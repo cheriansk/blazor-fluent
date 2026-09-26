@@ -1,0 +1,68 @@
+@using BlazorFluent.Core.Contracts
+@inject ITenantContext TenantContext
+@using Microsoft.FluentUI.AspNetCore.Components
+
+@if (TenantContext.TenantId is null)
+{
+    @* Not yet initialized — show nothing *@
+    return;
+}
+
+@if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
+{
+    @* Company user with multiple tenants — show dropdown *@
+    <FluentSelect TOption="TenantInfo"
+                  TValue="string"
+                  Items="@TenantContext.AllowedTenants.ToList()"
+                  OptionValue="@(t => t.Id)"
+                  OptionText="@(t => t.Name)"
+                  Value="@TenantContext.TenantId"
+                  ValueChanged="@((string? id) => OnTenantChanged(id))"
+                  Style="min-width: 180px;">
+    </FluentSelect>
+}
+else if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count == 1)
+{
+    @* Company user but only one tenant *@
+    <FluentBadge Style="padding: 4px 10px;">
+        @TenantContext.TenantName
+    </FluentBadge>
+}
+else
+{
+    @* Client user — locked to their tenant, no switching *@
+    <FluentTooltip Anchor="tenant-badge" Position="TooltipPosition.Bottom">
+        You are locked to this tenant and cannot switch.
+    </FluentTooltip>
+    <FluentBadge Id="tenant-badge"
+                 
+                 Style="padding: 4px 10px; cursor: default;">
+        🔒 @TenantContext.TenantName
+    </FluentBadge>
+}
+
+@if (!string.IsNullOrEmpty(_switchError))
+{
+    <FluentBadge  Color="BadgeColor.Severe" Style="margin-left: 8px;">
+        @_switchError
+    </FluentBadge>
+}
+
+@code {
+    private string? _switchError;
+
+    private void OnTenantChanged(string? newTenantId)
+    {
+        if (string.IsNullOrWhiteSpace(newTenantId)) return;
+
+        var result = TenantContext.SwitchTenant(newTenantId);
+        if (!result.Succeeded)
+        {
+            _switchError = result.Errors.FirstOrDefault() ?? "Switch failed.";
+        }
+        else
+        {
+            _switchError = null;
+        }
+    }
+}

@@ -1,9 +1,12 @@
 using BlazorFluent.Core.Events;
 
 namespace BlazorFluent.Jobs.Jobs.Catalog;
+
 /// <summary>
-/// SAMPLE EVENT ONLY
+/// Sample event: triggers a catalog synchronization batch for a specific tenant.
+/// Pass <paramref name="TenantId"/> so the background listener can restore tenant context.
 /// </summary>
-/// <param name="TriggerSource"></param>
-/// <param name="BatchSize"></param>
-public record CatalogSyncJobEvent(string TriggerSource, int BatchSize = 100) : BaseJobEvent(TriggerSource);
+public record CatalogSyncJobEvent(
+    string TriggerSource,
+    string? TenantId = null,
+    int BatchSize = 100) : BaseJobEvent(TriggerSource, TenantId);

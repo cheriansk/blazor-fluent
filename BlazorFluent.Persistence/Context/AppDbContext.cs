@@ -1,6 +1,8 @@
+using System.Reflection;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,15 +11,20 @@ namespace BlazorFluent.Persistence.Context;
 public class AppDbContext : DbContext
 {
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ITenantContext _tenantContext;
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
-        IDateTimeProvider dateTimeProvider) : base(options)
+        IDateTimeProvider dateTimeProvider,
+        ITenantContext tenantContext) : base(options)
     {
         _dateTimeProvider = dateTimeProvider;
+        _tenantContext = tenantContext;
     }
 
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
+    public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
+    public DbSet<ProjectEntity> Projects => Set<ProjectEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,14 +38,62 @@ public class AppDbContext : DbContext
             ? "timestamp with time zone"
             : "timestamp without time zone";
 
-        // 3. Enforce audit columns (Created, CreatedBy, Updated, UpdatedBy) on EVERY entity
+        // 3. Enforce multi-tenant security architecture and audit columns on EVERY entity
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (entityType.IsKeyless) continue;
 
-            if (typeof(IAuditableEntity).IsAssignableFrom(entityType.ClrType))
+            var clrType = entityType.ClrType;
+            var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
+            var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
+            var isSoftDeletable = typeof(ISoftDeletableEntity).IsAssignableFrom(clrType);
+
+            // Fail-closed Tenancy Rule: every entity MUST declare its tenancy boundary
+            if (!isGlobal && !isTenant)
             {
-                modelBuilder.Entity(entityType.ClrType, builder =>
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates multi-tenant security architecture! " +
+                    $"It must either implement '{nameof(ITenantEntity)}' (for tenant-level isolation) " +
+                    $"or explicitly implement '{nameof(IGlobalEntity)}' (if it is host-wide).");
+            }
+
+            // Apply Global Query Filters & Indexes
+            if (isTenant && isSoftDeletable)
+            {
+                var method = typeof(AppDbContext)
+                    .GetMethod(nameof(ConfigureTenantAndSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType);
+                method.Invoke(this, [modelBuilder]);
+
+                modelBuilder.Entity(clrType, builder =>
+                {
+                    builder.HasIndex(nameof(ITenantEntity.TenantId));
+                });
+            }
+            else if (isTenant)
+            {
+                var method = typeof(AppDbContext)
+                    .GetMethod(nameof(ConfigureTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType);
+                method.Invoke(this, [modelBuilder]);
+
+                modelBuilder.Entity(clrType, builder =>
+                {
+                    builder.HasIndex(nameof(ITenantEntity.TenantId));
+                });
+            }
+            else if (isSoftDeletable)
+            {
+                var method = typeof(AppDbContext)
+                    .GetMethod(nameof(ConfigureSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType);
+                method.Invoke(this, [modelBuilder]);
+            }
+
+            // Enforce audit columns
+            if (typeof(IAuditableEntity).IsAssignableFrom(clrType))
+            {
+                modelBuilder.Entity(clrType, builder =>
                 {
                     builder.Property(nameof(IAuditableEntity.Created))
                         .HasColumnName("Created")
@@ -64,7 +119,7 @@ public class AppDbContext : DbContext
             else
             {
                 // Inject shadow properties so tables always persist audit columns
-                modelBuilder.Entity(entityType.ClrType, builder =>
+                modelBuilder.Entity(clrType, builder =>
                 {
                     builder.Property<DateTime>(AuditableEntityInterceptor.CreatedProperty)
                         .HasColumnName("Created")
@@ -88,5 +143,26 @@ public class AppDbContext : DbContext
                 });
             }
         }
+    }
+
+    private void ConfigureTenantAndSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ITenantEntity, ISoftDeletableEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(e => (_tenantContext.IsHost || e.TenantId == _tenantContext.TenantId) && !e.IsDeleted);
+    }
+
+    private void ConfigureTenantFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ITenantEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(e => _tenantContext.IsHost || e.TenantId == _tenantContext.TenantId);
+    }
+
+    private void ConfigureSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ISoftDeletableEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(e => !e.IsDeleted);
     }
 }

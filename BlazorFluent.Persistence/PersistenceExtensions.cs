@@ -16,10 +16,14 @@ public static class PersistenceExtensions
         var useUtc = !bool.TryParse(configuration["DateTimeSettings:UseUtc"], out var parsed) || parsed;
         services.TryAddSingleton<IDateTimeProvider>(new ConfigurableDateTimeProvider(useUtc));
 
+        // 2. Register current user and tenant context (scoped per request/circuit)
         services.TryAddScoped<ICurrentUser, DefaultCurrentUser>();
+        services.TryAddScoped<ITenantContext, TenantContext>();
+
+        // 3. Register audit interceptor (scoped — needs ICurrentUser + ITenantContext which are scoped)
         services.AddScoped<AuditableEntityInterceptor>();
 
-        // 2. Strict connection string loading from appsettings.json
+        // 4. Strict connection string loading from appsettings.json
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -28,7 +32,7 @@ public static class PersistenceExtensions
                 "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.json.");
         }
 
-        // 3. Register AppDbContext with Npgsql and Interceptors
+        // 5. Register AppDbContext with Npgsql and the audit interceptor
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();

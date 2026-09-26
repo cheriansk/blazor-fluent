@@ -4,13 +4,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BlazorFluent.Persistence.Configurations.Catalog;
 
-public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity>
+public class ProductConfiguration : IEntityTypeConfiguration<ProductEntity>
 {
     public void Configure(EntityTypeBuilder<ProductEntity> builder)
     {
         builder.ToTable("Products", schema: "catalog");
 
         builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.TenantId)
+            .HasMaxLength(256)
+            .IsRequired();
 
         builder.Property(p => p.Name)
             .IsRequired()
@@ -29,7 +33,8 @@ public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity
         builder.HasIndex(p => p.Sku)
             .IsUnique();
 
-        // Soft delete global query filter
-        builder.HasQueryFilter(p => !p.IsDeleted);
+        builder.HasIndex(p => p.TenantId)
+            .HasDatabaseName("IX_Products_TenantId");
+
     }
 }

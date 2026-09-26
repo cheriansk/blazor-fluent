@@ -6,7 +6,7 @@ using Microsoft.FluentUI.AspNetCore.Components;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configure console logging timezone based on DateTimeSettings:UseUtc
-var useUtc = builder.Configuration.GetValue<bool>("DateTimeSettings:UseUtc", defaultValue: true);
+var useUtc = !bool.TryParse(builder.Configuration["DateTimeSettings:UseUtc"], out var parsedUtc) || parsedUtc;
 builder.Logging.AddSimpleConsole(options =>
 {
     options.IncludeScopes = true;
@@ -42,3 +42,37 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+
+/**
+ * 
+ * 1.  UseExceptionHandler            → RFC 9457 ProblemDetails
+2.  UseResponseCompression
+3.  UseCors                        ← before HTTPS redirect (preflight)
+4.  UseHttpsRedirection
+5.  Security headers
+6.  UseStaticFiles                 (optional)
+7.  Hangfire dashboard             (if jobs enabled)
+8.  UseRouting
+9.  OpenAPI + Scalar
+10. UseAuthentication
+11. Per-module ConfigureMiddleware ← multi-tenant root override etc.
+12. UseRateLimiter
+13. Quota enforcement              (if quotas enabled)
+14. UseAuthorization
+15. Per-module MapEndpoints
+16. Health, SSE, SignalR
+17. CurrentUserMiddleware          ← last, so authorization already done
+
+
+
+Three ordering rules are unusual and important:
+
+ --> Tenant resolution before authentication. Finbuckle’s strategy chain sees an anonymous User, which is why claim-aware tenant logic lives in post-auth module middleware - see the multitenancy deep dive.
+--> CORS before HTTPS redirect. Preflight OPTIONS requests can’t follow redirects per the Fetch spec.
+--> Per-module middleware after authentication. UseModuleMiddlewares runs each module’s ConfigureMiddleware right after UseAuthentication, so module middleware (like Multitenancy’s root-operator override) can read claims.
+--> CurrentUserMiddleware runs last: it populates ICurrentUser from claims for the endpoint to consume. Anything reading ICurrentUser earlier in the chain sees nothing - middleware that needs the user reads claims directly.
+
+Related
+ * 
+ */

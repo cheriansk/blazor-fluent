@@ -9,16 +9,22 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
 {
     private readonly ICurrentUser _currentUser;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ITenantContext _tenantContext;
 
     public const string CreatedProperty = "Created";
     public const string CreatedByProperty = "CreatedBy";
     public const string UpdatedProperty = "Updated";
     public const string UpdatedByProperty = "UpdatedBy";
+    public const string TenantIdProperty = "TenantId";
 
-    public AuditableEntityInterceptor(ICurrentUser currentUser, IDateTimeProvider dateTimeProvider)
+    public AuditableEntityInterceptor(
+        ICurrentUser currentUser,
+        IDateTimeProvider dateTimeProvider,
+        ITenantContext tenantContext)
     {
         _currentUser = currentUser;
         _dateTimeProvider = dateTimeProvider;
+        _tenantContext = tenantContext;
     }
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
@@ -50,6 +56,53 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 continue;
             }
 
+            // ─── TENANT SECURITY ──────────────────────────────────────────────────────
+            if (entry.Entity is ITenantEntity tenantEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    // If TenantId was not set by application code, inject the current context's tenant.
+                    // Host users with IsHost=true can write to any tenant explicitly.
+                    if (string.IsNullOrWhiteSpace(tenantEntity.TenantId))
+                    {
+                        if (string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+                        {
+                            // Fail-closed: never persist an entity without a TenantId
+                            throw new InvalidOperationException(
+                                $"Cannot save entity '{entry.Entity.GetType().Name}': " +
+                                $"TenantId is not set and no active tenant is available in ITenantContext. " +
+                                $"Ensure the user session is fully initialized before writing tenant-scoped data.");
+                        }
+
+                        tenantEntity.TenantId = _tenantContext.TenantId;
+                    }
+                    else if (!_tenantContext.IsHost &&
+                             tenantEntity.TenantId != _tenantContext.TenantId)
+                    {
+                        // Security: a non-host user is trying to write to a different tenant's data.
+                        throw new InvalidOperationException(
+                            $"Security violation: attempt to insert entity '{entry.Entity.GetType().Name}' " +
+                            $"into tenant '{tenantEntity.TenantId}' while active tenant is '{_tenantContext.TenantId}'.");
+                    }
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    // TenantId is immutable — it can never be changed after creation.
+                    entry.Property(TenantIdProperty).IsModified = false;
+
+                    // Cross-tenant write guard for non-host users
+                    if (!_tenantContext.IsHost &&
+                        tenantEntity.TenantId != _tenantContext.TenantId)
+                    {
+                        throw new InvalidOperationException(
+                            $"Security violation: attempt to modify entity '{entry.Entity.GetType().Name}' " +
+                            $"belonging to tenant '{tenantEntity.TenantId}' while active tenant is '{_tenantContext.TenantId}'.");
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────────────────
+
+            // ─── AUDIT FIELDS ─────────────────────────────────────────────────────────
             // 1. Strongly typed IAuditableEntity
             if (entry.Entity is IAuditableEntity auditableEntity)
             {
@@ -92,6 +145,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     if (hasCreatedBy) entry.Property(CreatedByProperty).IsModified = false;
                 }
             }
+            // ─────────────────────────────────────────────────────────────────────────
         }
     }
 }
