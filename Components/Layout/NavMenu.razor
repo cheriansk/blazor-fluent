@@ -1,9 +1,10 @@
-﻿@rendermode InteractiveServer
+@rendermode InteractiveServer
 
 <FluentNav Id="main-menu" Width="260px">
     <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())" IconActive="@(new Icons.Filled.Size20.Home())">Home</FluentNavItem>
         <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())">Counter</FluentNavItem>
         <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())">Weather</FluentNavItem>
+        <FluentNavItem Href="catalog" IconRest="@(new Icons.Regular.Size20.Box())" IconActive="@(new Icons.Filled.Size20.Box())">Catalog (Module)</FluentNavItem>
 </FluentNav>
 
 @code {

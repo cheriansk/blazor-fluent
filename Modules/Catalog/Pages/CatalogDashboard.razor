@@ -1,0 +1,78 @@
+@page "/catalog"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Domain.Catalog
+@using BlazorFluent.Jobs.Abstractions
+@using BlazorFluent.Jobs.Jobs.Catalog
+@inject IJobEventQueue JobQueue
+
+<PageTitle>Catalog & Batch Jobs - SAMPLE PAGE ONLY</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentLabel Typo="Typography.H3">Modular Monolith - Catalog Module</FluentLabel>
+    <FluentLabel Typo="Typography.Body">
+        Demonstrating the 4-project Lean Modular Monolith architecture:
+        <strong>BlazorFluent</strong> (UI/Host),
+        <strong>BlazorFluent.Core</strong> (POCO Domain & Common),
+        <strong>BlazorFluent.Persistence</strong> (PostgreSQL EF Core), and
+        <strong>BlazorFluent.Jobs</strong> (Queue & Batch Listener).
+    </FluentLabel>
+
+    <FluentCard>
+        <FluentLabel Typo="Typography.H5">Event-Driven Batch Job Trigger</FluentLabel>
+        <FluentLabel Typo="Typography.Body">
+            Trigger a batch job onto the in-memory queue. The background listener will immediately dequeue and execute the batch handler within a scoped DbContext lifetime.
+        </FluentLabel>
+
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="15" Style="margin-top: 15px;">
+            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="TriggerManualBatchJob" Loading="@isSubmitting">
+                Trigger Catalog Sync Batch (Action Trigger)
+            </FluentButton>
+        </FluentStack>
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div style="margin-top: 15px; padding: 12px; border-left: 4px solid #107c41; background-color: rgba(16, 124, 65, 0.08); border-radius: 4px;">
+                <strong>Batch Event Dispatched:</strong> @statusMessage
+            </div>
+        }
+    </FluentCard>
+
+    <FluentCard>
+        <FluentLabel Typo="Typography.H5">Sample POCO Entity from Core</FluentLabel>
+        <FluentLabel Typo="Typography.Body">
+            Product entity is a pure POCO defined in <code>BlazorFluent.Core.Domain.Catalog</code> with 0 EF Core dependencies.
+        </FluentLabel>
+        <ul>
+            <li><strong>Id:</strong> @sampleProduct.Id</li>
+            <li><strong>Name:</strong> @sampleProduct.Name</li>
+            <li><strong>SKU:</strong> @sampleProduct.Sku</li>
+            <li><strong>Price:</strong> @sampleProduct.Price.ToString("C")</li>
+            <li><strong>Active:</strong> @sampleProduct.IsActive</li>
+        </ul>
+    </FluentCard>
+</FluentStack>
+
+@code {
+    private bool isSubmitting = false;
+    private string? statusMessage;
+
+    private readonly ProductEntity sampleProduct = new()
+    {
+        Name = "Surface Laptop Studio",
+        Sku = "SLS-2026-X1",
+        Price = 1999.99m,
+        IsActive = true
+    };
+
+    private async Task TriggerManualBatchJob()
+    {
+        isSubmitting = true;
+        statusMessage = null;
+
+        var jobEvent = new CatalogSyncJobEvent(TriggerSource: "UserAction:CatalogDashboard", BatchSize: 250);
+        await JobQueue.EnqueueAsync(jobEvent);
+
+        statusMessage = $"Enqueued event '{jobEvent.EventId}' at {jobEvent.Timestamp:HH:mm:ss}. The background listener is processing it.";
+        isSubmitting = false;
+    }
+}
