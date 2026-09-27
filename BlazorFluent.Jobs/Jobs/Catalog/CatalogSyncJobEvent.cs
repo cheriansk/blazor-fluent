@@ -9,4 +9,7 @@ namespace BlazorFluent.Jobs.Jobs.Catalog;
 public record CatalogSyncJobEvent(
     string TriggerSource,
     string? TenantId = null,
-    int BatchSize = 100) : BaseJobEvent(TriggerSource, TenantId);
+    int BatchSize = 100,
+    string? CorrelationId = null,
+    Guid? ParentExecutionId = null) : BaseJobEvent(TriggerSource, TenantId, CorrelationId, ParentExecutionId);
+

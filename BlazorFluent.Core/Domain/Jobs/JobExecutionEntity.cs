@@ -10,7 +10,13 @@ namespace BlazorFluent.Core.Domain.Jobs;
 /// </summary>
 public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+
+    /// <summary>Correlation identifier linking all chained batch steps in the same pipeline.</summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>Identifier of the predecessor job execution that triggered this step (if chained).</summary>
+    public Guid? ParentExecutionId { get; set; }
 
     /// <summary>Name or type of the background batch job.</summary>
     public string JobName { get; set; } = string.Empty;
@@ -20,6 +26,7 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
 
     /// <summary>How the job was initiated: 'Cron', 'Manual', 'Event', 'Manual Retry'.</summary>
     public string TriggerSource { get; set; } = "Cron";
+
 
     /// <summary>Current lifecycle status.</summary>
     public JobStatus Status { get; set; } = JobStatus.Queued;

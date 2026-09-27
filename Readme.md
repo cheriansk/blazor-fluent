@@ -513,3 +513,16 @@ BlazorFluent incorporates enterprise-grade persistence patterns inspired by Full
   - Queries can selectively ignore soft-delete via `.IgnoreQueryFilters(QueryFilters.SoftDelete)` without accidentally disabling multi-tenant isolation.
 - **Automatic Soft-Delete Interceptor**: Calling `_dbContext.Remove(entity)` on any soft-deletable entity is automatically intercepted, converted to an `UPDATE` setting `IsDeleted = true`, and recorded in `audit.AuditRecords` with Level 2 property diffs.
 - **Fail-Closed Tenancy Verification**: Startup model validation ensures every entity explicitly declares either `ITenantEntity` or `IGlobalEntity`.
+
+
+-------------------------------------------------
+
+### HTTP Security Headers Standard
+
+All responses from the internet-facing Blazor WebApp are hardened at the ASP.NET Core pipeline boundary with zero third-party dependencies:
+
+- **Clickjacking Protection**: `X-Frame-Options: SAMEORIGIN` disallows unauthorized framing while supporting same-origin workflows.
+- **MIME Sniffing Prevention**: `X-Content-Type-Options: nosniff` forces browsers to adhere strictly to declared MIME types.
+- **Referrer Privacy**: `Referrer-Policy: strict-origin-when-cross-origin` strips sensitive path/query info when leaving the origin.
+- **Device Capabilities**: `Permissions-Policy: camera=(), microphone=(), geolocation=()` restricts access to hardware APIs.
+- **Reflected XSS Filtering**: `X-XSS-Protection: 1; mode=block` maintains legacy browser safety.

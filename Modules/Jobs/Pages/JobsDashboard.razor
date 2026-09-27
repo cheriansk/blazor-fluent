@@ -73,24 +73,42 @@
             </FluentGridItem>
         </FluentGrid>
 
-        <!-- Error Detail Modal Dialog -->
+        <!-- Execution Detail Modal Dialog -->
         @if (_selectedErrorExecution != null)
         {
-            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--error);">
+            <FluentCard Style="@($"margin-bottom: 20px; border-left: 4px solid {(_selectedErrorExecution.Status == JobStatus.Failed ? "var(--error)" : "var(--accent-fill-rest)")};")">
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
-                    <FluentLabel Typo="Typography.H5">Job Error Diagnostics: @_selectedErrorExecution.JobName</FluentLabel>
+                    <FluentLabel Typo="Typography.H5">
+                        @(_selectedErrorExecution.Status == JobStatus.Failed ? "Job Error Diagnostics" : "Job Execution Details"): @_selectedErrorExecution.JobName
+                    </FluentLabel>
                     <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedErrorExecution = null)" />
                 </FluentStack>
                 <FluentLabel Typo="Typography.Body" Style="margin-bottom: 8px;">
-                    <strong>Execution ID:</strong> @_selectedErrorExecution.Id | <strong>Source:</strong> @_selectedErrorExecution.TriggerSource | <strong>Attempts:</strong> @_selectedErrorExecution.AttemptCount / @_selectedErrorExecution.MaxRetries
+                    <strong>Execution ID:</strong> @_selectedErrorExecution.Id 
+                    | <strong>Correlation ID:</strong> @(_selectedErrorExecution.CorrelationId ?? "—") 
+                    | <strong>Parent:</strong> @(_selectedErrorExecution.ParentExecutionId?.ToString() ?? "Root") 
+                    | <strong>Source:</strong> @_selectedErrorExecution.TriggerSource 
+                    | <strong>Attempts:</strong> @_selectedErrorExecution.AttemptCount / @_selectedErrorExecution.MaxRetries
                 </FluentLabel>
-                <div style="background: var(--neutral-layer-2); padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">
-                    @_selectedErrorExecution.ErrorMessage
-                </div>
+                @if (!string.IsNullOrWhiteSpace(_selectedErrorExecution.ErrorMessage))
+                {
+                    <div style="background: var(--neutral-layer-2); padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">
+                        @_selectedErrorExecution.ErrorMessage
+                    </div>
+                }
+                else
+                {
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                        Execution completed successfully with no errors in @(_selectedErrorExecution.DurationMs?.ToString("F0") ?? "0") ms.
+                    </FluentLabel>
+                }
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="margin-top: 12px;">
-                    <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.ArrowCounterclockwise())" OnClick="@(() => RetryJobAsync(_selectedErrorExecution.Id))">
-                        Retry Job Now
-                    </FluentButton>
+                    @if (_selectedErrorExecution.Status == JobStatus.Failed)
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.ArrowCounterclockwise())" OnClick="@(() => RetryJobAsync(_selectedErrorExecution.Id))">
+                            Retry Job Now
+                        </FluentButton>
+                    }
                     <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _selectedErrorExecution = null)">
                         Close
                     </FluentButton>
@@ -122,6 +140,19 @@
                     <PropertyColumn Property="@(e => e.TenantId ?? "Host")" Title="Tenant Scope" Sortable="true" />
                     <PropertyColumn Property="@(e => e.TriggerSource)" Title="Source" Sortable="true" />
                     
+                    <TemplateColumn Title="Correlation" Sortable="true">
+                        @if (!string.IsNullOrWhiteSpace(context.CorrelationId))
+                        {
+                            <span title="Correlation: @context.CorrelationId@(context.ParentExecutionId.HasValue ? $"\nParent: {context.ParentExecutionId}" : "")">
+                                <FluentBadge Appearance="Appearance.Neutral">@context.CorrelationId</FluentBadge>
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color: var(--neutral-foreground-hint);">—</span>
+                        }
+                    </TemplateColumn>
+
                     <TemplateColumn Title="Status" Sortable="true">
                         @switch (context.Status)
                         {
@@ -166,15 +197,12 @@
                                     Retry
                                 </FluentButton>
                             }
-                            @if (!string.IsNullOrWhiteSpace(context.ErrorMessage))
-                            {
-                                <FluentButton Appearance="ButtonAppearance.Subtle"
-                                              Size="ButtonSize.Small"
-                                              IconStart="@(new Icons.Regular.Size16.Info())"
-                                              OnClick="@(() => _selectedErrorExecution = context)">
-                                    Details
-                                </FluentButton>
-                            }
+                            <FluentButton Appearance="ButtonAppearance.Subtle"
+                                          Size="ButtonSize.Small"
+                                          IconStart="@(new Icons.Regular.Size16.Info())"
+                                          OnClick="@(() => _selectedErrorExecution = context)">
+                                Details
+                            </FluentButton>
                         </FluentStack>
                     </TemplateColumn>
                 </FluentDataGrid>

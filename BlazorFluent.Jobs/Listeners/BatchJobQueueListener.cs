@@ -69,15 +69,16 @@ public class BatchJobQueueListener : BackgroundService
         using (_logger.BeginScope(new Dictionary<string, object>
         {
             ["TenantId"] = tenantId,
-            ["JobId"] = jobEvent.EventId
+            ["JobId"] = jobEvent.EventId,
+            ["CorrelationId"] = jobEvent.CorrelationId
         }))
         {
             var eventType = jobEvent.GetType();
             var jobName = eventType.Name.Replace("Event", string.Empty);
 
             _logger.LogInformation(
-                "Processing batch job {JobName} ({EventId}) triggered by {Source} for tenant {TenantId}",
-                jobName, jobEvent.EventId, jobEvent.TriggerSource, tenantId);
+                "Processing batch job {JobName} ({EventId}, CorrelationId={CorrelationId}) triggered by {Source} for tenant {TenantId}",
+                jobName, jobEvent.EventId, jobEvent.CorrelationId, jobEvent.TriggerSource, tenantId);
 
             using var scope = _scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -102,10 +103,12 @@ public class BatchJobQueueListener : BackgroundService
             // ─── 2. RECORD INITIAL EXECUTION STAMP ────────────────────────────────────────
             var execution = new JobExecutionEntity
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 JobName = jobName,
                 TenantId = jobEvent.TenantId,
                 TriggerSource = jobEvent.TriggerSource,
+                CorrelationId = jobEvent.CorrelationId,
+                ParentExecutionId = jobEvent.ParentExecutionId,
                 Status = JobStatus.Running,
                 AttemptCount = 1,
                 MaxRetries = MaxRetries,
@@ -172,13 +175,13 @@ public class BatchJobQueueListener : BackgroundService
                     {
                         await auditService.LogUserActivityAsync(
                             $"Background batch job '{jobName}' succeeded",
-                            $"JobId: {jobEvent.EventId}, Attempts: {attempt}/{MaxRetries}, Duration: {stopwatch.ElapsedMilliseconds}ms",
+                            $"JobId: {jobEvent.EventId}, CorrelationId: {jobEvent.CorrelationId}, Attempts: {attempt}/{MaxRetries}, Duration: {stopwatch.ElapsedMilliseconds}ms",
                             stoppingToken);
                     }
 
                     _logger.LogInformation(
-                        "Successfully completed batch job {JobName} ({EventId}) on attempt {Attempt}/{MaxRetries} in {Duration}ms.",
-                        jobName, jobEvent.EventId, attempt, MaxRetries, stopwatch.ElapsedMilliseconds);
+                        "Successfully completed batch job {JobName} ({EventId}, CorrelationId={CorrelationId}) on attempt {Attempt}/{MaxRetries} in {Duration}ms.",
+                        jobName, jobEvent.EventId, jobEvent.CorrelationId, attempt, MaxRetries, stopwatch.ElapsedMilliseconds);
                     return;
                 }
                 catch (Exception ex) when (attempt < MaxRetries && !stoppingToken.IsCancellationRequested)
@@ -187,8 +190,8 @@ public class BatchJobQueueListener : BackgroundService
                     var backoffDelay = TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1));
 
                     _logger.LogWarning(ex,
-                        "Batch job {JobName} ({EventId}) failed attempt {Attempt}/{MaxRetries}. Retrying in {Delay}ms...",
-                        jobName, jobEvent.EventId, attempt, MaxRetries, backoffDelay.TotalMilliseconds);
+                        "Batch job {JobName} ({EventId}, CorrelationId={CorrelationId}) failed attempt {Attempt}/{MaxRetries}. Retrying in {Delay}ms...",
+                        jobName, jobEvent.EventId, jobEvent.CorrelationId, attempt, MaxRetries, backoffDelay.TotalMilliseconds);
 
                     execution.AttemptCount = attempt;
                     execution.Status = JobStatus.Retrying;
@@ -217,7 +220,7 @@ public class BatchJobQueueListener : BackgroundService
                 await auditService.LogSecurityEventAsync(
                     $"Background batch job '{jobName}' failed after {MaxRetries} attempts",
                     AuditSeverity.Error,
-                    $"JobId: {jobEvent.EventId}, Error: {lastException?.Message}",
+                    $"JobId: {jobEvent.EventId}, CorrelationId: {jobEvent.CorrelationId}, Error: {lastException?.Message}",
                     stoppingToken);
             }
 

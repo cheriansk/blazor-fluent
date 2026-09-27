@@ -90,13 +90,15 @@ public class JobManagerService : IJobManagerService
 
         var retryEvent = new CatalogSyncJobEvent(
             TriggerSource: "Manual Retry",
-            TenantId: execution.TenantId);
+            TenantId: execution.TenantId,
+            CorrelationId: execution.CorrelationId,
+            ParentExecutionId: execution.Id);
 
         await _queue.EnqueueAsync(retryEvent, cancellationToken);
 
         await _auditService.LogUserActivityAsync(
             $"Initiated manual retry for background job '{execution.JobName}'",
-            $"PreviousExecutionId: {executionId}, TenantId: {execution.TenantId ?? "Host"}",
+            $"PreviousExecutionId: {executionId}, CorrelationId: {execution.CorrelationId}, TenantId: {execution.TenantId ?? "Host"}",
             cancellationToken);
 
         return Result.Success();
