@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 
+@using BlazorFluent.Components.Common
+
 <FluentLayout>
     <FluentLayoutItem Area="LayoutArea.Header">
         <FluentLayoutHamburger />
@@ -12,7 +14,9 @@
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
-            @Body
+            <AppErrorBoundary>
+                @Body
+            </AppErrorBoundary>
         </div>
     </FluentLayoutItem>
 

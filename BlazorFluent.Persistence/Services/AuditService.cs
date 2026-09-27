@@ -1,9 +1,11 @@
+using System.Text.Json;
 using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
@@ -14,6 +16,7 @@ public class AuditService : IAuditService
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AuditService> _logger;
 
     public AuditService(
@@ -21,12 +24,14 @@ public class AuditService : IAuditService
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IDateTimeProvider dateTimeProvider,
+        IServiceScopeFactory scopeFactory,
         ILogger<AuditService> logger)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _dateTimeProvider = dateTimeProvider;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -175,5 +180,80 @@ public class AuditService : IAuditService
             .ToListAsync(cancellationToken);
 
         return PagedResult<AuditRecordEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
+    }
+
+    public async Task<string> LogExceptionAsync(
+        Exception exception,
+        string? contextDescription = null,
+        AuditSeverity severity = AuditSeverity.Error,
+        CancellationToken cancellationToken = default)
+    {
+        var errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        var now = _dateTimeProvider.Now;
+        var currentUserId = _currentUser.UserId ?? "system";
+        var tenantId = _tenantContext.TenantId ?? "host";
+
+        // Structured JSON payload detailing the incident
+        var exceptionPayload = new
+        {
+            IncidentReference = errorId,
+            ExceptionType = exception.GetType().FullName,
+            exception.Message,
+            exception.Source,
+            StackTrace = exception.StackTrace?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries),
+            InnerException = exception.InnerException is not null ? new
+            {
+                Type = exception.InnerException.GetType().FullName,
+                exception.InnerException.Message,
+                StackTrace = exception.InnerException.StackTrace?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            } : null
+        };
+
+        var changesJson = JsonSerializer.Serialize(exceptionPayload, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        // 1. Always log structured incident to Serilog stream & rolling file sink
+        _logger.LogError(
+            exception,
+            "INCIDENT [{ErrorId}]: Context={Context}, Tenant={TenantId}, User={UserId}, Message={Message}",
+            errorId, contextDescription ?? "General", tenantId, currentUserId, exception.Message);
+
+        // 2. Persist to audit.AuditRecords using an isolated scope
+        // An isolated scope ensures that even if the caller's DbContext transaction is currently aborted/rolling back,
+        // this exception record is guaranteed to be saved to PostgreSQL!
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var record = new AuditRecordEntity
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                UserId = currentUserId,
+                UserEmail = _currentUser.Email,
+                UserType = _tenantContext.UserType,
+                EventType = AuditEventType.Exception,
+                Severity = severity,
+                Description = string.IsNullOrWhiteSpace(contextDescription)
+                    ? $"Exception: {exception.Message}"
+                    : $"{contextDescription}: {exception.Message}",
+                ChangesJson = changesJson,
+                TraceId = errorId,
+                Created = now,
+                CreatedBy = currentUserId
+            };
+
+            isolatedDbContext.AuditRecords.Add(record);
+            await isolatedDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception persistEx)
+        {
+            _logger.LogCritical(persistEx, "Failed to persist exception audit record for Incident {ErrorId} to PostgreSQL!", errorId);
+        }
+
+        return errorId;
     }
 }

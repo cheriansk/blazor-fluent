@@ -88,6 +88,9 @@ public static class PersistenceExtensions
         // 10. Register tenant administration service (scoped — depends on ITenantCacheService)
         services.TryAddScoped<ITenantService, TenantService>();
 
+        // 11. Register Unit of Work for atomic transactions and rollbacks
+        services.TryAddScoped<IUnitOfWork, UnitOfWork>();
+
         return services;
     }
 }

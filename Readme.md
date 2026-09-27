@@ -472,3 +472,29 @@ Located under **Administration > Background Jobs** in the navigation menu:
 - **Error Stack Trace Inspection**: Click "Details" on any failed row to view the full error message and exception trace.
 ```
 
+-------------------------------------------------------------------------------------
+
+## Error Handling, Logging & Atomic Transactions
+
+BlazorFluent enforces end-to-end exception containment, structured audit tracking, and database transaction consistency:
+
+### 1. Blazor Circuit Error Boundary (`AppErrorBoundary`)
+- Wraps application content in `MainLayout.razor` to catch unhandled component rendering exceptions.
+- Keeps the SignalR circuit alive and prevents white-screen crashes.
+- Renders a sanitized Fluent UI V5 error card displaying a unique incident reference code (`ERR-XXXXXX`).
+- Never exposes internal stack traces, connection strings, or table names to clients.
+
+### 2. Forensic Exception Auditing (`audit.AuditRecords`)
+- Exceptions are automatically captured and recorded into PostgreSQL table `audit.AuditRecords` under `AuditEventType.Exception`.
+- Stores the full exception type, message, stack trace, and inner exceptions in `ChangesJson`.
+- Associated with the active `TenantId`, `UserId`, `TraceId` (Incident Reference), and timestamp.
+- Accessible directly to host administrators in the **Audit Trail Explorer** (`/auditing`).
+- Uses an isolated DB execution scope to guarantee error records are persisted even if the business transaction was rolled back.
+
+### 3. Atomic Database Transactions (`IUnitOfWork`)
+- Multi-step database workflows are wrapped using `IUnitOfWork.ExecuteInTransactionAsync(...)`.
+- **All-or-Nothing Guarantee**: If any step fails or an exception is thrown, all pending database writes in the flow are rolled back, and the EF Core `ChangeTracker` is cleared to prevent corrupted in-memory entity states.
+- Returns a safe `Result.Failure("... Reference: ERR-XXXXXX")` to the calling page.
+
+### 4. Structured Rolling File Logging (Serilog)
+- All exceptions are mirrored to rolling daily log files (`logs/blazorfluent-.log`) with structured placeholders and enriched tenant/user context.

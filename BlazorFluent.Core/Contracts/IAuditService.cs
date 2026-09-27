@@ -29,4 +29,15 @@ public interface IAuditService
     /// Records a critical business or user action.
     /// </summary>
     Task LogUserActivityAsync(string action, string? details = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records an unhandled application or UI exception to both the forensic audit trail (audit.AuditRecords)
+    /// and structured Serilog stream.
+    /// Returns a sanitized correlation incident reference (e.g., 'ERR-8F2B1C') safe to display to end users.
+    /// </summary>
+    Task<string> LogExceptionAsync(
+        Exception exception,
+        string? contextDescription = null,
+        AuditSeverity severity = AuditSeverity.Error,
+        CancellationToken cancellationToken = default);
 }
