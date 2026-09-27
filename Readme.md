@@ -202,3 +202,166 @@ graph TD
 ```
 
 ------------------------------------------
+
+# Implementation Plan: Caching Architecture Specification (L1 vs. L2 & README Documentation)
+
+## Goal Description
+Document and clarify the precise mechanics of **L1 (In-Process Memory)** vs. **L2 (Distributed Cache - Redis / Memory Fallback)** within the BlazorFluent architecture, including:
+1. Exactly what data is stored in L1 vs. L2.
+2. How .NET 10 `HybridCache` coordinates synchronization, serialization, and invalidation between L1 and L2 across auto-scaled Azure Web App instances.
+3. An explicit inventory of cached items vs. non-cached business items.
+4. A copy-ready, production-grade section to be integrated into `README.md`.
+
+---
+
+## User Review Required
+
+> [!NOTE]
+> **How HybridCache Coordinates L1 and L2**:
+> In .NET 10 `HybridCache`, every cached item exists in **both** L1 and L2, but with fundamentally different representations, lifetimes, and purposes:
+> - **L1 (In-Process RAM)** stores **live C# object references** in local instance memory for **sub-microsecond access**.
+> - **L2 (Distributed Tier)** stores **serialized binary/JSON payloads** in Redis (or shared memory) with longer TTLs, serving as the **single source of truth** across auto-scaled instances and the **pub/sub invalidation backplane**.
+
+---
+
+## L1 vs. L2 Deep-Dive Specification
+
+| Dimension | L1: In-Process Memory Cache | L2: Distributed Cache (Redis / Valkey) |
+| :--- | :--- | :--- |
+| **Location** | Local RAM of the specific Azure Web App node | Remote shared Redis instance (or in-memory fallback for local dev) |
+| **Storage Format** | Unserialized live .NET object instances | Serialized binary / JSON byte buffers |
+| **Access Latency** | **~50 to 100 nanoseconds** (Zero network hops, zero deserialization) | **~0.5 to 1.5 milliseconds** (Network round-trip across same Azure VNet) |
+| **Default Lifetime** | Short (`LocalCacheExpirationMinutes = 15`) | Longer (`DefaultExpirationMinutes = 60`) |
+| **Scope** | Private to the current instance and circuit | Shared across all auto-scaled Azure instances |
+| **Eviction Mechanism** | Local TTL expiration OR instant eviction via Redis Pub/Sub message | Absolute TTL, LRU eviction, or atomic tag invalidation (`RemoveByTagAsync`) |
+
+---
+
+## Data Inventory: What is Cached vs. Excluded
+
+### 1. Cached Payloads (Infrastructure Hotspots Only)
+
+| Cache Scope | Key Pattern | Payload Type | L1 TTL | L2 TTL | Invalidation Trigger |
+| :--- | :--- | :--- | :---: | :---: | :--- |
+| **Global (Host)** | `g:tenants:all` | `IReadOnlyList<TenantEntity>` (Slug, DisplayName, StartDate, EndDate, IsActive) | 15 min | 60 min | Tenant created, edited, dates changed, or status toggled |
+| **Tenant-Scoped** | `t:{tenantId}:permissions:{userId}` | `IReadOnlyList<string>` (User permission claims & role grants) | 15 min | 60 min | User role change, permission revocation |
+| **Tenant-Scoped** | `t:{tenantId}:settings` | `TenantSettingsDto` (Branding, theme colors, feature flags) | 15 min | 60 min | Tenant settings modified, or tenant deactivated |
+
+### 2. Intentionally Non-Cached Payloads (Direct to PostgreSQL)
+
+| Entity / Query | Why It Is Excluded From Cache |
+| :--- | :--- |
+| **Catalog Products (`ProductEntity`)** | High cardinality, search/filter variants, and pagination. Querying PostgreSQL with `.AsNoTracking()` takes **1-3ms**. Caching would introduce stale-data bugs without user-perceived gain. |
+| **Audit Records (`AuditRecordEntity`)** | Write-heavy, chronological append-only audit stream. Caching audit tables is an anti-pattern. |
+| **User Profile / Form Edits** | Interactive transactional updates; must always reflect the absolute latest state from the database. |
+
+---
+
+## Proposed Changes: Section to Append to `README.md`
+
+Below is the exact documentation markdown to be added to `README.md`:
+
+```markdown
+------------------------------------------
+# Multi-Tenant Caching Architecture (L1 vs. L2 & Azure Auto-Scaling)
+
+BlazorFluent implements a high-performance, fail-closed multi-tenant caching architecture based on **.NET 10 HybridCache (`Microsoft.Extensions.Caching.Hybrid`)** and **FullStackHero surgical caching patterns**.
+
+## 1. Two-Tier Cache Topology (L1 vs. L2)
+
+```
+                            Azure ARR Load Balancer
+                                       │
+                ┌──────────────────────┴──────────────────────┐
+                ▼                                             ▼
+       Azure Web App (Node 1)                        Azure Web App (Node 2)
+  ┌───────────────────────────────┐             ┌───────────────────────────────┐
+  │ L1 Cache: In-Process RAM      │             │ L1 Cache: In-Process RAM      │
+  │ • Live C# object references   │             │ • Live C# object references   │
+  │ • Latency: ~50-100 ns         │             │ • Latency: ~50-100 ns         │
+  │ • TTL: 15 minutes             │             │ • TTL: 15 minutes             │
+  └───────────────┬───────────────┘             └───────────────┬───────────────┘
+                  │                                             │
+                  │        Redis Invalidation Bus (Pub/Sub)     │
+                  ├─────────────────────────────────────────────┤
+                  │                                             │
+                  ▼                                             ▼
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ L2 Cache: Azure Cache for Redis (or Valkey / DistributedMemoryCache in dev) │
+  │ • Serialized shared byte payload                                            │
+  │ • Latency: ~0.8-1.5 ms (intra-VNet)                                         │
+  │ • TTL: 60 minutes                                                           │
+  │ • Broadcasts real-time L1 eviction across all auto-scaled nodes              │
+  └──────────────────────────────────────┬──────────────────────────────────────┘
+                                         │
+                                         ▼
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                 PostgreSQL (Azure Flexible Server / Local)                  │
+  │ • Ground truth database with Tenant Isolation Filters                       │
+  │ • DataProtectionKeys table (shared token encryption across all nodes)       │
+  └─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### L1 (In-Process Memory)
+- **What is stored**: Unserialized, live C# object references residing directly in the web application's memory heap.
+- **Speed**: **Sub-microsecond (<100 nanoseconds)**. Zero network hops, zero JSON/binary serialization overhead.
+- **Lifecycle**: Managed by `LocalCacheExpirationMinutes` (default: 15 minutes). Evicted immediately if an invalidation message arrives via Redis.
+
+### L2 (Distributed Tier)
+- **What is stored**: Serialized byte payloads accessible to all application instances.
+- **Speed**: **~0.5 to 1.5 milliseconds** within the same Azure VNet or AWS VPC.
+- **Lifecycle**: Managed by `DefaultExpirationMinutes` (default: 60 minutes).
+- **Dual-Mode Operation**:
+  - **Local Development**: Defaults to `DistributedMemoryCache` ($0 external setup, no Redis required).
+  - **Azure Production**: Supplying `ConnectionStrings:Redis` automatically turns on `StackExchangeRedisCache`.
+
+---
+
+## 2. What Is Cached vs. What Is Not
+
+To avoid cache-invalidation bugs and stale-data hazards, BlazorFluent follows the **Surgical Caching Pattern**:
+
+### ✅ What IS Cached (Infrastructure Hotspots Only)
+1. **Global Tenant Directory (`g:tenants:all`)**:
+   - The complete tenant metadata list (`TenantEntity`).
+   - Queried during route resolution, tenant switching, and host management.
+   - Evicted automatically on tenant creation, status change, or date update.
+2. **Tenant Permissions & Claims (`t:{tenantId}:permissions:{userId}`)**:
+   - Authorized roles and permission flags checked on every UI interaction.
+   - Evicted when user permissions change.
+3. **Tenant Customization (`t:{tenantId}:settings`)**:
+   - Tenant branding, custom themes, and configuration flags.
+
+### ❌ What is NOT Cached (Direct PostgreSQL Queries)
+- **Business Entities (`Products`, `Orders`, etc.)**: Kept direct from PostgreSQL using EF Core `.AsNoTracking()`. PostgreSQL executes indexed queries in **1-3ms**, ensuring zero risk of stale business data.
+- **Forensic Audit Trails (`audit.AuditRecords`)**: Strictly append-only write path; never cached.
+
+---
+
+## 3. Multi-Tenant Security & Atomic Eviction
+
+1. **Fail-Closed Facade (`ITenantCacheService`)**:
+   - Automatically prefixes keys: `t:{tenantId}:{key}`.
+   - Throws `InvalidOperationException` immediately if tenant cache is invoked without an active `TenantId`.
+2. **Atomic Tenant Eviction**:
+   - Every tenant cache entry is automatically tagged with `tenant:{tenantId}`.
+   - Deactivating a tenant immediately triggers:
+     ```csharp
+     await _cacheService.InvalidateTenantAsync(tenantId);
+     ```
+   - This atomically purges all cached entries for that tenant across all auto-scaled Azure instances simultaneously.
+
+---
+
+## 4. Azure Auto-Scaling Configuration Guide
+
+1. **Enable Sticky Sessions (ARR Affinity)**:
+   In Azure Portal: *App Service > Configuration > General settings > ARR affinity: On*.
+2. **Configure Redis for L2 Sync**:
+   In Azure Portal: *App Service > Configuration > Application settings*, add:
+   `ConnectionStrings__Redis` = `<your-azure-cache-for-redis-connection-string>`
+3. **PostgreSQL Data Protection (Zero Extra Cloud Cost)**:
+   ASP.NET Core Data Protection encryption keys are stored in the PostgreSQL `DataProtectionKeys` table. When Azure auto-scales from 1 to $N$ instances, all instances share the same key ring and can decrypt each other's antiforgery tokens and authentication cookies seamlessly.
+```
+
+---

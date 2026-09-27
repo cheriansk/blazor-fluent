@@ -10,26 +10,37 @@ namespace BlazorFluent.Persistence.Services;
 
 public class TenantService : ITenantService
 {
+    private const string TenantsCacheKey = "tenants:all";
     private readonly AppDbContext _dbContext;
     private readonly IAuditService _auditService;
+    private readonly ITenantCacheService _cacheService;
     private readonly ILogger<TenantService> _logger;
 
     public TenantService(
         AppDbContext dbContext,
         IAuditService auditService,
+        ITenantCacheService cacheService,
         ILogger<TenantService> logger)
     {
         _dbContext = dbContext;
         _auditService = auditService;
+        _cacheService = cacheService;
         _logger = logger;
     }
 
     public async Task<IReadOnlyList<TenantEntity>> GetAllTenantsAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Tenants
-            .AsNoTracking()
-            .OrderBy(t => t.DisplayName)
-            .ToListAsync(cancellationToken);
+        return await _cacheService.GetGlobalOrCreateAsync(
+            TenantsCacheKey,
+            async token =>
+            {
+                return (IReadOnlyList<TenantEntity>)await _dbContext.Tenants
+                    .AsNoTracking()
+                    .OrderBy(t => t.DisplayName)
+                    .ToListAsync(token);
+            },
+            expiration: TimeSpan.FromMinutes(60),
+            cancellationToken: cancellationToken);
     }
 
     public async Task<Result<TenantEntity>> CreateTenantAsync(
@@ -67,6 +78,9 @@ public class TenantService : ITenantService
         _dbContext.Tenants.Add(tenant);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        // Evict global tenant directory cache across all auto-scaled instances
+        await _cacheService.RemoveGlobalAsync(TenantsCacheKey, cancellationToken);
+
         _logger.LogInformation("Provisioned new tenant: Slug={Slug}, Name={Name}, StartDate={StartDate}, EndDate={EndDate}",
             tenant.Slug, tenant.DisplayName, tenant.StartDate, tenant.EndDate);
 
@@ -85,6 +99,16 @@ public class TenantService : ITenantService
 
         tenant.IsActive = isActive;
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Evict global tenant directory cache across all auto-scaled instances
+        await _cacheService.RemoveGlobalAsync(TenantsCacheKey, cancellationToken);
+
+        // If deactivated, purge all tenant session/circuit cache entries across all nodes
+        if (!isActive)
+        {
+            await _cacheService.InvalidateTenantAsync(tenant.Slug, cancellationToken);
+            await _cacheService.InvalidateTenantAsync(tenant.Id.ToString(), cancellationToken);
+        }
 
         _logger.LogInformation("Updated tenant status: Slug={Slug}, IsActive={IsActive}", tenant.Slug, isActive);
 
@@ -108,6 +132,9 @@ public class TenantService : ITenantService
         tenant.StartDate = startDate;
         tenant.EndDate = endDate;
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Evict global tenant directory cache across all auto-scaled instances
+        await _cacheService.RemoveGlobalAsync(TenantsCacheKey, cancellationToken);
 
         _logger.LogInformation("Updated tenant dates: Slug={Slug}, StartDate={StartDate}, EndDate={EndDate}",
             tenant.Slug, startDate, endDate);

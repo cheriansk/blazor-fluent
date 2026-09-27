@@ -5,11 +5,12 @@ using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Delegates;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Interceptors;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlazorFluent.Persistence.Context;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ITenantContext _tenantContext;
@@ -27,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
     public DbSet<ProjectEntity> Projects => Set<ProjectEntity>();
     public DbSet<AuditRecordEntity> AuditRecords => Set<AuditRecordEntity>();
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +48,8 @@ public class AppDbContext : DbContext
             if (entityType.IsKeyless) continue;
 
             var clrType = entityType.ClrType;
+            if (clrType == typeof(DataProtectionKey)) continue;
+
             var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
             var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
             var isSoftDeletable = typeof(ISoftDeletableEntity).IsAssignableFrom(clrType);

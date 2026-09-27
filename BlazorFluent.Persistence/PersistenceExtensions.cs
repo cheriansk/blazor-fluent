@@ -2,7 +2,9 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Persistence.Context;
 using BlazorFluent.Persistence.Interceptors;
 using BlazorFluent.Persistence.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -24,13 +26,10 @@ public static class PersistenceExtensions
         // 3. Register forensic audit service (scoped)
         services.TryAddScoped<IAuditService, AuditService>();
 
-        // 4. Register tenant administration service (scoped)
-        services.TryAddScoped<ITenantService, TenantService>();
-
-        // 5. Register audit interceptor (scoped — needs ICurrentUser + ITenantContext which are scoped)
+        // 4. Register audit interceptor (scoped — needs ICurrentUser + ITenantContext which are scoped)
         services.AddScoped<AuditableEntityInterceptor>();
 
-        // 4. Strict connection string loading from appsettings.json
+        // 5. Strict connection string loading from appsettings.json
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -39,7 +38,7 @@ public static class PersistenceExtensions
                 "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.json.");
         }
 
-        // 5. Register AppDbContext with Npgsql and the audit interceptor
+        // 6. Register AppDbContext with Npgsql, audit interceptor, and DataProtection support
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
@@ -49,6 +48,45 @@ public static class PersistenceExtensions
             })
             .AddInterceptors(interceptor);
         });
+
+        // 7. Auto-scaling Azure Web Apps: Shared Data Protection Key Ring in PostgreSQL
+        services.AddDataProtection()
+            .PersistKeysToDbContext<AppDbContext>()
+            .SetApplicationName("BlazorFluent");
+
+        // 8. Multi-Instance Caching (L1 In-Memory + L2 Distributed with auto-scaled invalidation)
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = "BlazorFluent:";
+            });
+        }
+        else
+        {
+            // Default zero-dependency local development L2 cache
+            services.AddDistributedMemoryCache();
+        }
+
+        var defaultExp = int.TryParse(configuration["Caching:DefaultExpirationMinutes"], out var exp) ? exp : 60;
+        var localExp = int.TryParse(configuration["Caching:LocalCacheExpirationMinutes"], out var lexp) ? lexp : 15;
+
+        services.AddHybridCache(options =>
+        {
+            options.DefaultEntryOptions = new HybridCacheEntryOptions
+            {
+                Expiration = TimeSpan.FromMinutes(defaultExp),
+                LocalCacheExpiration = TimeSpan.FromMinutes(localExp)
+            };
+        });
+
+        // 9. Register ITenantCacheService (scoped per circuit/request)
+        services.TryAddScoped<ITenantCacheService, TenantHybridCacheService>();
+
+        // 10. Register tenant administration service (scoped — depends on ITenantCacheService)
+        services.TryAddScoped<ITenantService, TenantService>();
 
         return services;
     }
