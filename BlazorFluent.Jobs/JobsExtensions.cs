@@ -27,6 +27,9 @@ public static class JobsExtensions
         // 4. Auto-discover and register all IBatchJobHandler<T> in this assembly
         RegisterBatchJobHandlers(services, typeof(JobsExtensions).Assembly);
 
+        // 5. Register JobManagerService for dashboard queries and manual triggers
+        services.TryAddScoped<IJobManagerService, Services.JobManagerService>();
+
         return services;
     }
 

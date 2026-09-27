@@ -1,27 +1,45 @@
+using System.Diagnostics;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
+using BlazorFluent.Persistence.Context;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Jobs.Listeners;
 
+/// <summary>
+/// Background worker processing queued batch job events with:
+/// - 3-attempt retries with exponential backoff
+/// - Execution history recorded in PostgreSQL (JobExecutionEntity)
+/// - Forensic auditing via IAuditService
+/// - Multi-tenant context preservation
+/// - Graceful draining on host shutdown
+/// </summary>
 public class BatchJobQueueListener : BackgroundService
 {
+    private const int MaxRetries = 3;
     private readonly IJobEventQueue _queue;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<BatchJobQueueListener> _logger;
 
     public BatchJobQueueListener(
         IJobEventQueue queue,
         IServiceScopeFactory scopeFactory,
+        IHostApplicationLifetime lifetime,
         ILogger<BatchJobQueueListener> logger)
     {
         _queue = queue;
         _scopeFactory = scopeFactory;
+        _lifetime = lifetime;
         _logger = logger;
+
+        // Graceful channel completion on host shutdown
+        _lifetime.ApplicationStopping.Register(() => _queue.Complete());
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -55,65 +73,157 @@ public class BatchJobQueueListener : BackgroundService
         }))
         {
             var eventType = jobEvent.GetType();
+            var jobName = eventType.Name.Replace("Event", string.Empty);
+
             _logger.LogInformation(
-                "Processing batch job event {EventId} ({EventType}) triggered by {Source} for tenant {TenantId}",
-                jobEvent.EventId, eventType.Name, jobEvent.TriggerSource, tenantId);
+                "Processing batch job {JobName} ({EventId}) triggered by {Source} for tenant {TenantId}",
+                jobName, jobEvent.EventId, jobEvent.TriggerSource, tenantId);
 
-            try
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var auditService = scope.ServiceProvider.GetService<IAuditService>();
+
+            // ─── 1. RESTORE TENANT CONTEXT ───────────────────────────────────────────────
+            if (!string.IsNullOrWhiteSpace(jobEvent.TenantId))
             {
-                using var scope = _scopeFactory.CreateScope();
+                var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+                tenantContext.Initialize(
+                    tenantId: jobEvent.TenantId,
+                    tenantName: null,
+                    userType: UserType.CompanyUser,
+                    allowedTenants: [],
+                    isHost: false);
+            }
+            else
+            {
+                _logger.LogDebug("Job event {EventId} has no TenantId — running as host-level job.", jobEvent.EventId);
+            }
 
-                // ─── RESTORE TENANT CONTEXT ───────────────────────────────────────────────
-                // Background services run outside of an HTTP request scope. We must manually
-                // restore the tenant context from the enqueued job event so that:
-                //   • EF global query filters work correctly for tenant data isolation
-                //   • Audit fields (CreatedBy, TenantId) are set to the originating tenant
-                if (!string.IsNullOrWhiteSpace(jobEvent.TenantId))
-                {
-                    var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-                    tenantContext.Initialize(
-                        tenantId: jobEvent.TenantId,
-                        tenantName: null,               // Not needed for background processing
-                        userType: UserType.CompanyUser, // Jobs are system-level; use CompanyUser to allow writes
-                        allowedTenants: [],
-                        isHost: false);
-                }
-                else
-                {
-                    // Null TenantId → host-level job. The ITenantContext remains uninitialized
-                    // but EF context's IsHost = false by default; host jobs must call
-                    // IgnoreQueryFilters() explicitly if they need cross-tenant reads.
-                    _logger.LogDebug("Job event {EventId} has no TenantId — running as host-level job.", jobEvent.EventId);
-                }
-                // ─────────────────────────────────────────────────────────────────────────
+            // ─── 2. RECORD INITIAL EXECUTION STAMP ────────────────────────────────────────
+            var execution = new JobExecutionEntity
+            {
+                Id = Guid.NewGuid(),
+                JobName = jobName,
+                TenantId = jobEvent.TenantId,
+                TriggerSource = jobEvent.TriggerSource,
+                Status = JobStatus.Running,
+                AttemptCount = 1,
+                MaxRetries = MaxRetries,
+                StartedAt = DateTime.UtcNow
+            };
 
-                var handlerType = typeof(IBatchJobHandler<>).MakeGenericType(eventType);
-                var handler = scope.ServiceProvider.GetService(handlerType);
+            dbContext.JobExecutions.Add(execution);
+            await dbContext.SaveChangesAsync(stoppingToken);
 
-                if (handler == null)
+            // ─── 3. RESOLVE HANDLER ──────────────────────────────────────────────────────
+            var handlerType = typeof(IBatchJobHandler<>).MakeGenericType(eventType);
+            var handler = scope.ServiceProvider.GetService(handlerType);
+
+            if (handler == null)
+            {
+                _logger.LogWarning("No IBatchJobHandler registered for event type {EventType}. Marking job {EventId} as failed.",
+                    eventType.Name, jobEvent.EventId);
+
+                execution.Status = JobStatus.Failed;
+                execution.CompletedAt = DateTime.UtcNow;
+                execution.ErrorMessage = $"No IBatchJobHandler registered for {eventType.Name}.";
+                await dbContext.SaveChangesAsync(stoppingToken);
+                return;
+            }
+
+            var method = handlerType.GetMethod(nameof(IBatchJobHandler<IJobEvent>.HandleAsync));
+            if (method == null)
+            {
+                _logger.LogError("HandleAsync method not found on handler {HandlerType}.", handlerType.Name);
+                execution.Status = JobStatus.Failed;
+                execution.CompletedAt = DateTime.UtcNow;
+                execution.ErrorMessage = $"HandleAsync not found on {handlerType.Name}.";
+                await dbContext.SaveChangesAsync(stoppingToken);
+                return;
+            }
+
+            // ─── 4. EXECUTE WITH 3-ATTEMPT RETRY LOOP & EXPONENTIAL BACKOFF ──────────────
+            var stopwatch = Stopwatch.StartNew();
+            Exception? lastException = null;
+
+            for (var attempt = 1; attempt <= MaxRetries; attempt++)
+            {
+                try
                 {
-                    _logger.LogWarning("No IBatchJobHandler registered for event type {EventType}. Skipping event {EventId}.",
-                        eventType.Name, jobEvent.EventId);
+                    if (attempt > 1)
+                    {
+                        execution.AttemptCount = attempt;
+                        execution.Status = JobStatus.Retrying;
+                        await dbContext.SaveChangesAsync(stoppingToken);
+                    }
+
+                    var task = (Task)method.Invoke(handler, [jobEvent, stoppingToken])!;
+                    await task;
+
+                    // Succeeded!
+                    stopwatch.Stop();
+                    execution.Status = JobStatus.Succeeded;
+                    execution.CompletedAt = DateTime.UtcNow;
+                    execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+                    execution.ErrorMessage = null;
+                    await dbContext.SaveChangesAsync(stoppingToken);
+
+                    if (auditService != null)
+                    {
+                        await auditService.LogUserActivityAsync(
+                            $"Background batch job '{jobName}' succeeded",
+                            $"JobId: {jobEvent.EventId}, Attempts: {attempt}/{MaxRetries}, Duration: {stopwatch.ElapsedMilliseconds}ms",
+                            stoppingToken);
+                    }
+
+                    _logger.LogInformation(
+                        "Successfully completed batch job {JobName} ({EventId}) on attempt {Attempt}/{MaxRetries} in {Duration}ms.",
+                        jobName, jobEvent.EventId, attempt, MaxRetries, stopwatch.ElapsedMilliseconds);
                     return;
                 }
-
-                var method = handlerType.GetMethod(nameof(IBatchJobHandler<IJobEvent>.HandleAsync));
-                if (method == null)
+                catch (Exception ex) when (attempt < MaxRetries && !stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogError("HandleAsync method not found on handler {HandlerType}.", handlerType.Name);
-                    return;
+                    lastException = ex;
+                    var backoffDelay = TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1));
+
+                    _logger.LogWarning(ex,
+                        "Batch job {JobName} ({EventId}) failed attempt {Attempt}/{MaxRetries}. Retrying in {Delay}ms...",
+                        jobName, jobEvent.EventId, attempt, MaxRetries, backoffDelay.TotalMilliseconds);
+
+                    execution.AttemptCount = attempt;
+                    execution.Status = JobStatus.Retrying;
+                    execution.ErrorMessage = $"Attempt {attempt}/{MaxRetries} failed: {ex.Message}";
+                    await dbContext.SaveChangesAsync(stoppingToken);
+
+                    await Task.Delay(backoffDelay, stoppingToken);
                 }
-
-                var task = (Task)method.Invoke(handler, [jobEvent, stoppingToken])!;
-                await task;
-
-                _logger.LogInformation("Successfully completed batch job event {EventId}.", jobEvent.EventId);
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    break;
+                }
             }
-            catch (Exception ex)
+
+            // All attempts exhausted: Flag as Failed
+            stopwatch.Stop();
+            execution.Status = JobStatus.Failed;
+            execution.CompletedAt = DateTime.UtcNow;
+            execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+            execution.ErrorMessage = lastException?.ToString() ?? "Unknown batch job failure.";
+            await dbContext.SaveChangesAsync(stoppingToken);
+
+            if (auditService != null)
             {
-                _logger.LogError(ex, "Failed executing batch job for event {EventId} ({EventType}).",
-                    jobEvent.EventId, eventType.Name);
+                await auditService.LogSecurityEventAsync(
+                    $"Background batch job '{jobName}' failed after {MaxRetries} attempts",
+                    AuditSeverity.Error,
+                    $"JobId: {jobEvent.EventId}, Error: {lastException?.Message}",
+                    stoppingToken);
             }
+
+            _logger.LogError(lastException,
+                "Batch job {JobName} ({EventId}) permanently failed after {MaxRetries} attempts.",
+                jobName, jobEvent.EventId, MaxRetries);
         }
     }
 }

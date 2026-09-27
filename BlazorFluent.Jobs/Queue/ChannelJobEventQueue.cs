@@ -36,4 +36,10 @@ public class ChannelJobEventQueue : IJobEventQueue
     {
         return _channel.Reader.ReadAllAsync(cancellationToken);
     }
+
+    public void Complete()
+    {
+        _logger.LogInformation("ChannelJobEventQueue writer completed. Draining remaining events.");
+        _channel.Writer.TryComplete();
+    }
 }

@@ -1,0 +1,250 @@
+@page "/jobs"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Jobs
+@inject IJobManagerService JobManagerService
+@inject ITenantContext TenantContext
+@inject IDateTimeProvider DateTimeProvider
+
+<PageTitle>Background Jobs</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <!-- Header -->
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H3">Background Jobs Dashboard</FluentLabel>
+            <FluentLabel Typo="Typography.Body">Monitor batch job execution history, view transient retries, and manually trigger or retry jobs.</FluentLabel>
+        </div>
+        @if (TenantContext.IsHost)
+        {
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                <FluentButton Appearance="ButtonAppearance.Secondary" IconStart="@(new Icons.Regular.Size16.ArrowSync())" OnClick="@LoadExecutionsAsync">
+                    Refresh
+                </FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Play())" OnClick="@TriggerCatalogSyncAsync">
+                    Run Catalog Sync Job
+                </FluentButton>
+            </FluentStack>
+        }
+    </FluentStack>
+
+    @if (!TenantContext.IsHost)
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Error">
+            Access Denied. Background job monitoring and orchestration is restricted to host administrators.
+        </FluentMessageBar>
+    }
+    else
+    {
+        <!-- Alert feedback -->
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+                @_statusMessage
+            </FluentMessageBar>
+        }
+
+        <!-- Metric Summary Cards -->
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Total Executions</FluentLabel>
+                    <FluentLabel Typo="Typography.H4">@_executions.Count</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Succeeded</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Success">@_executions.Count(e => e.Status == JobStatus.Succeeded)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Failed</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Error">@_executions.Count(e => e.Status == JobStatus.Failed)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Running / Retrying</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Warning">@_executions.Count(e => e.Status == JobStatus.Running || e.Status == JobStatus.Retrying)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+
+        <!-- Error Detail Modal Dialog -->
+        @if (_selectedErrorExecution != null)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--error);">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    <FluentLabel Typo="Typography.H5">Job Error Diagnostics: @_selectedErrorExecution.JobName</FluentLabel>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedErrorExecution = null)" />
+                </FluentStack>
+                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 8px;">
+                    <strong>Execution ID:</strong> @_selectedErrorExecution.Id | <strong>Source:</strong> @_selectedErrorExecution.TriggerSource | <strong>Attempts:</strong> @_selectedErrorExecution.AttemptCount / @_selectedErrorExecution.MaxRetries
+                </FluentLabel>
+                <div style="background: var(--neutral-layer-2); padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">
+                    @_selectedErrorExecution.ErrorMessage
+                </div>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="margin-top: 12px;">
+                    <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.ArrowCounterclockwise())" OnClick="@(() => RetryJobAsync(_selectedErrorExecution.Id))">
+                        Retry Job Now
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _selectedErrorExecution = null)">
+                        Close
+                    </FluentButton>
+                </FluentStack>
+            </FluentCard>
+        }
+
+        <!-- Execution History Grid -->
+        <FluentCard Style="padding: 16px;">
+            <FluentLabel Typo="Typography.H5" Style="margin-bottom: 16px;">Recent Job Executions</FluentLabel>
+
+            @if (_isLoading)
+            {
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center; padding: 24px;">
+                    <FluentProgressRing />
+                    <FluentLabel>Loading batch job execution history...</FluentLabel>
+                </FluentStack>
+            }
+            else if (_executions.Count == 0)
+            {
+                <FluentLabel Typo="Typography.Body" Style="padding: 24px; color: var(--neutral-foreground-hint);">
+                    No background job executions recorded yet. Click "Run Catalog Sync Job" to trigger a batch run.
+                </FluentLabel>
+            }
+            else
+            {
+                <FluentDataGrid Items="@_executions.AsQueryable()" ResizableColumns="true" TGridItem="JobExecutionEntity">
+                    <PropertyColumn Property="@(e => e.JobName)" Title="Job Name" Sortable="true" />
+                    <PropertyColumn Property="@(e => e.TenantId ?? "Host")" Title="Tenant Scope" Sortable="true" />
+                    <PropertyColumn Property="@(e => e.TriggerSource)" Title="Source" Sortable="true" />
+                    
+                    <TemplateColumn Title="Status" Sortable="true">
+                        @switch (context.Status)
+                        {
+                            case JobStatus.Succeeded:
+                                <FluentBadge Color="BadgeColor.Success">Succeeded</FluentBadge>
+                                break;
+                            case JobStatus.Failed:
+                                <FluentBadge Color="BadgeColor.Severe">Failed</FluentBadge>
+                                break;
+                            case JobStatus.Retrying:
+                                <FluentBadge Color="BadgeColor.Warning">Retrying (@context.AttemptCount/@context.MaxRetries)</FluentBadge>
+                                break;
+                            case JobStatus.Running:
+                                <FluentBadge Color="BadgeColor.Brand">Running</FluentBadge>
+                                break;
+                            case JobStatus.Queued:
+                                <FluentBadge Color="BadgeColor.Informative">Queued</FluentBadge>
+                                break;
+                        }
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Attempts">
+                        @context.AttemptCount / @context.MaxRetries
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Started At" Sortable="true">
+                        @context.StartedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Duration">
+                        @(context.DurationMs.HasValue ? $"{context.DurationMs.Value:F0} ms" : "—")
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Actions">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                            @if (context.Status == JobStatus.Failed)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.ArrowCounterclockwise())"
+                                              OnClick="@(() => RetryJobAsync(context.Id))">
+                                    Retry
+                                </FluentButton>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(context.ErrorMessage))
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.Info())"
+                                              OnClick="@(() => _selectedErrorExecution = context)">
+                                    Details
+                                </FluentButton>
+                            }
+                        </FluentStack>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            }
+        </FluentCard>
+    }
+</FluentStack>
+
+@code {
+    private List<JobExecutionEntity> _executions = new();
+    private JobExecutionEntity? _selectedErrorExecution;
+    private bool _isLoading = true;
+    private string? _statusMessage;
+    private bool _isError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TenantContext.IsHost)
+        {
+            await LoadExecutionsAsync();
+        }
+    }
+
+    private async Task LoadExecutionsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var results = await JobManagerService.GetRecentExecutionsAsync(limit: 100);
+            _executions = results.ToList();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task TriggerCatalogSyncAsync()
+    {
+        var result = await JobManagerService.TriggerJobAsync("CatalogSyncJob", TenantContext.TenantId);
+        if (result.IsSuccess)
+        {
+            _statusMessage = "Catalog Sync job event enqueued successfully. Processing in background.";
+            _isError = false;
+            // Delay slightly to let the listener pick it up
+            await Task.Delay(300);
+            await LoadExecutionsAsync();
+        }
+        else
+        {
+            _statusMessage = $"Failed to trigger job: {result.Error}";
+            _isError = true;
+        }
+    }
+
+    private async Task RetryJobAsync(Guid executionId)
+    {
+        _selectedErrorExecution = null;
+        var result = await JobManagerService.RetryJobAsync(executionId);
+        if (result.IsSuccess)
+        {
+            _statusMessage = "Manual retry enqueued successfully. Processing in background.";
+            _isError = false;
+            await Task.Delay(300);
+            await LoadExecutionsAsync();
+        }
+        else
+        {
+            _statusMessage = $"Failed to initiate retry: {result.Error}";
+            _isError = true;
+        }
+    }
+}

@@ -365,3 +365,105 @@ To avoid cache-invalidation bugs and stale-data hazards, BlazorFluent follows th
 ```
 
 ---
+--------------------------------------------------------------------------------------------------------------
+
+# Implementation Plan: Native Custom Batch Job Engine (Retries, Auditing, Cron & Fluent UI V5 Dashboard)
+
+## Goal Description
+This implementation provides:
+1. **3 Automatic Retries with Exponential Backoff**: Transient failures are automatically retried up to 3 times (500ms, 1500ms, 3000ms) before flagging as failed.
+2. **Persistent Job Execution History**: Stored in a single clean PostgreSQL table (`JobExecutionEntity`), eliminating continuous DB polling overhead.
+3. **Forensic Auditing & Serilog Observability**: Integrates with `IAuditService` to record job completions, failures, and manual retry triggers with user attribution.
+4. **Cron Scheduling via `Cronos`**: Standard cron expressions (e.g. `"0 2 * * *"`) parsed with the official, 50KB zero-dependency Microsoft-standard parser.
+5. **Modern Fluent UI Blazor V5 Dashboard (`/jobs`)**:
+   - Live execution grid with status badges (`BadgeColor.Success`, `BadgeColor.Severe`, `BadgeColor.Warning`).
+   - Execution duration, attempt counts (`1/3`, `3/3`), and stack trace inspection.
+   - **Manual "Retry" Button** for failed jobs and a **"Run Now"** trigger for immediate on-demand execution.
+
+# Background Jobs Architecture (Resilience, Cron Scheduling & Fluent UI V5 Dashboard)
+
+BlazorFluent includes an ultra-lightweight, zero-dependency background batch job engine built natively on **System.Threading.Channels**, **Cronos**, and **EF Core**, avoiding the heavy database polling churn and licensing complexities of external job orchestrators.
+
+## 1. Architecture & Execution Flow
+
+```
+   Cron Trigger (Cronos)      Manual UI Trigger ("/jobs")      Domain Event
+             │                             │                         │
+             └──────────────────────┬──────┴─────────────────────────┘
+                                    │
+                                    ▼
+                      ┌───────────────────────────┐
+                      │    IJobEventQueue         │
+                      │ (Bounded Channel<IJobEvent)
+                      └─────────────┬─────────────┘
+                                    │
+                                    ▼
+                      ┌───────────────────────────┐
+                      │  BatchJobQueueListener    │
+                      │  - Scoped DI Activation   │
+                      │  - ITenantContext Restore │
+                      │  - 3 Retries + Backoff    │
+                      └───────┬───────────┬───────┘
+                              │           │
+             Success / Failure│           │ Audit & Log
+                              ▼           ▼
+        ┌──────────────────────────┐  ┌──────────────────────────┐
+        │   JobExecutionEntity     │  │  IAuditService / Serilog │
+        │  (PostgreSQL Table)      │  │  - Forensic Security Log │
+        │  - Status, Attempts, Err │  │  - Enriched with JobId   │
+        └─────────────┬────────────┘  └──────────────────────────┘
+                      │
+                      ▼
+        ┌──────────────────────────┐
+        │  JobsDashboard.razor     │
+        │  Route: "/jobs"          │
+        │  - Fluent UI V5 Grid     │
+        │  - Manual "Retry" Button │
+        │  - "Run Now" Trigger     │
+        └──────────────────────────┘
+```
+
+### Key Architectural Strengths
+- **Zero Database Polling**: Unlike Hangfire (which executes continuous `SELECT ... FOR UPDATE` queries 24/7), this engine sleeps until an event is pushed or a Cron trigger fires, preserving PostgreSQL IOPS and CPU on Azure.
+- **Tenant Isolation Preserved**: The listener automatically extracts `jobEvent.TenantId` and rehydrates `ITenantContext` into the background `IServiceScope`, guaranteeing that EF Core global query filters and audit stamps apply correctly.
+
+---
+
+## 2. Transient Retries & Backoff Policy
+
+Every batch job execution automatically attempts up to **3 executions** before flagging as permanently failed:
+- **Attempt 1**: Executes immediately upon dequeue.
+- **Attempt 2**: If Attempt 1 throws an unhandled exception, marks status as `Retrying`, waits **500ms**, and re-executes.
+- **Attempt 3**: If Attempt 2 fails, waits **1,500ms** (exponential backoff) and re-executes.
+- **Fatal Failure**: If all 3 attempts fail, records the full exception message, sets status to `Failed`, and logs a high-severity audit record in `audit.AuditRecords`.
+
+---
+
+## 3. Cron Scheduling Configuration
+
+Schedules are defined using standard Cron expressions via the lightweight `Cronos` library in `appsettings.json`:
+
+```json
+{
+  "Jobs": {
+    "EnableScheduler": true,
+    "Schedules": {
+      "TenantHealthCheckJob": "0 2 * * *",
+      "AuditLogMaintenanceJob": "0 3 * * 0"
+    }
+  }
+}
+```
+
+---
+
+## 4. Fluent UI V5 Dashboard (`/jobs`)
+
+Located under **Administration > Background Jobs** in the navigation menu:
+- **Summary Cards**: Displays live totals for Succeeded (`BadgeColor.Success`), Failed (`BadgeColor.Severe`), and In-Progress/Retrying (`BadgeColor.Warning`).
+- **DataGrid**: Lists Job Name, Tenant, Trigger Source, Started At, Duration, and Attempt count (`1/3`, `3/3`).
+- **Manual "Retry" Button**: If any job fails, an admin can click **"Retry"** directly in the grid to re-enqueue and re-execute the job with fresh tracking.
+- **"Run Now" Trigger**: Allows triggering registered jobs on-demand outside of their standard Cron schedule.
+- **Error Stack Trace Inspection**: Click "Details" on any failed row to view the full error message and exception trace.
+```
+
