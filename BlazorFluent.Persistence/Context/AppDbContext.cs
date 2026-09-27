@@ -1,4 +1,5 @@
 using System.Reflection;
+using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Catalog;
@@ -65,11 +66,11 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                     $"or explicitly implement '{nameof(IGlobalEntity)}' (if it is host-wide).");
             }
 
-            // Apply Global Query Filters & Indexes
-            if (isTenant && isSoftDeletable)
+            // Apply EF Core 10 Named Global Query Filters & Indexes
+            if (isTenant)
             {
                 var method = typeof(AppDbContext)
-                    .GetMethod(nameof(ConfigureTenantAndSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .GetMethod(nameof(ConfigureNamedTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType);
                 method.Invoke(this, [modelBuilder]);
 
@@ -78,22 +79,11 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                     builder.HasIndex(nameof(ITenantEntity.TenantId));
                 });
             }
-            else if (isTenant)
-            {
-                var method = typeof(AppDbContext)
-                    .GetMethod(nameof(ConfigureTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
-                    .MakeGenericMethod(clrType);
-                method.Invoke(this, [modelBuilder]);
 
-                modelBuilder.Entity(clrType, builder =>
-                {
-                    builder.HasIndex(nameof(ITenantEntity.TenantId));
-                });
-            }
-            else if (isSoftDeletable)
+            if (isSoftDeletable)
             {
                 var method = typeof(AppDbContext)
-                    .GetMethod(nameof(ConfigureSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .GetMethod(nameof(ConfigureNamedSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType);
                 method.Invoke(this, [modelBuilder]);
             }
@@ -153,24 +143,17 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
         }
     }
 
-    private void ConfigureTenantAndSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
-        where TEntity : class, ITenantEntity, ISoftDeletableEntity
-    {
-        modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(e => (_tenantContext.IsHost || e.TenantId == _tenantContext.TenantId) && !e.IsDeleted);
-    }
-
-    private void ConfigureTenantFilter<TEntity>(ModelBuilder modelBuilder)
+    private void ConfigureNamedTenantFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ITenantEntity
     {
         modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(e => _tenantContext.IsHost || e.TenantId == _tenantContext.TenantId);
+            .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.TenantId == _tenantContext.TenantId);
     }
 
-    private void ConfigureSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
+    private void ConfigureNamedSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ISoftDeletableEntity
     {
         modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(e => !e.IsDeleted);
+            .HasQueryFilter(QueryFilters.SoftDelete, e => !e.IsDeleted);
     }
 }

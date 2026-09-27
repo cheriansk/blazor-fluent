@@ -9,6 +9,6 @@ public abstract class BaseEntity : BaseEntity<Guid>
 {
     protected BaseEntity()
     {
-        Id = Guid.NewGuid();
+        Id = Guid.CreateVersion7();
     }
 }

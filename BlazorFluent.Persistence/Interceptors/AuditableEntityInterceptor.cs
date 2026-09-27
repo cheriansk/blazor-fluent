@@ -70,6 +70,17 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
+            // ─── 0. AUTOMATIC SOFT-DELETE CONVERSION ─────────────────────────────────
+            // If code calls context.Remove(entity) on an ISoftDeletableEntity,
+            // intercept the hard delete and convert it into a soft delete.
+            if (entry.State == EntityState.Deleted && entry.Entity is ISoftDeletableEntity softDeletable)
+            {
+                entry.State = EntityState.Modified;
+                softDeletable.IsDeleted = true;
+                softDeletable.DeletedAtUtc = now;
+                softDeletable.DeletedBy = currentUserId;
+            }
+
             if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
             {
                 continue;

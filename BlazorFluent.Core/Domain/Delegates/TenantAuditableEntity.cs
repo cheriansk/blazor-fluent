@@ -16,6 +16,6 @@ public abstract class TenantAuditableEntity : TenantAuditableEntity<Guid>
 {
     protected TenantAuditableEntity()
     {
-        Id = Guid.NewGuid();
+        Id = Guid.CreateVersion7();
     }
 }

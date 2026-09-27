@@ -498,3 +498,18 @@ BlazorFluent enforces end-to-end exception containment, structured audit trackin
 
 ### 4. Structured Rolling File Logging (Serilog)
 - All exceptions are mirrored to rolling daily log files (`logs/blazorfluent-.log`) with structured placeholders and enriched tenant/user context.
+
+
+------------------------------------------
+
+## Persistence & Data Isolation (PostgreSQL + EF Core 10)
+
+BlazorFluent incorporates enterprise-grade persistence patterns inspired by FullStackHero:
+
+- **Sequential UUIDv7**: All domain entities inherit from `BaseEntity` or `AuditableEntity` using native .NET 10 `Guid.CreateVersion7()`. Time-ordered sequential identifiers prevent B-Tree index page splitting in PostgreSQL.
+- **EF Core 10 Named Query Filters**:
+  - `QueryFilters.Tenant`: Automatically applied to all `ITenantEntity` instances (with host bypass).
+  - `QueryFilters.SoftDelete`: Automatically applied to all `ISoftDeletableEntity` instances.
+  - Queries can selectively ignore soft-delete via `.IgnoreQueryFilters(QueryFilters.SoftDelete)` without accidentally disabling multi-tenant isolation.
+- **Automatic Soft-Delete Interceptor**: Calling `_dbContext.Remove(entity)` on any soft-deletable entity is automatically intercepted, converted to an `UPDATE` setting `IsDeleted = true`, and recorded in `audit.AuditRecords` with Level 2 property diffs.
+- **Fail-Closed Tenancy Verification**: Startup model validation ensures every entity explicitly declares either `ITenantEntity` or `IGlobalEntity`.
