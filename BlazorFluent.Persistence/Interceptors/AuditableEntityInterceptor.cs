@@ -1,7 +1,11 @@
+using System.Text.Json;
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Delegates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Interceptors;
 
@@ -10,6 +14,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     private readonly ICurrentUser _currentUser;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ITenantContext _tenantContext;
+    private readonly ILogger<AuditableEntityInterceptor> _logger;
 
     public const string CreatedProperty = "Created";
     public const string CreatedByProperty = "CreatedBy";
@@ -17,19 +22,24 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     public const string UpdatedByProperty = "UpdatedBy";
     public const string TenantIdProperty = "TenantId";
 
+    private static readonly string[] SensitiveKeywords =
+        ["password", "secret", "token", "apikey", "key", "connectionstring", "securitystamp"];
+
     public AuditableEntityInterceptor(
         ICurrentUser currentUser,
         IDateTimeProvider dateTimeProvider,
-        ITenantContext tenantContext)
+        ITenantContext tenantContext,
+        ILogger<AuditableEntityInterceptor>? logger = null)
     {
         _currentUser = currentUser;
         _dateTimeProvider = dateTimeProvider;
         _tenantContext = tenantContext;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<AuditableEntityInterceptor>.Instance;
     }
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
-        UpdateAuditFields(eventData.Context);
+        UpdateAuditFieldsAndCaptureDiffs(eventData.Context);
         return base.SavingChanges(eventData, result);
     }
 
@@ -38,17 +48,26 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        UpdateAuditFields(eventData.Context);
+        UpdateAuditFieldsAndCaptureDiffs(eventData.Context);
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private void UpdateAuditFields(DbContext? context)
+    private void UpdateAuditFieldsAndCaptureDiffs(DbContext? context)
     {
         if (context == null) return;
 
         var now = _dateTimeProvider.Now;
         var currentUserId = _currentUser.UserId ?? "system";
 
+        // 1. Stamp Level 1 audit properties & enforce tenant isolation
+        UpdateAuditFields(context, now, currentUserId);
+
+        // 2. Capture Level 2 property diffs and append AuditRecordEntity to the same transaction
+        CaptureEntityDiffs(context, now, currentUserId);
+    }
+
+    private void UpdateAuditFields(DbContext context, DateTime now, string currentUserId)
+    {
         foreach (var entry in context.ChangeTracker.Entries())
         {
             if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
@@ -67,6 +86,10 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     {
                         if (string.IsNullOrWhiteSpace(_tenantContext.TenantId))
                         {
+                            _logger.LogError(
+                                "Tenant isolation error: Cannot save entity '{EntityType}' because TenantId is not set and no active tenant is available in ITenantContext",
+                                entry.Entity.GetType().Name);
+
                             // Fail-closed: never persist an entity without a TenantId
                             throw new InvalidOperationException(
                                 $"Cannot save entity '{entry.Entity.GetType().Name}': " +
@@ -79,6 +102,10 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     else if (!_tenantContext.IsHost &&
                              tenantEntity.TenantId != _tenantContext.TenantId)
                     {
+                        _logger.LogWarning(
+                            "Security violation: attempt to insert entity '{EntityType}' into tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
+                            entry.Entity.GetType().Name, tenantEntity.TenantId, _tenantContext.TenantId);
+
                         // Security: a non-host user is trying to write to a different tenant's data.
                         throw new InvalidOperationException(
                             $"Security violation: attempt to insert entity '{entry.Entity.GetType().Name}' " +
@@ -94,6 +121,10 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     if (!_tenantContext.IsHost &&
                         tenantEntity.TenantId != _tenantContext.TenantId)
                     {
+                        _logger.LogWarning(
+                            "Security violation: attempt to modify entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
+                            entry.Entity.GetType().Name, tenantEntity.TenantId, _tenantContext.TenantId);
+
                         throw new InvalidOperationException(
                             $"Security violation: attempt to modify entity '{entry.Entity.GetType().Name}' " +
                             $"belonging to tenant '{tenantEntity.TenantId}' while active tenant is '{_tenantContext.TenantId}'.");
@@ -147,5 +178,109 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             }
             // ─────────────────────────────────────────────────────────────────────────
         }
+    }
+
+    private void CaptureEntityDiffs(DbContext context, DateTime now, string currentUserId)
+    {
+        var entries = context.ChangeTracker.Entries()
+            .Where(e => (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
+                        && e.Entity is not IAuditExemptEntity)
+            .ToList();
+
+        if (entries.Count == 0) return;
+
+        var auditRecords = new List<AuditRecordEntity>();
+
+        foreach (var entry in entries)
+        {
+            var entityName = entry.Entity.GetType().Name;
+            var entityId = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey())?.CurrentValue?.ToString();
+
+            var operation = entry.State switch
+            {
+                EntityState.Added => EntityOperation.Insert,
+                EntityState.Modified => EntityOperation.Update,
+                EntityState.Deleted => EntityOperation.Delete,
+                _ => (EntityOperation?)null
+            };
+
+            if (operation == null) continue;
+
+            var changes = new Dictionary<string, object?>();
+
+            if (operation == EntityOperation.Update)
+            {
+                foreach (var prop in entry.Properties)
+                {
+                    if (!prop.IsModified) continue;
+                    var name = prop.Metadata.Name;
+                    if (name is CreatedProperty or CreatedByProperty or UpdatedProperty or UpdatedByProperty or TenantIdProperty) continue;
+
+                    var isSensitive = IsSensitiveProperty(name);
+                    var oldVal = isSensitive ? (prop.OriginalValue != null ? "****" : null) : prop.OriginalValue;
+                    var newVal = isSensitive ? (prop.CurrentValue != null ? "****" : null) : prop.CurrentValue;
+
+                    changes[name] = new { Old = oldVal, New = newVal };
+                }
+            }
+            else if (operation == EntityOperation.Insert)
+            {
+                foreach (var prop in entry.Properties)
+                {
+                    var name = prop.Metadata.Name;
+                    if (name is CreatedProperty or CreatedByProperty or UpdatedProperty or UpdatedByProperty) continue;
+                    if (prop.CurrentValue == null) continue;
+
+                    var isSensitive = IsSensitiveProperty(name);
+                    changes[name] = isSensitive ? "****" : prop.CurrentValue;
+                }
+            }
+            else if (operation == EntityOperation.Delete)
+            {
+                foreach (var prop in entry.Properties)
+                {
+                    var name = prop.Metadata.Name;
+                    if (name is CreatedProperty or CreatedByProperty or UpdatedProperty or UpdatedByProperty) continue;
+
+                    var isSensitive = IsSensitiveProperty(name);
+                    changes[name] = isSensitive ? "****" : prop.OriginalValue;
+                }
+            }
+
+            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? _tenantContext.TenantId ?? "host";
+
+            var record = new AuditRecordEntity
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                UserId = currentUserId,
+                UserEmail = _currentUser.Email,
+                UserType = _tenantContext.UserType,
+                EventType = AuditEventType.EntityChange,
+                Severity = AuditSeverity.Information,
+                EntityName = entityName,
+                EntityId = entityId,
+                Operation = operation,
+                ChangesJson = changes.Count > 0 ? JsonSerializer.Serialize(changes) : null,
+                Created = now,
+                CreatedBy = currentUserId
+            };
+
+            auditRecords.Add(record);
+        }
+
+        if (auditRecords.Count > 0)
+        {
+            context.Set<AuditRecordEntity>().AddRange(auditRecords);
+            _logger.LogDebug(
+                "Captured {AuditRecordCount} Level-2 entity audit record(s) for Tenant '{TenantId}'",
+                auditRecords.Count, _tenantContext.TenantId ?? "host");
+        }
+    }
+
+    private static bool IsSensitiveProperty(string propertyName)
+    {
+        var lower = propertyName.ToLowerInvariant();
+        return SensitiveKeywords.Any(k => lower.Contains(k));
     }
 }

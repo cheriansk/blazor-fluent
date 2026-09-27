@@ -28,6 +28,12 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<TenantEntity>
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(t => t.StartDate)
+            .IsRequired();
+
+        builder.Property(t => t.EndDate)
+            .IsRequired();
+
         // One tenant → many projects
         builder.HasMany(t => t.Projects)
             .WithOne(p => p.TenantEntity)

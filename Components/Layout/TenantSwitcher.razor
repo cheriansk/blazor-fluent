@@ -1,5 +1,6 @@
 @using BlazorFluent.Core.Contracts
 @inject ITenantContext TenantContext
+@inject IAuditService AuditService
 @using Microsoft.FluentUI.AspNetCore.Components
 
 @if (TenantContext.TenantId is null)
@@ -51,18 +52,24 @@ else
 @code {
     private string? _switchError;
 
-    private void OnTenantChanged(string? newTenantId)
+    private async Task OnTenantChanged(string? newTenantId)
     {
         if (string.IsNullOrWhiteSpace(newTenantId)) return;
 
+        var prevTenant = TenantContext.TenantId ?? "unknown";
         var result = TenantContext.SwitchTenant(newTenantId);
         if (!result.Succeeded)
         {
             _switchError = result.Errors.FirstOrDefault() ?? "Switch failed.";
+            await AuditService.LogSecurityEventAsync(
+                "TenantSwitchBlocked",
+                AuditSeverity.Warning,
+                $"Attempted switch from '{prevTenant}' to '{newTenantId}' blocked: {_switchError}");
         }
         else
         {
             _switchError = null;
+            await AuditService.LogTenantSwitchAsync(prevTenant, newTenantId);
         }
     }
 }

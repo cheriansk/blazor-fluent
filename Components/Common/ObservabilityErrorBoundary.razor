@@ -15,9 +15,9 @@ else if (ErrorContent is not null)
 }
 else
 {
-    <FluentMessageBar Title="Unexpected Error" Intent="MessageIntent.Error" AllowDismiss="true" OnDismiss="@Recover">
+    <FluentMessageBar Title="Unexpected Error" Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@Recover">
         An unexpected error occurred in this view. The system administrator has been notified.
-        <FluentButton Appearance="Appearance.Lightweight" OnClick="@Recover">Try Again</FluentButton>
+        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@Recover">Try Again</FluentButton>
     </FluentMessageBar>
 }
 

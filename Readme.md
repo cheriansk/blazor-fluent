@@ -150,5 +150,55 @@ SET app.current_tenant_id = 'tenant-guid-here';
 ```
 Even if an attacker finds an SQL injection vulnerability or executes raw queries, PostgreSQL will physically return 0 rows from other tenants!
 
-
+IGlobalEntity (Crucial): Protects your #1 security priority. It switches your EF Core filters from opt-in to default-on. If a developer adds a new entity tomorrow and forgets the tenant base class, EF Core will still isolate it automatically. Only entities explicitly marked IGlobalEntity (like TenantEntity itself) bypass the filter.
 --------------------------
+# Implementation Plan: Detailed Forensic Auditing (Level 2 & 3)
+
+## 1. Goal Description
+
+Implement a comprehensive, enterprise-grade auditing system in **BlazorFluent** targeting the **same PostgreSQL database under a dedicated `audit` schema** with **indefinite retention**.
+
+This elevates auditing from **Level 1** (basic row stamps `Created`/`Updated`) to:
+1. **Level 2 (Property-Level Entity Diffs)**: Automatic before-and-after property change capture in JSON format on every EF Core `Insert`, `Update`, and `Delete`, with automated masking of credentials, tokens, and secrets.
+2. **Level 3 (Security & Activity Trail)**: Explicit logging of tenant switches, login/permission events, and critical user operations.
+
+---
+
+## 2. User Review Required
+
+> [!IMPORTANT]
+> **Transactional vs. Decoupled Auditing**:
+> Entity change audits are captured directly within the same database transaction in the `audit.AuditRecords` table. This ensures 100% transactional consistency (if a database save fails or rolls back, phantom audit records are never saved).
+
+> [!NOTE]
+> **Schema Isolation**:
+> The `audit.AuditRecords` table lives in its own PostgreSQL schema (`audit`), keeping application domain tables (`catalog`, `tenancy`) clean and uncluttered.
+
+---
+
+## 3. Architecture & Data Flow
+
+```mermaid
+graph TD
+    subgraph AppTriggers ["Application Triggers"]
+        EF["EF Core SaveChangesAsync<br/>(Products, Projects, Tenants)"]
+        TenantSwitch["TenantContext.SwitchTenant()<br/>(Company User Tenant Switch)"]
+        Security["Security Guards / Auth<br/>(Permission Failures, Logins)"]
+    end
+
+    subgraph Interception ["Audit Processing Layer"]
+        DiffBuilder["Entity Change Diff Builder<br/>(OldValue vs NewValue)"]
+        Masker["Credential Masker<br/>(password, secret, token, key -> '****')"]
+        AuditService["IAuditService<br/>(Explicit Security & Tenant Events)"]
+    end
+
+    subgraph Storage ["PostgreSQL (Same Database)"]
+        AuditTable["audit.AuditRecords<br/>- TenantId, UserId, UserType<br/>- EventType, Severity<br/>- ChangesJson (JSONB)<br/>- Created (Timestamp)"]
+    end
+
+    EF --> DiffBuilder --> Masker --> AuditTable
+    TenantSwitch --> AuditService --> AuditTable
+    Security --> AuditService --> AuditTable
+```
+
+------------------------------------------

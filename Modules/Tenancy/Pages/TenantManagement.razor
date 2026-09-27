@@ -1,0 +1,248 @@
+@page "/tenants"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Domain.Tenancy
+@inject ITenantService TenantService
+@inject ITenantContext TenantContext
+
+<PageTitle>Tenant Management</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H3">Tenant Directory</FluentLabel>
+            <FluentLabel Typo="Typography.Body">Host-level administration: manage tenant contracts, start/end dates, and operational status.</FluentLabel>
+        </div>
+        @if (TenantContext.IsHost)
+        {
+            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@(() => _showAddModal = true)">
+                Add Tenant
+            </FluentButton>
+        }
+    </FluentStack>
+
+    @if (!TenantContext.IsHost)
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Error">
+            Access Denied. Tenant administration is restricted to host administrators.
+        </FluentMessageBar>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+                @_statusMessage
+            </FluentMessageBar>
+        }
+
+        @if (_showAddModal)
+        {
+            <FluentCard Style="margin-bottom: 20px;">
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Provision New Tenant</FluentLabel>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Style="width: 100%;" />
+                    <FluentTextInput Label="Display Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Style="width: 100%;" />
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                        <FluentDatePicker Label="Start Date" @bind-Value="_newStartDate" Required="true" />
+                        <FluentDatePicker Label="End Date" @bind-Value="_newEndDate" Required="true" />
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@CreateTenantAsync">Create Tenant</FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAdd">Cancel</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        }
+
+        @if (_editingTenant is not null)
+        {
+            <FluentCard Style="margin-bottom: 20px;">
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.DisplayName</FluentLabel>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                        <FluentDatePicker Label="Start Date" @bind-Value="_editStartDate" Required="true" />
+                        <FluentDatePicker Label="End Date" @bind-Value="_editEndDate" Required="true" />
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@SaveDatesAsync">Save Dates</FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _editingTenant = null)">Cancel</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        }
+
+        @if (_isLoading)
+        {
+            <FluentProgressRing Style="margin: 30px auto;" />
+        }
+        else
+        {
+            <FluentDataGrid Items="@_tenants.AsQueryable()" GridTemplateColumns="1fr 1.5fr 120px 140px 140px 120px">
+                <PropertyColumn Property="@(t => t.Slug)" Title="Slug" />
+                <PropertyColumn Property="@(t => t.DisplayName)" Title="Name" />
+                <TemplateColumn Title="Status">
+                    <FluentSwitch Value="@context.IsActive"
+                                  ValueChanged="@((bool val) => ToggleStatusAsync(context, val))"
+                                  Label="@(context.IsActive ? "Active" : "Inactive")" />
+                </TemplateColumn>
+                <TemplateColumn Title="Start Date">
+                    @context.StartDate.ToString("yyyy-MM-dd")
+                </TemplateColumn>
+                <TemplateColumn Title="End Date">
+                    @context.EndDate.ToString("yyyy-MM-dd")
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => StartEdit(context))">
+                        Edit Dates
+                    </FluentButton>
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    }
+</FluentStack>
+
+@code {
+    private List<TenantEntity> _tenants = [];
+    private bool _isLoading = true;
+    private string? _statusMessage;
+    private bool _isError;
+
+    // Add modal state
+    private bool _showAddModal;
+    private string _newSlug = string.Empty;
+    private string _newName = string.Empty;
+    private DateTime? _newStartDate = DateTime.UtcNow.Date;
+    private DateTime? _newEndDate = DateTime.UtcNow.Date.AddYears(1);
+
+    // Edit modal state
+    private TenantEntity? _editingTenant;
+    private DateTime? _editStartDate;
+    private DateTime? _editEndDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TenantContext.IsHost)
+        {
+            await LoadTenantsAsync();
+        }
+    }
+
+    private async Task LoadTenantsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await TenantService.GetAllTenantsAsync();
+            _tenants = result.ToList();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ToggleStatusAsync(TenantEntity tenant, bool isActive)
+    {
+        var result = await TenantService.UpdateTenantStatusAsync(tenant.Id, isActive);
+        if (result.Succeeded)
+        {
+            tenant.IsActive = isActive;
+            _statusMessage = $"Tenant '{tenant.DisplayName}' status changed to {(isActive ? "Active" : "Inactive")}.";
+            _isError = false;
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update tenant status.";
+            _isError = true;
+        }
+    }
+
+    private void StartEdit(TenantEntity tenant)
+    {
+        _editingTenant = tenant;
+        _editStartDate = tenant.StartDate;
+        _editEndDate = tenant.EndDate;
+    }
+
+    private async Task SaveDatesAsync()
+    {
+        if (_editingTenant is null) return;
+
+        if (!_editStartDate.HasValue || !_editEndDate.HasValue)
+        {
+            _statusMessage = "Both Start Date and End Date are strictly required.";
+            _isError = true;
+            return;
+        }
+
+        if (_editEndDate.Value < _editStartDate.Value)
+        {
+            _statusMessage = "End Date cannot precede Start Date.";
+            _isError = true;
+            return;
+        }
+
+        var result = await TenantService.UpdateTenantDatesAsync(_editingTenant.Id, _editStartDate.Value, _editEndDate.Value);
+        if (result.Succeeded)
+        {
+            _editingTenant.StartDate = _editStartDate.Value;
+            _editingTenant.EndDate = _editEndDate.Value;
+            _statusMessage = $"Contract dates updated successfully for '{_editingTenant.DisplayName}'.";
+            _isError = false;
+            _editingTenant = null;
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update contract dates.";
+            _isError = true;
+        }
+    }
+
+    private async Task CreateTenantAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newSlug) || string.IsNullOrWhiteSpace(_newName))
+        {
+            _statusMessage = "Slug and Display Name are required.";
+            _isError = true;
+            return;
+        }
+
+        if (!_newStartDate.HasValue || !_newEndDate.HasValue)
+        {
+            _statusMessage = "Both Start Date and End Date are strictly required.";
+            _isError = true;
+            return;
+        }
+
+        if (_newEndDate.Value < _newStartDate.Value)
+        {
+            _statusMessage = "End Date cannot precede Start Date.";
+            _isError = true;
+            return;
+        }
+
+        var result = await TenantService.CreateTenantAsync(_newSlug, _newName, _newStartDate.Value, _newEndDate.Value);
+        if (result.Succeeded && result.Data is not null)
+        {
+            _statusMessage = $"Tenant '{result.Data.DisplayName}' created successfully.";
+            _isError = false;
+            CancelAdd();
+            await LoadTenantsAsync();
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to create tenant.";
+            _isError = true;
+        }
+    }
+
+    private void CancelAdd()
+    {
+        _showAddModal = false;
+        _newSlug = string.Empty;
+        _newName = string.Empty;
+        _newStartDate = DateTime.UtcNow.Date;
+        _newEndDate = DateTime.UtcNow.Date.AddYears(1);
+    }
+}

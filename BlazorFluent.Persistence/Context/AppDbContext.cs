@@ -1,5 +1,6 @@
 using System.Reflection;
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Delegates;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -25,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
     public DbSet<ProjectEntity> Projects => Set<ProjectEntity>();
+    public DbSet<AuditRecordEntity> AuditRecords => Set<AuditRecordEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

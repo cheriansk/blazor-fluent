@@ -1,6 +1,7 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Persistence.Context;
 using BlazorFluent.Persistence.Interceptors;
+using BlazorFluent.Persistence.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +21,13 @@ public static class PersistenceExtensions
         services.TryAddScoped<ICurrentUser, DefaultCurrentUser>();
         services.TryAddScoped<ITenantContext, TenantContext>();
 
-        // 3. Register audit interceptor (scoped — needs ICurrentUser + ITenantContext which are scoped)
+        // 3. Register forensic audit service (scoped)
+        services.TryAddScoped<IAuditService, AuditService>();
+
+        // 4. Register tenant administration service (scoped)
+        services.TryAddScoped<ITenantService, TenantService>();
+
+        // 5. Register audit interceptor (scoped — needs ICurrentUser + ITenantContext which are scoped)
         services.AddScoped<AuditableEntityInterceptor>();
 
         // 4. Strict connection string loading from appsettings.json
