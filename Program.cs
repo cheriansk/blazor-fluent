@@ -1,6 +1,7 @@
 using BlazorFluent.Components;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Infrastructure.Observability;
+using BlazorFluent.Infrastructure.Security;
 using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
 using Microsoft.AspNetCore.Components.Server.Circuits;
@@ -62,7 +63,10 @@ try
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
 
-    // 6. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
+    // 6. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
+    app.UseSecurityHeaders();
+
+    // 7. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
