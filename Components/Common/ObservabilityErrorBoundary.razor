@@ -1,0 +1,36 @@
+@using BlazorFluent.Core.Contracts
+@using Microsoft.Extensions.Logging
+@inherits ErrorBoundary
+@inject ILogger<ObservabilityErrorBoundary> Logger
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else if (ErrorContent is not null)
+{
+    @ErrorContent(CurrentException)
+}
+else
+{
+    <FluentMessageBar Title="Unexpected Error" Intent="MessageIntent.Error" AllowDismiss="true" OnDismiss="@Recover">
+        An unexpected error occurred in this view. The system administrator has been notified.
+        <FluentButton Appearance="Appearance.Lightweight" OnClick="@Recover">Try Again</FluentButton>
+    </FluentMessageBar>
+}
+
+@code {
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        Logger.LogError(
+            exception,
+            "Unhandled Blazor component exception in circuit. TenantId={TenantId}, UserId={UserId}, ErrorType={ErrorType}",
+            TenantContext.TenantId ?? "host",
+            CurrentUser.UserId ?? "anonymous",
+            exception.GetType().Name);
+
+        return Task.CompletedTask;
+    }
+}

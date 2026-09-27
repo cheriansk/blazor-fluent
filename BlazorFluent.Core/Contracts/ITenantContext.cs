@@ -1,5 +1,6 @@
 using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Core.Contracts;
 
@@ -46,11 +47,17 @@ public interface ITenantContext
 /// </summary>
 public sealed class TenantContext : ITenantContext
 {
+    private readonly ILogger<TenantContext> _logger;
     private string? _tenantId;
     private string? _tenantName;
     private UserType _userType;
     private bool _isHost;
     private List<TenantInfo> _allowedTenants = new();
+
+    public TenantContext(ILogger<TenantContext>? logger = null)
+    {
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantContext>.Instance;
+    }
 
     public string? TenantId => _tenantId;
     public string? TenantName => _tenantName;
@@ -75,6 +82,10 @@ public sealed class TenantContext : ITenantContext
         _userType = userType;
         _isHost = isHost;
         _allowedTenants = new List<TenantInfo>(allowedTenants);
+
+        _logger.LogInformation(
+            "Tenant context initialized: TenantId={TenantId}, TenantName={TenantName}, UserType={UserType}, IsHost={IsHost}, AllowedCount={AllowedCount}",
+            _tenantId, _tenantName, _userType, _isHost, _allowedTenants.Count);
     }
 
     /// <summary>
@@ -87,7 +98,7 @@ public sealed class TenantContext : ITenantContext
     {
         if (_userType == UserType.ClientUser)
         {
-            // Security: never expose that this path exists for client users.
+            _logger.LogWarning("Security violation: Client user attempted to switch tenant to {TargetTenantId}", newTenantId);
             return Result.Failure("Access denied.");
         }
 
@@ -95,16 +106,26 @@ public sealed class TenantContext : ITenantContext
 
         if (target is null)
         {
+            _logger.LogWarning(
+                "Security violation: User attempted unauthorized switch to tenant {TargetTenantId}. CurrentTenant={CurrentTenantId}",
+                newTenantId, _tenantId);
             return Result.Failure("Access denied.");
         }
 
         if (!target.IsActive)
         {
+            _logger.LogWarning("Tenant switch failed: Target tenant {TargetTenantId} is inactive", newTenantId);
             return Result.Failure("This tenant is not currently active.");
         }
 
+        var oldTenantId = _tenantId;
         _tenantId = target.Id;
         _tenantName = target.Name;
+
+        _logger.LogInformation(
+            "Tenant switched successfully from {FromTenantId} to {ToTenantId} for UserType {UserType}",
+            oldTenantId, newTenantId, _userType);
+
         return Result.Success();
     }
 }

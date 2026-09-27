@@ -1,47 +1,83 @@
 using BlazorFluent.Components;
+using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+// 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// 1. Configure console logging timezone based on DateTimeSettings:UseUtc
-var useUtc = !bool.TryParse(builder.Configuration["DateTimeSettings:UseUtc"], out var parsedUtc) || parsedUtc;
-builder.Logging.AddSimpleConsole(options =>
+try
 {
-    options.IncludeScopes = true;
-    options.UseUtcTimestamp = useUtc;
-    options.TimestampFormat = useUtc ? "[yyyy-MM-dd HH:mm:ss UTC] " : "[yyyy-MM-dd HH:mm:ss] ";
-});
+    Log.Information("Starting BlazorFluent application host...");
 
-// 2. Add presentation and UI services
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-builder.Services.AddFluentUIComponents();
+    var builder = WebApplication.CreateBuilder(args);
 
-// 3. Lean Modular Monolith Registrations
-builder.Services.AddPersistence(builder.Configuration);
-builder.Services.AddBackgroundJobs(enableScheduler: true);
+    // 2. Configure Serilog using Host Integration, appsettings.json, and Timezone Settings
+    var useUtc = !bool.TryParse(builder.Configuration["DateTimeSettings:UseUtc"], out var parsedUtc) || parsedUtc;
+    var timestampFormat = useUtc ? "yyyy-MM-dd HH:mm:ss 'UTC'" : "yyyy-MM-dd HH:mm:ss";
+    var logOutputTemplate = $"[{{Timestamp:{timestampFormat}}}] [{{Level:u3}}] {{Message:lj}} {{Properties:j}}{{NewLine}}{{Exception}}";
 
-var app = builder.Build();
+    builder.Host.UseSerilog((context, services, configuration) =>
+    {
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: logOutputTemplate)
+            .WriteTo.File(
+                path: "logs/blazorfluent-.log",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                outputTemplate: logOutputTemplate);
+    });
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    // 3. Add presentation and UI services
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
+    builder.Services.AddFluentUIComponents();
+
+    // 4. Blazor Circuit Lifecycle & Error Observability
+    builder.Services.AddScoped<CircuitHandler, BlazorCircuitObservabilityHandler>();
+
+    // 5. Lean Modular Monolith Registrations
+    builder.Services.AddPersistence(builder.Configuration);
+    builder.Services.AddBackgroundJobs(enableScheduler: true);
+
+    var app = builder.Build();
+
+    // Configure the HTTP request pipeline.
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseExceptionHandler("/Error", createScopeForErrors: true);
+        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+        app.UseHsts();
+    }
+    app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+    app.UseHttpsRedirection();
+
+    app.UseAntiforgery();
+
+    app.MapStaticAssets();
+    app.MapRazorComponents<App>()
+        .AddInteractiveServerRenderMode();
+
+    app.Run();
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
-
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "BlazorFluent application host terminated unexpectedly.");
+    throw;
+}
+finally
+{
+    Log.Information("Shutting down BlazorFluent host and flushing logs...");
+    Log.CloseAndFlush();
+}
 
 
 /**
