@@ -4,7 +4,12 @@
 
 
 
-
+## Observability & Request Logging
+BlazorFluent leverages **Serilog** for structured logging across both Blazor circuits and HTTP pipelines:
+- **Two-Stage Bootstrapping**: Early host initialization crashes are caught and flushed to the console before DI builds.
+- **Circuit Lifecycle Observability**: `BlazorCircuitObservabilityHandler` tracks circuit startup, user disconnection, reconnection, and circuit-breaking exceptions.
+- **HTTP Request Summaries**: `app.UseSerilogRequestLogging(...)` emits a single structured summary per request with `TenantId`, `UserId`, `ClientIp`, and latency.
+- **Static Asset Noise Filter**: Static assets (`/_framework/*`, `/_content/*`, `.css`, `.js`, images, fonts) are demoted to `Verbose` to keep console and rolling daily log files (`logs/blazorfluent-.log`) clean and readable.
 
 --------------------------
 # Enterprise Tenant Security: Frameworks vs. Custom Architecture

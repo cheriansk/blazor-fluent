@@ -3,8 +3,10 @@ namespace BlazorFluent.Core.Common;
 public class Result
 {
     public bool Succeeded { get; protected set; }
+    public bool IsSuccess => Succeeded;
     public string? Message { get; protected set; }
     public List<string> Errors { get; protected set; } = [];
+    public string? Error => Errors.Count > 0 ? string.Join(", ", Errors) : Message;
 
     public static Result Success(string? message = null) => new() { Succeeded = true, Message = message };
     public static Result Failure(string error) => new() { Succeeded = false, Errors = [error] };

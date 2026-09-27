@@ -1,10 +1,12 @@
 using BlazorFluent.Components;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Serilog;
+using Serilog.Events;
 
 // 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
 Log.Logger = new LoggerConfiguration()
@@ -59,6 +61,56 @@ try
     }
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
+
+    // 6. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+
+        // Silence noisy static web assets (_framework, _content, .css, .js, fonts, images)
+        options.GetLevel = (httpContext, elapsed, ex) =>
+        {
+            if (ex != null || httpContext.Response.StatusCode >= 500)
+                return LogEventLevel.Error;
+            if (httpContext.Response.StatusCode >= 400)
+                return LogEventLevel.Warning;
+
+            var path = httpContext.Request.Path.Value;
+            if (path != null && (
+                path.StartsWith("/_content") ||
+                path.StartsWith("/_framework") ||
+                path.EndsWith(".css") ||
+                path.EndsWith(".js") ||
+                path.EndsWith(".ico") ||
+                path.EndsWith(".png") ||
+                path.EndsWith(".svg") ||
+                path.EndsWith(".woff2")))
+            {
+                return LogEventLevel.Verbose;
+            }
+
+            return LogEventLevel.Information;
+        };
+
+        // Diagnostic context enrichment: TenantId, UserId, ClientIp
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+        {
+            diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+            diagnosticContext.Set("Host", httpContext.Request.Host.Value);
+
+            var tenantContext = httpContext.RequestServices.GetService<ITenantContext>();
+            if (!string.IsNullOrWhiteSpace(tenantContext?.TenantId))
+            {
+                diagnosticContext.Set("TenantId", tenantContext.TenantId);
+            }
+
+            var currentUser = httpContext.RequestServices.GetService<ICurrentUser>();
+            if (!string.IsNullOrWhiteSpace(currentUser?.UserId))
+            {
+                diagnosticContext.Set("UserId", currentUser.UserId);
+            }
+        };
+    });
 
     app.UseAntiforgery();
 

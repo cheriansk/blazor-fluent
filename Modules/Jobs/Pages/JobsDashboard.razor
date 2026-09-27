@@ -19,7 +19,7 @@
         @if (TenantContext.IsHost)
         {
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                <FluentButton Appearance="ButtonAppearance.Secondary" IconStart="@(new Icons.Regular.Size16.ArrowSync())" OnClick="@LoadExecutionsAsync">
+                <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.ArrowSync())" OnClick="@LoadExecutionsAsync">
                     Refresh
                 </FluentButton>
                 <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Play())" OnClick="@TriggerCatalogSyncAsync">
@@ -215,9 +215,9 @@
     private async Task TriggerCatalogSyncAsync()
     {
         var result = await JobManagerService.TriggerJobAsync("CatalogSyncJob", TenantContext.TenantId);
-        if (result.IsSuccess)
+        if (result.Succeeded)
         {
-            _statusMessage = "Catalog Sync job event enqueued successfully. Processing in background.";
+            _statusMessage = result.Message ?? "Catalog Sync job event enqueued successfully. Processing in background.";
             _isError = false;
             // Delay slightly to let the listener pick it up
             await Task.Delay(300);
@@ -225,7 +225,7 @@
         }
         else
         {
-            _statusMessage = $"Failed to trigger job: {result.Error}";
+            _statusMessage = $"Failed to trigger job: {result.Error ?? "Unknown error"}";
             _isError = true;
         }
     }
@@ -234,16 +234,16 @@
     {
         _selectedErrorExecution = null;
         var result = await JobManagerService.RetryJobAsync(executionId);
-        if (result.IsSuccess)
+        if (result.Succeeded)
         {
-            _statusMessage = "Manual retry enqueued successfully. Processing in background.";
+            _statusMessage = result.Message ?? "Manual retry enqueued successfully. Processing in background.";
             _isError = false;
             await Task.Delay(300);
             await LoadExecutionsAsync();
         }
         else
         {
-            _statusMessage = $"Failed to initiate retry: {result.Error}";
+            _statusMessage = $"Failed to initiate retry: {result.Error ?? "Unknown error"}";
             _isError = true;
         }
     }

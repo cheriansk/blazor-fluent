@@ -1,4 +1,5 @@
 using System.Reflection;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Listeners;
 using BlazorFluent.Jobs.Queue;
