@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace BlazorFluent.Core.Common;
 
-public class KeysetPagedResult<T, TKey>
+public class KeysetPagedResult<T, TKey> where TKey : struct
 {
     public IReadOnlyList<T> Items { get; init; } = [];
     public int PageSize { get; init; }

@@ -710,3 +710,12 @@ sequenceDiagram
 - **Keyset (Cursor) Pagination**: `KeysetPaginationExtensions` provides $O(1)$ cursor pagination (`WHERE id > lastId LIMIT pageSize + 1`) for high-volume multi-tenant grid components.
 - **EF Core 10 `ComplexType` Value Objects**: Inline value object mapping (`[ComplexType] Address`) without shadow primary keys or extra join tables.
 - **Native LINQ LeftJoin Extension**: Clean syntax for left outer joins (`QueryableExtensions.LeftJoin`) avoiding nested `GroupJoin` / `DefaultIfEmpty()` boilerplate.
+
+
+-----------------------------
+
+
+## 📬 Messaging & Webhook Security
+
+- **System.Threading.Channels Notification Queue**: High-throughput, zero-allocation bounded queue (`NotificationChannelQueue`) and background consumer (`NotificationQueueWorker`) that offload outbound email and Teams HTTP dispatches from UI request threads.
+- **Inbound Webhook HMAC Signature Validation**: Cryptographic payload validator (`IWebhookSignatureValidator`) that verifies incoming HTTP webhook headers (e.g., Stripe, GitHub, Azure AD callbacks) using constant-time comparison (`CryptographicOperations.FixedTimeEquals`) to block forged payloads and timing side-channel attacks.

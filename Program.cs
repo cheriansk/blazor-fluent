@@ -76,7 +76,8 @@ try
         .AddInteractiveServerComponents();
     builder.Services.AddFluentUIComponents();
 
-    // 4. Authorization & Authentication State Provider with Dual Policy Wiring (FSH Standard)
+    // 4. Authentication & Authorization State Provider with Dual Policy Wiring (FSH Standard)
+    builder.Services.AddAuthentication();
     builder.Services.AddAuthorization(options =>
     {
         var defaultPolicy = new AuthorizationPolicyBuilder()
@@ -116,12 +117,8 @@ try
         options.MinimumSameSitePolicy = SameSiteMode.Strict;
     });
 
-    // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready with DB probe)
-/*    builder.Services.AddHealthChecks()
-        .AddDbContextCheck<AppDbContext>(
-            name: "postgres",
-            failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
-            tags: ["ready", "db"]);*/
+    // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready)
+    builder.Services.AddHealthChecks();
 
     // 9. Observability: OpenTelemetry → Azure Monitor (Application Insights)
     var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];

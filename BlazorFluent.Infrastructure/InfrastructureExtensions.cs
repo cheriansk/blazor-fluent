@@ -39,6 +39,13 @@ public static class InfrastructureExtensions
         // 7. Responsive Viewport Layout Breakpoint Service
         services.TryAddScoped<ILayoutBreakpointService, LayoutBreakpointService>();
 
+        // 8. Bounded System.Threading.Channels Notification Queue & Background Worker
+        services.AddSingleton<NotificationChannelQueue>();
+        services.AddHostedService<NotificationQueueWorker>();
+
+        // 9. Inbound Webhook HMAC-SHA256 Signature Validator
+        services.TryAddSingleton<IWebhookSignatureValidator, HmacWebhookSignatureValidator>();
+
         return services;
     }
 }

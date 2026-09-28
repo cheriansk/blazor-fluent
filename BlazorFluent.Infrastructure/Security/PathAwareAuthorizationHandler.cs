@@ -53,8 +53,19 @@ public class PathAwareAuthorizationHandler : IAuthorizationMiddlewareResultHandl
                 await next(context);
                 return;
             }
-        }
+            if (authorizeResult.Challenged)
+            {
+                context.Response.Redirect("/login");
+                return;
+            }
 
-        await _defaultHandler.HandleAsync(next, context, policy, authorizeResult);
+            if (authorizeResult.Forbidden)
+            {
+                context.Response.Redirect("/auth-error");
+                return;
+            }
+
+            await _defaultHandler.HandleAsync(next, context, policy, authorizeResult);
+        }
     }
 }
