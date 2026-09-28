@@ -54,9 +54,18 @@ Every domain class and abstract base class in `BlazorFluent.Core` **must end wit
 
 **Exceptions**: Interfaces (`ITenantEntity`), records (`TenantInfo`, `BaseJobEvent`), and service classes (`TenantContext`).
 
-### 1.3 Enum Placement
+### 1.3 DataListTypes Enum Standard
 
-All shared enums live in `BlazorFluent.Core/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
+All shared domain enums live in `BlazorFluent.Core/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
+
+| Standard | Rule & Implementation |
+|---|---|
+| **Clean Code Identifiers** | Enum entries use alphanumeric codes with zero spaces or symbols (e.g. `ClientUser`, `CompanyUser`, `Admin`). This code is used in logic and database persistence. |
+| **Mandatory Display & Optional Description** | Every enum member, Category, and Filter declares `[Display(Name = "...", Description = "...")]` with mandatory `Name` and optional `Description`. Never use display names for logic comparisons. Retrieve via `.GetDisplayName()` and `.GetDescription()`. |
+| **Companion Definition Classes** | Enums define structured companion classes in the same file (e.g. `{EnumName}Definitions.Categories`, `{EnumName}Definitions.Filters`) declaring `const string` codes with `[Display]`. |
+| **Code-Only Attribute Signature** | `[DataListCategory(Definitions.Categories.Code)]` and `[DataListFilterCriterias(Definitions.Filters.Code)]` accept **only the constant code**, eliminating string repetition across members. |
+| **Rich Metadata Resolution** | `DataListExtensions` inspects companion definition classes via cached reflection ($O(1)$) to link each enum member to its `CategoryInfo` and `FilterInfo` records (resolving `Code`, `DisplayName`, and `Description`). |
+| **UI Projection** | Use `.ToDataListItems<TEnum>()` to project enums into immutable `DataListItem<TEnum>` records for direct binding to `FluentSelect` or data grids. |
 
 ### 1.4 Primary Keys
 
