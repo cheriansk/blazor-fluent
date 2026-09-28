@@ -2,6 +2,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Persistence.Context;
 using BlazorFluent.Persistence.Interceptors;
 using BlazorFluent.Persistence.Services;
+using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -44,6 +45,7 @@ public static class PersistenceExtensions
         {
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
+            options.UseExceptionProcessor();
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);

@@ -690,3 +690,23 @@ sequenceDiagram
 - **Resource-Based Authorization**: Evaluates permissions dynamically against entity instances using `IAuthorizationService.AuthorizeAsync(User, resource, requirement)` backed by `ProjectResourceAuthorizationHandler`.
 - **Input Sanitization**: `IInputSanitizer` (`Ganss.Xss.HtmlSanitizer`) strips script injection and malicious HTML tags from user text inputs before storage.
 - **Automated DAST Pipeline**: `.github/workflows/owasp-zap-scan.yml` boots the application host in CI and executes automated OWASP ZAP baseline vulnerability scans.
+
+
+-----------------------------------
+
+### 6. Enterprise Blazor Framework Enhancements
+
+- **Form Draft Auto-Save**: `ILocalStorageFormService` (`ProtectedLocalStorageFormService`) encrypts and stores uncommitted form drafts in browser `localStorage` using Data Protection keyrings.
+- **Unsaved Changes Navigation Guard**: `<FormNavigationGuard IsDirty="..." />` uses `NavigationManager.RegisterLocationChangingHandler` to prompt users before discarding uncommitted form edits.
+- **Responsive Layout Breakpoints**: `ILayoutBreakpointService` (`LayoutBreakpointService`) detects real-time browser viewport dimensions (`Mobile`, `Tablet`, `Desktop`) via JS interop.
+- **State Persistence**: `PersistentStateComponentBase` wraps .NET 10 `PersistentComponentState` to seamlessly preserve component state across circuit pause/resume cycles.
+
+
+--------------------------------------------
+
+## 💾 EF Core Security, Performance & Domain Enhancements
+
+- **Strongly-Typed DB Exception Translation**: `EntityFramework.Exceptions.PostgreSQL` automatically maps database constraint errors to strongly-typed C# exceptions (`UniqueConstraintException`, `ForeignKeyConstraintException`, `CannotInsertNullException`, `MaxLengthExceededException`), enabling clean user feedback without exposing raw stack traces.
+- **Keyset (Cursor) Pagination**: `KeysetPaginationExtensions` provides $O(1)$ cursor pagination (`WHERE id > lastId LIMIT pageSize + 1`) for high-volume multi-tenant grid components.
+- **EF Core 10 `ComplexType` Value Objects**: Inline value object mapping (`[ComplexType] Address`) without shadow primary keys or extra join tables.
+- **Native LINQ LeftJoin Extension**: Clean syntax for left outer joins (`QueryableExtensions.LeftJoin`) avoiding nested `GroupJoin` / `DefaultIfEmpty()` boilerplate.

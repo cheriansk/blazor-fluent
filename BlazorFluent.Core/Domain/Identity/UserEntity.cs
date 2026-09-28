@@ -2,7 +2,9 @@ using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
+using BlazorFluent.Core.Domain.ValueObjects;
 
 namespace BlazorFluent.Core.Domain.Identity;
 
@@ -41,6 +43,12 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     /// Default or home tenant ID for this user.
     /// </summary>
     public string? DefaultTenantId { get; set; }
+
+    /// <summary>
+    /// Embedded EF Core 10 ComplexType value object for user physical address.
+    /// Inline columns without separate table or shadow foreign keys.
+    /// </summary>
+    public Address PhysicalAddress { get; set; } = new();
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }

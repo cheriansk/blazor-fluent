@@ -41,6 +41,16 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasMaxLength(500)
             .IsRequired(false);
 
+        // EF Core 10 ComplexType Value Object mapping for physical address
+        builder.ComplexProperty(u => u.PhysicalAddress, addrBuilder =>
+        {
+            addrBuilder.Property(a => a.Street).HasMaxLength(256);
+            addrBuilder.Property(a => a.City).HasMaxLength(100);
+            addrBuilder.Property(a => a.State).HasMaxLength(100);
+            addrBuilder.Property(a => a.PostalCode).HasMaxLength(20);
+            addrBuilder.Property(a => a.Country).HasMaxLength(100);
+        });
+
         // Soft delete
         builder.Property(u => u.IsDeleted).IsRequired().HasDefaultValue(false);
         builder.Property(u => u.DeletedBy).HasMaxLength(256).IsRequired(false);
