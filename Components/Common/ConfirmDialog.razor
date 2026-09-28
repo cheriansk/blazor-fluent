@@ -1,0 +1,50 @@
+@* Reusable confirmation dialog for destructive actions (Revoke, Delete, Impersonate, etc.) *@
+<FluentDialog @ref="_dialog"
+              @bind-Hidden="@_hidden"
+              Modal="true"
+              TrapFocus="true"
+              PreventScroll="true"
+              AriaLabel="@Title">
+    <FluentDialogHeader ShowDismiss="false">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center;">
+            <FluentIcon Value="@(new Icons.Filled.Size24.Warning())" Color="Color.Warning" />
+            <FluentLabel Typo="Typography.H6">@Title</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentLabel Typo="Typography.Body">@Message</FluentLabel>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAsync">Cancel</FluentButton>
+        <FluentButton Appearance="ButtonAppearance.Primary"
+                      Style="background: var(--error); color: white;"
+                      OnClick="@ConfirmAsync">
+            @ConfirmLabel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private FluentDialog? _dialog;
+    private bool _hidden = true;
+
+    [Parameter, EditorRequired] public string Title { get; set; } = "Are you sure?";
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public string ConfirmLabel { get; set; } = "Confirm";
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+
+    public void Show() => _hidden = false;
+
+    private async Task ConfirmAsync()
+    {
+        _hidden = true;
+        await OnConfirmed.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        _hidden = true;
+        await OnCancelled.InvokeAsync();
+    }
+}

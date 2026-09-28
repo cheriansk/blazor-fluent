@@ -21,7 +21,9 @@ public class PathAwareAuthorizationHandler : IAuthorizationMiddlewareResultHandl
         "/authentication",
         "/Error",
         "/not-found",
-        "/favicon.ico"
+        "/favicon.ico",
+        "/healthz",
+        "/health/"
     ];
 
     private static readonly string[] BypassExtensions =

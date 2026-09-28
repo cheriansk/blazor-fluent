@@ -1,0 +1,22 @@
+@* Reusable empty-state card for data grids or lists with no records *@
+<FluentCard Style="text-align: center; padding: 48px 24px; margin: 16px 0;">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="align-items: center;">
+        <FluentIcon Value="@IconValue" Style="width: 48px; height: 48px; opacity: 0.4;" />
+        <FluentLabel Typo="Typography.H6" Style="color: var(--neutral-foreground-rest);">@Title</FluentLabel>
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-rest);">@Description</FluentLabel>
+        }
+        @if (Actions is not null)
+        {
+            <div style="margin-top: 8px;">@Actions</div>
+        }
+    </FluentStack>
+</FluentCard>
+
+@code {
+    [Parameter] public Icon IconValue { get; set; } = new Icons.Regular.Size32.DocumentSearch();
+    [Parameter] public string Title { get; set; } = "No records found";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

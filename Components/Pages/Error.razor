@@ -1,36 +1,69 @@
-﻿@page "/Error"
+@page "/Error"
 @using System.Diagnostics
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IAuditService AuditService
+@inject ILogger<Error> Logger
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
 
-<PageTitle>Error</PageTitle>
+<PageTitle>Unexpected Error</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<FluentCard Style="max-width: 600px; margin: 80px auto; padding: 32px;">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: center;">
+            <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
+            <div>
+                <FluentLabel Typo="Typography.H4" Style="color: var(--error);">Something went wrong</FluentLabel>
+                <FluentLabel Typo="Typography.Body">
+                    An unexpected error occurred. Our team has been notified automatically.
+                </FluentLabel>
+            </div>
+        </FluentStack>
 
-@if (ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
-    </p>
-}
+        @if (_errorId is not null)
+        {
+            <FluentMessageBar Intent="MessageBarIntent.Error" AllowDismiss="false">
+                <strong>Incident Reference:</strong>&nbsp;<code>@_errorId</code> — quote this reference when contacting support.
+            </FluentMessageBar>
+        }
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+            <FluentButton Appearance="ButtonAppearance.Primary"
+                          IconStart="@(new Icons.Regular.Size16.Home())"
+                          Href="/">
+                Return to Home
+            </FluentButton>
+        </FluentStack>
+    </FluentStack>
+</FluentCard>
 
-@code{
+@code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 
-    private string? RequestId { get; set; }
-    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+    private string? _errorId;
 
-    protected override void OnInitialized() =>
-        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+    protected override async Task OnInitializedAsync()
+    {
+        var exFeature = HttpContext?.Features
+            .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+
+        if (exFeature?.Error is { } ex)
+        {
+            try
+            {
+                _errorId = await AuditService.LogExceptionAsync(ex, "Unhandled HTTP Exception");
+            }
+            catch (Exception logEx)
+            {
+                Logger.LogCritical(logEx, "Failed to log exception from /Error page.");
+                _errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+            }
+        }
+        else
+        {
+            _errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        }
+    }
 }

@@ -219,7 +219,7 @@
                         </FluentButton>
                         @if ((TenantContext.IsHost || CurrentUser.IsInRole("Admin")) && context.UserId != CurrentUser.UserId)
                         {
-                            <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.PersonEye())" OnClick="@(() => PromptImpersonation(context))">
+                            <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.PersonCircle())" OnClick="@(() => PromptImpersonation(context))">
                                 Impersonate
                             </FluentButton>
                         }

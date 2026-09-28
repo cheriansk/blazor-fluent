@@ -42,6 +42,30 @@ public static class SecurityHeadersExtensions
                 headers.Append("X-XSS-Protection", "1; mode=block");
             }
 
+            // 6. Content-Security-Policy: Blazor Server safe policy
+            //    - script-src 'unsafe-inline': required for Blazor's SignalR inline bootstrap block
+            //    - style-src  'unsafe-inline': required for FluentUI v5 CSS-in-JS attribute injection
+            //    - connect-src: wss: / ws: for SignalR WebSocket transport (wss: in prod, ws: in dev)
+            //    - img-src: 'self' data: blob: for Fluent Icon SVG data URIs
+            //    - object-src 'none': disables Flash / legacy embed plugins
+            //    - base-uri 'self': prevents <base> tag injection attacks
+            //    - frame-ancestors 'self': CSP-level clickjacking guard (supplements X-Frame-Options)
+            if (!headers.ContainsKey("Content-Security-Policy"))
+            {
+                const string csp =
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data: blob:; " +
+                    "font-src 'self'; " +
+                    "connect-src 'self' wss: ws:; " +
+                    "object-src 'none'; " +
+                    "base-uri 'self'; " +
+                    "frame-ancestors 'self';";
+
+                headers.Append("Content-Security-Policy", csp);
+            }
+
             await next();
         });
     }

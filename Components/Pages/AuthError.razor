@@ -9,7 +9,7 @@
     <FluentCard Style="max-width: 440px; width: 100%; padding: 40px 32px; text-align: center; box-shadow: var(--elevation-shadow-card-rest, 0 8px 24px rgba(0,0,0,0.12)); border-radius: 12px;">
         <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="16">
             <div style="background-color: var(--error-background, #fde7e9); padding: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-                <FluentIcon Value="@(new Icons.Regular.Size32.ShieldDismiss())" Color="Color.Error" />
+                <FluentIcon Value="@(new Icons.Regular.Size24.ShieldDismiss())" Color="Color.Error" />
             </div>
 
             <FluentLabel Typo="Typography.H4" Style="margin: 0; font-weight: 700;">Access Denied</FluentLabel>
@@ -27,7 +27,7 @@
 
             <FluentDivider Style="width: 100%; margin: 8px 0;" />
 
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Subtle"
                           Style="width: 100%; height: 38px; font-weight: 600;"
                           OnClick="@(() => NavigationManager.NavigateTo("/login"))">
                 Return to Login

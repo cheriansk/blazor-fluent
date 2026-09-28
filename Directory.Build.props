@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      NuGet CVE Auditing (NuGet 6.8+, built into .NET 8+ SDK).
+      Warns on 'dotnet restore' when packages have known vulnerabilities.
+      NuGetAuditMode=all: audits both direct and transitive dependencies.
+      NuGetAuditLevel=moderate: flags Moderate, High, and Critical CVEs.
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
+
+    <!--
+      Treat vulnerable package warnings as build errors in CI.
+      Set to false locally if you need to unblock temporarily.
+    -->
+    <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+  </PropertyGroup>
+</Project>

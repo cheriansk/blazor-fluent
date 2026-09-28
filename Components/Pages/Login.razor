@@ -1,5 +1,6 @@
 @page "/login"
 @rendermode InteractiveServer
+@attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Identity
@@ -24,7 +25,7 @@
             @* Brand Header *@
             <div style="text-align: center;">
                 <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px; background-color: var(--accent-fill-rest, #0078d4); color: #fff; margin-bottom: 12px;">
-                    <FluentIcon Value="@(new Icons.Regular.Size28.ShieldKeyhole())" Color="Color.Lightweight" />
+                    <FluentIcon Value="@(new Icons.Regular.Size24.ShieldKeyhole())" Color="Color.Lightweight" />
                 </div>
                 <FluentLabel Typo="Typography.H3" Style="margin: 0; font-weight: 700;">BlazorFluent</FluentLabel>
                 <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
@@ -53,13 +54,13 @@
             </div>
 
             @* Primary Sign In Button *@
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Subtle"
                           Style="width: 100%; height: 40px; font-weight: 600;"
                           Disabled="@(!_isAcknowledged || _isLoading)"
                           OnClick="HandleMicrosoftSignIn">
                 @if (_isLoading)
                 {
-                    <FluentProgressRing Size="ProgressRingSize.Small" Style="margin-right: 8px;" />
+                    <FluentProgressRing Size="SpinnerSize.Small" Style="margin-right: 8px;" />
                     <span>Validating credentials...</span>
                 }
                 else
@@ -83,23 +84,23 @@
                     🛠️ Developer Authentication Sandbox (Local Testing)
                 </FluentLabel>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                   OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
                         ✅ Sign in as SuperAdmin (Valid Active)
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                   OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
                         ✅ Sign in as Developer (Valid Active)
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                   OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
                         ❌ Test Expired User (Gate 1 Failure)
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                   OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
                         ❌ Test Tampered HMAC (Gate 2 Failure)
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                   OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
                         ❌ Test Unprovisioned User (Gate 3 Failure)
                     </FluentButton>

@@ -1,17 +1,26 @@
+using Azure.Identity;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using BlazorFluent.Components;
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Validation;
 using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Infrastructure.Security;
 using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
+using BlazorFluent.Persistence.Context;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Serilog;
+using Serilog.Enrichers.Span;
 using Serilog.Events;
+using System.Threading.RateLimiting;
 
 // 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
 Log.Logger = new LoggerConfiguration()
@@ -24,6 +33,23 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
+    // Azure Key Vault configuration source for production environments
+    if (builder.Environment.IsProduction())
+    {
+        var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+        if (!string.IsNullOrWhiteSpace(keyVaultUri))
+        {
+            builder.Configuration.AddAzureKeyVault(
+                new Uri(keyVaultUri),
+                new DefaultAzureCredential());
+            Log.Information("Azure Key Vault configuration source registered: {Uri}", keyVaultUri);
+        }
+        else
+        {
+            Log.Warning("KeyVault:Uri not configured — running without Azure Key Vault in production.");
+        }
+    }
+
     // 2. Configure Serilog using Host Integration, appsettings.json, and Timezone Settings
     var useUtc = !bool.TryParse(builder.Configuration["DateTimeSettings:UseUtc"], out var parsedUtc) || parsedUtc;
     var timestampFormat = useUtc ? "yyyy-MM-dd HH:mm:ss 'UTC'" : "yyyy-MM-dd HH:mm:ss";
@@ -35,6 +61,7 @@ try
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
+            .Enrich.WithSpan()
             .WriteTo.Console(outputTemplate: logOutputTemplate)
             .WriteTo.File(
                 path: "logs/blazorfluent-.log",
@@ -72,6 +99,52 @@ try
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddBackgroundJobs(enableScheduler: true);
 
+    // 7. Security Hardening: Rate Limiting & Secure Cookie Policy
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.AddFixedWindowLimiter("login", opt =>
+        {
+            opt.Window = TimeSpan.FromMinutes(1);
+            opt.PermitLimit = 10;
+            opt.QueueLimit = 0;
+            opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        });
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    });
+
+    builder.Services.AddCookiePolicy(options =>
+    {
+        options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
+        options.Secure = CookieSecurePolicy.Always;
+        options.MinimumSameSitePolicy = SameSiteMode.Strict;
+    });
+
+    // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready with DB probe)
+/*    builder.Services.AddHealthChecks()
+        .AddDbContextCheck<AppDbContext>(
+            name: "postgres",
+            failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+            tags: ["ready", "db"]);*/
+
+    // 9. Observability: OpenTelemetry → Azure Monitor (Application Insights)
+    var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+    if (!string.IsNullOrWhiteSpace(aiConnectionString))
+    {
+        builder.Services.AddOpenTelemetry()
+            .UseAzureMonitor(options =>
+            {
+                options.ConnectionString = aiConnectionString;
+            });
+        Log.Information("OpenTelemetry → Azure Monitor configured.");
+    }
+    else
+    {
+        Log.Warning("ApplicationInsights:ConnectionString is not configured. OpenTelemetry tracing disabled.");
+    }
+
+    // 10. Reusability: FluentValidation auto-registration from Core assembly
+    //builder.Services.AddValidatorsFromAssemblyContaining<SendNotificationRequestValidator>(ServiceLifetime.Scoped);
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -91,6 +164,8 @@ try
     forwardedHeadersOptions.KnownNetworks.Clear();
     forwardedHeadersOptions.KnownProxies.Clear();
     app.UseForwardedHeaders(forwardedHeadersOptions);
+
+    app.UseCookiePolicy();
 
     app.UseHttpsRedirection();
 
@@ -148,11 +223,25 @@ try
     });
 
     app.UseAntiforgery();
+    app.UseRateLimiter();
     app.UseAuthorization();
 
     app.MapStaticAssets();
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();
+
+    // Health Check endpoints (unauthenticated probes)
+    app.MapHealthChecks("/healthz", new HealthCheckOptions
+    {
+        Predicate = _ => false,
+        AllowCachingResponses = false
+    });
+
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready"),
+        AllowCachingResponses = false
+    });
 
     app.Run();
 }

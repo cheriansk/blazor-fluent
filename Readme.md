@@ -644,3 +644,42 @@ sequenceDiagram
 ```
 
 ---
+## Enterprise Hardening: Security, Observability & Reusability
+
+### 1. 15 ASP.NET Core Security Concepts Matrix
+
+| # | Concept | Mechanism & Implementation |
+|---|---|---|
+| 1 | **Authentication** | Azure AD federated login, HMAC row-integrity seal on `UserEntity`, mandatory Privacy Notice agreement (`/login`). |
+| 2 | **Authorization** | Dual `DefaultPolicy` and `FallbackPolicy` requiring authenticated users, multi-tenant & project role gates (`ProjectRole`), and `PathAwareAuthorizationHandler`. |
+| 3 | **HTTPS & Transport** | Automatic HTTPS redirection, HSTS 30-day headers in production, and `ForwardedHeaders` (X-Forwarded-For, X-Forwarded-Proto) for cloud reverse proxies. |
+| 4 | **Input Validation** | Declarative `FluentValidation` validators in `BlazorFluent.Core.Validation`, auto-registered in DI and consumed in Razor components with `<FluentValidationValidator />`. |
+| 5 | **SQL Injection** | Parameterized queries enforced uniformly across EF Core 10 & PostgreSQL. Raw SQL string concatenation is prohibited. |
+| 6 | **CORS** | N/A for Blazor Server monolith; all UI state is negotiated via same-origin SignalR WebSockets. |
+| 7 | **CSRF / Anti-Forgery** | ASP.NET Core `app.UseAntiforgery()` enabled for form postbacks and circuit establishment. |
+| 8 | **Rate Limiting** | `Microsoft.AspNetCore.RateLimiting` fixed-window limiter (10 req/min per IP) on `/login` via `[EnableRateLimiting("login")]`. |
+| 9 | **Secure Cookies** | Global policy in `Program.cs`: `HttpOnly = Always`, `Secure = Always`, `SameSite = Strict`. |
+| 10 | **Secrets Management** | Dual-tier setup: `dotnet user-secrets` for local dev; Azure Key Vault (`Azure.Identity.DefaultAzureCredential`) for production. |
+| 11 | **Security Headers & CSP** | Strict edge headers in `SecurityHeadersExtensions`: X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-XSS-Protection, and a Blazor Server-safe `Content-Security-Policy`. |
+| 12 | **Error Handling** | Hardened `/Error` and `AppErrorBoundary` displaying sanitized `ERR-XXXXXXXX` incident references to users while recording full forensics in PostgreSQL `audit.AuditRecords` and Serilog. |
+| 13 | **Secure Logging** | Sensitive keyword masking (`password`, `token`, `secret`, `key`) in `AuditableEntityInterceptor`, structured Serilog logging, and no sensitive parameter logging in EF Core. |
+| 14 | **Data Protection** | Clustered keyring persisted to PostgreSQL (`PersistKeysToDbContext<AppDbContext>`) for auto-scaled Azure Web Apps and Container Apps. |
+| 15 | **Dependency Security** | `Directory.Build.props` repo-wide `NuGetAudit` scanning direct and transitive packages, plus `.github/dependabot.yml` automated PRs. |
+
+### 2. Observability & Health Probes
+
+- **Liveness Probe**: `GET /healthz` — Unauthenticated probe checking process liveness without database overhead (returns `200 Healthy`).
+- **Readiness Probe**: `GET /health/ready` — Unauthenticated probe verifying PostgreSQL database connectivity via `AddDbContextCheck<AppDbContext>` (returns `200 Healthy` or `503 Unhealthy`).
+- **OpenTelemetry & Azure Monitor**: Direct trace and metric export via `Azure.Monitor.OpenTelemetry.AspNetCore`.
+- **Serilog Trace Correlation**: Serilog log entries are enriched with `TraceId` and `SpanId` using `Serilog.Enrichers.Span`.
+
+### 3. Reusable UI Components (`Components/Common/`)
+
+- `<PageHeader Title="..." Subtitle="..." />`: Standardized page title header with typography tokens and action button slot.
+- `<ConfirmDialog Title="..." Message="..." OnConfirmed="..." />`: Accessible modal confirmation dialog for destructive actions (Revoke, Delete, Impersonate).
+- `<EmptyState Title="..." Description="..." />`: Standardized empty data table indicator card.
+
+### 4. Background Audit Log Purge
+
+- **Job**: `AuditPurgeJobHandler` executed nightly at 2 AM UTC (`Jobs:Schedules:AuditPurgeJob: "0 2 * * *"`).
+- **Execution**: Uses EF Core `ExecuteDeleteAsync` bulk deletion to remove `audit.AuditRecords` older than `Audit:RetentionDays` (default: 365 days) across all tenants without memory overhead.

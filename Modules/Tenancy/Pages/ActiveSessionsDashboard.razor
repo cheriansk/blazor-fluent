@@ -22,7 +22,7 @@
             </FluentLabel>
         </div>
 
-        <FluentButton Appearance="Appearance.Outline"
+        <FluentButton Appearance="ButtonAppearance.Outline"
                       IconStart="@(new Icons.Regular.Size16.ArrowClockwise())"
                       OnClick="LoadSessionsAsync">
             Refresh
@@ -41,7 +41,7 @@
         @if (_isLoading)
         {
             <div style="display: flex; justify-content: center; padding: 48px;">
-                <FluentProgressRing Size="ProgressRingSize.Large" />
+                <FluentProgressRing Size="SpinnerSize.Large" />
             </div>
         }
         else if (_sessions.Count == 0)
@@ -91,7 +91,7 @@
                 <TemplateColumn Title="Action">
                     @if (!context.IsRevoked)
                     {
-                        <FluentButton Appearance="Appearance.Subtle"
+                        <FluentButton Appearance="ButtonAppearance.Subtle"
                                       Size="ButtonSize.Small"
                                       Style="color: #d83b01; font-weight: 600;"
                                       OnClick="@(() => RevokeSessionAsync(context.Id, context.UserEmail))">

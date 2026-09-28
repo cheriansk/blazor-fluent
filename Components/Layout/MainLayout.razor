@@ -18,13 +18,13 @@
         <TenantSwitcher />
         @if (CurrentUser.IsAuthenticated)
         {
-            <FluentButton Appearance="Appearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.SignOut())" Title="Sign Out" OnClick="SignOut" Style="margin-left: 6px;">
+            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size20.SignOut())" Title="Sign Out" OnClick="SignOut" Style="margin-left: 6px;">
                 Sign Out
             </FluentButton>
         }
         else
         {
-            <FluentButton Appearance="Appearance.Accent" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Style="margin-left: 6px;">
+            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Style="margin-left: 6px;">
                 Sign In
             </FluentButton>
         }

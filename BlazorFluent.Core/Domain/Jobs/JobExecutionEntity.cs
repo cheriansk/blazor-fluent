@@ -10,8 +10,6 @@ namespace BlazorFluent.Core.Domain.Jobs;
 /// </summary>
 public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity
 {
-    public Guid Id { get; set; } = Guid.CreateVersion7();
-
     /// <summary>Correlation identifier linking all chained batch steps in the same pipeline.</summary>
     public string? CorrelationId { get; set; }
 
