@@ -96,6 +96,12 @@ public static class PersistenceExtensions
         // 12. Register Project Authorization Service with HybridCache caching
         services.TryAddScoped<IProjectAuthorizationService, ProjectAuthorizationService>();
 
+        // 13. Multi-Channel Notification Engine
+        services.AddHttpClient();
+        services.TryAddScoped<ITeamsNotificationSender, TeamsNotificationSender>();
+        services.TryAddScoped<IEmailNotificationSender, EmailNotificationSender>();
+        services.TryAddScoped<INotificationService, NotificationService>();
+
         return services;
     }
 }

@@ -1,0 +1,311 @@
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Notifications
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject NavigationManager NavigationManager
+@inject BlazorFluent.Core.Contracts.INotificationService MyNotificationService
+@inject ILogger<NotificationBell> Logger
+
+<div style="position: relative; display: inline-flex; align-items: center; margin-right: 8px;">
+    @* Bell Button with Unread Badge *@
+    <FluentButton Appearance="ButtonAppearance.Subtle"
+                  OnClick="TogglePanel"
+                  Title="Notifications"
+                  Style="position: relative; padding: 6px;">
+        <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" />
+        @if (_unreadCounts.TotalUnread > 0)
+        {
+            <span style="position: absolute; top: 0; right: 0; background-color: var(--accent-fill-rest, #0078d4); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 5px; line-height: 1.2;">
+                @(_unreadCounts.TotalUnread > 99 ? "99+" : _unreadCounts.TotalUnread.ToString())
+            </span>
+        }
+    </FluentButton>
+
+    @* Notification Dropdown Panel *@
+    @if (_isOpen)
+    {
+        <div style="position: absolute; top: calc(100% + 8px); right: 0; width: 400px; max-height: 520px; background: var(--neutral-layer-1, #ffffff); border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0); border-radius: 8px; box-shadow: var(--elevation-shadow-flyout, 0 8px 24px rgba(0,0,0,0.16)); z-index: 1050; display: flex; flex-direction: column; overflow: hidden;">
+            @* Header *@
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--neutral-stroke-subtle, #f0f0f0); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <FluentLabel Typo="Typography.BodyStrong">Notifications</FluentLabel>
+                    @if (_unreadCounts.TotalUnread > 0)
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">
+                            @_unreadCounts.TotalUnread unread
+                        </FluentBadge>
+                    }
+                </div>
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              Size="ButtonSize.Small"
+                              OnClick="MarkAllAsReadAsync"
+                              Disabled="@(GetActiveTabUnreadCount() == 0)">
+                    Mark all read
+                </FluentButton>
+            </div>
+
+            @* Tabs (General vs Personal) *@
+            <div style="display: flex; border-bottom: 1px solid var(--neutral-stroke-subtle, #f0f0f0); background: var(--neutral-layer-2, #fafafa);">
+                <button type="button"
+                        style="flex: 1; padding: 8px 12px; border: none; background: @(_activeCategory == NotificationCategory.Generic ? "var(--neutral-layer-1, #ffffff)" : "transparent"); font-weight: @(_activeCategory == NotificationCategory.Generic ? "600" : "normal"); border-bottom: @(_activeCategory == NotificationCategory.Generic ? "2px solid var(--accent-fill-rest, #0078d4)" : "2px solid transparent"); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;"
+                        @onclick="() => SetCategory(NotificationCategory.Generic)">
+                    <span>General</span>
+                    @if (_unreadCounts.GenericUnread > 0)
+                    {
+                        <span style="background: var(--neutral-fill-secondary-rest, #e1dfdd); font-size: 11px; padding: 1px 6px; border-radius: 8px;">
+                            @_unreadCounts.GenericUnread
+                        </span>
+                    }
+                </button>
+                <button type="button"
+                        style="flex: 1; padding: 8px 12px; border: none; background: @(_activeCategory == NotificationCategory.Personal ? "var(--neutral-layer-1, #ffffff)" : "transparent"); font-weight: @(_activeCategory == NotificationCategory.Personal ? "600" : "normal"); border-bottom: @(_activeCategory == NotificationCategory.Personal ? "2px solid var(--accent-fill-rest, #0078d4)" : "2px solid transparent"); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;"
+                        @onclick="() => SetCategory(NotificationCategory.Personal)">
+                    <span>Personal</span>
+                    @if (_unreadCounts.PersonalUnread > 0)
+                    {
+                        <span style="background: var(--neutral-fill-secondary-rest, #e1dfdd); font-size: 11px; padding: 1px 6px; border-radius: 8px;">
+                            @_unreadCounts.PersonalUnread
+                        </span>
+                    }
+                </button>
+            </div>
+
+            @* Filter Toolbar *@
+            <div style="padding: 6px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-1, #ffffff);">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" checked="@_onlyUnread" @onchange="OnOnlyUnreadChanged" />
+                    <span>Unread only</span>
+                </label>
+                <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="RefreshNotificationsAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.ArrowClockwise())" />
+                </FluentButton>
+            </div>
+
+            @* Notification Items Feed *@
+            <div style="flex: 1; overflow-y: auto; max-height: 380px; padding: 8px 12px;">
+                @if (_isLoading)
+                {
+                    <div style="display: flex; justify-content: center; padding: 24px;">
+                        <FluentSpinner Size="SpinnerSize.Medium" />
+                    </div>
+                }
+                else if (_notifications.Count == 0)
+                {
+                    <div style="text-align: center; padding: 32px 16px; color: var(--neutral-foreground-3, #8a8886);">
+                        <FluentIcon Value="@(new Icons.Regular.Size32.CheckmarkCircle())" Color="Color.Neutral" />
+                        <div style="margin-top: 8px; font-weight: 500;">No notifications</div>
+                        <div style="font-size: 12px; margin-top: 4px;">You're all caught up!</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        @foreach (var notification in _notifications)
+                        {
+                            <div style="padding: 10px 12px; border-radius: 6px; border: 1px solid var(--neutral-stroke-subtle, #ececec); background: @(notification.IsRead ? "var(--neutral-layer-1, #ffffff)" : "var(--neutral-layer-2, #f5f8fb)"); transition: background-color 0.15s ease;"
+                                 @key="notification.Id">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    @* Severity Icon *@
+                                    <div style="margin-top: 2px;">
+                                        @switch (notification.Severity)
+                                        {
+                                            case NotificationSeverity.Success:
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.CheckmarkCircle())" Color="Color.Success" />
+                                                break;
+                                            case NotificationSeverity.Warning:
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" Color="Color.Warning" />
+                                                break;
+                                            case NotificationSeverity.Error:
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.DismissCircle())" Color="Color.Error" />
+                                                break;
+                                            default:
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Accent" />
+                                                break;
+                                        }
+                                    </div>
+
+                                    @* Message Details *@
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: @(notification.IsRead ? "500" : "700"); font-size: 13px; color: var(--neutral-foreground-1, #242424); display: flex; align-items: center; justify-content: space-between;">
+                                            <span>@notification.Title</span>
+                                            @if (!notification.IsRead)
+                                            {
+                                                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: var(--accent-fill-rest, #0078d4); display: inline-block;"></span>
+                                            }
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--neutral-foreground-2, #616161); margin-top: 4px; line-height: 1.4; word-break: break-word;">
+                                            @notification.Message
+                                        </div>
+
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--neutral-foreground-3, #8a8886);">
+                                            <span>@GetRelativeTime(notification.Created)</span>
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                @if (notification.SentToTeams)
+                                                {
+                                                    <span style="font-size: 10px; background: #e8ebfa; color: #444791; padding: 1px 4px; border-radius: 3px;">Teams</span>
+                                                }
+                                                @if (notification.SentToMailbox)
+                                                {
+                                                    <span style="font-size: 10px; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 3px;">Mail</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(notification.LinkUrl))
+                                                {
+                                                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                                  Size="ButtonSize.Small"
+                                                                  OnClick="@(() => NavigateToLink(notification))"
+                                                                  Style="padding: 2px 6px; font-size: 11px;">
+                                                        Open
+                                                    </FluentButton>
+                                                }
+                                                @if (!notification.IsRead)
+                                                {
+                                                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                                  Size="ButtonSize.Small"
+                                                                  OnClick="@(() => MarkAsReadAsync(notification.Id))"
+                                                                  Title="Mark as read"
+                                                                  Style="padding: 2px 6px;">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.Checkmark())" />
+                                                    </FluentButton>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+    private bool _isLoading;
+    private bool _onlyUnread;
+    private NotificationCategory _activeCategory = NotificationCategory.Generic;
+    private UnreadNotificationCounts _unreadCounts = new();
+    private List<NotificationEntity> _notifications = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUnreadCountsAsync();
+    }
+
+    private async Task TogglePanel()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            await RefreshNotificationsAsync();
+        }
+    }
+
+    private async Task SetCategory(NotificationCategory category)
+    {
+        if (_activeCategory == category) return;
+        _activeCategory = category;
+        await RefreshNotificationsAsync();
+    }
+
+    private async Task OnOnlyUnreadChanged(ChangeEventArgs e)
+    {
+        _onlyUnread = e.Value is bool b && b;
+        await RefreshNotificationsAsync();
+    }
+
+    private async Task RefreshNotificationsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadUnreadCountsAsync();
+            var filter = new NotificationFilterRequest
+            {
+                Category = _activeCategory,
+                OnlyUnread = _onlyUnread,
+                Take = 30
+            };
+
+            var items = await MyNotificationService.GetNotificationsAsync(filter);
+            _notifications = items.ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error refreshing notifications in NotificationBell");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadUnreadCountsAsync()
+    {
+        try
+        {
+            _unreadCounts = await MyNotificationService.GetUnreadCountsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading unread notification counts");
+        }
+    }
+
+    private int GetActiveTabUnreadCount() =>
+        _activeCategory == NotificationCategory.Personal
+            ? _unreadCounts.PersonalUnread
+            : _unreadCounts.GenericUnread;
+
+    private async Task MarkAsReadAsync(Guid notificationId)
+    {
+        var success = await MyNotificationService.MarkAsReadAsync(notificationId);
+        if (success)
+        {
+            var item = _notifications.FirstOrDefault(n => n.Id == notificationId);
+            if (item is not null)
+            {
+                item.IsRead = true;
+                item.ReadAtUtc = DateTime.UtcNow;
+            }
+            await LoadUnreadCountsAsync();
+        }
+    }
+
+    private async Task MarkAllAsReadAsync()
+    {
+        await MyNotificationService.MarkAllAsReadAsync(_activeCategory);
+        foreach (var item in _notifications)
+        {
+            item.IsRead = true;
+            item.ReadAtUtc = DateTime.UtcNow;
+        }
+        await LoadUnreadCountsAsync();
+    }
+
+    private async Task NavigateToLink(NotificationEntity notification)
+    {
+        if (!notification.IsRead)
+        {
+            await MarkAsReadAsync(notification.Id);
+        }
+
+        if (!string.IsNullOrWhiteSpace(notification.LinkUrl))
+        {
+            _isOpen = false;
+            NavigationManager.NavigateTo(notification.LinkUrl);
+        }
+    }
+
+    private static string GetRelativeTime(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime.ToUniversalTime();
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return dateTime.ToString("MMM dd");
+    }
+}

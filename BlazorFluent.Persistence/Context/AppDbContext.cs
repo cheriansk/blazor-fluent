@@ -6,6 +6,7 @@ using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Delegates;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Jobs;
+using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Interceptors;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -35,6 +36,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<AuditRecordEntity> AuditRecords => Set<AuditRecordEntity>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<JobExecutionEntity> JobExecutions => Set<JobExecutionEntity>();
+    public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

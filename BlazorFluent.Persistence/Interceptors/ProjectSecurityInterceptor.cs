@@ -1,6 +1,7 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -74,8 +75,18 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         var userId = _currentUser.UserId ?? "anonymous";
         var tenantId = _tenantContext.TenantId ?? "no_tenant";
 
+        // Allow users to update their own personal notifications (e.g., mark as read)
+        var projectEntitiesToValidate = modifiedProjectEntities
+            .Where(e => !(e.Entity is NotificationEntity notif && notif.UserId == userId))
+            .ToList();
+
+        if (projectEntitiesToValidate.Count == 0)
+        {
+            return;
+        }
+
         // Group by ProjectId to minimize verification lookups
-        var projectIds = modifiedProjectEntities
+        var projectIds = projectEntitiesToValidate
             .Select(e => e.Entity.ProjectId)
             .Where(id => id != Guid.Empty)
             .Distinct()
