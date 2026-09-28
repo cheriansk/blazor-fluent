@@ -25,6 +25,12 @@ public static class InfrastructureExtensions
         // 3. Path-Aware Authorization Middleware Result Handler
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
 
+        // 4. Input Sanitization Service (XSS Protection)
+        services.TryAddSingleton<IInputSanitizer, HtmlInputSanitizer>();
+
+        // 5. Resource-Based Authorization Handler
+        services.AddScoped<IAuthorizationHandler, ProjectResourceAuthorizationHandler>();
+
         return services;
     }
 }

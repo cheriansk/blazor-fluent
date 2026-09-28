@@ -683,3 +683,10 @@ sequenceDiagram
 
 - **Job**: `AuditPurgeJobHandler` executed nightly at 2 AM UTC (`Jobs:Schedules:AuditPurgeJob: "0 2 * * *"`).
 - **Execution**: Uses EF Core `ExecuteDeleteAsync` bulk deletion to remove `audit.AuditRecords` older than `Audit:RetentionDays` (default: 365 days) across all tenants without memory overhead.
+
+
+
+### 5. Advanced Resource Authorization, Input Sanitization & DAST Pipeline
+- **Resource-Based Authorization**: Evaluates permissions dynamically against entity instances using `IAuthorizationService.AuthorizeAsync(User, resource, requirement)` backed by `ProjectResourceAuthorizationHandler`.
+- **Input Sanitization**: `IInputSanitizer` (`Ganss.Xss.HtmlSanitizer`) strips script injection and malicious HTML tags from user text inputs before storage.
+- **Automated DAST Pipeline**: `.github/workflows/owasp-zap-scan.yml` boots the application host in CI and executes automated OWASP ZAP baseline vulnerability scans.
