@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="BlazorFluent.Core/BlazorFluent.Core.csproj" />
+  <Project Path="BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj" />
   <Project Path="BlazorFluent.csproj" />
   <Project Path="BlazorFluent.Jobs/BlazorFluent.Jobs.csproj" />
   <Project Path="BlazorFluent.Persistence/BlazorFluent.Persistence.csproj" />

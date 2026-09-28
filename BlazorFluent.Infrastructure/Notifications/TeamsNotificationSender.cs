@@ -5,7 +5,7 @@ using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using Microsoft.Extensions.Logging;
 
-namespace BlazorFluent.Persistence.Services;
+namespace BlazorFluent.Infrastructure.Notifications;
 
 public class TeamsNotificationSender : ITeamsNotificationSender
 {

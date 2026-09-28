@@ -3,6 +3,7 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using BlazorFluent.Components;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Validation;
+using BlazorFluent.Infrastructure;
 using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Infrastructure.Security;
 using BlazorFluent.Jobs;
@@ -90,13 +91,9 @@ try
     builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<AppCurrentUser>());
     builder.Services.AddScoped<CurrentUserAuthenticationStateProvider>();
     builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CurrentUserAuthenticationStateProvider>());
-    builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
-
-    // 5. Blazor Circuit Lifecycle & Error Observability
-    builder.Services.AddScoped<CircuitHandler, BlazorCircuitObservabilityHandler>();
-
-    // 6. Lean Modular Monolith Registrations
+    // 5. Modular Monolith Registrations (Persistence, Infrastructure, Jobs)
     builder.Services.AddPersistence(builder.Configuration);
+    builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddBackgroundJobs(enableScheduler: true);
 
     // 7. Security Hardening: Rate Limiting & Secure Cookie Policy

@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-    <DefaultItemExcludes>$(DefaultItemExcludes);BlazorFluent.Core/**;BlazorFluent.Persistence/**;BlazorFluent.Jobs/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);BlazorFluent.Core/**;BlazorFluent.Persistence/**;BlazorFluent.Infrastructure/**;BlazorFluent.Jobs/**</DefaultItemExcludes>
     <NoWarn>$(NoWarn);EXTEXP0018</NoWarn>
 	  <WarningsAsErrors>CS0108</WarningsAsErrors>
   </PropertyGroup>
@@ -32,6 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="BlazorFluent.Core\BlazorFluent.Core.csproj" />
     <ProjectReference Include="BlazorFluent.Persistence\BlazorFluent.Persistence.csproj" />
+    <ProjectReference Include="BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />
     <ProjectReference Include="BlazorFluent.Jobs\BlazorFluent.Jobs.csproj" />
   </ItemGroup>
 </Project>

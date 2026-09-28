@@ -1,0 +1,30 @@
+using BlazorFluent.Core.Contracts;
+using BlazorFluent.Infrastructure.Notifications;
+using BlazorFluent.Infrastructure.Observability;
+using BlazorFluent.Infrastructure.Security;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace BlazorFluent.Infrastructure;
+
+public static class InfrastructureExtensions
+{
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        // 1. Outbound External Notification Senders (HTTP Webhooks & SMTP Email)
+        services.AddHttpClient();
+        services.TryAddScoped<ITeamsNotificationSender, TeamsNotificationSender>();
+        services.TryAddScoped<IEmailNotificationSender, EmailNotificationSender>();
+
+        // 2. Blazor Circuit Observability Lifecycle Handler
+        services.AddScoped<CircuitHandler, BlazorCircuitObservabilityHandler>();
+
+        // 3. Path-Aware Authorization Middleware Result Handler
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
+
+        return services;
+    }
+}

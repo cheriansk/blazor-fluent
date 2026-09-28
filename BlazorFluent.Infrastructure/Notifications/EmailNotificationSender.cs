@@ -6,7 +6,7 @@ using BlazorFluent.Core.Domain.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace BlazorFluent.Persistence.Services;
+namespace BlazorFluent.Infrastructure.Notifications;
 
 public class EmailNotificationSender : IEmailNotificationSender
 {
