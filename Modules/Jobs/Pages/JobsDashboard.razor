@@ -143,8 +143,8 @@
                     <TemplateColumn Title="Correlation" Sortable="true">
                         @if (!string.IsNullOrWhiteSpace(context.CorrelationId))
                         {
-                            <span title="Correlation: @context.CorrelationId@(context.ParentExecutionId.HasValue ? $"\nParent: {context.ParentExecutionId}" : "")">
-                                <FluentBadge Appearance="Appearance.Neutral">@context.CorrelationId</FluentBadge>
+                            <span title="@GetCorrelationTooltip(context)">
+                                <FluentBadge Appearance="BadgeAppearance.Tint">@context.CorrelationId</FluentBadge>
                             </span>
                         }
                         else
@@ -274,5 +274,15 @@
             _statusMessage = $"Failed to initiate retry: {result.Error ?? "Unknown error"}";
             _isError = true;
         }
+    }
+
+    private static string GetCorrelationTooltip(JobExecutionEntity entity)
+    {
+        var tooltip = $"Correlation: {entity.CorrelationId}";
+        if (entity.ParentExecutionId.HasValue)
+        {
+            tooltip += $"\nParent: {entity.ParentExecutionId.Value}";
+        }
+        return tooltip;
     }
 }

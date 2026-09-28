@@ -525,4 +525,20 @@ All responses from the internet-facing Blazor WebApp are hardened at the ASP.NET
 - **MIME Sniffing Prevention**: `X-Content-Type-Options: nosniff` forces browsers to adhere strictly to declared MIME types.
 - **Referrer Privacy**: `Referrer-Policy: strict-origin-when-cross-origin` strips sensitive path/query info when leaving the origin.
 - **Device Capabilities**: `Permissions-Policy: camera=(), microphone=(), geolocation=()` restricts access to hardware APIs.
-- **Reflected XSS Filtering**: `X-XSS-Protection: 1; mode=block` maintains legacy browser safety.
+- **Reflected XSS Filtering**: `X-XSS-Protection: 1; mode=block` maintains legacy browser safet
+
+---------------------------------------------------------------------------
+### Chained Batch Workflows & Correlation Tracking
+
+Background batch jobs support in-process event chaining with zero external message broker dependencies (e.g., RabbitMQ):
+
+- **Event-Driven Chaining**: When a batch step completes, its handler directly enqueues the next step's event via `IJobEventQueue.EnqueueAsync(nextEvent)`.
+- **Correlation Tracking**: Every `IJobEvent` and `JobExecutionEntity` carries a `CorrelationId` and an optional `ParentExecutionId`. All chained steps share the same `CorrelationId` across Serilog logs, PostgreSQL execution records, and audit events.
+- **Jobs Dashboard**: Chained jobs and their correlation IDs are directly visible on `/jobs`, allowing operators to trace multi-step pipelines and inspect individual step details or trigger manual retries..
+
+
+----------------------------------------------------------------------------------
+
+## Project-Level Role Authorization & Defense-in-Depth
+
+ Refer RoleAuth.md

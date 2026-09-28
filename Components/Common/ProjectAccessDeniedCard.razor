@@ -1,0 +1,42 @@
+@using BlazorFluent.Core.DataListTypes
+@inject NavigationManager NavigationManager
+
+<FluentCard Style="padding: 32px; max-width: 600px; margin: 40px auto; text-align: center;">
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="16">
+        <div style="background-color: var(--error-background, #fde7e9); padding: 16px; border-radius: 50%; display: inline-flex;">
+            <FluentIcon Value="@(new Icons.Regular.Size32.ShieldError())" Color="Color.Error" />
+        </div>
+
+        <FluentLabel Typo="Typography.H4">Access Denied</FluentLabel>
+
+        <FluentLabel Typo="Typography.Body">
+            @(CustomMessage ?? "You do not have the required permissions to access this page or resource.")
+        </FluentLabel>
+
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="12" Style="margin-top: 8px;">
+            <FluentBadge Appearance="BadgeAppearance.Filled">
+                Required Role: <strong>@RequiredRole</strong>
+            </FluentBadge>
+            <FluentBadge Appearance="BadgeAppearance.Filled">
+                Your Role: <strong>@(CurrentRole?.ToString() ?? "None")</strong>
+            </FluentBadge>
+        </FluentStack>
+
+        <FluentDivider Style="width: 100%; margin: 12px 0;" />
+
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="12">
+            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@(() => NavigationManager.NavigateTo("/tenancy/projects"))">
+                Back to Projects
+            </FluentButton>
+            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => NavigationManager.NavigateTo("/"))">
+                Go to Home
+            </FluentButton>
+        </FluentStack>
+    </FluentStack>
+</FluentCard>
+
+@code {
+    [Parameter] public ProjectRole RequiredRole { get; set; } = ProjectRole.ReadOnly;
+    [Parameter] public ProjectRole? CurrentRole { get; set; }
+    [Parameter] public string? CustomMessage { get; set; }
+}

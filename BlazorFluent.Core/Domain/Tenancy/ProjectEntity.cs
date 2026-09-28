@@ -25,4 +25,7 @@ public class ProjectEntity : TenantAuditableEntity, ISoftDeletableEntity
 
     /// <summary>Navigation to parent tenant.</summary>
     public TenantEntity? TenantEntity { get; set; }
+
+    /// <summary>Navigation to project user role assignments.</summary>
+    public ICollection<ProjectUserRoleEntity> UserRoles { get; set; } = new List<ProjectUserRoleEntity>();
 }

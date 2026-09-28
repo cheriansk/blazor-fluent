@@ -1,0 +1,63 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@inject IProjectAuthorizationService ProjectAuth
+@inject ITenantContext TenantContext
+
+@if (_isEvaluating)
+{
+    @if (LoadingContent is not null)
+    {
+        @LoadingContent
+    }
+    else
+    {
+        <FluentProgressRing Style="margin: 12px auto;" />
+    }
+}
+else if (_isAuthorized)
+{
+    @Authorized?.Invoke(_userRole ?? ProjectRole.ReadOnly)
+}
+else
+{
+    @if (NotAuthorized is not null)
+    {
+        @NotAuthorized?.Invoke(_userRole)
+    }
+}
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    [Parameter] public ProjectRole MinimumRole { get; set; } = ProjectRole.ReadOnly;
+    [Parameter] public RenderFragment<ProjectRole>? Authorized { get; set; }
+    [Parameter] public RenderFragment<ProjectRole?>? NotAuthorized { get; set; }
+    [Parameter] public RenderFragment? LoadingContent { get; set; }
+
+    private bool _isEvaluating = true;
+    private bool _isAuthorized;
+    private ProjectRole? _userRole;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isEvaluating = true;
+
+        if (TenantContext.IsHost)
+        {
+            _userRole = ProjectRole.Admin;
+            _isAuthorized = true;
+        }
+        else if (ProjectId == Guid.Empty)
+        {
+            var authorized = await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumRole);
+            _isAuthorized = authorized.Count > 0;
+            _userRole = _isAuthorized ? MinimumRole : null;
+        }
+        else
+        {
+            _userRole = await ProjectAuth.GetCurrentUserProjectRoleAsync(ProjectId);
+            _isAuthorized = _userRole.HasValue && _userRole.Value.Satisfies(MinimumRole);
+        }
+
+        _isEvaluating = false;
+    }
+}

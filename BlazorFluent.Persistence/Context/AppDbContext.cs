@@ -4,6 +4,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Interceptors;
@@ -29,6 +30,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
     public DbSet<ProjectEntity> Projects => Set<ProjectEntity>();
+    public DbSet<ProjectUserRoleEntity> ProjectUserRoles => Set<ProjectUserRoleEntity>();
+    public DbSet<UserEntity> Users => Set<UserEntity>();
     public DbSet<AuditRecordEntity> AuditRecords => Set<AuditRecordEntity>();
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<JobExecutionEntity> JobExecutions => Set<JobExecutionEntity>();

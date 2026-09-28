@@ -26,8 +26,9 @@ public static class PersistenceExtensions
         // 3. Register forensic audit service (scoped)
         services.TryAddScoped<IAuditService, AuditService>();
 
-        // 4. Register audit interceptor (scoped — needs ICurrentUser + ITenantContext which are scoped)
+        // 4. Register interceptors (scoped — need ICurrentUser + ITenantContext which are scoped)
         services.AddScoped<AuditableEntityInterceptor>();
+        services.AddScoped<ProjectSecurityInterceptor>();
 
         // 5. Strict connection string loading from appsettings.json
         var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -38,15 +39,16 @@ public static class PersistenceExtensions
                 "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.json.");
         }
 
-        // 6. Register AppDbContext with Npgsql, audit interceptor, and DataProtection support
+        // 6. Register AppDbContext with Npgsql, audit & security interceptors, and DataProtection support
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
+            var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
             })
-            .AddInterceptors(interceptor);
+            .AddInterceptors(interceptor, securityInterceptor);
         });
 
         // 7. Auto-scaling Azure Web Apps: Shared Data Protection Key Ring in PostgreSQL
@@ -90,6 +92,9 @@ public static class PersistenceExtensions
 
         // 11. Register Unit of Work for atomic transactions and rollbacks
         services.TryAddScoped<IUnitOfWork, UnitOfWork>();
+
+        // 12. Register Project Authorization Service with HybridCache caching
+        services.TryAddScoped<IProjectAuthorizationService, ProjectAuthorizationService>();
 
         return services;
     }

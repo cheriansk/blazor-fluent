@@ -4,7 +4,11 @@ using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Infrastructure.Security;
 using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Serilog;
 using Serilog.Events;
@@ -44,10 +48,24 @@ try
         .AddInteractiveServerComponents();
     builder.Services.AddFluentUIComponents();
 
-    // 4. Blazor Circuit Lifecycle & Error Observability
+    // 4. Authorization & Authentication State Provider with Dual Policy Wiring (FSH Standard)
+    builder.Services.AddAuthorization(options =>
+    {
+        var defaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+
+        options.DefaultPolicy = defaultPolicy;
+        options.FallbackPolicy = defaultPolicy;
+    });
+    builder.Services.AddCascadingAuthenticationState();
+    builder.Services.AddScoped<AuthenticationStateProvider, CurrentUserAuthenticationStateProvider>();
+    builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
+
+    // 5. Blazor Circuit Lifecycle & Error Observability
     builder.Services.AddScoped<CircuitHandler, BlazorCircuitObservabilityHandler>();
 
-    // 5. Lean Modular Monolith Registrations
+    // 6. Lean Modular Monolith Registrations
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddBackgroundJobs(enableScheduler: true);
 
@@ -61,12 +79,22 @@ try
         app.UseHsts();
     }
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+
+    // 6. Reverse Proxy & Forwarded Headers (preserves real client IP and HTTPS scheme behind Azure App Service / Cloudflare)
+    var forwardedHeadersOptions = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    };
+    forwardedHeadersOptions.KnownNetworks.Clear();
+    forwardedHeadersOptions.KnownProxies.Clear();
+    app.UseForwardedHeaders(forwardedHeadersOptions);
+
     app.UseHttpsRedirection();
 
-    // 6. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
+    // 7. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
     app.UseSecurityHeaders();
 
-    // 7. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
+    // 8. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
@@ -117,6 +145,7 @@ try
     });
 
     app.UseAntiforgery();
+    app.UseAuthorization();
 
     app.MapStaticAssets();
     app.MapRazorComponents<App>()

@@ -1,0 +1,381 @@
+@page "/tenancy/project-roles"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IProjectAuthorizationService ProjectAuth
+@inject ITenantContext TenantContext
+@inject AppDbContext DbContext
+
+<PageTitle>Project Access Management</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H3">Project Role & Access Management</FluentLabel>
+            <FluentLabel Typo="Typography.Body">
+                Assign and manage user roles (Admin, Dev, QA, ReadOnly) per project in tenant <strong>@TenantContext.TenantName</strong>.
+            </FluentLabel>
+        </div>
+        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.PersonAdd())" OnClick="@OpenAddModal">
+            Assign User
+        </FluentButton>
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    <!-- Project Selection Bar -->
+    <FluentCard>
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
+            <FluentLabel Typo="Typography.H5">Active Project:</FluentLabel>
+            <FluentSelect TOption="ProjectEntity"
+                          TValue="string"
+                          Items="@_projects"
+                          OptionText="@(p => p.Name)"
+                          OptionValue="@(p => p.Id.ToString())"
+                          Value="@_selectedProjectId"
+                          ValueChanged="@OnProjectChanged"
+                          Style="min-width: 280px;" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedProjectId))
+            {
+                <FluentBadge Appearance="BadgeAppearance.Tint">
+                    ID: @_selectedProjectId
+                </FluentBadge>
+            }
+        </FluentStack>
+    </FluentCard>
+
+    <!-- Role Assignment Form (Collapsible Card) -->
+    @if (_showAssignModal)
+    {
+        <FluentCard Style="border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+            <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">
+                @(_isEditing ? "Update Project Role" : "Assign User to Project")
+            </FluentLabel>
+
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                    <FluentTextInput Label="User ID / Username" @bind-Value="_formUserId" ReadOnly="@_isEditing" Required="true" Style="flex: 1;" />
+                    <FluentTextInput Label="Full Name" @bind-Value="_formUserName" Required="true" Style="flex: 1;" />
+                </FluentStack>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                    <FluentTextInput Label="Email Address" @bind-Value="_formEmail" Required="true" Style="flex: 1;" />
+                    <div style="flex: 1;">
+                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">User Type</FluentLabel>
+                        <FluentSelect TOption="string" TValue="string"
+                                      Value="@_formUserType.ToString()"
+                                      ValueChanged="@(val => _formUserType = Enum.TryParse<UserType>(val, out var res) ? res : UserType.CompanyUser)"
+                                      Style="width: 100%;">
+                            <FluentOption Value="@nameof(UserType.CompanyUser)">Company User</FluentOption>
+                            <FluentOption Value="@nameof(UserType.ClientUser)">Client User</FluentOption>
+                        </FluentSelect>
+                    </div>
+                </FluentStack>
+
+                <div style="width: 50%;">
+                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
+                    <FluentSelect TOption="string" TValue="string"
+                                  Value="@_formRole.ToString()"
+                                  ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
+                                  Style="width: 100%;">
+                        <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
+                        <FluentOption Value="@nameof(ProjectRole.QA)">🧪 QA</FluentOption>
+                        <FluentOption Value="@nameof(ProjectRole.Dev)">💻 Dev</FluentOption>
+                        <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
+                    </FluentSelect>
+                </div>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 12px;">
+                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@SaveAssignmentAsync">
+                        Save Assignment
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelModal">
+                        Cancel
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+    }
+
+    <!-- Members Grid -->
+    <FluentCard>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+            <FluentLabel Typo="Typography.H5">
+                Assigned Team Members (@_members.Count)
+            </FluentLabel>
+            <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.ArrowClockwise())" OnClick="@LoadMembersAsync">
+                Refresh
+            </FluentButton>
+        </FluentStack>
+
+        @if (_isLoading)
+        {
+            <FluentProgressRing Style="margin: 24px auto;" />
+        }
+        else if (_members.Count == 0)
+        {
+            <FluentMessageBar Intent="MessageBarIntent.Info">
+                No users assigned to this project yet. Click &ldquo;Assign User&rdquo; above to grant access.
+            </FluentMessageBar>
+        }
+        else
+        {
+            <FluentDataGrid Items="@_members.AsQueryable()" GridTemplateColumns="1.5fr 1.5fr 120px 120px 180px">
+                <TemplateColumn Title="Member">
+                    <div>
+                        <strong>@context.UserName</strong>
+                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">@context.UserId</div>
+                    </div>
+                </TemplateColumn>
+                <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" />
+                <TemplateColumn Title="Type">
+                    @if (context.UserType == UserType.CompanyUser)
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Filled">Company</FluentBadge>
+                    }
+                    else
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Tint">Client</FluentBadge>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Role">
+                    @switch (context.Role)
+                    {
+                        case ProjectRole.Admin:
+                            <FluentBadge Appearance="BadgeAppearance.Filled">👑 Admin</FluentBadge>
+                            break;
+                        case ProjectRole.Dev:
+                            <FluentBadge Appearance="BadgeAppearance.Tint">💻 Dev</FluentBadge>
+                            break;
+                        case ProjectRole.QA:
+                            <FluentBadge Appearance="BadgeAppearance.Tint">🧪 QA</FluentBadge>
+                            break;
+                        case ProjectRole.ReadOnly:
+                            <FluentBadge Appearance="BadgeAppearance.Tint">👁️ ReadOnly</FluentBadge>
+                            break;
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                        <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditAssignment(context))">
+                            Edit
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
+                            Revoke
+                        </FluentButton>
+                    </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentCard>
+
+    <!-- Architecture Defense-in-Depth Info -->
+    <FluentCard>
+        <FluentLabel Typo="Typography.H5">Defense-in-Depth Architecture Highlights</FluentLabel>
+        <ul style="margin-top: 8px; line-height: 1.6;">
+            <li><strong>Compile-Time Contract:</strong> Pages inherit from <code>AuthorizedPageComponentBase</code> and must declare <code>MinimumVisitRole</code> &amp; <code>MinimumEditRole</code>.</li>
+            <li><strong>Fail-Closed Gate 1 (Service Layer):</strong> <code>EnsureCanEditAsync(projectId)</code> throws <code>UnauthorizedAccessException</code> and logs security audits prior to data queries or mutations.</li>
+            <li><strong>Fail-Closed Gate 2 (EF Core Safety Net):</strong> <code>ProjectSecurityInterceptor</code> prevents any <code>Added</code>, <code>Modified</code>, or <code>Deleted</code> project entities if the user lacks write permissions.</li>
+            <li><strong>Live HybridCache Invalidation:</strong> Role updates immediately purge <code>proj_role_{tenantId}_{userId}_{projectId}</code> from L1/L2 memory so permissions take effect instantly without relogin.</li>
+        </ul>
+    </FluentCard>
+</FluentStack>
+
+@code {
+    private List<ProjectEntity> _projects = new();
+    private string? _selectedProjectId;
+    private List<ProjectUserRoleEntity> _members = new();
+
+    private bool _isLoading = false;
+    private bool _showAssignModal = false;
+    private bool _isEditing = false;
+    private string? _statusMessage;
+    private bool _isError = false;
+
+    // Form inputs
+    private string _formUserId = string.Empty;
+    private string _formUserName = string.Empty;
+    private string _formEmail = string.Empty;
+    private UserType _formUserType = UserType.CompanyUser;
+    private ProjectRole _formRole = ProjectRole.ReadOnly;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectsAsync();
+        if (!string.IsNullOrWhiteSpace(_selectedProjectId))
+        {
+            await LoadMembersAsync();
+        }
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        try
+        {
+            var dbProjects = await DbContext.Projects
+                .AsNoTracking()
+                .Where(p => !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            if (dbProjects.Count > 0)
+            {
+                _projects = dbProjects;
+            }
+            else
+            {
+                // Fallback demo projects if database has not been seeded yet
+                _projects = new List<ProjectEntity>
+                {
+                    new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Alpha Customer Portal", TenantId = TenantContext.TenantId ?? "" },
+                    new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Beta Analytics Service", TenantId = TenantContext.TenantId ?? "" },
+                    new() { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Gamma Mobile Gateway", TenantId = TenantContext.TenantId ?? "" }
+                };
+            }
+
+            _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Notice: Using local project list ({ex.Message}).";
+            _isError = false;
+            _projects = new List<ProjectEntity>
+            {
+                new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Alpha Customer Portal", TenantId = TenantContext.TenantId ?? "" },
+                new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Beta Analytics Service", TenantId = TenantContext.TenantId ?? "" }
+            };
+            _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();
+        }
+    }
+
+    private async Task OnProjectChanged(string? id)
+    {
+        _selectedProjectId = id;
+        await LoadMembersAsync();
+    }
+
+    private async Task LoadMembersAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedProjectId) || !Guid.TryParse(_selectedProjectId, out var projectId)) return;
+
+        _isLoading = true;
+        try
+        {
+            var members = await ProjectAuth.GetProjectMembersAsync(projectId);
+            _members = members.ToList();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load members: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenAddModal()
+    {
+        _isEditing = false;
+        _formUserId = string.Empty;
+        _formUserName = string.Empty;
+        _formEmail = string.Empty;
+        _formUserType = UserType.CompanyUser;
+        _formRole = ProjectRole.Dev;
+        _showAssignModal = true;
+    }
+
+    private void EditAssignment(ProjectUserRoleEntity member)
+    {
+        _isEditing = true;
+        _formUserId = member.UserId;
+        _formUserName = member.UserName;
+        _formEmail = member.UserEmail;
+        _formUserType = member.UserType;
+        _formRole = member.Role;
+        _showAssignModal = true;
+    }
+
+    private void CancelModal()
+    {
+        _showAssignModal = false;
+    }
+
+    private async Task SaveAssignmentAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedProjectId) || !Guid.TryParse(_selectedProjectId, out var projectId)) return;
+
+        if (string.IsNullOrWhiteSpace(_formUserId) || string.IsNullOrWhiteSpace(_formEmail))
+        {
+            _statusMessage = "User ID and Email are required.";
+            _isError = true;
+            return;
+        }
+
+        try
+        {
+            var result = await ProjectAuth.AssignUserRoleAsync(
+                projectId,
+                _formUserId,
+                _formEmail,
+                _formUserName,
+                _formUserType,
+                _formRole);
+
+            if (result.IsSuccess)
+            {
+                _statusMessage = $"Successfully saved role '{_formRole}' for user '{_formUserName}'. HybridCache purged.";
+                _isError = false;
+                _showAssignModal = false;
+                await LoadMembersAsync();
+            }
+            else
+            {
+                _statusMessage = result.Error;
+                _isError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error saving assignment: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    private async Task RevokeAssignmentAsync(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(_selectedProjectId) || !Guid.TryParse(_selectedProjectId, out var projectId)) return;
+
+        try
+        {
+            var result = await ProjectAuth.RevokeUserRoleAsync(projectId, userId);
+            if (result.IsSuccess)
+            {
+                _statusMessage = $"Access revoked for user '{userId}'. Cache purged.";
+                _isError = false;
+                await LoadMembersAsync();
+            }
+            else
+            {
+                _statusMessage = result.Error;
+                _isError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error revoking role: {ex.Message}";
+            _isError = true;
+        }
+    }
+}
