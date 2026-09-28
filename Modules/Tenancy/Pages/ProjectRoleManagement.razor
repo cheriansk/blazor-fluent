@@ -3,12 +3,17 @@
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Infrastructure.Security
 @using BlazorFluent.Persistence.Context
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject IProjectAuthorizationService ProjectAuth
 @inject ITenantContext TenantContext
 @inject AppDbContext DbContext
+@inject ICurrentUser CurrentUser
+@inject IImpersonationService ImpersonationService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>Project Access Management</PageTitle>
 
@@ -107,6 +112,45 @@
         </FluentCard>
     }
 
+    <!-- Impersonation Form (Collapsible Card) -->
+    @if (_showImpersonateModal)
+    {
+        <FluentCard Style="border-left: 4px solid #ffd335; background-color: #fffdf5;">
+            <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px; color: #424242;">
+                ⚠️ Operator Impersonation (SuperAdmin Troubleshooting)
+            </FluentLabel>
+
+            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
+                You are about to impersonate <strong>@_impersonateTargetName</strong> (<code>@_impersonateTargetEmail</code>) in tenant <strong>@TenantContext.TenantName</strong>.
+                This allows you to experience the application under this user's exact permissions.
+            </FluentLabel>
+
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                <FluentTextInput Label="Justification / Incident Ticket (Required)"
+                                 @bind-Value="_impersonateReason"
+                                 Placeholder="e.g. INC-4029: User reports cannot view analytics"
+                                 Required="true"
+                                 Style="width: 100%;" />
+
+                <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    ⏳ Max Duration: 60 minutes. An exit button will be pinned to the top of all pages.
+                </div>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="12">
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showImpersonateModal = false)">
+                        Cancel
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  Style="background-color: #d83b01; border-color: #d83b01;"
+                                  Disabled="@(string.IsNullOrWhiteSpace(_impersonateReason))"
+                                  OnClick="StartImpersonationAsync">
+                        Start Impersonating
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+    }
+
     <!-- Members Grid -->
     <FluentCard>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
@@ -173,6 +217,12 @@
                         <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
                             Revoke
                         </FluentButton>
+                        @if ((TenantContext.IsHost || CurrentUser.IsInRole("Admin")) && context.UserId != CurrentUser.UserId)
+                        {
+                            <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.PersonEye())" OnClick="@(() => PromptImpersonation(context))">
+                                Impersonate
+                            </FluentButton>
+                        }
                     </FluentStack>
                 </TemplateColumn>
             </FluentDataGrid>
@@ -375,6 +425,50 @@
         catch (Exception ex)
         {
             _statusMessage = $"Error revoking role: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    // --- Impersonation ---
+    private bool _showImpersonateModal = false;
+    private string _impersonateTargetUserId = string.Empty;
+    private string _impersonateTargetName = string.Empty;
+    private string _impersonateTargetEmail = string.Empty;
+    private string _impersonateReason = string.Empty;
+
+    private void PromptImpersonation(ProjectUserRoleEntity member)
+    {
+        _impersonateTargetUserId = member.UserId;
+        _impersonateTargetName = member.UserName;
+        _impersonateTargetEmail = member.UserEmail;
+        _impersonateReason = string.Empty;
+        _showImpersonateModal = true;
+    }
+
+    private async Task StartImpersonationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_impersonateReason)) return;
+
+        var result = await ImpersonationService.StartImpersonationAsync(
+            _impersonateTargetUserId,
+            _impersonateReason,
+            durationMinutes: 60);
+
+        if (result.IsSuccess)
+        {
+            if (CurrentUser is AppCurrentUser appUser)
+            {
+                var adminId = appUser.UserId ?? "dev_admin";
+                appUser.SetImpersonation(_impersonateTargetUserId, _impersonateTargetEmail, _impersonateTargetName, adminId);
+            }
+
+            AuthStateProvider.NotifyUserChanged();
+            _showImpersonateModal = false;
+            NavigationManager.NavigateTo("/", forceLoad: false);
+        }
+        else
+        {
+            _statusMessage = result.Error;
             _isError = true;
         }
     }

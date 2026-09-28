@@ -37,6 +37,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<JobExecutionEntity> JobExecutions => Set<JobExecutionEntity>();
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
+    public DbSet<UserSessionEntity> UserSessions => Set<UserSessionEntity>();
+    public DbSet<ImpersonationGrantEntity> ImpersonationGrants => Set<ImpersonationGrantEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

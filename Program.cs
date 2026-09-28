@@ -59,7 +59,10 @@ try
         options.FallbackPolicy = defaultPolicy;
     });
     builder.Services.AddCascadingAuthenticationState();
-    builder.Services.AddScoped<AuthenticationStateProvider, CurrentUserAuthenticationStateProvider>();
+    builder.Services.AddScoped<AppCurrentUser>();
+    builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<AppCurrentUser>());
+    builder.Services.AddScoped<CurrentUserAuthenticationStateProvider>();
+    builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CurrentUserAuthenticationStateProvider>());
     builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
 
     // 5. Blazor Circuit Lifecycle & Error Observability

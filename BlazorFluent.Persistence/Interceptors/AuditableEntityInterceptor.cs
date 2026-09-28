@@ -57,7 +57,9 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
         if (context == null) return;
 
         var now = _dateTimeProvider.Now;
-        var currentUserId = _currentUser.UserId ?? "system";
+        var currentUserId = _currentUser.IsImpersonated
+            ? $"{_currentUser.UserId} [Impersonated by {_currentUser.ImpersonatedBy}]"
+            : (_currentUser.UserId ?? "system");
 
         // 1. Stamp Level 1 audit properties & enforce tenant isolation
         UpdateAuditFields(context, now, currentUserId);

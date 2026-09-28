@@ -7,7 +7,7 @@ namespace BlazorFluent.Infrastructure.Security;
 /// <summary>
 /// Bridges <see cref="ICurrentUser"/> to Blazor's <see cref="AuthenticationStateProvider"/>.
 /// Ensures &lt;AuthorizeRouteView&gt; and cascading authentication states receive
-/// the current user claims and authentication status.
+/// dynamic user claims and respond to login, logout, and impersonation events.
 /// </summary>
 public class CurrentUserAuthenticationStateProvider : AuthenticationStateProvider
 {
@@ -20,14 +20,37 @@ public class CurrentUserAuthenticationStateProvider : AuthenticationStateProvide
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var identity = new ClaimsIdentity(new[]
+        if (!_currentUser.IsAuthenticated)
         {
-            new Claim(ClaimTypes.NameIdentifier, _currentUser.UserId ?? "dev_user"),
-            new Claim(ClaimTypes.Name, _currentUser.UserName ?? "Developer"),
-            new Claim(ClaimTypes.Email, _currentUser.Email ?? "dev@example.com")
-        }, "ApplicationAuth");
+            var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+            return Task.FromResult(new AuthenticationState(anonymous));
+        }
 
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, _currentUser.UserId ?? "anonymous"),
+            new(ClaimTypes.Name, _currentUser.UserName ?? "User"),
+            new(ClaimTypes.Email, _currentUser.Email)
+        };
+
+        if (_currentUser.IsInRole("Admin"))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
+
+        if (_currentUser.IsImpersonated)
+        {
+            claims.Add(new Claim("IsImpersonated", "true"));
+            claims.Add(new Claim("ImpersonatedBy", _currentUser.ImpersonatedBy ?? ""));
+        }
+
+        var identity = new ClaimsIdentity(claims, "ApplicationAuth");
         var principal = new ClaimsPrincipal(identity);
         return Task.FromResult(new AuthenticationState(principal));
+    }
+
+    public void NotifyUserChanged()
+    {
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 }

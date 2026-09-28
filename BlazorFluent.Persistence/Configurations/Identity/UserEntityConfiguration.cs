@@ -31,6 +31,16 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasMaxLength(256)
             .IsRequired(false);
 
+        builder.Property(u => u.StartDateUtc)
+            .IsRequired();
+
+        builder.Property(u => u.EndDateUtc)
+            .IsRequired();
+
+        builder.Property(u => u.RowSignature)
+            .HasMaxLength(500)
+            .IsRequired(false);
+
         // Soft delete
         builder.Property(u => u.IsDeleted).IsRequired().HasDefaultValue(false);
         builder.Property(u => u.DeletedBy).HasMaxLength(256).IsRequired(false);

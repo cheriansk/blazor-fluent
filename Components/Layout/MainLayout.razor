@@ -1,6 +1,13 @@
 @inherits LayoutComponentBase
-
 @using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Infrastructure.Security
+@inject ICurrentUser CurrentUser
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+<ImpersonationBanner />
+<SessionRevokedModal />
 
 <FluentLayout>
     <FluentLayoutItem Area="LayoutArea.Header">
@@ -9,6 +16,18 @@
         <FluentSpacer />
         <NotificationBell />
         <TenantSwitcher />
+        @if (CurrentUser.IsAuthenticated)
+        {
+            <FluentButton Appearance="Appearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.SignOut())" Title="Sign Out" OnClick="SignOut" Style="margin-left: 6px;">
+                Sign Out
+            </FluentButton>
+        }
+        else
+        {
+            <FluentButton Appearance="Appearance.Accent" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Style="margin-left: 6px;">
+                Sign In
+            </FluentButton>
+        }
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Navigation">
         <NavMenu />
@@ -39,3 +58,19 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private void SignOut()
+    {
+        if (CurrentUser is AppCurrentUser appUser)
+        {
+            appUser.IsAuthenticated = false;
+            appUser.UserId = null;
+            appUser.SessionId = null;
+            appUser.ClearImpersonation("dev_admin", "admin@blazorfluent.local", "System Administrator");
+        }
+
+        AuthStateProvider.NotifyUserChanged();
+        NavigationManager.NavigateTo("/login", forceLoad: false);
+    }
+}

@@ -1,0 +1,44 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Infrastructure.Security
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject ICurrentUser CurrentUser
+@inject IImpersonationService ImpersonationService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+@if (CurrentUser.IsImpersonated)
+{
+    <div style="background-color: #fff4ce; border-bottom: 2px solid #ffd335; color: #424242; padding: 8px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 2000; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+            <FluentIcon Value="@(new Icons.Filled.Size20.Warning())" Color="Color.Warning" />
+            <span>
+                <strong>OPERATOR TROUBLESHOOTING MODE:</strong> You are currently impersonating
+                <strong>@CurrentUser.UserName</strong> (<code>@CurrentUser.Email</code>).
+                All data mutations are shadow-audited under your admin account.
+            </span>
+        </div>
+
+        <FluentButton Appearance="Appearance.Accent"
+                      Size="ButtonSize.Small"
+                      Style="background-color: #d83b01; border-color: #d83b01; font-weight: 600;"
+                      OnClick="ExitImpersonationAsync">
+            Exit Impersonation
+        </FluentButton>
+    </div>
+}
+
+@code {
+    private async Task ExitImpersonationAsync()
+    {
+        await ImpersonationService.StopImpersonationAsync();
+
+        if (CurrentUser is AppCurrentUser appUser)
+        {
+            appUser.ClearImpersonation("dev_admin", "admin@blazorfluent.local", "System Administrator");
+            appUser.AddRole("Admin");
+        }
+
+        AuthStateProvider.NotifyUserChanged();
+        NavigationManager.NavigateTo("/", forceLoad: false);
+    }
+}

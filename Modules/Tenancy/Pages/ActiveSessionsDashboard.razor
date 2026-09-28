@@ -1,0 +1,174 @@
+@page "/admin/sessions"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Identity
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IUserSessionService SessionService
+@inject ICurrentUser CurrentUser
+@inject ITenantContext TenantContext
+@inject IAuditService AuditService
+@inject ILogger<ActiveSessionsDashboard> Logger
+
+<PageTitle>Active Sessions - BlazorFluent</PageTitle>
+
+<div style="padding: 24px; max-width: 1400px; margin: 0 auto;">
+    @* Header *@
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 24px;">
+        <div>
+            <FluentLabel Typo="Typography.H3" Style="font-weight: 700; margin: 0;">Active User Sessions</FluentLabel>
+            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
+                Real-time tracking of active circuits, device fingerprints, and immediate administrative session revocation.
+            </FluentLabel>
+        </div>
+
+        <FluentButton Appearance="Appearance.Outline"
+                      IconStart="@(new Icons.Regular.Size16.ArrowClockwise())"
+                      OnClick="LoadSessionsAsync">
+            Refresh
+        </FluentButton>
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" Style="margin-bottom: 16px;">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    @* Sessions Grid *@
+    <FluentCard Style="padding: 20px;">
+        @if (_isLoading)
+        {
+            <div style="display: flex; justify-content: center; padding: 48px;">
+                <FluentProgressRing Size="ProgressRingSize.Large" />
+            </div>
+        }
+        else if (_sessions.Count == 0)
+        {
+            <div style="text-align: center; padding: 48px; color: var(--neutral-foreground-3, #8a8886);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.ShieldCheckmark())" Color="Color.Neutral" />
+                <div style="margin-top: 12px; font-weight: 500;">No active sessions found.</div>
+            </div>
+        }
+        else
+        {
+            <FluentDataGrid Items="@_sessions.AsQueryable()" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
+                <TemplateColumn Title="User">
+                    <div>
+                        <strong>@context.UserEmail</strong>
+                        <div style="font-size: 11px; color: var(--neutral-foreground-3, #888);">@context.UserId</div>
+                    </div>
+                </TemplateColumn>
+
+                <PropertyColumn Property="@(s => s.TenantId)" Title="Tenant" />
+                <PropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" />
+                <PropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" />
+
+                <TemplateColumn Title="Started">
+                    <span title="@context.StartedAtUtc.ToString("u")">@GetRelativeTime(context.StartedAtUtc)</span>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Last Activity">
+                    <span title="@context.LastActivityAtUtc.ToString("u")">@GetRelativeTime(context.LastActivityAtUtc)</span>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Status">
+                    @if (context.IsRevoked)
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">
+                            Revoked
+                        </FluentBadge>
+                    }
+                    else
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">
+                            Active
+                        </FluentBadge>
+                    }
+                </TemplateColumn>
+
+                <TemplateColumn Title="Action">
+                    @if (!context.IsRevoked)
+                    {
+                        <FluentButton Appearance="Appearance.Subtle"
+                                      Size="ButtonSize.Small"
+                                      Style="color: #d83b01; font-weight: 600;"
+                                      OnClick="@(() => RevokeSessionAsync(context.Id, context.UserEmail))">
+                            Revoke
+                        </FluentButton>
+                    }
+                    else
+                    {
+                        <span style="font-size: 12px; color: var(--neutral-foreground-3, #999);">Terminated</span>
+                    }
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentCard>
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isError;
+    private string? _statusMessage;
+    private List<UserSessionEntity> _sessions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSessionsAsync();
+    }
+
+    private async Task LoadSessionsAsync()
+    {
+        _isLoading = true;
+        _statusMessage = null;
+
+        try
+        {
+            var sessions = await SessionService.GetActiveSessionsAsync();
+            _sessions = sessions.ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load active user sessions");
+            _statusMessage = "Failed to load sessions.";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task RevokeSessionAsync(Guid sessionId, string userEmail)
+    {
+        var adminId = CurrentUser.UserId ?? "admin";
+        var success = await SessionService.RevokeSessionAsync(sessionId, adminId);
+        if (success)
+        {
+            await AuditService.LogSecurityEventAsync(
+                "SessionRevokedByAdmin",
+                AuditSeverity.Warning,
+                $"Admin '{CurrentUser.Email}' revoked active session '{sessionId}' for user '{userEmail}'.");
+
+            _statusMessage = $"Successfully revoked session for '{userEmail}'. Real-time invalidation broadcast.";
+            _isError = false;
+            await LoadSessionsAsync();
+        }
+        else
+        {
+            _statusMessage = "Could not revoke session.";
+            _isError = true;
+        }
+    }
+
+    private static string GetRelativeTime(DateTime dt)
+    {
+        var span = DateTime.UtcNow - dt.ToUniversalTime();
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return dt.ToString("MMM dd HH:mm");
+    }
+}

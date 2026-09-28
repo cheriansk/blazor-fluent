@@ -1,0 +1,277 @@
+@page "/login"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Identity
+@using BlazorFluent.Infrastructure.Security
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject AppDbContext DbContext
+@inject IConfiguration Configuration
+@inject ICurrentUser CurrentUser
+@inject IUserSessionService SessionService
+@inject IAuditService AuditService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject ILogger<Login> Logger
+
+<PageTitle>Sign In - BlazorFluent</PageTitle>
+
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <FluentCard Style="max-width: 480px; width: 100%; padding: 36px 32px; box-shadow: var(--elevation-shadow-card-rest, 0 8px 24px rgba(0,0,0,0.12)); border-radius: 12px;">
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+            @* Brand Header *@
+            <div style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px; background-color: var(--accent-fill-rest, #0078d4); color: #fff; margin-bottom: 12px;">
+                    <FluentIcon Value="@(new Icons.Regular.Size28.ShieldKeyhole())" Color="Color.Lightweight" />
+                </div>
+                <FluentLabel Typo="Typography.H3" Style="margin: 0; font-weight: 700;">BlazorFluent</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
+                    Enterprise Multi-Tenant Portal
+                </FluentLabel>
+            </div>
+
+            <FluentDivider Style="width: 100%;" />
+
+            @* Privacy Notice Card *@
+            <div style="background-color: var(--neutral-layer-2, #f5f5f5); border: 1px solid var(--neutral-stroke-subtle, #e0e0e0); border-radius: 8px; padding: 14px 16px;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Accent" Style="margin-top: 2px;" />
+                    <div style="font-size: 12px; color: var(--neutral-foreground-2, #424242); line-height: 1.5;">
+                        <strong>Corporate Monitoring & Privacy Notice</strong><br />
+                        Access to this portal is restricted to authorized personnel. All session activities,
+                        IP addresses, and data modifications are logged and audited in accordance with corporate security compliance policies.
+                    </div>
+                </div>
+            </div>
+
+            @* Mandatory Checkbox *@
+            <div style="margin: 4px 0;">
+                <FluentCheckbox @bind-Value="_isAcknowledged"
+                                Label="I acknowledge and agree to the Privacy Policy and Monitoring Notice." />
+            </div>
+
+            @* Primary Sign In Button *@
+            <FluentButton Appearance="Appearance.Accent"
+                          Style="width: 100%; height: 40px; font-weight: 600;"
+                          Disabled="@(!_isAcknowledged || _isLoading)"
+                          OnClick="HandleMicrosoftSignIn">
+                @if (_isLoading)
+                {
+                    <FluentProgressRing Size="ProgressRingSize.Small" Style="margin-right: 8px;" />
+                    <span>Validating credentials...</span>
+                }
+                else
+                {
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Window())" Style="margin-right: 8px;" />
+                    <span>Sign in with Microsoft</span>
+                }
+            </FluentButton>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <FluentMessageBar Intent="MessageBarIntent.Error">
+                    @_errorMessage
+                </FluentMessageBar>
+            }
+
+            @* Local Dev Sandbox Section *@
+            <FluentDivider Style="width: 100%; margin-top: 8px;" />
+            <div style="border-radius: 8px; border: 1px dashed var(--neutral-stroke-subtle, #ccc); padding: 12px 14px; background: var(--neutral-layer-1, #fafafa);">
+                <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; color: var(--neutral-foreground-2, #616161); margin-bottom: 8px; display: block;">
+                    🛠️ Developer Authentication Sandbox (Local Testing)
+                </FluentLabel>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                  OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
+                        ✅ Sign in as SuperAdmin (Valid Active)
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                  OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
+                        ✅ Sign in as Developer (Valid Active)
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                  OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
+                        ❌ Test Expired User (Gate 1 Failure)
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                  OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
+                        ❌ Test Tampered HMAC (Gate 2 Failure)
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                  OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
+                        ❌ Test Unprovisioned User (Gate 3 Failure)
+                    </FluentButton>
+                </FluentStack>
+            </div>
+        </FluentStack>
+    </FluentCard>
+</div>
+
+@code {
+    private bool _isAcknowledged;
+    private bool _isLoading;
+    private string? _errorMessage;
+    private string _secretKey = "BlazorFluent-Secret-Key-Change-In-Production-2026";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _secretKey = Configuration["Security:IntegritySecret"] ?? _secretKey;
+        await EnsureSeedUsersAsync();
+    }
+
+    private async Task HandleMicrosoftSignIn()
+    {
+        if (!_isAcknowledged) return;
+
+        var clientId = Configuration["AzureAd:ClientId"];
+        if (string.IsNullOrWhiteSpace(clientId) || clientId.Equals("mock", StringComparison.OrdinalIgnoreCase))
+        {
+            // Local dev mode without live Azure subscription: default to admin
+            await TestSignInAsync("admin@blazorfluent.local");
+            return;
+        }
+
+        // Production: Redirect to OIDC challenge endpoint
+        NavigationManager.NavigateTo("/authentication/challenge", forceLoad: true);
+    }
+
+    private async Task TestSignInAsync(string email)
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var now = DateTime.UtcNow;
+            var user = await DbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+
+            // Gate: User exists check
+            if (user == null)
+            {
+                await AuditService.LogSecurityEventAsync(
+                    "LoginFailedUnprovisioned",
+                    AuditSeverity.Warning,
+                    $"Authentication rejected for unprovisioned email '{email}'.");
+
+                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString("Your account is not provisioned in this system.")}");
+                return;
+            }
+
+            // Gate: Date validity and HMAC tamper seal check
+            if (!user.IsValidForLogin(now, _secretKey, out var failureReason))
+            {
+                await AuditService.LogSecurityEventAsync(
+                    "LoginFailedValidityGate",
+                    AuditSeverity.Warning,
+                    $"Login rejected for '{email}': {failureReason}");
+
+                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(failureReason)}");
+                return;
+            }
+
+            // All gates passed: Create active session
+            var session = await SessionService.CreateSessionAsync(
+                user.Id.ToString(),
+                user.Email,
+                "127.0.0.1 (Local Dev)",
+                "Edge / Windows 11");
+
+            // Update circuit authenticated state
+            if (CurrentUser is AppCurrentUser appUser)
+            {
+                appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
+                appUser.SessionId = session.Id.ToString();
+                if (user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    appUser.AddRole("Admin");
+                }
+            }
+
+            AuthStateProvider.NotifyUserChanged();
+
+            await AuditService.LogUserActivityAsync(
+                "UserLoginSuccess",
+                $"User '{user.Email}' logged in successfully. SessionId: {session.Id}");
+
+            // Navigate to Home
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during test login for {Email}", email);
+            _errorMessage = "An unexpected error occurred during login.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task EnsureSeedUsersAsync()
+    {
+        try
+        {
+            var count = await DbContext.Users.CountAsync();
+            if (count > 0) return;
+
+            var admin = new UserEntity
+            {
+                Email = "admin@blazorfluent.local",
+                FullName = "System Administrator",
+                UserType = UserType.CompanyUser,
+                IsActive = true,
+                DefaultTenantId = "default",
+                StartDateUtc = DateTime.UtcNow.AddDays(-30),
+                EndDateUtc = DateTime.UtcNow.AddYears(1)
+            };
+            admin.RowSignature = admin.ComputeIntegritySignature(_secretKey);
+
+            var dev = new UserEntity
+            {
+                Email = "dev@blazorfluent.local",
+                FullName = "Jane Developer",
+                UserType = UserType.CompanyUser,
+                IsActive = true,
+                DefaultTenantId = "default",
+                StartDateUtc = DateTime.UtcNow.AddDays(-30),
+                EndDateUtc = DateTime.UtcNow.AddYears(1)
+            };
+            dev.RowSignature = dev.ComputeIntegritySignature(_secretKey);
+
+            var expired = new UserEntity
+            {
+                Email = "expired@blazorfluent.local",
+                FullName = "Expired Contractor",
+                UserType = UserType.ClientUser,
+                IsActive = true,
+                DefaultTenantId = "default",
+                StartDateUtc = DateTime.UtcNow.AddDays(-90),
+                EndDateUtc = DateTime.UtcNow.AddDays(-5)
+            };
+            expired.RowSignature = expired.ComputeIntegritySignature(_secretKey);
+
+            var tampered = new UserEntity
+            {
+                Email = "tampered@blazorfluent.local",
+                FullName = "Tampered Account",
+                UserType = UserType.ClientUser,
+                IsActive = true,
+                DefaultTenantId = "default",
+                StartDateUtc = DateTime.UtcNow.AddDays(-10),
+                EndDateUtc = DateTime.UtcNow.AddYears(1),
+                RowSignature = "FORGED_TAMPERED_SIGNATURE_INVALID"
+            };
+
+            DbContext.Users.AddRange(admin, dev, expired, tampered);
+            await DbContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not seed test users.");
+        }
+    }
+}

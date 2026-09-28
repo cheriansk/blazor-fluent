@@ -1,0 +1,92 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Infrastructure.Security
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject ICurrentUser CurrentUser
+@inject IUserSessionService SessionService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+@if (_isRevoked)
+{
+    @* Unclosable Full-Screen Modal Overlay *@
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <FluentCard Style="max-width: 440px; width: 90%; padding: 36px 28px; text-align: center; border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.3);">
+            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="16">
+                <div style="background-color: var(--error-background, #fde7e9); padding: 18px; border-radius: 50%; display: inline-flex;">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.ShieldDismiss())" Color="Color.Error" />
+                </div>
+
+                <FluentLabel Typo="Typography.H4" Style="margin: 0; font-weight: 700;">Session Terminated</FluentLabel>
+
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); line-height: 1.5;">
+                    Your active session has been revoked by an administrator or your access window has expired.
+                </FluentLabel>
+
+                <FluentDivider Style="width: 100%; margin: 8px 0;" />
+
+                <FluentButton Appearance="Appearance.Accent"
+                              Style="width: 100%; height: 38px; font-weight: 600;"
+                              OnClick="HandleRedirectToLogin">
+                    Log In Again
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
+    </div>
+}
+
+@code {
+    private bool _isRevoked;
+    private PeriodicTimer? _timer;
+
+    protected override void OnInitialized()
+    {
+        // Poll every 5 seconds to check revocation state (extremely fast via HybridCache)
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _ = RunRevocationWatchdogAsync();
+    }
+
+    private async Task RunRevocationWatchdogAsync()
+    {
+        if (_timer is null) return;
+
+        try
+        {
+            while (await _timer.WaitForNextTickAsync())
+            {
+                if (!CurrentUser.IsAuthenticated || string.IsNullOrWhiteSpace(CurrentUser.SessionId))
+                    continue;
+
+                if (Guid.TryParse(CurrentUser.SessionId, out var sessionId))
+                {
+                    var revoked = await SessionService.IsSessionRevokedAsync(sessionId);
+                    if (revoked && !_isRevoked)
+                    {
+                        _isRevoked = true;
+                        await InvokeAsync(StateHasChanged);
+                        break;
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch { }
+    }
+
+    private void HandleRedirectToLogin()
+    {
+        if (CurrentUser is AppCurrentUser appUser)
+        {
+            appUser.IsAuthenticated = false;
+            appUser.SessionId = null;
+        }
+
+        AuthStateProvider.NotifyUserChanged();
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

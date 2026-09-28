@@ -542,3 +542,105 @@ Background batch jobs support in-process event chaining with zero external messa
 ## Project-Level Role Authorization & Defense-in-Depth
 
  Refer RoleAuth.md
+
+
+ -------------------------------------------------------------------------------
+
+ ## 12. Enterprise Identity: Login Flow, Active Sessions & Operator Impersonation
+
+BlazorFluent incorporates enterprise-grade identity protections adapted from FullStackHero (FSH) principles:
+
+- **Corporate Login Portal (`/login`)**: Pinned Privacy Notice & Monitoring Disclosure with a mandatory acknowledgment checkbox disabling "Sign in with Microsoft" until accepted.
+- **HMAC-SHA256 Row Integrity Seal**: Protects `UserEntity` dates (`StartDateUtc`, `EndDateUtc`) and active status from direct database tampering. If a DBA modifies dates directly in PostgreSQL, the signature fails closed, rejects login, and logs a security incident in `audit.AuditRecords`.
+- **Minimal Auth Error Screen (`/auth-error`)**: Renders *"Access Denied: Please contact your IT administrator."* when account validity or date windows fail.
+- **Active User Sessions (`/admin/sessions`)**: Real-time tracking of active circuits with IP address, browser/device info, and an administrative "Kill Session" button that freezes the client circuit instantly via `<SessionRevokedModal />`.
+- **Operator Impersonation**: Time-bound (60m auto-expiry) troubleshooting impersonation for SuperAdmins with a persistent warning banner (`<ImpersonationBanner />`) and shadow audit trails (`UpdatedBy = "{Target} [Impersonated by {Admin}]"`).
+
+
+# Implementation Plan: Enterprise Login Flow, Date Validity, Active Sessions & Impersonation
+
+## 1. Goal Description
+
+This implementation plan provides a complete, production-ready enterprise authentication and identity lifecycle for BlazorFluent:
+
+1. **Dedicated Corporate Login Page (`/login`)**:
+   - Branded Fluent UI V5 card layout.
+   - **Privacy Notice & Legal Monitoring Disclosure**: "This system is monitored for security compliance. Unauthorized access is prohibited."
+   - **Mandatory Agreement Checkbox**: The "Sign in with Microsoft" button remains disabled until the user explicitly checks *"I acknowledge and agree to the Privacy Policy and Monitoring Notice"*.
+   - **Dual-Mode Authentication**:
+     - *Production*: Redirects to corporate Azure AD (Entra ID) via OpenID Connect + PKCE.
+     - *Development*: Provides a dev switch to test valid, expired, and unprovisioned users without requiring a live Azure subscription.
+
+2. **Backend Database Validity Gate (`OnTokenValidated`)**:
+   - When Azure AD authenticates the user, ASP.NET Core checks their validity against PostgreSQL before issuing any session cookie:
+     - Does the user exist in `Users`?
+     - Is `IsActive == true`?
+     - Is `DateTime.UtcNow >= StartDateUtc && DateTime.UtcNow <= EndDateUtc`?
+     - Does the **HMAC-SHA256 Row Integrity Seal** match (anti-tamper protection)?
+   - **If Valid**: Creates an encrypted HTTP-only session cookie (via PostgreSQL Data Protection), records an active `UserSessionEntity`, and redirects to `/` (Home) with full tenant and project roles loaded.
+   - **If Failed**: Rejects authentication, logs a forensic security event in `audit.AuditRecords`, issues zero cookies, and redirects to `/auth-error`.
+
+3. **Minimal Auth Error Page (`/auth-error`)**:
+   - Clean, minimal Fluent UI card:
+     - `"Access Denied: Please contact your IT administrator."`
+     - Clean explanation (account inactive, access window expired, or unprovisioned).
+     - `"Return to Login"` button.
+
+4. **Active User Sessions & Real-Time Circuit Revocation (`UserSessionEntity`)**:
+   - Tracks active sessions (IP address, user-agent, login time, last activity) in `identity.UserSessions`.
+   - Host Administrators can view all live sessions at `/admin/sessions`.
+   - Clicking **"Revoke Session"** broadcasts a revocation signal via `HybridCache`. The target user's active Blazor circuit freezes in real time with an unclosable **"Session Revoked"** modal and disconnects.
+
+5. **Operator / Support Impersonation (`ImpersonationGrantEntity`)**:
+   - Allows SuperAdmins to temporarily view the application *as a specific user* to troubleshoot issues within that user's exact tenant and project constraints.
+   - Enforced by a **strict 60-minute auto-expiry** and mandatory reason logging.
+   - Renders a persistent, inescapable warning banner at the top of every page (`⚠️ You are currently impersonating John Doe [Exit Impersonation]`).
+   - Every mutation made during impersonation shadows the audit trail (`ImpersonatedBy = adminId`) in `audit.AuditRecords`.
+
+---
+
+## 2. End-to-End Authentication Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Browser
+    participant Login as /login (Razor Component)
+    participant AuthEndpoint as /authentication/challenge
+    participant AAD as Azure AD / Entra ID
+    participant Handler as OIDC OnTokenValidated
+    participant DB as PostgreSQL (AppDbContext)
+    participant Home as / (Home Page)
+    participant Err as /auth-error (Access Denied)
+
+    User->>Login: Visits /login
+    Login-->>User: Displays Privacy Notice & Legal Disclaimer
+    User->>Login: Ticks [x] "I acknowledge & agree"
+    Login->>Login: Enables "Sign in with Microsoft" button
+    User->>Login: Clicks "Sign in with Microsoft"
+    Login->>AuthEndpoint: Redirects to Challenge Endpoint
+
+    alt Real Azure AD (Production)
+        AuthEndpoint->>AAD: Redirects to Azure AD (OIDC + PKCE)
+        User->>AAD: Enters Corporate Credentials & MFA
+        AAD-->>AuthEndpoint: POST Auth Code to /signin-oidc
+    else Dev Mode (Local Testing)
+        AuthEndpoint->>AuthEndpoint: Mock OIDC Callback with selected test email
+    end
+
+    AuthEndpoint->>Handler: OnTokenValidated(ClaimsPrincipal)
+    Handler->>DB: Query Users where Email == claims.Email & !IsDeleted
+    
+    alt User Not Found OR Inactive OR Outside Start/End Dates OR HMAC Mismatch
+        Handler->>DB: Log Security Event to audit.AuditRecords
+        Handler-->>Err: 302 Redirect to /auth-error?reason=AccessDenied (No Cookie Minted)
+        Err-->>User: Renders "Access Denied: Please contact your IT administrator"
+    else User Valid, Active, Within Dates, HMAC Matches
+        Handler->>DB: Insert identity.UserSessions (IP, UserAgent, LoginTime)
+        Handler->>Handler: Issue Encrypted SameSite=Strict HTTP-Only Cookie
+        Handler-->>Home: 302 Redirect to / (Home) with allowed permissions
+        Home-->>User: Renders Dashboard with user's tenant & project roles
+    end
+```
+
+---

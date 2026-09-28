@@ -16,6 +16,9 @@ public class PathAwareAuthorizationHandler : IAuthorizationMiddlewareResultHandl
     [
         "/_content",
         "/_framework",
+        "/login",
+        "/auth-error",
+        "/authentication",
         "/Error",
         "/not-found",
         "/favicon.ico"

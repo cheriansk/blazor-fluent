@@ -102,6 +102,10 @@ public static class PersistenceExtensions
         services.TryAddScoped<IEmailNotificationSender, EmailNotificationSender>();
         services.TryAddScoped<INotificationService, NotificationService>();
 
+        // 14. Enterprise Identity: Sessions & Impersonation
+        services.TryAddScoped<IUserSessionService, UserSessionService>();
+        services.TryAddScoped<IImpersonationService, ImpersonationService>();
+
         return services;
     }
 }
