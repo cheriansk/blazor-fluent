@@ -1,0 +1,53 @@
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<ConfirmDialog @ref="_confirmDialog"
+               Title="Unsaved Changes"
+               Message="You have unsaved changes on this form. Are you sure you want to leave?"
+               ConfirmLabel="Discard & Leave"
+               OnConfirmed="@OnUserConfirmedLeave"
+               OnCancelled="@OnUserCancelledLeave" />
+
+@code {
+    private ConfirmDialog? _confirmDialog;
+    private IDisposable? _registration;
+    private LocationChangingContext? _pendingContext;
+
+    [Parameter] public bool IsDirty { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _registration = NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (IsDirty)
+        {
+            context.PreventNavigation();
+            _pendingContext = context;
+            _confirmDialog?.Show();
+        }
+        return ValueTask.CompletedTask;
+    }
+
+    private void OnUserConfirmedLeave()
+    {
+        IsDirty = false;
+        if (_pendingContext is not null)
+        {
+            NavigationManager.NavigateTo(_pendingContext.TargetLocation);
+        }
+    }
+
+    private void OnUserCancelledLeave()
+    {
+        _pendingContext = null;
+    }
+
+    public void Dispose()
+    {
+        _registration?.Dispose();
+    }
+}

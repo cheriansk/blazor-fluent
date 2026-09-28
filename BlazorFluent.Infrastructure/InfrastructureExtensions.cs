@@ -2,6 +2,8 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Infrastructure.Notifications;
 using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Infrastructure.Security;
+using BlazorFluent.Infrastructure.Storage;
+using BlazorFluent.Infrastructure.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.Extensions.Configuration;
@@ -30,6 +32,12 @@ public static class InfrastructureExtensions
 
         // 5. Resource-Based Authorization Handler
         services.AddScoped<IAuthorizationHandler, ProjectResourceAuthorizationHandler>();
+
+        // 6. Encrypted ProtectedLocalStorage Form Draft Auto-Save Service
+        services.TryAddScoped<ILocalStorageFormService, ProtectedLocalStorageFormService>();
+
+        // 7. Responsive Viewport Layout Breakpoint Service
+        services.TryAddScoped<ILayoutBreakpointService, LayoutBreakpointService>();
 
         return services;
     }
