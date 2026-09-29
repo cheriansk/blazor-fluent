@@ -15,11 +15,12 @@
     Run this script immediately after cloning the template, before writing any custom code.
 
 .PARAMETER NewName
-    The new PascalCase project name (e.g., "MyApp", "ContosoPortal").
-    Must start with an uppercase letter and contain only letters and digits.
+    The new project name (e.g., "MyApp", "commandcenter", "command_center").
+    Must start with a letter or underscore and contain only letters, digits, and underscores.
+    Note: Hyphens (-) are disallowed because C# namespaces do not support hyphens.
 
 .PARAMETER OldName
-    The old PascalCase project name to replace (defaults to "BlazorFluent").
+    The old project name to replace (defaults to "BlazorFluent").
     Allows renaming projects that have already been renamed once.
 
 .PARAMETER Force
@@ -30,23 +31,35 @@
     ./Rename-Project.ps1 -NewName "ContosoPortal"
 
 .EXAMPLE
+    ./Rename-Project.ps1 -NewName "commandcenter"
+
+.EXAMPLE
+    ./Rename-Project.ps1 -NewName "command_center"
+
+.EXAMPLE
     ./Rename-Project.ps1 -NewName "ContosoPortal" -Force
 
 .EXAMPLE
     ./Rename-Project.ps1 -OldName "ContosoPortal" -NewName "AcmeApp" -Force
 
 .NOTES
-    Requires PowerShell 7+ (cross-platform).
+    Requires PowerShell 7+ or Windows PowerShell 5.1.
     This script performs irreversible in-place modifications.
 #>
 
 param(
-    [Parameter(Mandatory, HelpMessage = "New PascalCase project name (e.g., 'MyApp')")]
-    [ValidatePattern('^[A-Z][a-zA-Z0-9]+$', ErrorMessage = "New name must be PascalCase: start with uppercase letter, letters and digits only.")]
-    [string]$NewName,
+    [Parameter(Mandatory = $false, HelpMessage = "New project name (e.g., 'MyApp', 'commandcenter', 'command_center')")]
+    [ValidateScript({
+        if ($_ -eq "" -or $_ -match '^[a-zA-Z_][a-zA-Z0-9_]+$') { return $true }
+        throw "Invalid project name '$_'.`n`nFormat Requirements:`n  - Allowed characters : Letters (A-Z, a-z), digits (0-9), and underscores (_)`n  - Starting character : Must start with a letter or underscore`n  - Allowed symbols    : '_' (underscore) is the ONLY allowed symbol`n  - Disallowed symbols : Hyphens (-), spaces, dots, or special symbols`n                         (C# namespaces cannot contain hyphens or spaces)`n  - Valid examples     : 'CommandCenter', 'commandcenter', 'command_center', 'MyPortal_v2'"
+    })]
+    [string]$NewName = "",
 
     [Parameter(Mandatory = $false, HelpMessage = "Old project name to replace (defaults to 'BlazorFluent')")]
-    [ValidatePattern('^[A-Z][a-zA-Z0-9]+$', ErrorMessage = "Old name must be PascalCase: start with uppercase letter, letters and digits only.")]
+    [ValidateScript({
+        if ($_ -match '^[a-zA-Z_][a-zA-Z0-9_]+$') { return $true }
+        throw "Invalid old project name '$_'. Must start with a letter or underscore and contain only letters, digits, and underscores."
+    })]
     [string]$OldName = "BlazorFluent",
 
     [Parameter(Mandatory = $false, HelpMessage = "Skip interactive confirmation prompts and git uncommitted changes warnings")]
@@ -56,19 +69,51 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ─── Constants ───────────────────────────────────────────────────────────────
+# --- Interactive Prompt for NewName if not provided --------------------------
+if ([string]::IsNullOrWhiteSpace($NewName)) {
+    Write-Host ""
+    Write-Host "+==============================================================+" -ForegroundColor Cyan
+    Write-Host "|          BlazorFluent Template -> Project Renamer           |" -ForegroundColor Cyan
+    Write-Host "+==============================================================+" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Project Name Format Rules:" -ForegroundColor White
+    Write-Host "  - Allowed characters : Letters (A-Z, a-z), digits (0-9), and underscores (_)" -ForegroundColor DarkGray
+    Write-Host "  - Starting character : Must start with a letter or underscore" -ForegroundColor DarkGray
+    Write-Host "  - Allowed symbols    : '_' (underscore) is the ONLY allowed symbol" -ForegroundColor Green
+    Write-Host "  - Disallowed symbols : Hyphens (-), spaces, dots, or special symbols" -ForegroundColor Yellow
+    Write-Host "                         (C# namespaces do not support hyphens or spaces)" -ForegroundColor DarkGray
+    Write-Host "  - Valid examples     : MyPortalv2, myportalv2, myportal_v2, MyPortal_v2" -ForegroundColor Cyan
+    Write-Host ""
+
+    while ($true) {
+        $inputName = Read-Host "  Enter new project name"
+        if ($inputName -match '^[a-zA-Z_][a-zA-Z0-9_]+$') {
+            $NewName = $inputName
+            break
+        }
+        Write-Host ""
+        Write-Host "  ERROR: '$inputName' is not a valid project name." -ForegroundColor Red
+        Write-Host "  - Must start with a letter or underscore." -ForegroundColor Yellow
+        Write-Host "  - Only letters, digits, and underscores (_) are allowed." -ForegroundColor Yellow
+        Write-Host "  - Hyphens (-) and spaces are not allowed." -ForegroundColor Yellow
+        Write-Host "  - Examples: 'MyPortalv2', 'myportalv2', 'myportal_v2'" -ForegroundColor Cyan
+        Write-Host ""
+    }
+}
+
+# --- Constants ---------------------------------------------------------------
 $OldNameLower = $OldName.ToLower()
 $NewNameLower = $NewName.ToLower()
 $ScriptRoot   = $PSScriptRoot
-if (-not $ScriptRoot) { $ScriptRoot = Get-Location }
+if (-not $ScriptRoot) { $ScriptRoot = (Get-Location).Path }
 
-# ─── Counters ────────────────────────────────────────────────────────────────
+# --- Counters -----------------------------------------------------------------
 $filesModified    = 0
 $filesRenamed     = 0
 $dirsRenamed      = 0
 $binObjCleaned    = 0
 
-# ─── Exclude patterns ───────────────────────────────────────────────────────
+# --- Exclude patterns ---------------------------------------------------------
 $excludeDirs = @("bin", "obj", ".git", ".vs", "node_modules", "logs")
 
 function Should-Exclude {
@@ -81,23 +126,23 @@ function Should-Exclude {
     return $false
 }
 
-# ─── Banner ──────────────────────────────────────────────────────────────────
+# --- Banner ------------------------------------------------------------------
 Write-Host ""
-Write-Host "╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║          BlazorFluent Template → Project Renamer           ║" -ForegroundColor Cyan
-Write-Host "╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "+==============================================================+" -ForegroundColor Cyan
+Write-Host "|          BlazorFluent Template -> Project Renamer           |" -ForegroundColor Cyan
+Write-Host "+==============================================================+" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Old Name : $OldName ($OldNameLower)" -ForegroundColor Yellow
 Write-Host "  New Name : $NewName ($NewNameLower)" -ForegroundColor Green
 Write-Host "  Root     : $ScriptRoot" -ForegroundColor DarkGray
 Write-Host ""
 
-if ($NewName -eq $OldName) {
+if ($NewName -ceq $OldName) {
     Write-Host "  ERROR: New name is the same as the old name. Nothing to do." -ForegroundColor Red
     exit 1
 }
 
-# ─── Pre-flight Git Safety Check ─────────────────────────────────────────────
+# --- Pre-flight Git Safety Check ---------------------------------------------
 if (Get-Command git -ErrorAction SilentlyContinue) {
     $gitStatus = git status --porcelain 2>$null
     if ($gitStatus -and -not $Force) {
@@ -113,7 +158,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     }
 }
 
-# ─── Confirmation Prompt ────────────────────────────────────────────────────
+# --- Confirmation Prompt ------------------------------------------------------
 if (-not $Force) {
     Write-Host "  This will perform IRREVERSIBLE in-place modifications." -ForegroundColor Red
     Write-Host ""
@@ -125,10 +170,10 @@ if (-not $Force) {
     Write-Host ""
 }
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # PHASE 1: Replace file contents
-# ═════════════════════════════════════════════════════════════════════════════
-Write-Host "━━━ Phase 1: Replacing file contents ━━━" -ForegroundColor Cyan
+# =============================================================================
+Write-Host "=== Phase 1: Replacing file contents ===" -ForegroundColor Cyan
 
 $extensions = @("*.cs", "*.csproj", "*.slnx", "*.razor", "*.json", "*.props",
                 "*.yml", "*.yaml", "*.md", "*.js", "*.css", "*.html")
@@ -152,10 +197,10 @@ foreach ($file in $targetFiles) {
 
     $original = $content
 
-    # Pass 1: PascalCase replacement (e.g. BlazorFluent → NewName)
+    # Pass 1: PascalCase replacement (e.g. BlazorFluent -> NewName)
     $content = $content -creplace [regex]::Escape($OldName), $NewName
 
-    # Pass 2: lowercase replacement (e.g. blazorfluent → newname)
+    # Pass 2: lowercase replacement (e.g. blazorfluent -> newname)
     $content = $content -creplace [regex]::Escape($OldNameLower), $NewNameLower
 
     if ($content -ne $original) {
@@ -169,10 +214,10 @@ foreach ($file in $targetFiles) {
 Write-Host "  Files modified: $filesModified" -ForegroundColor Green
 Write-Host ""
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # PHASE 2: Rename files
-# ═════════════════════════════════════════════════════════════════════════════
-Write-Host "━━━ Phase 2: Renaming files ━━━" -ForegroundColor Cyan
+# =============================================================================
+Write-Host "=== Phase 2: Renaming files ===" -ForegroundColor Cyan
 
 $filesToRename = Get-ChildItem -Path $ScriptRoot -Recurse -File |
     Where-Object {
@@ -188,17 +233,17 @@ foreach ($file in $filesToRename) {
         Rename-Item -Path $file.FullName -NewName $newFileName
         $filesRenamed++
         $rel = $file.FullName.Substring($ScriptRoot.Length + 1)
-        Write-Host "  Renamed: $rel → $newFileName" -ForegroundColor DarkGreen
+        Write-Host "  Renamed: $rel -> $newFileName" -ForegroundColor DarkGreen
     }
 }
 
 Write-Host "  Files renamed: $filesRenamed" -ForegroundColor Green
 Write-Host ""
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # PHASE 3: Rename directories
-# ═════════════════════════════════════════════════════════════════════════════
-Write-Host "━━━ Phase 3: Renaming directories ━━━" -ForegroundColor Cyan
+# =============================================================================
+Write-Host "=== Phase 3: Renaming directories ===" -ForegroundColor Cyan
 
 $dirsToRename = Get-ChildItem -Path $ScriptRoot -Recurse -Directory |
     Where-Object {
@@ -214,17 +259,17 @@ foreach ($dir in $dirsToRename) {
         Rename-Item -Path $dir.FullName -NewName $newDirName
         $dirsRenamed++
         $rel = $dir.FullName.Substring($ScriptRoot.Length + 1)
-        Write-Host "  Renamed: $rel → $newDirName" -ForegroundColor DarkGreen
+        Write-Host "  Renamed: $rel -> $newDirName" -ForegroundColor DarkGreen
     }
 }
 
 Write-Host "  Directories renamed: $dirsRenamed" -ForegroundColor Green
 Write-Host ""
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # PHASE 4: Clean bin/obj folders
-# ═════════════════════════════════════════════════════════════════════════════
-Write-Host "━━━ Phase 4: Cleaning stale bin/obj folders ━━━" -ForegroundColor Cyan
+# =============================================================================
+Write-Host "=== Phase 4: Cleaning stale bin/obj folders ===" -ForegroundColor Cyan
 
 $staleDirectories = Get-ChildItem -Path $ScriptRoot -Recurse -Directory |
     Where-Object { $_.Name -eq "bin" -or $_.Name -eq "obj" } |
@@ -240,10 +285,10 @@ foreach ($staleDir in $staleDirectories) {
 Write-Host "  Directories cleaned: $binObjCleaned" -ForegroundColor Green
 Write-Host ""
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # PHASE 5: Post-rename verification
-# ═════════════════════════════════════════════════════════════════════════════
-Write-Host "━━━ Phase 5: Verification scan ━━━" -ForegroundColor Cyan
+# =============================================================================
+Write-Host "=== Phase 5: Verification scan ===" -ForegroundColor Cyan
 
 $remainingHits = @()
 foreach ($ext in $extensions) {
@@ -271,12 +316,12 @@ if ($remainingHits.Count -gt 0) {
 
 Write-Host ""
 
-# ═════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # Summary
-# ═════════════════════════════════════════════════════════════════════════════
-Write-Host "╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║                    Rename Complete!                        ║" -ForegroundColor Cyan
-Write-Host "╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+# =============================================================================
+Write-Host "+==============================================================+" -ForegroundColor Cyan
+Write-Host "|                    Rename Complete!                          |" -ForegroundColor Cyan
+Write-Host "+==============================================================+" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Summary:" -ForegroundColor White
 Write-Host "    Files modified    : $filesModified" -ForegroundColor Green
