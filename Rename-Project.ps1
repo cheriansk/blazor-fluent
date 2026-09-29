@@ -317,6 +317,92 @@ if ($remainingHits.Count -gt 0) {
 Write-Host ""
 
 # =============================================================================
+# PHASE 6: Git remote configuration (optional)
+# =============================================================================
+Write-Host "=== Phase 6: Git remote configuration (optional) ===" -ForegroundColor Cyan
+
+$gitInstalled = (Get-Command git -ErrorAction SilentlyContinue) -ne $null
+$isGitRepo = $false
+if ($gitInstalled) {
+    $insideWorkTree = (git rev-parse --is-inside-work-tree 2>$null)
+    if ($insideWorkTree -eq "true") {
+        $isGitRepo = $true
+    }
+}
+
+if (-not $gitInstalled -or -not $isGitRepo) {
+    Write-Host "  Skipping git remote setup (not a git repository or git not installed)." -ForegroundColor DarkGray
+    Write-Host ""
+} else {
+    $existingRemotes = git remote -v 2>$null
+    if ($existingRemotes) {
+        Write-Host "  Current Git remotes:" -ForegroundColor DarkGray
+        foreach ($line in ($existingRemotes | Select-Object -Unique)) {
+            Write-Host "    $line" -ForegroundColor DarkGray
+        }
+        Write-Host ""
+    }
+
+    $setupGit = Read-Host "  Do you want to configure git remotes for your new project repository? (y/N)"
+    if ($setupGit -eq "y" -or $setupGit -eq "yes") {
+        Write-Host ""
+
+        # Step 1: Handle existing template remote ('origin')
+        $remotesList = @(git remote 2>$null)
+        $hasOrigin = $remotesList -contains "origin"
+
+        if ($hasOrigin) {
+            Write-Host "  What would you like to do with the template remote ('origin' - 'https://github.com/cheriansk/blazor-fluent')?" -ForegroundColor White
+            Write-Host "    1. Keep as 'template' (renames 'origin' -> 'template' to pull future template updates)" -ForegroundColor Cyan
+            Write-Host "    2. Remove template remote completely (removes reference to this template repository)" -ForegroundColor Yellow
+            Write-Host "    3. Keep 'origin' unchanged" -ForegroundColor DarkGray
+            Write-Host ""
+            $templateChoice = Read-Host "  Choice [1/2/3] (default: 1)"
+            if (-not $templateChoice) { $templateChoice = "1" }
+
+            switch ($templateChoice) {
+                "1" {
+                    if ($remotesList -contains "template") {
+                        git remote remove template 2>$null
+                    }
+                    git remote rename origin template
+                    Write-Host "  Renamed remote 'origin' -> 'template'" -ForegroundColor Green
+                }
+                "2" {
+                    git remote remove origin
+                    Write-Host "  Removed remote 'origin'" -ForegroundColor Yellow
+                }
+                default {
+                    Write-Host "  Kept 'origin' remote unchanged." -ForegroundColor DarkGray
+                }
+            }
+            Write-Host ""
+        }
+
+        # Step 2: Configure new 'origin' remote
+        Write-Host "  Enter the Git URL for your new repository (e.g. https://github.com/username/my-repo.git)" -ForegroundColor White
+        $newOriginUrl = Read-Host "  New 'origin' URL (leave blank to skip)"
+        if (-not [string]::IsNullOrWhiteSpace($newOriginUrl)) {
+            $newOriginUrl = $newOriginUrl.Trim()
+            $currentRemotes = @(git remote 2>$null)
+            if ($currentRemotes -contains "origin") {
+                git remote set-url origin $newOriginUrl
+                Write-Host "  Updated 'origin' remote -> $newOriginUrl" -ForegroundColor Green
+            } else {
+                git remote add origin $newOriginUrl
+                Write-Host "  Added 'origin' remote -> $newOriginUrl" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "  Skipped setting new 'origin' remote." -ForegroundColor DarkGray
+        }
+        Write-Host ""
+    } else {
+        Write-Host "  Skipped git remote configuration." -ForegroundColor DarkGray
+        Write-Host ""
+    }
+}
+
+# =============================================================================
 # Summary
 # =============================================================================
 Write-Host "+==============================================================+" -ForegroundColor Cyan
@@ -328,11 +414,27 @@ Write-Host "    Files modified    : $filesModified" -ForegroundColor Green
 Write-Host "    Files renamed     : $filesRenamed" -ForegroundColor Green
 Write-Host "    Dirs renamed      : $dirsRenamed" -ForegroundColor Green
 Write-Host "    bin/obj cleaned   : $binObjCleaned" -ForegroundColor Green
+
+if ($gitInstalled -and $isGitRepo) {
+    $finalRemotes = (git remote -v 2>$null | Select-Object -Unique)
+    if ($finalRemotes) {
+        Write-Host ""
+        Write-Host "  Git Remotes:" -ForegroundColor White
+        foreach ($r in $finalRemotes) {
+            Write-Host "    $r" -ForegroundColor DarkGray
+        }
+    }
+}
+
 Write-Host ""
 Write-Host "  Next steps:" -ForegroundColor White
 Write-Host "    1. Open $NewName.slnx in Visual Studio / Rider" -ForegroundColor DarkGray
 Write-Host "    2. Run: dotnet restore" -ForegroundColor DarkGray
 Write-Host "    3. Run: dotnet build" -ForegroundColor DarkGray
-Write-Host "    4. Update Security:IntegritySecret in appsettings.json" -ForegroundColor DarkGray
-Write-Host "    5. Update ConnectionStrings:DefaultConnection for your database" -ForegroundColor DarkGray
+Write-Host "    4. Review and commit your changes:" -ForegroundColor DarkGray
+Write-Host "         git add ." -ForegroundColor Cyan
+Write-Host "         git commit -m `"Scaffold project from BlazorFluent template`"" -ForegroundColor Cyan
+Write-Host "         git push -u origin main" -ForegroundColor Cyan
+Write-Host "    5. Update Security:IntegritySecret in appsettings.json" -ForegroundColor DarkGray
+Write-Host "    6. Update ConnectionStrings:DefaultConnection for your database" -ForegroundColor DarkGray
 Write-Host ""
