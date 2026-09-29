@@ -2,7 +2,7 @@ using System.Text.Json;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
@@ -190,6 +190,27 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
             // ─────────────────────────────────────────────────────────────────────────
+
+            // ─── VERSIONING ───────────────────────────────────────────────────────────
+            if (entry.Entity is IVersionedEntity versionedEntity)
+            {
+                if (entry.State == EntityState.Added && versionedEntity.VerNum <= 0)
+                {
+                    versionedEntity.VerNum = 1;
+                }
+                // On Modified, version updates are explicitly governed by entity.SetVersionNumber(newVersion)
+            }
+
+            // ─── EFFECTIVE DATING VALIDATION ──────────────────────────────────────────
+            if (entry.Entity is IEffectiveDatedEntity effectiveDated)
+            {
+                if (effectiveDated.EndDate.HasValue && effectiveDated.EndDate.Value < effectiveDated.StartDate)
+                {
+                    throw new InvalidOperationException(
+                        $"Entity '{entry.Entity.GetType().Name}' has an invalid effective date range: " +
+                        $"EndDate ({effectiveDated.EndDate.Value:u}) cannot precede StartDate ({effectiveDated.StartDate:u}).");
+                }
+            }
         }
     }
 

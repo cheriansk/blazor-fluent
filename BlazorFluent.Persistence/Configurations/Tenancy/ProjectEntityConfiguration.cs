@@ -28,6 +28,10 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(p => p.TeamsWebhookUrl)
+            .HasMaxLength(2000)
+            .IsRequired(false);
+
         // Soft delete
         builder.Property(p => p.IsDeleted).IsRequired().HasDefaultValue(false);
         builder.Property(p => p.DeletedBy).HasMaxLength(256).IsRequired(false);

@@ -17,7 +17,7 @@ When cloning this template for a new Blazor WebApp, complete these steps before 
 - [ ] Review and update `.github/dependabot.yml` schedule and assignees.
 - [ ] Review and update `.github/workflows/owasp-zap-scan.yml` target URL.
 - [ ] Run initial EF Core migration: `dotnet ef migrations add InitialCreate -p YourAppName.Persistence -s YourAppName`.
-- [ ] Delete sample entities (`ProductEntity`, `CatalogDashboard`, `CatalogSyncJobHandler`, `Weather.razor`, `Counter.razor`) once your domain entities are in place.
+- [ ] Delete sample entities (`ProductEntity`, `CatalogDashboardPage`, `CatalogSyncJobHandler`, `WeatherPage.razor`, `CounterPage.razor`) once your domain entities are in place.
 - [ ] Update `README.md` with your project's description, setup instructions, and deployment guide.
 
 ---
@@ -52,15 +52,92 @@ Every domain class and abstract base class in `BlazorFluent.Core` **must end wit
 | `TenantAuditableEntity` | `TenantAuditable` |
 | `UserSessionEntity` | `UserSession` |
 
-**Exceptions**: Interfaces (`ITenantEntity`), records (`TenantInfo`, `BaseJobEvent`), and service classes (`TenantContext`).
+### 1.2 Entity Architecture & Developer Decision Guide
 
-### 1.3 Enum Placement
+When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step decision framework:
 
-All shared enums live in `BlazorFluent.Core/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
+#### Step 1: Choose the Base Class (Single Class Inheritance)
+| If the entity is... | Inherit from... | What you get |
+|---|---|---|
+| **Tenant-scoped with audit trail** (90% of business entities) | `TenantAuditableEntity` | Sequential UUIDv7 `Id`, `Created/Updated` stamps, `TenantId` |
+| **Host-wide / System entity with audit trail** (e.g. Users, Tenants) | `AuditableEntity` | Sequential UUIDv7 `Id`, `Created/Updated` stamps (no `TenantId`) |
+| **Lightweight table with no audit trail** (e.g. keyrings, technical caches) | `BaseEntity` | Sequential UUIDv7 `Id` only |
+
+#### Step 2: Choose Required Multi-Tenancy Boundary
+| If the entity is... | Must Implement... | Enforcement |
+|---|---|---|
+| **Scoped to a single tenant** | `ITenantEntity` (already included if inheriting `TenantAuditableEntity`) | EF Core automatic `QueryFilters.Tenant` isolation |
+| **System-wide / Cross-tenant** | `IGlobalEntity` | Explicit opt-out; startup fail-closed guard throws if unassigned |
+
+#### Step 3: Choose Composable Capabilities (Multiple Marker Interfaces)
+| Capability Needed | Implement Marker Interface | Automatic Behavior Enabled |
+|---|---|---|
+| **Soft Deletion** | `ISoftDeletableEntity` | `DbContext.Remove()` becomes soft delete; filtered by `QueryFilters.SoftDelete` |
+| **Project Workspace Scoping** | `IProjectScopedEntity` | Write operations guarded by `ProjectSecurityInterceptor` against user role |
+| **Effective Dating (Active Date Ranges)** | `IEffectiveDatedEntity` | Adds `StartDate`/`EndDate?`; interceptor enforces `EndDate >= StartDate`; LINQ `query.WhereActive()` |
+| **Revision / Version Tracking** | `IVersionedEntity` | Adds `VerNum` and `SetVersionNumber(newVer)`. Interceptor validates `VerNum >= 1`. Versions are explicitly controlled via domain logic, not blind auto-increments |
+| **Skip Audit Diff Logging** | `IAuditExemptEntity` | Prevents recursive diff logging in `audit.AuditRecords` |
+| **Skip Mandatory Validation** | `IValidationExemptEntity` | Explicitly exempts internal logging/system tables from mandatory `IValidator<TEntity>` checks |
+
+#### Common Entity Scenarios Quick Reference Table
+| Entity Scenario | Base Class | Marker Interfaces |
+|---|---|---|
+| **Standard Business Entity** (Products, Customers, Orders) | `TenantAuditableEntity` | `ISoftDeletableEntity` |
+| **Project Workspace Entity** (Tasks, Documents, Features) | `TenantAuditableEntity` | `IProjectScopedEntity`, `ISoftDeletableEntity` |
+| **Effective-Dated Contract / Pricing** | `TenantAuditableEntity` | `IEffectiveDatedEntity`, `IVersionedEntity`, `ISoftDeletableEntity` |
+| **Company Tenant Entity** | `AuditableEntity` | `IGlobalEntity`, `IEffectiveDatedEntity` |
+| **User Account Entity** | `AuditableEntity` | `IGlobalEntity`, `ISoftDeletableEntity` |
+| **System Audit Record / Job Execution** | `AuditableEntity` / `TenantAuditableEntity` | `IAuditExemptEntity`, `IValidationExemptEntity` |
+
+### 1.3 DataListTypes Enum Standard
+
+All shared domain enums live in `BlazorFluent.Core/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
+
+| Standard | Rule & Implementation |
+|---|---|
+| **Clean Code Identifiers** | Enum entries use alphanumeric codes with zero spaces or symbols (e.g. `ClientUser`, `CompanyUser`, `Admin`). This code is used in logic and database persistence. |
+| **Mandatory Display & Optional Description** | Every enum member, Category, and Filter declares `[Display(Name = "...", Description = "...")]` with mandatory `Name` and optional `Description`. Never use display names for logic comparisons. Retrieve via `.GetDisplayName()` and `.GetDescription()`. |
+| **Companion Definition Classes** | Enums define structured companion classes in the same file (e.g. `{EnumName}Definitions.Categories`, `{EnumName}Definitions.Filters`) declaring `const string` codes with `[Display]`. |
+| **Code-Only Attribute Signature** | `[DataListCategory(Definitions.Categories.Code)]` and `[DataListFilterCriterias(Definitions.Filters.Code)]` accept **only the constant code**, eliminating string repetition across members. |
+| **Rich Metadata Resolution** | `DataListExtensions` inspects companion definition classes via cached reflection ($O(1)$) to link each enum member to its `CategoryInfo` and `FilterInfo` records (resolving `Code`, `DisplayName`, and `Description`). |
+| **UI Projection & Filtering** | Use `DataListExtensions.GetDataListItems<TEnum>()` (or `enumVal.GetDataListItems()`) for unfiltered items, and `GetFilteredDataListItems<TEnum>(criteria)` (or `enumVal.GetFilteredDataListItems(criteria)`) for filtered items. In `<FluentSelect>`, bind `TValue="string"` with `OptionText="@(i => i.DisplayName)"` and `OptionValue="@(i => i.Code)"` to display user-friendly names while persisting raw enum codes. |
 
 ### 1.4 Primary Keys
 
 All entities use **sequential UUIDv7** via `Guid.CreateVersion7()` in `BaseEntity`. Never use auto-increment integers or random GUIDs.
+
+### 1.5 Consolidated 2-Tier Validation Architecture & Fail-Closed Guard
+
+Validation is strictly organized into two distinct, intuitive tiers to prevent confusion and folder scattering:
+
+| Tier | Purpose | Location | Target Type | How it Fires |
+|---|---|---|---|---|
+| **Tier 1: Page / Feature Form** | Instant UI field-level red error feedback | `BlazorFluent.Core/Validation/<Module>/` | Request / Form DTO | Automatically via Blazor `<EditForm>` with `<FluentValidationValidator />` |
+| **Tier 2: Entity Invariant Shield** | Fail-closed database integrity guard | `BlazorFluent.Core/Domain/<Module>/` | Domain Entity POCO | Automatically via EF Core `EntityValidationInterceptor` during `SaveChangesAsync` |
+
+#### Architectural Invariant Rules:
+1. **The Single-Entity Invariant Rule**: A Tier 2 Entity Validator must **only inspect properties of its own entity**. It is strictly **forbidden** to inject `DbContext`, call repositories, or reference properties of external entities.
+2. **Fail-Closed Startup Safety**: At application launch, `AppDbContext` inspects all mapped entities. If any concrete entity lacks an `IValidator<TEntity>` and does **not** implement `IValidationExemptEntity`, startup terminates immediately with an `InvalidOperationException` detailing the missing validator.
+3. **Zero-Reflection Performance**: `EntityValidationInterceptor` caches closed `IValidator<TEntity>` types in a static `ConcurrentDictionary`, resolving validators in under 1 microsecond.
+4. **Batch Error Aggregation**: If any entities fail validation during `SaveChangesAsync()`, all errors across all entities in the commit batch are aggregated into a structured `EntityValidationException`, and the transaction is aborted before any SQL is sent to PostgreSQL.
+
+### 1.6 Project Task Management & Reusable Swimlane Architecture
+
+The Task Management subsystem implements project-scoped task tracking, Jira-style comments, automated notifications, and Microsoft Teams daily summaries:
+
+1. **Entity Models & Scoping**:
+   - `TaskEntity` inherits `TenantAuditableEntity`, implementing `IProjectScopedEntity` and `ISoftDeletableEntity`. It stores `Title`, `Description`, `Priority` (`TaskPriority`), `Status` (`TaskStatus`), `DueDate`, `AssigneeEmails` (semicolon-separated), `Labels` (comma-separated), `IsClosed`, `ClosedAtUtc`, and child `Comments`.
+   - `TaskCommentEntity` inherits `TenantAuditableEntity`, capturing discussion threads with `AuthorUserId`, `AuthorName`, `AuthorEmail`, and `CommentText`.
+   - Both entities use PostgreSQL schema `tasks` (`tasks.Tasks`, `tasks.TaskComments`) and implement Tier 2 single-entity validators (`TaskEntityValidator`, `TaskCommentEntityValidator`).
+2. **Reusable Generic Swimlane Component**:
+   - `<FluentSwimlaneBoardComp<TItem>>` (`Components/Common/FluentSwimlaneBoardComp.razor`) provides a generic multi-column kanban/swimlane view configured via `SwimlaneColumn<TItem>` definitions.
+   - Accepts custom card render fragments (`@CardTemplate`), column badge counters, and click callbacks (`OnItemClick`), with zero drag-and-drop fragility.
+3. **Automated Assignee Notifications**:
+   - When a task is created, `ITaskService.CreateTaskAsync` dispatches in-app notifications (`INotificationSender.SendAsync`) to all assigned emails.
+4. **Daily Microsoft Teams Channel Summary**:
+   - `DailyTaskSummaryJobHandler` executes daily (at 18:00 UTC via `PeriodicBatchScheduler`).
+   - Gathers tasks across all active projects grouped into Past Due, Due Today, Due Tomorrow, and Due in 2 Days.
+   - Formats a Markdown summary table and dispatches it to the project's configured webhook (`ProjectEntity.TeamsWebhookUrl`) or global fallback.
 
 ---
 
@@ -167,7 +244,25 @@ All multi-step write operations must use `IUnitOfWork.ExecuteAsync(...)` for ato
 
 ## 5. Blazor UI Rules
 
-### 5.1 Component Library
+### 5.1 Razor File & Component Naming Taxonomy (Mandatory)
+
+All current and future `.razor` files must adhere strictly to this 4-tier naming taxonomy:
+
+| Suffix | Scope & Architectural Rule | Examples | Consuming Tag |
+|---|---|---|---|
+| **`*Page.razor`** | **Routable Screen**: Any file declaring an `@page` directive at the top (top-level routable screen with a URL path). | `HomePage.razor`, `ProjectsDashboardPage.razor`, `LoginPage.razor`, `NotFoundPage.razor` | Loaded by Blazor Router |
+| **`*Comp.razor`** | **Embedded Component**: Any reusable component embedded inside a page, layout, or another component. | `PageHeaderComp.razor`, `EmptyStateComp.razor`, `FluentSwimlaneBoardComp.razor`, `NavMenuComp.razor` | `<PageHeaderComp>`, `<EmptyStateComp>` |
+| **`*Modal.razor`** | **Modal Screen / Dialog**: Any component whose whole purpose is a modal dialog / backdrop overlay screen. | `ConfirmDialogModal.razor`, `SessionRevokedModal.razor`, `ReconnectModal.razor` | `<ConfirmDialogModal>` |
+| **`*Popup.razor`** | **Interactive Popup / Flyout**: Any component whose whole purpose is an interactive flyout, dropdown, or pop-up tray. | `NotificationBellPopup.razor` | `<NotificationBellPopup>` |
+| **`*Layout.razor`** | **Custom Sub-Layout**: Any custom shell layout (e.g. for auth, admin, print) providing structural wrapping. | `AdminLayout.razor`, `AuthLayout.razor`, `EmptyLayout.razor` | `@layout AdminLayout` |
+
+> **Framework Roots Exception**: Framework-mandated files retain their standard Blazor roles: `App.razor` (root HTML shell), `Routes.razor` (router shell), `MainLayout.razor` (master default layout), `_Imports.razor` (compiler directives).
+>
+> **Code-Behind & Scoped CSS Co-Location**:
+> - Code-behind files must exactly match the full component file name: `*Page.razor.cs`, `*Comp.razor.cs`, `*Modal.razor.cs`, `*Popup.razor.cs`, `*Layout.razor.cs`.
+> - Scoped CSS files must exactly match: `*Page.razor.css`, `*Comp.razor.css`, `*Modal.razor.css`, `*Popup.razor.css`, `*Layout.razor.css`.
+
+### 5.2 Component Library
 
 This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use V5 APIs.
 
@@ -177,18 +272,26 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | **Dual-generic selects** | `FluentSelect<TOption, TValue>` requires both type parameters. Never omit the value type. |
 | **Icons package** | Use `Microsoft.FluentUI.AspNetCore.Components.Icons` for all icon references. |
 
-### 5.2 Reusable Components
+### 5.3 Reusable Components
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| `<PageHeader>` | Consistent page title/subtitle with action slot | `Components/Common/` |
-| `<ConfirmDialog>` | Accessible modal for destructive actions | `Components/Common/` |
-| `<EmptyState>` | Centered icon + message for empty views | `Components/Common/` |
-| `<FormNavigationGuard>` | Warns on unsaved dirty form edits | `Components/Common/` |
-| `<ProjectAuthorizeView>` | Role-gated conditional rendering | `Components/Common/` |
-| `<ImpersonationBanner>` | Pinned banner during impersonation | `Components/Common/` |
+| `<PageHeaderComp>` | Consistent page title/subtitle with action slot | `Components/Common/` |
+| `<ConfirmDialogModal>` | Accessible modal for destructive actions | `Components/Common/` |
+| `<EmptyStateComp>` | Centered icon + message for empty views | `Components/Common/` |
+| `<FormNavigationGuardComp>` | Warns on unsaved dirty form edits | `Components/Common/` |
+| `<ProjectAuthorizeViewComp>` | Role-gated conditional rendering | `Components/Common/` |
+| `<ImpersonationBannerComp>` | Pinned banner during impersonation | `Components/Common/` |
+| `<FluentSwimlaneBoardComp<TItem>>` | Generic multi-column swimlane/kanban board | `Components/Common/` |
+| `<NotificationBellPopup>` | Header notification tray popup flyout | `Components/Layout/` |
+| `<NavMenuComp>` | Sidebar navigation links | `Components/Layout/` |
+| `<TenantSwitcherComp>` | Header tenant switching dropdown | `Components/Layout/` |
+| `<AppErrorBoundaryComp>` | User-facing correlation ID error boundary | `Components/Common/` |
+| `<ObservabilityErrorBoundaryComp>` | Circuit logging telemetry error boundary | `Components/Common/` |
+| `<SessionRevokedModal>` | Watchdog freezing circuit upon session revocation | `Components/Common/` |
+| `<ReconnectModal>` | Custom SignalR reconnection overlay | `Components/Layout/` |
 
-### 5.3 State Management
+### 5.4 State Management
 
 | Rule | Description |
 |------|-------------|
@@ -196,15 +299,15 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | **Circuit persistence** | Use `PersistentStateComponentBase` for state survival across circuit pause/resume. |
 | **Session revocation** | `<SessionRevokedModal>` monitors session validity and freezes the UI on revocation. |
 
-### 5.4 Error Handling
+### 5.5 Error Handling
 
 | Rule | Description |
 |------|-------------|
-| **Root error boundary** | `<ObservabilityErrorBoundary>` wraps the router, logging unhandled exceptions with structured tenant/user context. |
-| **Page error boundary** | `<AppErrorBoundary>` generates user-facing `ERR-XXXXXXXX` correlation IDs with a recovery button. |
+| **Root error boundary** | `<ObservabilityErrorBoundaryComp>` wraps the router, logging unhandled exceptions with structured tenant/user context. |
+| **Page error boundary** | `<AppErrorBoundaryComp>` generates user-facing `ERR-XXXXXXXX` correlation IDs with a recovery button. |
 | **Reconnection** | `<ReconnectModal>` provides custom SignalR reconnection UI. Never use the default Blazor reconnection overlay. |
 
-### 5.5 Responsive Design
+### 5.6 Responsive Design
 
 Use `ILayoutBreakpointService` for programmatic breakpoint detection:
 - **Mobile**: < 640px
@@ -353,7 +456,7 @@ BlazorFluent/
 │   ├── Constants/                               # Role constants
 │   ├── Contracts/                               # All service interfaces
 │   ├── DataListTypes/                            # All shared enums
-│   ├── Domain/                                  # Entities, delegates, value objects
+│   ├── Domain/                                  # Entities, Base abstractions, value objects
 │   ├── Events/                                  # Job event contracts
 │   └── Validation/                              # FluentValidation validators
 │

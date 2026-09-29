@@ -1,11 +1,11 @@
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Identity;
 
 /// <summary>
 /// Tracks active user circuits and browser sessions for visibility and remote revocation.
 /// </summary>
-public class UserSessionEntity : TenantAuditableEntity, ISoftDeletableEntity
+public class UserSessionEntity : TenantAuditableEntity, ISoftDeletableEntity, IValidationExemptEntity
 {
     public string UserId { get; set; } = string.Empty;
     public string UserEmail { get; set; } = string.Empty;

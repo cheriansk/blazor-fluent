@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tenancy;
 
@@ -14,6 +14,12 @@ public class ProjectEntity : TenantAuditableEntity, ISoftDeletableEntity
     public string Description { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Dedicated Microsoft Teams incoming webhook URL for project-specific notifications and daily task digests.
+    /// If null or empty, falls back to the system-wide default Teams webhook.
+    /// </summary>
+    public string? TeamsWebhookUrl { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }

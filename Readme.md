@@ -719,3 +719,23 @@ sequenceDiagram
 
 - **System.Threading.Channels Notification Queue**: High-throughput, zero-allocation bounded queue (`NotificationChannelQueue`) and background consumer (`NotificationQueueWorker`) that offload outbound email and Teams HTTP dispatches from UI request threads.
 - **Inbound Webhook HMAC Signature Validation**: Cryptographic payload validator (`IWebhookSignatureValidator`) that verifies incoming HTTP webhook headers (e.g., Stripe, GitHub, Azure AD callbacks) using constant-time comparison (`CryptographicOperations.FixedTimeEquals`) to block forged payloads and timing side-channel attacks.
+
+
+----------------------------------
+
+### Validation Architecture (Consolidated 2-Tier Model)
+
+The application enforces a dual-layer validation pipeline to ensure rock-solid data integrity with zero developer ambiguity:
+
+1. **Tier 1: Page / Feature Form Validation** (`BlazorFluent.Core/Validation/<Module>/`)
+   - Validates user input commands and form DTOs.
+   - Automatically integrated with Blazor `<EditForm>` and `<FluentValidationValidator />`.
+   - Provides instant, field-level red error feedback as users type or submit, blocking navigation and server calls for invalid data.
+
+2. **Tier 2: Entity Invariant Shield** (`BlazorFluent.Core/Domain/<Module>/<Entity>Validator.cs`)
+   - Validates pure in-memory business invariants for domain entities before persistence.
+   - Automatically executed by `EntityValidationInterceptor` during EF Core `SaveChangesAsync()`.
+   - **The Single-Entity Rule**: Entity validators inspect *only their own properties* (never query the database or foreign entities).
+   - **Fail-Closed Startup Safety**: At application launch, `AppDbContext` verifies that every concrete entity has a registered `IValidator<TEntity>` or explicitly implements `IValidationExemptEntity` (for internal logging tables like `AuditRecordEntity`). Missing validators halt the app on startup.
+   - **Zero-Reflection Performance**: Uses static `ConcurrentDictionary` caching for sub-microsecond DI lookups.
+   - **Batch Aggregation**: Collects all property failures across all entities in the commit batch into a structured `EntityValidationException` before any SQL is sent to PostgreSQL.

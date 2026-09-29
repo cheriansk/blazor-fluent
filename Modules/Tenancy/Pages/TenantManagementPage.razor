@@ -87,10 +87,10 @@
                                   Label="@(context.IsActive ? "Active" : "Inactive")" />
                 </TemplateColumn>
                 <TemplateColumn Title="Start Date">
-                    @context.StartDate.ToString("yyyy-MM-dd")
+                    @context.StartDate.ToString()
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
-                    @context.EndDate.ToString("yyyy-MM-dd")
+                    @context.EndDate.ToString()
                 </TemplateColumn>
                 <TemplateColumn Title="Actions">
                     <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => StartEdit(context))">
