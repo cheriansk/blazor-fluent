@@ -92,3 +92,10 @@ public interface IVersionedEntity : IMarkerEntity
     /// <param name="newVersion">The new version number (must be greater than current VerNum).</param>
     void SetVersionNumber(int newVersion);
 }
+
+/// <summary>
+/// Explicitly exempts an internal system or infrastructure entity (e.g. AuditRecordEntity, JobExecutionEntity)
+/// from mandatory fail-closed entity validator enforcement.
+/// Non-exempt entities MUST have an IValidator<TEntity> registered in DI or the application will fail at startup.
+/// </summary>
+public interface IValidationExemptEntity : IMarkerEntity { }

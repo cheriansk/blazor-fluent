@@ -8,7 +8,7 @@ namespace BlazorFluent.Core.Domain.Jobs;
 /// Stored in PostgreSQL with execution duration, attempt count, and error diagnostics.
 /// Implements <see cref="IGlobalEntity"/> (host-wide visibility) and <see cref="IAuditExemptEntity"/> (prevents recursive auditing).
 /// </summary>
-public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity
+public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity, IValidationExemptEntity
 {
     /// <summary>Correlation identifier linking all chained batch steps in the same pipeline.</summary>
     public string? CorrelationId { get; set; }

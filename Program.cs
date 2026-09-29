@@ -2,6 +2,7 @@ using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using BlazorFluent.Components;
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Validation;
 using BlazorFluent.Infrastructure;
 using BlazorFluent.Infrastructure.Observability;
@@ -92,7 +93,11 @@ try
     builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<AppCurrentUser>());
     builder.Services.AddScoped<CurrentUserAuthenticationStateProvider>();
     builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CurrentUserAuthenticationStateProvider>());
-    // 5. Modular Monolith Registrations (Persistence, Infrastructure, Jobs)
+
+    // 5. Validation Architecture: Register all Tier 1 (Page) and Tier 2 (Entity) validators from Core
+    builder.Services.AddValidatorsFromAssemblyContaining<BaseEntity>();
+
+    // 6. Modular Monolith Registrations (Persistence, Infrastructure, Jobs)
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddBackgroundJobs(enableScheduler: true);
@@ -135,9 +140,6 @@ try
     {
         Log.Warning("ApplicationInsights:ConnectionString is not configured. OpenTelemetry tracing disabled.");
     }
-
-    // 10. Reusability: FluentValidation auto-registration from Core assembly
-    //builder.Services.AddValidatorsFromAssemblyContaining<SendNotificationRequestValidator>(ServiceLifetime.Scoped);
 
     var app = builder.Build();
 

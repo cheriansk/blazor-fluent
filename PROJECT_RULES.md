@@ -77,6 +77,7 @@ When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step de
 | **Effective Dating (Active Date Ranges)** | `IEffectiveDatedEntity` | Adds `StartDate`/`EndDate?`; interceptor enforces `EndDate >= StartDate`; LINQ `query.WhereActive()` |
 | **Revision / Version Tracking** | `IVersionedEntity` | Adds `VerNum` and `SetVersionNumber(newVer)`. Interceptor validates `VerNum >= 1`. Versions are explicitly controlled via domain logic, not blind auto-increments |
 | **Skip Audit Diff Logging** | `IAuditExemptEntity` | Prevents recursive diff logging in `audit.AuditRecords` |
+| **Skip Mandatory Validation** | `IValidationExemptEntity` | Explicitly exempts internal logging/system tables from mandatory `IValidator<TEntity>` checks |
 
 #### Common Entity Scenarios Quick Reference Table
 | Entity Scenario | Base Class | Marker Interfaces |
@@ -86,7 +87,7 @@ When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step de
 | **Effective-Dated Contract / Pricing** | `TenantAuditableEntity` | `IEffectiveDatedEntity`, `IVersionedEntity`, `ISoftDeletableEntity` |
 | **Company Tenant Entity** | `AuditableEntity` | `IGlobalEntity`, `IEffectiveDatedEntity` |
 | **User Account Entity** | `AuditableEntity` | `IGlobalEntity`, `ISoftDeletableEntity` |
-| **System Audit Record / Job Execution** | `AuditableEntity` / `TenantAuditableEntity` | `IAuditExemptEntity` |
+| **System Audit Record / Job Execution** | `AuditableEntity` / `TenantAuditableEntity` | `IAuditExemptEntity`, `IValidationExemptEntity` |
 
 ### 1.3 DataListTypes Enum Standard
 
@@ -104,6 +105,21 @@ All shared domain enums live in `BlazorFluent.Core/DataListTypes/`. Never declar
 ### 1.4 Primary Keys
 
 All entities use **sequential UUIDv7** via `Guid.CreateVersion7()` in `BaseEntity`. Never use auto-increment integers or random GUIDs.
+
+### 1.5 Consolidated 2-Tier Validation Architecture & Fail-Closed Guard
+
+Validation is strictly organized into two distinct, intuitive tiers to prevent confusion and folder scattering:
+
+| Tier | Purpose | Location | Target Type | How it Fires |
+|---|---|---|---|---|
+| **Tier 1: Page / Feature Form** | Instant UI field-level red error feedback | `BlazorFluent.Core/Validation/<Module>/` | Request / Form DTO | Automatically via Blazor `<EditForm>` with `<FluentValidationValidator />` |
+| **Tier 2: Entity Invariant Shield** | Fail-closed database integrity guard | `BlazorFluent.Core/Domain/<Module>/` | Domain Entity POCO | Automatically via EF Core `EntityValidationInterceptor` during `SaveChangesAsync` |
+
+#### Architectural Invariant Rules:
+1. **The Single-Entity Invariant Rule**: A Tier 2 Entity Validator must **only inspect properties of its own entity**. It is strictly **forbidden** to inject `DbContext`, call repositories, or reference properties of external entities.
+2. **Fail-Closed Startup Safety**: At application launch, `AppDbContext` inspects all mapped entities. If any concrete entity lacks an `IValidator<TEntity>` and does **not** implement `IValidationExemptEntity`, startup terminates immediately with an `InvalidOperationException` detailing the missing validator.
+3. **Zero-Reflection Performance**: `EntityValidationInterceptor` caches closed `IValidator<TEntity>` types in a static `ConcurrentDictionary`, resolving validators in under 1 microsecond.
+4. **Batch Error Aggregation**: If any entities fail validation during `SaveChangesAsync()`, all errors across all entities in the commit batch are aggregated into a structured `EntityValidationException`, and the transaction is aborted before any SQL is sent to PostgreSQL.
 
 ---
 

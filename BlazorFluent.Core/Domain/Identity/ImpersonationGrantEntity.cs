@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Identity;
 /// for troubleshooting and permission verification.
 /// Implements <see cref="IGlobalEntity"/> so it exists across all tenants.
 /// </summary>
-public class ImpersonationGrantEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
+public class ImpersonationGrantEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity, IValidationExemptEntity
 {
     public string SourceAdminId { get; set; } = string.Empty;
     public string SourceAdminEmail { get; set; } = string.Empty;
