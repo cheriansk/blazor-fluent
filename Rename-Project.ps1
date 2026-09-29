@@ -317,9 +317,9 @@ if ($remainingHits.Count -gt 0) {
 Write-Host ""
 
 # =============================================================================
-# PHASE 6: Git remote configuration (optional)
+# PHASE 6: Git remote and branch configuration (optional)
 # =============================================================================
-Write-Host "=== Phase 6: Git remote configuration (optional) ===" -ForegroundColor Cyan
+Write-Host "=== Phase 6: Git remote and branch configuration (optional) ===" -ForegroundColor Cyan
 
 $gitInstalled = (Get-Command git -ErrorAction SilentlyContinue) -ne $null
 $isGitRepo = $false
@@ -331,7 +331,7 @@ if ($gitInstalled) {
 }
 
 if (-not $gitInstalled -or -not $isGitRepo) {
-    Write-Host "  Skipping git remote setup (not a git repository or git not installed)." -ForegroundColor DarkGray
+    Write-Host "  Skipping git configuration (not a git repository or git not installed)." -ForegroundColor DarkGray
     Write-Host ""
 } else {
     $existingRemotes = git remote -v 2>$null
@@ -343,16 +343,27 @@ if (-not $gitInstalled -or -not $isGitRepo) {
         Write-Host ""
     }
 
-    $setupGit = Read-Host "  Do you want to configure git remotes for your new project repository? (y/N)"
+    $setupGit = Read-Host "  Do you want to configure git remotes and branches for your new project repository? (y/N)"
     if ($setupGit -eq "y" -or $setupGit -eq "yes") {
         Write-Host ""
 
-        # Step 1: Handle existing template remote ('origin')
+        # Step 1: Verify current branch is 'main'
+        $currentBranch = (git branch --show-current 2>$null)
+        if ($currentBranch) { $currentBranch = $currentBranch.Trim() }
+        if ($currentBranch -ne "main") {
+            Write-Host "  ERROR: Expected current branch to be 'main', but found '$currentBranch'." -ForegroundColor Red
+            Write-Host "  The template repository must be on the 'main' branch to initialize 'main_template' and 'develop'." -ForegroundColor Yellow
+            Write-Host "  Please checkout the 'main' branch and re-run, or configure git manually." -ForegroundColor Yellow
+            Write-Host ""
+            exit 1
+        }
+
+        # Step 2: Handle existing template remote ('origin')
         $remotesList = @(git remote 2>$null)
         $hasOrigin = $remotesList -contains "origin"
 
         if ($hasOrigin) {
-            Write-Host "  What would you like to do with the template remote ('origin')?" -ForegroundColor White
+            Write-Host "  What would you like to do with the template remote ('origin' - 'https://github.com/cheriansk/blazor-fluent')?" -ForegroundColor White
             Write-Host "    1. Keep as 'template' (read-only: renames 'origin' -> 'template' and disables push)" -ForegroundColor Cyan
             Write-Host "    2. Remove template remote completely (removes reference to this template repository)" -ForegroundColor Yellow
             Write-Host "    3. Keep 'origin' unchanged" -ForegroundColor DarkGray
@@ -380,7 +391,7 @@ if (-not $gitInstalled -or -not $isGitRepo) {
             Write-Host ""
         }
 
-        # Step 2: Configure new 'origin' remote
+        # Step 3: Configure new 'origin' remote
         Write-Host "  Enter the Git URL for your new repository (e.g. https://github.com/username/my-repo.git)" -ForegroundColor White
         $newOriginUrl = Read-Host "  New 'origin' URL (leave blank to skip)"
         if (-not [string]::IsNullOrWhiteSpace($newOriginUrl)) {
@@ -397,8 +408,23 @@ if (-not $gitInstalled -or -not $isGitRepo) {
             Write-Host "  Skipped setting new 'origin' remote." -ForegroundColor DarkGray
         }
         Write-Host ""
+
+        # Step 4: Branch restructuring (main -> main_template, create clean develop)
+        Write-Host "  Configuring branches:" -ForegroundColor White
+        git branch -m main main_template
+        $currentRemotes = @(git remote 2>$null)
+        if ($currentRemotes -contains "template") {
+            git branch -u template/main main_template 2>$null
+        }
+        Write-Host "  Renamed branch 'main' -> 'main_template' (tracking template repository)" -ForegroundColor Green
+
+        git checkout --orphan develop 2>$null
+        git add -A
+        Write-Host "  Created clean orphan branch 'develop' with zero template commit history" -ForegroundColor Green
+        Write-Host "  All renamed files are staged and ready for your initial commit." -ForegroundColor Green
+        Write-Host ""
     } else {
-        Write-Host "  Skipped git remote configuration." -ForegroundColor DarkGray
+        Write-Host "  Skipped git configuration." -ForegroundColor DarkGray
         Write-Host ""
     }
 }
@@ -417,9 +443,13 @@ Write-Host "    Dirs renamed      : $dirsRenamed" -ForegroundColor Green
 Write-Host "    bin/obj cleaned   : $binObjCleaned" -ForegroundColor Green
 
 if ($gitInstalled -and $isGitRepo) {
+    $activeBranch = (git branch --show-current 2>$null)
+    if ($activeBranch) {
+        Write-Host ""
+        Write-Host "  Current Branch: $($activeBranch.Trim())" -ForegroundColor Cyan
+    }
     $finalRemotes = (git remote -v 2>$null | Select-Object -Unique)
     if ($finalRemotes) {
-        Write-Host ""
         Write-Host "  Git Remotes:" -ForegroundColor White
         foreach ($r in $finalRemotes) {
             Write-Host "    $r" -ForegroundColor DarkGray
@@ -432,10 +462,13 @@ Write-Host "  Next steps:" -ForegroundColor White
 Write-Host "    1. Open $NewName.slnx in Visual Studio / Rider" -ForegroundColor DarkGray
 Write-Host "    2. Run: dotnet restore" -ForegroundColor DarkGray
 Write-Host "    3. Run: dotnet build" -ForegroundColor DarkGray
-Write-Host "    4. Review and commit your changes:" -ForegroundColor DarkGray
-Write-Host "         git add ." -ForegroundColor Cyan
-Write-Host "         git commit -m `"Scaffold project from BlazorFluent template`"" -ForegroundColor Cyan
-Write-Host "         git push -u origin main" -ForegroundColor Cyan
+Write-Host "    4. Review staged changes and create your initial commit on 'develop':" -ForegroundColor DarkGray
+Write-Host "         git status" -ForegroundColor Cyan
+Write-Host "         git commit -m `"Initial commit: scaffold from BlazorFluent template`"" -ForegroundColor Cyan
+Write-Host "         git push -u origin develop" -ForegroundColor Cyan
 Write-Host "    5. Update Security:IntegritySecret in appsettings.json" -ForegroundColor DarkGray
 Write-Host "    6. Update ConnectionStrings:DefaultConnection for your database" -ForegroundColor DarkGray
+Write-Host "    (Optional) To pull future template updates:" -ForegroundColor DarkGray
+Write-Host "         git checkout main_template" -ForegroundColor Cyan
+Write-Host "         git pull template main" -ForegroundColor Cyan
 Write-Host ""
