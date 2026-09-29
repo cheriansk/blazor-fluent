@@ -17,7 +17,7 @@ When cloning this template for a new Blazor WebApp, complete these steps before 
 - [ ] Review and update `.github/dependabot.yml` schedule and assignees.
 - [ ] Review and update `.github/workflows/owasp-zap-scan.yml` target URL.
 - [ ] Run initial EF Core migration: `dotnet ef migrations add InitialCreate -p YourAppName.Persistence -s YourAppName`.
-- [ ] Delete sample entities (`ProductEntity`, `CatalogDashboard`, `CatalogSyncJobHandler`, `Weather.razor`, `Counter.razor`) once your domain entities are in place.
+- [ ] Delete sample entities (`ProductEntity`, `CatalogDashboardPage`, `CatalogSyncJobHandler`, `WeatherPage.razor`, `CounterPage.razor`) once your domain entities are in place.
 - [ ] Update `README.md` with your project's description, setup instructions, and deployment guide.
 
 ---
@@ -130,7 +130,7 @@ The Task Management subsystem implements project-scoped task tracking, Jira-styl
    - `TaskCommentEntity` inherits `TenantAuditableEntity`, capturing discussion threads with `AuthorUserId`, `AuthorName`, `AuthorEmail`, and `CommentText`.
    - Both entities use PostgreSQL schema `tasks` (`tasks.Tasks`, `tasks.TaskComments`) and implement Tier 2 single-entity validators (`TaskEntityValidator`, `TaskCommentEntityValidator`).
 2. **Reusable Generic Swimlane Component**:
-   - `<FluentSwimlaneBoard<TItem>>` (`Components/Common/FluentSwimlaneBoard.razor`) provides a generic multi-column kanban/swimlane view configured via `SwimlaneColumn<TItem>` definitions.
+   - `<FluentSwimlaneBoardComp<TItem>>` (`Components/Common/FluentSwimlaneBoardComp.razor`) provides a generic multi-column kanban/swimlane view configured via `SwimlaneColumn<TItem>` definitions.
    - Accepts custom card render fragments (`@CardTemplate`), column badge counters, and click callbacks (`OnItemClick`), with zero drag-and-drop fragility.
 3. **Automated Assignee Notifications**:
    - When a task is created, `ITaskService.CreateTaskAsync` dispatches in-app notifications (`INotificationSender.SendAsync`) to all assigned emails.
@@ -244,7 +244,25 @@ All multi-step write operations must use `IUnitOfWork.ExecuteAsync(...)` for ato
 
 ## 5. Blazor UI Rules
 
-### 5.1 Component Library
+### 5.1 Razor File & Component Naming Taxonomy (Mandatory)
+
+All current and future `.razor` files must adhere strictly to this 4-tier naming taxonomy:
+
+| Suffix | Scope & Architectural Rule | Examples | Consuming Tag |
+|---|---|---|---|
+| **`*Page.razor`** | **Routable Screen**: Any file declaring an `@page` directive at the top (top-level routable screen with a URL path). | `HomePage.razor`, `ProjectsDashboardPage.razor`, `LoginPage.razor`, `NotFoundPage.razor` | Loaded by Blazor Router |
+| **`*Comp.razor`** | **Embedded Component**: Any reusable component embedded inside a page, layout, or another component. | `PageHeaderComp.razor`, `EmptyStateComp.razor`, `FluentSwimlaneBoardComp.razor`, `NavMenuComp.razor` | `<PageHeaderComp>`, `<EmptyStateComp>` |
+| **`*Modal.razor`** | **Modal Screen / Dialog**: Any component whose whole purpose is a modal dialog / backdrop overlay screen. | `ConfirmDialogModal.razor`, `SessionRevokedModal.razor`, `ReconnectModal.razor` | `<ConfirmDialogModal>` |
+| **`*Popup.razor`** | **Interactive Popup / Flyout**: Any component whose whole purpose is an interactive flyout, dropdown, or pop-up tray. | `NotificationBellPopup.razor` | `<NotificationBellPopup>` |
+| **`*Layout.razor`** | **Custom Sub-Layout**: Any custom shell layout (e.g. for auth, admin, print) providing structural wrapping. | `AdminLayout.razor`, `AuthLayout.razor`, `EmptyLayout.razor` | `@layout AdminLayout` |
+
+> **Framework Roots Exception**: Framework-mandated files retain their standard Blazor roles: `App.razor` (root HTML shell), `Routes.razor` (router shell), `MainLayout.razor` (master default layout), `_Imports.razor` (compiler directives).
+>
+> **Code-Behind & Scoped CSS Co-Location**:
+> - Code-behind files must exactly match the full component file name: `*Page.razor.cs`, `*Comp.razor.cs`, `*Modal.razor.cs`, `*Popup.razor.cs`, `*Layout.razor.cs`.
+> - Scoped CSS files must exactly match: `*Page.razor.css`, `*Comp.razor.css`, `*Modal.razor.css`, `*Popup.razor.css`, `*Layout.razor.css`.
+
+### 5.2 Component Library
 
 This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use V5 APIs.
 
@@ -254,19 +272,26 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | **Dual-generic selects** | `FluentSelect<TOption, TValue>` requires both type parameters. Never omit the value type. |
 | **Icons package** | Use `Microsoft.FluentUI.AspNetCore.Components.Icons` for all icon references. |
 
-### 5.2 Reusable Components
+### 5.3 Reusable Components
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| `<PageHeader>` | Consistent page title/subtitle with action slot | `Components/Common/` |
-| `<ConfirmDialog>` | Accessible modal for destructive actions | `Components/Common/` |
-| `<EmptyState>` | Centered icon + message for empty views | `Components/Common/` |
-| `<FormNavigationGuard>` | Warns on unsaved dirty form edits | `Components/Common/` |
-| `<ProjectAuthorizeView>` | Role-gated conditional rendering | `Components/Common/` |
-| `<ImpersonationBanner>` | Pinned banner during impersonation | `Components/Common/` |
-| `<FluentSwimlaneBoard<TItem>>` | Generic multi-column swimlane/kanban board | `Components/Common/` |
+| `<PageHeaderComp>` | Consistent page title/subtitle with action slot | `Components/Common/` |
+| `<ConfirmDialogModal>` | Accessible modal for destructive actions | `Components/Common/` |
+| `<EmptyStateComp>` | Centered icon + message for empty views | `Components/Common/` |
+| `<FormNavigationGuardComp>` | Warns on unsaved dirty form edits | `Components/Common/` |
+| `<ProjectAuthorizeViewComp>` | Role-gated conditional rendering | `Components/Common/` |
+| `<ImpersonationBannerComp>` | Pinned banner during impersonation | `Components/Common/` |
+| `<FluentSwimlaneBoardComp<TItem>>` | Generic multi-column swimlane/kanban board | `Components/Common/` |
+| `<NotificationBellPopup>` | Header notification tray popup flyout | `Components/Layout/` |
+| `<NavMenuComp>` | Sidebar navigation links | `Components/Layout/` |
+| `<TenantSwitcherComp>` | Header tenant switching dropdown | `Components/Layout/` |
+| `<AppErrorBoundaryComp>` | User-facing correlation ID error boundary | `Components/Common/` |
+| `<ObservabilityErrorBoundaryComp>` | Circuit logging telemetry error boundary | `Components/Common/` |
+| `<SessionRevokedModal>` | Watchdog freezing circuit upon session revocation | `Components/Common/` |
+| `<ReconnectModal>` | Custom SignalR reconnection overlay | `Components/Layout/` |
 
-### 5.3 State Management
+### 5.4 State Management
 
 | Rule | Description |
 |------|-------------|
@@ -274,15 +299,15 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | **Circuit persistence** | Use `PersistentStateComponentBase` for state survival across circuit pause/resume. |
 | **Session revocation** | `<SessionRevokedModal>` monitors session validity and freezes the UI on revocation. |
 
-### 5.4 Error Handling
+### 5.5 Error Handling
 
 | Rule | Description |
 |------|-------------|
-| **Root error boundary** | `<ObservabilityErrorBoundary>` wraps the router, logging unhandled exceptions with structured tenant/user context. |
-| **Page error boundary** | `<AppErrorBoundary>` generates user-facing `ERR-XXXXXXXX` correlation IDs with a recovery button. |
+| **Root error boundary** | `<ObservabilityErrorBoundaryComp>` wraps the router, logging unhandled exceptions with structured tenant/user context. |
+| **Page error boundary** | `<AppErrorBoundaryComp>` generates user-facing `ERR-XXXXXXXX` correlation IDs with a recovery button. |
 | **Reconnection** | `<ReconnectModal>` provides custom SignalR reconnection UI. Never use the default Blazor reconnection overlay. |
 
-### 5.5 Responsive Design
+### 5.6 Responsive Design
 
 Use `ILayoutBreakpointService` for programmatic breakpoint detection:
 - **Mobile**: < 640px

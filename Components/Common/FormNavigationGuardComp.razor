@@ -2,7 +2,7 @@
 @inject NavigationManager NavigationManager
 @implements IDisposable
 
-<ConfirmDialog @ref="_confirmDialog"
+<ConfirmDialogModal @ref="_confirmDialog"
                Title="Unsaved Changes"
                Message="You have unsaved changes on this form. Are you sure you want to leave?"
                ConfirmLabel="Discard & Leave"
@@ -10,7 +10,7 @@
                OnCancelled="@OnUserCancelledLeave" />
 
 @code {
-    private ConfirmDialog? _confirmDialog;
+    private ConfirmDialogModal? _confirmDialog;
     private IDisposable? _registration;
     private LocationChangingContext? _pendingContext;
 

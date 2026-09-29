@@ -88,7 +88,7 @@ else
     </div>
 
     <!-- Reusable 6-Column Swimlane Board -->
-    <FluentSwimlaneBoard TItem="TaskEntity"
+    <FluentSwimlaneBoardComp TItem="TaskEntity"
                          Columns="@_columns"
                          Items="@_tasks"
                          OnItemClick="OpenTaskDetailsModal">
@@ -136,7 +136,7 @@ else
                 </div>
             </FluentCard>
         </ItemTemplate>
-    </FluentSwimlaneBoard>
+    </FluentSwimlaneBoardComp>
 }
 
 <!-- Create Task Modal -->

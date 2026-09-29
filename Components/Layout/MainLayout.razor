@@ -6,7 +6,7 @@
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 
-<ImpersonationBanner />
+<ImpersonationBannerComp />
 <SessionRevokedModal />
 
 <FluentLayout>
@@ -14,8 +14,8 @@
         <FluentLayoutHamburger />
         BlazorFluent
         <FluentSpacer />
-        <NotificationBell />
-        <TenantSwitcher />
+        <NotificationBellPopup />
+        <TenantSwitcherComp />
         @if (CurrentUser.IsAuthenticated)
         {
             <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size20.SignOut())" Title="Sign Out" OnClick="SignOut" Style="margin-left: 6px;">
@@ -30,13 +30,13 @@
         }
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Navigation">
-        <NavMenu />
+        <NavMenuComp />
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
-            <AppErrorBoundary>
+            <AppErrorBoundaryComp>
                 @Body
-            </AppErrorBoundary>
+            </AppErrorBoundaryComp>
         </div>
     </FluentLayoutItem>
 
