@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.DataListTypes;
 /// <summary>
 /// Static definitions for TaskPriority category and search filter codes.
 /// </summary>
-public static class TaskPriorityDefinitions
+public static class UserTaskPriorityDefinitions
 {
     public static class Categories
     {
@@ -37,26 +37,26 @@ public static class TaskPriorityDefinitions
 /// <summary>
 /// Urgency and priority rating for project tasks.
 /// </summary>
-public enum TaskPriority
+public enum UserTaskPriority
 {
     [Display(Name = "Low", Description = "Minor task or non-blocking improvement.")]
-    [DataListCategory(TaskPriorityDefinitions.Categories.Standard)]
-    [DataListFilterCriterias(TaskPriorityDefinitions.Filters.Routine)]
+    [DataListCategory(UserTaskPriorityDefinitions.Categories.Standard)]
+    [DataListFilterCriterias(UserTaskPriorityDefinitions.Filters.Routine)]
     Low = 1,
 
     [Display(Name = "Medium", Description = "Normal operational work item.")]
-    [DataListCategory(TaskPriorityDefinitions.Categories.Standard)]
-    [DataListFilterCriterias(TaskPriorityDefinitions.Filters.Routine)]
+    [DataListCategory(UserTaskPriorityDefinitions.Categories.Standard)]
+    [DataListFilterCriterias(UserTaskPriorityDefinitions.Filters.Routine)]
     Medium = 2,
 
     [Display(Name = "High", Description = "Important task with high business priority.")]
-    [DataListCategory(TaskPriorityDefinitions.Categories.Escalated)]
-    [DataListFilterCriterias(TaskPriorityDefinitions.Filters.Urgent)]
+    [DataListCategory(UserTaskPriorityDefinitions.Categories.Escalated)]
+    [DataListFilterCriterias(UserTaskPriorityDefinitions.Filters.Urgent)]
     High = 3,
 
     [Display(Name = "Urgent", Description = "Critical blocker requiring immediate resolution.")]
-    [DataListCategory(TaskPriorityDefinitions.Categories.Escalated)]
-    [DataListFilterCriterias(TaskPriorityDefinitions.Filters.Urgent)]
+    [DataListCategory(UserTaskPriorityDefinitions.Categories.Escalated)]
+    [DataListFilterCriterias(UserTaskPriorityDefinitions.Filters.Urgent)]
     Urgent = 4
 }
 

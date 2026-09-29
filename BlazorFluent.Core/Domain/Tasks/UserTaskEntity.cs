@@ -8,7 +8,7 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Represents a work item or task strictly partitioned per-tenant and per-project.
 /// Supports multi-assignee tracking via semicolon-delimited emails and Jira-style tag labels.
 /// </summary>
-public class TaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class UserTaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// ID of the project to which this task belongs.
@@ -29,7 +29,7 @@ public class TaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDele
     /// <summary>
     /// Urgency and priority rating (Low, Medium, High, Urgent).
     /// </summary>
-    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public UserTaskPriority Priority { get; set; } = UserTaskPriority.Medium;
 
     /// <summary>
     /// Current lifecycle status (Open, InProgress, Closed).
@@ -75,7 +75,7 @@ public class TaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDele
 
     // --- Navigation Properties ---
     public ProjectEntity? Project { get; set; }
-    public ICollection<TaskCommentEntity> Comments { get; set; } = new List<TaskCommentEntity>();
+    public ICollection<UserTaskCommentEntity> Comments { get; set; } = new List<UserTaskCommentEntity>();
 
     /// <summary>
     /// Parses the semicolon-separated assignees into clean trimmed email addresses.

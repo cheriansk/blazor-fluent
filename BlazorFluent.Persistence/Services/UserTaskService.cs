@@ -8,20 +8,20 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
 
-public class TaskService : ITaskService
+public class UserTaskService : IUserTaskService
 {
     private readonly AppDbContext _context;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly INotificationService _notificationService;
-    private readonly ILogger<TaskService> _logger;
+    private readonly ILogger<UserTaskService> _logger;
 
-    public TaskService(
+    public UserTaskService(
         AppDbContext context,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         INotificationService notificationService,
-        ILogger<TaskService> logger)
+        ILogger<UserTaskService> logger)
     {
         _context = context;
         _currentUser = currentUser;
@@ -30,7 +30,7 @@ public class TaskService : ITaskService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserTaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
     {
         return await _context.Tasks
             .AsNoTracking()
@@ -40,14 +40,14 @@ public class TaskService : ITaskService
             .ToListAsync(ct);
     }
 
-    public async Task<TaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<UserTaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default)
     {
         return await _context.Tasks
             .Include(t => t.Comments.Where(c => !c.IsDeleted).OrderBy(c => c.CreatedAtUtc))
             .FirstOrDefaultAsync(t => t.Id == taskId, ct);
     }
 
-    public async Task<Result<TaskEntity>> CreateTaskAsync(TaskEntity task, CancellationToken ct = default)
+    public async Task<Result<UserTaskEntity>> CreateTaskAsync(UserTaskEntity task, CancellationToken ct = default)
     {
         try
         {
@@ -71,23 +71,23 @@ public class TaskService : ITaskService
             // Automated Notification: Alert all assignees
             await NotifyAssigneesAsync(task, isNew: true, ct);
 
-            return Result<TaskEntity>.Success(task);
+            return Result<UserTaskEntity>.Success(task);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create task '{Title}'", task.Title);
-            return Result<TaskEntity>.Failure($"Failed to create task: {ex.Message}");
+            return Result<UserTaskEntity>.Failure($"Failed to create task: {ex.Message}");
         }
     }
 
-    public async Task<Result<TaskEntity>> UpdateTaskAsync(TaskEntity updated, CancellationToken ct = default)
+    public async Task<Result<UserTaskEntity>> UpdateTaskAsync(UserTaskEntity updated, CancellationToken ct = default)
     {
         try
         {
             var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == updated.Id, ct);
             if (task is null)
             {
-                return Result<TaskEntity>.Failure("Task not found.");
+                return Result<UserTaskEntity>.Failure("Task not found.");
             }
 
             var wasClosed = task.IsClosed;
@@ -114,12 +114,12 @@ public class TaskService : ITaskService
             }
 
             await _context.SaveChangesAsync(ct);
-            return Result<TaskEntity>.Success(task);
+            return Result<UserTaskEntity>.Success(task);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update task {Id}", updated.Id);
-            return Result<TaskEntity>.Failure($"Failed to update task: {ex.Message}");
+            return Result<UserTaskEntity>.Failure($"Failed to update task: {ex.Message}");
         }
     }
 
@@ -167,19 +167,19 @@ public class TaskService : ITaskService
         }
     }
 
-    public async Task<Result<TaskCommentEntity>> AddCommentAsync(Guid taskId, string commentText, CancellationToken ct = default)
+    public async Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid taskId, string commentText, CancellationToken ct = default)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(commentText))
             {
-                return Result<TaskCommentEntity>.Failure("Comment text cannot be empty.");
+                return Result<UserTaskCommentEntity>.Failure("Comment text cannot be empty.");
             }
 
             var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct);
-            if (task is null) return Result<TaskCommentEntity>.Failure("Task not found.");
+            if (task is null) return Result<UserTaskCommentEntity>.Failure("Task not found.");
 
-            var comment = new TaskCommentEntity
+            var comment = new UserTaskCommentEntity
             {
                 TaskId = taskId,
                 TenantId = task.TenantId,
@@ -194,16 +194,16 @@ public class TaskService : ITaskService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Added comment to task {TaskId} by {Author}", taskId, comment.AuthorName);
-            return Result<TaskCommentEntity>.Success(comment);
+            return Result<UserTaskCommentEntity>.Success(comment);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add comment to task {TaskId}", taskId);
-            return Result<TaskCommentEntity>.Failure($"Failed to add comment: {ex.Message}");
+            return Result<UserTaskCommentEntity>.Failure($"Failed to add comment: {ex.Message}");
         }
     }
 
-    public async Task<IReadOnlyList<TaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default)
     {
         return await _context.TaskComments
             .AsNoTracking()
@@ -212,7 +212,7 @@ public class TaskService : ITaskService
             .ToListAsync(ct);
     }
 
-    private async Task NotifyAssigneesAsync(TaskEntity task, bool isNew, CancellationToken ct)
+    private async Task NotifyAssigneesAsync(UserTaskEntity task, bool isNew, CancellationToken ct)
     {
         var emails = task.GetParsedAssigneeEmails();
         if (emails.Count == 0) return;
@@ -236,7 +236,7 @@ public class TaskService : ITaskService
                 var request = new SendNotificationRequest
                 {
                     Category = NotificationCategory.Personal,
-                    Severity = task.Priority == TaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,
+                    Severity = task.Priority == UserTaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,
                     Title = title,
                     Message = message,
                     ProjectId = task.ProjectId,

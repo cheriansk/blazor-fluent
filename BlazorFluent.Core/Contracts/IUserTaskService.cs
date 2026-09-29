@@ -6,27 +6,27 @@ namespace BlazorFluent.Core.Contracts;
 /// <summary>
 /// Domain service contract managing project work items, swimlane task lifecycle, and Jira-style comments.
 /// </summary>
-public interface ITaskService
+public interface IUserTaskService
 {
     /// <summary>
     /// Retrieves all active (non-deleted) tasks for a project, ordered by DueDate ascending.
     /// </summary>
-    Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<UserTaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a single task by ID including its discussion comments.
     /// </summary>
-    Task<TaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default);
+    Task<UserTaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default);
 
     /// <summary>
     /// Creates a new project task, stamps audit context, and dispatches automated in-app notifications to all assignees.
     /// </summary>
-    Task<Result<TaskEntity>> CreateTaskAsync(TaskEntity task, CancellationToken ct = default);
+    Task<Result<UserTaskEntity>> CreateTaskAsync(UserTaskEntity task, CancellationToken ct = default);
 
     /// <summary>
     /// Updates details, priority, due date, assignees, or labels of an existing task.
     /// </summary>
-    Task<Result<TaskEntity>> UpdateTaskAsync(TaskEntity task, CancellationToken ct = default);
+    Task<Result<UserTaskEntity>> UpdateTaskAsync(UserTaskEntity task, CancellationToken ct = default);
 
     /// <summary>
     /// Marks a task as Closed with completion timestamp and user identifier.
@@ -41,10 +41,10 @@ public interface ITaskService
     /// <summary>
     /// Appends a new chronological comment to the task discussion thread.
     /// </summary>
-    Task<Result<TaskCommentEntity>> AddCommentAsync(Guid taskId, string commentText, CancellationToken ct = default);
+    Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid taskId, string commentText, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves all chronological comments for a task.
     /// </summary>
-    Task<IReadOnlyList<TaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default);
+    Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default);
 }

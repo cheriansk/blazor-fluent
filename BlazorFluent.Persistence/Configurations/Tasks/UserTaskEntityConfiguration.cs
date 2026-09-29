@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BlazorFluent.Persistence.Configurations.Tasks;
 
-public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
+public class UserTaskEntityConfiguration : IEntityTypeConfiguration<UserTaskEntity>
 {
-    public void Configure(EntityTypeBuilder<TaskEntity> builder)
+    public void Configure(EntityTypeBuilder<UserTaskEntity> builder)
     {
         builder.ToTable("Tasks", EntitySchemas.app.ToString());
 
