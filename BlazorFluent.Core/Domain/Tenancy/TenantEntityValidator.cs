@@ -16,9 +16,13 @@ public class TenantEntityValidator : AbstractValidator<TenantEntity>
             .MaximumLength(100).WithMessage("Tenant slug cannot exceed 100 characters.")
             .Matches(@"^[a-z0-9\-]+$").WithMessage("Tenant slug must be URL-safe (lowercase letters, numbers, and dashes only).");
 
-        RuleFor(x => x.DisplayName)
-            .NotEmpty().WithMessage("Tenant display name is required.")
-            .MaximumLength(200).WithMessage("Tenant display name cannot exceed 200 characters.");
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("Tenant Code is required.")
+            .MaximumLength(15).WithMessage("Tenant Code cannot exceed 15 characters.");
+
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Tenant Name is required.")
+            .MaximumLength(200).WithMessage("Tenant Name cannot exceed 200 characters.");
 
         RuleFor(x => x)
             .Must(x => !x.EndDate.HasValue || x.EndDate.Value >= x.StartDate)

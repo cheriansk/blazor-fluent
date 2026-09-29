@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace BlazorFluent.Infrastructure.Security;
 
@@ -33,10 +35,17 @@ public static class SecurityHeadersExtensions
                 headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
             }
 
+            var env = context.RequestServices.GetService<IHostEnvironment>();
+            var isDev = env?.IsDevelopment() ?? false;
+
             // 4. Feature and device API restriction: Disable unused hardware capabilities
+            // In development, permit unload=* to satisfy Visual Studio BrowserLink's tab-close listener
             if (!headers.ContainsKey("Permissions-Policy"))
             {
-                headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+                var permissionsPolicy = isDev
+                    ? "camera=(), microphone=(), geolocation=(), unload=*"
+                    : "camera=(), microphone=(), geolocation=()";
+                headers.Append("Permissions-Policy", permissionsPolicy);
             }
 
             // 5. Legacy XSS filter protection
@@ -49,19 +58,24 @@ public static class SecurityHeadersExtensions
             //    - script-src 'unsafe-inline': required for Blazor's SignalR inline bootstrap block
             //    - style-src  'unsafe-inline': required for FluentUI v5 CSS-in-JS attribute injection
             //    - connect-src: wss: / ws: for SignalR WebSocket transport (wss: in prod, ws: in dev)
+            //                   In development, permits localhost dynamic ports for Visual Studio BrowserLink & Hot Reload
             //    - img-src: 'self' data: blob: for Fluent Icon SVG data URIs
             //    - object-src 'none': disables Flash / legacy embed plugins
             //    - base-uri 'self': prevents <base> tag injection attacks
             //    - frame-ancestors 'self': CSP-level clickjacking guard (supplements X-Frame-Options)
             if (!headers.ContainsKey("Content-Security-Policy"))
             {
-                const string csp =
+                var connectSrc = isDev
+                    ? "connect-src 'self' wss: ws: http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:*; "
+                    : "connect-src 'self' wss: ws:; ";
+
+                var csp =
                     "default-src 'self'; " +
                     "script-src 'self' 'unsafe-inline'; " +
                     "style-src 'self' 'unsafe-inline'; " +
                     "img-src 'self' data: blob:; " +
                     "font-src 'self'; " +
-                    "connect-src 'self' wss: ws:; " +
+                    connectSrc +
                     "object-src 'none'; " +
                     "base-uri 'self'; " +
                     "frame-ancestors 'self';";

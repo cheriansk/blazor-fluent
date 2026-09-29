@@ -36,7 +36,7 @@ public class TenantService : ITenantService
             {
                 return (IReadOnlyList<TenantEntity>)await _dbContext.Tenants
                     .AsNoTracking()
-                    .OrderBy(t => t.DisplayName)
+                    .OrderBy(t => t.Name)
                     .ToListAsync(token);
             },
             expiration: TimeSpan.FromMinutes(60),
@@ -44,7 +44,7 @@ public class TenantService : ITenantService
     }
 
     public async Task<Result<TenantEntity>> CreateTenantAsync(
-        string slug,
+        string slug,string code,
         string displayName,
         DateTime startDate,
         DateTime endDate,
@@ -52,6 +52,9 @@ public class TenantService : ITenantService
     {
         if (string.IsNullOrWhiteSpace(slug))
             return Result<TenantEntity>.Failure("Slug is required.");
+
+        if (string.IsNullOrWhiteSpace(code))
+            return Result<TenantEntity>.Failure("Code is required.");
 
         if (string.IsNullOrWhiteSpace(displayName))
             return Result<TenantEntity>.Failure("DisplayName is required.");
@@ -68,8 +71,9 @@ public class TenantService : ITenantService
         var tenant = new TenantEntity
         {
             Id = Guid.NewGuid(),
+            Code = code,
             Slug = normalizedSlug,
-            DisplayName = displayName.Trim(),
+            Name = displayName.Trim(),
             IsActive = true,
             StartDate = startDate,
             EndDate = endDate
@@ -81,11 +85,11 @@ public class TenantService : ITenantService
         // Evict global tenant directory cache across all auto-scaled instances
         await _cacheService.RemoveGlobalAsync(TenantsCacheKey, cancellationToken);
 
-        _logger.LogInformation("Provisioned new tenant: Slug={Slug}, Name={Name}, StartDate={StartDate}, EndDate={EndDate}",
-            tenant.Slug, tenant.DisplayName, tenant.StartDate, tenant.EndDate);
+        _logger.LogInformation("Provisioned new tenant: Slug={Slug}, Name={Name}, Code={Code}, StartDate={StartDate}, EndDate={EndDate}",
+            tenant.Slug, tenant.Name,tenant.Code, tenant.StartDate, tenant.EndDate);
 
         await _auditService.LogUserActivityAsync(
-            $"Created tenant '{tenant.DisplayName}' (Slug: {tenant.Slug})",
+            $"Created tenant '{tenant.Name}' (Slug: {tenant.Slug})",
             $"StartDate: {tenant.StartDate:yyyy-MM-dd}, EndDate: {tenant.EndDate:yyyy-MM-dd}",
             cancellationToken);
 
@@ -113,7 +117,7 @@ public class TenantService : ITenantService
         _logger.LogInformation("Updated tenant status: Slug={Slug}, IsActive={IsActive}", tenant.Slug, isActive);
 
         await _auditService.LogSecurityEventAsync(
-            $"Tenant status changed for '{tenant.DisplayName}' to {(isActive ? "Active" : "Inactive")}",
+            $"Tenant status changed for '{tenant.Name}' to {(isActive ? "Active" : "Inactive")}",
             isActive ? AuditSeverity.Information : AuditSeverity.Warning,
             $"TenantId: {tenant.Id}",
             cancellationToken);
@@ -140,7 +144,7 @@ public class TenantService : ITenantService
             tenant.Slug, startDate, endDate);
 
         await _auditService.LogUserActivityAsync(
-            $"Updated contract dates for tenant '{tenant.DisplayName}'",
+            $"Updated contract dates for tenant '{tenant.Name}'",
             $"StartDate: {startDate:yyyy-MM-dd}, EndDate: {endDate:yyyy-MM-dd}",
             cancellationToken);
 

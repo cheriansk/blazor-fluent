@@ -3,6 +3,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
@@ -72,6 +73,11 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
+            if (entry.Entity is DataProtectionKey)
+            {
+                continue;
+            }
+
             // ─── 0. AUTOMATIC SOFT-DELETE CONVERSION ─────────────────────────────────
             // If code calls context.Remove(entity) on an ISoftDeletableEntity,
             // intercept the hard delete and convert it into a soft delete.
@@ -218,7 +224,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         var entries = context.ChangeTracker.Entries()
             .Where(e => (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
-                        && e.Entity is not IAuditExemptEntity)
+                        && e.Entity is not IAuditExemptEntity
+                        && e.Entity is not DataProtectionKey)
             .ToList();
 
         if (entries.Count == 0) return;

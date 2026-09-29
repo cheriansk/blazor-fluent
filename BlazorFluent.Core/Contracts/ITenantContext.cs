@@ -38,6 +38,11 @@ public interface ITenantContext
     /// Client users are strictly prohibited and this will always return a security failure.
     /// </summary>
     Result SwitchTenant(string newTenantId);
+
+    /// <summary>
+    /// Resets the tenant context to an uninitialized state (e.g., on sign out).
+    /// </summary>
+    void Reset();
 }
 
 /// <summary>
@@ -127,5 +132,15 @@ public sealed class TenantContext : ITenantContext
             oldTenantId, newTenantId, _userType);
 
         return Result.Success();
+    }
+
+    public void Reset()
+    {
+        _tenantId = null;
+        _tenantName = null;
+        _userType = UserType.CompanyUser;
+        _isHost = false;
+        _allowedTenants.Clear();
+        _logger.LogInformation("Tenant context reset.");
     }
 }

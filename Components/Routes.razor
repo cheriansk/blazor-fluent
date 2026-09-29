@@ -5,9 +5,16 @@
     <Found Context="routeData">
         <ObservabilityErrorBoundaryComp>
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-                <NotAuthorized>
-                    <ProjectAccessDeniedCardComp RequiredRole="BlazorFluent.Core.DataListTypes.ProjectRole.ReadOnly"
-                                             CustomMessage="You must be authenticated and authorized to access this section." />
+                <NotAuthorized Context="authContext">
+                    @if (authContext.User.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <ProjectAccessDeniedCardComp RequiredRole="BlazorFluent.Core.DataListTypes.ProjectRole.ReadOnly"
+                                                 CustomMessage="You do not have permission to access this section." />
+                    }
                 </NotAuthorized>
             </AuthorizeRouteView>
         </ObservabilityErrorBoundaryComp>

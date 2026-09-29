@@ -1,18 +1,25 @@
 @page "/login"
 @rendermode InteractiveServer
+@attribute [AllowAnonymous]
 @attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Identity
+@using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Infrastructure.Security
 @using BlazorFluent.Persistence.Context
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject AppDbContext DbContext
+@inject IServiceScopeFactory ScopeFactory
 @inject IConfiguration Configuration
+@inject IWebHostEnvironment HostEnvironment
+@inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject IUserSessionService SessionService
 @inject IAuditService AuditService
+@inject ProtectedSessionStorage SessionStorage
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 @inject ILogger<LoginPage> Logger
@@ -77,35 +84,38 @@
                 </FluentMessageBar>
             }
 
-            @* Local Dev Sandbox Section *@
-            <FluentDivider Style="width: 100%; margin-top: 8px;" />
-            <div style="border-radius: 8px; border: 1px dashed var(--neutral-stroke-subtle, #ccc); padding: 12px 14px; background: var(--neutral-layer-1, #fafafa);">
-                <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; color: var(--neutral-foreground-2, #616161); margin-bottom: 8px; display: block;">
-                    🛠️ Developer Authentication Sandbox (Local Testing)
-                </FluentLabel>
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                  OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
-                        ✅ Sign in as SuperAdmin (Valid Active)
-                    </FluentButton>
-                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                  OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
-                        ✅ Sign in as Developer (Valid Active)
-                    </FluentButton>
-                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                  OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
-                        ❌ Test Expired User (Gate 1 Failure)
-                    </FluentButton>
-                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                  OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
-                        ❌ Test Tampered HMAC (Gate 2 Failure)
-                    </FluentButton>
-                    <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                  OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
-                        ❌ Test Unprovisioned User (Gate 3 Failure)
-                    </FluentButton>
-                </FluentStack>
-            </div>
+            @if (HostEnvironment.IsDevelopment())
+            {
+                @* Local Dev Sandbox Section *@
+                <FluentDivider Style="width: 100%; margin-top: 8px;" />
+                <div style="border-radius: 8px; border: 1px dashed var(--neutral-stroke-subtle, #ccc); padding: 12px 14px; background: var(--neutral-layer-1, #fafafa);">
+                    <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; color: var(--neutral-foreground-2, #616161); margin-bottom: 8px; display: block;">
+                        🛠️ Developer Authentication Sandbox (Local Testing)
+                    </FluentLabel>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
+                            ✅ Sign in as SuperAdmin (Valid Active)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
+                            ✅ Sign in as Developer (Valid Active)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
+                            ❌ Test Expired User (Gate 1 Failure)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
+                            ❌ Test Tampered HMAC (Gate 2 Failure)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
+                            ❌ Test Unprovisioned User (Gate 3 Failure)
+                        </FluentButton>
+                    </FluentStack>
+                </div>
+            }
         </FluentStack>
     </FluentCard>
 </div>
@@ -119,7 +129,10 @@
     protected override async Task OnInitializedAsync()
     {
         _secretKey = Configuration["Security:IntegritySecret"] ?? _secretKey;
-        await EnsureSeedUsersAsync();
+        if (HostEnvironment.IsDevelopment())
+        {
+            await EnsureSeedUsersAsync();
+        }
     }
 
     private async Task HandleMicrosoftSignIn()
@@ -174,19 +187,71 @@
                 return;
             }
 
-            // All gates passed: Create active session
+            // All gates passed: Resolve active tenant from database
+            var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
+            var tenantIdentifier = user.DefaultTenantId ?? "default";
+
+            var activeTenant = await DbContext.Tenants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Slug == tenantIdentifier || t.Id.ToString() == tenantIdentifier || t.Code == tenantIdentifier);
+
+            var resolvedTenantId = activeTenant?.Slug ?? tenantIdentifier;
+            var resolvedTenantName = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
+
+            List<TenantInfo> allowedTenants;
+            if (isHost || user.UserType == UserType.CompanyUser)
+            {
+                var dbTenants = await DbContext.Tenants
+                    .AsNoTracking()
+                    .Where(t => t.IsActive)
+                    .OrderBy(t => t.Name)
+                    .ToListAsync();
+
+                allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
+                if (allowedTenants.Count == 0)
+                {
+                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, isHost)];
+                }
+            }
+            else
+            {
+                allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+            }
+
+            TenantContext.Initialize(
+                tenantId: resolvedTenantId,
+                tenantName: resolvedTenantName,
+                userType: user.UserType,
+                allowedTenants: allowedTenants,
+                isHost: isHost);
+
+            // Create active session
             var session = await SessionService.CreateSessionAsync(
                 user.Id.ToString(),
                 user.Email,
                 "127.0.0.1 (Local Dev)",
                 "Edge / Windows 11");
 
+            // Store in browser sessionStorage for F5 refresh / intra-session preservation
+            try
+            {
+                await SessionStorage.SetAsync("app_session", new UserSessionStorageData(
+                    session.Id,
+                    user.Id.ToString(),
+                    user.Email,
+                    resolvedTenantId));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Could not persist session to browser sessionStorage.");
+            }
+
             // Update circuit authenticated state
             if (CurrentUser is AppCurrentUser appUser)
             {
                 appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
                 appUser.SessionId = session.Id.ToString();
-                if (user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase))
+                if (isHost)
                 {
                     appUser.AddRole("Admin");
                 }
@@ -216,7 +281,25 @@
     {
         try
         {
-            var count = await DbContext.Users.CountAsync();
+            using var scope = ScopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // 1. Ensure Root Default Tenant exists
+            if (!await db.Tenants.AnyAsync(t => t.Code == "OrgRoot"))
+            {
+                db.Tenants.Add(new TenantEntity
+                {
+                    Slug = "default",
+                    Code = "OrgRoot",
+                    Name = "Root System Organization",
+                    IsActive = true,
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddYears(10)
+                });
+                await db.SaveChangesAsync();
+            }
+
+            var count = await db.Users.CountAsync();
             if (count > 0) return;
 
             var admin = new UserEntity
@@ -267,8 +350,8 @@
                 RowSignature = "FORGED_TAMPERED_SIGNATURE_INVALID"
             };
 
-            DbContext.Users.AddRange(admin, dev, expired, tampered);
-            await DbContext.SaveChangesAsync();
+            db.Users.AddRange(admin, dev, expired, tampered);
+            await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {

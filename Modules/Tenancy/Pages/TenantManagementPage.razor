@@ -42,7 +42,8 @@
                 <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Provision New Tenant</FluentLabel>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                     <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Style="width: 100%;" />
-                    <FluentTextInput Label="Display Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Style="width: 100%;" />
+                    <FluentTextInput Label="Code" @bind-Value="_newCode" Placeholder="e.g. ACME" Required="true" Style="width: 100%;" />
+                    <FluentTextInput Label="Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Style="width: 100%;" />
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
                         <FluentDatePicker Label="Start Date" @bind-Value="_newStartDate" Required="true" />
                         <FluentDatePicker Label="End Date" @bind-Value="_newEndDate" Required="true" />
@@ -58,7 +59,7 @@
         @if (_editingTenant is not null)
         {
             <FluentCard Style="margin-bottom: 20px;">
-                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.DisplayName</FluentLabel>
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Code)</FluentLabel>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
                         <FluentDatePicker Label="Start Date" @bind-Value="_editStartDate" Required="true" />
@@ -80,7 +81,7 @@
         {
             <FluentDataGrid Items="@_tenants.AsQueryable()" GridTemplateColumns="1fr 1.5fr 120px 140px 140px 120px">
                 <PropertyColumn Property="@(t => t.Slug)" Title="Slug" />
-                <PropertyColumn Property="@(t => t.DisplayName)" Title="Name" />
+                <PropertyColumn Property="@(t => t.Name)" Title="Name" />
                 <TemplateColumn Title="Status">
                     <FluentSwitch Value="@context.IsActive"
                                   ValueChanged="@((bool val) => ToggleStatusAsync(context, val))"
@@ -111,6 +112,7 @@
     // Add modal state
     private bool _showAddModal;
     private string _newSlug = string.Empty;
+    private string _newCode = string.Empty;
     private string _newName = string.Empty;
     private DateTime? _newStartDate = DateTime.UtcNow.Date;
     private DateTime? _newEndDate = DateTime.UtcNow.Date.AddYears(1);
@@ -148,7 +150,7 @@
         if (result.Succeeded)
         {
             tenant.IsActive = isActive;
-            _statusMessage = $"Tenant '{tenant.DisplayName}' status changed to {(isActive ? "Active" : "Inactive")}.";
+            _statusMessage = $"Tenant '{tenant.Name}' status changed to {(isActive ? "Active" : "Inactive")}.";
             _isError = false;
         }
         else
@@ -188,7 +190,7 @@
         {
             _editingTenant.StartDate = _editStartDate.Value;
             _editingTenant.EndDate = _editEndDate.Value;
-            _statusMessage = $"Contract dates updated successfully for '{_editingTenant.DisplayName}'.";
+            _statusMessage = $"Contract dates updated successfully for '{_editingTenant.Name}'.";
             _isError = false;
             _editingTenant = null;
         }
@@ -201,9 +203,9 @@
 
     private async Task CreateTenantAsync()
     {
-        if (string.IsNullOrWhiteSpace(_newSlug) || string.IsNullOrWhiteSpace(_newName))
+        if (string.IsNullOrWhiteSpace(_newSlug)|| string.IsNullOrWhiteSpace(_newCode) || string.IsNullOrWhiteSpace(_newName))
         {
-            _statusMessage = "Slug and Display Name are required.";
+            _statusMessage = "Slug, Code and Display Name are required.";
             _isError = true;
             return;
         }
@@ -222,10 +224,10 @@
             return;
         }
 
-        var result = await TenantService.CreateTenantAsync(_newSlug, _newName, _newStartDate.Value, _newEndDate.Value);
+        var result = await TenantService.CreateTenantAsync(_newSlug,_newCode, _newName, _newStartDate.Value, _newEndDate.Value);
         if (result.Succeeded && result.Data is not null)
         {
-            _statusMessage = $"Tenant '{result.Data.DisplayName}' created successfully.";
+            _statusMessage = $"Tenant '{result.Data.Name} - {result.Data.Code}' created successfully.";
             _isError = false;
             CancelAdd();
             await LoadTenantsAsync();
@@ -241,6 +243,7 @@
     {
         _showAddModal = false;
         _newSlug = string.Empty;
+        _newCode = string.Empty;
         _newName = string.Empty;
         _newStartDate = DateTime.UtcNow.Date;
         _newEndDate = DateTime.UtcNow.Date.AddYears(1);

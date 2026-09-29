@@ -87,7 +87,6 @@ try
             .Build();
 
         options.DefaultPolicy = defaultPolicy;
-        options.FallbackPolicy = defaultPolicy;
     });
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<AppCurrentUser>();

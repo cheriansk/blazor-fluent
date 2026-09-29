@@ -8,12 +8,12 @@ namespace BlazorFluent.Infrastructure.Security;
 /// </summary>
 public class AppCurrentUser : ICurrentUser
 {
-    public string Email { get; set; } = "admin@blazorfluent.local";
-    public string? UserId { get; set; } = "dev_admin";
-    public string? UserName { get; set; } = "System Administrator";
-    public bool IsAuthenticated { get; set; } = true;
+    public string Email { get; set; } = string.Empty;
+    public string? UserId { get; set; } = null;
+    public string? UserName { get; set; } = null;
+    public bool IsAuthenticated { get; set; } = false;
 
-    private readonly List<string> _roles = ["Admin", "User"];
+    private readonly List<string> _roles = [];
 
     public bool IsInRole(string role) => _roles.Contains(role, StringComparer.OrdinalIgnoreCase);
 
@@ -58,5 +58,17 @@ public class AppCurrentUser : ICurrentUser
         UserId = adminId;
         Email = adminEmail;
         UserName = adminName;
+    }
+
+    public void Clear()
+    {
+        UserId = null;
+        Email = string.Empty;
+        UserName = null;
+        IsAuthenticated = false;
+        IsImpersonated = false;
+        ImpersonatedBy = null;
+        SessionId = null;
+        _roles.Clear();
     }
 }

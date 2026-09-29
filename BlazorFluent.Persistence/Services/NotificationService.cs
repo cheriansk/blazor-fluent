@@ -5,35 +5,33 @@ using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
 
 public class NotificationService : INotificationService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
-    private readonly IProjectAuthorizationService _projectAuthService;
     private readonly ITeamsNotificationSender _teamsSender;
     private readonly IEmailNotificationSender _emailSender;
     private readonly IConfiguration _configuration;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
-        AppDbContext dbContext,
+        IServiceScopeFactory scopeFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
-        IProjectAuthorizationService projectAuthService,
         ITeamsNotificationSender teamsSender,
         IEmailNotificationSender emailSender,
         IConfiguration configuration,
         ILogger<NotificationService> logger)
     {
-        _dbContext = dbContext;
+        _scopeFactory = scopeFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
-        _projectAuthService = projectAuthService;
         _teamsSender = teamsSender;
         _emailSender = emailSender;
         _configuration = configuration;
@@ -42,6 +40,9 @@ public class NotificationService : INotificationService
 
     public async Task<NotificationEntity> SendAsync(SendNotificationRequest request, CancellationToken ct = default)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
         var tenantId = _tenantContext.TenantId ?? "default";
 
         var notification = new NotificationEntity
@@ -58,8 +59,8 @@ public class NotificationService : INotificationService
             IsRead = false
         };
 
-        _dbContext.Notifications.Add(notification);
-        await _dbContext.SaveChangesAsync(ct);
+        db.Notifications.Add(notification);
+        await db.SaveChangesAsync(ct);
 
         // 1. Teams Dispatch (if requested and configured)
         if ((request.Channels & NotificationChannels.Teams) != 0)
@@ -93,7 +94,7 @@ public class NotificationService : INotificationService
 
         if (notification.SentToTeams || notification.SentToMailbox)
         {
-            await _dbContext.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(ct);
         }
 
         return notification;
@@ -101,10 +102,13 @@ public class NotificationService : INotificationService
 
     public async Task<IReadOnlyList<NotificationEntity>> GetNotificationsAsync(NotificationFilterRequest filter, CancellationToken ct = default)
     {
-        var currentUserId = _currentUser.UserId;
-        var authorizedProjectIds = await _projectAuthService.GetAuthorizedProjectIdsAsync(ProjectRole.ReadOnly, ct);
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var query = _dbContext.Notifications
+        var currentUserId = _currentUser.UserId;
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+
+        var query = db.Notifications
             .AsNoTracking()
             .Where(n => n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId));
 
@@ -141,10 +145,13 @@ public class NotificationService : INotificationService
 
     public async Task<UnreadNotificationCounts> GetUnreadCountsAsync(CancellationToken ct = default)
     {
-        var currentUserId = _currentUser.UserId;
-        var authorizedProjectIds = await _projectAuthService.GetAuthorizedProjectIdsAsync(ProjectRole.ReadOnly, ct);
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var genericCount = await _dbContext.Notifications
+        var currentUserId = _currentUser.UserId;
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+
+        var genericCount = await db.Notifications
             .AsNoTracking()
             .Where(n => !n.IsRead
                 && n.Category == NotificationCategory.Generic
@@ -155,7 +162,7 @@ public class NotificationService : INotificationService
         var personalCount = 0;
         if (!string.IsNullOrWhiteSpace(currentUserId))
         {
-            personalCount = await _dbContext.Notifications
+            personalCount = await db.Notifications
                 .AsNoTracking()
                 .Where(n => !n.IsRead
                     && n.Category == NotificationCategory.Personal
@@ -173,8 +180,11 @@ public class NotificationService : INotificationService
 
     public async Task<bool> MarkAsReadAsync(Guid notificationId, CancellationToken ct = default)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
         var currentUserId = _currentUser.UserId;
-        var notification = await _dbContext.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId, ct);
+        var notification = await db.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId, ct);
         if (notification is null) return false;
 
         // Privacy check: Personal notification can only be read by recipient
@@ -188,7 +198,7 @@ public class NotificationService : INotificationService
         // Project check: Generic notification on a project requires read access
         if (notification.ProjectId != Guid.Empty)
         {
-            var authorizedProjectIds = await _projectAuthService.GetAuthorizedProjectIdsAsync(ProjectRole.ReadOnly, ct);
+            var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
             if (!authorizedProjectIds.Contains(notification.ProjectId))
             {
                 return false;
@@ -197,16 +207,19 @@ public class NotificationService : INotificationService
 
         notification.IsRead = true;
         notification.ReadAtUtc = DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
         return true;
     }
 
     public async Task<int> MarkAllAsReadAsync(NotificationCategory category, CancellationToken ct = default)
     {
-        var currentUserId = _currentUser.UserId;
-        var authorizedProjectIds = await _projectAuthService.GetAuthorizedProjectIdsAsync(ProjectRole.ReadOnly, ct);
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var query = _dbContext.Notifications
+        var currentUserId = _currentUser.UserId;
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+
+        var query = db.Notifications
             .Where(n => !n.IsRead && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
 
         if (category == NotificationCategory.Personal)
@@ -229,8 +242,32 @@ public class NotificationService : INotificationService
             item.ReadAtUtc = now;
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
         return unreadNotifications.Count;
+    }
+
+    private async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(AppDbContext db, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    {
+        if (_tenantContext.IsHost || _currentUser.IsInRole("Admin"))
+        {
+            return await db.Projects
+                .AsNoTracking()
+                .Where(p => !p.IsDeleted)
+                .Select(p => p.Id)
+                .ToListAsync(ct);
+        }
+
+        var userId = _currentUser.UserId ?? "anonymous";
+        var userRoles = await db.ProjectUserRoles
+            .AsNoTracking()
+            .Where(r => r.UserId == userId && !r.IsDeleted)
+            .ToListAsync(ct);
+
+        return userRoles
+            .Where(r => r.Role.Satisfies(minRole))
+            .Select(r => r.ProjectId)
+            .Distinct()
+            .ToList();
     }
 
     private string? ResolveTeamsWebhook(Guid projectId)

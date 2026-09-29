@@ -20,7 +20,16 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<TenantEntity>
             .IsUnique()
             .HasDatabaseName("IX_Tenants_Slug");
 
-        builder.Property(t => t.DisplayName)
+        builder.Property(t => t.Code)
+            .HasMaxLength(15)
+            .IsRequired();
+
+
+        builder.HasIndex(t => t.Code)
+            .IsUnique()
+            .HasDatabaseName("IX_Tenants_Code");
+
+        builder.Property(t => t.Name)
             .HasMaxLength(200)
             .IsRequired();
 

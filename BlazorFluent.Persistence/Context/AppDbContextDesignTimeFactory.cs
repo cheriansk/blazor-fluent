@@ -1,6 +1,7 @@
 using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -32,6 +33,8 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
             userType: UserType.CompanyUser,
             allowedTenants: Array.Empty<TenantInfo>(),
             isHost: true);
+
+        optionsBuilder.AddInterceptors(new TenantDbConnectionInterceptor(tenantContext));
 
         return new AppDbContext(
             optionsBuilder.Options,
