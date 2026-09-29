@@ -8,7 +8,7 @@ public class ImpersonationGrantEntityConfiguration : IEntityTypeConfiguration<Im
 {
     public void Configure(EntityTypeBuilder<ImpersonationGrantEntity> builder)
     {
-        builder.ToTable("ImpersonationGrants", "identity");
+        builder.ToTable("ImpersonationGrants", EntitySchemas.identity.ToString());
 
         builder.HasKey(g => g.Id);
 

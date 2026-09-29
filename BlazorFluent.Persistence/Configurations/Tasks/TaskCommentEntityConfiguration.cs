@@ -8,7 +8,7 @@ public class TaskCommentEntityConfiguration : IEntityTypeConfiguration<TaskComme
 {
     public void Configure(EntityTypeBuilder<TaskCommentEntity> builder)
     {
-        builder.ToTable("TaskComments", "tasks");
+        builder.ToTable("TaskComments", EntitySchemas.app.ToString());
 
         builder.HasKey(c => c.Id);
 

@@ -8,7 +8,7 @@ public class AuditRecordEntityConfiguration : IEntityTypeConfiguration<AuditReco
 {
     public void Configure(EntityTypeBuilder<AuditRecordEntity> builder)
     {
-        builder.ToTable("AuditRecords", "audit");
+        builder.ToTable("AuditRecords", EntitySchemas.app.ToString());
 
         builder.HasKey(a => a.Id);
 

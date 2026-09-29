@@ -8,7 +8,7 @@ public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
 {
     public void Configure(EntityTypeBuilder<TaskEntity> builder)
     {
-        builder.ToTable("Tasks", "tasks");
+        builder.ToTable("Tasks", EntitySchemas.app.ToString());
 
         builder.HasKey(t => t.Id);
 

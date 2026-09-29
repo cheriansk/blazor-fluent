@@ -8,7 +8,7 @@ public class ProjectUserRoleEntityConfiguration : IEntityTypeConfiguration<Proje
 {
     public void Configure(EntityTypeBuilder<ProjectUserRoleEntity> builder)
     {
-        builder.ToTable("ProjectUserRoles", "tenancy");
+        builder.ToTable("ProjectUserRoles", EntitySchemas.tenancy.ToString());
 
         builder.HasKey(r => r.Id);
 

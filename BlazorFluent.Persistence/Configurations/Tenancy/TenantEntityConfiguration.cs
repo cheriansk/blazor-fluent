@@ -8,7 +8,7 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<TenantEntity>
 {
     public void Configure(EntityTypeBuilder<TenantEntity> builder)
     {
-        builder.ToTable("Tenants", "tenancy");
+        builder.ToTable("Tenants", EntitySchemas.tenancy.ToString());
 
         builder.HasKey(t => t.Id);
 
