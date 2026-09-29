@@ -6,6 +6,7 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject NavigationManager NavigationManager
 @inject BlazorFluent.Core.Contracts.INotificationService MyNotificationService
+@inject ICurrentUser CurrentUser
 @inject ILogger<NotificationBellPopup> Logger
 
 <div style="position: relative; display: inline-flex; align-items: center; margin-right: 8px;">
@@ -192,7 +193,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUnreadCountsAsync();
+        if (CurrentUser.IsAuthenticated)
+        {
+            await LoadUnreadCountsAsync();
+        }
     }
 
     private async Task TogglePanel()
@@ -219,6 +223,8 @@
 
     private async Task RefreshNotificationsAsync()
     {
+        if (!CurrentUser.IsAuthenticated) return;
+
         _isLoading = true;
         try
         {
@@ -245,6 +251,12 @@
 
     private async Task LoadUnreadCountsAsync()
     {
+        if (!CurrentUser.IsAuthenticated)
+        {
+            _unreadCounts = new();
+            return;
+        }
+
         try
         {
             _unreadCounts = await MyNotificationService.GetUnreadCountsAsync();

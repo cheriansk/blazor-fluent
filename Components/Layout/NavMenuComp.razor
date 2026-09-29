@@ -1,23 +1,28 @@
 @rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
 
 <FluentNav Id="main-menu" Width="260px">
-    <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())" IconActive="@(new Icons.Filled.Size20.Home())">Home</FluentNavItem>
-    <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())">Counter</FluentNavItem>
-    <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())">Weather</FluentNavItem>
-    <FluentNavItem Href="catalog" IconRest="@(new Icons.Regular.Size20.Box())" IconActive="@(new Icons.Filled.Size20.Box())">Catalog (Module)</FluentNavItem>
-    <FluentNavItem Href="tenancy/projects" IconRest="@(new Icons.Regular.Size20.BuildingMultiple())" IconActive="@(new Icons.Filled.Size20.BuildingMultiple())">Projects (Tenancy)</FluentNavItem>
-    <FluentNavItem Href="tasks" IconRest="@(new Icons.Regular.Size20.TaskListLtr())" IconActive="@(new Icons.Filled.Size20.TaskListLtr())">Tasks</FluentNavItem>
-    <FluentNavItem Href="tenancy/project-roles" IconRest="@(new Icons.Regular.Size20.PeopleTeam())" IconActive="@(new Icons.Filled.Size20.PeopleTeam())">Project Roles</FluentNavItem>
-
-    @if (TenantContext.IsHost)
+    @if (CurrentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(TenantContext.TenantId))
     {
-        <FluentNavGroup Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
-            <FluentNavItem Href="tenants" IconRest="@(new Icons.Regular.Size20.Building())" IconActive="@(new Icons.Filled.Size20.Building())">Tenants</FluentNavItem>
-            <FluentNavItem Href="auditing" IconRest="@(new Icons.Regular.Size20.DocumentBulletList())" IconActive="@(new Icons.Filled.Size20.DocumentBulletList())">Audit Trail</FluentNavItem>
-            <FluentNavItem Href="jobs" IconRest="@(new Icons.Regular.Size20.Clock())" IconActive="@(new Icons.Filled.Size20.Clock())">Background Jobs</FluentNavItem>
-            <FluentNavItem Href="admin/sessions" IconRest="@(new Icons.Regular.Size20.Laptop())" IconActive="@(new Icons.Filled.Size20.Laptop())">Active Sessions</FluentNavItem>
-        </FluentNavGroup>
+        <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())" IconActive="@(new Icons.Filled.Size20.Home())">Home</FluentNavItem>
+        <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())">Counter</FluentNavItem>
+        <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())">Weather</FluentNavItem>
+        <FluentNavItem Href="catalog" IconRest="@(new Icons.Regular.Size20.Box())" IconActive="@(new Icons.Filled.Size20.Box())">Catalog (Module)</FluentNavItem>
+        <FluentNavItem Href="tenancy/projects" IconRest="@(new Icons.Regular.Size20.BuildingMultiple())" IconActive="@(new Icons.Filled.Size20.BuildingMultiple())">Projects (Tenancy)</FluentNavItem>
+        <FluentNavItem Href="tasks" IconRest="@(new Icons.Regular.Size20.TaskListLtr())" IconActive="@(new Icons.Filled.Size20.TaskListLtr())">Tasks</FluentNavItem>
+        <FluentNavItem Href="tenancy/project-roles" IconRest="@(new Icons.Regular.Size20.PeopleTeam())" IconActive="@(new Icons.Filled.Size20.PeopleTeam())">Project Roles</FluentNavItem>
+
+        @if (TenantContext.IsHost)
+        {
+            <FluentNavGroup Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
+                <FluentNavItem Href="tenants" IconRest="@(new Icons.Regular.Size20.Building())" IconActive="@(new Icons.Filled.Size20.Building())">Tenants</FluentNavItem>
+                <FluentNavItem Href="auditing" IconRest="@(new Icons.Regular.Size20.DocumentBulletList())" IconActive="@(new Icons.Filled.Size20.DocumentBulletList())">Audit Trail</FluentNavItem>
+                <FluentNavItem Href="jobs" IconRest="@(new Icons.Regular.Size20.Clock())" IconActive="@(new Icons.Filled.Size20.Clock())">Background Jobs</FluentNavItem>
+                <FluentNavItem Href="admin/sessions" IconRest="@(new Icons.Regular.Size20.Laptop())" IconActive="@(new Icons.Filled.Size20.Laptop())">Active Sessions</FluentNavItem>
+            </FluentNavGroup>
+        }
     }
 </FluentNav>
 

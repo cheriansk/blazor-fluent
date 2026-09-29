@@ -28,6 +28,7 @@ public static class PersistenceExtensions
         services.TryAddScoped<IAuditService, AuditService>();
 
         // 4. Register interceptors (scoped — need ICurrentUser, ITenantContext, and IServiceProvider)
+        services.AddScoped<TenantDbConnectionInterceptor>();
         services.AddScoped<EntityValidationInterceptor>();
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<ProjectSecurityInterceptor>();
@@ -44,6 +45,7 @@ public static class PersistenceExtensions
         // 6. Register AppDbContext with Npgsql, validation, audit & security interceptors, and DataProtection support
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
+            var connectionInterceptor = sp.GetRequiredService<TenantDbConnectionInterceptor>();
             var validationInterceptor = sp.GetRequiredService<EntityValidationInterceptor>();
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
@@ -52,7 +54,7 @@ public static class PersistenceExtensions
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
             })
-            .AddInterceptors(validationInterceptor, interceptor, securityInterceptor);
+            .AddInterceptors(connectionInterceptor, validationInterceptor, interceptor, securityInterceptor);
         });
 
         // 7. Auto-scaling Azure Web Apps: Shared Data Protection Key Ring in PostgreSQL

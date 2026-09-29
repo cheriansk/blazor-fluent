@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Exceptions;
 using FluentValidation;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -58,7 +59,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
         foreach (var entry in entries)
         {
-            if (entry.Entity is IValidationExemptEntity)
+            if (IsExemptEntity(entry.Entity))
             {
                 continue;
             }
@@ -122,7 +123,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
         foreach (var entry in entries)
         {
-            if (entry.Entity is IValidationExemptEntity)
+            if (IsExemptEntity(entry.Entity))
             {
                 continue;
             }
@@ -172,4 +173,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
             throw new EntityValidationException(errors.ToDictionary(k => k.Key, v => v.Value.ToArray()));
         }
     }
+
+    private static bool IsExemptEntity(object entity) =>
+        entity is IValidationExemptEntity or DataProtectionKey;
 }

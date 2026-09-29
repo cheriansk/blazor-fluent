@@ -12,7 +12,9 @@ public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntit
     /// <summary>Short, URL-safe slug used to resolve tenants (e.g., from subdomain or header).</summary>
     public string Slug { get; set; } = string.Empty;
 
-    public string DisplayName { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>Operational status switch. Setting to false immediately deactivates the tenant. Required.</summary>
     public bool IsActive { get; set; } = true;

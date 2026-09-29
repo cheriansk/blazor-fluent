@@ -1,37 +1,56 @@
 @inherits LayoutComponentBase
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Infrastructure.Security
+@using BlazorFluent.Persistence.Context
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.EntityFrameworkCore
 @inject ICurrentUser CurrentUser
+@inject ITenantContext TenantContext
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
+@inject ProtectedSessionStorage SessionStorage
+@inject IUserSessionService SessionService
+@inject AppDbContext DbContext
+@inject ILogger<MainLayout> Logger
 
 <ImpersonationBannerComp />
 <SessionRevokedModal />
 
 <FluentLayout>
     <FluentLayoutItem Area="LayoutArea.Header">
-        <FluentLayoutHamburger />
+        @if (HasActiveTenantSession)
+        {
+            <FluentLayoutHamburger />
+        }
         BlazorFluent
         <FluentSpacer />
-        <NotificationBellPopup />
-        <TenantSwitcherComp />
+        @if (HasActiveTenantSession)
+        {
+            <NotificationBellPopup />
+            <TenantSwitcherComp />
+        }
         @if (CurrentUser.IsAuthenticated)
         {
             <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size20.SignOut())" Title="Sign Out" OnClick="SignOut" Style="margin-left: 6px;">
                 Sign Out
             </FluentButton>
         }
-        else
+        else if (!IsAnonymousPage)
         {
             <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Style="margin-left: 6px;">
                 Sign In
             </FluentButton>
         }
     </FluentLayoutItem>
-    <FluentLayoutItem Area="LayoutArea.Navigation">
-        <NavMenuComp />
-    </FluentLayoutItem>
+    @if (HasActiveTenantSession)
+    {
+        <FluentLayoutItem Area="LayoutArea.Navigation">
+            <NavMenuComp />
+        </FluentLayoutItem>
+    }
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
             <AppErrorBoundaryComp>
@@ -44,9 +63,9 @@
         <div style="display: flex">
             <FluentLink Href="https://www.fluentui-blazor.net" Target="LinkTarget.Blank" IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
                 Documentation and demos
-                </FluentLink>
+            </FluentLink>
             <FluentSpacer />
-                <FluentLink Href="https://learn.microsoft.com/en-us/aspnet/core/blazor" Target="LinkTarget.Blank" IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
+            <FluentLink Href="https://learn.microsoft.com/en-us/aspnet/core/blazor" Target="LinkTarget.Blank" IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
                 About Blazor
             </FluentLink>
         </div>
@@ -60,17 +79,157 @@
 </div>
 
 @code {
-    private void SignOut()
+    private bool HasActiveTenantSession => CurrentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(TenantContext.TenantId);
+
+    private bool IsAnonymousPage
     {
-        if (CurrentUser is AppCurrentUser appUser)
+        get
         {
-            appUser.IsAuthenticated = false;
-            appUser.UserId = null;
-            appUser.SessionId = null;
-            appUser.ClearImpersonation("dev_admin", "admin@blazorfluent.local", "System Administrator");
+            var uri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLowerInvariant();
+            return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("not-found");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!CurrentUser.IsAuthenticated)
+        {
+            try
+            {
+                var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
+                if (result.Success && result.Value != null)
+                {
+                    var data = result.Value;
+
+                    // Validate session against database
+                    var isRevoked = await SessionService.IsSessionRevokedAsync(data.SessionId);
+                    if (!isRevoked)
+                    {
+                        var user = await DbContext.Users
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(u => u.Id.ToString() == data.UserId && !u.IsDeleted);
+
+                        if (user != null && user.IsActive)
+                        {
+                            var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
+                            var activeTenant = await DbContext.Tenants
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(t => t.Slug == data.ActiveTenantId || t.Id.ToString() == data.ActiveTenantId);
+
+                            var resolvedTenantId = activeTenant?.Slug ?? data.ActiveTenantId;
+                            var resolvedTenantName = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
+
+                            List<TenantInfo> allowedTenants;
+                            if (isHost || user.UserType == UserType.CompanyUser)
+                            {
+                                var dbTenants = await DbContext.Tenants
+                                    .AsNoTracking()
+                                    .Where(t => t.IsActive)
+                                    .OrderBy(t => t.Name)
+                                    .ToListAsync();
+
+                                allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
+                                if (allowedTenants.Count == 0)
+                                {
+                                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, isHost)];
+                                }
+                            }
+                            else
+                            {
+                                allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+                            }
+
+                            TenantContext.Initialize(
+                                tenantId: resolvedTenantId,
+                                tenantName: resolvedTenantName,
+                                userType: user.UserType,
+                                allowedTenants: allowedTenants,
+                                isHost: isHost);
+
+                            if (CurrentUser is AppCurrentUser appUser)
+                            {
+                                appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
+                                appUser.SessionId = data.SessionId.ToString();
+                                if (isHost)
+                                {
+                                    appUser.AddRole("Admin");
+                                }
+                            }
+
+                            AuthStateProvider.NotifyUserChanged();
+                            StateHasChanged();
+                            return;
+                        }
+                    }
+
+                    // Session revoked or invalid: clear storage
+                    await SessionStorage.DeleteAsync("app_session");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to restore session from browser sessionStorage.");
+            }
+
+            // If still not authenticated and trying to access a protected page, redirect to login
+            if (!IsAnonymousPage)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+        {
+            // Edge case: Authenticated but tenant missing -> try resolving from user's default
+            try
+            {
+                var userId = CurrentUser.UserId;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var user = await DbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+                    if (user != null)
+                    {
+                        var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
+                        var tenantId = user.DefaultTenantId ?? "default";
+                        var activeTenant = await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId);
+                        var name = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
+                        TenantContext.Initialize(tenantId, name, user.UserType, [new TenantInfo(tenantId, name, isHost)], isHost);
+                        StateHasChanged();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to resolve tenant for authenticated user.");
+            }
+        }
+    }
+
+    private async Task SignOut()
+    {
+        try
+        {
+            var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
+            if (result.Success && result.Value != null)
+            {
+                var adminOrSelf = CurrentUser.UserId ?? "user";
+                await SessionService.RevokeSessionAsync(result.Value.SessionId, adminOrSelf);
+            }
+            await SessionStorage.DeleteAsync("app_session");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error while cleaning session storage on sign out.");
         }
 
+        if (CurrentUser is AppCurrentUser appUser)
+        {
+            appUser.Clear();
+        }
+
+        TenantContext.Reset();
         AuthStateProvider.NotifyUserChanged();
-        NavigationManager.NavigateTo("/login", forceLoad: false);
+        NavigationManager.NavigateTo("/login", forceLoad: true);
     }
 }

@@ -1,6 +1,9 @@
 @using BlazorFluent.Core.Contracts
+@using BlazorFluent.Infrastructure.Security
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ITenantContext TenantContext
 @inject IAuditService AuditService
+@inject ProtectedSessionStorage SessionStorage
 @using Microsoft.FluentUI.AspNetCore.Components
 
 @if (TenantContext.TenantId is null)
@@ -70,6 +73,20 @@ else
         {
             _switchError = null;
             await AuditService.LogTenantSwitchAsync(prevTenant, newTenantId);
+
+            // Update session storage so refreshes (F5) preserve the switched tenant
+            try
+            {
+                var existing = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
+                if (existing.Success && existing.Value != null)
+                {
+                    await SessionStorage.SetAsync("app_session", existing.Value with { ActiveTenantId = newTenantId });
+                }
+            }
+            catch
+            {
+                // Non-fatal if session storage update fails in browser
+            }
         }
     }
 }
