@@ -418,7 +418,7 @@ if (-not $gitInstalled -or -not $isGitRepo) {
         }
         Write-Host "  Renamed branch 'main' -> 'main_template' (tracking template repository)" -ForegroundColor Green
 
-        git checkout --orphan develop 2>$null
+        git checkout -q --orphan develop 2>$null
         git add -A
         Write-Host "  Created clean orphan branch 'develop' with zero template commit history" -ForegroundColor Green
         Write-Host "  All renamed files are staged and ready for your initial commit." -ForegroundColor Green
@@ -462,7 +462,9 @@ Write-Host "  Next steps:" -ForegroundColor White
 Write-Host "    1. Open $NewName.slnx in Visual Studio / Rider" -ForegroundColor DarkGray
 Write-Host "    2. Run: dotnet restore" -ForegroundColor DarkGray
 Write-Host "    3. Run: dotnet build" -ForegroundColor DarkGray
-Write-Host "    4. Review staged changes and create your initial commit on 'develop':" -ForegroundColor DarkGray
+Write-Host "    4. Generate initial database migration (creates DataProtectionKeys and entity tables):" -ForegroundColor DarkGray
+Write-Host "         dotnet ef migrations add InitialCreate --project $NewName.Persistence --startup-project ." -ForegroundColor Cyan
+Write-Host "    5. Review staged changes and create your initial commit on 'develop':" -ForegroundColor DarkGray
 Write-Host "         git status" -ForegroundColor Cyan
 Write-Host "         git commit -m `"Initial commit: scaffold from BlazorFluent template`"" -ForegroundColor Cyan
 Write-Host "         git push -u origin develop" -ForegroundColor Cyan

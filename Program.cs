@@ -11,6 +11,7 @@ using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
 using BlazorFluent.Persistence.Context;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -142,6 +143,24 @@ try
     }
 
     var app = builder.Build();
+
+    // 10. Database Migration in Development (creates DataProtectionKeys and all entity tables)
+    if (app.Environment.IsDevelopment())
+    {
+        try
+        {
+            Log.Information("Applying EF Core database migrations in Development...");
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.Migrate();
+            Log.Information("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Failed to apply database migrations on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
+            throw;
+        }
+    }
 
     // Configure the HTTP request pipeline.
     if (!app.Environment.IsDevelopment())
