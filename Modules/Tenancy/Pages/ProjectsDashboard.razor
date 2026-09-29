@@ -72,7 +72,7 @@
             projects are ever returned — enforced at the persistence layer, not just the UI.
         </FluentLabel>
 
-        <FluentDataGrid Items="@SampleProjectsQueryable" GridTemplateColumns="1fr 2fr 120px">
+        <FluentDataGrid Items="@SampleProjectsQueryable" GridTemplateColumns="1fr 2fr 100px 140px">
             <PropertyColumn Property="@(p => p.Name)" Title="Project Name" />
             <PropertyColumn Property="@(p => p.Description)" Title="Description" />
             <TemplateColumn Title="Status">
@@ -84,6 +84,11 @@
                 {
                     <FluentBadge >Inactive</FluentBadge>
                 }
+            </TemplateColumn>
+            <TemplateColumn Title="Actions">
+                <FluentAnchor Appearance="Appearance.Lightweight" Href="@($"/projects/{context.Id}/tasks")">
+                    View Tasks
+                </FluentAnchor>
             </TemplateColumn>
         </FluentDataGrid>
     </FluentCard>

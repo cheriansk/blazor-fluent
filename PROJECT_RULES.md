@@ -100,7 +100,7 @@ All shared domain enums live in `BlazorFluent.Core/DataListTypes/`. Never declar
 | **Companion Definition Classes** | Enums define structured companion classes in the same file (e.g. `{EnumName}Definitions.Categories`, `{EnumName}Definitions.Filters`) declaring `const string` codes with `[Display]`. |
 | **Code-Only Attribute Signature** | `[DataListCategory(Definitions.Categories.Code)]` and `[DataListFilterCriterias(Definitions.Filters.Code)]` accept **only the constant code**, eliminating string repetition across members. |
 | **Rich Metadata Resolution** | `DataListExtensions` inspects companion definition classes via cached reflection ($O(1)$) to link each enum member to its `CategoryInfo` and `FilterInfo` records (resolving `Code`, `DisplayName`, and `Description`). |
-| **UI Projection** | Use `.ToDataListItems<TEnum>()` to project enums into immutable `DataListItem<TEnum>` records for direct binding to `FluentSelect` or data grids. |
+| **UI Projection & Filtering** | Use `DataListExtensions.GetDataListItems<TEnum>()` (or `enumVal.GetDataListItems()`) for unfiltered items, and `GetFilteredDataListItems<TEnum>(criteria)` (or `enumVal.GetFilteredDataListItems(criteria)`) for filtered items. In `<FluentSelect>`, bind `TValue="string"` with `OptionText="@(i => i.DisplayName)"` and `OptionValue="@(i => i.Code)"` to display user-friendly names while persisting raw enum codes. |
 
 ### 1.4 Primary Keys
 
@@ -120,6 +120,24 @@ Validation is strictly organized into two distinct, intuitive tiers to prevent c
 2. **Fail-Closed Startup Safety**: At application launch, `AppDbContext` inspects all mapped entities. If any concrete entity lacks an `IValidator<TEntity>` and does **not** implement `IValidationExemptEntity`, startup terminates immediately with an `InvalidOperationException` detailing the missing validator.
 3. **Zero-Reflection Performance**: `EntityValidationInterceptor` caches closed `IValidator<TEntity>` types in a static `ConcurrentDictionary`, resolving validators in under 1 microsecond.
 4. **Batch Error Aggregation**: If any entities fail validation during `SaveChangesAsync()`, all errors across all entities in the commit batch are aggregated into a structured `EntityValidationException`, and the transaction is aborted before any SQL is sent to PostgreSQL.
+
+### 1.6 Project Task Management & Reusable Swimlane Architecture
+
+The Task Management subsystem implements project-scoped task tracking, Jira-style comments, automated notifications, and Microsoft Teams daily summaries:
+
+1. **Entity Models & Scoping**:
+   - `TaskEntity` inherits `TenantAuditableEntity`, implementing `IProjectScopedEntity` and `ISoftDeletableEntity`. It stores `Title`, `Description`, `Priority` (`TaskPriority`), `Status` (`TaskStatus`), `DueDate`, `AssigneeEmails` (semicolon-separated), `Labels` (comma-separated), `IsClosed`, `ClosedAtUtc`, and child `Comments`.
+   - `TaskCommentEntity` inherits `TenantAuditableEntity`, capturing discussion threads with `AuthorUserId`, `AuthorName`, `AuthorEmail`, and `CommentText`.
+   - Both entities use PostgreSQL schema `tasks` (`tasks.Tasks`, `tasks.TaskComments`) and implement Tier 2 single-entity validators (`TaskEntityValidator`, `TaskCommentEntityValidator`).
+2. **Reusable Generic Swimlane Component**:
+   - `<FluentSwimlaneBoard<TItem>>` (`Components/Common/FluentSwimlaneBoard.razor`) provides a generic multi-column kanban/swimlane view configured via `SwimlaneColumn<TItem>` definitions.
+   - Accepts custom card render fragments (`@CardTemplate`), column badge counters, and click callbacks (`OnItemClick`), with zero drag-and-drop fragility.
+3. **Automated Assignee Notifications**:
+   - When a task is created, `ITaskService.CreateTaskAsync` dispatches in-app notifications (`INotificationSender.SendAsync`) to all assigned emails.
+4. **Daily Microsoft Teams Channel Summary**:
+   - `DailyTaskSummaryJobHandler` executes daily (at 18:00 UTC via `PeriodicBatchScheduler`).
+   - Gathers tasks across all active projects grouped into Past Due, Due Today, Due Tomorrow, and Due in 2 Days.
+   - Formats a Markdown summary table and dispatches it to the project's configured webhook (`ProjectEntity.TeamsWebhookUrl`) or global fallback.
 
 ---
 
@@ -246,6 +264,7 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | `<FormNavigationGuard>` | Warns on unsaved dirty form edits | `Components/Common/` |
 | `<ProjectAuthorizeView>` | Role-gated conditional rendering | `Components/Common/` |
 | `<ImpersonationBanner>` | Pinned banner during impersonation | `Components/Common/` |
+| `<FluentSwimlaneBoard<TItem>>` | Generic multi-column swimlane/kanban board | `Components/Common/` |
 
 ### 5.3 State Management
 

@@ -288,4 +288,29 @@ public static class DataListExtensions
 
         return items;
     }
+
+    /// <summary>
+    /// Retrieves all enum values projected as DataListItem DTOs as-is without filtering.
+    /// </summary>
+    public static IReadOnlyList<DataListItem<TEnum>> GetDataListItems<TEnum>() where TEnum : struct, Enum =>
+        ToDataListItems<TEnum>(categoryCode: null, filterCriteria: null);
+
+    /// <summary>
+    /// Retrieves enum values projected as DataListItem DTOs filtered by a specific filter criteria code.
+    /// If the enum does not declare filter criteria or the criteria is null/empty, returns all items.
+    /// </summary>
+    public static IReadOnlyList<DataListItem<TEnum>> GetFilteredDataListItems<TEnum>(string? filterCriteria) where TEnum : struct, Enum =>
+        ToDataListItems<TEnum>(categoryCode: null, filterCriteria: filterCriteria);
+
+    /// <summary>
+    /// Extension method on an enum instance to retrieve all items of its enum type as DataListItem DTOs.
+    /// </summary>
+    public static IReadOnlyList<DataListItem<TEnum>> GetDataListItems<TEnum>(this TEnum _) where TEnum : struct, Enum =>
+        GetDataListItems<TEnum>();
+
+    /// <summary>
+    /// Extension method on an enum instance to retrieve items of its enum type filtered by criteria.
+    /// </summary>
+    public static IReadOnlyList<DataListItem<TEnum>> GetFilteredDataListItems<TEnum>(this TEnum _, string? filterCriteria) where TEnum : struct, Enum =>
+        GetFilteredDataListItems<TEnum>(filterCriteria);
 }

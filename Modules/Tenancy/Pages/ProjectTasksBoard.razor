@@ -1,0 +1,797 @@
+@page "/projects/{ProjectId:guid}/tasks"
+@page "/tasks"
+@rendermode InteractiveServer
+@using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Tasks
+@using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@inject ITaskService TaskService
+@inject AppDbContext DbContext
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject NavigationManager Navigation
+
+<PageTitle>Tasks — @(_currentProject?.Name ?? "Project Work Items")</PageTitle>
+
+<div class="tasks-page-header">
+    <div class="tasks-page-header-left">
+        <FluentBreadcrumb>
+            <FluentBreadcrumbItem Href="/tenancy/projects">Projects</FluentBreadcrumbItem>
+            <FluentBreadcrumbItem>@(_currentProject?.Name ?? "Tasks")</FluentBreadcrumbItem>
+            <FluentBreadcrumbItem Current="true">Task Board</FluentBreadcrumbItem>
+        </FluentBreadcrumb>
+        <div class="tasks-header-title-row">
+            <FluentLabel Typo="Typography.H3">@(_currentProject?.Name ?? "Project Tasks")</FluentLabel>
+            @if (_currentProject is not null)
+            {
+                <FluentBadge Appearance="@BadgeAppearance.Filled">Project ID: @_currentProject.Id.ToString()[..8]...</FluentBadge>
+            }
+        </div>
+    </div>
+
+    <div class="tasks-page-header-actions">
+        <!-- Project Switcher -->
+        @if (_availableProjects.Count > 1)
+        {
+            <div style="min-width: 200px;">
+                <FluentSelect Items="@_availableProjects"
+                              OptionText="@(p => p.Name)"
+                              OptionValue="@(p => p.Id.ToString())"
+                              SelectedOption="@_currentProject"
+                              SelectedOptionChanged="OnProjectChanged"
+                              Label="Switch Project" />
+            </div>
+        }
+
+        <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="OpenCreateTaskModal">
+            New Task
+        </FluentButton>
+    </div>
+</div>
+
+@if (_isLoading)
+{
+    <FluentProgressRing Style="margin: 3rem auto;" />
+}
+else if (_currentProject is null)
+{
+    <FluentMessageBar Intent="MessageBarIntent.Warning" Style="margin-top: 1.5rem;">
+        No active project selected or found. Please navigate to a valid project.
+    </FluentMessageBar>
+}
+else
+{
+    <!-- Swimlane Metrics Bar -->
+    <div class="metrics-bar">
+        <div class="metric-item">
+            <span class="metric-count">@_tasks.Count</span>
+            <span class="metric-label">Total Tasks</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-count text-danger">@_tasks.Count(t => !t.IsClosed && t.DueDate.HasValue && t.DueDate.Value.Date < _today)</span>
+            <span class="metric-label">Past Due</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-count text-warning">@_tasks.Count(t => !t.IsClosed && t.DueDate.HasValue && t.DueDate.Value.Date == _today)</span>
+            <span class="metric-label">Due Today</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-count text-success">@_tasks.Count(t => t.IsClosed || t.Status == UserTaskStatus.Closed)</span>
+            <span class="metric-label">Completed</span>
+        </div>
+    </div>
+
+    <!-- Reusable 6-Column Swimlane Board -->
+    <FluentSwimlaneBoard TItem="TaskEntity"
+                         Columns="@_columns"
+                         Items="@_tasks"
+                         OnItemClick="OpenTaskDetailsModal">
+        <ItemTemplate>
+            <FluentCard Class="task-card">
+                <div class="task-card-header">
+                    <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(context.Priority)">
+                        @context.Priority
+                    </FluentBadge>
+                    <span class="task-card-due @(context.DueDate.HasValue && context.DueDate.Value.Date < _today && !context.IsClosed ? "due-overdue" : "")">
+                        @(context.DueDate.HasValue ? context.DueDate.Value.ToString("MMM dd") : "No Due Date")
+                    </span>
+                </div>
+
+                <div class="task-card-title">@context.Title</div>
+
+                @if (!string.IsNullOrWhiteSpace(context.Labels))
+                {
+                    <div class="task-card-labels">
+                        @foreach (var label in context.GetParsedLabels())
+                        {
+                            <span class="jira-label-pill">@label</span>
+                        }
+                    </div>
+                }
+
+                <div class="task-card-footer">
+                    <div class="task-card-assignees" title="@context.AssigneeEmails">
+                        @if (!string.IsNullOrWhiteSpace(context.AssigneeEmails))
+                        {
+                            <span>👤 @(context.GetParsedAssigneeEmails().FirstOrDefault() ?? "")</span>
+                            @if (context.GetParsedAssigneeEmails().Count > 1)
+                            {
+                                <span class="badge-more">+@(context.GetParsedAssigneeEmails().Count - 1)</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="unassigned-text">Unassigned</span>
+                        }
+                    </div>
+                    <div class="task-card-comments-count">
+                        💬 @(context.Comments?.Count ?? 0)
+                    </div>
+                </div>
+            </FluentCard>
+        </ItemTemplate>
+    </FluentSwimlaneBoard>
+}
+
+<!-- Create Task Modal -->
+@if (_showCreateModal)
+{
+    <div class="modal-backdrop" @onclick="CloseModals">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <FluentLabel Typo="Typography.H4">Create New Task</FluentLabel>
+                <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
+            </div>
+
+            <div class="modal-body">
+                <FluentTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Style="width: 100%;" Placeholder="Brief headline of the task..." />
+
+                <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Details" Rows="4" Style="width: 100%; margin-top: 12px;" Placeholder="Add detailed description, acceptance criteria, or repro steps..." />
+
+                <div class="modal-grid-row" style="margin-top: 12px;">
+                    <FluentSelect TOption="DataListItem<TaskPriority>"
+                                  TValue="string"
+                                  Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                                  OptionText="@(i => i.DisplayName)"
+                                  OptionValue="@(i => i.Code)"
+                                  @bind-Value:get="_newTask.Priority.ToString()"
+                                  @bind-Value:set="code => { if (Enum.TryParse<TaskPriority>(code, out var p)) _newTask.Priority = p; }"
+                                  Label="Priority" Style="width: 100%;" />
+
+                    <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date" Style="width: 100%;" />
+                </div>
+
+                <FluentTextInput @bind-Value="_newTask.AssigneeEmails"
+                                 Label="Assignee Email(s) (Semicolon-Separated)"
+                                 Placeholder="alice@company.com; bob@company.com"
+                                 Style="width: 100%; margin-top: 12px;" />
+
+                <FluentTextInput @bind-Value="_newTask.Labels"
+                                 Label="Labels / Tags (Comma-Separated)"
+                                 Placeholder="Frontend, Bug, HighPriority"
+                                 Style="width: 100%; margin-top: 12px;" />
+            </div>
+
+            <div class="modal-footer">
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseModals">Cancel</FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveNewTaskAsync" Loading="@_isSaving">Create Task</FluentButton>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Task Details & Jira Discussion Modal -->
+@if (_selectedTask is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(_selectedTask.Priority)">
+                        @_selectedTask.Priority
+                    </FluentBadge>
+                    <FluentLabel Typo="Typography.H4">@_selectedTask.Title</FluentLabel>
+                </div>
+                <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
+            </div>
+
+            <div class="modal-body-split">
+                <!-- Left Pane: Task Details & Editing -->
+                <div class="modal-pane-left">
+                    <FluentTextInput @bind-Value="_selectedTask.Title" Label="Title" Style="width: 100%;" />
+
+                    <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="4" Style="width: 100%; margin-top: 12px;" />
+
+                    <div class="modal-grid-row" style="margin-top: 12px;">
+                        <FluentSelect TOption="DataListItem<TaskPriority>"
+                                      TValue="string"
+                                      Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                                      OptionText="@(i => i.DisplayName)"
+                                      OptionValue="@(i => i.Code)"
+                                      @bind-Value:get="_selectedTask.Priority.ToString()"
+                                      @bind-Value:set="code => { if (Enum.TryParse<TaskPriority>(code, out var p)) _selectedTask.Priority = p; }"
+                                      Label="Priority" Style="width: 100%;" />
+
+                        <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date" Style="width: 100%;" />
+                    </div>
+
+                    <div class="modal-grid-row" style="margin-top: 12px;">
+                        <FluentSelect TOption="DataListItem<UserTaskStatus>"
+                                      TValue="string"
+                                      Items="@(DataListExtensions.GetDataListItems<UserTaskStatus>())"
+                                      OptionText="@(i => i.DisplayName)"
+                                      OptionValue="@(i => i.Code)"
+                                      @bind-Value:get="_selectedTask.Status.ToString()"
+                                      @bind-Value:set="code => { if (Enum.TryParse<UserTaskStatus>(code, out var s)) _selectedTask.Status = s; }"
+                                      Label="Status" Style="width: 100%;" />
+
+                        <FluentTextInput @bind-Value="_selectedTask.AssigneeEmails"
+                                         Label="Assignees"
+                                         Placeholder="email1@co.com; email2@co.com"
+                                         Style="width: 100%;" />
+                    </div>
+
+                    <FluentTextInput @bind-Value="_selectedTask.Labels"
+                                     Label="Labels"
+                                     Placeholder="UI, Release-1.0"
+                                     Style="width: 100%; margin-top: 12px;" />
+
+                    <div style="display: flex; gap: 8px; margin-top: 20px;">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
+                            Save Changes
+                        </FluentButton>
+
+                        @if (_selectedTask.IsClosed)
+                        {
+                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="ReopenSelectedTaskAsync">
+                                Reopen Task
+                            </FluentButton>
+                        }
+                        else
+                        {
+                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseSelectedTaskAsync">
+                                Mark as Closed
+                            </FluentButton>
+                        }
+                    </div>
+                </div>
+
+                <!-- Right Pane: Jira-Style Discussion Comments Thread -->
+                <div class="modal-pane-right">
+                    <FluentLabel Typo="Typography.H5">Activity & Comments (@(_selectedTaskComments.Count))</FluentLabel>
+
+                    <div class="comments-thread">
+                        @if (_selectedTaskComments.Count == 0)
+                        {
+                            <div class="no-comments-placeholder">No comments yet. Start the discussion below.</div>
+                        }
+                        else
+                        {
+                            @foreach (var c in _selectedTaskComments)
+                            {
+                                <div class="comment-bubble">
+                                    <div class="comment-bubble-header">
+                                        <span class="comment-author">@c.AuthorName</span>
+                                        <span class="comment-time">@c.CreatedAtUtc.ToString("MMM dd, yyyy HH:mm") UTC</span>
+                                    </div>
+                                    <div class="comment-body">@c.CommentText</div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Add Comment Form -->
+                    <div class="add-comment-box">
+                        <FluentTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Style="width: 100%;" />
+                        <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 8px; align-self: flex-end;" OnClick="PostCommentAsync" Loading="@_isPostingComment">
+                            Post Comment
+                        </FluentButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .tasks-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .tasks-header-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 6px;
+    }
+
+    .tasks-page-header-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+    }
+
+    .metrics-bar {
+        display: flex;
+        align-items: center;
+        background-color: var(--neutral-layer-1, #ffffff);
+        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 1.25rem;
+        gap: 2rem;
+    }
+
+    .metric-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .metric-count {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .metric-label {
+        font-size: 0.8rem;
+        color: var(--neutral-foreground-hint, #707070);
+    }
+
+    .metric-divider {
+        width: 1px;
+        height: 36px;
+        background-color: var(--neutral-stroke-layer-rest, #e0e0e0);
+    }
+
+    .text-danger { color: #d13438; }
+    .text-warning { color: #ff8c00; }
+    .text-success { color: #107c41; }
+
+    /* Task Card Styles */
+    .task-card {
+        padding: 0.85rem;
+        border-radius: 6px;
+        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        background-color: var(--neutral-layer-1, #ffffff);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .task-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .task-card-due {
+        font-size: 0.75rem;
+        color: var(--neutral-foreground-hint, #707070);
+    }
+
+    .due-overdue {
+        color: #d13438;
+        font-weight: 600;
+    }
+
+    .task-card-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--neutral-foreground-rest, #242424);
+        line-height: 1.3;
+    }
+
+    .task-card-labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .jira-label-pill {
+        background-color: #edebe9;
+        color: #323130;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .task-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #f3f2f1;
+        padding-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #605e5c;
+    }
+
+    .badge-more {
+        background-color: #f3f2f1;
+        padding: 1px 4px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        margin-left: 3px;
+    }
+
+    .unassigned-text {
+        color: #a19f9d;
+        font-style: italic;
+    }
+
+    /* Modal Backdrop & Dialog Styles */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.45);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-dialog {
+        background: var(--neutral-layer-1, #ffffff);
+        border-radius: 8px;
+        width: 90%;
+        max-width: 580px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-dialog-large {
+        max-width: 950px;
+        width: 95%;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .modal-body-split {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        max-height: calc(90vh - 120px);
+        overflow-y: auto;
+    }
+
+    .modal-pane-left {
+        flex: 1 1 50%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-pane-right {
+        flex: 1 1 50%;
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        padding-left: 1.5rem;
+    }
+
+    .modal-grid-row {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+    }
+
+    /* Comments Thread Styles */
+    .comments-thread {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin: 1rem 0;
+        max-height: 360px;
+        padding-right: 0.5rem;
+    }
+
+    .comment-bubble {
+        background-color: var(--neutral-layer-2, #f5f5f5);
+        border: 1px solid #e1dfdd;
+        border-radius: 6px;
+        padding: 0.75rem;
+    }
+
+    .comment-bubble-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        margin-bottom: 4px;
+    }
+
+    .comment-author {
+        font-weight: 600;
+        color: var(--neutral-foreground-rest, #242424);
+    }
+
+    .comment-time {
+        color: var(--neutral-foreground-hint, #8a8a8a);
+    }
+
+    .comment-body {
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+    }
+
+    .no-comments-placeholder {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: #8a8a8a;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+
+    .add-comment-box {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        padding-top: 1rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _isPostingComment = false;
+    private DateTime _today = DateTime.UtcNow.Date;
+
+    private ProjectEntity? _currentProject;
+    private List<ProjectEntity> _availableProjects = [];
+    private List<TaskEntity> _tasks = [];
+    private List<SwimlaneColumn<TaskEntity>> _columns = [];
+
+    // Modal state
+    private bool _showCreateModal = false;
+    private TaskEntity _newTask = new();
+    private DateTime? _newTaskDueDate;
+
+    private TaskEntity? _selectedTask;
+    private DateTime? _selectedTaskDueDate;
+    private List<TaskCommentEntity> _selectedTaskComments = [];
+    private string _newCommentText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        InitializeSwimlanes();
+        await LoadProjectsAndTasksAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_currentProject is not null && _currentProject.Id != ProjectId && ProjectId != Guid.Empty)
+        {
+            await LoadProjectsAndTasksAsync();
+        }
+    }
+
+    private void InitializeSwimlanes()
+    {
+        _today = DateTime.UtcNow.Date;
+        var tomorrow = _today.AddDays(1);
+        var in2Days = _today.AddDays(2);
+
+        _columns = new List<SwimlaneColumn<TaskEntity>>
+        {
+            new("Past Due", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date < _today, "#d13438", "Overdue"),
+            new("Due Today", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == _today, "#ff8c00", "Today's priority"),
+            new("Due Tomorrow", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == tomorrow, "#0078d4", "Next 24 hours"),
+            new("Due in 2 Days", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == in2Days, "#8764b8", "Upcoming"),
+            new("Due Later", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && (!t.DueDate.HasValue || t.DueDate.Value.Date > in2Days), "#605e5c", "Future pipeline"),
+            new("Closed", t => t.IsClosed || t.Status == UserTaskStatus.Closed, "#107c41", "Completed work")
+        };
+    }
+
+    private async Task LoadProjectsAndTasksAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _availableProjects = await DbContext.Projects
+                .AsNoTracking()
+                .Where(p => p.IsActive && !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            if (_availableProjects.Count == 0)
+            {
+                _currentProject = null;
+                _tasks = [];
+                return;
+            }
+
+            if (ProjectId != Guid.Empty)
+            {
+                _currentProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectId) ?? _availableProjects.First();
+            }
+            else
+            {
+                _currentProject = _availableProjects.First();
+                ProjectId = _currentProject.Id;
+            }
+
+            var result = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
+            _tasks = result.ToList();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OnProjectChanged(ProjectEntity? newProject)
+    {
+        if (newProject is not null && newProject.Id != ProjectId)
+        {
+            Navigation.NavigateTo($"/projects/{newProject.Id}/tasks");
+        }
+    }
+
+    private void OpenCreateTaskModal()
+    {
+        _newTask = new TaskEntity
+        {
+            ProjectId = _currentProject?.Id ?? ProjectId,
+            Priority = TaskPriority.Medium,
+            Status = UserTaskStatus.Open
+        };
+        _newTaskDueDate = DateTime.UtcNow.Date.AddDays(1);
+        _showCreateModal = true;
+    }
+
+    private void CloseModals()
+    {
+        _showCreateModal = false;
+        _selectedTask = null;
+        _selectedTaskComments.Clear();
+        _newCommentText = string.Empty;
+    }
+
+    private async Task SaveNewTaskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newTask.Title)) return;
+
+        _isSaving = true;
+        try
+        {
+            _newTask.ProjectId = _currentProject!.Id;
+            _newTask.DueDate = _newTaskDueDate;
+
+            var result = await TaskService.CreateTaskAsync(_newTask);
+            if (result.IsSuccess)
+            {
+                CloseModals();
+                var fresh = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
+                _tasks = fresh.ToList();
+            }
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task OpenTaskDetailsModal(TaskEntity task)
+    {
+        _selectedTask = await TaskService.GetTaskByIdAsync(task.Id);
+        if (_selectedTask is not null)
+        {
+            _selectedTaskDueDate = _selectedTask.DueDate;
+            _selectedTaskComments = (await TaskService.GetCommentsAsync(_selectedTask.Id)).ToList();
+        }
+    }
+
+    private async Task UpdateSelectedTaskAsync()
+    {
+        if (_selectedTask is null) return;
+
+        _isSaving = true;
+        try
+        {
+            _selectedTask.DueDate = _selectedTaskDueDate;
+            var result = await TaskService.UpdateTaskAsync(_selectedTask);
+            if (result.IsSuccess)
+            {
+                CloseModals();
+                var fresh = await TaskService.GetTasksByProjectAsync(_currentProject!.Id);
+                _tasks = fresh.ToList();
+            }
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task CloseSelectedTaskAsync()
+    {
+        if (_selectedTask is null) return;
+
+        var result = await TaskService.CloseTaskAsync(_selectedTask.Id);
+        if (result.IsSuccess)
+        {
+            CloseModals();
+            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject!.Id);
+            _tasks = fresh.ToList();
+        }
+    }
+
+    private async Task ReopenSelectedTaskAsync()
+    {
+        if (_selectedTask is null) return;
+
+        var result = await TaskService.ReopenTaskAsync(_selectedTask.Id);
+        if (result.IsSuccess)
+        {
+            CloseModals();
+            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject!.Id);
+            _tasks = fresh.ToList();
+        }
+    }
+
+    private async Task PostCommentAsync()
+    {
+        if (_selectedTask is null || string.IsNullOrWhiteSpace(_newCommentText)) return;
+
+        _isPostingComment = true;
+        try
+        {
+            var result = await TaskService.AddCommentAsync(_selectedTask.Id, _newCommentText);
+            if (result.IsSuccess)
+            {
+                _newCommentText = string.Empty;
+                _selectedTaskComments = (await TaskService.GetCommentsAsync(_selectedTask.Id)).ToList();
+            }
+        }
+        finally
+        {
+            _isPostingComment = false;
+        }
+    }
+
+    private static string GetPriorityColor(TaskPriority priority) => priority switch
+    {
+        TaskPriority.Urgent => "#d13438", // Red
+        TaskPriority.High => "#ff8c00",   // Orange
+        TaskPriority.Medium => "#0078d4", // Blue
+        _ => "#605e5c"                    // Gray
+    };
+}

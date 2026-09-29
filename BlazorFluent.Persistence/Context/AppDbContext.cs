@@ -7,6 +7,7 @@ using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Domain.Notifications;
+using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Interceptors;
 using FluentValidation;
@@ -43,6 +44,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
     public DbSet<UserSessionEntity> UserSessions => Set<UserSessionEntity>();
     public DbSet<ImpersonationGrantEntity> ImpersonationGrants => Set<ImpersonationGrantEntity>();
+    public DbSet<TaskEntity> Tasks => Set<TaskEntity>();
+    public DbSet<TaskCommentEntity> TaskComments => Set<TaskCommentEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

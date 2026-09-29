@@ -1,0 +1,148 @@
+@typeparam TItem
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<div class="swimlane-container">
+    @foreach (var col in Columns)
+    {
+        var colItems = Items.Where(col.Predicate).ToList();
+
+        <div class="swimlane-column">
+            <!-- Column Header -->
+            <div class="swimlane-header">
+                <div class="swimlane-header-left">
+                    <span class="swimlane-title">@col.Title</span>
+                    @if (!string.IsNullOrWhiteSpace(col.Subtitle))
+                    {
+                        <span class="swimlane-subtitle">@col.Subtitle</span>
+                    }
+                </div>
+                <FluentBadge Appearance="@BadgeAppearance.Tint" ><!--Color="@col.BadgeColor">-->
+                    @colItems.Count
+                </FluentBadge>
+            </div>
+
+            <!-- Column Card Stack -->
+            <div class="swimlane-body">
+                @if (colItems.Count == 0)
+                {
+                    <div class="swimlane-empty">
+                        <span>No items</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in colItems)
+                    {
+                        <div class="swimlane-card-wrapper" @onclick="() => HandleItemClick(item)">
+                            @if (ItemTemplate is not null)
+                            {
+                                @ItemTemplate(item)
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .swimlane-container {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 0.5rem 0 1.5rem 0;
+        min-height: 550px;
+        align-items: flex-start;
+    }
+
+    .swimlane-column {
+        flex: 1 1 300px;
+        min-width: 290px;
+        max-width: 360px;
+        background-color: var(--neutral-layer-2, #f5f5f5);
+        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 260px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .swimlane-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        background-color: var(--neutral-layer-1, #ffffff);
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .swimlane-header-left {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .swimlane-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--neutral-foreground-rest, #242424);
+    }
+
+    .swimlane-subtitle {
+        font-size: 0.75rem;
+        color: var(--neutral-foreground-hint, #707070);
+    }
+
+    .swimlane-body {
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .swimlane-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--neutral-foreground-hint, #8a8a8a);
+        font-size: 0.85rem;
+        border: 1px dashed var(--neutral-stroke-layer-rest, #d1d1d1);
+        border-radius: 6px;
+        background-color: var(--neutral-layer-1, #fafafa);
+    }
+
+    .swimlane-card-wrapper {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .swimlane-card-wrapper:hover {
+        transform: translateY(-2px);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<SwimlaneColumn<TItem>> Columns { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<TItem> Items { get; set; } = [];
+
+    [Parameter]
+    public RenderFragment<TItem>? ItemTemplate { get; set; }
+
+    [Parameter]
+    public EventCallback<TItem> OnItemClick { get; set; }
+
+    private async Task HandleItemClick(TItem item)
+    {
+        if (OnItemClick.HasDelegate)
+        {
+            await OnItemClick.InvokeAsync(item);
+        }
+    }
+}

@@ -2,6 +2,7 @@ using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Audit;
 using BlazorFluent.Jobs.Jobs.Catalog;
+using BlazorFluent.Jobs.Jobs.Tasks;
 using Cronos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -116,6 +117,15 @@ public class PeriodicBatchScheduler : BackgroundService
                 "AuditPurgeJob",
                 parsedPurge,
                 () => new AuditPurgeJobEvent(TriggerSource: "Cron", RetentionDays: retentionDays)));
+        }
+
+        var dailyTaskCron = _configuration["Jobs:Schedules:DailyTaskSummaryJob"] ?? "0 18 * * *";
+        if (TryParseCron("DailyTaskSummaryJob", dailyTaskCron, out var parsedTaskCron))
+        {
+            entries.Add(new ScheduleEntry(
+                "DailyTaskSummaryJob",
+                parsedTaskCron,
+                () => new DailyTaskSummaryJobEvent(TriggerSource: "Cron")));
         }
 
         return entries;
