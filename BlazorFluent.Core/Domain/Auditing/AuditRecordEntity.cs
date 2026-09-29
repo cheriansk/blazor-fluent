@@ -1,5 +1,5 @@
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Auditing;
 

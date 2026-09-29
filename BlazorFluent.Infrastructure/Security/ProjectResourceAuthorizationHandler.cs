@@ -1,6 +1,6 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BlazorFluent.Infrastructure.Security;

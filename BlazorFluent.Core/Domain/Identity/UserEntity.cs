@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Domain.ValueObjects;

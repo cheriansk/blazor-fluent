@@ -3,7 +3,7 @@ using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Catalog;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Domain.Notifications;

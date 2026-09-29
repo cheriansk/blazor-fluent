@@ -1,5 +1,5 @@
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 
 namespace BlazorFluent.Core.Domain.Tenancy;

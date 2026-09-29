@@ -52,7 +52,41 @@ Every domain class and abstract base class in `BlazorFluent.Core` **must end wit
 | `TenantAuditableEntity` | `TenantAuditable` |
 | `UserSessionEntity` | `UserSession` |
 
-**Exceptions**: Interfaces (`ITenantEntity`), records (`TenantInfo`, `BaseJobEvent`), and service classes (`TenantContext`).
+### 1.2 Entity Architecture & Developer Decision Guide
+
+When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step decision framework:
+
+#### Step 1: Choose the Base Class (Single Class Inheritance)
+| If the entity is... | Inherit from... | What you get |
+|---|---|---|
+| **Tenant-scoped with audit trail** (90% of business entities) | `TenantAuditableEntity` | Sequential UUIDv7 `Id`, `Created/Updated` stamps, `TenantId` |
+| **Host-wide / System entity with audit trail** (e.g. Users, Tenants) | `AuditableEntity` | Sequential UUIDv7 `Id`, `Created/Updated` stamps (no `TenantId`) |
+| **Lightweight table with no audit trail** (e.g. keyrings, technical caches) | `BaseEntity` | Sequential UUIDv7 `Id` only |
+
+#### Step 2: Choose Required Multi-Tenancy Boundary
+| If the entity is... | Must Implement... | Enforcement |
+|---|---|---|
+| **Scoped to a single tenant** | `ITenantEntity` (already included if inheriting `TenantAuditableEntity`) | EF Core automatic `QueryFilters.Tenant` isolation |
+| **System-wide / Cross-tenant** | `IGlobalEntity` | Explicit opt-out; startup fail-closed guard throws if unassigned |
+
+#### Step 3: Choose Composable Capabilities (Multiple Marker Interfaces)
+| Capability Needed | Implement Marker Interface | Automatic Behavior Enabled |
+|---|---|---|
+| **Soft Deletion** | `ISoftDeletableEntity` | `DbContext.Remove()` becomes soft delete; filtered by `QueryFilters.SoftDelete` |
+| **Project Workspace Scoping** | `IProjectScopedEntity` | Write operations guarded by `ProjectSecurityInterceptor` against user role |
+| **Effective Dating (Active Date Ranges)** | `IEffectiveDatedEntity` | Adds `StartDate`/`EndDate?`; interceptor enforces `EndDate >= StartDate`; LINQ `query.WhereActive()` |
+| **Revision / Version Tracking** | `IVersionedEntity` | Adds `VerNum` and `SetVersionNumber(newVer)`. Interceptor validates `VerNum >= 1`. Versions are explicitly controlled via domain logic, not blind auto-increments |
+| **Skip Audit Diff Logging** | `IAuditExemptEntity` | Prevents recursive diff logging in `audit.AuditRecords` |
+
+#### Common Entity Scenarios Quick Reference Table
+| Entity Scenario | Base Class | Marker Interfaces |
+|---|---|---|
+| **Standard Business Entity** (Products, Customers, Orders) | `TenantAuditableEntity` | `ISoftDeletableEntity` |
+| **Project Workspace Entity** (Tasks, Documents, Features) | `TenantAuditableEntity` | `IProjectScopedEntity`, `ISoftDeletableEntity` |
+| **Effective-Dated Contract / Pricing** | `TenantAuditableEntity` | `IEffectiveDatedEntity`, `IVersionedEntity`, `ISoftDeletableEntity` |
+| **Company Tenant Entity** | `AuditableEntity` | `IGlobalEntity`, `IEffectiveDatedEntity` |
+| **User Account Entity** | `AuditableEntity` | `IGlobalEntity`, `ISoftDeletableEntity` |
+| **System Audit Record / Job Execution** | `AuditableEntity` / `TenantAuditableEntity` | `IAuditExemptEntity` |
 
 ### 1.3 DataListTypes Enum Standard
 
@@ -362,7 +396,7 @@ BlazorFluent/
 │   ├── Constants/                               # Role constants
 │   ├── Contracts/                               # All service interfaces
 │   ├── DataListTypes/                            # All shared enums
-│   ├── Domain/                                  # Entities, delegates, value objects
+│   ├── Domain/                                  # Entities, Base abstractions, value objects
 │   ├── Events/                                  # Job event contracts
 │   └── Validation/                              # FluentValidation validators
 │

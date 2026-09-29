@@ -1,6 +1,6 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.Domain.Delegates;
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
