@@ -108,7 +108,7 @@ public static class PersistenceExtensions
         services.TryAddScoped<IImpersonationService, ImpersonationService>();
 
         // 15. Project Work Item & Task Management Service
-        services.TryAddScoped<ITaskService, TaskService>();
+        services.TryAddScoped<IUserTaskService, UserTaskService>();
 
         return services;
     }

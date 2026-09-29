@@ -126,9 +126,9 @@ Validation is strictly organized into two distinct, intuitive tiers to prevent c
 The Task Management subsystem implements project-scoped task tracking, Jira-style comments, automated notifications, and Microsoft Teams daily summaries:
 
 1. **Entity Models & Scoping**:
-   - `TaskEntity` inherits `TenantAuditableEntity`, implementing `IProjectScopedEntity` and `ISoftDeletableEntity`. It stores `Title`, `Description`, `Priority` (`TaskPriority`), `Status` (`TaskStatus`), `DueDate`, `AssigneeEmails` (semicolon-separated), `Labels` (comma-separated), `IsClosed`, `ClosedAtUtc`, and child `Comments`.
+   - `UserTaskEntity` inherits `TenantAuditableEntity`, implementing `IProjectScopedEntity` and `ISoftDeletableEntity`. It stores `Title`, `Description`, `Priority` (`TaskPriority`), `Status` (`TaskStatus`), `DueDate`, `AssigneeEmails` (semicolon-separated), `Labels` (comma-separated), `IsClosed`, `ClosedAtUtc`, and child `Comments`.
    - `TaskCommentEntity` inherits `TenantAuditableEntity`, capturing discussion threads with `AuthorUserId`, `AuthorName`, `AuthorEmail`, and `CommentText`.
-   - Both entities use PostgreSQL schema `tasks` (`tasks.Tasks`, `tasks.TaskComments`) and implement Tier 2 single-entity validators (`TaskEntityValidator`, `TaskCommentEntityValidator`).
+   - Both entities use PostgreSQL schema `tasks` (`tasks.Tasks`, `tasks.TaskComments`) and implement Tier 2 single-entity validators (`UserTaskEntityValidator`, `TaskCommentEntityValidator`).
 2. **Reusable Generic Swimlane Component**:
    - `<FluentSwimlaneBoardComp<TItem>>` (`Components/Common/FluentSwimlaneBoardComp.razor`) provides a generic multi-column kanban/swimlane view configured via `SwimlaneColumn<TItem>` definitions.
    - Accepts custom card render fragments (`@CardTemplate`), column badge counters, and click callbacks (`OnItemClick`), with zero drag-and-drop fragility.

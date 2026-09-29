@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BlazorFluent.Persistence.Configurations.Tasks;
 
-public class TaskCommentEntityConfiguration : IEntityTypeConfiguration<TaskCommentEntity>
+public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserTaskCommentEntity>
 {
-    public void Configure(EntityTypeBuilder<TaskCommentEntity> builder)
+    public void Configure(EntityTypeBuilder<UserTaskCommentEntity> builder)
     {
-        builder.ToTable("TaskComments", "tasks");
+        builder.ToTable("TaskComments", EntitySchemas.app.ToString());
 
         builder.HasKey(c => c.Id);
 

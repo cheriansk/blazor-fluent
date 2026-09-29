@@ -8,7 +8,7 @@ public class NotificationEntityConfiguration : IEntityTypeConfiguration<Notifica
 {
     public void Configure(EntityTypeBuilder<NotificationEntity> builder)
     {
-        builder.ToTable("Notifications", "notifications");
+        builder.ToTable("Notifications", EntitySchemas.app.ToString());
 
         builder.HasKey(n => n.Id);
 

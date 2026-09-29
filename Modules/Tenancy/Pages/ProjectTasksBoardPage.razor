@@ -8,7 +8,7 @@
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Persistence.Context
 @using Microsoft.EntityFrameworkCore
-@inject ITaskService TaskService
+@inject IUserTaskService TaskService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
@@ -88,7 +88,7 @@ else
     </div>
 
     <!-- Reusable 6-Column Swimlane Board -->
-    <FluentSwimlaneBoardComp TItem="TaskEntity"
+    <FluentSwimlaneBoardComp TItem="UserTaskEntity"
                          Columns="@_columns"
                          Items="@_tasks"
                          OnItemClick="OpenTaskDetailsModal">
@@ -155,13 +155,13 @@ else
                 <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Details" Rows="4" Style="width: 100%; margin-top: 12px;" Placeholder="Add detailed description, acceptance criteria, or repro steps..." />
 
                 <div class="modal-grid-row" style="margin-top: 12px;">
-                    <FluentSelect TOption="DataListItem<TaskPriority>"
+                    <FluentSelect TOption="DataListItem<UserTaskPriority>"
                                   TValue="string"
-                                  Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                                  Items="@(DataListExtensions.GetDataListItems<UserTaskPriority>())"
                                   OptionText="@(i => i.DisplayName)"
                                   OptionValue="@(i => i.Code)"
                                   @bind-Value:get="_newTask.Priority.ToString()"
-                                  @bind-Value:set="code => { if (Enum.TryParse<TaskPriority>(code, out var p)) _newTask.Priority = p; }"
+                                  @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _newTask.Priority = p; }"
                                   Label="Priority" Style="width: 100%;" />
 
                     <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date" Style="width: 100%;" />
@@ -209,13 +209,13 @@ else
                     <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="4" Style="width: 100%; margin-top: 12px;" />
 
                     <div class="modal-grid-row" style="margin-top: 12px;">
-                        <FluentSelect TOption="DataListItem<TaskPriority>"
+                        <FluentSelect TOption="DataListItem<UserTaskPriority>"
                                       TValue="string"
-                                      Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                                      Items="@(DataListExtensions.GetDataListItems<UserTaskPriority>())"
                                       OptionText="@(i => i.DisplayName)"
                                       OptionValue="@(i => i.Code)"
                                       @bind-Value:get="_selectedTask.Priority.ToString()"
-                                      @bind-Value:set="code => { if (Enum.TryParse<TaskPriority>(code, out var p)) _selectedTask.Priority = p; }"
+                                      @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _selectedTask.Priority = p; }"
                                       Label="Priority" Style="width: 100%;" />
 
                         <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date" Style="width: 100%;" />
@@ -576,17 +576,17 @@ else
 
     private ProjectEntity? _currentProject;
     private List<ProjectEntity> _availableProjects = [];
-    private List<TaskEntity> _tasks = [];
-    private List<SwimlaneColumn<TaskEntity>> _columns = [];
+    private List<UserTaskEntity> _tasks = [];
+    private List<SwimlaneColumn<UserTaskEntity>> _columns = [];
 
     // Modal state
     private bool _showCreateModal = false;
-    private TaskEntity _newTask = new();
+    private UserTaskEntity _newTask = new();
     private DateTime? _newTaskDueDate;
 
-    private TaskEntity? _selectedTask;
+    private UserTaskEntity? _selectedTask;
     private DateTime? _selectedTaskDueDate;
-    private List<TaskCommentEntity> _selectedTaskComments = [];
+    private List<UserTaskCommentEntity> _selectedTaskComments = [];
     private string _newCommentText = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -609,7 +609,7 @@ else
         var tomorrow = _today.AddDays(1);
         var in2Days = _today.AddDays(2);
 
-        _columns = new List<SwimlaneColumn<TaskEntity>>
+        _columns = new List<SwimlaneColumn<UserTaskEntity>>
         {
             new("Past Due", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date < _today, "#d13438", "Overdue"),
             new("Due Today", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == _today, "#ff8c00", "Today's priority"),
@@ -667,10 +667,10 @@ else
 
     private void OpenCreateTaskModal()
     {
-        _newTask = new TaskEntity
+        _newTask = new UserTaskEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
-            Priority = TaskPriority.Medium,
+            Priority = UserTaskPriority.Medium,
             Status = UserTaskStatus.Open
         };
         _newTaskDueDate = DateTime.UtcNow.Date.AddDays(1);
@@ -709,7 +709,7 @@ else
         }
     }
 
-    private async Task OpenTaskDetailsModal(TaskEntity task)
+    private async Task OpenTaskDetailsModal(UserTaskEntity task)
     {
         _selectedTask = await TaskService.GetTaskByIdAsync(task.Id);
         if (_selectedTask is not null)
@@ -787,11 +787,11 @@ else
         }
     }
 
-    private static string GetPriorityColor(TaskPriority priority) => priority switch
+    private static string GetPriorityColor(UserTaskPriority priority) => priority switch
     {
-        TaskPriority.Urgent => "#d13438", // Red
-        TaskPriority.High => "#ff8c00",   // Orange
-        TaskPriority.Medium => "#0078d4", // Blue
+        UserTaskPriority.Urgent => "#d13438", // Red
+        UserTaskPriority.High => "#ff8c00",   // Orange
+        UserTaskPriority.Medium => "#0078d4", // Blue
         _ => "#605e5c"                    // Gray
     };
 }

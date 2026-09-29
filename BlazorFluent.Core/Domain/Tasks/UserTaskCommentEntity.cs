@@ -6,10 +6,10 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Chronological Jira-style discussion comment attached to a parent task.
 /// Maintained within tenant scope with audit dates and soft-deletion support.
 /// </summary>
-public class TaskCommentEntity : TenantAuditableEntity, ISoftDeletableEntity
+public class UserTaskCommentEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
     /// <summary>
-    /// Foreign key to the parent <see cref="TaskEntity"/>.
+    /// Foreign key to the parent <see cref="UserTaskEntity"/>.
     /// </summary>
     public Guid TaskId { get; set; }
 
@@ -44,5 +44,5 @@ public class TaskCommentEntity : TenantAuditableEntity, ISoftDeletableEntity
     public string? DeletedBy { get; set; }
 
     // --- Navigation Property ---
-    public TaskEntity? Task { get; set; }
+    public UserTaskEntity? Task { get; set; }
 }

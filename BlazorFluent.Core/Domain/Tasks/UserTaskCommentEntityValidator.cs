@@ -7,9 +7,9 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Validates pure in-memory comment constraints before database persistence.
 /// Executed automatically by EntityValidationInterceptor during SaveChangesAsync.
 /// </summary>
-public class TaskCommentEntityValidator : AbstractValidator<TaskCommentEntity>
+public class UserTaskCommentEntityValidator : AbstractValidator<UserTaskCommentEntity>
 {
-    public TaskCommentEntityValidator()
+    public UserTaskCommentEntityValidator()
     {
         RuleFor(x => x.CommentText)
             .NotEmpty().WithMessage("Comment text cannot be empty.")

@@ -44,8 +44,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
     public DbSet<UserSessionEntity> UserSessions => Set<UserSessionEntity>();
     public DbSet<ImpersonationGrantEntity> ImpersonationGrants => Set<ImpersonationGrantEntity>();
-    public DbSet<TaskEntity> Tasks => Set<TaskEntity>();
-    public DbSet<TaskCommentEntity> TaskComments => Set<TaskCommentEntity>();
+    public DbSet<UserTaskEntity> Tasks => Set<UserTaskEntity>();
+    public DbSet<UserTaskCommentEntity> TaskComments => Set<UserTaskCommentEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

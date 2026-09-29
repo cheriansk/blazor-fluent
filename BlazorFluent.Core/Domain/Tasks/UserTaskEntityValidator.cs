@@ -3,13 +3,13 @@ using FluentValidation;
 namespace BlazorFluent.Core.Domain.Tasks;
 
 /// <summary>
-/// Tier 2 Entity Invariant Validator for TaskEntity.
+/// Tier 2 Entity Invariant Validator for UserTaskEntity.
 /// Validates pure in-memory entity constraints before database persistence.
 /// Executed automatically by EntityValidationInterceptor during SaveChangesAsync.
 /// </summary>
-public class TaskEntityValidator : AbstractValidator<TaskEntity>
+public class UserTaskEntityValidator : AbstractValidator<UserTaskEntity>
 {
-    public TaskEntityValidator()
+    public UserTaskEntityValidator()
     {
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Task title is required.")

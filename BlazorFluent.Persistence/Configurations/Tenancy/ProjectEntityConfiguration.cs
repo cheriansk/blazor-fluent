@@ -8,7 +8,7 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
 {
     public void Configure(EntityTypeBuilder<ProjectEntity> builder)
     {
-        builder.ToTable("Projects", "tenancy");
+        builder.ToTable("Projects", EntitySchemas.tenancy.ToString());
 
         builder.HasKey(p => p.Id);
 
