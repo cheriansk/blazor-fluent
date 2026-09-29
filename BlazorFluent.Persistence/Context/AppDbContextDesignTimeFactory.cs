@@ -1,4 +1,6 @@
+using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.DataListTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -22,22 +24,19 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
             npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
         });
 
+        var dateTimeProvider = new ConfigurableDateTimeProvider(useUtc: true);
+        var tenantContext = new TenantContext();
+        tenantContext.Initialize(
+            tenantId: null,
+            tenantName: null,
+            userType: UserType.CompanyUser,
+            allowedTenants: Array.Empty<TenantInfo>(),
+            isHost: true);
+
         return new AppDbContext(
             optionsBuilder.Options,
-            new DesignTimeDateTimeProvider(),
-            new DesignTimeTenantContext(),
+            dateTimeProvider,
+            tenantContext,
             serviceProvider: null);
-    }
-
-    private sealed class DesignTimeDateTimeProvider : IDateTimeProvider
-    {
-        public DateTime UtcNow => DateTime.UtcNow;
-        public bool UseUtc => true;
-    }
-
-    private sealed class DesignTimeTenantContext : ITenantContext
-    {
-        public string? TenantId => null;
-        public bool IsHost => true;
     }
 }
