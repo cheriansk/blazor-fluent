@@ -139,6 +139,22 @@ The Task Management subsystem implements project-scoped task tracking, Jira-styl
    - Gathers tasks across all active projects grouped into Past Due, Due Today, Due Tomorrow, and Due in 2 Days.
    - Formats a Markdown summary table and dispatches it to the project's configured webhook (`ProjectEntity.TeamsWebhookUrl`) or global fallback.
 
+### 1.7 File Import, Client-Side Encryption & Staging Pipeline
+
+The File Ingestion & Staging subsystem implements enterprise-grade, asynchronous file processing:
+
+1. **Defense-in-Depth Cryptography**:
+   - File streams are encrypted client-side in C# using hardware-accelerated **AES-256-GCM** prior to network egress.
+   - Unique 256-bit AES keys per tenant are dynamically derived using **HKDF-SHA256** (`ITenantEncryptionService`), guaranteeing zero-knowledge confidentiality.
+2. **Hierarchical Blob Storage**:
+   - `ITenantBlobStorageService` organizes blobs as `tenants/{tenantId}/projects/{projectId}/imports/{year}/{month}/{importFileId}.bin`.
+   - Production connects to Azure Blob Storage; development seamlessly falls back to isolated local encrypted directories.
+3. **Fail-Closed Validation & Decoupled Batch Processing**:
+   - Storing the raw file metadata in `imports.ImportFiles` immediately responds to the user and enqueues `FileImportedJobEvent` via `IJobEventPublisher`.
+   - `FileStagingJobHandler` decrypts streams and executes `IFileSchemaValidator<TSchema>` (e.g. `TaskImportSchemaValidator`).
+   - **Strict Fail-Closed Policy**: If any cell or row fails validation, 0 rows are staged, detailed cell/row diagnostics are saved in `ValidationErrorsJson`, status becomes `ValidationFailed`, and the user is alerted.
+   - On success, rows are staged in `staging.StagedTasks` and user receives an in-app confirmation notification.
+
 ---
 
 ## 2. Multi-Tenancy Rules
@@ -290,6 +306,7 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | `<ObservabilityErrorBoundaryComp>` | Circuit logging telemetry error boundary | `Components/Common/` |
 | `<SessionRevokedModal>` | Watchdog freezing circuit upon session revocation | `Components/Common/` |
 | `<ReconnectModal>` | Custom SignalR reconnection overlay | `Components/Layout/` |
+| `<ImportErrorsModal>` | Line-by-line schema validation diagnostics modal | `Modules/Imports/Components/` |
 
 ### 5.4 State Management
 

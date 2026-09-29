@@ -352,8 +352,8 @@ if (-not $gitInstalled -or -not $isGitRepo) {
         $hasOrigin = $remotesList -contains "origin"
 
         if ($hasOrigin) {
-            Write-Host "  What would you like to do with the template remote ('origin' - 'https://github.com/cheriansk/blazor-fluent')?" -ForegroundColor White
-            Write-Host "    1. Keep as 'template' (renames 'origin' -> 'template' to pull future template updates)" -ForegroundColor Cyan
+            Write-Host "  What would you like to do with the template remote ('origin')?" -ForegroundColor White
+            Write-Host "    1. Keep as 'template' (read-only: renames 'origin' -> 'template' and disables push)" -ForegroundColor Cyan
             Write-Host "    2. Remove template remote completely (removes reference to this template repository)" -ForegroundColor Yellow
             Write-Host "    3. Keep 'origin' unchanged" -ForegroundColor DarkGray
             Write-Host ""
@@ -366,7 +366,8 @@ if (-not $gitInstalled -or -not $isGitRepo) {
                         git remote remove template 2>$null
                     }
                     git remote rename origin template
-                    Write-Host "  Renamed remote 'origin' -> 'template'" -ForegroundColor Green
+                    git remote set-url --push template "DISABLED_DO_NOT_PUSH"
+                    Write-Host "  Renamed remote 'origin' -> 'template' (push disabled for safety)" -ForegroundColor Green
                 }
                 "2" {
                     git remote remove origin
