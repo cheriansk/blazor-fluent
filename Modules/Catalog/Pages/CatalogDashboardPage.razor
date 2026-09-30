@@ -48,11 +48,16 @@
     </FluentCard>
 
     <FluentCard>
-        <FluentLabel Typo="Typography.H5">Sample POCO Entity from Core</FluentLabel>
-        <FluentLabel Typo="Typography.Body">
-            Product entity is a pure POCO defined in <code>BlazorFluent.Core.Domain.Catalog</code> with 0 EF Core dependencies.
-            It now inherits <code>TenantAuditableEntity</code> for full tenant isolation.
-        </FluentLabel>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+            <div>
+                <FluentLabel Typo="Typography.H5">Sample POCO Entity from Core</FluentLabel>
+                <FluentLabel Typo="Typography.Body">
+                    Product entity is a pure POCO defined in <code>BlazorFluent.Core.Domain.Catalog</code> with 0 EF Core dependencies.
+                    It now inherits <code>TenantAuditableEntity</code> for full tenant isolation.
+                </FluentLabel>
+            </div>
+            <EntityHistoryButton EntityName="ProductEntity" EntityId="@sampleProduct.Id.ToString()" Label="Product History" IconOnly="false" Appearance="ButtonAppearance.Outline" />
+        </FluentStack>
         <ul>
             <li><strong>Id:</strong> @sampleProduct.Id</li>
             <li><strong>Name:</strong> @sampleProduct.Name</li>

@@ -2,6 +2,7 @@ using System.Text.Json;
 using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.DTOs;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -255,5 +256,113 @@ public class AuditService : IAuditService
         }
 
         return errorId;
+    }
+
+    public async Task<List<EntityFieldHistoryDto>> GetEntityHistoryAsync(
+        string entityName,
+        string entityId,
+        string? propertyName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var records = await _dbContext.AuditRecords
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(a => a.EntityName == entityName && a.EntityId == entityId)
+            .OrderByDescending(a => a.Created)
+            .ToListAsync(cancellationToken);
+
+        var result = new List<EntityFieldHistoryDto>();
+
+        foreach (var record in records)
+        {
+            var userEmail = !string.IsNullOrWhiteSpace(record.UserEmail)
+                ? record.UserEmail
+                : (!string.IsNullOrWhiteSpace(record.UserId) ? record.UserId : "System");
+
+            if (string.IsNullOrWhiteSpace(record.ChangesJson))
+            {
+                result.Add(new EntityFieldHistoryDto
+                {
+                    AuditRecordId = record.Id.ToString(),
+                    EntityName = record.EntityName ?? entityName,
+                    EntityId = record.EntityId ?? entityId,
+                    PropertyName = propertyName ?? "Entity Record",
+                    OldValue = null,
+                    NewValue = record.Operation?.ToString() ?? record.EventType.ToString(),
+                    UserId = record.UserId ?? "system",
+                    UserEmail = userEmail,
+                    UserType = record.UserType,
+                    Operation = record.Operation ?? EntityOperation.Update,
+                    Timestamp = record.Created,
+                    Description = record.Description
+                });
+                continue;
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(record.ChangesJson);
+                if (doc.RootElement.ValueKind != JsonValueKind.Object) continue;
+
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    var propName = prop.Name;
+
+                    if (!string.IsNullOrWhiteSpace(propertyName) &&
+                        !string.Equals(propName, propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    string? oldVal = null;
+                    string? newVal = null;
+
+                    if (record.Operation == EntityOperation.Update)
+                    {
+                        if (prop.Value.ValueKind == JsonValueKind.Object &&
+                            (prop.Value.TryGetProperty("Old", out var oldElem) || prop.Value.TryGetProperty("old", out oldElem)) &&
+                            (prop.Value.TryGetProperty("New", out var newElem) || prop.Value.TryGetProperty("new", out newElem)))
+                        {
+                            oldVal = oldElem.ValueKind == JsonValueKind.Null ? null : oldElem.ToString();
+                            newVal = newElem.ValueKind == JsonValueKind.Null ? null : newElem.ToString();
+                        }
+                        else
+                        {
+                            newVal = prop.Value.ToString();
+                        }
+                    }
+                    else if (record.Operation == EntityOperation.Insert)
+                    {
+                        newVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
+                    }
+                    else if (record.Operation == EntityOperation.Delete)
+                    {
+                        oldVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
+                    }
+
+                    result.Add(new EntityFieldHistoryDto
+                    {
+                        AuditRecordId = record.Id.ToString(),
+                        EntityName = record.EntityName ?? entityName,
+                        EntityId = record.EntityId ?? entityId,
+                        PropertyName = propName,
+                        OldValue = oldVal,
+                        NewValue = newVal,
+                        UserId = record.UserId ?? "system",
+                        UserEmail = userEmail,
+                        UserType = record.UserType,
+                        Operation = record.Operation ?? EntityOperation.Update,
+                        Timestamp = record.Created,
+                        Description = record.Description
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse ChangesJson for audit record {AuditId}", record.Id);
+            }
+        }
+
+        return result;
     }
 }
