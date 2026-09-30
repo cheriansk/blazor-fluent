@@ -90,16 +90,30 @@
         }
         else
         {
-            <FluentDataGrid Items="@_auditResult.Items.AsQueryable()" GridTemplateColumns="160px 120px 120px 120px 100px 1fr 100px">
-                <TemplateColumn Title="Timestamp">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                <FluentTextInput  Placeholder="Quick filter visible audit records..." 
+                              @bind-Value="_inGridSearchText"
+                              @bind-Value:after="StateHasChanged"
+                              Style="width: 320px;" >
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                    </FluentTextInput>
+                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    Showing @FilteredAuditItems.Count() of @(_auditResult.Items.Count) records on this page
+                </span>
+            </FluentStack>
+
+            <FluentDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 120px 120px 100px 1fr 100px">
+                <TemplateColumn Title="Timestamp" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Created))">
                     @context.Created.ToString("yyyy-MM-dd HH:mm:ss")
                 </TemplateColumn>
-                <PropertyColumn Property="@(a => a.TenantId)" Title="Tenant" />
-                <PropertyColumn Property="@(a => a.UserId)" Title="User" />
-                <TemplateColumn Title="Event">
+                <PropertyColumn Property="@(a => a.TenantId)" Title="Tenant" Sortable="true" />
+                <PropertyColumn Property="@(a => a.UserId)" Title="User" Sortable="true" />
+                <TemplateColumn Title="Event" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.EventType))">
                     <FluentBadge>@context.EventType</FluentBadge>
                 </TemplateColumn>
-                <TemplateColumn Title="Severity">
+                <TemplateColumn Title="Severity" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Severity))">
                     @if (context.Severity == AuditSeverity.Critical || context.Severity == AuditSeverity.Error)
                     {
                         <FluentBadge Color="BadgeColor.Severe">@context.Severity</FluentBadge>
@@ -113,7 +127,7 @@
                         <FluentBadge Color="BadgeColor.Informative">@context.Severity</FluentBadge>
                     }
                 </TemplateColumn>
-                <PropertyColumn Property="@(a => a.Description)" Title="Description" />
+                <PropertyColumn Property="@(a => a.Description)" Title="Description" Sortable="true" />
                 <TemplateColumn Title="Diff">
                     @if (!string.IsNullOrWhiteSpace(context.ChangesJson))
                     {
@@ -143,6 +157,26 @@
     private PagedResult<AuditRecordEntity>? _auditResult;
     private bool _isLoading = true;
     private AuditRecordEntity? _selectedAuditRecord;
+    private string _inGridSearchText = string.Empty;
+
+    private IQueryable<AuditRecordEntity> FilteredAuditItems
+    {
+        get
+        {
+            var items = _auditResult?.Items ?? [];
+            var query = items.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_inGridSearchText))
+            {
+                var term = _inGridSearchText.Trim();
+                query = query.Where(a =>
+                    (a.Description != null && a.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (a.TenantId != null && a.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (a.UserId != null && a.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    a.EventType.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
 
     private readonly List<string> _eventTypes = ["All", "EntityChange", "Security", "TenantSwitch", "UserActivity"];
     private string _selectedEventType = "All";

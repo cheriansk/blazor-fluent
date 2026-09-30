@@ -135,7 +135,21 @@
             }
             else
             {
-                <FluentDataGrid Items="@_executions.AsQueryable()" ResizableColumns="true" TGridItem="JobExecutionEntity">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                    <FluentTextInput Placeholder="Filter jobs by name, source, or correlation..."
+                                  @bind-Value="_jobSearchText"
+                                  @bind-Value:after="StateHasChanged"
+                                  Style="width: 340px;" >
+                    <StartTemplate>    
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                        Showing @FilteredExecutions.Count() of @_executions.Count executions
+                    </span>
+                </FluentStack>
+
+                <FluentDataGrid Items="@FilteredExecutions" ResizableColumns="true" TGridItem="JobExecutionEntity">
                     <PropertyColumn Property="@(e => e.JobName)" Title="Job Name" Sortable="true" />
                     <PropertyColumn Property="@(e => e.TenantId ?? "Host")" Title="Tenant Scope" Sortable="true" />
                     <PropertyColumn Property="@(e => e.TriggerSource)" Title="Source" Sortable="true" />
@@ -213,6 +227,26 @@
 
 @code {
     private List<JobExecutionEntity> _executions = new();
+    private string _jobSearchText = string.Empty;
+
+    private IQueryable<JobExecutionEntity> FilteredExecutions
+    {
+        get
+        {
+            var query = _executions.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_jobSearchText))
+            {
+                var term = _jobSearchText.Trim();
+                query = query.Where(e =>
+                    (e.JobName != null && e.JobName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (e.TenantId != null && e.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (e.TriggerSource != null && e.TriggerSource.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (e.CorrelationId != null && e.CorrelationId.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query;
+        }
+    }
+
     private JobExecutionEntity? _selectedErrorExecution;
     private bool _isLoading = true;
     private string? _statusMessage;

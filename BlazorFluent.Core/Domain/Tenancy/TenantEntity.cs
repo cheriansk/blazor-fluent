@@ -16,6 +16,42 @@ public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntit
 
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Semicolon-separated domain suffixes for internal staff (up to 5, e.g. "@microsoft.com;@msft.com"). Immutable after creation.</summary>
+    public string InternalEmailDomains { get; set; } = string.Empty;
+
+    /// <summary>Semicolon-separated domain suffixes for client/external users (up to 5, e.g. "@salesforce.com"). Immutable after creation.</summary>
+    public string ExternalEmailDomains { get; set; } = string.Empty;
+
+    /// <summary>Backward-compatible helper returning the primary internal domain.</summary>
+    public string InternalEmailDomain => GetInternalDomains().FirstOrDefault() ?? string.Empty;
+
+    /// <summary>Backward-compatible helper returning the primary external domain.</summary>
+    public string ExternalEmailDomain => GetExternalDomains().FirstOrDefault() ?? string.Empty;
+
+    /// <summary>Returns parsed and normalized list of internal email domains (e.g. "@domain.com").</summary>
+    public IReadOnlyList<string> GetInternalDomains() =>
+        string.IsNullOrWhiteSpace(InternalEmailDomains)
+            ? []
+            : InternalEmailDomains.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(NormalizeDomain)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+    /// <summary>Returns parsed and normalized list of external email domains (e.g. "@domain.com").</summary>
+    public IReadOnlyList<string> GetExternalDomains() =>
+        string.IsNullOrWhiteSpace(ExternalEmailDomains)
+            ? []
+            : ExternalEmailDomains.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(NormalizeDomain)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+    private static string NormalizeDomain(string domain)
+    {
+        var trimmed = domain.Trim().ToLowerInvariant();
+        return trimmed.StartsWith("@") ? trimmed : "@" + trimmed;
+    }
+
     /// <summary>Operational status switch. Setting to false immediately deactivates the tenant. Required.</summary>
     public bool IsActive { get; set; } = true;
 

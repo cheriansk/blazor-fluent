@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Identity
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Infrastructure.Security
 @using BlazorFluent.Persistence.Context
@@ -64,51 +65,84 @@
     {
         <FluentCard Style="border-left: 4px solid var(--accent-fill-rest, #0078d4);">
             <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">
-                @(_isEditing ? "Update Project Role" : "Assign User to Project")
+                @(_isEditing ? "Update Project Role" : "Assign Tenant User to Project")
             </FluentLabel>
 
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                    <FluentTextInput Label="User ID / Username" @bind-Value="_formUserId" ReadOnly="@_isEditing" Required="true" Style="flex: 1;" />
-                    <FluentTextInput Label="Full Name" @bind-Value="_formUserName" Required="true" Style="flex: 1;" />
-                </FluentStack>
+            @if (!_isEditing && _tenantUsers.Count == 0)
+            {
+                <FluentMessageBar Intent="MessageBarIntent.Warning" Style="margin-bottom: 12px;">
+                    No active users are provisioned for tenant '@TenantContext.TenantName'. Please add users to this tenant first in <FluentLink Href="/tenants">Tenant Management</FluentLink>.
+                </FluentMessageBar>
+                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelModal">
+                    Close
+                </FluentButton>
+            }
+            else
+            {
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    @if (!_isEditing)
+                    {
+                        <FluentSelect TOption="UserEntity"
+                                      TValue="string"
+                                      Items="@_tenantUsers"
+                                      OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserType.CompanyUser ? "Internal Staff" : "External Client")}]")"
+                                      OptionValue="@(u => u.Id.ToString())"
+                                      Value="@_selectedTenantUserId"
+                                      ValueChanged="@OnTenantUserSelected"
+                                      Label="Select Tenant User"
+                                      Required="true"
+                                      Style="width: 100%;" />
 
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                    <FluentTextInput Label="Email Address" @bind-Value="_formEmail" Required="true" Style="flex: 1;" />
-                    <div style="flex: 1;">
-                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">User Type</FluentLabel>
+                        @if (!string.IsNullOrWhiteSpace(_formEmail))
+                        {
+                            <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-2, #fafafa); padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 16px;">
+                                <span>Member: <strong>@_formUserName</strong></span>
+                                <span>Email: <code>@_formEmail</code></span>
+                                <span>Type:
+                                    @if (_formUserType == UserType.CompanyUser)
+                                    {
+                                        <FluentBadge Appearance="BadgeAppearance.Filled">Internal Staff</FluentBadge>
+                                    }
+                                    else
+                                    {
+                                        <FluentBadge Appearance="BadgeAppearance.Tint">External Client</FluentBadge>
+                                    }
+                                </span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-2, #fafafa); padding: 8px 12px; border-radius: 6px;">
+                            Updating Role for: <strong>@_formUserName</strong> (<code>@_formEmail</code>)
+                        </div>
+                    }
+
+                    <div style="width: 50%;">
+                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
                         <FluentSelect TOption="string" TValue="string"
-                                      Value="@_formUserType.ToString()"
-                                      ValueChanged="@(val => _formUserType = Enum.TryParse<UserType>(val, out var res) ? res : UserType.CompanyUser)"
+                                      Value="@_formRole.ToString()"
+                                      ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
                                       Style="width: 100%;">
-                            <FluentOption Value="@nameof(UserType.CompanyUser)">Company User</FluentOption>
-                            <FluentOption Value="@nameof(UserType.ClientUser)">Client User</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRole.QA)">🧪 QA</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRole.Dev)">💻 Dev</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
                         </FluentSelect>
                     </div>
-                </FluentStack>
 
-                <div style="width: 50%;">
-                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
-                    <FluentSelect TOption="string" TValue="string"
-                                  Value="@_formRole.ToString()"
-                                  ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
-                                  Style="width: 100%;">
-                        <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
-                        <FluentOption Value="@nameof(ProjectRole.QA)">🧪 QA</FluentOption>
-                        <FluentOption Value="@nameof(ProjectRole.Dev)">💻 Dev</FluentOption>
-                        <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
-                    </FluentSelect>
-                </div>
-
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 12px;">
-                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@SaveAssignmentAsync">
-                        Save Assignment
-                    </FluentButton>
-                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelModal">
-                        Cancel
-                    </FluentButton>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 12px;">
+                        <FluentButton Appearance="ButtonAppearance.Primary"
+                                      Disabled="@(string.IsNullOrWhiteSpace(_formUserId))"
+                                      OnClick="@SaveAssignmentAsync">
+                            Save Assignment
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelModal">
+                            Cancel
+                        </FluentButton>
+                    </FluentStack>
                 </FluentStack>
-            </FluentStack>
+            }
         </FluentCard>
     }
 
@@ -174,15 +208,29 @@
         }
         else
         {
-            <FluentDataGrid Items="@_members.AsQueryable()" GridTemplateColumns="1.5fr 1.5fr 120px 120px 180px">
-                <TemplateColumn Title="Member">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                <FluentTextInput Placeholder="Filter members by name, email, or role..."
+                              @bind-Value="_memberFilterText"
+                              @bind-Value:after="StateHasChanged"
+                              Style="width: 320px;" >
+                    <StartTemplate>    
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+                <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    Showing @FilteredMembers.Count() of @_members.Count members
+                </span>
+            </FluentStack>
+
+            <FluentDataGrid Items="@FilteredMembers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 180px">
+                <TemplateColumn Title="Member" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserName))">
                     <div>
                         <strong>@context.UserName</strong>
                         <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">@context.UserId</div>
                     </div>
                 </TemplateColumn>
-                <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" />
-                <TemplateColumn Title="Type">
+                <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
+                <TemplateColumn Title="Type" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserType))">
                     @if (context.UserType == UserType.CompanyUser)
                     {
                         <FluentBadge Appearance="BadgeAppearance.Filled">Company</FluentBadge>
@@ -192,7 +240,7 @@
                         <FluentBadge Appearance="BadgeAppearance.Tint">Client</FluentBadge>
                     }
                 </TemplateColumn>
-                <TemplateColumn Title="Role">
+                <TemplateColumn Title="Role" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.Role))">
                     @switch (context.Role)
                     {
                         case ProjectRole.Admin:
@@ -245,6 +293,28 @@
     private List<ProjectEntity> _projects = new();
     private string? _selectedProjectId;
     private List<ProjectUserRoleEntity> _members = new();
+    private string _memberFilterText = string.Empty;
+
+    private IQueryable<ProjectUserRoleEntity> FilteredMembers
+    {
+        get
+        {
+            var query = _members.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_memberFilterText))
+            {
+                var term = _memberFilterText.Trim();
+                query = query.Where(m =>
+                    (m.UserName != null && m.UserName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (m.UserEmail != null && m.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (m.UserId != null && m.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    m.Role.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    private List<UserEntity> _tenantUsers = [];
+    private string? _selectedTenantUserId;
 
     private bool _isLoading = false;
     private bool _showAssignModal = false;
@@ -262,9 +332,46 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadProjectsAsync();
+        await LoadTenantUsersAsync();
         if (!string.IsNullOrWhiteSpace(_selectedProjectId))
         {
             await LoadMembersAsync();
+        }
+    }
+
+    private async Task LoadTenantUsersAsync()
+    {
+        try
+        {
+            var tenantId = TenantContext.TenantId ?? "default";
+            _tenantUsers = await DbContext.Users
+                .AsNoTracking()
+                .Where(u => (u.DefaultTenantId == tenantId || (tenantId == "default" && string.IsNullOrEmpty(u.DefaultTenantId))) && !u.IsDeleted && u.IsActive)
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
+        }
+        catch
+        {
+            _tenantUsers = [];
+        }
+    }
+
+    private void OnTenantUserSelected(string? userId)
+    {
+        _selectedTenantUserId = userId;
+        var user = _tenantUsers.FirstOrDefault(u => u.Id.ToString() == userId);
+        if (user != null)
+        {
+            _formUserId = user.Id.ToString();
+            _formUserName = user.FullName;
+            _formEmail = user.Email;
+            _formUserType = user.UserType;
+        }
+        else
+        {
+            _formUserId = string.Empty;
+            _formUserName = string.Empty;
+            _formEmail = string.Empty;
         }
     }
 
@@ -338,10 +445,19 @@
     private void OpenAddModal()
     {
         _isEditing = false;
-        _formUserId = string.Empty;
-        _formUserName = string.Empty;
-        _formEmail = string.Empty;
-        _formUserType = UserType.CompanyUser;
+        var firstUser = _tenantUsers.FirstOrDefault();
+        if (firstUser != null)
+        {
+            OnTenantUserSelected(firstUser.Id.ToString());
+        }
+        else
+        {
+            _selectedTenantUserId = null;
+            _formUserId = string.Empty;
+            _formUserName = string.Empty;
+            _formEmail = string.Empty;
+            _formUserType = UserType.CompanyUser;
+        }
         _formRole = ProjectRole.Dev;
         _showAssignModal = true;
     }
@@ -349,6 +465,7 @@
     private void EditAssignment(ProjectUserRoleEntity member)
     {
         _isEditing = true;
+        _selectedTenantUserId = member.UserId;
         _formUserId = member.UserId;
         _formUserName = member.UserName;
         _formEmail = member.UserEmail;
