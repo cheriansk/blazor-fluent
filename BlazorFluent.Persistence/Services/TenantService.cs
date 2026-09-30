@@ -273,6 +273,7 @@ public class TenantService : ITenantService
             return Result<UserEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
 
         var user = await _dbContext.Users
+            .AsTracking()
             .FirstOrDefaultAsync(u => u.Id == userId && u.DefaultTenantId == normalizedSlug && !u.IsDeleted, cancellationToken);
 
         if (user is null)
@@ -329,7 +330,9 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantStatusAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default)
     {
-        var tenant = await _dbContext.Tenants.FindAsync([tenantId], cancellationToken);
+        var tenant = await _dbContext.Tenants
+            .AsTracking()
+            .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
 
         tenant.IsActive = isActive;
@@ -361,7 +364,9 @@ public class TenantService : ITenantService
         if (endDate < startDate)
             return Result.Failure("End date cannot precede start date.");
 
-        var tenant = await _dbContext.Tenants.FindAsync([tenantId], cancellationToken);
+        var tenant = await _dbContext.Tenants
+            .AsTracking()
+            .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
 
         tenant.StartDate = startDate;

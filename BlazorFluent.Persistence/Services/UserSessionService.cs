@@ -58,7 +58,9 @@ public class UserSessionService : IUserSessionService
 
     public async Task UpdateHeartbeatAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var session = await _dbContext.UserSessions.FirstOrDefaultAsync(s => s.Id == sessionId, ct);
+        var session = await _dbContext.UserSessions
+            .AsTracking()
+            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
         if (session != null && !session.IsRevoked)
         {
             session.LastActivityAtUtc = DateTime.UtcNow;
@@ -84,7 +86,9 @@ public class UserSessionService : IUserSessionService
 
     public async Task<bool> RevokeSessionAsync(Guid sessionId, string revokedBy, CancellationToken ct = default)
     {
-        var session = await _dbContext.UserSessions.FirstOrDefaultAsync(s => s.Id == sessionId, ct);
+        var session = await _dbContext.UserSessions
+            .AsTracking()
+            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
         if (session == null) return false;
 
         session.IsRevoked = true;

@@ -42,7 +42,31 @@ BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs comp
 | **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All ← `Web`. |
 | **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorFluent.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, or `Jobs`. |
 
-### 1.2 Entity Naming Convention
+### 1.2 Service Scope Lifetime & Captive Dependency Governance
+
+| Lifetime | Scope Definition | Applicable Service Types |
+|----------|------------------|--------------------------|
+| **Scoped (`AddScoped`)** | Created once per HTTP request or Blazor circuit scope. | `AppDbContext`, EF Core interceptors, domain services (`ITenantService`, `IAuditService`, `IProjectAuthorizationService`, `IUserSessionService`, `IImpersonationService`), repositories, UI authentication state providers (`ICurrentUser`, `CurrentUserAuthenticationStateProvider`). |
+| **Singleton (`AddSingleton`)** | Created once for the host lifetime. Must be thread-safe. | In-memory queues (`NotificationChannelQueue`, `ChannelJobEventQueue`), stateless sanitizers/validators (`HtmlInputSanitizer`, `HmacWebhookSignatureValidator`), time providers (`ConfigurableDateTimeProvider`). |
+| **Transient (`AddTransient`)** | Created new every time requested. Stateless. | FluentValidation validators (`AddValidatorsFromAssemblyContaining`), lightweight calculation helpers. |
+
+#### Captive Dependency Rules & Enforcement
+1. **Never Inject Scoped into Singleton**: A `Singleton` service MUST NEVER directly inject a `Scoped` service or `AppDbContext`. This creates a captive dependency where the Singleton holds onto a single DbContext instance forever, causing multithreaded concurrency crashes (`"A second operation was started on this context instance"`).
+2. **IServiceScopeFactory Pattern for Background Services**: Long-lived background services (`BackgroundService`, `IHostedService`, background job consumers) needing `AppDbContext` or Scoped services MUST inject `IServiceScopeFactory` and create a fresh scope (`using var scope = _scopeFactory.CreateScope()`) for each unit of work or loop iteration.
+3. **Fail-Fast Container Validation**: `Program.cs` enforces `options.ValidateScopes = true` and `options.ValidateOnBuild = true` across **ALL** environments (Development, Staging, Production) so captive dependencies trigger immediate startup failures rather than runtime concurrency bugs in production.
+
+### 1.3 Service-Layer Read & Write Authorization Rules
+1. **Never Rely on `[Authorize]` Alone**: Authorization must be enforced at both the UI page contract level (`AuthorizedPageComponentBase` with `MinimumVisitRole` / `MinimumEditRole`) AND the domain service layer.
+2. **Fail-Closed Service-Layer Gates**: Domain services (`UserTaskService`, `ProjectAuthorizationService`) MUST inject `IProjectAuthorizationService` and call:
+   - `await _projectAuth.EnsureCanVisitAsync(projectId, operation)` on all **READ** methods (`GetTasksByProjectAsync`, `GetTaskByIdAsync`, `GetCommentsAsync`).
+   - `await _projectAuth.EnsureCanEditAsync(projectId, operation)` on all **WRITE** methods (`CreateTaskAsync`, `UpdateTaskAsync`, `CloseTaskAsync`, `ReopenTaskAsync`, `AddCommentAsync`).
+   - Unauthenticated or unauthorized reads log security events into PostgreSQL `audit.AuditRecords` and throw `UnauthorizedAccessException` before querying data.
+
+### 1.4 Global `NoTracking` Query Behavior & Mutation Rule
+1. **Default `NoTracking` Behavior**: `AppDbContext` is configured with `options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)` globally in `PersistenceExtensions.cs`. All LINQ queries execute with no tracking by default for maximum read performance and minimal memory footprint.
+2. **Explicit `.AsTracking()` for Entity Mutations**: Any domain service method that retrieves an existing entity to modify its properties and call `SaveChangesAsync()` MUST chain `.AsTracking()` onto the query (e.g. `_dbContext.Users.AsTracking().FirstOrDefaultAsync(...)`).
+
+### 1.5 Entity Naming Convention
 
 Every domain class and abstract base class in `BlazorFluent.Core` **must end with `Entity`**.
 

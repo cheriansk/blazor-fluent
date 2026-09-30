@@ -184,7 +184,9 @@ public class NotificationService : INotificationService
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var currentUserId = _currentUser.UserId;
-        var notification = await db.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId, ct);
+        var notification = await db.Notifications
+            .AsTracking()
+            .FirstOrDefaultAsync(n => n.Id == notificationId, ct);
         if (notification is null) return false;
 
         // Privacy check: Personal notification can only be read by recipient
