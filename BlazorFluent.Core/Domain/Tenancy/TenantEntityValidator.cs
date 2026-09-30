@@ -24,6 +24,39 @@ public class TenantEntityValidator : AbstractValidator<TenantEntity>
             .NotEmpty().WithMessage("Tenant Name is required.")
             .MaximumLength(200).WithMessage("Tenant Name cannot exceed 200 characters.");
 
+        RuleFor(x => x.InternalEmailDomains)
+            .NotEmpty().WithMessage("At least one Internal email domain is required.")
+            .MaximumLength(500).WithMessage("Internal email domains cannot exceed 500 characters.");
+
+        RuleFor(x => x.ExternalEmailDomains)
+            .NotEmpty().WithMessage("At least one External email domain is required.")
+            .MaximumLength(500).WithMessage("External email domains cannot exceed 500 characters.");
+
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                var internals = x.GetInternalDomains();
+                return internals.Count >= 1 && internals.Count <= 5;
+            })
+            .WithMessage("Between 1 and 5 Internal email domains must be configured.");
+
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                var externals = x.GetExternalDomains();
+                return externals.Count >= 1 && externals.Count <= 5;
+            })
+            .WithMessage("Between 1 and 5 External email domains must be configured.");
+
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                var internals = x.GetInternalDomains();
+                var externals = x.GetExternalDomains();
+                return !internals.Intersect(externals, StringComparer.OrdinalIgnoreCase).Any();
+            })
+            .WithMessage("Internal and External email domains must not overlap. No domain can exist in both lists.");
+
         RuleFor(x => x)
             .Must(x => !x.EndDate.HasValue || x.EndDate.Value >= x.StartDate)
             .WithMessage("Tenant subscription EndDate cannot precede StartDate.");

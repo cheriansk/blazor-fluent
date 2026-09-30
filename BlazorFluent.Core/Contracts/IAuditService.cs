@@ -40,4 +40,6 @@ public interface IAuditService
         string? contextDescription = null,
         AuditSeverity severity = AuditSeverity.Error,
         CancellationToken cancellationToken = default);
+
 }
+

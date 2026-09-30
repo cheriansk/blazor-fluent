@@ -33,6 +33,16 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<TenantEntity>
             .HasMaxLength(200)
             .IsRequired();
 
+        builder.Property(t => t.InternalEmailDomains)
+            .HasMaxLength(500)
+            .IsRequired()
+            .HasDefaultValue("");
+
+        builder.Property(t => t.ExternalEmailDomains)
+            .HasMaxLength(500)
+            .IsRequired()
+            .HasDefaultValue("");
+
         builder.Property(t => t.IsActive)
             .IsRequired()
             .HasDefaultValue(true);

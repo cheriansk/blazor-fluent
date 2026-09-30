@@ -43,21 +43,31 @@
     @if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
     {
         <FluentCard>
-            <FluentLabel Typo="Typography.H5">Your Tenants (@TenantContext.AllowedTenants.Count)</FluentLabel>
-            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
-                As a company user, you can switch between these tenants. Use the switcher in the header.
-            </FluentLabel>
-            <FluentDataGrid Items="@AllowedTenantsQueryable" GridTemplateColumns="1fr 1fr 120px">
-                <PropertyColumn Property="@(t => t.Id)" Title="Tenant ID" />
-                <PropertyColumn Property="@(t => t.Name)" Title="Name" />
-                <TemplateColumn Title="Status">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                <div>
+                    <FluentLabel Typo="Typography.H5">Your Tenants (@TenantContext.AllowedTenants.Count)</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 6px;">
+                        As a company user, you can switch between these tenants. Use the switcher in the header.
+                    </FluentLabel>
+                </div>
+                <FluentTextInput Placeholder="Filter tenants..." @bind-Value="_tenantSearchText" @bind-Value:after="StateHasChanged" Style="width: 250px;" >
+                                        <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+            </FluentStack>
+
+            <FluentDataGrid Items="@FilteredAllowedTenants" ResizableColumns="true" GridTemplateColumns="1fr 1fr 120px">
+                <PropertyColumn Property="@(t => t.Id)" Title="Tenant ID" Sortable="true" />
+                <PropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true" />
+                <TemplateColumn Title="Status" SortBy="@(GridSort<TenantInfo>.ByAscending(t => t.IsActive))">
                     @if (context.IsActive)
                     {
-                        <FluentBadge >Active</FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                     }
                     else
                     {
-                        <FluentBadge >Inactive</FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Tint">Inactive</FluentBadge>
                     }
                 </TemplateColumn>
             </FluentDataGrid>
@@ -65,24 +75,31 @@
     }
 
     <FluentCard>
-        <FluentLabel Typo="Typography.H5">Projects for &ldquo;@TenantContext.TenantName&rdquo;</FluentLabel>
-        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
-            All projects are scoped to the active tenant. Every project row in the database carries a
-            <code>TenantId</code> foreign key. EF Core global query filters ensure only this tenant's
-            projects are ever returned — enforced at the persistence layer, not just the UI.
-        </FluentLabel>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+            <div>
+                <FluentLabel Typo="Typography.H5">Projects for &ldquo;@TenantContext.TenantName&rdquo;</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 6px;">
+                    All projects are scoped to the active tenant via EF Core global query filters.
+                </FluentLabel>
+            </div>
+            <FluentTextInput Placeholder="Filter projects..." @bind-Value="_projectSearchText" @bind-Value:after="StateHasChanged" Style="width: 250px;" >
+                    <StartTemplate>    
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+        </FluentStack>
 
-        <FluentDataGrid Items="@SampleProjectsQueryable" GridTemplateColumns="1fr 2fr 100px 140px">
-            <PropertyColumn Property="@(p => p.Name)" Title="Project Name" />
-            <PropertyColumn Property="@(p => p.Description)" Title="Description" />
-            <TemplateColumn Title="Status">
+        <FluentDataGrid Items="@FilteredProjects" ResizableColumns="true" GridTemplateColumns="1fr 2fr 100px 140px">
+            <PropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+            <PropertyColumn Property="@(p => p.Description)" Title="Description" Sortable="true" />
+            <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.IsActive))">
                 @if (context.IsActive)
                 {
-                    <FluentBadge >Active</FluentBadge>
+                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                 }
                 else
                 {
-                    <FluentBadge >Inactive</FluentBadge>
+                    <FluentBadge Appearance="BadgeAppearance.Tint">Inactive</FluentBadge>
                 }
             </TemplateColumn>
             <TemplateColumn Title="Actions">
@@ -107,13 +124,42 @@
 </FluentStack>
 
 @code {
-    private IQueryable<TenantInfo> AllowedTenantsQueryable =>
-        TenantContext.AllowedTenants.AsQueryable();
+    private string _tenantSearchText = string.Empty;
+    private string _projectSearchText = string.Empty;
 
-    // Sample in-memory projects demonstrating the 1-to-N tenant/project relationship.
-    // In production this would be loaded from AppDbContext.Projects filtered by TenantId
-    // via the global query filter — no manual .Where(p => p.TenantId == ...) needed.
-    private IQueryable<ProjectEntity> SampleProjectsQueryable => new List<ProjectEntity>
+    private IQueryable<TenantInfo> FilteredAllowedTenants
+    {
+        get
+        {
+            var query = TenantContext.AllowedTenants.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_tenantSearchText))
+            {
+                var term = _tenantSearchText.Trim();
+                query = query.Where(t =>
+                    t.Id.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    private IQueryable<ProjectEntity> FilteredProjects
+    {
+        get
+        {
+            var query = SampleProjectsList.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_projectSearchText))
+            {
+                var term = _projectSearchText.Trim();
+                query = query.Where(p =>
+                    p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    p.Description.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    private List<ProjectEntity> SampleProjectsList => new List<ProjectEntity>
     {
         new()
         {
@@ -139,5 +185,5 @@
             Description = "Archived migration project",
             IsActive = false
         }
-    }.AsQueryable();
+    };
 }

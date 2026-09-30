@@ -53,27 +53,41 @@
         }
         else
         {
-            <FluentDataGrid Items="@_sessions.AsQueryable()" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
-                <TemplateColumn Title="User">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                <FluentTextInput Placeholder="Filter sessions by user, tenant, IP, or device..."
+                              @bind-Value="_sessionSearchText"
+                              @bind-Value:after="StateHasChanged"
+                              Style="width: 340px;" >
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+                <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    Showing @FilteredSessions.Count() of @_sessions.Count active sessions
+                </span>
+            </FluentStack>
+
+            <FluentDataGrid Items="@FilteredSessions" ResizableColumns="true" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
+                <TemplateColumn Title="User" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.UserEmail))">
                     <div>
                         <strong>@context.UserEmail</strong>
                         <div style="font-size: 11px; color: var(--neutral-foreground-3, #888);">@context.UserId</div>
                     </div>
                 </TemplateColumn>
 
-                <PropertyColumn Property="@(s => s.TenantId)" Title="Tenant" />
-                <PropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" />
-                <PropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" />
+                <PropertyColumn Property="@(s => s.TenantId)" Title="Tenant" Sortable="true" />
+                <PropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" Sortable="true" />
+                <PropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" Sortable="true" />
 
-                <TemplateColumn Title="Started">
+                <TemplateColumn Title="Started" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.StartedAtUtc))">
                     <span title="@context.StartedAtUtc.ToString("u")">@GetRelativeTime(context.StartedAtUtc)</span>
                 </TemplateColumn>
 
-                <TemplateColumn Title="Last Activity">
+                <TemplateColumn Title="Last Activity" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.LastActivityAtUtc))">
                     <span title="@context.LastActivityAtUtc.ToString("u")">@GetRelativeTime(context.LastActivityAtUtc)</span>
                 </TemplateColumn>
 
-                <TemplateColumn Title="Status">
+                <TemplateColumn Title="Status" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.IsRevoked))">
                     @if (context.IsRevoked)
                     {
                         <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">
@@ -113,6 +127,26 @@
     private bool _isError;
     private string? _statusMessage;
     private List<UserSessionEntity> _sessions = new();
+    private string _sessionSearchText = string.Empty;
+
+    private IQueryable<UserSessionEntity> FilteredSessions
+    {
+        get
+        {
+            var query = _sessions.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_sessionSearchText))
+            {
+                var term = _sessionSearchText.Trim();
+                query = query.Where(s =>
+                    (s.UserEmail != null && s.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.UserId != null && s.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.TenantId != null && s.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.IpAddress != null && s.IpAddress.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.UserAgent != null && s.UserAgent.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
