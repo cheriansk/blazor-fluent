@@ -45,6 +45,7 @@ public static class PersistenceExtensions
         // 6. Register AppDbContext with Npgsql, validation, audit & security interceptors, and DataProtection support
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
+            options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             var connectionInterceptor = sp.GetRequiredService<TenantDbConnectionInterceptor>();
             var validationInterceptor = sp.GetRequiredService<EntityValidationInterceptor>();
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();

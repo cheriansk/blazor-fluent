@@ -166,6 +166,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         var tenantId = _tenantContext.TenantId ?? string.Empty;
 
         var existing = await _dbContext.ProjectUserRoles
+            .AsTracking()
             .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
 
         if (existing is not null)
@@ -213,6 +214,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         }
 
         var existing = await _dbContext.ProjectUserRoles
+            .AsTracking()
             .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
 
         if (existing is null)

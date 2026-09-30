@@ -14,6 +14,7 @@ public class UserTaskService : IUserTaskService
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly INotificationService _notificationService;
+    private readonly IProjectAuthorizationService _projectAuth;
     private readonly ILogger<UserTaskService> _logger;
 
     public UserTaskService(
@@ -21,17 +22,21 @@ public class UserTaskService : IUserTaskService
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         INotificationService notificationService,
+        IProjectAuthorizationService projectAuth,
         ILogger<UserTaskService> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _notificationService = notificationService;
+        _projectAuth = projectAuth;
         _logger = logger;
     }
 
     public async Task<IReadOnlyList<UserTaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
     {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProject", ct: ct);
+
         return await _context.Tasks
             .AsNoTracking()
             .Where(t => t.ProjectId == projectId)
@@ -42,15 +47,24 @@ public class UserTaskService : IUserTaskService
 
     public async Task<UserTaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default)
     {
-        return await _context.Tasks
+        var task = await _context.Tasks
             .Include(t => t.Comments.Where(c => !c.IsDeleted).OrderBy(c => c.CreatedAtUtc))
             .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+
+        if (task is not null)
+        {
+            await _projectAuth.EnsureCanVisitAsync(task.ProjectId, operation: "GetTaskById", ct: ct);
+        }
+
+        return task;
     }
 
     public async Task<Result<UserTaskEntity>> CreateTaskAsync(UserTaskEntity task, CancellationToken ct = default)
     {
         try
         {
+            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CreateTask", ct: ct);
+
             if (string.IsNullOrWhiteSpace(task.TenantId))
             {
                 task.TenantId = _tenantContext.TenantId ?? string.Empty;
@@ -84,7 +98,12 @@ public class UserTaskService : IUserTaskService
     {
         try
         {
-            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == updated.Id, ct);
+            await _projectAuth.EnsureCanEditAsync(updated.ProjectId, operation: "UpdateTask", ct: ct);
+
+            var task = await _context.Tasks
+                .AsTracking()
+                .FirstOrDefaultAsync(t => t.Id == updated.Id, ct);
+
             if (task is null)
             {
                 return Result<UserTaskEntity>.Failure("Task not found.");
@@ -127,8 +146,13 @@ public class UserTaskService : IUserTaskService
     {
         try
         {
-            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct);
+            var task = await _context.Tasks
+                .AsTracking()
+                .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+
             if (task is null) return Result<bool>.Failure("Task not found.");
+
+            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CloseTask", ct: ct);
 
             task.Status = UserTaskStatus.Closed;
             task.IsClosed = true;
@@ -149,8 +173,13 @@ public class UserTaskService : IUserTaskService
     {
         try
         {
-            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct);
+            var task = await _context.Tasks
+                .AsTracking()
+                .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+
             if (task is null) return Result<bool>.Failure("Task not found.");
+
+            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "ReopenTask", ct: ct);
 
             task.Status = UserTaskStatus.Open;
             task.IsClosed = false;
@@ -176,8 +205,13 @@ public class UserTaskService : IUserTaskService
                 return Result<UserTaskCommentEntity>.Failure("Comment text cannot be empty.");
             }
 
-            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct);
+            var task = await _context.Tasks
+                .AsTracking()
+                .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+
             if (task is null) return Result<UserTaskCommentEntity>.Failure("Task not found.");
+
+            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "AddComment", ct: ct);
 
             var comment = new UserTaskCommentEntity
             {
@@ -205,6 +239,12 @@ public class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default)
     {
+        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct);
+        if (task is not null)
+        {
+            await _projectAuth.EnsureCanVisitAsync(task.ProjectId, operation: "GetComments", ct: ct);
+        }
+
         return await _context.TaskComments
             .AsNoTracking()
             .Where(c => c.TaskId == taskId && !c.IsDeleted)

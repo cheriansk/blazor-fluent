@@ -36,6 +36,13 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
+    // Enforce DI scope validation & build validation across all environments to fail fast on captive dependencies
+    builder.Host.UseDefaultServiceProvider((context, options) =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
+
     // Azure Key Vault configuration source for production environments
     if (builder.Environment.IsProduction())
     {
@@ -102,7 +109,17 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddBackgroundJobs(enableScheduler: true);
 
-    // 7. Security Hardening: Rate Limiting & Secure Cookie Policy
+    // 7. Security Hardening: Request Body Limits (Anti-Pattern 5), Rate Limiting (Anti-Pattern 7) & Secure Cookie Policy
+    builder.WebHost.ConfigureKestrel(serverOptions =>
+    {
+        serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB limit
+    });
+
+    builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+    {
+        options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB limit
+    });
+
     builder.Services.AddRateLimiter(options =>
     {
         options.AddFixedWindowLimiter("login", opt =>
