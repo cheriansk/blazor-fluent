@@ -1,0 +1,47 @@
+@namespace BlazorFluent.Components.Common
+@using BlazorFluent.Core.DTOs
+@inject IDialogService DialogService
+
+<FluentButton Appearance="@Appearance"
+              IconStart="@(new Icons.Regular.Size16.History())"
+              OnClick="@OpenHistoryDrawerAsync"
+              Title="@(Tooltip ?? (!string.IsNullOrWhiteSpace(PropertyName) ? $"View history for field '{PropertyName}'" : $"View history for record '{EntityId}'"))">
+    @if (!IconOnly && !string.IsNullOrWhiteSpace(Label))
+    {
+        @Label
+    }
+</FluentButton>
+
+@code {
+    [Parameter, EditorRequired] public string EntityName { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string EntityId { get; set; } = string.Empty;
+    [Parameter] public string? PropertyName { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Tooltip { get; set; }
+    [Parameter] public bool IconOnly { get; set; } = true;
+    [Parameter] public ButtonAppearance Appearance { get; set; } = ButtonAppearance.Subtle;
+
+    private async Task OpenHistoryDrawerAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(EntityName) && !string.IsNullOrWhiteSpace(EntityId))
+        {
+            var data = new EntityHistoryData
+            {
+                EntityName = EntityName,
+                EntityId = EntityId,
+                PropertyName = PropertyName,
+                Title = !string.IsNullOrWhiteSpace(PropertyName)
+                    ? $"Field History: {PropertyName}"
+                    : $"Entity History: {EntityName}"
+            };
+
+            await DialogService.ShowDrawerAsync<EntityHistoryViewerDrawer>(options =>
+            {
+                options.Data = data;
+                options.Width = "520px";
+                options.Alignment = DialogAlignment.End;
+                options.Header.Title = data.Title;
+            });
+        }
+    }
+}

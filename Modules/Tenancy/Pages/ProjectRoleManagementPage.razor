@@ -265,6 +265,7 @@
                         <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
                             Revoke
                         </FluentButton>
+                        <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View project role assignment history" />
                         @if ((TenantContext.IsHost || CurrentUser.IsInRole("Admin")) && context.UserId != CurrentUser.UserId)
                         {
                             <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.PersonCircle())" OnClick="@(() => PromptImpersonation(context))">

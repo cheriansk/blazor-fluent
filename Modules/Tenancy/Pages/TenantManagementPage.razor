@@ -187,6 +187,7 @@
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 4px; font-size: 13px;" Wrap="true">
                             <span>Internal: @foreach(var d in _managingUsersTenant.GetInternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Filled" Style="margin-right: 4px;">@d</FluentBadge> }</span>
                             <span>External: @foreach(var d in _managingUsersTenant.GetExternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Tint" Style="margin-right: 4px;">@d</FluentBadge> }</span>
+                            <EntityHistoryButton EntityName="TenantEntity" EntityId="@_managingUsersTenant.Id.ToString()" PropertyName="InternalEmailDomains" Label="Domain History" IconOnly="false" Appearance="ButtonAppearance.Primary" />
                         </FluentStack>
                     </div>
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
@@ -255,7 +256,10 @@
                 @if (_editingUser is not null)
                 {
                     <FluentCard Style="margin-bottom: 16px; background-color: #f0f7ff; border: 1px solid #c7e0f4; padding: 16px;">
-                        <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">Edit User: @_editingUser.FullName</FluentLabel>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                            <FluentLabel Typo="Typography.H6">Edit User: @_editingUser.FullName</FluentLabel>
+                    <EntityHistoryButton EntityName="UserEntity" EntityId="@_editingUser.Id.ToString()" Label="Field History" IconOnly="false" Appearance="ButtonAppearance.Subtle" />
+                        </FluentStack>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                             <FluentTextInput Label="Full Name" @bind-Value="_editUserFullName" Required="true" Style="width: 100%;" />
 
@@ -329,7 +333,7 @@
                 }
                 else
                 {
-                    <FluentDataGrid Items="@FilteredTenantUsers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 120px 100px 100px" Style="margin-top: 8px;">
+                    <FluentDataGrid Items="@FilteredTenantUsers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 120px 100px 140px" Style="margin-top: 8px;">
                         <PropertyColumn Property="@(u => u.FullName)" Title="Name" Sortable="true" />
                         <PropertyColumn Property="@(u => u.Email)" Title="Email" Sortable="true" />
                         <TemplateColumn Title="Type" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.UserType))">
@@ -355,13 +359,16 @@
                             </FluentBadge>
                         </TemplateColumn>
                         <TemplateColumn Title="Actions">
-                            <FluentButton Appearance="ButtonAppearance.Subtle"
-                                          Size="ButtonSize.Small"
-                                          IconStart="@(new Icons.Regular.Size16.Edit())"
-                                          Title="Edit User"
-                                          OnClick="@(() => StartEditUser(context))">
-                                Edit
-                            </FluentButton>
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.Edit())"
+                                              Title="Edit User"
+                                              OnClick="@(() => StartEditUser(context))">
+                                    Edit
+                                </FluentButton>
+                        <EntityHistoryButton EntityName="UserEntity" EntityId="@context.Id.ToString()" Tooltip="View user change history" />
+                            </FluentStack>
                         </TemplateColumn>
                     </FluentDataGrid>
                 }
@@ -390,7 +397,7 @@
         }
         else
         {
-            <FluentDataGrid Items="@FilteredTenants" ResizableColumns="true" GridTemplateColumns="120px 80px 1.5fr 150px 150px 100px 110px 110px 180px">
+            <FluentDataGrid Items="@FilteredTenants" ResizableColumns="true" GridTemplateColumns="120px 80px 1.5fr 150px 150px 100px 110px 110px 210px">
                 <PropertyColumn Property="@(t => t.Slug)" Title="Slug" Sortable="true" />
                 <PropertyColumn Property="@(t => t.Code)" Title="Code" Sortable="true" />
                 <PropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true" />
@@ -425,6 +432,7 @@
                         <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" Title="Edit Dates" OnClick="@(() => StartEdit(context))">
                             Dates
                         </FluentButton>
+                <EntityHistoryButton EntityName="TenantEntity" EntityId="@context.Id.ToString()" Tooltip="View tenant change history" />
                     </FluentStack>
                 </TemplateColumn>
             </FluentDataGrid>

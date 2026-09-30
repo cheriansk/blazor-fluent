@@ -1,5 +1,6 @@
 using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.DTOs;
 using BlazorFluent.Core.Domain.Auditing;
 
 namespace BlazorFluent.Core.Contracts;
@@ -41,5 +42,13 @@ public interface IAuditService
         AuditSeverity severity = AuditSeverity.Error,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Retrieves property-level mutation history for a specific entity or field.
+    /// </summary>
+    Task<List<EntityFieldHistoryDto>> GetEntityHistoryAsync(
+        string entityName,
+        string entityId,
+        string? propertyName = null,
+        CancellationToken cancellationToken = default);
 }
 

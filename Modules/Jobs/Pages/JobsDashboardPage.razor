@@ -217,6 +217,7 @@
                                           OnClick="@(() => _selectedErrorExecution = context)">
                                 Details
                             </FluentButton>
+                            <EntityHistoryButton EntityName="JobExecutionEntity" EntityId="@context.Id.ToString()" Tooltip="View job execution change history" />
                         </FluentStack>
                     </TemplateColumn>
                 </FluentDataGrid>

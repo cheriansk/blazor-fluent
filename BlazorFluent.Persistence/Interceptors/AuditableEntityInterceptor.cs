@@ -73,7 +73,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
-            if (entry.Entity is DataProtectionKey)
+            if (entry.Entity is DataProtectionKey || entry.Entity is AuditRecordEntity)
             {
                 continue;
             }
