@@ -1,0 +1,233 @@
+@page "/knowledge/{Id:guid}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.DTOs
+@inject IKnowledgeBaseService KnowledgeService
+@inject NavigationManager NavigationManager
+@inject ICurrentUser CurrentUser
+@inject ITenantContext TenantContext
+
+<PageTitle>@(_article?.Title ?? "Knowledge Article") - BlazorFluent</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="width: 100%; max-width: 960px; margin: 0 auto; padding-bottom: 40px;">
+    <!-- Navigation back -->
+    <FluentButton Appearance="ButtonAppearance.Subtle"
+                  IconStart="@(new Icons.Regular.Size16.ArrowLeft())"
+                  OnClick="@(() => NavigationManager.NavigateTo("/knowledge"))">
+        Back to Knowledge Base
+    </FluentButton>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isStatusError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    @if (_isLoading)
+    {
+        <FluentProgressRing Style="margin: 80px auto;" />
+    }
+    else if (_article == null)
+    {
+        <EmptyStateComp Title="Article Not Found"
+                        Description="The requested knowledge base article does not exist or you do not have permission to view it."
+                        IconValue="@(new Icons.Regular.Size24.DocumentDismiss())" />
+    }
+    else
+    {
+        <!-- Article Header Metadata Block -->
+        <FluentCard Style="padding: 20px; background: var(--neutral-layer-2); border: 1px solid var(--neutral-stroke-layer-1); display: flex; flex-direction: column; gap: 14px;">
+            <!-- Title & Status Row -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <FluentLabel Typo="Typography.H3" Style="font-weight: 700; margin: 0; flex: 1;">
+                    @_article.Title
+                </FluentLabel>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Scope Badge -->
+                    @if (_article.IsGlobal)
+                    {
+                        <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #6b21a8; color: #ffffff;">
+                            GLOBAL
+                        </span>
+                    }
+                    else
+                    {
+                        <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #0369a1; color: #ffffff;">
+                            TENANT ONLY
+                        </span>
+                    }
+
+                    <!-- Status Badge -->
+                    @if (_article.Status == KnowledgeArticleStatus.Approved)
+                    {
+                        <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #15803d; color: #ffffff;">
+                            ✓ APPROVED
+                        </span>
+                    }
+                    else if (_article.Status == KnowledgeArticleStatus.PendingReview)
+                    {
+                        <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #d97706; color: #ffffff;">
+                            ⏳ PENDING REVIEW/APPROVAL
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Labels Row -->
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                <span style="font-size: 12px; color: var(--neutral-foreground-hint); font-weight: 600;">Labels:</span>
+                @foreach (var label in _article.Labels)
+                {
+                    <span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--neutral-layer-3); border: 1px solid var(--neutral-stroke-rest); color: var(--neutral-foreground-rest);">
+                        @label
+                    </span>
+                }
+            </div>
+
+            <div style="height: 1px; background: var(--neutral-stroke-subtle); width: 100%;"></div>
+
+            <!-- Detailed Creator, Timestamps & Approval Status Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; font-size: 13px;">
+                <!-- Author & Creation -->
+                <div>
+                    <span style="color: var(--neutral-foreground-hint); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Created By</span>
+                    <strong style="color: var(--neutral-foreground-rest);">@_article.AuthorUserName</strong>
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint);">@_article.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy - h:mm tt")</div>
+                </div>
+
+                <!-- Last Updated -->
+                <div>
+                    <span style="color: var(--neutral-foreground-hint); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Last Updated</span>
+                    <strong style="color: var(--neutral-foreground-rest);">
+                        @(_article.UpdatedAtUtc.HasValue ? _article.UpdatedAtUtc.Value.ToLocalTime().ToString("MMM dd, yyyy - h:mm tt") : "Never modified")
+                    </strong>
+                </div>
+
+                <!-- Approval Status Section -->
+                <div>
+                    @if (_article.Status == KnowledgeArticleStatus.Approved)
+                    {
+                        <span style="color: var(--neutral-foreground-hint); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Approved By</span>
+                        <strong style="color: #15803d;">@_article.ApprovedByUserName</strong>
+                        @if (_article.ApprovedAtUtc.HasValue)
+                        {
+                            <div style="font-size: 12px; color: var(--neutral-foreground-hint);">@_article.ApprovedAtUtc.Value.ToLocalTime().ToString("MMM dd, yyyy - h:mm tt")</div>
+                        }
+                    }
+                    else
+                    {
+                        <span style="color: var(--neutral-foreground-hint); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Pending Approvers</span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                            @foreach (var r in _article.Reviewers.Where(rev => !rev.HasApproved))
+                            {
+                                <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(217, 119, 6, 0.15); color: #b45309; font-weight: 600;">
+                                    @r.UserName
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Approval Action Bar for Reviewers -->
+            @if (CanApprove)
+            {
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 6px; background: rgba(16, 124, 65, 0.08); border: 1px solid rgba(16, 124, 65, 0.3); margin-top: 6px;">
+                    <div>
+                        <strong style="color: #15803d;">You are an assigned reviewer for this article.</strong>
+                        <div style="font-size: 12px; color: var(--neutral-foreground-rest);">Review the description and images below, then click to approve and publish.</div>
+                    </div>
+
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  IconStart="@(new Icons.Regular.Size16.Checkmark())"
+                                  OnClick="@ApproveArticleAsync"
+                                  Loading="@_isApproving">
+                        Approve &amp; Publish
+                    </FluentButton>
+                </div>
+            }
+        </FluentCard>
+
+        <!-- Article Content Body -->
+        <FluentCard Style="padding: 24px; min-height: 350px; background: var(--neutral-layer-1);">
+            <div class="article-html-content" style="line-height: 1.6; font-size: 15px; color: var(--neutral-foreground-rest);">
+                @((MarkupString)_article.Content)
+            </div>
+        </FluentCard>
+    }
+</FluentStack>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool _isLoading = true;
+    private bool _isApproving = false;
+    private string? _statusMessage;
+    private bool _isStatusError = false;
+    private KnowledgeArticleDetailDto? _article;
+
+    private bool CanApprove =>
+        _article != null &&
+        _article.Status == KnowledgeArticleStatus.PendingReview &&
+        (_article.Reviewers.Any(r => r.UserId == CurrentUser.UserId && !r.HasApproved) ||
+         TenantContext.IsHost ||
+         CurrentUser.IsInRole("Admin"));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadArticleAsync();
+    }
+
+    private async Task LoadArticleAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _article = await KnowledgeService.GetArticleByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error loading article: {ex.Message}";
+            _isStatusError = true;
+            _article = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApproveArticleAsync()
+    {
+        _isApproving = true;
+        try
+        {
+            var success = await KnowledgeService.ApproveArticleAsync(Id);
+            if (success)
+            {
+                _statusMessage = "Article approved successfully!";
+                _isStatusError = false;
+                await LoadArticleAsync();
+            }
+            else
+            {
+                _statusMessage = "Failed to approve article. Ensure you have reviewer permissions.";
+                _isStatusError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error during approval: {ex.Message}";
+            _isStatusError = true;
+        }
+        finally
+        {
+            _isApproving = false;
+        }
+    }
+}

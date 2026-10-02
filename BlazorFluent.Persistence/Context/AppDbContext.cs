@@ -6,6 +6,7 @@ using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Jobs;
+using BlazorFluent.Core.Domain.Knowledge;
 using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -46,6 +47,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ImpersonationGrantEntity> ImpersonationGrants => Set<ImpersonationGrantEntity>();
     public DbSet<UserTaskEntity> Tasks => Set<UserTaskEntity>();
     public DbSet<UserTaskCommentEntity> TaskComments => Set<UserTaskCommentEntity>();
+    public DbSet<KnowledgeArticleEntity> KnowledgeArticles => Set<KnowledgeArticleEntity>();
+    public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -175,6 +178,13 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     private void ConfigureNamedTenantFilter<TEntity>(ModelBuilder modelBuilder)
         where TEntity : class, ITenantEntity
     {
+        if (typeof(TEntity) == typeof(KnowledgeArticleEntity))
+        {
+            modelBuilder.Entity<KnowledgeArticleEntity>()
+                .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.IsGlobal || e.TenantId == _tenantContext.TenantId);
+            return;
+        }
+
         modelBuilder.Entity<TEntity>()
             .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.TenantId == _tenantContext.TenantId);
     }

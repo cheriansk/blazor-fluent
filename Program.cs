@@ -10,6 +10,7 @@ using BlazorFluent.Infrastructure.Security;
 using BlazorFluent.Jobs;
 using BlazorFluent.Persistence;
 using BlazorFluent.Persistence.Context;
+using BlazorFluent.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
@@ -84,6 +85,7 @@ try
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
     builder.Services.AddFluentUIComponents();
+    builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
 
     // 4. Authentication & Authorization State Provider with Dual Policy Wiring (FSH Standard)
     builder.Services.AddAuthentication();
