@@ -4,6 +4,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Events;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Domain.Knowledge;
@@ -49,6 +50,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<UserTaskCommentEntity> TaskComments => Set<UserTaskCommentEntity>();
     public DbSet<KnowledgeArticleEntity> KnowledgeArticles => Set<KnowledgeArticleEntity>();
     public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();
+    public DbSet<EventPublishTrackerEntity> EventPublishTrackers => Set<EventPublishTrackerEntity>();
+    public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

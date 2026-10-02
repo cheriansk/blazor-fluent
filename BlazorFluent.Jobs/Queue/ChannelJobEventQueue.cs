@@ -1,6 +1,8 @@
 using System.Threading.Channels;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Jobs.Queue;
@@ -9,10 +11,15 @@ public class ChannelJobEventQueue : IJobEventQueue
 {
     private readonly Channel<IJobEvent> _channel;
     private readonly ILogger<ChannelJobEventQueue> _logger;
+    private readonly IServiceScopeFactory? _scopeFactory;
 
-    public ChannelJobEventQueue(ILogger<ChannelJobEventQueue> logger, int capacity = 1000)
+    public ChannelJobEventQueue(
+        ILogger<ChannelJobEventQueue> logger,
+        IServiceScopeFactory? scopeFactory = null,
+        int capacity = 1000)
     {
         _logger = logger;
+        _scopeFactory = scopeFactory;
         var options = new BoundedChannelOptions(capacity)
         {
             FullMode = BoundedChannelFullMode.Wait,
@@ -28,6 +35,44 @@ public class ChannelJobEventQueue : IJobEventQueue
 
         _logger.LogInformation("Enqueuing job event {EventId} of type {EventType} from source {Source}",
             jobEvent.EventId, jobEvent.GetType().Name, jobEvent.TriggerSource);
+
+        if (_scopeFactory != null)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+
+                // Least Privilege: scope is strictly locked to target tenant or 'system', never IsHost=true
+                var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
+                if (tenantContext != null)
+                {
+                    var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) ? jobEvent.TenantId : "system";
+                    tenantContext.Initialize(
+                        tenantId: targetTenantId,
+                        tenantName: targetTenantId == "system" ? "System Daemon" : null,
+                        userType: Core.DataListTypes.UserType.CompanyUser,
+                        allowedTenants: [],
+                        isHost: false);
+                }
+
+                var eventTracker = scope.ServiceProvider.GetService<IEventTrackerService>();
+                if (eventTracker != null)
+                {
+                    await eventTracker.TrackPublishAsync(
+                        jobEvent,
+                        eventId: jobEvent.EventId,
+                        correlationId: jobEvent.CorrelationId,
+                        triggerSource: jobEvent.TriggerSource,
+                        sourceClass: nameof(ChannelJobEventQueue),
+                        sourceMethod: nameof(EnqueueAsync),
+                        cancellationToken: cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to record event publish tracking for event {EventId}", jobEvent.EventId);
+            }
+        }
 
         await _channel.Writer.WriteAsync(jobEvent, cancellationToken);
     }

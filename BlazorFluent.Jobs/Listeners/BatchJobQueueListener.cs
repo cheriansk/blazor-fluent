@@ -83,22 +83,17 @@ public class BatchJobQueueListener : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var auditService = scope.ServiceProvider.GetService<IAuditService>();
+            var eventTracker = scope.ServiceProvider.GetService<IEventTrackerService>();
 
-            // ─── 1. RESTORE TENANT CONTEXT ───────────────────────────────────────────────
-            if (!string.IsNullOrWhiteSpace(jobEvent.TenantId))
-            {
-                var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-                tenantContext.Initialize(
-                    tenantId: jobEvent.TenantId,
-                    tenantName: null,
-                    userType: UserType.CompanyUser,
-                    allowedTenants: [],
-                    isHost: false);
-            }
-            else
-            {
-                _logger.LogDebug("Job event {EventId} has no TenantId — running as host-level job.", jobEvent.EventId);
-            }
+            // ─── 1. RESTORE TENANT CONTEXT (LEAST PRIVILEGE) ─────────────────────────────
+            var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+            var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) ? jobEvent.TenantId : "system";
+            tenantContext.Initialize(
+                tenantId: targetTenantId,
+                tenantName: targetTenantId == "system" ? "System Daemon" : null,
+                userType: UserType.CompanyUser,
+                allowedTenants: [],
+                isHost: false);
 
             // ─── 2. RECORD INITIAL EXECUTION STAMP ────────────────────────────────────────
             var execution = new JobExecutionEntity
@@ -131,6 +126,22 @@ public class BatchJobQueueListener : BackgroundService
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"No IBatchJobHandler registered for {eventType.Name}.";
                 await dbContext.SaveChangesAsync(stoppingToken);
+
+                if (eventTracker != null)
+                {
+                    var failId = await eventTracker.TrackConsumptionStartAsync(
+                        jobEvent.EventId,
+                        "UnknownHandler",
+                        "HandleAsync",
+                        cancellationToken: stoppingToken);
+
+                    await eventTracker.TrackConsumptionCompleteAsync(
+                        failId,
+                        isSuccess: false,
+                        durationMs: 0,
+                        errorMessage: $"No IBatchJobHandler registered for {eventType.Name}.",
+                        cancellationToken: stoppingToken);
+                }
                 return;
             }
 
@@ -148,6 +159,17 @@ public class BatchJobQueueListener : BackgroundService
             // ─── 4. EXECUTE WITH 3-ATTEMPT RETRY LOOP & EXPONENTIAL BACKOFF ──────────────
             var stopwatch = Stopwatch.StartNew();
             Exception? lastException = null;
+
+            Guid consumptionId = Guid.Empty;
+            if (eventTracker != null)
+            {
+                consumptionId = await eventTracker.TrackConsumptionStartAsync(
+                    jobEvent.EventId,
+                    handler.GetType().Name,
+                    method.Name,
+                    attemptCount: 1,
+                    cancellationToken: stoppingToken);
+            }
 
             for (var attempt = 1; attempt <= MaxRetries; attempt++)
             {
@@ -170,6 +192,15 @@ public class BatchJobQueueListener : BackgroundService
                     execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
                     execution.ErrorMessage = null;
                     await dbContext.SaveChangesAsync(stoppingToken);
+
+                    if (eventTracker != null && consumptionId != Guid.Empty)
+                    {
+                        await eventTracker.TrackConsumptionCompleteAsync(
+                            consumptionId,
+                            isSuccess: true,
+                            durationMs: stopwatch.Elapsed.TotalMilliseconds,
+                            cancellationToken: stoppingToken);
+                    }
 
                     if (auditService != null)
                     {
@@ -214,6 +245,17 @@ public class BatchJobQueueListener : BackgroundService
             execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
             execution.ErrorMessage = lastException?.ToString() ?? "Unknown batch job failure.";
             await dbContext.SaveChangesAsync(stoppingToken);
+
+            if (eventTracker != null && consumptionId != Guid.Empty)
+            {
+                await eventTracker.TrackConsumptionCompleteAsync(
+                    consumptionId,
+                    isSuccess: false,
+                    durationMs: stopwatch.Elapsed.TotalMilliseconds,
+                    errorMessage: lastException?.Message,
+                    exceptionDetails: lastException?.ToString(),
+                    cancellationToken: stoppingToken);
+            }
 
             if (auditService != null)
             {

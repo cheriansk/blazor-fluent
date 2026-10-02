@@ -61,7 +61,30 @@
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
             <AppErrorBoundaryComp>
-                @Body
+                @if (CurrentUser.IsAuthenticated && !TenantContext.IsHost && string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+                {
+                    <div style="padding: 40px; max-width: 800px; margin: 40px auto;">
+                        <FluentCard Style="border-left: 4px solid var(--error); padding: 24px;">
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                                    <FluentIcon Value="@(new Icons.Filled.Size24.DismissCircle())" Color="Color.Error" />
+                                    <FluentLabel Typo="Typography.H4">Active Tenant Required</FluentLabel>
+                                </FluentStack>
+                                <FluentLabel Typo="Typography.Body">
+                                    Your account is authenticated, but no active tenant is currently selected or assigned.
+                                    Application screens and data operations are disabled to prevent cross-tenant data corruption.
+                                </FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                                    Please switch to an authorized tenant or contact your organization administrator.
+                                </FluentLabel>
+                            </FluentStack>
+                        </FluentCard>
+                    </div>
+                }
+                else
+                {
+                    @Body
+                }
             </AppErrorBoundaryComp>
         </div>
     </FluentLayoutItem>

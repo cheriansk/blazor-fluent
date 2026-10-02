@@ -18,17 +18,20 @@ public class JobManagerService : IJobManagerService
     private readonly AppDbContext _dbContext;
     private readonly IJobEventQueue _queue;
     private readonly IAuditService _auditService;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<JobManagerService> _logger;
 
     public JobManagerService(
         AppDbContext dbContext,
         IJobEventQueue queue,
         IAuditService auditService,
+        ITenantContext tenantContext,
         ILogger<JobManagerService> logger)
     {
         _dbContext = dbContext;
         _queue = queue;
         _auditService = auditService;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -46,7 +49,17 @@ public class JobManagerService : IJobManagerService
         if (string.IsNullOrWhiteSpace(jobName))
             return Result.Failure("JobName is required.");
 
-        _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, tenantId ?? "Host");
+        // Least Privilege: Non-host users can only trigger jobs for their own active tenant
+        var targetTenantId = _tenantContext.IsHost
+            ? tenantId
+            : _tenantContext.TenantId;
+
+        if (!_tenantContext.IsHost && string.IsNullOrWhiteSpace(targetTenantId))
+        {
+            return Result.Failure("Cannot trigger job: active tenant context is missing.");
+        }
+
+        _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
 
         // Map known job names to their respective typed event triggers
         if (jobName.Equals("CatalogSyncJob", StringComparison.OrdinalIgnoreCase) ||
@@ -54,7 +67,7 @@ public class JobManagerService : IJobManagerService
         {
             var jobEvent = new CatalogSyncJobEvent(
                 TriggerSource: "Manual",
-                TenantId: tenantId);
+                TenantId: targetTenantId);
 
             await _queue.EnqueueAsync(jobEvent, cancellationToken);
         }
@@ -63,7 +76,7 @@ public class JobManagerService : IJobManagerService
             // Generic catalog sync fallback for demo purposes
             var jobEvent = new CatalogSyncJobEvent(
                 TriggerSource: "Manual",
-                TenantId: tenantId);
+                TenantId: targetTenantId);
 
             await _queue.EnqueueAsync(jobEvent, cancellationToken);
         }

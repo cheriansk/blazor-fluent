@@ -1,1 +1,2 @@
-dotnet ef migrations add AddKnowledgeBaseModule --project BlazorFluent.Persistence --startup-project . --output-dir Migrations
+dotnet ef migrations add AddEventTrackingSystem --project BlazorFluent.Persistence --startup-project . --output-dir Migrations
+
