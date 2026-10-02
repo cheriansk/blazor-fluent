@@ -32,6 +32,7 @@ public static class PersistenceExtensions
         services.AddScoped<EntityValidationInterceptor>();
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<ProjectSecurityInterceptor>();
+        services.AddScoped<NoTrackingMutationGuardInterceptor>();
 
         // 5. Strict connection string loading from appsettings.json
         var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -50,12 +51,13 @@ public static class PersistenceExtensions
             var validationInterceptor = sp.GetRequiredService<EntityValidationInterceptor>();
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
+            var noTrackingGuard = sp.GetRequiredService<NoTrackingMutationGuardInterceptor>();
             options.UseExceptionProcessor();
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
             })
-            .AddInterceptors(connectionInterceptor, validationInterceptor, interceptor, securityInterceptor);
+            .AddInterceptors(connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard);
         });
 
         // 7. Auto-scaling Azure Web Apps: Shared Data Protection Key Ring in PostgreSQL
@@ -115,6 +117,9 @@ public static class PersistenceExtensions
 
         // 16. Knowledge Management Service
         services.TryAddScoped<IKnowledgeBaseService, KnowledgeBaseService>();
+
+        // 17. Universal Event Tracker Ledger Service
+        services.TryAddScoped<IEventTrackerService, EventTrackerService>();
 
         return services;
     }

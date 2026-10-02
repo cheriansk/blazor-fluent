@@ -1,0 +1,427 @@
+@page "/events"
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Events
+@inject IEventTrackerService EventTrackerService
+@inject ITenantContext TenantContext
+@inject IJSRuntime JS
+
+<PageTitle>Event Tracker</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <!-- Header -->
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H3">Event Tracker & Audit Ledger</FluentLabel>
+            <FluentLabel Typo="Typography.Body">Trace event generation and consumption: inspect sender origins, user IDs, JSON payloads, and per-consumer execution receipts.</FluentLabel>
+        </div>
+        <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.ArrowSync())" OnClick="@LoadEventsAsync">
+            Refresh
+        </FluentButton>
+    </FluentStack>
+
+    @if (!TenantContext.IsHost && string.IsNullOrWhiteSpace(TenantContext.TenantId))
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Error">
+            Access Denied. Event tracking records are restricted to authenticated tenant users and host administrators.
+        </FluentMessageBar>
+    }
+    else
+    {
+        <!-- Metric Summary Cards -->
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Total Events</FluentLabel>
+                    <FluentLabel Typo="Typography.H4">@(_eventResult?.TotalCount ?? 0)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Completed</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Success">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatus.Completed) ?? 0)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">In Progress</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Warning">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatus.InProgress || e.Status == EventTrackerStatus.Published) ?? 0)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="6" sm="3">
+                <FluentCard Style="padding: 16px; text-align: center;">
+                    <FluentLabel Typo="Typography.Subject">Failed / Partial</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Error">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatus.Failed || e.Status == EventTrackerStatus.PartiallyFailed) ?? 0)</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+
+        <!-- Filter Toolbar -->
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                <FluentLabel Typo="Typography.H6">Filters & Search</FluentLabel>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true" Style="align-items: flex-end;">
+                    <FluentTextInput Label="Search (Event, Origin, User, Payload)" @bind-Value="_filter.SearchTerm" Placeholder="Search..." Style="min-width: 240px;" />
+                    
+                    @if (TenantContext.IsHost)
+                    {
+                        <FluentTextInput Label="Tenant ID" @bind-Value="_filter.TenantId" Placeholder="All tenants" Style="width: 140px;" />
+                    }
+
+                    <div>
+                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                        <FluentSelect Items="@_statuses"
+                                      TOption="string"
+                                      TValue="string"
+                                      SelectedOption="@_selectedStatus"
+                                      SelectedOptionChanged="@OnStatusChanged"
+                                      Style="min-width: 160px;" />
+                    </div>
+
+                    <FluentDatePicker Label="From Date" @bind-Value="_filter.FromDate" />
+                    <FluentDatePicker Label="To Date" @bind-Value="_filter.ToDate" />
+
+                    <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Search())" OnClick="@SearchAsync">
+                        Filter
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@ResetFiltersAsync">
+                        Reset
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+
+        <!-- Selected Event Inspection Detail Panel -->
+        @if (_selectedEvent is not null)
+        {
+            <FluentCard Style="margin-bottom: 15px; border-left: 4px solid var(--accent-fill-rest); padding: 20px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <FluentLabel Typo="Typography.H4">Event: @_selectedEvent.EventName</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                            <b>Event ID:</b> @_selectedEvent.EventId | <b>Correlation:</b> @_selectedEvent.CorrelationId | <b>Published:</b> @_selectedEvent.PublishedAtUtc.ToString("yyyy-MM-dd HH:mm:ss UTC")
+                        </FluentLabel>
+                    </div>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _selectedEvent = null)">Close</FluentButton>
+                </FluentStack>
+
+                <FluentGrid Spacing="3">
+                    <FluentGridItem xs="12" md="6">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
+                            <FluentLabel Typo="Typography.Subject"><b>Sender Origin</b></FluentLabel>
+                            <div><b>Class:</b> <code>@_selectedEvent.SourceClass</code></div>
+                            <div><b>Method:</b> <code>@_selectedEvent.SourceMethod</code></div>
+                            @if (!string.IsNullOrWhiteSpace(_selectedEvent.SourceFilePath))
+                            {
+                                <div><b>File:</b> <small>@_selectedEvent.SourceFilePath</small></div>
+                            }
+                            <div><b>User:</b> @(_selectedEvent.UserEmail ?? _selectedEvent.UserId ?? "system")</div>
+                            <div><b>Trigger:</b> <FluentBadge>@_selectedEvent.TriggerSource</FluentBadge></div>
+                        </FluentStack>
+                    </FluentGridItem>
+
+                    <FluentGridItem xs="12" md="6">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
+                            <FluentLabel Typo="Typography.Subject"><b>Aggregate Lifecycle</b></FluentLabel>
+                            <div>
+                                <b>Status:</b>
+                                @if (_selectedEvent.Status == EventTrackerStatus.Completed)
+                                {
+                                    <FluentBadge Color="BadgeColor.Success">Completed</FluentBadge>
+                                }
+                                else if (_selectedEvent.Status == EventTrackerStatus.InProgress)
+                                {
+                                    <FluentBadge Color="BadgeColor.Warning">In Progress</FluentBadge>
+                                }
+                                else if (_selectedEvent.Status == EventTrackerStatus.Failed)
+                                {
+                                    <FluentBadge Color="BadgeColor.Severe">Failed</FluentBadge>
+                                }
+                                else if (_selectedEvent.Status == EventTrackerStatus.PartiallyFailed)
+                                {
+                                    <FluentBadge Color="BadgeColor.Warning">Partially Failed</FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Color="BadgeColor.Informative">Published</FluentBadge>
+                                }
+                            </div>
+                            <div><b>Consumers Run:</b> @(_selectedEvent.Consumptions?.Count ?? _selectedEvent.ConsumerCount)</div>
+                        </FluentStack>
+                    </FluentGridItem>
+                </FluentGrid>
+
+                <FluentDivider Style="margin: 16px 0;" />
+
+                <!-- Consumer Execution Telemetry -->
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 8px;">Consumer Execution Receipts</FluentLabel>
+                @if (_selectedEvent.Consumptions is null || !_selectedEvent.Consumptions.Any())
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-bottom: 12px;">
+                        No consumers have processed this event yet.
+                    </FluentMessageBar>
+                }
+                else
+                {
+                    <FluentDataGrid Items="@_selectedEvent.Consumptions.AsQueryable()" ResizableColumns="true" Style="margin-bottom: 16px;">
+                        <PropertyColumn Property="@(c => c.ConsumerClass)" Title="Consumer Class" />
+                        <PropertyColumn Property="@(c => c.ConsumerMethod)" Title="Method" />
+                        <TemplateColumn Title="Started At">
+                            @context.StartedAtUtc.ToString("HH:mm:ss.fff")
+                        </TemplateColumn>
+                        <TemplateColumn Title="Duration">
+                            @context.DurationMs.ToString("F1") ms
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            @if (context.Status == EventConsumptionStatus.Succeeded)
+                            {
+                                <FluentBadge Color="BadgeColor.Success">Succeeded</FluentBadge>
+                            }
+                            else if (context.Status == EventConsumptionStatus.Running)
+                            {
+                                <FluentBadge Color="BadgeColor.Warning">Running</FluentBadge>
+                            }
+                            else
+                            {
+                                <FluentBadge Color="BadgeColor.Severe">Failed</FluentBadge>
+                            }
+                        </TemplateColumn>
+                        <TemplateColumn Title="Attempt">
+                            #@context.AttemptCount
+                        </TemplateColumn>
+                        <TemplateColumn Title="Diagnostics">
+                            @if (!string.IsNullOrWhiteSpace(context.ErrorMessage))
+                            {
+                                <span title="@context.ErrorMessage" style="color: var(--error); font-size: 12px; cursor: help;">
+                                    ⚠️ @Truncate(context.ErrorMessage, 60)
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color: var(--success); font-size: 12px;">OK</span>
+                            }
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                }
+
+                <!-- Payload JSON Inspector -->
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px;">
+                    <FluentLabel Typo="Typography.H5">Event Payload (JSON)</FluentLabel>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Copy())" OnClick="@CopyPayloadAsync">
+                        @(_copied ? "Copied!" : "Copy Payload")
+                    </FluentButton>
+                </FluentStack>
+                <div style="background-color: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; margin-top: 8px; max-height: 280px; overflow-y: auto; white-space: pre-wrap;">
+                    @_selectedEvent.PayloadJson
+                </div>
+            </FluentCard>
+        }
+
+        @if (_isLoading)
+        {
+            <FluentProgressRing Style="margin: 30px auto;" />
+        }
+        else if (_eventResult is null || _eventResult.Items.Count == 0)
+        {
+            <FluentMessageBar Intent="MessageBarIntent.Info">
+                No events recorded matching the current search criteria.
+            </FluentMessageBar>
+        }
+        else
+        {
+            <!-- In-Grid Quick Search -->
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                <FluentTextInput Placeholder="Quick filter visible records..." 
+                                @bind-Value="_inGridSearchText"
+                                @bind-Value:after="StateHasChanged"
+                                Style="width: 320px;">
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+                <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    Showing @FilteredEventItems.Count() of @(_eventResult.Items.Count) events on this page
+                </span>
+            </FluentStack>
+
+            <!-- Master Events Grid -->
+            <FluentDataGrid Items="@FilteredEventItems" ResizableColumns="true" GridTemplateColumns="170px 180px 220px 140px 140px 120px 110px">
+                <TemplateColumn Title="Published At" SortBy="@(GridSort<EventPublishTrackerEntity>.ByDescending(e => e.PublishedAtUtc))">
+                    @context.PublishedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")
+                </TemplateColumn>
+                <TemplateColumn Title="Event Name" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.EventName))">
+                    <b>@context.EventName</b>
+                </TemplateColumn>
+                <TemplateColumn Title="Sender Origin" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.SourceClass))">
+                    <span title="@($"{context.SourceClass}.{context.SourceMethod}")">
+                        <code>@context.SourceClass.@context.SourceMethod</code>
+                    </span>
+                </TemplateColumn>
+                <PropertyColumn Property="@(e => e.UserEmail ?? e.UserId)" Title="User" Sortable="true" />
+                <TemplateColumn Title="Status" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.Status))">
+                    @if (context.Status == EventTrackerStatus.Completed)
+                    {
+                        <FluentBadge Color="BadgeColor.Success">Completed</FluentBadge>
+                    }
+                    else if (context.Status == EventTrackerStatus.InProgress)
+                    {
+                        <FluentBadge Color="BadgeColor.Warning">In Progress</FluentBadge>
+                    }
+                    else if (context.Status == EventTrackerStatus.Failed)
+                    {
+                        <FluentBadge Color="BadgeColor.Severe">Failed</FluentBadge>
+                    }
+                    else if (context.Status == EventTrackerStatus.PartiallyFailed)
+                    {
+                        <FluentBadge Color="BadgeColor.Warning">Partial Fail</FluentBadge>
+                    }
+                    else
+                    {
+                        <FluentBadge Color="BadgeColor.Informative">Published</FluentBadge>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Consumers">
+                    <span>@((context.Consumptions?.Count ?? 0)) consumer(s)</span>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => SelectEventAsync(context))">
+                        Inspect
+                    </FluentButton>
+                </TemplateColumn>
+            </FluentDataGrid>
+
+            <!-- Pagination Bar -->
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px;">
+                <FluentLabel Typo="Typography.Body">
+                    Showing Page @_eventResult.PageNumber of @_eventResult.TotalPages (@_eventResult.TotalCount total records)
+                </FluentLabel>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    <FluentButton Disabled="@(!_eventResult.HasPreviousPage)" OnClick="@PreviousPageAsync">Previous</FluentButton>
+                    <FluentButton Disabled="@(!_eventResult.HasNextPage)" OnClick="@NextPageAsync">Next</FluentButton>
+                </FluentStack>
+            </FluentStack>
+        }
+    }
+</FluentStack>
+
+@code {
+    private EventTrackerFilter _filter = new() { PageSize = 20 };
+    private PagedResult<EventPublishTrackerEntity>? _eventResult;
+    private bool _isLoading = true;
+    private EventPublishTrackerEntity? _selectedEvent;
+    private string _inGridSearchText = string.Empty;
+    private bool _copied = false;
+
+    private static string Truncate(string? value, int maxLen = 60) =>
+        string.IsNullOrWhiteSpace(value) ? string.Empty : (value.Length > maxLen ? value[..maxLen] + "..." : value);
+
+    private readonly List<string> _statuses = ["All", "Published", "InProgress", "Completed", "PartiallyFailed", "Failed"];
+    private string _selectedStatus = "All";
+
+    private IQueryable<EventPublishTrackerEntity> FilteredEventItems
+    {
+        get
+        {
+            var items = _eventResult?.Items ?? [];
+            var query = items.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_inGridSearchText))
+            {
+                var term = _inGridSearchText.Trim();
+                query = query.Where(e =>
+                    e.EventName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    e.SourceClass.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    e.SourceMethod.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (e.UserEmail != null && e.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (e.UserId != null && e.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    e.CorrelationId.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _eventResult = await EventTrackerService.GetEventsAsync(_filter);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SelectEventAsync(EventPublishTrackerEntity entity)
+    {
+        _selectedEvent = entity;
+        _copied = false;
+        var freshConsumptions = await EventTrackerService.GetConsumptionsAsync(entity.Id);
+        if (freshConsumptions != null)
+        {
+            _selectedEvent.Consumptions = freshConsumptions.ToList();
+        }
+    }
+
+    private async Task CopyPayloadAsync()
+    {
+        if (_selectedEvent != null && !string.IsNullOrWhiteSpace(_selectedEvent.PayloadJson))
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", _selectedEvent.PayloadJson);
+            _copied = true;
+            StateHasChanged();
+        }
+    }
+
+    private void OnStatusChanged(string? value)
+    {
+        _selectedStatus = value ?? "All";
+        if (_selectedStatus == "All" || !Enum.TryParse<EventTrackerStatus>(_selectedStatus, out var status))
+        {
+            _filter.Status = null;
+        }
+        else
+        {
+            _filter.Status = status;
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        _filter.PageNumber = 1;
+        await LoadEventsAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _filter = new EventTrackerFilter { PageSize = 20 };
+        _selectedStatus = "All";
+        _inGridSearchText = string.Empty;
+        await LoadEventsAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_eventResult?.HasPreviousPage == true)
+        {
+            _filter.PageNumber--;
+            await LoadEventsAsync();
+        }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_eventResult?.HasNextPage == true)
+        {
+            _filter.PageNumber++;
+            await LoadEventsAsync();
+        }
+    }
+}
