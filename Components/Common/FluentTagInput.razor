@@ -1,0 +1,122 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <FluentTextInput @bind-Value="@_currentInput"
+                         Immediate="true"
+                         Placeholder="Type a label (e.g. Architecture, Security, API)..."
+                         Style="flex: 1;"
+                         Disabled="@(Tags.Count >= MaxTags)"
+                         @onkeydown="@HandleKeyDown" />
+
+        <FluentButton Appearance="ButtonAppearance.Outline"
+                      IconStart="@(new Icons.Regular.Size16.Add())"
+                      OnClick="@AddTag"
+                      Disabled="@(string.IsNullOrWhiteSpace(_currentInput) || Tags.Count >= MaxTags)">
+            Add
+        </FluentButton>
+    </div>
+
+    <!-- Live Counter and Guidance -->
+    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+        <span style="color: @(Tags.Count < MinTags ? "var(--warning)" : "var(--neutral-foreground-hint)");">
+            @if (Tags.Count == 0)
+            {
+                <span>At least 1 label is required</span>
+            }
+            else
+            {
+                <span>Press Enter or click Add to append label</span>
+            }
+        </span>
+        <span style="font-weight: 600; color: @(Tags.Count > MaxTags ? "var(--error)" : "var(--neutral-foreground-rest)");">
+            @Tags.Count / @MaxTags labels
+        </span>
+    </div>
+
+    <!-- Active Label Badges -->
+    @if (Tags.Count > 0)
+    {
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; background: var(--neutral-layer-2); border-radius: 6px; border: 1px solid var(--neutral-stroke-subtle);">
+            @foreach (var tag in Tags)
+            {
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; background: var(--accent-fill-rest); color: #ffffff; font-size: 12px; font-weight: 600;">
+                    @tag
+                    <span @onclick="@(() => RemoveTag(tag))"
+                          style="cursor: pointer; font-weight: bold; margin-left: 2px; padding: 0 2px; border-radius: 50%; opacity: 0.85;"
+                          title="Remove @tag">
+                        ✕
+                    </span>
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Quick Suggestions (clickable chips, only adds if not already present) -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; margin-top: 2px;">
+        <span style="color: var(--neutral-foreground-hint);">Suggestions:</span>
+        @foreach (var s in _commonSuggestions)
+        {
+            @if (!Tags.Contains(s, StringComparer.OrdinalIgnoreCase) && Tags.Count < MaxTags)
+            {
+                <span @onclick="@(() => AddSuggestion(s))"
+                      style="cursor: pointer; padding: 2px 6px; border-radius: 8px; background: var(--neutral-layer-3); border: 1px dashed var(--neutral-stroke-rest); color: var(--neutral-foreground-rest);">
+                    + @s
+                </span>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<string> Tags { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> TagsChanged { get; set; }
+    [Parameter] public int MinTags { get; set; } = 1;
+    [Parameter] public int MaxTags { get; set; } = 10;
+
+    private string _currentInput = string.Empty;
+
+    private readonly string[] _commonSuggestions = new[]
+    {
+        "Architecture", "Troubleshooting", "Onboarding", "Frontend", "Backend", "API", "Database", "Security", "DevOps"
+    };
+
+    private async Task AddTag()
+    {
+        if (string.IsNullOrWhiteSpace(_currentInput)) return;
+        if (Tags.Count >= MaxTags) return;
+
+        var clean = _currentInput.Trim().Trim(';', ',');
+        if (!string.IsNullOrWhiteSpace(clean) && !Tags.Contains(clean, StringComparer.OrdinalIgnoreCase))
+        {
+            Tags.Add(clean);
+            _currentInput = string.Empty;
+            await TagsChanged.InvokeAsync(Tags);
+        }
+    }
+
+    private async Task AddSuggestion(string suggestion)
+    {
+        if (Tags.Count >= MaxTags) return;
+        if (!Tags.Contains(suggestion, StringComparer.OrdinalIgnoreCase))
+        {
+            Tags.Add(suggestion);
+            await TagsChanged.InvokeAsync(Tags);
+        }
+    }
+
+    private async Task RemoveTag(string tag)
+    {
+        Tags.Remove(tag);
+        await TagsChanged.InvokeAsync(Tags);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == ",")
+        {
+            await AddTag();
+        }
+    }
+}

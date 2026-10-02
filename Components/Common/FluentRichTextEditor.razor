@@ -1,0 +1,68 @@
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="fluent-editor-wrapper" style="display: flex; flex-direction: column; width: 100%;">
+    <div id="@_editorId" style="min-height: @(MinHeight); max-height: @(MaxHeight); background: var(--neutral-layer-1); color: var(--neutral-foreground-rest); border-radius: 4px; overflow-y: auto;"></div>
+
+    @if (!ReadOnly)
+    {
+        <div style="display: flex; justify-content: flex-end; align-items: center; padding: 4px 6px; font-size: 11px; color: @(_charCount > MaxLength ? "var(--error)" : "var(--neutral-foreground-hint)");">
+            <span>@_charCount.ToString("N0") / @MaxLength.ToString("N0") characters</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public int MaxLength { get; set; } = 20000;
+    [Parameter] public string MinHeight { get; set; } = "240px";
+    [Parameter] public string MaxHeight { get; set; } = "500px";
+    [Parameter] public bool ReadOnly { get; set; } = false;
+
+    private string _editorId = $"quill-editor-{Guid.NewGuid():N}";
+    private DotNetObjectReference<FluentRichTextEditor>? _dotNetRef;
+    private IJSObjectReference? _module;
+    private int _charCount = 0;
+    private bool _isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_isInitialized)
+        {
+            _isInitialized = true;
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/quill-interop.js");
+            await _module.InvokeVoidAsync("init", _editorId, _dotNetRef, Value, MaxLength, ReadOnly);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnContentChanged(string html, int length)
+    {
+        _charCount = length;
+        Value = html;
+        await ValueChanged.InvokeAsync(html);
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("destroy", _editorId);
+                await _module.DisposeAsync();
+            }
+        }
+        catch
+        {
+            // Ignore JS interop disposal errors on unmount
+        }
+        finally
+        {
+            _dotNetRef?.Dispose();
+        }
+    }
+}

@@ -1,0 +1,57 @@
+.navmenu-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: width 0.2s ease-in-out;
+}
+
+.nav-expanded {
+    width: 260px;
+}
+
+.nav-collapsed {
+    width: 54px;
+}
+
+.nav-toggle-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--neutral-stroke-subtle);
+}
+
+.nav-expanded .nav-toggle-row {
+    justify-content: space-between;
+    padding: 8px 12px;
+}
+
+.nav-collapsed .nav-toggle-row {
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.nav-header-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--neutral-foreground-hint);
+}
+
+/* Collapsed Icon-Only Rules */
+.nav-collapsed ::deep .fluent-navitem {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.nav-collapsed ::deep .fluent-navitem > span:not(.fluent-nav-icon):not(svg),
+.nav-collapsed ::deep .fluent-navgroup-title,
+.nav-collapsed ::deep .fluent-navgroup-expander {
+    display: none !important;
+}
+
+.nav-collapsed ::deep .fluent-navgroup-header {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}

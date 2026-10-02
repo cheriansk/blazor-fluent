@@ -15,6 +15,8 @@
 @inject IUserSessionService SessionService
 @inject AppDbContext DbContext
 @inject ILogger<MainLayout> Logger
+@inject INavigationStateService NavState
+@implements IDisposable
 
 <ImpersonationBannerComp />
 <SessionRevokedModal />
@@ -24,7 +26,11 @@
     <FluentLayoutItem Area="LayoutArea.Header">
         @if (HasActiveTenantSession)
         {
-            <FluentLayoutHamburger />
+            <FluentButton Appearance="ButtonAppearance.Subtle"
+                          IconStart="@(NavState.IsCollapsed ? new Icons.Regular.Size20.PanelLeftExpand() : new Icons.Regular.Size20.PanelLeftContract())"
+                          Title="@(NavState.IsCollapsed ? "Expand Navigation" : "Collapse Navigation")"
+                          OnClick="@NavState.Toggle"
+                          Style="margin-right: 6px;" />
         }
         BlazorFluent
         <FluentSpacer />
@@ -48,7 +54,7 @@
     </FluentLayoutItem>
     @if (HasActiveTenantSession)
     {
-        <FluentLayoutItem Area="LayoutArea.Navigation">
+        <FluentLayoutItem Area="LayoutArea.Navigation" Style="@($"width: {(NavState.IsCollapsed ? "54px" : "260px")}; min-width: {(NavState.IsCollapsed ? "54px" : "260px")}; transition: width 0.2s ease-in-out;")">
             <NavMenuComp />
         </FluentLayoutItem>
     }
@@ -89,6 +95,21 @@
             var uri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLowerInvariant();
             return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("not-found");
         }
+    }
+
+    protected override void OnInitialized()
+    {
+        NavState.OnChange += HandleNavStateChanged;
+    }
+
+    private void HandleNavStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavState.OnChange -= HandleNavStateChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

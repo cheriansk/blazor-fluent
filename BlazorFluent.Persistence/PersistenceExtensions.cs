@@ -113,6 +113,9 @@ public static class PersistenceExtensions
         // 15. Project Work Item & Task Management Service
         services.TryAddScoped<IUserTaskService, UserTaskService>();
 
+        // 16. Knowledge Management Service
+        services.TryAddScoped<IKnowledgeBaseService, KnowledgeBaseService>();
+
         return services;
     }
 }
