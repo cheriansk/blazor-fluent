@@ -13,6 +13,7 @@
 @inject NavigationManager NavigationManager
 @inject ProtectedSessionStorage SessionStorage
 @inject IUserSessionService SessionService
+@inject ICircuitSessionTracker CircuitTracker
 @inject AppDbContext DbContext
 @inject ILogger<MainLayout> Logger
 @inject INavigationStateService NavState
@@ -130,9 +131,28 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private System.Threading.Timer? _heartbeatTimer;
+
+    private void StartHeartbeat(Guid sessionId)
+    {
+        _heartbeatTimer?.Dispose();
+        _heartbeatTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                await SessionService.UpdateHeartbeatAsync(sessionId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Session heartbeat tick skipped.");
+            }
+        }, null, TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
+    }
+
     public void Dispose()
     {
         NavState.OnChange -= HandleNavStateChanged;
+        _heartbeatTimer?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -203,6 +223,7 @@
                                 }
                             }
 
+                            StartHeartbeat(data.SessionId);
                             AuthStateProvider.NotifyUserChanged();
                             StateHasChanged();
                             return;
@@ -253,6 +274,7 @@
 
     private async Task SignOut()
     {
+        _heartbeatTimer?.Dispose();
         try
         {
             var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");

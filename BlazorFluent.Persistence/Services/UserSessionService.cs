@@ -35,6 +35,9 @@ public class UserSessionService : IUserSessionService
     {
         var tenantId = _tenantContext.TenantId ?? "default";
 
+        // Enforce strict single-active-session policy per user
+        await RevokePreviousSessionsAsync(userId, null, ct);
+
         var session = new UserSessionEntity
         {
             TenantId = tenantId,
@@ -54,6 +57,63 @@ public class UserSessionService : IUserSessionService
             userEmail, userId, ipAddress, session.Id);
 
         return session;
+    }
+
+    public async Task RevokePreviousSessionsAsync(string userId, Guid? exceptSessionId = null, CancellationToken ct = default)
+    {
+        var query = _dbContext.UserSessions
+            .AsTracking()
+            .Where(s => s.UserId == userId && !s.IsRevoked);
+
+        if (exceptSessionId.HasValue)
+        {
+            query = query.Where(s => s.Id != exceptSessionId.Value);
+        }
+
+        var sessionsToRevoke = await query.ToListAsync(ct);
+        if (sessionsToRevoke.Count == 0) return;
+
+        var now = DateTime.UtcNow;
+        foreach (var session in sessionsToRevoke)
+        {
+            session.IsRevoked = true;
+            session.RevokedAtUtc = now;
+            session.RevokedBy = "System (New Login)";
+
+            var cacheKey = $"revoked_session_{session.Id}";
+            await _cache.SetAsync(cacheKey, true, cancellationToken: ct);
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+        _logger.LogInformation("Revoked {Count} prior active session(s) for user {UserId} upon new login.", sessionsToRevoke.Count, userId);
+    }
+
+    public async Task<int> RevokeStaleSessionsAsync(TimeSpan timeout, string revokedBy, CancellationToken ct = default)
+    {
+        var cutoff = DateTime.UtcNow - timeout;
+        var staleSessions = await _dbContext.UserSessions
+            .AsTracking()
+            .Where(s => !s.IsRevoked && s.LastActivityAtUtc < cutoff)
+            .ToListAsync(ct);
+
+        if (staleSessions.Count == 0) return 0;
+
+        var now = DateTime.UtcNow;
+        foreach (var session in staleSessions)
+        {
+            session.IsRevoked = true;
+            session.RevokedAtUtc = now;
+            session.RevokedBy = revokedBy;
+
+            var cacheKey = $"revoked_session_{session.Id}";
+            await _cache.SetAsync(cacheKey, true, cancellationToken: ct);
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+        _logger.LogWarning("Admin '{RevokedBy}' revoked {Count} stale sessions older than {Timeout}.",
+            revokedBy, staleSessions.Count, timeout);
+
+        return staleSessions.Count;
     }
 
     public async Task UpdateHeartbeatAsync(Guid sessionId, CancellationToken ct = default)
@@ -106,12 +166,21 @@ public class UserSessionService : IUserSessionService
         return true;
     }
 
-    public async Task<IReadOnlyList<UserSessionEntity>> GetActiveSessionsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserSessionEntity>> GetActiveSessionsAsync(bool includeTerminated = false, CancellationToken ct = default)
     {
-        var query = _dbContext.UserSessions
-            .AsNoTracking()
-            .OrderByDescending(s => s.StartedAtUtc);
+        var query = _dbContext.UserSessions.AsNoTracking();
 
-        return await query.Take(100).ToListAsync(ct);
+        if (!includeTerminated)
+        {
+            var activeCutoff = DateTime.UtcNow.AddMinutes(-30);
+            query = query.Where(s => !s.IsRevoked && s.LastActivityAtUtc >= activeCutoff)
+                         .OrderByDescending(s => s.LastActivityAtUtc);
+        }
+        else
+        {
+            query = query.OrderByDescending(s => s.StartedAtUtc);
+        }
+
+        return await query.Take(200).ToListAsync(ct);
     }
 }

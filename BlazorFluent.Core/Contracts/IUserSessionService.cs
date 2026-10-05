@@ -31,7 +31,18 @@ public interface IUserSessionService
     Task<bool> RevokeSessionAsync(Guid sessionId, string revokedBy, CancellationToken ct = default);
 
     /// <summary>
-    /// Returns all non-deleted user sessions for the active tenant (or all tenants for Host Admin).
+    /// Revokes any existing active sessions for a specific user to enforce single-active-session policy.
     /// </summary>
-    Task<IReadOnlyList<UserSessionEntity>> GetActiveSessionsAsync(CancellationToken ct = default);
+    Task RevokePreviousSessionsAsync(string userId, Guid? exceptSessionId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Revokes all stale sessions whose last activity is older than the specified timeout.
+    /// Returns the number of sessions revoked.
+    /// </summary>
+    Task<int> RevokeStaleSessionsAsync(TimeSpan timeout, string revokedBy, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns active user sessions. If includeTerminated is true, includes expired and revoked sessions.
+    /// </summary>
+    Task<IReadOnlyList<UserSessionEntity>> GetActiveSessionsAsync(bool includeTerminated = false, CancellationToken ct = default);
 }

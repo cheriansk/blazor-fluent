@@ -23,8 +23,10 @@ public static class InfrastructureExtensions
         services.TryAddScoped<ITeamsNotificationSender, TeamsNotificationSender>();
         services.TryAddScoped<IEmailNotificationSender, EmailNotificationSender>();
 
-        // 2. Blazor Circuit Observability Lifecycle Handler
+        // 2. Blazor Circuit Observability Lifecycle Handler & Session Circuit Tracker
+        services.AddSingleton<ICircuitSessionTracker, CircuitSessionTracker>();
         services.AddScoped<CircuitHandler, BlazorCircuitObservabilityHandler>();
+        services.AddScoped<CircuitHandler, UserSessionCircuitHandler>();
 
         // 3. Path-Aware Authorization Middleware Result Handler
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
