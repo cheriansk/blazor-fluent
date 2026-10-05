@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Jobs.Queue;
 
-public class ChannelJobEventQueue : IJobEventQueue
+public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
 {
     private readonly Channel<IJobEvent> _channel;
     private readonly ILogger<ChannelJobEventQueue> _logger;
@@ -75,6 +75,11 @@ public class ChannelJobEventQueue : IJobEventQueue
         }
 
         await _channel.Writer.WriteAsync(jobEvent, cancellationToken);
+    }
+
+    public ValueTask PublishAsync(IJobEvent jobEvent, CancellationToken cancellationToken = default)
+    {
+        return EnqueueAsync(jobEvent, cancellationToken);
     }
 
     public IAsyncEnumerable<IJobEvent> ReadAllAsync(CancellationToken cancellationToken = default)

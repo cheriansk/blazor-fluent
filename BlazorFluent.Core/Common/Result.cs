@@ -23,6 +23,7 @@ public class Result
 public class Result<T> : Result
 {
     public T? Data { get; private set; }
+    public T? Value => Data;
 
     public static Result<T> Success(T data, string? message = null) => new() { Succeeded = true, Data = data, Message = message };
     public static new Result<T> Failure(string error) => new() { Succeeded = false, Errors = [error] };

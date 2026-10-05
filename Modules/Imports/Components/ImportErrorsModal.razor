@@ -1,0 +1,66 @@
+@using BlazorFluent.Core.Abstractions.Imports
+@using BlazorFluent.Core.DTOs.Imports
+
+<FluentDialog @ref="_dialog"
+              @bind-Hidden="@_hidden"
+              Modal="true"
+              TrapFocus="true"
+              PreventScroll="true"
+              Style="--dialog-width: 850px; --dialog-height: 550px;"
+              AriaLabel="Validation Error Diagnostics">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center;">
+            <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
+            <FluentLabel Typo="Typography.H6">Validation Diagnostics: @FileDetails?.OriginalFileName</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody Style="max-height: 400px; overflow-y: auto;">
+        @if (FileDetails != null)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                <FluentMessageBar Intent="MessageBarIntent.Error">
+                    Strict fail-closed policy: @FileDetails.ValidationErrors.Count error(s) detected. 0 records staged.
+                </FluentMessageBar>
+
+                <FluentDataGrid Items="@FileDetails.ValidationErrors.AsQueryable()"
+                                ResizableColumns="true"
+                                TGridItem="FileValidationError"
+                                Style="width: 100%;">
+                    <PropertyColumn Property="@(e => e.SheetName)" Title="Sheet / Section" Width="130px" />
+                    <PropertyColumn Property="@(e => e.RowIndex)" Title="Row #" Width="80px" />
+                    <PropertyColumn Property="@(e => e.ColumnName)" Title="Column / Field" Width="140px" />
+                    <PropertyColumn Property="@(e => e.ErrorMessage)" Title="Validation Message" />
+                    <PropertyColumn Property="@(e => e.AttemptedValue)" Title="Attempted Value" Width="140px" />
+                </FluentDataGrid>
+            </FluentStack>
+        }
+        else
+        {
+            <FluentLabel Typo="Typography.Body">No diagnostic errors recorded.</FluentLabel>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@CloseAsync">Close</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private FluentDialog? _dialog;
+    private bool _hidden = true;
+
+    [Parameter] public ImportFileDetailsDto? FileDetails { get; set; }
+
+    public void Show(ImportFileDetailsDto details)
+    {
+        FileDetails = details;
+        _hidden = false;
+        StateHasChanged();
+    }
+
+    private void CloseAsync()
+    {
+        _hidden = true;
+    }
+}

@@ -121,6 +121,9 @@ public static class PersistenceExtensions
         // 17. Universal Event Tracker Ledger Service
         services.TryAddScoped<IEventTrackerService, EventTrackerService>();
 
+        // 18. Multi-Tenant File Ingestion & Processing Pipeline Service
+        services.TryAddScoped<IImportFileService, ImportFileService>();
+
         return services;
     }
 }

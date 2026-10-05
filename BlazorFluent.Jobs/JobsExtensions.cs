@@ -1,6 +1,7 @@
 using System.Reflection;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Jobs.Abstractions;
+using BlazorFluent.Jobs.FileImports.Abstractions;
 using BlazorFluent.Jobs.Listeners;
 using BlazorFluent.Jobs.Queue;
 using BlazorFluent.Jobs.Schedulers;
@@ -13,8 +14,10 @@ public static class JobsExtensions
 {
     public static IServiceCollection AddBackgroundJobs(this IServiceCollection services, bool enableScheduler = true)
     {
-        // 1. Register the in-memory high performance Channel Job Queue
-        services.TryAddSingleton<IJobEventQueue, ChannelJobEventQueue>();
+        // 1. Register the in-memory high performance Channel Job Queue & Event Publisher
+        services.TryAddSingleton<ChannelJobEventQueue>();
+        services.TryAddSingleton<IJobEventQueue>(sp => sp.GetRequiredService<ChannelJobEventQueue>());
+        services.TryAddSingleton<IJobEventPublisher>(sp => sp.GetRequiredService<ChannelJobEventQueue>());
 
         // 2. Register the Queue Listener background worker
         services.AddHostedService<BatchJobQueueListener>();
@@ -30,6 +33,10 @@ public static class JobsExtensions
 
         // 5. Register JobManagerService for dashboard queries and manual triggers
         services.TryAddScoped<IJobManagerService, Services.JobManagerService>();
+
+        // 6. Auto-discover and register all IFileStager and IFileProcessor implementations
+        RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(IFileStager));
+        RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(IFileProcessor));
 
         return services;
     }
@@ -47,6 +54,17 @@ public static class JobsExtensions
         foreach (var item in handlerTypes)
         {
             services.AddScoped(item.ServiceType, item.ImplementationType);
+        }
+    }
+
+    private static void RegisterImplementationsOf(IServiceCollection services, Assembly assembly, Type serviceType)
+    {
+        var implementations = assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && serviceType.IsAssignableFrom(t));
+
+        foreach (var impl in implementations)
+        {
+            services.AddScoped(serviceType, impl);
         }
     }
 }

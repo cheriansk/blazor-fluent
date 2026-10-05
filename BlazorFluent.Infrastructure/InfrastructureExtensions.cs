@@ -1,4 +1,6 @@
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Security;
+using BlazorFluent.Core.Storage;
 using BlazorFluent.Infrastructure.Notifications;
 using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Infrastructure.Security;
@@ -45,6 +47,12 @@ public static class InfrastructureExtensions
 
         // 9. Inbound Webhook HMAC-SHA256 Signature Validator
         services.TryAddSingleton<IWebhookSignatureValidator, HmacWebhookSignatureValidator>();
+
+        // 10. Tenant-Partitioned AES-256-GCM Encryption Service
+        services.TryAddSingleton<ITenantEncryptionService, TenantAesGcmEncryptionService>();
+
+        // 11. Tenant Blob Storage Service (Azure Blob Storage with local filesystem fallback)
+        services.TryAddSingleton<ITenantBlobStorageService, AzureAndLocalBlobStorageService>();
 
         return services;
     }

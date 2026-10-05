@@ -163,21 +163,29 @@ The Task Management subsystem implements project-scoped task tracking, Jira-styl
    - Gathers tasks across all active projects grouped into Past Due, Due Today, Due Tomorrow, and Due in 2 Days.
    - Formats a Markdown summary table and dispatches it to the project's configured webhook (`ProjectEntity.TeamsWebhookUrl`) or global fallback.
 
-### 1.7 File Import, Client-Side Encryption & Staging Pipeline
+### 1.7 File Import, Client-Side Encryption & Modular Batch Processing Pipeline
 
-The File Ingestion & Staging subsystem implements enterprise-grade, asynchronous file processing:
+The File Ingestion & Batch Processing subsystem implements enterprise-grade, asynchronous file processing:
 
 1. **Defense-in-Depth Cryptography**:
-   - File streams are encrypted client-side in C# using hardware-accelerated **AES-256-GCM** prior to network egress.
+   - File streams are encrypted client-side in C# using hardware-accelerated **AES-256-GCM** prior to network egress or storage.
    - Unique 256-bit AES keys per tenant are dynamically derived using **HKDF-SHA256** (`ITenantEncryptionService`), guaranteeing zero-knowledge confidentiality.
-2. **Hierarchical Blob Storage**:
-   - `ITenantBlobStorageService` organizes blobs as `tenants/{tenantId}/projects/{projectId}/imports/{year}/{month}/{importFileId}.bin`.
+2. **Hierarchical Batch Storage**:
+   - `ITenantBlobStorageService` organizes batch blobs into a dedicated folder per batch: `tenants/{tenantId}/projects/{projectId}/imports/{yyyy}/{MM}/batch-{importId}/{fileId}{extension}`.
    - Production connects to Azure Blob Storage; development seamlessly falls back to isolated local encrypted directories.
-3. **Fail-Closed Validation & Decoupled Batch Processing**:
-   - Storing the raw file metadata in `imports.ImportFiles` immediately responds to the user and enqueues `FileImportedJobEvent` via `IJobEventPublisher`.
-   - `FileStagingJobHandler` decrypts streams and executes `IFileSchemaValidator<TSchema>` (e.g. `TaskImportSchemaValidator`).
-   - **Strict Fail-Closed Policy**: If any cell or row fails validation, 0 rows are staged, detailed cell/row diagnostics are saved in `ValidationErrorsJson`, status becomes `ValidationFailed`, and the user is alerted.
-   - On success, rows are staged in `staging.StagedTasks` and user receives an in-app confirmation notification.
+3. **Atomic Multi-File Batch Ingestion**:
+   - Single or bulk files are uploaded with a shared `ImportId` (Batch GUID).
+   - If any file fails upload or encryption, the entire batch transaction aborts and uploaded blobs are purged (fail-closed rollback).
+   - Once all files in the batch are persisted to `imports.ImportFiles`, `FileImportBatchJobEvent(ImportId, ProjectId, TenantId)` is emitted.
+4. **Generic Batch Worker & 2-Phase Ingestion**:
+   - `GenericFileImportBatchJobHandler` listens for `FileImportBatchJobEvent`, retrieves all files for `ImportId`, and coordinates two discrete phases per file via auto-discovered handlers:
+     1. **Validate & Stage (`IFileStager`)**: Decrypts stream, parses payload, strictly validates invariants (fail-closed), and inserts valid records into the feature staging table (e.g. `staging.StagedTasks`) tagged with `ImportId`. If validation fails, status becomes `ValidationFailed`, error diagnostics are recorded, and staging halts.
+     2. **Domain Promotion (`IFileProcessor`)**: Commits staged records into live domain entities (e.g. `tasks.Tasks`, `tasks.TaskComments`). On completion, status transitions to `Completed`.
+5. **Streamlined Feature Packaging (`BlazorFluent.Jobs/FileImports/<Feature>/`)**:
+   - Each import feature (e.g. `Tasks`) is completely self-contained within its own folder containing strictly **2 classes**:
+     - `*ValidateAndStage.cs`: Implements `IFileStager`, embedding its internal parsing models and fail-closed validation rules.
+     - `*Process.cs`: Implements `IFileProcessor`, reading from staging and committing to domain entities.
+   - Handlers are auto-discovered and registered in DI via assembly scanning (`JobsExtensions.cs`). Adding a new filetype requires zero DI modifications and zero runner changes.
 
 ---
 

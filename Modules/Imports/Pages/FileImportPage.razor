@@ -1,0 +1,470 @@
+@page "/imports"
+@rendermode InteractiveServer
+@using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Core.DTOs.Imports
+@using BlazorFluent.Modules.Imports.Components
+@using BlazorFluent.Persistence.Context
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.EntityFrameworkCore
+@inject IImportFileService ImportService
+@inject AppDbContext DbContext
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject NavigationManager Navigation
+
+<PageTitle>File Import & Processing — BlazorFluent</PageTitle>
+
+<PageHeaderComp Title="File Import & Batch Processing Pipeline"
+                Subtitle="Upload single or bulk multi-format payloads, client-side encrypted per-tenant, and processed asynchronously.">
+    <Actions>
+        <FluentButton Appearance="ButtonAppearance.Outline"
+                      IconStart="@(new Icons.Regular.Size16.ArrowClockwise())"
+                      OnClick="@RefreshHistoryAsync">
+            Refresh Status
+        </FluentButton>
+    </Actions>
+</PageHeaderComp>
+
+<FluentGrid Spacing="3" AdaptiveRendering="true">
+    <!-- Left Column: Upload Form Card -->
+    <FluentGridItem xs="12" lg="5">
+        <FluentCard Style="padding: 1.5rem; height: 100%;">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentLabel Typo="Typography.H6">Upload Batch Payloads</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                    Select single or multiple files. All files in a batch share a unified Batch ID and are client-side encrypted with AES-256-GCM.
+                </FluentLabel>
+
+                <!-- Project Selector -->
+                @if (_availableProjects.Count > 1)
+                {
+                    <FluentSelect TOption="ProjectEntity" TValue="string"
+                                  Items="@_availableProjects"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id.ToString())"
+                                  SelectedOption="@_currentProject"
+                                  SelectedOptionChanged="@OnProjectChanged"
+                                  Label="Target Project Workspace"
+                                  Style="width: 100%;" />
+                }
+                else if (_currentProject != null)
+                {
+                    <FluentTextField Value="@_currentProject.Name" ReadOnly="true" Label="Target Project Workspace" Style="width: 100%;" />
+                }
+                else
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Warning">
+                        No active projects found. Please create a project workspace first.
+                    </FluentMessageBar>
+                }
+
+                <!-- Multi-File Picker Dropzone -->
+                <div style="border: 2px dashed var(--accent-fill-rest); padding: 1.25rem; border-radius: 6px; text-align: center; background: var(--neutral-fill-secondary-rest);">
+                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 0.5rem; display: block;">
+                        Choose one or more task files (.csv, .txt, .tsv)
+                    </FluentLabel>
+                    <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" style="width: 100%;" />
+                </div>
+
+                <!-- Pending Files Table -->
+                @if (_pendingFiles.Count > 0)
+                {
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentLabel Typo="Typography.Subtitle">Queued Files (@_pendingFiles.Count)</FluentLabel>
+                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                      IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                      OnClick="@ClearPendingFiles">
+                            Clear All
+                        </FluentButton>
+                    </FluentStack>
+
+                    <div style="max-height: 320px; overflow-y: auto; border: 1px solid var(--neutral-stroke-layer-rest); border-radius: 6px; padding: 0.5rem;">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            @foreach (var item in _pendingFiles)
+                            {
+                                <div style="padding: 0.75rem; border-radius: 4px; background: var(--neutral-fill-secondary-rest); border: 1px solid var(--neutral-stroke-rest);" @key="item.Id">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 0.5rem;">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6" VerticalAlignment="VerticalAlignment.Center">
+                                            <FluentIcon Value="@(new Icons.Regular.Size16.Document())" />
+                                            <div>
+                                                <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">@item.FileName</FluentLabel>
+                                                <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">@FormatBytes(item.Size)</FluentLabel>
+                                            </div>
+                                        </FluentStack>
+                                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                      IconStart="@(new Icons.Regular.Size16.Delete())"
+                                                      OnClick="@(() => RemovePendingFile(item.Id))"
+                                                      Title="Remove from batch" />
+                                    </FluentStack>
+
+                                    <!-- Per-file Combined Format & Target Type Selector -->
+                                    <FluentSelect TOption="DataListItem<ImportFileType>" TValue="string"
+                                                  Items="@_fileTypeOptions"
+                                                  OptionText="@(i => i.DisplayName)"
+                                                  OptionValue="@(i => i.Code)"
+                                                  Value="@item.SelectedFileType.ToString()"
+                                                  ValueChanged="@((string? v) => OnItemFileTypeChanged(item, v))"
+                                                  Label="Payload Specification"
+                                                  Style="width: 100%;" />
+                                </div>
+                            }
+                        </FluentStack>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_statusMessage))
+                {
+                    <FluentMessageBar Intent="@_messageIntent">
+                        @_statusMessage
+                    </FluentMessageBar>
+                }
+
+                <!-- Submit Button -->
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+                              Disabled="@(_isUploading || _pendingFiles.Count == 0 || _currentProject == null)"
+                              Loading="@_isUploading"
+                              Style="width: 100%; margin-top: 0.5rem;"
+                              OnClick="@UploadBatchAsync">
+                    @(_isUploading ? "Encrypting & Storing Batch..." : $"Upload & Ingest Batch ({_pendingFiles.Count} files)")
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+
+    <!-- Right Column: Staging History Grid -->
+    <FluentGridItem xs="12" lg="7">
+        <FluentCard Style="padding: 1.5rem; height: 100%;">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                    <FluentLabel Typo="Typography.H6">Payload Staging History</FluentLabel>
+                    <FluentBadge Appearance="@BadgeAppearance.Filled">@_history.Count file(s)</FluentBadge>
+                </FluentStack>
+
+                @if (_isLoadingHistory)
+                {
+                    <FluentProgressRing Style="margin: 2rem auto;" />
+                }
+                else if (_history.Count == 0)
+                {
+                    <EmptyStateComp Title="No Files Ingested"
+                                    Description="Uploaded payloads and their background staging progress will appear here."
+                                    IconValue="@(new Icons.Regular.Size32.DocumentSearch())" />
+                }
+                else
+                {
+                    <div style="overflow-x: auto;">
+                        <FluentDataGrid Items="@_history.AsQueryable()"
+                                        ResizableColumns="true"
+                                        TGridItem="ImportFileSummaryDto"
+                                        Style="width: 100%;">
+                            <TemplateColumn Title="Batch ID" Width="100px">
+                                <span title="@context.ImportId.ToString()" style="font-family: monospace; font-size: 0.85em; cursor: help;">
+                                    @context.ImportId.ToString()[..8]...
+                                </span>
+                            </TemplateColumn>
+                            <PropertyColumn Property="@(f => f.OriginalFileName)" Title="File Name" Width="170px" />
+                            <TemplateColumn Title="Format Specification" Width="140px">
+                                <FluentBadge Appearance="@BadgeAppearance.Outline">@context.FileType</FluentBadge>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Pipeline Stage" Width="100px">
+                                <FluentBadge Appearance="@BadgeAppearance.Filled" Color="BadgeColor.Subtle">
+                                    @(string.IsNullOrWhiteSpace(context.StepStage) ? "Uploaded" : context.StepStage)
+                                </FluentBadge>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Status" Width="140px">
+                                @switch (context.Status)
+                                {
+                                    case ImportStatus.Uploaded:
+                                        <FluentBadge Color="BadgeColor.Informative">Uploaded</FluentBadge>
+                                        break;
+                                    case ImportStatus.Validating:
+                                        <FluentBadge Color="BadgeColor.Brand">Validating</FluentBadge>
+                                        break;
+                                    case ImportStatus.ValidationSuccess:
+                                        <FluentBadge Color="BadgeColor.Brand">Validated</FluentBadge>
+                                        break;
+                                    case ImportStatus.ValidationFailed:
+                                        <FluentBadge Color="BadgeColor.Severe">Validation Failed</FluentBadge>
+                                        break;
+                                    case ImportStatus.Staging:
+                                        <FluentBadge Color="BadgeColor.Brand">Staging</FluentBadge>
+                                        break;
+                                    case ImportStatus.StagingSuccess:
+                                        <FluentBadge Color="BadgeColor.Brand">Staged</FluentBadge>
+                                        break;
+                                    case ImportStatus.StagingFailed:
+                                        <FluentBadge Color="BadgeColor.Severe">Staging Failed</FluentBadge>
+                                        break;
+                                    case ImportStatus.Processing:
+                                        <FluentBadge Color="BadgeColor.Brand">Processing</FluentBadge>
+                                        break;
+                                    case ImportStatus.Completed:
+                                        <FluentBadge Color="BadgeColor.Success">Completed</FluentBadge>
+                                        break;
+                                    case ImportStatus.ProcessingFailed:
+                                        <FluentBadge Color="BadgeColor.Severe">Processing Failed</FluentBadge>
+                                        break;
+                                    default:
+                                        <FluentBadge>@context.Status</FluentBadge>
+                                        break;
+                                }
+                            </TemplateColumn>
+                            <TemplateColumn Title="Metrics" Width="100px">
+                                <span>@context.ValidRowsCount / @context.TotalRowsCount ok</span>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Size" Width="80px">
+                                <span>@FormatBytes(context.FileSizeBytes)</span>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Actions" Width="130px">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                                    @if (context.Status is ImportStatus.ValidationFailed or ImportStatus.StagingFailed or ImportStatus.ProcessingFailed)
+                                    {
+                                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                      IconStart="@(new Icons.Regular.Size16.ErrorCircle())"
+                                                      Style="color: var(--error);"
+                                                      OnClick="@(() => ViewDiagnosticsAsync(context.Id))">
+                                            Errors
+                                        </FluentButton>
+                                    }
+                                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                  IconStart="@(new Icons.Regular.Size16.Delete())"
+                                                  OnClick="@(() => PromptDelete(context.Id))" />
+                                </FluentStack>
+                            </TemplateColumn>
+                        </FluentDataGrid>
+                    </div>
+                }
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+</FluentGrid>
+
+<!-- Diagnostics Modal -->
+<ImportErrorsModal @ref="_errorsModal" />
+
+<!-- Confirmation Modal -->
+<ConfirmDialogModal @ref="_confirmDialog"
+                    Title="Delete Import Record"
+                    Message="Are you sure you want to delete this import record and its staged items?"
+                    ConfirmLabel="Delete"
+                    OnConfirmed="@DeleteConfirmedAsync" />
+
+@code {
+    private ImportErrorsModal? _errorsModal;
+    private ConfirmDialogModal? _confirmDialog;
+
+    private List<ProjectEntity> _availableProjects = new();
+    private ProjectEntity? _currentProject;
+
+    private IReadOnlyList<DataListItem<ImportFileType>> _fileTypeOptions = Array.Empty<DataListItem<ImportFileType>>();
+    private readonly List<PendingUploadItem> _pendingFiles = new();
+
+    private bool _isUploading;
+    private bool _isLoadingHistory = true;
+    private string? _statusMessage;
+    private MessageBarIntent _messageIntent = MessageBarIntent.Info;
+
+    private List<ImportFileSummaryDto> _history = new();
+    private Guid _pendingDeleteId;
+
+    private sealed class PendingUploadItem
+    {
+        public Guid Id { get; } = Guid.NewGuid();
+        public IBrowserFile File { get; set; } = default!;
+        public string FileName => File.Name;
+        public long Size => File.Size;
+        public ImportFileType SelectedFileType { get; set; } = ImportFileType.TaskExcel;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _fileTypeOptions = DataListExtensions.GetDataListItems<ImportFileType>();
+
+        await LoadProjectsAsync();
+        await RefreshHistoryAsync();
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        _availableProjects = await DbContext.Projects
+            .AsNoTracking()
+            .Where(p => p.IsActive && !p.IsDeleted)
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+
+        if (_availableProjects.Count > 0)
+        {
+            _currentProject = _availableProjects[0];
+        }
+    }
+
+    private async Task OnProjectChanged(ProjectEntity? newProject)
+    {
+        _currentProject = newProject;
+        await RefreshHistoryAsync();
+    }
+
+    private void HandleFilesSelected(InputFileChangeEventArgs e)
+    {
+        _statusMessage = null;
+        var selected = e.GetMultipleFiles(50);
+        foreach (var file in selected)
+        {
+            var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+            var detectedType = ext switch
+            {
+                ".xlsx" or ".xls" => ImportFileType.TaskExcel,
+                ".json" => ImportFileType.TaskJson,
+                ".xml" => ImportFileType.TaskXml,
+                ".csv" or ".txt" or ".tsv" => ImportFileType.TaskCsv,
+                _ => ImportFileType.TaskExcel
+            };
+
+            _pendingFiles.Add(new PendingUploadItem
+            {
+                File = file,
+                SelectedFileType = detectedType
+            });
+        }
+    }
+
+    private void OnItemFileTypeChanged(PendingUploadItem item, string? newCode)
+    {
+        if (Enum.TryParse<ImportFileType>(newCode, out var fileType))
+        {
+            item.SelectedFileType = fileType;
+        }
+    }
+
+    private void RemovePendingFile(Guid id)
+    {
+        _pendingFiles.RemoveAll(f => f.Id == id);
+    }
+
+    private void ClearPendingFiles()
+    {
+        _pendingFiles.Clear();
+    }
+
+    private async Task UploadBatchAsync()
+    {
+        if (_pendingFiles.Count == 0 || _currentProject == null) return;
+
+        _isUploading = true;
+        _statusMessage = null;
+
+        try
+        {
+            const long maxFileSize = 52_428_800; // 50MB per file
+            var fileItems = new List<UploadBatchFileItem>(_pendingFiles.Count);
+
+            foreach (var pending in _pendingFiles)
+            {
+                var memoryStream = new MemoryStream();
+                using var readStream = pending.File.OpenReadStream(maxFileSize);
+                await readStream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                fileItems.Add(new UploadBatchFileItem
+                {
+                    FileType = pending.SelectedFileType,
+                    FileName = pending.FileName,
+                    ContentType = pending.File.ContentType ?? "application/octet-stream",
+                    FileSizeBytes = pending.Size,
+                    ContentStream = memoryStream
+                });
+            }
+
+            var request = new UploadBatchRequest
+            {
+                ProjectId = _currentProject.Id,
+                Files = fileItems
+            };
+
+            var result = await ImportService.UploadBatchAndQueueAsync(request);
+            if (result.IsSuccess)
+            {
+                _messageIntent = MessageBarIntent.Success;
+                _statusMessage = $"Batch {result.Value:N} uploaded successfully ({fileItems.Count} file(s)). Pipeline queued for background validation, staging, and domain processing.";
+                _pendingFiles.Clear();
+                await RefreshHistoryAsync();
+            }
+            else
+            {
+                _messageIntent = MessageBarIntent.Error;
+                _statusMessage = result.Error;
+            }
+        }
+        catch (Exception ex)
+        {
+            _messageIntent = MessageBarIntent.Error;
+            _statusMessage = $"Upload failed: {ex.Message}";
+        }
+        finally
+        {
+            _isUploading = false;
+        }
+    }
+
+    private async Task RefreshHistoryAsync()
+    {
+        if (_currentProject == null)
+        {
+            _history.Clear();
+            _isLoadingHistory = false;
+            return;
+        }
+
+        _isLoadingHistory = true;
+        try
+        {
+            _history = (await ImportService.GetImportHistoryAsync(_currentProject.Id)).ToList();
+        }
+        finally
+        {
+            _isLoadingHistory = false;
+        }
+    }
+
+    private async Task ViewDiagnosticsAsync(Guid importFileId)
+    {
+        var details = await ImportService.GetImportFileDetailsAsync(importFileId);
+        if (details != null && _errorsModal != null)
+        {
+            _errorsModal.Show(details);
+        }
+    }
+
+    private void PromptDelete(Guid importFileId)
+    {
+        _pendingDeleteId = importFileId;
+        _confirmDialog?.Show();
+    }
+
+    private async Task DeleteConfirmedAsync()
+    {
+        if (_pendingDeleteId != Guid.Empty)
+        {
+            await ImportService.DeleteImportFileAsync(_pendingDeleteId);
+            _pendingDeleteId = Guid.Empty;
+            await RefreshHistoryAsync();
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] suffixes = { "B", "KB", "MB", "GB" };
+        int counter = 0;
+        decimal number = bytes;
+        while (Math.Round(number / 1024) >= 1)
+        {
+            number /= 1024;
+            counter++;
+        }
+        return $"{number:n1} {suffixes[counter]}";
+    }
+}
