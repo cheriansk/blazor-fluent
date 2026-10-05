@@ -6,6 +6,7 @@ using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Events;
 using BlazorFluent.Core.Domain.Identity;
+using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Domain.Knowledge;
 using BlazorFluent.Core.Domain.Notifications;
@@ -52,6 +53,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();
     public DbSet<EventPublishTrackerEntity> EventPublishTrackers => Set<EventPublishTrackerEntity>();
     public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();
+    public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
+    public DbSet<StagedTaskEntity> StagedTasks => Set<StagedTaskEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

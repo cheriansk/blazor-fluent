@@ -46,6 +46,11 @@
             </div>
         }
 
+        <FluentButton Appearance="ButtonAppearance.Subtle"
+                      IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+                      OnClick="@(() => Navigation.NavigateTo("/imports"))">
+            Import
+        </FluentButton>
         <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="OpenCreateTaskModal">
             New Task
         </FluentButton>

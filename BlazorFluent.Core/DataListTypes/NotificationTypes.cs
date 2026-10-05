@@ -19,7 +19,7 @@ public enum NotificationCategory
     /// </summary>
     [Display(Name = "Personal", Description = "Strictly isolated to recipient user")]
     [DataListCategory(NotificationDefinitions.Categories.Audience)]
-    Personal = 2
+    Personal = 2,
 }
 
 /// <summary>
