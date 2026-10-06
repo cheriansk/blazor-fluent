@@ -30,7 +30,7 @@
             <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())" Tooltip="Counter">Counter</FluentNavItem>
             <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())" Tooltip="Weather">Weather</FluentNavItem>
 
-            @if (TenantContext.IsHost || CurrentUser.IsInRole("Admin"))
+            @if (CurrentUser.IsRootAdmin)
             {
                 <FluentNavCategory Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
                     <FluentNavItem Href="settings" IconRest="@(new Icons.Regular.Size20.Settings())" IconActive="@(new Icons.Filled.Size20.Settings())" Tooltip="Settings">Settings</FluentNavItem>

@@ -6,7 +6,6 @@
 @inject ITenantService TenantService
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
-@inject IRootAdminService RootAdminService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
@@ -443,7 +442,7 @@
 </FluentStack>
 
 @code {
-    private bool IsRootAdmin => RootAdminService.IsRootAdmin(CurrentUser.Email);
+    private bool IsRootAdmin => CurrentUser.IsRootAdmin;
     private List<TenantEntity> _tenants = [];
     private bool _isLoading = true;
     private string? _statusMessage;

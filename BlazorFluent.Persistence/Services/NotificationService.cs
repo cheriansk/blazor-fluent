@@ -38,9 +38,29 @@ public class NotificationService : INotificationService
         _logger = logger;
     }
 
+    private IServiceScope CreateScopedContext()
+    {
+        var scope = _scopeFactory.CreateScope();
+        var scopedUser = scope.ServiceProvider.GetService<ICurrentUser>();
+        scopedUser?.SetSystemDaemon("NotificationService");
+
+        var scopedTenant = scope.ServiceProvider.GetService<ITenantContext>();
+        if (scopedTenant != null && !string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        {
+            scopedTenant.Initialize(
+                _tenantContext.TenantId,
+                _tenantContext.TenantName,
+                _tenantContext.UserType,
+                _tenantContext.AllowedTenants,
+                _tenantContext.IsHost);
+        }
+
+        return scope;
+    }
+
     public async Task<NotificationEntity> SendAsync(SendNotificationRequest request, CancellationToken ct = default)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var tenantId = _tenantContext.TenantId ?? "default";
@@ -102,7 +122,7 @@ public class NotificationService : INotificationService
 
     public async Task<IReadOnlyList<NotificationEntity>> GetNotificationsAsync(NotificationFilterRequest filter, CancellationToken ct = default)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var currentUserId = _currentUser.UserId;
@@ -145,7 +165,7 @@ public class NotificationService : INotificationService
 
     public async Task<UnreadNotificationCounts> GetUnreadCountsAsync(CancellationToken ct = default)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var currentUserId = _currentUser.UserId;
@@ -180,7 +200,7 @@ public class NotificationService : INotificationService
 
     public async Task<bool> MarkAsReadAsync(Guid notificationId, CancellationToken ct = default)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var currentUserId = _currentUser.UserId;
@@ -215,7 +235,7 @@ public class NotificationService : INotificationService
 
     public async Task<int> MarkAllAsReadAsync(NotificationCategory category, CancellationToken ct = default)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var currentUserId = _currentUser.UserId;
@@ -250,7 +270,7 @@ public class NotificationService : INotificationService
 
     private async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(AppDbContext db, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
     {
-        if (_tenantContext.IsHost || _currentUser.IsInRole("Admin"))
+        if (_currentUser.IsRootAdmin)
         {
             return await db.Projects
                 .AsNoTracking()

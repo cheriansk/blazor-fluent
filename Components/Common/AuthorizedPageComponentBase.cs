@@ -13,6 +13,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
 {
     [Inject] protected IProjectAuthorizationService ProjectAuth { get; set; } = default!;
     [Inject] protected ITenantContext TenantContext { get; set; } = default!;
+    [Inject] protected ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] protected NavigationManager NavigationManager { get; set; } = default!;
 
     /// <summary>
@@ -69,7 +70,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
         {
             // If page is not tied to a specific project (e.g. multi-project overview),
             // check if user has access to at least one project or is host/admin.
-            if (TenantContext.IsHost)
+            if (CurrentUser.IsRootAdmin)
             {
                 CanVisit = true;
                 CanEdit = true;

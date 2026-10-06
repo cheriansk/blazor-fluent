@@ -7,6 +7,11 @@ public interface IJobEvent
     string TriggerSource { get; }
 
     /// <summary>
+    /// Job name inferred from the event type (e.g. AuditPurgeJobEvent -> AuditPurgeJob).
+    /// </summary>
+    string JobName => GetType().Name.Replace("Event", string.Empty);
+
+    /// <summary>
     /// The tenant that enqueued this job. Restored by the background listener
     /// to scope all EF queries and auditing within the job to the correct tenant.
     /// Null only for host-level jobs that intentionally operate cross-tenant.
@@ -33,6 +38,7 @@ public abstract record BaseJobEvent(
     public Guid EventId { get; init; } = Guid.CreateVersion7();
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     public string TriggerSource { get; init; } = TriggerSource;
+    public virtual string JobName => GetType().Name.Replace("Event", string.Empty);
     public string? TenantId { get; init; } = TenantId;
     public string CorrelationId { get; init; } = !string.IsNullOrWhiteSpace(CorrelationId)
         ? CorrelationId

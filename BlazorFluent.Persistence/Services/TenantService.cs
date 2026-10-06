@@ -65,7 +65,7 @@ public class TenantService : ITenantService
         DateTime endDate,
         CancellationToken cancellationToken = default)
     {
-        if (!_rootAdminService.IsRootAdmin(_currentUser.Email))
+        if (!_currentUser.IsRootAdmin)
             return Result<TenantEntity>.Failure("Access Denied: Only designated root super-administrators can provision new tenants.");
 
         if (string.IsNullOrWhiteSpace(slug))
@@ -196,6 +196,9 @@ public class TenantService : ITenantService
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
+        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
+            return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
+
         var tenant = await _dbContext.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
@@ -289,6 +292,9 @@ public class TenantService : ITenantService
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
+        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
+            return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
+
         var tenant = await _dbContext.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
@@ -354,7 +360,7 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantStatusAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default)
     {
-        if (!_rootAdminService.IsRootAdmin(_currentUser.Email))
+        if (!_currentUser.IsRootAdmin)
             return Result.Failure("Access Denied: Only designated root super-administrators can modify tenants.");
 
         var tenant = await _dbContext.Tenants
@@ -391,7 +397,7 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
-        if (!_rootAdminService.IsRootAdmin(_currentUser.Email))
+        if (!_currentUser.IsRootAdmin)
             return Result.Failure("Access Denied: Only designated root super-administrators can modify tenants.");
 
         if (endDate < startDate)

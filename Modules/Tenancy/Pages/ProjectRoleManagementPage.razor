@@ -266,7 +266,7 @@
                             Revoke
                         </FluentButton>
                         <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View project role assignment history" />
-                        @if ((TenantContext.IsHost || CurrentUser.IsInRole("Admin")) && context.UserId != CurrentUser.UserId)
+                        @if (CurrentUser.IsRootAdmin && context.UserId != CurrentUser.UserId)
                         {
                             <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.PersonCircle())" OnClick="@(() => PromptImpersonation(context))">
                                 Impersonate
@@ -576,7 +576,7 @@
         {
             if (CurrentUser is AppCurrentUser appUser)
             {
-                var adminId = appUser.UserId ?? "dev_admin";
+                var adminId = appUser.UserId ?? string.Empty;
                 appUser.SetImpersonation(_impersonateTargetUserId, _impersonateTargetEmail, _impersonateTargetName, adminId);
             }
 

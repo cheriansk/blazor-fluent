@@ -34,8 +34,7 @@
 
         if (CurrentUser is AppCurrentUser appUser)
         {
-            appUser.ClearImpersonation("dev_admin", "admin@blazorfluent.local", "System Administrator");
-            appUser.AddRole("Admin");
+            appUser.ClearImpersonation();
         }
 
         AuthStateProvider.NotifyUserChanged();

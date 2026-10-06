@@ -55,6 +55,13 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                         isHost: false);
                 }
 
+                var jobName = !string.IsNullOrWhiteSpace(jobEvent.JobName)
+                    ? jobEvent.JobName
+                    : jobEvent.GetType().Name.Replace("Event", string.Empty);
+
+                var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+                currentUser?.SetSystemDaemon($"ChannelJob:{jobName}");
+
                 var eventTracker = scope.ServiceProvider.GetService<IEventTrackerService>();
                 if (eventTracker != null)
                 {

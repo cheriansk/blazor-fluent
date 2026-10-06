@@ -175,8 +175,7 @@
         _article != null &&
         _article.Status == KnowledgeArticleStatus.PendingReview &&
         (_article.Reviewers.Any(r => r.UserId == CurrentUser.UserId && !r.HasApproved) ||
-         TenantContext.IsHost ||
-         CurrentUser.IsInRole("Admin"));
+         CurrentUser.IsRootAdmin);
 
     protected override async Task OnInitializedAsync()
     {

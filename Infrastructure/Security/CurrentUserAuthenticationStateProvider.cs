@@ -20,7 +20,8 @@ public class CurrentUserAuthenticationStateProvider : AuthenticationStateProvide
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        if (!_currentUser.IsAuthenticated)
+        // System daemons are non-interactive background identities and cannot authenticate in UI circuits
+        if (!_currentUser.IsAuthenticated || _currentUser.IsSystemDaemon)
         {
             var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
             return Task.FromResult(new AuthenticationState(anonymous));
@@ -33,7 +34,12 @@ public class CurrentUserAuthenticationStateProvider : AuthenticationStateProvide
             new(ClaimTypes.Email, _currentUser.Email)
         };
 
-        if (_currentUser.IsInRole("Admin"))
+        if (_currentUser.IsRootAdmin)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "RootAdmin"));
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
+        else if (_currentUser.IsInRole("Admin"))
         {
             claims.Add(new Claim(ClaimTypes.Role, "Admin"));
         }

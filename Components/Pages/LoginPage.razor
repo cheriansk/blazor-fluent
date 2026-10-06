@@ -11,7 +11,7 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@inject AppDbContext DbContext
+@inject IInternalAuthenticationService AuthVerificationService
 @inject IServiceScopeFactory ScopeFactory
 @inject IConfiguration Configuration
 @inject IWebHostEnvironment HostEnvironment
@@ -167,79 +167,22 @@
 
         try
         {
-            var now = DateTime.UtcNow;
-            var user = await DbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
-
-            // Gate: User exists check
-            if (user == null)
+            var authResult = await AuthVerificationService.VerifyLoginCredentialsAsync(email);
+            if (!authResult.IsSuccess)
             {
-                await AuditService.LogSecurityEventAsync(
-                    "LoginFailedUnprovisioned",
-                    AuditSeverity.Warning,
-                    $"Authentication rejected for unprovisioned email '{email}'.");
-
-                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString("Your account is not provisioned in this system.")}");
+                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(authResult.Error ?? "Authentication failed.")}");
                 return;
             }
 
-            // Gate: Date validity and HMAC tamper seal check
-            if (!user.IsValidForLogin(now, _secretKey, out var failureReason))
-            {
-                await AuditService.LogSecurityEventAsync(
-                    "LoginFailedValidityGate",
-                    AuditSeverity.Warning,
-                    $"Login rejected for '{email}': {failureReason}");
-
-                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(failureReason)}");
-                return;
-            }
-
-            // All gates passed: Resolve active tenant from database (Invisible Default Tenant Policy)
-            var isRootAdmin = RootAdminService.IsRootAdmin(user.Email);
-            var isHost = isRootAdmin;
-
-            List<TenantInfo> allowedTenants = [];
-            string resolvedTenantId = string.Empty;
-            string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
-
-            if (isHost || user.UserType == UserType.CompanyUser)
-            {
-                var dbTenants = await DbContext.Tenants
-                    .AsNoTracking()
-                    .Where(t => t.IsActive && t.Slug != "default")
-                    .OrderBy(t => t.Name)
-                    .ToListAsync();
-
-                allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
-
-                var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
-                if (defaultMatch is not null)
-                {
-                    resolvedTenantId = defaultMatch.Id;
-                    resolvedTenantName = defaultMatch.Name;
-                }
-            }
-            else
-            {
-                var userTenant = await DbContext.Tenants
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Slug == user.DefaultTenantId && t.Slug != "default");
-
-                if (userTenant is not null)
-                {
-                    resolvedTenantId = userTenant.Slug;
-                    resolvedTenantName = userTenant.Name;
-                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
-                }
-            }
+            var verified = authResult.Value!;
+            var user = verified.User;
+            var isHost = verified.IsRootAdmin;
 
             TenantContext.Initialize(
-                tenantId: resolvedTenantId,
-                tenantName: resolvedTenantName,
+                tenantId: verified.ResolvedTenantId,
+                tenantName: verified.ResolvedTenantName,
                 userType: user.UserType,
-                allowedTenants: allowedTenants,
+                allowedTenants: verified.AllowedTenants,
                 isHost: isHost);
 
             // Create active session
@@ -256,7 +199,7 @@
                     session.Id,
                     user.Id.ToString(),
                     user.Email,
-                    resolvedTenantId));
+                    verified.ResolvedTenantId));
             }
             catch (Exception ex)
             {
@@ -300,6 +243,8 @@
         try
         {
             using var scope = ScopeFactory.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("LoginDevSeeder");
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             // 1. Ensure Root Default Tenant exists

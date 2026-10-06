@@ -3,6 +3,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Persistence.Context;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -12,9 +13,6 @@ namespace BlazorFluent.Persistence.Interceptors;
 
 public class AuditableEntityInterceptor : SaveChangesInterceptor
 {
-    private readonly ICurrentUser _currentUser;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<AuditableEntityInterceptor> _logger;
 
     public const string CreatedProperty = "Created";
@@ -26,15 +24,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     private static readonly string[] SensitiveKeywords =
         ["password", "secret", "token", "apikey", "key", "connectionstring", "securitystamp"];
 
-    public AuditableEntityInterceptor(
-        ICurrentUser currentUser,
-        IDateTimeProvider dateTimeProvider,
-        ITenantContext tenantContext,
-        ILogger<AuditableEntityInterceptor>? logger = null)
+    public AuditableEntityInterceptor(ILogger<AuditableEntityInterceptor>? logger = null)
     {
-        _currentUser = currentUser;
-        _dateTimeProvider = dateTimeProvider;
-        _tenantContext = tenantContext;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<AuditableEntityInterceptor>.Instance;
     }
 
@@ -57,19 +48,24 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         if (context == null) return;
 
-        var now = _dateTimeProvider.Now;
-        var currentUserId = _currentUser.IsImpersonated
-            ? $"{_currentUser.UserId} [Impersonated by {_currentUser.ImpersonatedBy}]"
-            : (_currentUser.UserId ?? "system");
+        var appDb = context as AppDbContext;
+        var currentUser = appDb?.CurrentUser ?? new DefaultCurrentUser();
+        var tenantContext = appDb?.TenantContext ?? new TenantContext();
+        var dateTimeProvider = appDb?.DateTimeProvider ?? new ConfigurableDateTimeProvider(true);
+
+        var now = dateTimeProvider.Now;
+        var currentUserId = currentUser.IsImpersonated
+            ? $"{currentUser.UserId} [Impersonated by {currentUser.ImpersonatedBy}]"
+            : (currentUser.IsAuthenticated ? (currentUser.UserId ?? "authenticated_user") : (currentUser.IsSystemDaemon ? "system" : "anonymous"));
 
         // 1. Stamp Level 1 audit properties & enforce tenant isolation
-        UpdateAuditFields(context, now, currentUserId);
+        UpdateAuditFields(context, now, currentUserId, tenantContext);
 
         // 2. Capture Level 2 property diffs and append AuditRecordEntity to the same transaction
-        CaptureEntityDiffs(context, now, currentUserId);
+        CaptureEntityDiffs(context, now, currentUserId, currentUser, tenantContext);
     }
 
-    private void UpdateAuditFields(DbContext context, DateTime now, string currentUserId)
+    private void UpdateAuditFields(DbContext context, DateTime now, string currentUserId, ITenantContext tenantContext)
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
@@ -103,7 +99,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     // Host users with IsHost=true can write to any tenant explicitly.
                     if (string.IsNullOrWhiteSpace(tenantEntity.TenantId))
                     {
-                        if (string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+                        if (string.IsNullOrWhiteSpace(tenantContext.TenantId))
                         {
                             _logger.LogError(
                                 "Tenant isolation error: Cannot save entity '{EntityType}' because TenantId is not set and no active tenant is available in ITenantContext",
@@ -116,19 +112,19 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                                 $"Ensure the user session is fully initialized before writing tenant-scoped data.");
                         }
 
-                        tenantEntity.TenantId = _tenantContext.TenantId;
+                        tenantEntity.TenantId = tenantContext.TenantId;
                     }
-                    else if (!_tenantContext.IsHost &&
-                             tenantEntity.TenantId != _tenantContext.TenantId)
+                    else if (!tenantContext.IsHost &&
+                             tenantEntity.TenantId != tenantContext.TenantId)
                     {
                         _logger.LogWarning(
                             "Security violation: attempt to insert entity '{EntityType}' into tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
-                            entry.Entity.GetType().Name, tenantEntity.TenantId, _tenantContext.TenantId);
+                            entry.Entity.GetType().Name, tenantEntity.TenantId, tenantContext.TenantId);
 
                         // Security: a non-host user is trying to write to a different tenant's data.
                         throw new InvalidOperationException(
                             $"Security violation: attempt to insert entity '{entry.Entity.GetType().Name}' " +
-                            $"into tenant '{tenantEntity.TenantId}' while active tenant is '{_tenantContext.TenantId}'.");
+                            $"into tenant '{tenantEntity.TenantId}' while active tenant is '{tenantContext.TenantId}'.");
                     }
                 }
                 else if (entry.State == EntityState.Modified)
@@ -137,16 +133,16 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     entry.Property(TenantIdProperty).IsModified = false;
 
                     // Cross-tenant write guard for non-host users
-                    if (!_tenantContext.IsHost &&
-                        tenantEntity.TenantId != _tenantContext.TenantId)
+                    if (!tenantContext.IsHost &&
+                        tenantEntity.TenantId != tenantContext.TenantId)
                     {
                         _logger.LogWarning(
                             "Security violation: attempt to modify entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
-                            entry.Entity.GetType().Name, tenantEntity.TenantId, _tenantContext.TenantId);
+                            entry.Entity.GetType().Name, tenantEntity.TenantId, tenantContext.TenantId);
 
                         throw new InvalidOperationException(
                             $"Security violation: attempt to modify entity '{entry.Entity.GetType().Name}' " +
-                            $"belonging to tenant '{tenantEntity.TenantId}' while active tenant is '{_tenantContext.TenantId}'.");
+                            $"belonging to tenant '{tenantEntity.TenantId}' while active tenant is '{tenantContext.TenantId}'.");
                     }
                 }
             }
@@ -220,7 +216,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
         }
     }
 
-    private void CaptureEntityDiffs(DbContext context, DateTime now, string currentUserId)
+    private void CaptureEntityDiffs(DbContext context, DateTime now, string currentUserId, ICurrentUser currentUser, ITenantContext tenantContext)
     {
         var entries = context.ChangeTracker.Entries()
             .Where(e => (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
@@ -288,15 +284,15 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
 
-            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? _tenantContext.TenantId ?? "host";
+            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? tenantContext.TenantId ?? "host";
 
             var record = new AuditRecordEntity
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
                 UserId = currentUserId,
-                UserEmail = _currentUser.Email,
-                UserType = _tenantContext.UserType,
+                UserEmail = currentUser.Email,
+                UserType = tenantContext.UserType,
                 EventType = AuditEventType.EntityChange,
                 Severity = AuditSeverity.Information,
                 EntityName = entityName,
@@ -315,7 +311,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             context.Set<AuditRecordEntity>().AddRange(auditRecords);
             _logger.LogDebug(
                 "Captured {AuditRecordCount} Level-2 entity audit record(s) for Tenant '{TenantId}'",
-                auditRecords.Count, _tenantContext.TenantId ?? "host");
+                auditRecords.Count, tenantContext.TenantId ?? "host");
         }
     }
 

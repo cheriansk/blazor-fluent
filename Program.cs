@@ -96,6 +96,7 @@ try
             .Build();
 
         options.DefaultPolicy = defaultPolicy;
+        options.FallbackPolicy = defaultPolicy;
     });
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<AppCurrentUser>();
@@ -169,6 +170,8 @@ try
         {
             Log.Information("Applying EF Core database migrations in Development...");
             using var scope = app.Services.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("StartupMigration");
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
             Log.Information("Database migrations applied successfully.");
@@ -262,22 +265,24 @@ try
     app.UseRateLimiter();
     app.UseAuthorization();
 
-    app.MapStaticAssets();
+    app.MapStaticAssets()
+        .AllowAnonymous();
     app.MapRazorComponents<App>()
-        .AddInteractiveServerRenderMode();
+        .AddInteractiveServerRenderMode()
+        .AllowAnonymous();
 
     // Health Check endpoints (unauthenticated probes)
     app.MapHealthChecks("/healthz", new HealthCheckOptions
     {
         Predicate = _ => false,
         AllowCachingResponses = false
-    });
+    }).AllowAnonymous();
 
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
         AllowCachingResponses = false
-    });
+    }).AllowAnonymous();
 
     app.Run();
 }

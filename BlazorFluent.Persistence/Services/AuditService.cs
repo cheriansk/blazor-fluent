@@ -227,6 +227,8 @@ public class AuditService : IAuditService
         try
         {
             using var scope = _scopeFactory.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("ForensicAuditLogger");
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             var record = new AuditRecordEntity

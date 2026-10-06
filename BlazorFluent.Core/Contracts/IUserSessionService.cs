@@ -5,7 +5,7 @@ namespace BlazorFluent.Core.Contracts;
 public interface IUserSessionService
 {
     /// <summary>
-    /// Creates a new user session record in PostgreSQL and registers it in HybridCache.
+    /// Creates a new user session record in PostgreSQL.
     /// </summary>
     Task<UserSessionEntity> CreateSessionAsync(
         string userId,
@@ -20,8 +20,8 @@ public interface IUserSessionService
     Task UpdateHeartbeatAsync(Guid sessionId, CancellationToken ct = default);
 
     /// <summary>
-    /// Checks whether the given session has been revoked by an administrator.
-    /// Uses HybridCache for ultra-fast (nanosecond) lookups.
+    /// Checks whether the given session has been revoked by an administrator via live database query.
+    /// Guarantees zero stale authorization data.
     /// </summary>
     Task<bool> IsSessionRevokedAsync(Guid sessionId, CancellationToken ct = default);
 

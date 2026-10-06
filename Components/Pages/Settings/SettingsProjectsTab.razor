@@ -6,6 +6,7 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <div>
@@ -145,7 +146,7 @@
 
     private async Task LoadAvailableTenantsAsync()
     {
-        if (TenantContext.IsHost)
+        if (CurrentUser.IsRootAdmin)
         {
             var dbTenants = await DbContext.Tenants
                 .AsNoTracking()

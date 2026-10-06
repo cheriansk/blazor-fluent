@@ -5,7 +5,7 @@
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Auditing
 @inject IAuditService AuditService
-@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
 
 <PageTitle>Audit Trail</PageTitle>
 
@@ -15,7 +15,7 @@
         <FluentLabel Typo="Typography.Body">Host-level forensic auditing: inspect entity changes, tenant switches, and security alerts across the system.</FluentLabel>
     </div>
 
-    @if (!TenantContext.IsHost)
+    @if (!CurrentUser.IsRootAdmin)
     {
         <FluentMessageBar Intent="MessageBarIntent.Error">
             Access Denied. Audit trail records are restricted to host administrators.
@@ -186,7 +186,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (TenantContext.IsHost)
+        if (CurrentUser.IsRootAdmin)
         {
             await LoadAuditsAsync();
         }

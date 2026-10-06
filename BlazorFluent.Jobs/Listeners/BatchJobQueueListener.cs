@@ -95,6 +95,9 @@ public class BatchJobQueueListener : BackgroundService
                 allowedTenants: [],
                 isHost: false);
 
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon($"BatchJob:{jobName}");
+
             // ─── 2. RECORD INITIAL EXECUTION STAMP ────────────────────────────────────────
             var execution = new JobExecutionEntity
             {

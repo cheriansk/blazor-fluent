@@ -23,6 +23,9 @@ public static class InitialDatabaseSeeder
     public static async Task SeedAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         using var scope = serviceProvider.CreateScope();
+        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+        currentUser?.SetSystemDaemon("DatabaseSeeder");
+
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();

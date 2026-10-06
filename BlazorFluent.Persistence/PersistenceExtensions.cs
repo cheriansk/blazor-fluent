@@ -27,12 +27,13 @@ public static class PersistenceExtensions
         // 3. Register forensic audit service (scoped)
         services.TryAddScoped<IAuditService, AuditService>();
 
-        // 4. Register interceptors (scoped — need ICurrentUser, ITenantContext, and IServiceProvider)
-        services.AddScoped<TenantDbConnectionInterceptor>();
-        services.AddScoped<EntityValidationInterceptor>();
-        services.AddScoped<AuditableEntityInterceptor>();
-        services.AddScoped<ProjectSecurityInterceptor>();
-        services.AddScoped<NoTrackingMutationGuardInterceptor>();
+        // 4. Register interceptors (Singletons — thread-safe, dynamically read context from AppDbContext)
+        services.AddSingleton<ZeroTrustDbCommandInterceptor>();
+        services.AddSingleton(_ => new TenantDbConnectionInterceptor());
+        services.AddSingleton(_ => new EntityValidationInterceptor());
+        services.AddSingleton<AuditableEntityInterceptor>();
+        services.AddSingleton<ProjectSecurityInterceptor>();
+        services.AddSingleton<NoTrackingMutationGuardInterceptor>();
 
         // 5. Strict connection string loading from appsettings.json
         var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -47,6 +48,8 @@ public static class PersistenceExtensions
         Action<IServiceProvider, DbContextOptionsBuilder> configureDbContext = (sp, options) =>
         {
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.ManyServiceProvidersCreatedWarning));
+            var zeroTrustInterceptor = sp.GetRequiredService<ZeroTrustDbCommandInterceptor>();
             var connectionInterceptor = sp.GetRequiredService<TenantDbConnectionInterceptor>();
             var validationInterceptor = sp.GetRequiredService<EntityValidationInterceptor>();
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
@@ -57,7 +60,7 @@ public static class PersistenceExtensions
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
             })
-            .AddInterceptors(connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard);
+            .AddInterceptors(zeroTrustInterceptor, connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard);
         };
 
         services.AddDbContext<AppDbContext>(configureDbContext);
@@ -105,7 +108,7 @@ public static class PersistenceExtensions
         // 11. Register Unit of Work for atomic transactions and rollbacks
         services.TryAddScoped<IUnitOfWork, UnitOfWork>();
 
-        // 12. Register Project Authorization Service with HybridCache caching
+        // 12. Register Project Authorization Service with direct live real-time queries
         services.TryAddScoped<IProjectAuthorizationService, ProjectAuthorizationService>();
 
         // 13. Multi-Channel Notification Engine Data Service
@@ -126,6 +129,9 @@ public static class PersistenceExtensions
 
         // 18. Multi-Tenant File Ingestion & Processing Pipeline Service
         services.TryAddScoped<IImportFileService, ImportFileService>();
+
+        // 19. Zero-Trust Internal Authentication Verification Service (runs in isolated system scope)
+        services.TryAddScoped<IInternalAuthenticationService, InternalAuthenticationService>();
 
         return services;
     }

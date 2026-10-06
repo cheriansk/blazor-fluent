@@ -6,7 +6,6 @@
 @inject ISettingsNavigationState SettingsNav
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
-@inject IRootAdminService RootAdminService
 
 <PageTitle>Settings — BlazorFluent</PageTitle>
 
@@ -51,7 +50,7 @@
             }
         </FluentTab>
 
-        @if (RootAdminService.IsRootAdmin(CurrentUser.Email))
+        @if (CurrentUser.IsRootAdmin)
         {
             <FluentTab Id="sessions" Header="Sessions" IconStart="@(new Icons.Regular.Size20.Laptop())">
                 @if (_visitedTabs.Contains("sessions"))
@@ -77,7 +76,7 @@
             SettingsNav.InitialTab = null;
         }
 
-        if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !RootAdminService.IsRootAdmin(CurrentUser.Email))
+        if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
         {
             _activeTabId = "tenants";
         }

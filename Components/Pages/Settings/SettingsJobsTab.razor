@@ -9,7 +9,6 @@
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
-@inject IRootAdminService RootAdminService
 @inject IDateTimeProvider DateTimeProvider
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
@@ -251,7 +250,7 @@
 
     private async Task LoadAvailableTenantsAsync()
     {
-        var isRootAdmin = RootAdminService.IsRootAdmin(CurrentUser.Email) || TenantContext.IsHost;
+        var isRootAdmin = CurrentUser.IsRootAdmin;
         if (isRootAdmin)
         {
             var dbTenants = await DbContext.Tenants

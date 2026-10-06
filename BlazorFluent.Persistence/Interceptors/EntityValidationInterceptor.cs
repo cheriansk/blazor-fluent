@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Exceptions;
+using BlazorFluent.Persistence.Context;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace BlazorFluent.Persistence.Interceptors;
 
 /// <summary>
-/// EF Core SaveChanges interceptor enforcing Tier 2 entity invariant validations.
+/// Singleton EF Core SaveChanges interceptor enforcing Tier 2 entity invariant validations.
 /// Executes before SQL generation and before AuditableEntityInterceptor.
 /// Uses static ConcurrentDictionary caching for sub-microsecond DI validator resolution.
 /// Aggregates all validation failures across all entities in the commit batch into an EntityValidationException.
@@ -17,11 +18,17 @@ namespace BlazorFluent.Persistence.Interceptors;
 public class EntityValidationInterceptor : SaveChangesInterceptor
 {
     private static readonly ConcurrentDictionary<Type, Type?> _validatorTypeCache = new();
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceProvider? _fallbackServiceProvider;
 
-    public EntityValidationInterceptor(IServiceProvider serviceProvider)
+    [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
+    public EntityValidationInterceptor()
     {
-        _serviceProvider = serviceProvider;
+        _fallbackServiceProvider = null;
+    }
+
+    public EntityValidationInterceptor(IServiceProvider fallbackServiceProvider)
+    {
+        _fallbackServiceProvider = fallbackServiceProvider;
     }
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
@@ -57,6 +64,9 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
         var errors = new Dictionary<string, List<string>>();
 
+        var sp = (context as AppDbContext)?.ServiceProvider ?? _fallbackServiceProvider;
+        if (sp is null) return;
+
         foreach (var entry in entries)
         {
             if (IsExemptEntity(entry.Entity))
@@ -71,7 +81,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
             if (validatorType is null) continue;
 
-            if (_serviceProvider.GetService(validatorType) is IValidator validator)
+            if (sp.GetService(validatorType) is IValidator validator)
             {
                 var validationContext = new ValidationContext<object>(entry.Entity);
                 var validationResult = await validator.ValidateAsync(validationContext, cancellationToken);
@@ -121,6 +131,9 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
         var errors = new Dictionary<string, List<string>>();
 
+        var sp = (context as AppDbContext)?.ServiceProvider ?? _fallbackServiceProvider;
+        if (sp is null) return;
+
         foreach (var entry in entries)
         {
             if (IsExemptEntity(entry.Entity))
@@ -135,7 +148,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
             if (validatorType is null) continue;
 
-            if (_serviceProvider.GetService(validatorType) is IValidator validator)
+            if (sp.GetService(validatorType) is IValidator validator)
             {
                 var validationContext = new ValidationContext<object>(entry.Entity);
                 var validationResult = validator.Validate(validationContext);

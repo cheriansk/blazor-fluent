@@ -1,16 +1,29 @@
 @inject NavigationManager NavigationManager
+@inject ICurrentUser CurrentUser
+
+<div style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
+    <FluentSpinner Size="SpinnerSize.Medium" />
+</div>
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        if (string.IsNullOrWhiteSpace(returnUrl) || returnUrl.StartsWith("login", StringComparison.OrdinalIgnoreCase))
+        if (firstRender)
         {
-            NavigationManager.NavigateTo("/login", replace: true);
-        }
-        else
-        {
-            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
+            // Allow MainLayout.OnAfterRenderAsync a brief window (250ms) to rehydrate session from browser sessionStorage
+            await Task.Delay(250);
+            if (!CurrentUser.IsAuthenticated)
+            {
+                var returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+                if (string.IsNullOrWhiteSpace(returnUrl) || returnUrl.StartsWith("login", StringComparison.OrdinalIgnoreCase))
+                {
+                    NavigationManager.NavigateTo("/login", replace: true);
+                }
+                else
+                {
+                    NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
+                }
+            }
         }
     }
 }

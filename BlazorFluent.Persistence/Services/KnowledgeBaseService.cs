@@ -308,7 +308,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         var currentUserId = _currentUser.UserId;
         var reviewer = article.Reviewers.FirstOrDefault(r => r.UserId == currentUserId);
 
-        var isHostOrAdmin = _tenantContext.IsHost || _currentUser.IsInRole("Admin");
+        var isHostOrAdmin = _currentUser.IsRootAdmin;
         if (reviewer is null && !isHostOrAdmin)
         {
             _logger.LogWarning("User '{UserId}' attempted to approve article '{ArticleId}' without reviewer assignment", currentUserId, articleId);

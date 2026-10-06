@@ -2,7 +2,6 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
@@ -11,18 +10,15 @@ public class UserSessionService : IUserSessionService
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
-    private readonly HybridCache _cache;
     private readonly ILogger<UserSessionService> _logger;
 
     public UserSessionService(
         IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
-        HybridCache cache,
         ILogger<UserSessionService> logger)
     {
         _dbFactory = dbFactory;
         _tenantContext = tenantContext;
-        _cache = cache;
         _logger = logger;
     }
 
@@ -33,6 +29,15 @@ public class UserSessionService : IUserSessionService
         string userAgent,
         CancellationToken ct = default)
     {
+        // Security Gate: Reject persistent session creation for background system daemons
+        if (string.Equals(userId, "system", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(userEmail, "system@daemon.local", StringComparison.OrdinalIgnoreCase) ||
+            userEmail?.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            _logger.LogCritical("SECURITY ALERT: Blocked illicit attempt to create persistent user session for system daemon '{UserId}' ({UserEmail}).", userId, userEmail);
+            throw new InvalidOperationException("System daemon service identities are non-interactive and cannot possess persistent user sessions.");
+        }
+
         var tenantId = _tenantContext.TenantId ?? "default";
 
         // Enforce strict single-active-session policy per user
@@ -64,6 +69,7 @@ public class UserSessionService : IUserSessionService
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var query = dbContext.UserSessions
+            .IgnoreQueryFilters()
             .AsTracking()
             .Where(s => s.UserId == userId && !s.IsRevoked);
 
@@ -81,9 +87,6 @@ public class UserSessionService : IUserSessionService
             session.IsRevoked = true;
             session.RevokedAtUtc = now;
             session.RevokedBy = "System (New Login)";
-
-            var cacheKey = $"revoked_session_{session.Id}";
-            await _cache.SetAsync(cacheKey, true, cancellationToken: ct);
         }
 
         await dbContext.SaveChangesAsync(ct);
@@ -95,6 +98,7 @@ public class UserSessionService : IUserSessionService
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var cutoff = DateTime.UtcNow - timeout;
         var staleSessions = await dbContext.UserSessions
+            .IgnoreQueryFilters()
             .AsTracking()
             .Where(s => !s.IsRevoked && s.LastActivityAtUtc < cutoff)
             .ToListAsync(ct);
@@ -107,9 +111,6 @@ public class UserSessionService : IUserSessionService
             session.IsRevoked = true;
             session.RevokedAtUtc = now;
             session.RevokedBy = revokedBy;
-
-            var cacheKey = $"revoked_session_{session.Id}";
-            await _cache.SetAsync(cacheKey, true, cancellationToken: ct);
         }
 
         await dbContext.SaveChangesAsync(ct);
@@ -123,6 +124,7 @@ public class UserSessionService : IUserSessionService
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var session = await dbContext.UserSessions
+            .IgnoreQueryFilters()
             .AsTracking()
             .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
         if (session != null && !session.IsRevoked)
@@ -134,25 +136,20 @@ public class UserSessionService : IUserSessionService
 
     public async Task<bool> IsSessionRevokedAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var cacheKey = $"revoked_session_{sessionId}";
-        return await _cache.GetOrCreateAsync(
-            cacheKey,
-            async token =>
-            {
-                await using var dbContext = await _dbFactory.CreateDbContextAsync(token);
-                var session = await dbContext.UserSessions
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Id == sessionId, token);
+        await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
+        var session = await dbContext.UserSessions
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
 
-                return session == null || session.IsRevoked;
-            },
-            cancellationToken: ct);
+        return session == null || session.IsRevoked;
     }
 
     public async Task<bool> RevokeSessionAsync(Guid sessionId, string revokedBy, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var session = await dbContext.UserSessions
+            .IgnoreQueryFilters()
             .AsTracking()
             .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
         if (session == null) return false;
@@ -162,9 +159,6 @@ public class UserSessionService : IUserSessionService
         session.RevokedBy = revokedBy;
 
         await dbContext.SaveChangesAsync(ct);
-
-        var cacheKey = $"revoked_session_{sessionId}";
-        await _cache.SetAsync(cacheKey, true, cancellationToken: ct);
 
         _logger.LogWarning("SECURITY ALERT: User session {SessionId} ({UserEmail}) REVOKED by {RevokedBy}",
             sessionId, session.UserEmail, revokedBy);

@@ -2,6 +2,7 @@
 @using BlazorFluent.Core.DataListTypes
 @inject IProjectAuthorizationService ProjectAuth
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
 
 @if (_isEvaluating)
 {
@@ -41,7 +42,7 @@ else
     {
         _isEvaluating = true;
 
-        if (TenantContext.IsHost)
+        if (CurrentUser.IsRootAdmin)
         {
             _userRole = ProjectRole.Admin;
             _isAuthorized = true;
