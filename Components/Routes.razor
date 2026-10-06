@@ -1,9 +1,16 @@
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
 @using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@inject NavigationManager NavigationManager
+@inject ILogger<Routes> Logger
+@inject ICurrentUser CurrentUser
+@inject ITenantContext TenantContext
+@implements IDisposable
 
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFoundPage)">
     <Found Context="routeData">
-        <ObservabilityErrorBoundaryComp>
+        <ObservabilityErrorBoundaryComp PageName="@routeData.PageType.Name" PageType="@routeData.PageType">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
                 <NotAuthorized Context="authContext">
                     @if (authContext.User.Identity?.IsAuthenticated != true)
@@ -20,3 +27,23 @@
         </ObservabilityErrorBoundaryComp>
     </Found>
 </Router>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        Logger.LogDebug("Razor Navigation Router Initialized: CurrentUri='{Uri}', Tenant='{TenantId}', User='{UserId}'",
+            NavigationManager.Uri, TenantContext.TenantId ?? "none", CurrentUser.UserId ?? "anonymous");
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        Logger.LogDebug("Razor Navigation: Target='{TargetUri}', Intercepted={IsIntercepted}, Tenant='{TenantId}', User='{UserId}' ({Email})",
+            e.Location, e.IsNavigationIntercepted, TenantContext.TenantId ?? "none", CurrentUser.UserId ?? "anonymous", CurrentUser.Email ?? "n/a");
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+}

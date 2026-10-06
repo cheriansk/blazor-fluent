@@ -48,15 +48,23 @@ else
 }
 
 @code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private ITenantContext TenantContext { get; set; } = default!;
+    [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
+
     private string? _errorReferenceId;
 
     protected override async Task OnErrorAsync(Exception exception)
     {
+        var currentUri = NavigationManager.Uri;
+        var tenantId = TenantContext.TenantId ?? "none";
+        var userId = CurrentUser.UserId ?? "anonymous";
+
         try
         {
             _errorReferenceId = await AuditService.LogExceptionAsync(
                 exception,
-                "Blazor Component Rendering Error",
+                $"Razor Page Rendering Error at URL: {currentUri} (Tenant: {tenantId}, User: {userId})",
                 AuditSeverity.Critical);
         }
         catch (Exception logEx)
@@ -64,6 +72,16 @@ else
             Logger.LogCritical(logEx, "Failed to log UI exception to AuditService. Original message: {Message}", exception.Message);
             _errorReferenceId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
         }
+
+        Logger.LogError(
+            exception,
+            "Razor Page Rendering Error: Incident='{IncidentRef}', URL='{CurrentUri}', Tenant='{TenantId}', User='{UserId}', ExceptionType='{ExceptionType}': {ErrorMessage}",
+            _errorReferenceId,
+            currentUri,
+            tenantId,
+            userId,
+            exception.GetType().FullName,
+            exception.Message);
     }
 
     private void RecoverAndReload()
