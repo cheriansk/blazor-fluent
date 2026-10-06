@@ -364,6 +364,151 @@
             </FluentCard>
         }
 
+        @* Tenant Project Management Panel *@
+        @if (_managingProjectsTenant is not null)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #0078d4;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <FluentLabel Typo="Typography.H5">Projects for @_managingProjectsTenant.Name (@_managingProjectsTenant.Code)</FluentLabel>
+                        <div style="font-size: 13px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                            Manage project workspaces, timelines, and scopes scoped to tenant <code>@_managingProjectsTenant.Slug</code>.
+                        </div>
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@OpenAddProjectForm">
+                            Add Project
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseProjectManagement">
+                            Close
+                        </FluentButton>
+                    </FluentStack>
+                </FluentStack>
+
+                @* Add / Edit Project Sub-Card *@
+                @if (_showAddProjectForm)
+                {
+                    <FluentCard Style="margin-bottom: 16px; background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
+                        <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">
+                            @(_editingProject is not null ? $"Edit Project: {_editingProject.Name}" : $"Add Project to {_managingProjectsTenant.Name}")
+                        </FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                <FluentTextInput Label="Project Name" @bind-Value="_projName" Required="true" Style="flex: 2;" Placeholder="e.g. Enterprise Cloud Migration" />
+                                <FluentTextInput Label="Project Short Code" @bind-Value="_projShortCode" Required="true" Style="flex: 1;" Placeholder="e.g. CLOUD-01" />
+                            </FluentStack>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                <FluentTextInput Label="Location" @bind-Value="_projLocation" Style="flex: 2;" Placeholder="e.g. Seattle, WA / Remote" />
+                                <div style="flex: 1;">
+                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                                    <FluentSelect TOption="string" TValue="string"
+                                                  Value="@_projStatus.ToString()"
+                                                  ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
+                                                  Style="width: 100%;">
+                                        <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
+                                        <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
+                                        <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
+                                        <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
+                                    </FluentSelect>
+                                </div>
+                            </FluentStack>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                                <FluentDatePicker Label="Tentative Start Date" @bind-Value="_projStartDate" />
+                                <FluentDatePicker Label="Tentative End Date" @bind-Value="_projEndDate" />
+                            </FluentStack>
+
+                            <div>
+                                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Summary of Scope of Project</FluentLabel>
+                                <FluentTextArea @bind-Value="_projScopeSummary" Placeholder="Brief summary of project scope, deliverables, and goals..." Rows="3" Style="width: 100%;" />
+                            </div>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              Disabled="@(!IsProjectFormValid)"
+                                              OnClick="@SaveTenantProjectAsync">
+                                    @(_editingProject is not null ? "Update Project" : "Save Project")
+                                </FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseProjectForm">
+                                    Cancel
+                                </FluentButton>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                }
+
+                @* Search & Filter Toolbar for Projects *@
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px; margin-bottom: 8px;">
+                    <FluentTextInput Placeholder="Filter projects by name, short code, or location..."
+                                     @bind-Value="_projectSearchText"
+                                     @bind-Value:after="StateHasChanged"
+                                     Style="width: 320px;">
+                        <StartTemplate>
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                        </StartTemplate>
+                    </FluentTextInput>
+                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                        Showing @FilteredTenantProjects.Count() of @_tenantProjects.Count projects
+                    </span>
+                </FluentStack>
+
+                @if (_isLoadingProjects)
+                {
+                    <FluentProgressRing Style="margin: 20px auto;" />
+                }
+                else if (!_tenantProjects.Any())
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-top: 8px;">
+                        No projects have been added to this tenant yet. Click &ldquo;Add Project&rdquo; above to create the first workspace.
+                    </FluentMessageBar>
+                }
+                else
+                {
+                    <FluentDataGrid Items="@FilteredTenantProjects" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 120px 120px 140px" Style="margin-top: 8px;">
+                        <PropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
+                        <PropertyColumn Property="@(p => p.Name)" Title="Name" Sortable="true" />
+                        <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
+                            @switch (context.Status)
+                            {
+                                case ProjectStatus.Active:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                                    break;
+                                case ProjectStatus.New:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
+                                    break;
+                                case ProjectStatus.OnHold:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
+                                    break;
+                                case ProjectStatus.Done:
+                                    <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
+                                    break;
+                            }
+                        </TemplateColumn>
+                        <PropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeStartDate))">
+                            @(context.TentativeStartDate?.ToString("yyyy-MM-dd") ?? "—")
+                        </TemplateColumn>
+                        <TemplateColumn Title="End Date" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeEndDate))">
+                            @(context.TentativeEndDate?.ToString("yyyy-MM-dd") ?? "—")
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.Edit())"
+                                              Title="Edit Project"
+                                              OnClick="@(() => StartEditProject(context))">
+                                    Edit
+                                </FluentButton>
+                                <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project change history" />
+                            </FluentStack>
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                }
+            </FluentCard>
+        }
+
         @* Search & Filter Toolbar for Tenants *@
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
             <FluentTextInput Placeholder="Filter tenants by name, code, slug, or domain..."
@@ -427,6 +572,9 @@
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
                         @if (IsRootAdmin)
                         {
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Folder())" Title="Manage Projects" OnClick="@(() => OpenProjectManagement(context))">
+                                Projects
+                            </FluentButton>
                             <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.People())" Title="Manage Users" OnClick="@(() => OpenUserManagement(context))">
                                 Users
                             </FluentButton>
@@ -789,6 +937,7 @@
         if (!IsRootAdmin) return;
 
         _managingUsersTenant = tenant;
+        _managingProjectsTenant = null;
         _showAddUserForm = false;
         _editingUser = null;
         _userFullName = string.Empty;
@@ -1000,6 +1149,168 @@
         {
             _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update tenant user.";
             _isError = true;
+        }
+    }
+
+    // --- Tenant Project Management ---
+    private TenantEntity? _managingProjectsTenant;
+    private List<ProjectEntity> _tenantProjects = [];
+    private bool _isLoadingProjects;
+    private bool _showAddProjectForm;
+    private ProjectEntity? _editingProject;
+
+    // Project form inputs
+    private string _projName = string.Empty;
+    private string _projShortCode = string.Empty;
+    private string? _projLocation;
+    private ProjectStatus _projStatus = ProjectStatus.New;
+    private DateTime? _projStartDate;
+    private DateTime? _projEndDate;
+    private string? _projScopeSummary;
+    private string _projectSearchText = string.Empty;
+
+    private IQueryable<ProjectEntity> FilteredTenantProjects
+    {
+        get
+        {
+            var query = _tenantProjects.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_projectSearchText))
+            {
+                var term = _projectSearchText.Trim();
+                query = query.Where(p =>
+                    p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (p.ShortCode != null && p.ShortCode.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Location != null && p.Location.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.ScopeSummary != null && p.ScopeSummary.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query;
+        }
+    }
+
+    private bool IsProjectFormValid =>
+        !string.IsNullOrWhiteSpace(_projName) &&
+        !string.IsNullOrWhiteSpace(_projShortCode) &&
+        (!_projStartDate.HasValue || !_projEndDate.HasValue || _projEndDate.Value >= _projStartDate.Value);
+
+    private async Task OpenProjectManagement(TenantEntity tenant)
+    {
+        _managingProjectsTenant = tenant;
+        _managingUsersTenant = null;
+        _showAddProjectForm = false;
+        _editingProject = null;
+        _projectSearchText = string.Empty;
+        await LoadTenantProjectsAsync();
+    }
+
+    private void CloseProjectManagement()
+    {
+        _managingProjectsTenant = null;
+        _showAddProjectForm = false;
+        _editingProject = null;
+        _tenantProjects.Clear();
+    }
+
+    private async Task LoadTenantProjectsAsync()
+    {
+        if (_managingProjectsTenant is null) return;
+        _isLoadingProjects = true;
+        try
+        {
+            var projects = await TenantService.GetTenantProjectsAsync(_managingProjectsTenant.Slug);
+            _tenantProjects = projects.ToList();
+        }
+        finally
+        {
+            _isLoadingProjects = false;
+        }
+    }
+
+    private void OpenAddProjectForm()
+    {
+        _editingProject = null;
+        _projName = string.Empty;
+        _projShortCode = string.Empty;
+        _projLocation = null;
+        _projStatus = ProjectStatus.New;
+        _projStartDate = DateTime.UtcNow.Date;
+        _projEndDate = DateTime.UtcNow.Date.AddMonths(6);
+        _projScopeSummary = null;
+        _showAddProjectForm = true;
+    }
+
+    private void StartEditProject(ProjectEntity project)
+    {
+        _editingProject = project;
+        _projName = project.Name;
+        _projShortCode = project.ShortCode;
+        _projLocation = project.Location;
+        _projStatus = project.Status;
+        _projStartDate = project.TentativeStartDate;
+        _projEndDate = project.TentativeEndDate;
+        _projScopeSummary = project.ScopeSummary;
+        _showAddProjectForm = true;
+    }
+
+    private void CloseProjectForm()
+    {
+        _showAddProjectForm = false;
+        _editingProject = null;
+    }
+
+    private async Task SaveTenantProjectAsync()
+    {
+        if (_managingProjectsTenant is null || !IsProjectFormValid) return;
+
+        if (_editingProject is null)
+        {
+            var result = await TenantService.CreateTenantProjectAsync(
+                _managingProjectsTenant.Slug,
+                _projName,
+                _projShortCode,
+                _projLocation,
+                _projStartDate,
+                _projEndDate,
+                _projScopeSummary,
+                _projStatus);
+
+            if (result.Succeeded && result.Data is not null)
+            {
+                _statusMessage = $"Project '{result.Data.Name}' ({result.Data.ShortCode}) created successfully.";
+                _isError = false;
+                CloseProjectForm();
+                await LoadTenantProjectsAsync();
+            }
+            else
+            {
+                _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to create project.";
+                _isError = true;
+            }
+        }
+        else
+        {
+            var result = await TenantService.UpdateTenantProjectAsync(
+                _managingProjectsTenant.Slug,
+                _editingProject.Id,
+                _projName,
+                _projShortCode,
+                _projLocation,
+                _projStartDate,
+                _projEndDate,
+                _projScopeSummary,
+                _projStatus);
+
+            if (result.Succeeded && result.Data is not null)
+            {
+                _statusMessage = $"Project '{result.Data.Name}' updated successfully.";
+                _isError = false;
+                CloseProjectForm();
+                await LoadTenantProjectsAsync();
+            }
+            else
+            {
+                _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update project.";
+                _isError = true;
+            }
         }
     }
 }

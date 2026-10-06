@@ -32,7 +32,8 @@
                                   OptionText="@(t => t.Name)"
                                   OptionValue="@(t => t.Id)"
                                   Value="@_selectedTenantId"
-                                  ValueChanged="@OnTenantSelected"
+                                  ValueChanged="@OnTenantSelectedAsync"
+                                  Disabled="@(_availableTenants.Count <= 1)"
                                   Placeholder="-- All Tenants --"
                                   Style="min-width: 200px;" />
                 </div>
@@ -258,6 +259,11 @@
                 .Select(t => new TenantFilterOption(t.Id, t.Name))
                 .ToList();
         }
+
+        if (_availableTenants.Count == 1)
+        {
+            await OnTenantSelectedAsync(_availableTenants[0].Id);
+        }
     }
 
     private async Task LoadAvailableUsersAsync()
@@ -302,7 +308,7 @@
         _availableUsers = users;
     }
 
-    private async Task OnTenantSelected(string? tenantId)
+    private async Task OnTenantSelectedAsync(string? tenantId)
     {
         _selectedTenantId = tenantId;
         _filter.TenantId = tenantId;

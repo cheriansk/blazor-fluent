@@ -37,11 +37,12 @@
                           OptionValue="@(t => t.Id)"
                           Value="@_selectedTenantId"
                           ValueChanged="@OnTenantSelected"
+                          Disabled="@(_availableTenants.Count <= 1)"
                           Label="Filter by Tenant"
                           Placeholder="-- Select a tenant to view events --"
                           Style="min-width: 300px;" />
 
-            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId) && _availableTenants.Count > 1)
             {
                 <FluentButton Appearance="ButtonAppearance.Subtle"
                               IconStart="@(new Icons.Regular.Size16.Dismiss())"
@@ -376,6 +377,11 @@
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(t.Id, t.Name))
                 .ToList();
+        }
+
+        if (_availableTenants.Count == 1)
+        {
+            await OnTenantSelected(_availableTenants[0].Id);
         }
     }
 

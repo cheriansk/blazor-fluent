@@ -25,17 +25,9 @@
             <FluentNavItem Href="knowledge" IconRest="@(new Icons.Regular.Size20.BookOpen())" IconActive="@(new Icons.Filled.Size20.BookOpen())" Tooltip="Knowledge Base">Knowledge Base</FluentNavItem>
             <FluentNavItem Href="tasks" IconRest="@(new Icons.Regular.Size20.TaskListLtr())" IconActive="@(new Icons.Filled.Size20.TaskListLtr())" Tooltip="Tasks">Tasks</FluentNavItem>
             <FluentNavItem Href="imports" IconRest="@(new Icons.Regular.Size20.ArrowSync())" IconActive="@(new Icons.Filled.Size20.ArrowSync())" Tooltip="File Imports">File Imports</FluentNavItem>
-            <FluentNavItem Href="tenancy/project-roles" IconRest="@(new Icons.Regular.Size20.PeopleTeam())" IconActive="@(new Icons.Filled.Size20.PeopleTeam())" Tooltip="Project Roles">Project Roles</FluentNavItem>
             <FluentNavItem Href="catalog" IconRest="@(new Icons.Regular.Size20.Box())" IconActive="@(new Icons.Filled.Size20.Box())" Tooltip="Catalog">Catalog (Module)</FluentNavItem>
             <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())" Tooltip="Counter">Counter</FluentNavItem>
             <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())" Tooltip="Weather">Weather</FluentNavItem>
-
-            @if (CurrentUser.IsRootAdmin)
-            {
-                <FluentNavCategory Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
-                    <FluentNavItem Href="settings" IconRest="@(new Icons.Regular.Size20.Settings())" IconActive="@(new Icons.Filled.Size20.Settings())" Tooltip="Settings">Settings</FluentNavItem>
-                </FluentNavCategory>
-            }
         }
     </FluentNav>
 </div>

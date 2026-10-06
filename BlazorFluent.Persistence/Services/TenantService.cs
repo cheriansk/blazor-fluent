@@ -428,4 +428,152 @@ public class TenantService : ITenantService
 
         return Result.Success();
     }
+
+    public async Task<IReadOnlyList<ProjectEntity>> GetTenantProjectsAsync(string tenantSlug, CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+        return await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(p => p.TenantId == normalizedSlug && !p.IsDeleted)
+            .OrderBy(p => p.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Result<ProjectEntity>> CreateTenantProjectAsync(
+        string tenantSlug,
+        string name,
+        string shortCode,
+        string? location,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? scopeSummary,
+        ProjectStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProjectEntity>.Failure("Project Name is required.");
+
+        if (string.IsNullOrWhiteSpace(shortCode))
+            return Result<ProjectEntity>.Failure("Project Short Code is required.");
+
+        if (startDate.HasValue && endDate.HasValue && endDate < startDate)
+            return Result<ProjectEntity>.Failure("End date cannot precede start date.");
+
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+        var tenant = await _dbContext.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
+
+        if (tenant is null)
+            return Result<ProjectEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
+
+        var trimmedName = name.Trim();
+        var trimmedCode = shortCode.Trim();
+
+        var duplicate = await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.TenantId == normalizedSlug && !p.IsDeleted &&
+                           (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
+                      cancellationToken);
+
+        if (duplicate)
+            return Result<ProjectEntity>.Failure($"A project with name '{trimmedName}' or short code '{trimmedCode}' already exists for this tenant.");
+
+        var project = new ProjectEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = trimmedName,
+            ShortCode = trimmedCode,
+            Location = location?.Trim(),
+            TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null,
+            TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null,
+            ScopeSummary = scopeSummary?.Trim(),
+            Description = scopeSummary?.Trim() ?? string.Empty,
+            Status = status,
+            IsActive = status == ProjectStatus.Active || status == ProjectStatus.New,
+            TenantEntityId = tenant.Id,
+            TenantId = normalizedSlug
+        };
+
+        _dbContext.Projects.Add(project);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Created project '{ProjectName}' ({ShortCode}) in tenant '{TenantSlug}'", project.Name, project.ShortCode, tenantSlug);
+
+        await _auditService.LogUserActivityAsync(
+            $"Created tenant project '{project.Name}' ({project.ShortCode})",
+            $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
+            cancellationToken);
+
+        return Result<ProjectEntity>.Success(project);
+    }
+
+    public async Task<Result<ProjectEntity>> UpdateTenantProjectAsync(
+        string tenantSlug,
+        Guid projectId,
+        string name,
+        string shortCode,
+        string? location,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? scopeSummary,
+        ProjectStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProjectEntity>.Failure("Project Name is required.");
+
+        if (string.IsNullOrWhiteSpace(shortCode))
+            return Result<ProjectEntity>.Failure("Project Short Code is required.");
+
+        if (startDate.HasValue && endDate.HasValue && endDate < startDate)
+            return Result<ProjectEntity>.Failure("End date cannot precede start date.");
+
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        var project = await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AsTracking()
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == normalizedSlug && !p.IsDeleted, cancellationToken);
+
+        if (project is null)
+            return Result<ProjectEntity>.Failure($"Project was not found in tenant '{tenantSlug}'.");
+
+        var trimmedName = name.Trim();
+        var trimmedCode = shortCode.Trim();
+
+        var duplicate = await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.TenantId == normalizedSlug && p.Id != projectId && !p.IsDeleted &&
+                           (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
+                      cancellationToken);
+
+        if (duplicate)
+            return Result<ProjectEntity>.Failure($"Another project with name '{trimmedName}' or short code '{trimmedCode}' already exists for this tenant.");
+
+        project.Name = trimmedName;
+        project.ShortCode = trimmedCode;
+        project.Location = location?.Trim();
+        project.TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null;
+        project.TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null;
+        project.ScopeSummary = scopeSummary?.Trim();
+        if (!string.IsNullOrWhiteSpace(scopeSummary))
+        {
+            project.Description = scopeSummary.Trim();
+        }
+        project.Status = status;
+        project.IsActive = status == ProjectStatus.Active || status == ProjectStatus.New;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Updated project '{ProjectName}' ({ShortCode}) in tenant '{TenantSlug}'", project.Name, project.ShortCode, tenantSlug);
+
+        await _auditService.LogUserActivityAsync(
+            $"Updated tenant project '{project.Name}' ({project.ShortCode})",
+            $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
+            cancellationToken);
+
+        return Result<ProjectEntity>.Success(project);
+    }
 }
