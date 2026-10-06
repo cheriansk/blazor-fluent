@@ -7,11 +7,20 @@
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
 @inject IAuditService AuditService
+@inject IRootAdminService RootAdminService
 @inject ILogger<SettingsSessionsTab> Logger
 
 <div>
-    @* Header *@
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 24px;">
+    @if (!RootAdminService.IsRootAdmin(CurrentUser.Email))
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 16px;">
+            Access Denied: Active user session administration is restricted exclusively to Root Administrators.
+        </FluentMessageBar>
+    }
+    else
+    {
+        @* Header *@
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 24px;">
         <div>
             <FluentLabel Typo="Typography.H3" Style="font-weight: 700; margin: 0;">Active User Sessions</FluentLabel>
             <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
@@ -168,6 +177,7 @@
             </FluentDataGrid>
         }
     </FluentCard>
+    }
 </div>
 
 @code {
@@ -248,11 +258,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (!RootAdminService.IsRootAdmin(CurrentUser.Email))
+        {
+            _isLoading = false;
+            _isError = true;
+            _statusMessage = "Access Denied: Active user session administration is restricted exclusively to Root Administrators.";
+            return;
+        }
+
         await LoadSessionsAsync();
     }
 
     private async Task LoadSessionsAsync()
     {
+        if (!RootAdminService.IsRootAdmin(CurrentUser.Email)) return;
+
         _isLoading = true;
         _statusMessage = null;
 
@@ -275,6 +295,8 @@
 
     private async Task RevokeAllStaleAsync()
     {
+        if (!RootAdminService.IsRootAdmin(CurrentUser.Email)) return;
+
         var adminId = CurrentUser.Email ?? CurrentUser.UserId ?? "admin";
         try
         {
@@ -307,6 +329,8 @@
 
     private async Task RevokeSessionAsync(Guid sessionId, string userEmail)
     {
+        if (!RootAdminService.IsRootAdmin(CurrentUser.Email)) return;
+
         var adminId = CurrentUser.UserId ?? "admin";
         var success = await SessionService.RevokeSessionAsync(sessionId, adminId);
         if (success)

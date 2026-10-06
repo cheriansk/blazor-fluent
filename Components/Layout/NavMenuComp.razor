@@ -32,10 +32,10 @@
 
             @if (TenantContext.IsHost || CurrentUser.IsInRole("Admin"))
             {
-                <FluentNavGroup Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
+                <FluentNavCategory Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
                     <FluentNavItem Href="settings" IconRest="@(new Icons.Regular.Size20.Settings())" IconActive="@(new Icons.Filled.Size20.Settings())" Tooltip="Settings">Settings</FluentNavItem>
                     <FluentNavItem Href="auditing" IconRest="@(new Icons.Regular.Size20.DocumentBulletList())" IconActive="@(new Icons.Filled.Size20.DocumentBulletList())" Tooltip="Audit Trail">Audit Trail</FluentNavItem>
-                </FluentNavGroup>
+                </FluentNavCategory>
             }
         }
     </FluentNav>

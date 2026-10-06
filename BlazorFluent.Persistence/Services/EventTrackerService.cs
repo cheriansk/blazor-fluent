@@ -288,7 +288,14 @@ public class EventTrackerService : IEventTrackerService
         }
         else if (!string.IsNullOrWhiteSpace(filter.TenantId))
         {
-            query = query.Where(e => e.TenantId == filter.TenantId);
+            if (string.Equals(filter.TenantId, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e => e.TenantId == IRootAdminService.DefaultTenantSlug || e.TenantId == "system" || e.TenantId == "host");
+            }
+            else
+            {
+                query = query.Where(e => e.TenantId == filter.TenantId);
+            }
         }
 
         if (filter.Status.HasValue)

@@ -17,6 +17,8 @@ public class TenantService : ITenantService
     private readonly IAuditService _auditService;
     private readonly ITenantCacheService _cacheService;
     private readonly IConfiguration _configuration;
+    private readonly IRootAdminService _rootAdminService;
+    private readonly ICurrentUser _currentUser;
     private readonly ILogger<TenantService> _logger;
 
     public TenantService(
@@ -24,12 +26,16 @@ public class TenantService : ITenantService
         IAuditService auditService,
         ITenantCacheService cacheService,
         IConfiguration configuration,
+        IRootAdminService rootAdminService,
+        ICurrentUser currentUser,
         ILogger<TenantService> logger)
     {
         _dbContext = dbContext;
         _auditService = auditService;
         _cacheService = cacheService;
         _configuration = configuration;
+        _rootAdminService = rootAdminService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -41,6 +47,7 @@ public class TenantService : ITenantService
             {
                 return (IReadOnlyList<TenantEntity>)await _dbContext.Tenants
                     .AsNoTracking()
+                    .Where(t => t.Slug != "default")
                     .OrderBy(t => t.Name)
                     .ToListAsync(token);
             },
@@ -58,8 +65,14 @@ public class TenantService : ITenantService
         DateTime endDate,
         CancellationToken cancellationToken = default)
     {
+        if (!_rootAdminService.IsRootAdmin(_currentUser.Email))
+            return Result<TenantEntity>.Failure("Access Denied: Only designated root super-administrators can provision new tenants.");
+
         if (string.IsNullOrWhiteSpace(slug))
             return Result<TenantEntity>.Failure("Slug is required.");
+
+        if (string.Equals(slug.Trim(), "default", StringComparison.OrdinalIgnoreCase))
+            return Result<TenantEntity>.Failure("The 'default' slug is reserved for internal system administration.");
 
         if (string.IsNullOrWhiteSpace(code))
             return Result<TenantEntity>.Failure("Code is required.");
@@ -189,6 +202,17 @@ public class TenantService : ITenantService
 
         if (tenant is null)
             return Result<UserEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
+
+        // Enforce maximum 3 users in the default system root tenant
+        if (string.Equals(normalizedSlug, "default", StringComparison.OrdinalIgnoreCase))
+        {
+            var defaultUserCount = await _dbContext.Users
+                .CountAsync(u => u.DefaultTenantId == "default" && !u.IsDeleted, cancellationToken);
+            if (defaultUserCount >= 3)
+            {
+                return Result<UserEntity>.Failure("The default system root tenant cannot exceed a maximum of 3 administrator accounts.");
+            }
+        }
 
         // Automatically determine UserType from configured tenant domains
         UserType userType;
@@ -330,10 +354,16 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantStatusAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default)
     {
+        if (!_rootAdminService.IsRootAdmin(_currentUser.Email))
+            return Result.Failure("Access Denied: Only designated root super-administrators can modify tenants.");
+
         var tenant = await _dbContext.Tenants
             .AsTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
+
+        if (string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+            return Result.Failure("The default system root anchor tenant cannot be deactivated or modified.");
 
         tenant.IsActive = isActive;
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -361,6 +391,9 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
+        if (!_rootAdminService.IsRootAdmin(_currentUser.Email))
+            return Result.Failure("Access Denied: Only designated root super-administrators can modify tenants.");
+
         if (endDate < startDate)
             return Result.Failure("End date cannot precede start date.");
 
@@ -368,6 +401,9 @@ public class TenantService : ITenantService
             .AsTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
+
+        if (string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+            return Result.Failure("The default system root anchor tenant cannot be modified.");
 
         tenant.StartDate = startDate;
         tenant.EndDate = endDate;

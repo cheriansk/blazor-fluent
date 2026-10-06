@@ -59,6 +59,9 @@ public static class InfrastructureExtensions
         // 12. Settings In-Memory Navigation State
         services.TryAddScoped<ISettingsNavigationState, SettingsNavigationState>();
 
+        // 13. Root Administrator Security Service (Max 3 super-administrators from configuration)
+        services.TryAddSingleton<IRootAdminService, RootAdminService>();
+
         return services;
     }
 }

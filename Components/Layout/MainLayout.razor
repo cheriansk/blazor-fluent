@@ -15,6 +15,7 @@
 @inject IUserSessionService SessionService
 @inject ICircuitSessionTracker CircuitTracker
 @inject AppDbContext DbContext
+@inject IRootAdminService RootAdminService
 @inject ILogger<MainLayout> Logger
 @inject INavigationStateService NavState
 @implements IDisposable
@@ -178,32 +179,47 @@
 
                         if (user != null && user.IsActive)
                         {
-                            var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
+                            var isRootAdmin = RootAdminService.IsRootAdmin(user.Email);
+                            var isHost = isRootAdmin;
                             var activeTenant = await DbContext.Tenants
                                 .AsNoTracking()
-                                .FirstOrDefaultAsync(t => t.Slug == data.ActiveTenantId || t.Id.ToString() == data.ActiveTenantId);
-
-                            var resolvedTenantId = activeTenant?.Slug ?? data.ActiveTenantId;
-                            var resolvedTenantName = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
+                                .FirstOrDefaultAsync(t => (t.Slug == data.ActiveTenantId || t.Id.ToString() == data.ActiveTenantId) && t.Slug != IRootAdminService.DefaultTenantSlug);
 
                             List<TenantInfo> allowedTenants;
+                            string resolvedTenantId = string.Empty;
+                            string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
+
                             if (isHost || user.UserType == UserType.CompanyUser)
                             {
                                 var dbTenants = await DbContext.Tenants
                                     .AsNoTracking()
-                                    .Where(t => t.IsActive)
+                                    .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
                                     .OrderBy(t => t.Name)
                                     .ToListAsync();
 
                                 allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
-                                if (allowedTenants.Count == 0)
+                                var match = allowedTenants.FirstOrDefault(t => t.Id == activeTenant?.Slug)
+                                    ?? allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId)
+                                    ?? allowedTenants.FirstOrDefault();
+
+                                if (match != null)
                                 {
-                                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, isHost)];
+                                    resolvedTenantId = match.Id;
+                                    resolvedTenantName = match.Name;
                                 }
                             }
                             else
                             {
-                                allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+                                if (activeTenant != null)
+                                {
+                                    resolvedTenantId = activeTenant.Slug;
+                                    resolvedTenantName = activeTenant.Name;
+                                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+                                }
+                                else
+                                {
+                                    allowedTenants = [];
+                                }
                             }
 
                             TenantContext.Initialize(
@@ -220,6 +236,7 @@
                                 if (isHost)
                                 {
                                     appUser.AddRole("Admin");
+                                    appUser.AddRole("RootAdmin");
                                 }
                             }
 
@@ -256,11 +273,16 @@
                     var user = await DbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id.ToString() == userId);
                     if (user != null)
                     {
-                        var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
-                        var tenantId = user.DefaultTenantId ?? "default";
-                        var activeTenant = await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId);
-                        var name = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
-                        TenantContext.Initialize(tenantId, name, user.UserType, [new TenantInfo(tenantId, name, isHost)], isHost);
+                        var isHost = RootAdminService.IsRootAdmin(user.Email);
+                        var tenantId = (user.DefaultTenantId != null && user.DefaultTenantId != IRootAdminService.DefaultTenantSlug)
+                            ? user.DefaultTenantId
+                            : "";
+                        var activeTenant = !string.IsNullOrEmpty(tenantId)
+                            ? await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId && t.Slug != IRootAdminService.DefaultTenantSlug)
+                            : null;
+                        var name = activeTenant?.Name ?? (isHost ? "System Root Administration" : "Organization");
+                        var allowed = !string.IsNullOrEmpty(tenantId) ? [new TenantInfo(tenantId, name, isHost)] : new List<TenantInfo>();
+                        TenantContext.Initialize(tenantId, name, user.UserType, allowed, isHost);
                         StateHasChanged();
                     }
                 }

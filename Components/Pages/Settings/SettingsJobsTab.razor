@@ -8,6 +8,8 @@
 @inject IJobManagerService JobManagerService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject IRootAdminService RootAdminService
 @inject IDateTimeProvider DateTimeProvider
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
@@ -249,13 +251,16 @@
 
     private async Task LoadAvailableTenantsAsync()
     {
-        if (TenantContext.IsHost)
+        var isRootAdmin = RootAdminService.IsRootAdmin(CurrentUser.Email) || TenantContext.IsHost;
+        if (isRootAdmin)
         {
             var dbTenants = await DbContext.Tenants
                 .AsNoTracking()
                 .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Slug, t.Name))
+                .Select(t => new TenantFilterOption(
+                    t.Slug,
+                    t.Slug == IRootAdminService.DefaultTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
                 .ToListAsync();
 
             _availableTenants = dbTenants;
@@ -263,7 +268,7 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive)
+                .Where(t => t.IsActive && t.Id != IRootAdminService.DefaultTenantSlug)
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(t.Id, t.Name))
                 .ToList();
@@ -302,7 +307,18 @@
         try
         {
             var results = await JobManagerService.GetRecentExecutionsAsync(limit: 200);
-            _executions = results.Where(e => e.TenantId == _selectedTenantId).ToList();
+            if (string.Equals(_selectedTenantId, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase))
+            {
+                _executions = results.Where(e =>
+                    e.TenantId == IRootAdminService.DefaultTenantSlug ||
+                    e.TenantId == "system" ||
+                    e.TenantId == "host" ||
+                    string.IsNullOrEmpty(e.TenantId)).ToList();
+            }
+            else
+            {
+                _executions = results.Where(e => e.TenantId == _selectedTenantId).ToList();
+            }
         }
         finally
         {

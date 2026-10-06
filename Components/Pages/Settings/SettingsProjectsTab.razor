@@ -108,9 +108,9 @@
                     </TemplateColumn>
                     <TemplateColumn Title="Actions">
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                            <FluentAnchor Appearance="Appearance.Lightweight" Href="@($"/projects/{context.Id}/tasks")">
+                            <FluentLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")">
                                 View Tasks
-                            </FluentAnchor>
+                            </FluentLink>
                             <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
                         </FluentStack>
                     </TemplateColumn>
@@ -149,7 +149,7 @@
         {
             var dbTenants = await DbContext.Tenants
                 .AsNoTracking()
-                .Where(t => t.IsActive)
+                .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(t.Slug, t.Name))
                 .ToListAsync();
@@ -159,7 +159,7 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive)
+                .Where(t => t.IsActive && t.Id != "default")
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(t.Id, t.Name))
                 .ToList();

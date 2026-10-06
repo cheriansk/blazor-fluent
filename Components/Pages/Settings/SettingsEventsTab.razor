@@ -8,6 +8,8 @@
 @inject IEventTrackerService EventTrackerService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject IRootAdminService RootAdminService
 @inject IJSRuntime JS
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
@@ -351,13 +353,16 @@
 
     private async Task LoadAvailableTenantsAsync()
     {
-        if (TenantContext.IsHost)
+        var isRootAdmin = RootAdminService.IsRootAdmin(CurrentUser.Email) || TenantContext.IsHost;
+        if (isRootAdmin)
         {
             var dbTenants = await DbContext.Tenants
                 .AsNoTracking()
                 .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Slug, t.Name))
+                .Select(t => new TenantFilterOption(
+                    t.Slug,
+                    t.Slug == IRootAdminService.DefaultTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
                 .ToListAsync();
 
             _availableTenants = dbTenants;
@@ -365,7 +370,7 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive)
+                .Where(t => t.IsActive && t.Id != IRootAdminService.DefaultTenantSlug)
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(t.Id, t.Name))
                 .ToList();

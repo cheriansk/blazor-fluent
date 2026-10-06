@@ -162,7 +162,7 @@ try
 
     var app = builder.Build();
 
-    // 10. Database Migration in Development (creates DataProtectionKeys and all entity tables)
+    // 10. Database Migration and Root Seeding in Development (creates tables and seeds root anchor)
     if (app.Environment.IsDevelopment())
     {
         try
@@ -172,10 +172,13 @@ try
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
             Log.Information("Database migrations applied successfully.");
+
+            Log.Information("Seeding default root tenant anchor and designated super-administrators...");
+            await BlazorFluent.Persistence.Initialization.InitialDatabaseSeeder.SeedAsync(app.Services);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Failed to apply database migrations on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
+            Log.Fatal(ex, "Failed to apply database migrations or seed initial data on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
             throw;
         }
     }

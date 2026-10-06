@@ -5,14 +5,16 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject ITenantService TenantService
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject IRootAdminService RootAdminService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
         <div>
             <FluentLabel Typo="Typography.H3">Tenant Directory</FluentLabel>
-            <FluentLabel Typo="Typography.Body">Host-level administration: manage tenant contracts, email domains, and user directories.</FluentLabel>
+            <FluentLabel Typo="Typography.Body">Manage tenant contracts, email domains, and user directories.</FluentLabel>
         </div>
-        @if (TenantContext.IsHost)
+        @if (IsRootAdmin)
         {
             <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@(() => { _showAddModal = true; _showConfirmCreate = false; })">
                 Add Tenant
@@ -20,20 +22,12 @@
         }
     </FluentStack>
 
-    @if (!TenantContext.IsHost)
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
     {
-        <FluentMessageBar Intent="MessageBarIntent.Error">
-            Access Denied. Tenant administration is restricted to host administrators.
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
         </FluentMessageBar>
     }
-    else
-    {
-        @if (!string.IsNullOrWhiteSpace(_statusMessage))
-        {
-            <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
-                @_statusMessage
-            </FluentMessageBar>
-        }
 
         @* Step 1: Provision New Tenant Form *@
         @if (_showAddModal && !_showConfirmCreate)
@@ -410,9 +404,19 @@
                     }
                 </TemplateColumn>
                 <TemplateColumn Title="Status" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.IsActive))">
-                    <FluentSwitch Value="@context.IsActive"
-                                  ValueChanged="@((bool val) => ToggleStatusAsync(context, val))"
-                                  Label="@(context.IsActive ? "Active" : "Inactive")" />
+                    @if (IsRootAdmin)
+                    {
+                        <FluentSwitch Value="@context.IsActive"
+                                      ValueChanged="@((bool val) => ToggleStatusAsync(context, val))"
+                                      Label="@(context.IsActive ? "Active" : "Inactive")" />
+                    }
+                    else
+                    {
+                        <FluentBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                                     Color="@(context.IsActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                            @(context.IsActive ? "Active" : "Inactive")
+                        </FluentBadge>
+                    }
                 </TemplateColumn>
                 <TemplateColumn Title="Start Date" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.StartDate))">
                     @context.StartDate.ToString("yyyy-MM-dd")
@@ -422,21 +426,24 @@
                 </TemplateColumn>
                 <TemplateColumn Title="Actions">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
-                        <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.People())" Title="Manage Users" OnClick="@(() => OpenUserManagement(context))">
-                            Users
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" Title="Edit Dates" OnClick="@(() => StartEdit(context))">
-                            Dates
-                        </FluentButton>
-                <EntityHistoryButton EntityName="TenantEntity" EntityId="@context.Id.ToString()" Tooltip="View tenant change history" />
+                        @if (IsRootAdmin)
+                        {
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.People())" Title="Manage Users" OnClick="@(() => OpenUserManagement(context))">
+                                Users
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" Title="Edit Dates" OnClick="@(() => StartEdit(context))">
+                                Dates
+                            </FluentButton>
+                        }
+                        <EntityHistoryButton EntityName="TenantEntity" EntityId="@context.Id.ToString()" Tooltip="View tenant change history" />
                     </FluentStack>
                 </TemplateColumn>
             </FluentDataGrid>
         }
-    }
 </FluentStack>
 
 @code {
+    private bool IsRootAdmin => RootAdminService.IsRootAdmin(CurrentUser.Email);
     private List<TenantEntity> _tenants = [];
     private bool _isLoading = true;
     private string? _statusMessage;
@@ -526,10 +533,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (TenantContext.IsHost)
-        {
-            await LoadTenantsAsync();
-        }
+        await LoadTenantsAsync();
     }
 
     private async Task LoadTenantsAsync()
@@ -678,6 +682,8 @@
 
     private async Task CreateTenantAsync()
     {
+        if (!IsRootAdmin) return;
+
         var result = await TenantService.CreateTenantAsync(
             _newSlug,
             _newCode,
@@ -719,6 +725,8 @@
 
     private async Task ToggleStatusAsync(TenantEntity tenant, bool isActive)
     {
+        if (!IsRootAdmin) return;
+
         var result = await TenantService.UpdateTenantStatusAsync(tenant.Id, isActive);
         if (result.Succeeded)
         {
@@ -735,6 +743,8 @@
 
     private void StartEdit(TenantEntity tenant)
     {
+        if (!IsRootAdmin) return;
+
         _editingTenant = tenant;
         _editStartDate = tenant.StartDate;
         _editEndDate = tenant.EndDate;
@@ -742,7 +752,7 @@
 
     private async Task SaveDatesAsync()
     {
-        if (_editingTenant is null) return;
+        if (!IsRootAdmin || _editingTenant is null) return;
 
         if (!_editStartDate.HasValue || !_editEndDate.HasValue)
         {
@@ -777,6 +787,8 @@
     // --- Tenant User Management ---
     private async Task OpenUserManagement(TenantEntity tenant)
     {
+        if (!IsRootAdmin) return;
+
         _managingUsersTenant = tenant;
         _showAddUserForm = false;
         _editingUser = null;
@@ -873,7 +885,7 @@
 
     private async Task CreateTenantUserAsync()
     {
-        if (_managingUsersTenant is null || !IsUserFormValid) return;
+        if (!IsRootAdmin || _managingUsersTenant is null || !IsUserFormValid) return;
 
         var result = await TenantService.AddTenantUserAsync(
             _managingUsersTenant.Slug,
@@ -967,7 +979,7 @@
 
     private async Task SaveEditUserAsync()
     {
-        if (_managingUsersTenant is null || _editingUser is null || !IsEditUserFormValid) return;
+        if (!IsRootAdmin || _managingUsersTenant is null || _editingUser is null || !IsEditUserFormValid) return;
 
         var result = await TenantService.UpdateTenantUserAsync(
             _managingUsersTenant.Slug,

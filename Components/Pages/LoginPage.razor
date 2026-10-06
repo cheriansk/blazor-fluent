@@ -17,6 +17,7 @@
 @inject IWebHostEnvironment HostEnvironment
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject IRootAdminService RootAdminService
 @inject IUserSessionService SessionService
 @inject IAuditService AuditService
 @inject ProtectedSessionStorage SessionStorage
@@ -95,11 +96,19 @@
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                         <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                       OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
-                            ✅ Sign in as SuperAdmin (Valid Active)
+                            👑 Sign in as Root Admin 1 (admin@blazorfluent.local)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("admin2@blazorfluent.local"))">
+                            👑 Sign in as Root Admin 2 (admin2@blazorfluent.local)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("admin3@blazorfluent.local"))">
+                            👑 Sign in as Root Admin 3 (admin3@blazorfluent.local)
                         </FluentButton>
                         <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                       OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
-                            ✅ Sign in as Developer (Valid Active)
+                            👤 Sign in as Standard Developer (dev@blazorfluent.local)
                         </FluentButton>
                         <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                       OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
@@ -187,35 +196,43 @@
                 return;
             }
 
-            // All gates passed: Resolve active tenant from database
-            var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
-            var tenantIdentifier = user.DefaultTenantId ?? "default";
+            // All gates passed: Resolve active tenant from database (Invisible Default Tenant Policy)
+            var isRootAdmin = RootAdminService.IsRootAdmin(user.Email);
+            var isHost = isRootAdmin;
 
-            var activeTenant = await DbContext.Tenants
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Slug == tenantIdentifier || t.Id.ToString() == tenantIdentifier || t.Code == tenantIdentifier);
+            List<TenantInfo> allowedTenants = [];
+            string resolvedTenantId = string.Empty;
+            string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
 
-            var resolvedTenantId = activeTenant?.Slug ?? tenantIdentifier;
-            var resolvedTenantName = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
-
-            List<TenantInfo> allowedTenants;
             if (isHost || user.UserType == UserType.CompanyUser)
             {
                 var dbTenants = await DbContext.Tenants
                     .AsNoTracking()
-                    .Where(t => t.IsActive)
+                    .Where(t => t.IsActive && t.Slug != "default")
                     .OrderBy(t => t.Name)
                     .ToListAsync();
 
                 allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
-                if (allowedTenants.Count == 0)
+
+                var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
+                if (defaultMatch is not null)
                 {
-                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, isHost)];
+                    resolvedTenantId = defaultMatch.Id;
+                    resolvedTenantName = defaultMatch.Name;
                 }
             }
             else
             {
-                allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+                var userTenant = await DbContext.Tenants
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Slug == user.DefaultTenantId && t.Slug != "default");
+
+                if (userTenant is not null)
+                {
+                    resolvedTenantId = userTenant.Slug;
+                    resolvedTenantName = userTenant.Name;
+                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+                }
             }
 
             TenantContext.Initialize(
@@ -254,6 +271,7 @@
                 if (isHost)
                 {
                     appUser.AddRole("Admin");
+                    appUser.AddRole("RootAdmin");
                 }
             }
 
