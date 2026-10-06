@@ -18,11 +18,13 @@
 
 <div class="tasks-page-header">
     <div class="tasks-page-header-left">
-        <FluentBreadcrumb>
-            <FluentBreadcrumbItem Href="/tenancy/projects">Projects</FluentBreadcrumbItem>
-            <FluentBreadcrumbItem>@(_currentProject?.Name ?? "Tasks")</FluentBreadcrumbItem>
-            <FluentBreadcrumbItem Current="true">Task Board</FluentBreadcrumbItem>
-        </FluentBreadcrumb>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4px">
+            <FluentLink Href="/tenancy/projects">Projects</FluentLink>
+            <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
+            <FluentLink>@(_currentProject?.Name ?? "Tasks")</FluentLink>
+            <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
+            <FluentLink >Task Board</FluentLink>
+        </FluentStack>
         <div class="tasks-header-title-row">
             <FluentLabel Typo="Typography.H3">@(_currentProject?.Name ?? "Project Tasks")</FluentLabel>
             @if (_currentProject is not null)

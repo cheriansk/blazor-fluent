@@ -9,6 +9,8 @@
     <NoWarn>$(NoWarn);EXTEXP0018</NoWarn>
 	  <UseRazorSourceGenerator Condition="'$(DesignTimeBuild)' == 'true'">true</UseRazorSourceGenerator>
 	  <WarningsAsErrors>CS0108</WarningsAsErrors>
+	  <!-- Force unrecognized Blazor components to break the build -->
+	  <WarningsAsErrors>$(WarningsAsErrors);RZ10012</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

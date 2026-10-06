@@ -3,14 +3,14 @@
 @using BlazorFluent.Core.DTOs
 @inject IAuditService AuditService
 
-<FluentDialogHeader ShowDismiss="true">
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="width: 100%;">
-        <FluentLabel Typo="Typography.H5">@(Content?.Title ?? "Entity Change History")</FluentLabel>
-    </FluentStack>
-</FluentDialogHeader>
-
 <FluentDialogBody Style="padding: 16px;">
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="width: 100%;">
+    <TitleTemplate>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="width: 100%;">
+            <FluentLabel Typo="Typography.H5">@(Content?.Title ?? "Entity Change History")</FluentLabel>
+        </FluentStack>
+    </TitleTemplate>
+    <ChildContent>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="width: 100%;">
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="width: 100%; align-items: center;">
             <FluentBadge Appearance="BadgeAppearance.Filled">
                 Target: <strong>@Content?.EntityName</strong> (@Content?.EntityId)
@@ -138,6 +138,7 @@
             <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseAsync">Close</FluentButton>
         </FluentStack>
     </FluentStack>
+    </ChildContent>
 </FluentDialogBody>
 
 @code {
