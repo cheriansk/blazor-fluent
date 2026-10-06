@@ -7,5 +7,8 @@ namespace BlazorFluent.Jobs.Jobs.Tasks;
 /// </summary>
 public record DailyTaskSummaryJobEvent(
     string TriggerSource = "Cron",
-    string? SpecificTenantId = null
-) : BaseJobEvent("DailyTaskSummaryJob", SpecificTenantId ?? "SYSTEM");
+    string? SpecificTenantId = null,
+    string? SenderOrigin = null,
+    string? SenderUserId = null,
+    string? SenderUserEmail = null
+) : BaseJobEvent("DailyTaskSummaryJob", SpecificTenantId ?? "system", senderOrigin: SenderOrigin, senderUserId: SenderUserId, senderUserEmail: SenderUserEmail);

@@ -59,4 +59,74 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
 
     /// <summary>Consumer executions recorded for this event.</summary>
     public ICollection<EventConsumptionTrackerEntity> Consumptions { get; set; } = new List<EventConsumptionTrackerEntity>();
+
+    /// <summary>
+    /// Computes who or what sent the event:
+    /// - If sent by user interaction: strictly points to that user (Email or UserId).
+    /// - If sent by batch or background daemon: uses the daemon user running the batch.
+    /// </summary>
+    public string GetEffectiveSender()
+    {
+        if (!string.IsNullOrWhiteSpace(UserEmail) &&
+            !UserEmail.Equals("system@daemon.local", StringComparison.OrdinalIgnoreCase) &&
+            !UserEmail.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase))
+        {
+            return UserEmail;
+        }
+
+        if (!string.IsNullOrWhiteSpace(UserId) &&
+            !UserId.Equals("system", StringComparison.OrdinalIgnoreCase) &&
+            !UserId.StartsWith("ChannelJob:", StringComparison.OrdinalIgnoreCase) &&
+            !UserId.StartsWith("SystemDaemon", StringComparison.OrdinalIgnoreCase))
+        {
+            return UserId;
+        }
+
+        var batchName = !string.IsNullOrWhiteSpace(EventName)
+            ? EventName.Replace("Event", string.Empty)
+            : (!string.IsNullOrWhiteSpace(SourceClass) && SourceClass != "ChannelJobEventQueue" ? SourceClass : "BatchWorker");
+
+        return $"SystemDaemon ({batchName})";
+    }
+
+    /// <summary>
+    /// Computes the sender origin:
+    /// - If batch: the batch name (e.g. CatalogSyncJob)
+    /// - If button on razor page: the button name (e.g. Button:RunCatalogSyncJob)
+    /// - If class function: the functionName (e.g. ImportFileService.UploadBatchAsync)
+    /// </summary>
+    public string GetEffectiveSenderOrigin()
+    {
+        if (!string.IsNullOrWhiteSpace(TriggerSource) &&
+            (TriggerSource.StartsWith("Button:", StringComparison.OrdinalIgnoreCase) ||
+             TriggerSource.StartsWith("Batch:", StringComparison.OrdinalIgnoreCase) ||
+             TriggerSource.Contains(".")))
+        {
+            return TriggerSource;
+        }
+
+        if (string.Equals(TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TriggerSource, "System", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(SourceClass, "ChannelJobEventQueue", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(SourceClass, "PeriodicBatchScheduler", StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(EventName) ? EventName.Replace("Event", string.Empty) : "BatchJob";
+        }
+
+        if (SourceClass.EndsWith("Page", StringComparison.OrdinalIgnoreCase) ||
+            SourceClass.EndsWith("Comp", StringComparison.OrdinalIgnoreCase) ||
+            SourceClass.EndsWith("Tab", StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(SourceMethod) ? $"Button:{SourceMethod.Replace("Async", string.Empty)}" : SourceClass;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SourceMethod))
+        {
+            return !string.IsNullOrWhiteSpace(SourceClass) && SourceClass != "ChannelJobEventQueue"
+                ? $"{SourceClass}.{SourceMethod}"
+                : SourceMethod;
+        }
+
+        return !string.IsNullOrWhiteSpace(EventName) ? EventName.Replace("Event", string.Empty) : "UnknownOrigin";
+    }
 }

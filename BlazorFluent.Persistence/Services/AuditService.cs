@@ -149,7 +149,18 @@ public class AuditService : IAuditService
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(filter.TenantId))
+        {
             query = query.Where(a => a.TenantId == filter.TenantId);
+        }
+        else if (filter.AllowedTenantIds != null && filter.AllowedTenantIds.Count > 0)
+        {
+            query = query.Where(a => filter.AllowedTenantIds.Contains(a.TenantId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.UserId))
+        {
+            query = query.Where(a => a.UserId == filter.UserId || a.UserEmail == filter.UserId);
+        }
 
         if (filter.EventType.HasValue)
             query = query.Where(a => a.EventType == filter.EventType.Value);

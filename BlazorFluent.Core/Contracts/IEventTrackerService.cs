@@ -23,6 +23,9 @@ public interface IEventTrackerService
         string? sourceClass = null,
         [CallerMemberName] string sourceMethod = "",
         [CallerFilePath] string sourceFilePath = "",
+        string? senderOrigin = null,
+        string? senderUserId = null,
+        string? senderUserEmail = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

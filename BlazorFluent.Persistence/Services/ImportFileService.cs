@@ -147,7 +147,10 @@ public class ImportFileService : IImportFileService
             var batchEvent = new FileImportBatchJobEvent(
                 ImportId: importId,
                 ProjectId: request.ProjectId,
-                TenantId: tenantId);
+                TenantId: tenantId,
+                SenderOrigin: "ImportFileService.UploadBatchAsync",
+                SenderUserId: _currentUser.UserId,
+                SenderUserEmail: _currentUser.Email);
 
             await _eventPublisher.PublishAsync(batchEvent, ct);
 

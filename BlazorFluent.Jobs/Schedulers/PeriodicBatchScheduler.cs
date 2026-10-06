@@ -106,7 +106,11 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "CatalogSyncJob",
                 parsedCatalog,
-                () => new CatalogSyncJobEvent(TriggerSource: "Cron")));
+                () => new CatalogSyncJobEvent(
+                    TriggerSource: "Cron",
+                    SenderOrigin: "CatalogSyncJob",
+                    SenderUserId: "SystemDaemon (CatalogSyncJob)",
+                    SenderUserEmail: "SystemDaemon (CatalogSyncJob)")));
         }
 
         var auditPurgeCron = _configuration["Jobs:Schedules:AuditPurgeJob"] ?? "0 2 * * *";
@@ -116,7 +120,12 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "AuditPurgeJob",
                 parsedPurge,
-                () => new AuditPurgeJobEvent(TriggerSource: "Cron", RetentionDays: retentionDays)));
+                () => new AuditPurgeJobEvent(
+                    TriggerSource: "Cron",
+                    RetentionDays: retentionDays,
+                    SenderOrigin: "AuditPurgeJob",
+                    SenderUserId: "SystemDaemon (AuditPurgeJob)",
+                    SenderUserEmail: "SystemDaemon (AuditPurgeJob)")));
         }
 
         var dailyTaskCron = _configuration["Jobs:Schedules:DailyTaskSummaryJob"] ?? "0 18 * * *";
@@ -125,7 +134,11 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "DailyTaskSummaryJob",
                 parsedTaskCron,
-                () => new DailyTaskSummaryJobEvent(TriggerSource: "Cron")));
+                () => new DailyTaskSummaryJobEvent(
+                    TriggerSource: "Cron",
+                    SenderOrigin: "DailyTaskSummaryJob",
+                    SenderUserId: "SystemDaemon (DailyTaskSummaryJob)",
+                    SenderUserEmail: "SystemDaemon (DailyTaskSummaryJob)")));
         }
 
         return entries;

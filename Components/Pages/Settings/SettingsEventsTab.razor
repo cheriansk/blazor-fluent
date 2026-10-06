@@ -17,7 +17,7 @@
         <div>
             <FluentLabel Typo="Typography.H4">Event Tracker &amp; Audit Ledger</FluentLabel>
             <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
-                Trace event publication and execution: inspect sender origins, user IDs, JSON payloads, and per-consumer telemetry.
+                Trace event publication and execution: inspect sender origins, senders, JSON payloads, and per-consumer telemetry.
             </FluentLabel>
         </div>
         @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
@@ -99,7 +99,7 @@
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                 <FluentLabel Typo="Typography.H6">Search &amp; Filters</FluentLabel>
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true" Style="align-items: flex-end;">
-                    <FluentTextInput Label="Search (Event, Origin, User, Payload)" @bind-Value="_filter.SearchTerm" Placeholder="Search..." Style="min-width: 240px;" />
+                    <FluentTextInput Label="Search (Event, Origin, Sender, Payload)" @bind-Value="_filter.SearchTerm" Placeholder="Search..." Style="min-width: 240px;" />
 
                     <div>
                         <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
@@ -141,15 +141,14 @@
                 <FluentGrid Spacing="2">
                     <FluentGridItem xs="12" sm="6">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                            <div><b>Trigger Origin:</b> <code>@_selectedEvent.SourceClass.@_selectedEvent.SourceMethod</code></div>
-                            <div><b>File Source:</b> @_selectedEvent.SourceFilePath</div>
+                            <div><b>Trigger Origin:</b> <code>@_selectedEvent.GetEffectiveSenderOrigin()</code></div>
                             <div><b>Correlation ID:</b> @(_selectedEvent.CorrelationId ?? "—")</div>
+                            <div><b>Tenant:</b> @_selectedEvent.TenantId</div>
                         </FluentStack>
                     </FluentGridItem>
                     <FluentGridItem xs="12" sm="6">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                            <div><b>Publisher User:</b> @(_selectedEvent.UserEmail ?? _selectedEvent.UserId ?? "System")</div>
-                            <div><b>Tenant:</b> @_selectedEvent.TenantId</div>
+                            <div><b>Published by:</b> @_selectedEvent.GetEffectiveSender()</div>
                             <div>
                                 <b>Status:</b>
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(_selectedEvent.Status)">
@@ -267,12 +266,16 @@
                     <TemplateColumn Title="Event Name" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.EventName))">
                         <b>@context.EventName</b>
                     </TemplateColumn>
-                    <TemplateColumn Title="Sender Origin" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.SourceClass))">
-                        <span title="@($"{context.SourceClass}.{context.SourceMethod}")">
-                            <code>@context.SourceClass.@context.SourceMethod</code>
+                    <TemplateColumn Title="Sender Origin" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.GetEffectiveSenderOrigin()))">
+                        <span title="@context.GetEffectiveSenderOrigin()">
+                            <code>@context.GetEffectiveSenderOrigin()</code>
                         </span>
                     </TemplateColumn>
-                    <PropertyColumn Property="@(e => e.UserEmail ?? e.UserId)" Title="User" Sortable="true" />
+                    <TemplateColumn Title="Sender" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.GetEffectiveSender()))">
+                        <span title="@context.GetEffectiveSender()">
+                            @context.GetEffectiveSender()
+                        </span>
+                    </TemplateColumn>
                     <TemplateColumn Title="Status" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.Status))">
                         @if (context.Status == EventTrackerStatus.Completed)
                         {
@@ -431,6 +434,8 @@
                 var term = _inGridSearchText.Trim();
                 query = query.Where(e =>
                     e.EventName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    e.GetEffectiveSenderOrigin().Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    e.GetEffectiveSender().Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     e.SourceClass.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     e.SourceMethod.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     (e.UserEmail != null && e.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||

@@ -6,6 +6,7 @@
 @using BlazorFluent.Jobs.Jobs.Catalog
 @inject IJobEventQueue JobQueue
 @inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
 
 <PageTitle>Catalog &amp; Batch Jobs - SAMPLE PAGE ONLY</PageTitle>
 
@@ -85,9 +86,12 @@
         statusMessage = null;
 
         var jobEvent = new CatalogSyncJobEvent(
-            TriggerSource: "UserAction:CatalogDashboard",
+            TriggerSource: "Button:TriggerManualBatchJob",
             TenantId: TenantContext.TenantId,
-            BatchSize: 250);
+            BatchSize: 250,
+            SenderOrigin: "Button:TriggerManualBatchJob",
+            SenderUserId: CurrentUser.UserId,
+            SenderUserEmail: CurrentUser.Email);
 
         await JobQueue.EnqueueAsync(jobEvent);
 

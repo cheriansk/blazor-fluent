@@ -2,6 +2,8 @@ using System.Threading.Channels;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
+using BlazorFluent.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -46,7 +48,7 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                 var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
                 if (tenantContext != null)
                 {
-                    var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) ? jobEvent.TenantId : "system";
+                    var targetTenantId = jobEvent.TenantId;
                     tenantContext.Initialize(
                         tenantId: targetTenantId,
                         tenantName: targetTenantId == "system" ? "System Daemon" : null,
@@ -65,13 +67,20 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                 var eventTracker = scope.ServiceProvider.GetService<IEventTrackerService>();
                 if (eventTracker != null)
                 {
+                    var effectiveUserId = jobEvent.SenderUserId;
+                    var effectiveUserEmail = jobEvent.SenderUserEmail;
+                    var effectiveOrigin = jobEvent.SenderOrigin;
+
                     await eventTracker.TrackPublishAsync(
                         jobEvent,
                         eventId: jobEvent.EventId,
                         correlationId: jobEvent.CorrelationId,
-                        triggerSource: jobEvent.TriggerSource,
-                        sourceClass: nameof(ChannelJobEventQueue),
+                        triggerSource: effectiveOrigin,
+                        sourceClass: effectiveOrigin,
                         sourceMethod: nameof(EnqueueAsync),
+                        senderOrigin: effectiveOrigin,
+                        senderUserId: effectiveUserId,
+                        senderUserEmail: effectiveUserEmail,
                         cancellationToken: cancellationToken);
                 }
             }

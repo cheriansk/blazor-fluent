@@ -11,5 +11,8 @@ public record CatalogSyncJobEvent(
     string? TenantId = null,
     int BatchSize = 100,
     string? CorrelationId = null,
-    Guid? ParentExecutionId = null) : BaseJobEvent(TriggerSource, TenantId, CorrelationId, ParentExecutionId);
+    Guid? ParentExecutionId = null,
+    string? SenderOrigin = null,
+    string? SenderUserId = null,
+    string? SenderUserEmail = null) : BaseJobEvent(TriggerSource, TenantId, CorrelationId, ParentExecutionId, SenderOrigin, SenderUserId, SenderUserEmail);
 

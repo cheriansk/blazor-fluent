@@ -50,6 +50,18 @@
             }
         </FluentTab>
 
+        @if (CanViewAuditTrail)
+        {
+            <FluentTab Id="auditing" Header="Audit Trail" IconStart="@(new Icons.Regular.Size20.DocumentBulletList())">
+                @if (_visitedTabs.Contains("auditing"))
+                {
+                    <div style="padding-top: 16px;">
+                        <SettingsAuditTab />
+                    </div>
+                }
+            </FluentTab>
+        }
+
         @if (CurrentUser.IsRootAdmin)
         {
             <FluentTab Id="sessions" Header="Sessions" IconStart="@(new Icons.Regular.Size20.Laptop())">
@@ -81,8 +93,18 @@
             _activeTabId = "tenants";
         }
 
+        if (_activeTabId.Equals("auditing", StringComparison.OrdinalIgnoreCase) && !CanViewAuditTrail)
+        {
+            _activeTabId = "tenants";
+        }
+
         _visitedTabs.Add(_activeTabId);
     }
+
+    private bool CanViewAuditTrail =>
+        CurrentUser.IsRootAdmin ||
+        CurrentUser.IsInRole("Admin") ||
+        CurrentUser.IsInRole("CompanyAdmin");
 
     private void OnTabChanged()
     {

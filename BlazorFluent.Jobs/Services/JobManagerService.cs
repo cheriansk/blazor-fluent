@@ -19,6 +19,7 @@ public class JobManagerService : IJobManagerService
     private readonly IJobEventQueue _queue;
     private readonly IAuditService _auditService;
     private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUser _currentUser;
     private readonly ILogger<JobManagerService> _logger;
 
     public JobManagerService(
@@ -26,12 +27,14 @@ public class JobManagerService : IJobManagerService
         IJobEventQueue queue,
         IAuditService auditService,
         ITenantContext tenantContext,
+        ICurrentUser currentUser,
         ILogger<JobManagerService> logger)
     {
         _dbContext = dbContext;
         _queue = queue;
         _auditService = auditService;
         _tenantContext = tenantContext;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -61,13 +64,20 @@ public class JobManagerService : IJobManagerService
 
         _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
 
+        var senderOrigin = $"Button:Run{jobName}";
+        var senderUserId = _currentUser.UserId;
+        var senderUserEmail = _currentUser.Email;
+
         // Map known job names to their respective typed event triggers
         if (jobName.Equals("CatalogSyncJob", StringComparison.OrdinalIgnoreCase) ||
             jobName.Equals("CatalogSyncJobEvent", StringComparison.OrdinalIgnoreCase))
         {
             var jobEvent = new CatalogSyncJobEvent(
-                TriggerSource: "Manual",
-                TenantId: targetTenantId);
+                TriggerSource: senderOrigin,
+                TenantId: targetTenantId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: senderUserId,
+                SenderUserEmail: senderUserEmail);
 
             await _queue.EnqueueAsync(jobEvent, cancellationToken);
         }
@@ -75,8 +85,11 @@ public class JobManagerService : IJobManagerService
         {
             // Generic catalog sync fallback for demo purposes
             var jobEvent = new CatalogSyncJobEvent(
-                TriggerSource: "Manual",
-                TenantId: targetTenantId);
+                TriggerSource: senderOrigin,
+                TenantId: targetTenantId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: senderUserId,
+                SenderUserEmail: senderUserEmail);
 
             await _queue.EnqueueAsync(jobEvent, cancellationToken);
         }
@@ -101,11 +114,15 @@ public class JobManagerService : IJobManagerService
         _logger.LogInformation("Initiating manual retry for job {JobName} (Previous Execution: {ExecutionId})",
             execution.JobName, executionId);
 
+        var senderOrigin = $"Button:Retry{execution.JobName}";
         var retryEvent = new CatalogSyncJobEvent(
-            TriggerSource: "Manual Retry",
+            TriggerSource: senderOrigin,
             TenantId: execution.TenantId,
             CorrelationId: execution.CorrelationId,
-            ParentExecutionId: execution.Id);
+            ParentExecutionId: execution.Id,
+            SenderOrigin: senderOrigin,
+            SenderUserId: _currentUser.UserId,
+            SenderUserEmail: _currentUser.Email);
 
         await _queue.EnqueueAsync(retryEvent, cancellationToken);
 

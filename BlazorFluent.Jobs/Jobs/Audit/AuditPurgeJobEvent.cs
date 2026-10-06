@@ -9,4 +9,7 @@ namespace BlazorFluent.Jobs.Jobs.Audit;
 /// </summary>
 public record AuditPurgeJobEvent(
     string TriggerSource,
-    int RetentionDays = 365) : BaseJobEvent(TriggerSource, TenantId: null);
+    int RetentionDays = 365,
+    string? SenderOrigin = null,
+    string? SenderUserId = null,
+    string? SenderUserEmail = null) : BaseJobEvent(TriggerSource, tenantId: "system", senderOrigin: SenderOrigin, senderUserId: SenderUserId, senderUserEmail: SenderUserEmail);
