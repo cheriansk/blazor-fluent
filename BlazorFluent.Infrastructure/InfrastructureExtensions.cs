@@ -56,6 +56,9 @@ public static class InfrastructureExtensions
         // 11. Tenant Blob Storage Service (Azure Blob Storage with local filesystem fallback)
         services.TryAddSingleton<ITenantBlobStorageService, AzureAndLocalBlobStorageService>();
 
+        // 12. Settings In-Memory Navigation State
+        services.TryAddScoped<ISettingsNavigationState, SettingsNavigationState>();
+
         return services;
     }
 }

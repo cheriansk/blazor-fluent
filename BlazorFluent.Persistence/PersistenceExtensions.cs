@@ -43,8 +43,8 @@ public static class PersistenceExtensions
                 "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.json.");
         }
 
-        // 6. Register AppDbContext with Npgsql, validation, audit & security interceptors, and DataProtection support
-        services.AddDbContext<AppDbContext>((sp, options) =>
+        // 6. Register AppDbContext and IDbContextFactory with Npgsql, validation, audit & security interceptors, and DataProtection support
+        Action<IServiceProvider, DbContextOptionsBuilder> configureDbContext = (sp, options) =>
         {
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             var connectionInterceptor = sp.GetRequiredService<TenantDbConnectionInterceptor>();
@@ -58,7 +58,10 @@ public static class PersistenceExtensions
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
             })
             .AddInterceptors(connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard);
-        });
+        };
+
+        services.AddDbContext<AppDbContext>(configureDbContext);
+        services.AddDbContextFactory<AppDbContext>(configureDbContext, ServiceLifetime.Scoped);
 
         // 7. Auto-scaling Azure Web Apps: Shared Data Protection Key Ring in PostgreSQL
         services.AddDataProtection()

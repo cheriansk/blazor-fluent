@@ -1,0 +1,338 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Identity
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IUserSessionService SessionService
+@inject ICircuitSessionTracker CircuitTracker
+@inject ICurrentUser CurrentUser
+@inject ITenantContext TenantContext
+@inject IAuditService AuditService
+@inject ILogger<SettingsSessionsTab> Logger
+
+<div>
+    @* Header *@
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 24px;">
+        <div>
+            <FluentLabel Typo="Typography.H3" Style="font-weight: 700; margin: 0;">Active User Sessions</FluentLabel>
+            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
+                Real-time tracking of active circuits, device fingerprints, and immediate administrative session revocation.
+            </FluentLabel>
+        </div>
+
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+            <FluentButton Appearance="ButtonAppearance.Outline"
+                          IconStart="@(new Icons.Regular.Size16.Broom())"
+                          OnClick="RevokeAllStaleAsync"
+                          Title="Revoke all sessions inactive for more than 30 minutes">
+                Revoke Stale (>30m)
+            </FluentButton>
+            <FluentButton Appearance="ButtonAppearance.Outline"
+                          IconStart="@(new Icons.Regular.Size16.ArrowClockwise())"
+                          OnClick="LoadSessionsAsync">
+                Refresh
+            </FluentButton>
+        </FluentStack>
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" Style="margin-bottom: 16px;">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    @* Sessions Grid *@
+    <FluentCard Style="padding: 20px;">
+        @if (_isLoading)
+        {
+            <div style="display: flex; justify-content: center; padding: 48px;">
+                <FluentProgressRing Size="SpinnerSize.Large" />
+            </div>
+        }
+        else if (_sessions.Count == 0)
+        {
+            <div style="text-align: center; padding: 48px; color: var(--neutral-foreground-3, #8a8886);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.ShieldCheckmark())" Color="Color.Neutral" />
+                <div style="margin-top: 12px; font-weight: 500;">No sessions found.</div>
+            </div>
+        }
+        else
+        {
+            @* Filter Pills & Search *@
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="align-items: center;">
+                    <FluentButton Size="ButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.ActiveAndIdle ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.ActiveAndIdle))">
+                        Active &amp; Idle (@ActiveAndIdleCount)
+                    </FluentButton>
+                    <FluentButton Size="ButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.OnlineOnly ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.OnlineOnly))">
+                        Online (@OnlineCount)
+                    </FluentButton>
+                    <FluentButton Size="ButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.IdleOnly ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.IdleOnly))">
+                        Idle (@IdleCount)
+                    </FluentButton>
+                    <FluentButton Size="ButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.TerminatedOnly ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.TerminatedOnly))">
+                        Terminated / Revoked (@TerminatedCount)
+                    </FluentButton>
+                    <FluentButton Size="ButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.All ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.All))">
+                        All (@_sessions.Count)
+                    </FluentButton>
+                </FluentStack>
+
+                <FluentTextInput Placeholder="Filter sessions by user, tenant, IP, or device..."
+                              @bind-Value="_sessionSearchText"
+                              @bind-Value:after="StateHasChanged"
+                              Style="width: 320px;" >
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+            </FluentStack>
+
+            <FluentDataGrid Items="@FilteredSessions" ResizableColumns="true" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
+                <TemplateColumn Title="User" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.UserEmail))">
+                    <div>
+                        <strong>@context.UserEmail</strong>
+                        <div style="font-size: 11px; color: var(--neutral-foreground-3, #888);">@context.UserId</div>
+                    </div>
+                </TemplateColumn>
+
+                <PropertyColumn Property="@(s => s.TenantId)" Title="Tenant" Sortable="true" />
+                <PropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" Sortable="true" />
+                <PropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" Sortable="true" />
+
+                <TemplateColumn Title="Started" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.StartedAtUtc))">
+                    <span title="@context.StartedAtUtc.ToString("u")">@GetRelativeTime(context.StartedAtUtc)</span>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Last Activity" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.LastActivityAtUtc))">
+                    <span title="@context.LastActivityAtUtc.ToString("u")">@GetRelativeTime(context.LastActivityAtUtc)</span>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Status">
+                    @{
+                        var status = GetSessionStatus(context);
+                    }
+                    @switch (status)
+                    {
+                        case "Online":
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">
+                                Online
+                            </FluentBadge>
+                            break;
+                        case "Idle":
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">
+                                Idle
+                            </FluentBadge>
+                            break;
+                        case "Disconnected":
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Subtle">
+                                Disconnected
+                            </FluentBadge>
+                            break;
+                        default:
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">
+                                @status
+                            </FluentBadge>
+                            break;
+                    }
+                </TemplateColumn>
+
+                <TemplateColumn Title="Action">
+                    @{
+                        var isTerminated = context.IsRevoked || (DateTime.UtcNow - context.LastActivityAtUtc > TimeSpan.FromMinutes(30));
+                    }
+                    @if (!isTerminated)
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                      Size="ButtonSize.Small"
+                                      Style="color: #d83b01; font-weight: 600;"
+                                      OnClick="@(() => RevokeSessionAsync(context.Id, context.UserEmail))">
+                            Revoke
+                        </FluentButton>
+                    }
+                    else
+                    {
+                        <span style="font-size: 12px; color: var(--neutral-foreground-3, #999);">Terminated</span>
+                    }
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentCard>
+</div>
+
+@code {
+    private enum SessionStatusFilter
+    {
+        ActiveAndIdle,
+        OnlineOnly,
+        IdleOnly,
+        TerminatedOnly,
+        All
+    }
+
+    private SessionStatusFilter _currentFilter = SessionStatusFilter.ActiveAndIdle;
+    private bool _isLoading = true;
+    private bool _isError;
+    private string? _statusMessage;
+    private List<UserSessionEntity> _sessions = new();
+    private string _sessionSearchText = string.Empty;
+
+    private int ActiveAndIdleCount => _sessions.Count(s => !IsTerminated(s));
+    private int OnlineCount => _sessions.Count(s => GetSessionStatus(s) == "Online");
+    private int IdleCount => _sessions.Count(s => GetSessionStatus(s) == "Idle");
+    private int TerminatedCount => _sessions.Count(s => IsTerminated(s));
+
+    private bool IsTerminated(UserSessionEntity s) =>
+        s.IsRevoked || (DateTime.UtcNow - s.LastActivityAtUtc > TimeSpan.FromMinutes(30));
+
+    private string GetSessionStatus(UserSessionEntity session)
+    {
+        if (session.IsRevoked) return "Revoked";
+
+        var idleDuration = DateTime.UtcNow - session.LastActivityAtUtc;
+        if (idleDuration > TimeSpan.FromMinutes(30)) return "Expired";
+
+        var isConnected = CircuitTracker.IsSessionConnected(session.Id);
+        if (isConnected && idleDuration <= TimeSpan.FromMinutes(15)) return "Online";
+        if (isConnected && idleDuration > TimeSpan.FromMinutes(15)) return "Idle";
+        if (!isConnected && idleDuration <= TimeSpan.FromMinutes(30)) return "Idle";
+
+        return "Disconnected";
+    }
+
+    private IQueryable<UserSessionEntity> FilteredSessions
+    {
+        get
+        {
+            var query = _sessions.AsQueryable();
+
+            query = _currentFilter switch
+            {
+                SessionStatusFilter.ActiveAndIdle => query.Where(s => !IsTerminated(s)),
+                SessionStatusFilter.OnlineOnly => query.Where(s => GetSessionStatus(s) == "Online"),
+                SessionStatusFilter.IdleOnly => query.Where(s => GetSessionStatus(s) == "Idle"),
+                SessionStatusFilter.TerminatedOnly => query.Where(s => IsTerminated(s)),
+                _ => query
+            };
+
+            if (!string.IsNullOrWhiteSpace(_sessionSearchText))
+            {
+                var term = _sessionSearchText.Trim();
+                query = query.Where(s =>
+                    (s.UserEmail != null && s.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.UserId != null && s.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.TenantId != null && s.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.IpAddress != null && s.IpAddress.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.UserAgent != null && s.UserAgent.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            return query;
+        }
+    }
+
+    private void SetFilter(SessionStatusFilter filter)
+    {
+        _currentFilter = filter;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSessionsAsync();
+    }
+
+    private async Task LoadSessionsAsync()
+    {
+        _isLoading = true;
+        _statusMessage = null;
+
+        try
+        {
+            var sessions = await SessionService.GetActiveSessionsAsync(includeTerminated: true);
+            _sessions = sessions.ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load active user sessions");
+            _statusMessage = "Failed to load sessions.";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task RevokeAllStaleAsync()
+    {
+        var adminId = CurrentUser.Email ?? CurrentUser.UserId ?? "admin";
+        try
+        {
+            var count = await SessionService.RevokeStaleSessionsAsync(TimeSpan.FromMinutes(30), adminId);
+            if (count > 0)
+            {
+                await AuditService.LogSecurityEventAsync(
+                    "StaleSessionsRevoked",
+                    AuditSeverity.Warning,
+                    $"Admin '{adminId}' revoked {count} stale session(s) older than 30 minutes.");
+
+                _statusMessage = $"Successfully cleaned up {count} stale session(s).";
+                _isError = false;
+            }
+            else
+            {
+                _statusMessage = "No stale sessions (>30m inactive) found to revoke.";
+                _isError = false;
+            }
+
+            await LoadSessionsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error revoking stale sessions");
+            _statusMessage = "Failed to revoke stale sessions.";
+            _isError = true;
+        }
+    }
+
+    private async Task RevokeSessionAsync(Guid sessionId, string userEmail)
+    {
+        var adminId = CurrentUser.UserId ?? "admin";
+        var success = await SessionService.RevokeSessionAsync(sessionId, adminId);
+        if (success)
+        {
+            await AuditService.LogSecurityEventAsync(
+                "SessionRevokedByAdmin",
+                AuditSeverity.Warning,
+                $"Admin '{CurrentUser.Email}' revoked active session '{sessionId}' for user '{userEmail}'.");
+
+            _statusMessage = $"Successfully revoked session for '{userEmail}'. Real-time invalidation broadcast.";
+            _isError = false;
+            await LoadSessionsAsync();
+        }
+        else
+        {
+            _statusMessage = "Could not revoke session.";
+            _isError = true;
+        }
+    }
+
+    private static string GetRelativeTime(DateTime dt)
+    {
+        var span = DateTime.UtcNow - dt.ToUniversalTime();
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return dt.ToString("MMM dd HH:mm");
+    }
+}

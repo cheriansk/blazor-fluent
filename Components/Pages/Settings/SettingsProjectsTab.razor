@@ -1,0 +1,226 @@
+@using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject AppDbContext DbContext
+@inject ITenantContext TenantContext
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <div>
+        <FluentLabel Typo="Typography.H4">Project Workspaces</FluentLabel>
+        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+            Select an authorized tenant to view and manage associated project workspaces and work items.
+        </FluentLabel>
+    </div>
+
+    <!-- Tenant Filter Toolbar -->
+    <FluentCard Style="padding: 16px;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <FluentSelect TOption="TenantFilterOption"
+                          TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelected"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant to view projects --"
+                          Style="min-width: 300px;" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+            {
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                              OnClick="@ClearTenantFilter">
+                    Clear Filter
+                </FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+                              OnClick="@LoadProjectsForTenantAsync">
+                    Refresh
+                </FluentButton>
+            }
+        </FluentStack>
+    </FluentCard>
+
+    @if (string.IsNullOrWhiteSpace(_selectedTenantId))
+    {
+        <!-- Empty State Prompt -->
+        <FluentMessageBar Intent="MessageBarIntent.Info" Style="padding: 16px;">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                <FluentIcon Value="@(new Icons.Regular.Size24.BuildingMultiple())" />
+                <div>
+                    <strong>No Tenant Selected:</strong> Please choose a tenant from the dropdown above to display its active projects.
+                </div>
+            </FluentStack>
+        </FluentMessageBar>
+    }
+    else
+    {
+        <!-- Projects Data Grid -->
+        <FluentCard Style="padding: 20px;">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+                <div>
+                    <FluentLabel Typo="Typography.H5">Projects for &ldquo;@_selectedTenantName&rdquo;</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                        Found @_projects.Count project(s) scoped to tenant <code>@_selectedTenantId</code>.
+                    </FluentLabel>
+                </div>
+                <FluentTextInput Placeholder="Filter projects by name or description..."
+                                 @bind-Value="_projectSearchText"
+                                 @bind-Value:after="StateHasChanged"
+                                 Style="width: 280px;">
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+            </FluentStack>
+
+            @if (_isLoading)
+            {
+                <div style="display: flex; justify-content: center; padding: 40px;">
+                    <FluentProgressRing Size="SpinnerSize.Medium" />
+                </div>
+            }
+            else if (_projects.Count == 0)
+            {
+                <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Folder())" Color="Color.Neutral" />
+                    <div style="margin-top: 10px; font-weight: 500;">No projects found for this tenant.</div>
+                </div>
+            }
+            else
+            {
+                <FluentDataGrid Items="@FilteredProjects" ResizableColumns="true" GridTemplateColumns="1fr 2fr 120px 200px">
+                    <PropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+                    <PropertyColumn Property="@(p => p.Description)" Title="Description" Sortable="true" />
+                    <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.IsActive))">
+                        @if (context.IsActive)
+                        {
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                        }
+                        else
+                        {
+                            <FluentBadge Appearance="BadgeAppearance.Tint">Inactive</FluentBadge>
+                        }
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                            <FluentAnchor Appearance="Appearance.Lightweight" Href="@($"/projects/{context.Id}/tasks")">
+                                View Tasks
+                            </FluentAnchor>
+                            <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
+                        </FluentStack>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            }
+        </FluentCard>
+
+        <!-- Architecture Callout -->
+        <FluentCard Style="padding: 16px; background-color: var(--neutral-layer-2);">
+            <FluentLabel Typo="Typography.Subject" Style="font-weight: 600; margin-bottom: 6px;">Multi-Tenant Workspace Isolation</FluentLabel>
+            <div style="font-size: 13px; color: var(--neutral-foreground-hint); line-height: 1.6;">
+                Projects are securely partitioned per-tenant. When non-host users interact with tasks, file batch imports, and project boards, EF Core automatically enforces tenant-scoped query filters.
+            </div>
+        </FluentCard>
+    }
+</FluentStack>
+
+@code {
+    public record TenantFilterOption(string Id, string Name);
+
+    private List<TenantFilterOption> _availableTenants = new();
+    private string? _selectedTenantId;
+    private string _selectedTenantName = string.Empty;
+    private List<ProjectEntity> _projects = new();
+    private string _projectSearchText = string.Empty;
+    private bool _isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvailableTenantsAsync();
+    }
+
+    private async Task LoadAvailableTenantsAsync()
+    {
+        if (TenantContext.IsHost)
+        {
+            var dbTenants = await DbContext.Tenants
+                .AsNoTracking()
+                .Where(t => t.IsActive)
+                .OrderBy(t => t.Name)
+                .Select(t => new TenantFilterOption(t.Slug, t.Name))
+                .ToListAsync();
+
+            _availableTenants = dbTenants;
+        }
+        else
+        {
+            _availableTenants = TenantContext.AllowedTenants
+                .Where(t => t.IsActive)
+                .OrderBy(t => t.Name)
+                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .ToList();
+        }
+    }
+
+    private async Task OnTenantSelected(string? tenantId)
+    {
+        _selectedTenantId = tenantId;
+        _selectedTenantName = _availableTenants.FirstOrDefault(t => t.Id == tenantId)?.Name ?? tenantId ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+        {
+            await LoadProjectsForTenantAsync();
+        }
+        else
+        {
+            _projects.Clear();
+        }
+    }
+
+    private void ClearTenantFilter()
+    {
+        _selectedTenantId = null;
+        _selectedTenantName = string.Empty;
+        _projects.Clear();
+    }
+
+    private async Task LoadProjectsForTenantAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+
+        _isLoading = true;
+        try
+        {
+            _projects = await DbContext.Projects
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(p => p.TenantId == _selectedTenantId && !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private IQueryable<ProjectEntity> FilteredProjects
+    {
+        get
+        {
+            var query = _projects.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_projectSearchText))
+            {
+                var term = _projectSearchText.Trim();
+                query = query.Where(p =>
+                    p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (p.Description != null && p.Description.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query;
+        }
+    }
+}
