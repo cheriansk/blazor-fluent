@@ -47,9 +47,12 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return new List<KnowledgeArticleListDto>();
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         var query = _context.KnowledgeArticles
             .AsNoTracking()
             .Include(a => a.Reviewers)
+            .Where(a => a.IsGlobal || a.TenantId == tenantId)
             .AsQueryable();
 
         if (status.HasValue)
@@ -116,11 +119,13 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return null;
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         var a = await _context.KnowledgeArticles
             .AsNoTracking()
             .Include(x => x.Reviewers)
             .Include(x => x.Project)
-            .FirstOrDefaultAsync(x => x.Id == articleId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == articleId && (x.IsGlobal || x.TenantId == tenantId), cancellationToken);
 
         if (a is null) return null;
 
@@ -249,10 +254,11 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             throw new UnauthorizedAccessException("Only authenticated users can update knowledge articles.");
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var article = await _context.KnowledgeArticles
             .AsTracking()
             .Include(a => a.Reviewers)
-            .FirstOrDefaultAsync(a => a.Id == dto.Id, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == dto.Id && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
 
         if (article is null)
         {
@@ -301,10 +307,11 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return false;
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var article = await _context.KnowledgeArticles
             .AsTracking()
             .Include(a => a.Reviewers)
-            .FirstOrDefaultAsync(a => a.Id == articleId, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == articleId && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
 
         if (article is null) return false;
 
@@ -364,9 +371,10 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return false;
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var article = await _context.KnowledgeArticles
             .AsTracking()
-            .FirstOrDefaultAsync(a => a.Id == articleId, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == articleId && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
         if (article is null) return false;
 
         article.IsDeleted = true;
@@ -405,8 +413,10 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return new List<string>();
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var labelStrings = await _context.KnowledgeArticles
             .AsNoTracking()
+            .Where(a => a.IsGlobal || a.TenantId == tenantId)
             .Select(a => a.Labels)
             .ToListAsync(cancellationToken);
 

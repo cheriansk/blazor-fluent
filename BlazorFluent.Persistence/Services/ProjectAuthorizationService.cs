@@ -43,10 +43,11 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             return ProjectRole.Admin;
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var userId = _currentUser.UserId ?? "anonymous";
         var roleEntity = await _dbContext.ProjectUserRoles
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
 
         return roleEntity?.Role;
     }
@@ -101,11 +102,13 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
     {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         if (_currentUser.IsRootAdmin)
         {
             return await _dbContext.Projects
                 .AsNoTracking()
-                .Where(p => !p.IsDeleted)
+                .Where(p => p.TenantId == tenantId && !p.IsDeleted)
                 .Select(p => p.Id)
                 .ToListAsync(ct);
         }
@@ -113,7 +116,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         var userId = _currentUser.UserId ?? "anonymous";
         var userRoles = await _dbContext.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => r.UserId == userId && !r.IsDeleted)
+            .Where(r => r.TenantId == tenantId && r.UserId == userId && !r.IsDeleted)
             .ToListAsync(ct);
 
         return userRoles
@@ -125,9 +128,11 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<ProjectUserRoleEntity>> GetProjectMembersAsync(Guid projectId, CancellationToken ct = default)
     {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         return await _dbContext.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => r.ProjectId == projectId && !r.IsDeleted)
+            .Where(r => r.TenantId == tenantId && r.ProjectId == projectId && !r.IsDeleted)
             .OrderBy(r => r.UserName)
             .ToListAsync(ct);
     }
@@ -152,7 +157,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         var existing = await _dbContext.ProjectUserRoles
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
 
         if (existing is not null)
         {
@@ -194,9 +199,11 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             return Result.Failure("Only Project Admins or Tenant Admins can revoke project roles.");
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         var existing = await _dbContext.ProjectUserRoles
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
 
         if (existing is null)
         {

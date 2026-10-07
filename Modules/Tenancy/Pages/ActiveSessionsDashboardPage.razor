@@ -1,11 +1,21 @@
 @page "/admin/sessions"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Core.Contracts
+@using Microsoft.AspNetCore.Authorization
 @inject ISettingsNavigationState SettingsNav
+@inject ICurrentUser CurrentUser
+@inject NavigationManager NavigationManager
 
 @code {
     protected override void OnInitialized()
     {
+        if (!CurrentUser.IsRootAdmin)
+        {
+            NavigationManager.NavigateTo("/settings", replace: true);
+            return;
+        }
+
         SettingsNav.NavigateToTab("sessions");
     }
 }

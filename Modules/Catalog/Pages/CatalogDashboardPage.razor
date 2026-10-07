@@ -1,9 +1,11 @@
 @page "/catalog"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.Domain.Catalog
 @using BlazorFluent.Jobs.Abstractions
 @using BlazorFluent.Jobs.Jobs.Catalog
+@using Microsoft.AspNetCore.Authorization
 @inject IJobEventQueue JobQueue
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser

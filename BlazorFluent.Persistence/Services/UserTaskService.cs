@@ -37,24 +37,25 @@ public class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProject", ct: ct);
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         return await _context.Tasks
             .AsNoTracking()
-            .Where(t => t.ProjectId == projectId)
-            .Include(t => t.Comments.Where(c => !c.IsDeleted))
+            .Where(t => t.TenantId == tenantId && t.ProjectId == projectId)
+            .Include(t => t.Comments.Where(c => !c.IsDeleted && c.TenantId == tenantId && c.ProjectId == projectId))
             .OrderBy(t => t.DueDate)
             .ToListAsync(ct);
     }
 
-    public async Task<UserTaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<UserTaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
-        var task = await _context.Tasks
-            .Include(t => t.Comments.Where(c => !c.IsDeleted).OrderBy(c => c.CreatedAtUtc))
-            .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskById", ct: ct);
 
-        if (task is not null)
-        {
-            await _projectAuth.EnsureCanVisitAsync(task.ProjectId, operation: "GetTaskById", ct: ct);
-        }
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+        var task = await _context.Tasks
+            .Include(t => t.Comments.Where(c => !c.IsDeleted && c.TenantId == tenantId && c.ProjectId == projectId).OrderBy(c => c.CreatedAtUtc))
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
 
         return task;
     }
@@ -98,16 +99,28 @@ public class UserTaskService : IUserTaskService
     {
         try
         {
-            await _projectAuth.EnsureCanEditAsync(updated.ProjectId, operation: "UpdateTask", ct: ct);
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
 
+            // 1. Compound database lookup: Task MUST match TenantId, ProjectId, and Id to eliminate IDOR
             var task = await _context.Tasks
                 .AsTracking()
-                .FirstOrDefaultAsync(t => t.Id == updated.Id, ct);
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == updated.ProjectId && t.Id == updated.Id, ct);
 
             if (task is null)
             {
-                return Result<UserTaskEntity>.Failure("Task not found.");
+                return Result<UserTaskEntity>.Failure("Task not found in the specified project.");
             }
+
+            // 2. Strict Project Immobility: Tasks can NEVER be reassigned or moved across projects
+            if (updated.ProjectId != Guid.Empty && updated.ProjectId != task.ProjectId)
+            {
+                _logger.LogWarning("Security Violation: Attempt to move task {TaskId} from project {OldProject} to {NewProject}",
+                    task.Id, task.ProjectId, updated.ProjectId);
+                return Result<UserTaskEntity>.Failure("Cross-project task reassignment is forbidden. Tasks cannot be moved between projects.");
+            }
+
+            // 3. Authorize caller against verified database project
+            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "UpdateTask", ct: ct);
 
             var wasClosed = task.IsClosed;
 
@@ -142,17 +155,19 @@ public class UserTaskService : IUserTaskService
         }
     }
 
-    public async Task<Result<bool>> CloseTaskAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<Result<bool>> CloseTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
         try
         {
+            await _projectAuth.EnsureCanEditAsync(projectId, operation: "CloseTask", ct: ct);
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
             var task = await _context.Tasks
                 .AsTracking()
-                .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
 
             if (task is null) return Result<bool>.Failure("Task not found.");
-
-            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CloseTask", ct: ct);
 
             task.Status = UserTaskStatus.Closed;
             task.IsClosed = true;
@@ -169,17 +184,19 @@ public class UserTaskService : IUserTaskService
         }
     }
 
-    public async Task<Result<bool>> ReopenTaskAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<Result<bool>> ReopenTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
         try
         {
+            await _projectAuth.EnsureCanEditAsync(projectId, operation: "ReopenTask", ct: ct);
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
             var task = await _context.Tasks
                 .AsTracking()
-                .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
 
             if (task is null) return Result<bool>.Failure("Task not found.");
-
-            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "ReopenTask", ct: ct);
 
             task.Status = UserTaskStatus.Open;
             task.IsClosed = false;
@@ -196,7 +213,7 @@ public class UserTaskService : IUserTaskService
         }
     }
 
-    public async Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid taskId, string commentText, CancellationToken ct = default)
+    public async Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid projectId, Guid taskId, string commentText, CancellationToken ct = default)
     {
         try
         {
@@ -205,17 +222,20 @@ public class UserTaskService : IUserTaskService
                 return Result<UserTaskCommentEntity>.Failure("Comment text cannot be empty.");
             }
 
+            await _projectAuth.EnsureCanEditAsync(projectId, operation: "AddComment", ct: ct);
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
             var task = await _context.Tasks
                 .AsTracking()
-                .FirstOrDefaultAsync(t => t.Id == taskId, ct);
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
 
             if (task is null) return Result<UserTaskCommentEntity>.Failure("Task not found.");
-
-            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "AddComment", ct: ct);
 
             var comment = new UserTaskCommentEntity
             {
                 TaskId = taskId,
+                ProjectId = projectId,
                 TenantId = task.TenantId,
                 AuthorUserId = _currentUser.UserId ?? "system",
                 AuthorName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Anonymous"),
@@ -237,17 +257,15 @@ public class UserTaskService : IUserTaskService
         }
     }
 
-    public async Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
-        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct);
-        if (task is not null)
-        {
-            await _projectAuth.EnsureCanVisitAsync(task.ProjectId, operation: "GetComments", ct: ct);
-        }
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetComments", ct: ct);
+
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
 
         return await _context.TaskComments
             .AsNoTracking()
-            .Where(c => c.TaskId == taskId && !c.IsDeleted)
+            .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && c.TaskId == taskId && !c.IsDeleted)
             .OrderBy(c => c.CreatedAtUtc)
             .ToListAsync(ct);
     }

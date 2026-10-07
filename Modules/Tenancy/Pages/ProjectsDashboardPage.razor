@@ -1,6 +1,8 @@
 @page "/tenancy/projects"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Core.Contracts
+@using Microsoft.AspNetCore.Authorization
 @inject ISettingsNavigationState SettingsNav
 
 @code {

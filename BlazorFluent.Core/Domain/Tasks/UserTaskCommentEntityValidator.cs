@@ -18,6 +18,9 @@ public class UserTaskCommentEntityValidator : AbstractValidator<UserTaskCommentE
         RuleFor(x => x.TaskId)
             .NotEmpty().WithMessage("Comment TaskId is mandatory.");
 
+        RuleFor(x => x.ProjectId)
+            .NotEmpty().WithMessage("Comment ProjectId is mandatory.");
+
         RuleFor(x => x.AuthorName)
             .MaximumLength(200).WithMessage("Author name cannot exceed 200 characters.");
 

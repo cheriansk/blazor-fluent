@@ -1,4 +1,5 @@
 @page "/imports"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
@@ -7,6 +8,7 @@
 @using BlazorFluent.Core.DTOs.Imports
 @using BlazorFluent.Modules.Imports.Components
 @using BlazorFluent.Persistence.Context
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @inject IImportFileService ImportService
@@ -432,7 +434,8 @@
 
     private async Task ViewDiagnosticsAsync(Guid importFileId)
     {
-        var details = await ImportService.GetImportFileDetailsAsync(importFileId);
+        if (_currentProject is null) return;
+        var details = await ImportService.GetImportFileDetailsAsync(_currentProject.Id, importFileId);
         if (details != null && _errorsModal != null)
         {
             _errorsModal.Show(details);
@@ -447,9 +450,9 @@
 
     private async Task DeleteConfirmedAsync()
     {
-        if (_pendingDeleteId != Guid.Empty)
+        if (_pendingDeleteId != Guid.Empty && _currentProject is not null)
         {
-            await ImportService.DeleteImportFileAsync(_pendingDeleteId);
+            await ImportService.DeleteImportFileAsync(_currentProject.Id, _pendingDeleteId);
             _pendingDeleteId = Guid.Empty;
             await RefreshHistoryAsync();
         }

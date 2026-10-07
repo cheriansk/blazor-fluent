@@ -125,12 +125,13 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
         var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
 
         var query = db.Notifications
             .AsNoTracking()
-            .Where(n => n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId));
+            .Where(n => n.TenantId == tenantId && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
 
         if (filter.ProjectId.HasValue && filter.ProjectId.Value != Guid.Empty)
         {
@@ -168,12 +169,14 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
         var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
 
         var genericCount = await db.Notifications
             .AsNoTracking()
-            .Where(n => !n.IsRead
+            .Where(n => n.TenantId == tenantId
+                && !n.IsRead
                 && n.Category == NotificationCategory.Generic
                 && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
@@ -184,7 +187,8 @@ public class NotificationService : INotificationService
         {
             personalCount = await db.Notifications
                 .AsNoTracking()
-                .Where(n => !n.IsRead
+                .Where(n => n.TenantId == tenantId
+                    && !n.IsRead
                     && n.Category == NotificationCategory.Personal
                     && n.UserId == currentUserId
                     && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
@@ -203,10 +207,11 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
         var notification = await db.Notifications
             .AsTracking()
-            .FirstOrDefaultAsync(n => n.Id == notificationId, ct);
+            .FirstOrDefaultAsync(n => n.TenantId == tenantId && n.Id == notificationId, ct);
         if (notification is null) return false;
 
         // Privacy check: Personal notification can only be read by recipient
@@ -238,11 +243,12 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
         var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
 
         var query = db.Notifications
-            .Where(n => !n.IsRead && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
+            .Where(n => n.TenantId == tenantId && !n.IsRead && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
 
         if (category == NotificationCategory.Personal)
         {
@@ -270,11 +276,13 @@ public class NotificationService : INotificationService
 
     private async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(AppDbContext db, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
     {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         if (_currentUser.IsRootAdmin)
         {
             return await db.Projects
                 .AsNoTracking()
-                .Where(p => !p.IsDeleted)
+                .Where(p => p.TenantId == tenantId && !p.IsDeleted)
                 .Select(p => p.Id)
                 .ToListAsync(ct);
         }
@@ -282,7 +290,7 @@ public class NotificationService : INotificationService
         var userId = _currentUser.UserId ?? "anonymous";
         var userRoles = await db.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => r.UserId == userId && !r.IsDeleted)
+            .Where(r => r.TenantId == tenantId && r.UserId == userId && !r.IsDeleted)
             .ToListAsync(ct);
 
         return userRoles

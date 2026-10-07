@@ -1,7 +1,9 @@
 @page "/settings"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject ISettingsNavigationState SettingsNav
 @inject ITenantContext TenantContext
@@ -14,14 +16,17 @@
 
 <div style="margin-top: 20px;">
     <FluentTabs @bind-ActiveTabId="_activeTabId" @bind-ActiveTabId:after="OnTabChanged" Orientation="Orientation.Horizontal">
-        <FluentTab Id="tenants" Header="Tenants" IconStart="@(new Icons.Regular.Size20.Building())">
-            @if (_visitedTabs.Contains("tenants"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsTenantsTab />
-                </div>
-            }
-        </FluentTab>
+        @if (CurrentUser.IsRootAdmin)
+        {
+            <FluentTab Id="tenants" Header="Tenants" IconStart="@(new Icons.Regular.Size20.Building())">
+                @if (_visitedTabs.Contains("tenants"))
+                {
+                    <div style="padding-top: 16px;">
+                        <SettingsTenantsTab />
+                    </div>
+                }
+            </FluentTab>
+        }
 
         <FluentTab Id="projects" Header="Projects" IconStart="@(new Icons.Regular.Size20.BuildingMultiple())">
             @if (_visitedTabs.Contains("projects"))
@@ -86,25 +91,32 @@
 </div>
 
 @code {
-    private string _activeTabId = "tenants";
+    private string _activeTabId = "projects";
     private readonly HashSet<string> _visitedTabs = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
     {
+        _activeTabId = CurrentUser.IsRootAdmin ? "tenants" : "projects";
+
         if (!string.IsNullOrWhiteSpace(SettingsNav.InitialTab))
         {
             _activeTabId = SettingsNav.InitialTab;
             SettingsNav.InitialTab = null;
         }
 
+        if (_activeTabId.Equals("tenants", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
+        {
+            _activeTabId = "projects";
+        }
+
         if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
         {
-            _activeTabId = "tenants";
+            _activeTabId = CurrentUser.IsRootAdmin ? "tenants" : "projects";
         }
 
         if (_activeTabId.Equals("auditing", StringComparison.OrdinalIgnoreCase) && !CanViewAuditTrail)
         {
-            _activeTabId = "tenants";
+            _activeTabId = CurrentUser.IsRootAdmin ? "tenants" : "projects";
         }
 
         _visitedTabs.Add(_activeTabId);

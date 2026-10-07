@@ -19,6 +19,9 @@ public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserT
         builder.Property(c => c.TaskId)
             .IsRequired();
 
+        builder.Property(c => c.ProjectId)
+            .IsRequired();
+
         builder.Property(c => c.AuthorUserId)
             .HasMaxLength(256)
             .IsRequired();
@@ -50,6 +53,9 @@ public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserT
         // Indexes
         builder.HasIndex(c => c.TenantId)
             .HasDatabaseName("IX_TaskComments_TenantId");
+
+        builder.HasIndex(c => new { c.TenantId, c.ProjectId, c.TaskId })
+            .HasDatabaseName("IX_TaskComments_Tenant_Project_Task");
 
         builder.HasIndex(c => new { c.TaskId, c.CreatedAtUtc })
             .HasDatabaseName("IX_TaskComments_TaskId_CreatedAtUtc");

@@ -3,6 +3,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Context;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -128,6 +129,12 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 {
                     // TenantId is immutable — it can never be changed after creation.
                     entry.Property(TenantIdProperty).IsModified = false;
+
+                    // Cross-project task immobility: Tasks can NEVER be moved between projects
+                    if (entry.Entity is UserTaskEntity)
+                    {
+                        entry.Property(nameof(UserTaskEntity.ProjectId)).IsModified = false;
+                    }
 
                     // Cross-tenant write guard for non-host users (check both original and current values)
                     var originalTenantId = entry.Property(TenantIdProperty).OriginalValue as string;

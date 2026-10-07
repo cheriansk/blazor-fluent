@@ -292,10 +292,19 @@ public class AuditService : IAuditService
         string? propertyName = null,
         CancellationToken cancellationToken = default)
     {
-        var records = await _dbContext.AuditRecords
+        var query = _dbContext.AuditRecords
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(a => a.EntityName == entityName && a.EntityId == entityId)
+            .Where(a => a.EntityName == entityName && a.EntityId == entityId);
+
+        // Zero Trust: Non-host users can only view audit trail for their own active tenant
+        if (!_tenantContext.IsHost)
+        {
+            var activeTenant = _tenantContext.TenantId ?? string.Empty;
+            query = query.Where(a => a.TenantId == activeTenant);
+        }
+
+        var records = await query
             .OrderByDescending(a => a.Created)
             .ToListAsync(cancellationToken);
 

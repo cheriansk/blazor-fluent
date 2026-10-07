@@ -1,5 +1,6 @@
 @page "/projects/{ProjectId:guid}/tasks"
 @page "/tasks"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
@@ -7,6 +8,7 @@
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Persistence.Context
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @inject IUserTaskService TaskService
 @inject AppDbContext DbContext
@@ -727,11 +729,12 @@ else
 
     private async Task OpenTaskDetailsModal(UserTaskEntity task)
     {
-        _selectedTask = await TaskService.GetTaskByIdAsync(task.Id);
+        if (_currentProject is null) return;
+        _selectedTask = await TaskService.GetTaskByIdAsync(_currentProject.Id, task.Id);
         if (_selectedTask is not null)
         {
             _selectedTaskDueDate = _selectedTask.DueDate;
-            _selectedTaskComments = (await TaskService.GetCommentsAsync(_selectedTask.Id)).ToList();
+            _selectedTaskComments = (await TaskService.GetCommentsAsync(_currentProject.Id, _selectedTask.Id)).ToList();
         }
     }
 
@@ -759,42 +762,42 @@ else
 
     private async Task CloseSelectedTaskAsync()
     {
-        if (_selectedTask is null) return;
+        if (_selectedTask is null || _currentProject is null) return;
 
-        var result = await TaskService.CloseTaskAsync(_selectedTask.Id);
+        var result = await TaskService.CloseTaskAsync(_currentProject.Id, _selectedTask.Id);
         if (result.IsSuccess)
         {
             CloseModals();
-            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject!.Id);
+            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
             _tasks = fresh.ToList();
         }
     }
 
     private async Task ReopenSelectedTaskAsync()
     {
-        if (_selectedTask is null) return;
+        if (_selectedTask is null || _currentProject is null) return;
 
-        var result = await TaskService.ReopenTaskAsync(_selectedTask.Id);
+        var result = await TaskService.ReopenTaskAsync(_currentProject.Id, _selectedTask.Id);
         if (result.IsSuccess)
         {
             CloseModals();
-            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject!.Id);
+            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
             _tasks = fresh.ToList();
         }
     }
 
     private async Task PostCommentAsync()
     {
-        if (_selectedTask is null || string.IsNullOrWhiteSpace(_newCommentText)) return;
+        if (_selectedTask is null || _currentProject is null || string.IsNullOrWhiteSpace(_newCommentText)) return;
 
         _isPostingComment = true;
         try
         {
-            var result = await TaskService.AddCommentAsync(_selectedTask.Id, _newCommentText);
+            var result = await TaskService.AddCommentAsync(_currentProject.Id, _selectedTask.Id, _newCommentText);
             if (result.IsSuccess)
             {
                 _newCommentText = string.Empty;
-                _selectedTaskComments = (await TaskService.GetCommentsAsync(_selectedTask.Id)).ToList();
+                _selectedTaskComments = (await TaskService.GetCommentsAsync(_currentProject.Id, _selectedTask.Id)).ToList();
             }
         }
         finally

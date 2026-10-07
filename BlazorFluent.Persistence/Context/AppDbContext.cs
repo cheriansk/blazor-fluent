@@ -21,6 +21,19 @@ namespace BlazorFluent.Persistence.Context;
 
 public class AppDbContext : DbContext, IDataProtectionKeyContext
 {
+    /// <summary>
+    /// Explicit whitelist of host-wide global platform entities allowed to omit TenantId.
+    /// Any other entity attempting to register without ITenantEntity will trigger an immediate startup exception.
+    /// </summary>
+    private static readonly HashSet<Type> WhitelistedGlobalEntities = new()
+    {
+        typeof(TenantEntity),
+        typeof(UserEntity),
+        typeof(KnowledgeArticleReviewerEntity),
+        typeof(ImpersonationGrantEntity),
+        typeof(JobExecutionEntity)
+    };
+
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUser _currentUser;
@@ -98,14 +111,31 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
             var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
             var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
             var isSoftDeletable = typeof(ISoftDeletableEntity).IsAssignableFrom(clrType);
+            var isProjectScoped = typeof(IProjectScopedEntity).IsAssignableFrom(clrType);
+
+            // Fail-closed Global Whitelist Guard: Only approved platform tables may omit TenantId
+            if (isGlobal && !WhitelistedGlobalEntities.Contains(clrType))
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' implements '{nameof(IGlobalEntity)}' but is NOT in the approved platform global entity whitelist! " +
+                    $"Only approved global platform tables (Tenants, Users, ArticleReviewers, ImpersonationGrants, JobExecutions) may omit TenantId.");
+            }
 
             // Fail-closed Tenancy Rule: every entity MUST declare its tenancy boundary
             if (!isGlobal && !isTenant)
             {
                 throw new InvalidOperationException(
                     $"Entity '{clrType.Name}' violates multi-tenant security architecture! " +
-                    $"It must either implement '{nameof(ITenantEntity)}' (for tenant-level isolation) " +
-                    $"or explicitly implement '{nameof(IGlobalEntity)}' (if it is host-wide).");
+                    $"It must implement '{nameof(ITenantEntity)}' (for tenant-level isolation). " +
+                    $"Global entities are strictly limited to the approved platform whitelist.");
+            }
+
+            // Fail-closed Project-Scoped Rule: every IProjectScopedEntity MUST also implement ITenantEntity
+            if (isProjectScoped && !isTenant)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' implements '{nameof(IProjectScopedEntity)}' but violates multi-tenant architecture by not implementing '{nameof(ITenantEntity)}'! " +
+                    $"All project-level tables must be strictly partitioned by both TenantId and ProjectId.");
             }
 
             // Fail-closed Validation Rule: every business entity must have a registered IValidator<TEntity>
