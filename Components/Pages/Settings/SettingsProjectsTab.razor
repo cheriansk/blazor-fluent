@@ -15,6 +15,9 @@
 @inject IImpersonationService ImpersonationService
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
+@inject IUnsavedChangesStateService UnsavedChanges
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <div>
@@ -136,7 +139,7 @@
                     <PropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
                     <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeStartDate))">
                         <span style="font-size: 12px;">
-                            @(context.TentativeStartDate?.ToString("yyyy-MM-dd") ?? "—") ~ @(context.TentativeEndDate?.ToString("yyyy-MM-dd") ?? "—")
+                            @TimeZoneService.FormatDate(context.TentativeStartDate) ~ @TimeZoneService.FormatDate(context.TentativeEndDate)
                         </span>
                     </TemplateColumn>
                     <TemplateColumn Title="Actions">
@@ -223,11 +226,11 @@
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="24" Wrap="true">
                                         <div style="flex: 1; min-width: 200px;">
                                             <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Tentative Start Date</span>
-                                            <span>@(_selectedProject.TentativeStartDate?.ToString("yyyy-MM-dd") ?? "—")</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.TentativeStartDate)</span>
                                         </div>
                                         <div style="flex: 1; min-width: 200px;">
                                             <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Tentative End Date</span>
-                                            <span>@(_selectedProject.TentativeEndDate?.ToString("yyyy-MM-dd") ?? "—")</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.TentativeEndDate)</span>
                                         </div>
                                     </FluentStack>
 
@@ -288,7 +291,7 @@
                                                           OnClick="@SaveProjectDetailsAsync">
                                                 Save Changes
                                             </FluentButton>
-                                            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _isEditingDetails = false)">
+                                            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelEditDetails">
                                                 Cancel
                                             </FluentButton>
                                         </FluentStack>
@@ -633,6 +636,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
         await LoadAvailableTenantsAsync();
     }
 
@@ -741,6 +745,13 @@
         _editEndDate = _selectedProject.TentativeEndDate;
         _editScopeSummary = !string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : _selectedProject.Description;
         _isEditingDetails = true;
+        UnsavedChanges.RegisterChange("Settings > Projects", $"Editing project '{_selectedProject.Name}' details");
+    }
+
+    private void CancelEditDetails()
+    {
+        _isEditingDetails = false;
+        UnsavedChanges.ClearChange("Settings > Projects");
     }
 
     private async Task SaveProjectDetailsAsync()
@@ -763,6 +774,7 @@
             _statusMessage = $"Project '{result.Data.Name}' updated successfully.";
             _isError = false;
             _isEditingDetails = false;
+            UnsavedChanges.ClearChange("Settings > Projects");
             await LoadProjectsForTenantAsync();
             _selectedProject = _projects.FirstOrDefault(p => p.Id == result.Data.Id) ?? result.Data;
         }
@@ -966,5 +978,16 @@
             _statusMessage = result.Error;
             _isError = true;
         }
+    }
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
+        UnsavedChanges.ClearChange("Settings > Projects");
     }
 }

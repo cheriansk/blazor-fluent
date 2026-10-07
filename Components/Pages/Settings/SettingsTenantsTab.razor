@@ -6,6 +6,9 @@
 @inject ITenantService TenantService
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject IUnsavedChangesStateService UnsavedChanges
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
@@ -15,7 +18,7 @@
         </div>
         @if (IsRootAdmin)
         {
-            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@(() => { _showAddModal = true; _showConfirmCreate = false; })">
+            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@StartAddTenant">
                 Add Tenant
             </FluentButton>
         }
@@ -160,7 +163,7 @@
                     </FluentStack>
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
                         <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@SaveDatesAsync">Save Dates</FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _editingTenant = null)">Cancel</FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelEditDates">Cancel</FluentButton>
                     </FluentStack>
                 </FluentStack>
             </FluentCard>
@@ -336,10 +339,10 @@
                             }
                         </TemplateColumn>
                         <TemplateColumn Title="Start Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.StartDateUtc))">
-                            @context.StartDateUtc.ToString("yyyy-MM-dd")
+                            @TimeZoneService.FormatDate(context.StartDateUtc)
                         </TemplateColumn>
                         <TemplateColumn Title="End Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.EndDateUtc))">
-                            @context.EndDateUtc.ToString("yyyy-MM-dd")
+                            @TimeZoneService.FormatDate(context.EndDateUtc)
                         </TemplateColumn>
                         <TemplateColumn Title="Status" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.IsActive))">
                             <FluentBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
@@ -855,6 +858,13 @@
         }
     }
 
+    private void StartAddTenant()
+    {
+        _showAddModal = true;
+        _showConfirmCreate = false;
+        UnsavedChanges.RegisterChange("Settings > Tenants", "Provisioning new tenant");
+    }
+
     private void CancelAdd()
     {
         _showAddModal = false;
@@ -868,6 +878,7 @@
         _tempExternalDomain = string.Empty;
         _newStartDate = DateTime.UtcNow.Date;
         _newEndDate = DateTime.UtcNow.Date.AddYears(1);
+        UnsavedChanges.ClearChange("Settings > Tenants");
     }
 
     private async Task ToggleStatusAsync(TenantEntity tenant, bool isActive)
@@ -895,6 +906,13 @@
         _editingTenant = tenant;
         _editStartDate = tenant.StartDate;
         _editEndDate = tenant.EndDate;
+        UnsavedChanges.RegisterChange("Settings > Tenants", $"Editing contract dates for '{tenant.Name}'");
+    }
+
+    private void CancelEditDates()
+    {
+        _editingTenant = null;
+        UnsavedChanges.ClearChange("Settings > Tenants");
     }
 
     private async Task SaveDatesAsync()
@@ -923,6 +941,7 @@
             _statusMessage = $"Contract dates updated successfully for '{_editingTenant.Name}'.";
             _isError = false;
             _editingTenant = null;
+            UnsavedChanges.ClearChange("Settings > Tenants");
         }
         else
         {
@@ -1312,5 +1331,10 @@
                 _isError = true;
             }
         }
+    }
+
+    public void Dispose()
+    {
+        UnsavedChanges.ClearChange("Settings > Tenants");
     }
 }

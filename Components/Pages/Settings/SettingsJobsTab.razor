@@ -10,6 +10,8 @@
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject IDateTimeProvider DateTimeProvider
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
@@ -199,7 +201,7 @@
                         @context.AttemptCount / @context.MaxRetries
                     </TemplateColumn>
                     <TemplateColumn Title="Started At" SortBy="@(GridSort<JobExecutionEntity>.ByDescending(e => e.StartedAt))">
-                        @context.StartedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                        @TimeZoneService.FormatDateTime(context.StartedAt)
                     </TemplateColumn>
                     <TemplateColumn Title="Duration">
                         @(context.DurationMs.HasValue ? $"{context.DurationMs.Value:F0} ms" : "—")
@@ -246,6 +248,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
         await LoadAvailableTenantsAsync();
     }
 
@@ -383,5 +386,15 @@
             }
             return query;
         }
+    }
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
     }
 }

@@ -19,6 +19,8 @@
 @inject IConfiguration Configuration
 @inject ILogger<MainLayout> Logger
 @inject INavigationStateService NavState
+@inject IProjectContext ProjectContext
+@inject IUserTimeZoneService TimeZoneService
 @implements IDisposable
 
 <ImpersonationBannerComp />
@@ -39,8 +41,13 @@
         <FluentSpacer />
         @if (HasActiveTenantSession)
         {
+            <TenantAndProjectSwitcherComp />
+        }
+        <FluentSpacer />
+        @if (HasActiveTenantSession)
+        {
+            <PendingChangesIndicatorComp />
             <NotificationBellPopup />
-            <TenantSwitcherComp />
         }
         @if (CurrentUser.IsAuthenticated)
         {
@@ -126,9 +133,15 @@
     protected override void OnInitialized()
     {
         NavState.OnChange += HandleNavStateChanged;
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
     }
 
     private void HandleNavStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleTimeZoneChanged()
     {
         InvokeAsync(StateHasChanged);
     }
@@ -154,12 +167,15 @@
     public void Dispose()
     {
         NavState.OnChange -= HandleNavStateChanged;
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
         _heartbeatTimer?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+
+        await TimeZoneService.InitializeAsync();
 
         if (!CurrentUser.IsAuthenticated)
         {
@@ -188,6 +204,15 @@
                             }
                         }
 
+                        // Apply persisted user timezone immediately upon rehydration
+                        var tzToApply = !string.IsNullOrWhiteSpace(user.TimeZoneId)
+                            ? user.TimeZoneId
+                            : data.TimeZoneId;
+                        if (!string.IsNullOrWhiteSpace(tzToApply))
+                        {
+                            TimeZoneService.ApplyUserTimeZone(tzToApply);
+                        }
+
                         // Prefer the intra-session active tenant if still permitted in allowed tenants
                         var resolvedTenantId = verified.ResolvedTenantId;
                         var resolvedTenantName = verified.ResolvedTenantName;
@@ -208,6 +233,11 @@
                             userType: user.UserType,
                             allowedTenants: verified.AllowedTenants,
                             isHost: isHost);
+
+                        if (data.ActiveProjectId.HasValue)
+                        {
+                            ProjectContext.Initialize(data.ActiveProjectId.Value, null, null, Array.Empty<ProjectInfo>());
+                        }
 
                         StartHeartbeat(data.SessionId);
                         AuthStateProvider.NotifyUserChanged();
@@ -304,6 +334,7 @@
         }
 
         TenantContext.Reset();
+        ProjectContext.Reset();
         AuthStateProvider.NotifyUserChanged();
         NavigationManager.NavigateTo("/login", forceLoad: true);
     }

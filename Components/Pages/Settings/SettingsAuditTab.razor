@@ -9,6 +9,8 @@
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
 @inject AppDbContext DbContext
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <div>
@@ -137,7 +139,7 @@
 
         <FluentDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 180px 120px 110px 1fr 100px">
             <TemplateColumn Title="Timestamp" SortBy="@(GridSort<AuditRecordEntity>.ByDescending(a => a.Created))">
-                @context.Created.ToString("yyyy-MM-dd HH:mm:ss")
+                @TimeZoneService.FormatDateTime(context.Created)
             </TemplateColumn>
             <PropertyColumn Property="@(a => a.TenantId)" Title="Tenant" Sortable="true" />
             <TemplateColumn Title="User" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.UserEmail ?? a.UserId))">
@@ -230,6 +232,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
         await LoadAvailableTenantsAsync();
         await LoadAvailableUsersAsync();
         await LoadAuditsAsync();
@@ -406,5 +409,15 @@
             _filter.PageNumber++;
             await LoadAuditsAsync();
         }
+    }
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
     }
 }

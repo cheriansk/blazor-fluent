@@ -45,6 +45,12 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     public string? DefaultTenantId { get; set; }
 
     /// <summary>
+    /// User's preferred timezone identifier (e.g., 'Eastern Standard Time', 'UTC').
+    /// Used for presentation-layer date/time formatting.
+    /// </summary>
+    public string TimeZoneId { get; set; } = "UTC";
+
+    /// <summary>
     /// Embedded EF Core 10 ComplexType value object for user physical address.
     /// Inline columns without separate table or shadow foreign keys.
     /// </summary>
@@ -65,7 +71,15 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     /// </summary>
     public string ComputeIntegritySignature(string secretKey)
     {
-        var payload = $"{Id}:{DefaultTenantId ?? ""}:{Email.ToLowerInvariant()}:{IsActive}:{StartDateUtc:yyyy-MM-ddTHH:mm:ssZ}:{EndDateUtc:yyyy-MM-ddTHH:mm:ssZ}";
+        var startUtc = StartDateUtc.Kind == DateTimeKind.Utc
+            ? StartDateUtc
+            : (StartDateUtc.Kind == DateTimeKind.Local ? StartDateUtc.ToUniversalTime() : DateTime.SpecifyKind(StartDateUtc, DateTimeKind.Utc));
+
+        var endUtc = EndDateUtc.Kind == DateTimeKind.Utc
+            ? EndDateUtc
+            : (EndDateUtc.Kind == DateTimeKind.Local ? EndDateUtc.ToUniversalTime() : DateTime.SpecifyKind(EndDateUtc, DateTimeKind.Utc));
+
+        var payload = $"{Id}:{DefaultTenantId ?? ""}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}";
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         return Convert.ToBase64String(hash);

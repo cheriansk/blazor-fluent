@@ -9,7 +9,9 @@
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject IUserTimeZoneService TimeZoneService
 @inject IJSRuntime JS
+@implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <!-- Header -->
@@ -133,7 +135,7 @@
                     <div>
                         <FluentLabel Typo="Typography.H5">Event Receipt: @_selectedEvent.EventName</FluentLabel>
                         <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">
-                            ID: @_selectedEvent.Id | Published: @_selectedEvent.PublishedAtUtc.ToString("yyyy-MM-dd HH:mm:ss.fff") UTC
+                            ID: @_selectedEvent.Id | Published: @TimeZoneService.FormatDateTime(_selectedEvent.PublishedAtUtc, "yyyy-MM-dd HH:mm:ss.fff") (@TimeZoneService.TimeZone.StandardName)
                         </FluentLabel>
                     </div>
                     <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedEvent = null)" />
@@ -177,7 +179,7 @@
                         <PropertyColumn Property="@(c => c.ConsumerClass)" Title="Consumer Class" />
                         <PropertyColumn Property="@(c => c.ConsumerMethod)" Title="Method" />
                         <TemplateColumn Title="Started At">
-                            @context.StartedAtUtc.ToString("HH:mm:ss.fff")
+                            @TimeZoneService.FormatDateTime(context.StartedAtUtc, "HH:mm:ss.fff")
                         </TemplateColumn>
                         <TemplateColumn Title="Duration">
                             @context.DurationMs.ToString("F1") ms
@@ -262,7 +264,7 @@
                 <!-- Master Events Grid -->
                 <FluentDataGrid Items="@FilteredEventItems" ResizableColumns="true" GridTemplateColumns="170px 180px 220px 140px 140px 120px 110px">
                     <TemplateColumn Title="Published At" SortBy="@(GridSort<EventPublishTrackerEntity>.ByDescending(e => e.PublishedAtUtc))">
-                        @context.PublishedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")
+                        @TimeZoneService.FormatDateTime(context.PublishedAtUtc)
                     </TemplateColumn>
                     <TemplateColumn Title="Event Name" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.EventName))">
                         <b>@context.EventName</b>
@@ -351,6 +353,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
         await LoadAvailableTenantsAsync();
     }
 
@@ -529,4 +532,14 @@
 
     private static string Truncate(string val, int maxLen) =>
         string.IsNullOrEmpty(val) || val.Length <= maxLen ? val : val[..maxLen] + "...";
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
+    }
 }

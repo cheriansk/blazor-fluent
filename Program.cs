@@ -26,6 +26,9 @@ using Serilog.Enrichers.Span;
 using Serilog.Events;
 using System.Threading.RateLimiting;
 
+// 0. Npgsql PostgreSQL Timestamp Compatibility (prevents DateTimeKind.Unspecified crashes)
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 // 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -86,6 +89,7 @@ try
         .AddInteractiveServerComponents();
     builder.Services.AddFluentUIComponents();
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
+    builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();
 
     // 4. Authentication & Authorization State Provider with Dual Policy Wiring (FSH Standard)
     builder.Services.AddAuthentication();
@@ -173,6 +177,20 @@ try
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
             currentUser?.SetSystemDaemon("StartupMigration");
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Inspect for pending entity changes not captured in a migration
+            try
+            {
+                if (db.Database.HasPendingModelChanges())
+                {
+                    Log.Fatal("⚠️ [FATAL SCHEMA DRIFT DETECTED] The EF Core model for 'AppDbContext' has pending entity changes that have not been captured in a migration! Please run 'dotnet ef migrations add <Name>' to generate the missing migration.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not evaluate pending model changes during startup check.");
+            }
+
             db.Database.Migrate();
             Log.Information("Database migrations applied successfully.");
 

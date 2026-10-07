@@ -7,7 +7,9 @@
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
 @inject IAuditService AuditService
+@inject IUserTimeZoneService TimeZoneService
 @inject ILogger<SettingsSessionsTab> Logger
+@implements IDisposable
 
 <div>
     @if (!CurrentUser.IsRootAdmin)
@@ -119,11 +121,11 @@
                 <PropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" Sortable="true" />
 
                 <TemplateColumn Title="Started" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.StartedAtUtc))">
-                    <span title="@context.StartedAtUtc.ToString("u")">@GetRelativeTime(context.StartedAtUtc)</span>
+                    <span title="@TimeZoneService.FormatDateTime(context.StartedAtUtc)">@GetRelativeTime(context.StartedAtUtc)</span>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Last Activity" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.LastActivityAtUtc))">
-                    <span title="@context.LastActivityAtUtc.ToString("u")">@GetRelativeTime(context.LastActivityAtUtc)</span>
+                    <span title="@TimeZoneService.FormatDateTime(context.LastActivityAtUtc)">@GetRelativeTime(context.LastActivityAtUtc)</span>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Status">
@@ -257,6 +259,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
+
         if (!CurrentUser.IsRootAdmin)
         {
             _isLoading = false;
@@ -350,12 +354,22 @@
         }
     }
 
-    private static string GetRelativeTime(DateTime dt)
+    private string GetRelativeTime(DateTime dt)
     {
         var span = DateTime.UtcNow - dt.ToUniversalTime();
         if (span.TotalMinutes < 1) return "just now";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
-        return dt.ToString("MMM dd HH:mm");
+        return TimeZoneService.FormatDateTime(dt, "MMM dd HH:mm");
+    }
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
     }
 }

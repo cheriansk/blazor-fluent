@@ -64,6 +64,17 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
     public DbSet<StagedTaskEntity> StagedTasks => Set<StagedTaskEntity>();
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion<UtcDateTimeConverter>();
+
+        configurationBuilder.Properties<DateTime?>()
+            .HaveConversion<NullableUtcDateTimeConverter>();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

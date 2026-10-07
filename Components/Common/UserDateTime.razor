@@ -1,0 +1,49 @@
+@using BlazorFluent.Core.Contracts
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
+
+@if (Value.HasValue)
+{
+    var formatted = TimeZoneService.FormatDateTime(Value.Value, Format);
+    if (ShowTimezone)
+    {
+        <span>@formatted <span style="opacity: 0.65; font-size: 0.85em;">(@TimeZoneService.TimeZone.StandardName)</span></span>
+    }
+    else
+    {
+        <span>@formatted</span>
+    }
+}
+else
+{
+    <span style="opacity: 0.5;">@NullText</span>
+}
+
+@code {
+    [Parameter]
+    public DateTime? Value { get; set; }
+
+    [Parameter]
+    public string Format { get; set; } = "yyyy-MM-dd HH:mm:ss";
+
+    [Parameter]
+    public bool ShowTimezone { get; set; } = false;
+
+    [Parameter]
+    public string NullText { get; set; } = "—";
+
+    protected override void OnInitialized()
+    {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
+    }
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
+    }
+}

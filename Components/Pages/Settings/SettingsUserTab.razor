@@ -1,0 +1,251 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IUserTimeZoneService TimeZoneService
+@inject ICurrentUser CurrentUser
+@inject IUnsavedChangesStateService UnsavedChanges
+@implements IDisposable
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H3">User Preferences</FluentLabel>
+            <FluentLabel Typo="Typography.Body">Manage personal settings, application timezone, and display preferences.</FluentLabel>
+        </div>
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    <!-- Timezone Configuration Card -->
+    <FluentCard Style="padding: 24px;">
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                <FluentIcon Value="@(new Icons.Regular.Size24.Globe())" Color="Color.Accent" />
+                <div>
+                    <FluentLabel Typo="Typography.H4">Application Timezone</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                        All dates, timestamps, session logs, and audit trails across BlazorFluent are formatted using this timezone.
+                    </FluentLabel>
+                </div>
+            </FluentStack>
+
+            <FluentDivider Style="margin: 8px 0;" />
+
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom" HorizontalGap="16" Wrap="true">
+                <div style="flex: 1; min-width: 320px; max-width: 550px;">
+                    <FluentSelect TOption="TimeZoneInfo"
+                                  TValue="string"
+                                  Items="@_availableTimeZones"
+                                  OptionValue="@(tz => tz.Id)"
+                                  OptionText="@(tz => tz.DisplayName)"
+                                  Value="@_selectedTimeZoneId"
+                                  ValueChanged="@OnTimeZoneChanged"
+                                  Label="Select Timezone"
+                                  Style="width: 100%;" />
+                </div>
+
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              IconStart="@(new Icons.Regular.Size16.Save())"
+                              OnClick="@SaveTimeZoneAsync"
+                              Disabled="@(!_hasUnsavedChanges || _saving)"
+                              Loading="@_saving">
+                    Save Timezone
+                </FluentButton>
+
+                <FluentButton Appearance="ButtonAppearance.Outline"
+                              OnClick="@ResetToUtcAsync"
+                              Disabled="@(_selectedTimeZoneId == "UTC" && !_hasUnsavedChanges)">
+                    Reset to UTC
+                </FluentButton>
+            </FluentStack>
+
+            <!-- Live Clock & Preview Card -->
+            <div style="background: var(--neutral-layer-2, #f5f5f5); border: 1px solid var(--neutral-stroke-subtle, #e0e0e0); border-radius: 8px; padding: 16px; margin-top: 8px;">
+                <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 8px;">
+                    🕒 Timezone Live Preview
+                </FluentLabel>
+                <FluentGrid Spacing="2" Style="width: 100%;">
+                    <FluentGridItem xs="12" sm="6" md="4">
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;">Your Local Time</div>
+                        <div style="font-size: 16px; font-weight: 600; color: var(--accent-foreground-rest, #0078d4); margin-top: 2px;">
+                            @_previewLocalTime
+                        </div>
+                    </FluentGridItem>
+                    <FluentGridItem xs="12" sm="6" md="4">
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;">UTC Equivalent</div>
+                        <div style="font-size: 16px; font-weight: 500; margin-top: 2px;">
+                            @_previewUtcTime
+                        </div>
+                    </FluentGridItem>
+                    <FluentGridItem xs="12" sm="12" md="4">
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;">Standard Name & Offset</div>
+                        <div style="font-size: 13px; margin-top: 4px;">
+                            @_previewZoneDetails
+                        </div>
+                    </FluentGridItem>
+                </FluentGrid>
+            </div>
+        </FluentStack>
+    </FluentCard>
+
+    <!-- User Profile Summary Card -->
+    <FluentCard Style="padding: 24px;">
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                <FluentIcon Value="@(new Icons.Regular.Size24.Person())" Color="Color.Accent" />
+                <div>
+                    <FluentLabel Typo="Typography.H4">Account Profile</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                        Identity details for the currently signed-in session.
+                    </FluentLabel>
+                </div>
+            </FluentStack>
+
+            <FluentDivider Style="margin: 8px 0;" />
+
+            <FluentGrid Spacing="3" Style="width: 100%;">
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Email Address</div>
+                    <div style="font-weight: 600; margin-top: 4px;">@(string.IsNullOrWhiteSpace(CurrentUser.Email) ? "—" : CurrentUser.Email)</div>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Display Name</div>
+                    <div style="font-weight: 600; margin-top: 4px;">@(string.IsNullOrWhiteSpace(CurrentUser.UserName) ? "—" : CurrentUser.UserName)</div>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Privilege Level</div>
+                    <div style="margin-top: 4px;">
+                        @if (CurrentUser.IsRootAdmin)
+                        {
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">Root Admin</FluentBadge>
+                        }
+                        else
+                        {
+                            <FluentBadge Appearance="BadgeAppearance.Filled">Standard User</FluentBadge>
+                        }
+                    </div>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Account ID</div>
+                    <div style="font-family: monospace; font-size: 12px; margin-top: 4px; opacity: 0.8;">
+                        @(string.IsNullOrWhiteSpace(CurrentUser.UserId) ? "—" : CurrentUser.UserId)
+                    </div>
+                </FluentGridItem>
+            </FluentGrid>
+        </FluentStack>
+    </FluentCard>
+</FluentStack>
+
+@code {
+    private const string UnsavedKey = "settings_user_timezone";
+    private List<TimeZoneInfo> _availableTimeZones = new();
+    private string _selectedTimeZoneId = "UTC";
+    private string? _initialTimeZoneId;
+    private bool _hasUnsavedChanges;
+    private bool _saving;
+    private string? _statusMessage;
+    private bool _isError;
+    private System.Threading.Timer? _clockTimer;
+
+    private string _previewLocalTime = string.Empty;
+    private string _previewUtcTime = string.Empty;
+    private string _previewZoneDetails = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _availableTimeZones = TimeZoneService.AvailableTimeZones.ToList();
+        _selectedTimeZoneId = TimeZoneService.TimeZoneId;
+        _initialTimeZoneId = _selectedTimeZoneId;
+        UpdateLivePreviews();
+
+        _clockTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                UpdateLivePreviews();
+                StateHasChanged();
+            });
+        }, null, 1000, 1000);
+    }
+
+    private void UpdateLivePreviews()
+    {
+        var nowUtc = DateTime.UtcNow;
+        _previewUtcTime = nowUtc.ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
+
+        try
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(_selectedTimeZoneId);
+            var localTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
+            _previewLocalTime = localTime.ToString("yyyy-MM-dd HH:mm:ss");
+            var offset = tz.GetUtcOffset(nowUtc);
+            var offsetStr = (offset >= TimeSpan.Zero ? "+" : "-") + offset.ToString(@"hh\:mm");
+            _previewZoneDetails = $"{tz.StandardName} (UTC {offsetStr})";
+        }
+        catch
+        {
+            _previewLocalTime = nowUtc.ToString("yyyy-MM-dd HH:mm:ss");
+            _previewZoneDetails = "UTC (+00:00)";
+        }
+    }
+
+    private void OnTimeZoneChanged(string? newTzId)
+    {
+        if (string.IsNullOrWhiteSpace(newTzId)) return;
+        _selectedTimeZoneId = newTzId;
+        _hasUnsavedChanges = !string.Equals(_selectedTimeZoneId, _initialTimeZoneId, StringComparison.OrdinalIgnoreCase);
+
+        if (_hasUnsavedChanges)
+        {
+            UnsavedChanges.RegisterChange(UnsavedKey, $"User Timezone changed to '{_selectedTimeZoneId}'");
+        }
+        else
+        {
+            UnsavedChanges.ClearChange(UnsavedKey);
+        }
+
+        UpdateLivePreviews();
+    }
+
+    private async Task SaveTimeZoneAsync()
+    {
+        _saving = true;
+        _statusMessage = null;
+
+        try
+        {
+            await TimeZoneService.SetTimeZoneAsync(_selectedTimeZoneId);
+            _initialTimeZoneId = _selectedTimeZoneId;
+            _hasUnsavedChanges = false;
+            UnsavedChanges.ClearChange(UnsavedKey);
+
+            _isError = false;
+            _statusMessage = $"Timezone successfully updated to '{_selectedTimeZoneId}'. All timestamps across the application now reflect this setting.";
+        }
+        catch (Exception ex)
+        {
+            _isError = true;
+            _statusMessage = $"Failed to save timezone: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void ResetToUtcAsync()
+    {
+        OnTimeZoneChanged("UTC");
+    }
+
+    public void Dispose()
+    {
+        _clockTimer?.Dispose();
+        UnsavedChanges.ClearChange(UnsavedKey);
+    }
+}

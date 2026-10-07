@@ -17,12 +17,14 @@ public static class PersistenceExtensions
     public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
         // 1. Read timezone configuration (default is UTC)
-        var useUtc = !bool.TryParse(configuration["DateTimeSettings:UseUtc"], out var parsed) || parsed;
+        var useUtc = true;//!bool.TryParse(configuration["DateTimeSettings:UseUtc"], out var parsed) || parsed;
         services.TryAddSingleton<IDateTimeProvider>(new ConfigurableDateTimeProvider(useUtc));
 
-        // 2. Register current user and tenant context (scoped per request/circuit)
+        // 2. Register current user, tenant context, project context, and unsaved changes state (scoped per request/circuit)
         services.TryAddScoped<ICurrentUser, DefaultCurrentUser>();
         services.TryAddScoped<ITenantContext, TenantContext>();
+        services.TryAddScoped<IProjectContext, ProjectContext>();
+        services.TryAddScoped<IUnsavedChangesStateService, UnsavedChangesStateService>();
 
         // 3. Register forensic audit service (scoped)
         services.TryAddScoped<IAuditService, AuditService>();
@@ -48,7 +50,9 @@ public static class PersistenceExtensions
         Action<IServiceProvider, DbContextOptionsBuilder> configureDbContext = (sp, options) =>
         {
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.ManyServiceProvidersCreatedWarning));
+            options.ConfigureWarnings(w => w
+                .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.ManyServiceProvidersCreatedWarning)
+                .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             var zeroTrustInterceptor = sp.GetRequiredService<ZeroTrustDbCommandInterceptor>();
             var connectionInterceptor = sp.GetRequiredService<TenantDbConnectionInterceptor>();
             var validationInterceptor = sp.GetRequiredService<EntityValidationInterceptor>();

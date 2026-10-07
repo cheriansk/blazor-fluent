@@ -42,6 +42,12 @@
     justify-content: center !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.nav-collapsed ::deep .fluent-navitem svg {
+    margin: 0 !important;
 }
 
 .nav-collapsed ::deep .fluent-navitem > span:not(.fluent-nav-icon):not(svg),

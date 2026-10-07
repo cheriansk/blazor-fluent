@@ -22,6 +22,7 @@
 @inject IAuditService AuditService
 @inject ProtectedSessionStorage SessionStorage
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject IUserTimeZoneService TimeZoneService
 @inject NavigationManager NavigationManager
 @inject ILogger<LoginPage> Logger
 
@@ -199,7 +200,8 @@
                     session.Id,
                     user.Id.ToString(),
                     user.Email,
-                    verified.ResolvedTenantId));
+                    verified.ResolvedTenantId,
+                    TimeZoneId: user.TimeZoneId));
             }
             catch (Exception ex)
             {
@@ -218,11 +220,16 @@
                 }
             }
 
-            AuthStateProvider.NotifyUserChanged();
+            if (!string.IsNullOrWhiteSpace(user.TimeZoneId))
+            {
+                TimeZoneService.ApplyUserTimeZone(user.TimeZoneId);
+            }
 
             await AuditService.LogUserActivityAsync(
                 "UserLoginSuccess",
                 $"User '{user.Email}' logged in successfully. SessionId: {session.Id}");
+
+            AuthStateProvider.NotifyUserChanged();
 
             // Navigate to Home
             NavigationManager.NavigateTo("/");

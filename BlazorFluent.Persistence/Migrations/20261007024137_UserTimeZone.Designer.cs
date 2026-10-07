@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlazorFluent.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007024137_UserTimeZone")]
+    partial class UserTimeZone
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -997,7 +1000,7 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobExecutions", (string)null);
+                    b.ToTable("JobExecutions");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Knowledge.KnowledgeArticleEntity", b =>
@@ -1756,7 +1759,7 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataProtectionKeys", (string)null);
+                    b.ToTable("DataProtectionKeys");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Events.EventConsumptionTrackerEntity", b =>

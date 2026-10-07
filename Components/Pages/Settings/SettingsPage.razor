@@ -73,6 +73,15 @@
                 }
             </FluentTab>
         }
+
+        <FluentTab Id="user" Header="User" IconStart="@(new Icons.Regular.Size20.Person())">
+            @if (_visitedTabs.Contains("user"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsUserTab />
+                </div>
+            }
+        </FluentTab>
     </FluentTabs>
 </div>
 

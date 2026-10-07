@@ -11,8 +11,11 @@
 @inject IUserTaskService TaskService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
+@inject IProjectContext ProjectContext
 @inject ICurrentUser CurrentUser
+@inject IUserTimeZoneService TimeZoneService
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Tasks — @(_currentProject?.Name ?? "Project Work Items")</PageTitle>
 
@@ -106,7 +109,7 @@ else
                         @context.Priority
                     </FluentBadge>
                     <span class="task-card-due @(context.DueDate.HasValue && context.DueDate.Value.Date < _today && !context.IsClosed ? "due-overdue" : "")">
-                        @(context.DueDate.HasValue ? context.DueDate.Value.ToString("MMM dd") : "No Due Date")
+                        @(context.DueDate.HasValue ? TimeZoneService.FormatDate(context.DueDate.Value, "MMM dd") : "No Due Date")
                     </span>
                 </div>
 
@@ -285,7 +288,7 @@ else
                                 <div class="comment-bubble">
                                     <div class="comment-bubble-header">
                                         <span class="comment-author">@c.AuthorName</span>
-                                        <span class="comment-time">@c.CreatedAtUtc.ToString("MMM dd, yyyy HH:mm") UTC</span>
+                                        <span class="comment-time">@TimeZoneService.FormatDateTime(c.CreatedAtUtc, "MMM dd, yyyy HH:mm")</span>
                                     </div>
                                     <div class="comment-body">@c.CommentText</div>
                                 </div>
@@ -598,6 +601,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
         InitializeSwimlanes();
         await LoadProjectsAndTasksAsync();
     }
@@ -648,6 +652,11 @@ else
             if (ProjectId != Guid.Empty)
             {
                 _currentProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectId) ?? _availableProjects.First();
+            }
+            else if (ProjectContext.ProjectId.HasValue)
+            {
+                _currentProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectContext.ProjectId.Value) ?? _availableProjects.First();
+                ProjectId = _currentProject.Id;
             }
             else
             {
@@ -801,4 +810,14 @@ else
         UserTaskPriority.Medium => "#0078d4", // Blue
         _ => "#605e5c"                    // Gray
     };
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
+    }
 }

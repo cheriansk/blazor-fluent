@@ -53,7 +53,9 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
         var tenantContext = appDb?.TenantContext ?? new TenantContext();
         var dateTimeProvider = appDb?.DateTimeProvider ?? new ConfigurableDateTimeProvider(true);
 
-        var now = dateTimeProvider.Now;
+        var now = dateTimeProvider.Now.Kind == DateTimeKind.Utc
+            ? dateTimeProvider.Now
+            : DateTime.SpecifyKind(dateTimeProvider.Now, DateTimeKind.Utc);
         var currentUserId = currentUser.IsImpersonated
             ? $"{currentUser.UserId} [Impersonated by {currentUser.ImpersonatedBy}]"
             : (currentUser.IsAuthenticated ? (currentUser.UserId ?? "authenticated_user") : (currentUser.IsSystemDaemon ? "system" : "anonymous"));
