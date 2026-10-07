@@ -317,9 +317,10 @@ public class ImportFileService : IImportFileService
         file.DeletedAtUtc = DateTime.UtcNow;
         file.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
-        // Clean up staged tasks for this file
-        var stagedTasks = await _context.StagedTasks.Where(s => s.ImportFileId == importFileId).ToListAsync(ct);
-        _context.StagedTasks.RemoveRange(stagedTasks);
+        // Clean up staged tasks for this file directly via SQL without materializing entities into memory
+        await _context.StagedTasks
+            .Where(s => s.ImportFileId == importFileId)
+            .ExecuteDeleteAsync(ct);
 
         await _context.SaveChangesAsync(ct);
         return Result<bool>.Success(true);

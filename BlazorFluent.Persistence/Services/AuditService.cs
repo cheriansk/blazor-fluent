@@ -47,7 +47,7 @@ public class AuditService : IAuditService
 
         var record = new AuditRecordEntity
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             TenantId = toTenantId, // Audit lives in target tenant's audit trail
             UserId = currentUserId,
             UserEmail = _currentUser.Email,
@@ -78,7 +78,7 @@ public class AuditService : IAuditService
 
         var record = new AuditRecordEntity
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             TenantId = tenantId,
             UserId = currentUserId,
             UserEmail = _currentUser.Email,
@@ -118,7 +118,7 @@ public class AuditService : IAuditService
 
         var record = new AuditRecordEntity
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             TenantId = tenantId,
             UserId = currentUserId,
             UserEmail = _currentUser.Email,
@@ -259,7 +259,7 @@ public class AuditService : IAuditService
 
             var record = new AuditRecordEntity
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 TenantId = tenantId,
                 UserId = currentUserId,
                 UserEmail = _currentUser.Email,

@@ -87,11 +87,6 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 softDeletable.DeletedBy = currentUserId;
             }
 
-            if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
-            {
-                continue;
-            }
-
             // ─── TENANT SECURITY ──────────────────────────────────────────────────────
             if (entry.Entity is ITenantEntity tenantEntity)
             {
@@ -134,21 +129,44 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     // TenantId is immutable — it can never be changed after creation.
                     entry.Property(TenantIdProperty).IsModified = false;
 
-                    // Cross-tenant write guard for non-host users
+                    // Cross-tenant write guard for non-host users (check both original and current values)
+                    var originalTenantId = entry.Property(TenantIdProperty).OriginalValue as string;
                     if (!tenantContext.IsHost &&
-                        tenantEntity.TenantId != tenantContext.TenantId)
+                        ((!string.IsNullOrEmpty(originalTenantId) && originalTenantId != tenantContext.TenantId) ||
+                         tenantEntity.TenantId != tenantContext.TenantId))
                     {
+                        var violatingTenant = originalTenantId ?? tenantEntity.TenantId;
                         _logger.LogWarning(
                             "Security violation: attempt to modify entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
-                            entry.Entity.GetType().Name, tenantEntity.TenantId, tenantContext.TenantId);
+                            entry.Entity.GetType().Name, violatingTenant, tenantContext.TenantId);
 
                         throw new InvalidOperationException(
                             $"Security violation: attempt to modify entity '{entry.Entity.GetType().Name}' " +
-                            $"belonging to tenant '{tenantEntity.TenantId}' while active tenant is '{tenantContext.TenantId}'.");
+                            $"belonging to tenant '{violatingTenant}' while active tenant is '{tenantContext.TenantId}'.");
+                    }
+                }
+                else if (entry.State == EntityState.Deleted)
+                {
+                    // Cross-tenant delete guard for hard deletes
+                    var originalTenantId = entry.Property(TenantIdProperty).OriginalValue as string ?? tenantEntity.TenantId;
+                    if (!tenantContext.IsHost && originalTenantId != tenantContext.TenantId)
+                    {
+                        _logger.LogWarning(
+                            "Security violation: attempt to delete entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
+                            entry.Entity.GetType().Name, originalTenantId, tenantContext.TenantId);
+
+                        throw new InvalidOperationException(
+                            $"Security violation: attempt to delete entity '{entry.Entity.GetType().Name}' " +
+                            $"belonging to tenant '{originalTenantId}' while active tenant is '{tenantContext.TenantId}'.");
                     }
                 }
             }
             // ─────────────────────────────────────────────────────────────────────────
+
+            if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
+            {
+                continue;
+            }
 
             // ─── AUDIT FIELDS ─────────────────────────────────────────────────────────
             // 1. Strongly typed IAuditableEntity
@@ -290,7 +308,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
 
             var record = new AuditRecordEntity
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.CreateVersion7(),
                 TenantId = tenantId,
                 UserId = currentUserId,
                 UserEmail = currentUser.Email,

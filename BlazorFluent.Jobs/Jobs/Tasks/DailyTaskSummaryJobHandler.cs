@@ -52,6 +52,20 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 
         var dispatchedCount = 0;
 
+        // Batch retrieve all actionable tasks across all target projects in a single query
+        var projectIds = projects.Select(p => p.Id).ToList();
+        var allTasks = await _dbContext.Tasks
+            .IgnoreQueryFilters()
+            .Where(t => projectIds.Contains(t.ProjectId) &&
+                        !t.IsDeleted &&
+                        !t.IsClosed &&
+                        t.Status != UserTaskStatus.Closed &&
+                        t.DueDate.HasValue)
+            .OrderBy(t => t.DueDate)
+            .ToListAsync(cancellationToken);
+
+        var tasksByProject = allTasks.ToLookup(t => t.ProjectId);
+
         foreach (var project in projects)
         {
             var webhookUrl = !string.IsNullOrWhiteSpace(project.TeamsWebhookUrl)
@@ -63,16 +77,7 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
                 continue;
             }
 
-            // Retrieve active tasks for this project
-            var tasks = await _dbContext.Tasks
-                .IgnoreQueryFilters()
-                .Where(t => t.ProjectId == project.Id &&
-                            !t.IsDeleted &&
-                            !t.IsClosed &&
-                            t.Status != UserTaskStatus.Closed &&
-                            t.DueDate.HasValue)
-                .OrderBy(t => t.DueDate)
-                .ToListAsync(cancellationToken);
+            var tasks = tasksByProject[project.Id].ToList();
 
             var pastDue = tasks.Where(t => t.DueDate!.Value.Date < today).ToList();
             var dueToday = tasks.Where(t => t.DueDate!.Value.Date == today).ToList();

@@ -4,7 +4,7 @@
 <div class="swimlane-container">
     @foreach (var col in Columns)
     {
-        var colItems = Items.Where(col.Predicate).ToList();
+        var colItems = _groupedItems.TryGetValue(col, out var list) ? list : (IReadOnlyList<TItem>)[];
 
         <div class="swimlane-column">
             <!-- Column Header -->
@@ -137,6 +137,17 @@
 
     [Parameter]
     public EventCallback<TItem> OnItemClick { get; set; }
+
+    private readonly Dictionary<SwimlaneColumn<TItem>, IReadOnlyList<TItem>> _groupedItems = new();
+
+    protected override void OnParametersSet()
+    {
+        _groupedItems.Clear();
+        foreach (var col in Columns)
+        {
+            _groupedItems[col] = Items.Where(col.Predicate).ToList();
+        }
+    }
 
     private async Task HandleItemClick(TItem item)
     {

@@ -9,21 +9,22 @@ public interface IKnowledgeBaseService
         string? searchTerm = null,
         KnowledgeArticleStatus? status = null,
         string? labelFilter = null,
-        bool? isGlobalOnly = null);
+        bool? isGlobalOnly = null,
+        CancellationToken cancellationToken = default);
 
-    Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId);
+    Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId, CancellationToken cancellationToken = default);
 
-    Task<Guid> CreateArticleAsync(CreateArticleDto dto);
+    Task<Guid> CreateArticleAsync(CreateArticleDto dto, CancellationToken cancellationToken = default);
 
-    Task UpdateArticleAsync(UpdateArticleDto dto);
+    Task UpdateArticleAsync(UpdateArticleDto dto, CancellationToken cancellationToken = default);
 
-    Task<bool> ApproveArticleAsync(Guid articleId);
+    Task<bool> ApproveArticleAsync(Guid articleId, CancellationToken cancellationToken = default);
 
-    Task<bool> DeleteArticleAsync(Guid articleId);
+    Task<bool> DeleteArticleAsync(Guid articleId, CancellationToken cancellationToken = default);
 
-    Task<List<UserDto>> GetAvailableReviewersAsync();
+    Task<List<UserDto>> GetAvailableReviewersAsync(CancellationToken cancellationToken = default);
 
-    Task<List<string>> GetAllLabelsAsync();
+    Task<List<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default);
 }
 
 public record UserDto(string Id, string Email, string FullName, UserType UserType);

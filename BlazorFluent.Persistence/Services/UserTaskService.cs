@@ -262,16 +262,19 @@ public class UserTaskService : IUserTaskService
         var message = $"You have been assigned to task '{task.Title}'. Priority: {task.Priority}, Due: {dueDateFormatted}.";
         var linkUrl = $"/projects/{task.ProjectId}/tasks";
 
+        // Batch query all target users in a single round-trip instead of N queries
+        var normalizedEmails = emails.Select(e => e.Trim().ToLowerInvariant()).Distinct().ToList();
+        var targetUsers = await _context.Users
+            .AsNoTracking()
+            .Where(u => normalizedEmails.Contains(u.Email.ToLower()))
+            .ToDictionaryAsync(u => u.Email.ToLower(), u => u.Id.ToString(), ct);
+
         foreach (var email in emails)
         {
             try
             {
-                // Find matching user in identity if available
-                var targetUser = await _context.Users
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
-
-                var targetUserId = targetUser?.Id.ToString() ?? email;
+                var norm = email.Trim().ToLowerInvariant();
+                var targetUserId = targetUsers.TryGetValue(norm, out var uid) ? uid : email;
 
                 var request = new SendNotificationRequest
                 {

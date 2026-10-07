@@ -152,8 +152,14 @@
         var clientId = Configuration["AzureAd:ClientId"];
         if (string.IsNullOrWhiteSpace(clientId) || clientId.Equals("mock", StringComparison.OrdinalIgnoreCase))
         {
-            // Local dev mode without live Azure subscription: default to admin
-            await TestSignInAsync("admin@blazorfluent.local");
+            if (HostEnvironment.IsDevelopment())
+            {
+                // Local dev mode without live Azure subscription: default to admin
+                await TestSignInAsync("admin@blazorfluent.local");
+                return;
+            }
+
+            _errorMessage = "Azure AD is not configured for this environment. Please contact your system administrator.";
             return;
         }
 

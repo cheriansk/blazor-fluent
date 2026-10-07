@@ -87,8 +87,8 @@ public class UserTaskEntityConfiguration : IEntityTypeConfiguration<UserTaskEnti
         builder.HasIndex(t => new { t.TenantId, t.ProjectId })
             .HasDatabaseName("IX_Tasks_TenantId_ProjectId");
 
-        builder.HasIndex(t => new { t.ProjectId, t.Status, t.DueDate })
-            .HasDatabaseName("IX_Tasks_ProjectId_Status_DueDate");
+        builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
+            .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
 
         builder.HasIndex(t => t.IsDeleted)
             .HasDatabaseName("IX_Tasks_IsDeleted");

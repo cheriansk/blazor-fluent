@@ -297,6 +297,7 @@ public class EventTrackerService : IEventTrackerService
         var query = _dbContext.EventPublishTrackers
             .IgnoreQueryFilters()
             .Include(e => e.Consumptions)
+            .AsSplitQuery()
             .AsNoTracking();
 
         // Enforce tenant boundary unless user is host
@@ -391,6 +392,7 @@ public class EventTrackerService : IEventTrackerService
         return await _dbContext.EventPublishTrackers
             .IgnoreQueryFilters()
             .Include(e => e.Consumptions)
+            .AsSplitQuery()
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventTrackerId || e.EventId == eventTrackerId, cancellationToken);
     }
