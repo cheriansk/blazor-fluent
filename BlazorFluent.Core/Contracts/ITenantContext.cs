@@ -101,9 +101,9 @@ public sealed class TenantContext : ITenantContext
     /// </summary>
     public Result SwitchTenant(string newTenantId)
     {
-        if (_userType == UserType.ClientUser)
+        if (_userType == UserType.ClientUser || string.Equals(newTenantId, "default", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning("Security violation: Client user attempted to switch tenant to {TargetTenantId}", newTenantId);
+            _logger.LogWarning("Security violation: Attempted unauthorized tenant switch to {TargetTenantId}", newTenantId);
             return Result.Failure("Access denied.");
         }
 

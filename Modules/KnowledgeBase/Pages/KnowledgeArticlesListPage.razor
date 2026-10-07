@@ -214,7 +214,7 @@
     private List<string> _labelSelectItems = new();
 
     private bool IsInternalUser =>
-        CurrentUser.IsAuthenticated && (TenantContext.IsHost || TenantContext.UserType == UserType.CompanyUser);
+        CurrentUser.IsAuthenticated && (CurrentUser.IsRootAdmin || TenantContext.UserType == UserType.CompanyUser);
 
     protected override async Task OnInitializedAsync()
     {

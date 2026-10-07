@@ -7,7 +7,10 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <DefaultItemExcludes>$(DefaultItemExcludes);BlazorFluent.Core/**;BlazorFluent.Persistence/**;BlazorFluent.Infrastructure/**;BlazorFluent.Jobs/**</DefaultItemExcludes>
     <NoWarn>$(NoWarn);EXTEXP0018</NoWarn>
+	  <UseRazorSourceGenerator Condition="'$(DesignTimeBuild)' == 'true'">true</UseRazorSourceGenerator>
 	  <WarningsAsErrors>CS0108</WarningsAsErrors>
+	  <!-- Force unrecognized Blazor components to break the build -->
+	  <WarningsAsErrors>$(WarningsAsErrors);RZ10012</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,4 +43,5 @@
     <ProjectReference Include="BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />
     <ProjectReference Include="BlazorFluent.Jobs\BlazorFluent.Jobs.csproj" />
   </ItemGroup>
+	
 </Project>

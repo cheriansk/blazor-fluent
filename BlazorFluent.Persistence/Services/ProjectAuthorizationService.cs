@@ -5,19 +5,17 @@ using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
 
 /// <summary>
-/// Implements project authorization and role management with HybridCache L1/L2 caching,
-/// live invalidation, and forensic security audit logging on unauthorized attempts.
+/// Implements project authorization and role management with direct real-time database queries
+/// and forensic security audit logging on unauthorized attempts.
 /// </summary>
 public class ProjectAuthorizationService : IProjectAuthorizationService
 {
     private readonly AppDbContext _dbContext;
-    private readonly HybridCache _cache;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IAuditService _auditService;
@@ -25,14 +23,12 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public ProjectAuthorizationService(
         AppDbContext dbContext,
-        HybridCache cache,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IAuditService auditService,
         ILogger<ProjectAuthorizationService> logger)
     {
         _dbContext = dbContext;
-        _cache = cache;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
@@ -41,29 +37,18 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<ProjectRole?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
     {
-        // Host / Tenant Admin bypass
-        if (_tenantContext.IsHost || _currentUser.IsInRole("Admin"))
+        // Root Admin bypass
+        if (_currentUser.IsRootAdmin)
         {
             return ProjectRole.Admin;
         }
 
         var userId = _currentUser.UserId ?? "anonymous";
-        var tenantId = _tenantContext.TenantId ?? "no_tenant";
-        var cacheKey = $"proj_role_{tenantId}_{userId}_{projectId}";
+        var roleEntity = await _dbContext.ProjectUserRoles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
 
-        var roleValue = await _cache.GetOrCreateAsync<int>(
-            cacheKey,
-            async token =>
-            {
-                var roleEntity = await _dbContext.ProjectUserRoles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, token);
-
-                return roleEntity is not null ? (int)roleEntity.Role : 0;
-            },
-            cancellationToken: ct);
-
-        return roleValue > 0 ? (ProjectRole)roleValue : null;
+        return roleEntity?.Role;
     }
 
     public async Task<bool> CanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
@@ -116,7 +101,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
     {
-        if (_tenantContext.IsHost || _currentUser.IsInRole("Admin"))
+        if (_currentUser.IsRootAdmin)
         {
             return await _dbContext.Projects
                 .AsNoTracking()
@@ -156,9 +141,9 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         ProjectRole role,
         CancellationToken ct = default)
     {
-        // Only ProjectAdmin, TenantAdmin, or Host can manage access
+        // Only ProjectAdmin, TenantAdmin, or Root Admin can manage access
         var callerRole = await GetCurrentUserProjectRoleAsync(projectId, ct);
-        if (!_tenantContext.IsHost && (callerRole is null || !callerRole.Value.CanManageAccess()))
+        if (!_currentUser.IsRootAdmin && (callerRole is null || !callerRole.Value.CanManageAccess()))
         {
             return Result.Failure("Only Project Admins or Tenant Admins can assign or change project roles.");
         }
@@ -193,10 +178,6 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         await _dbContext.SaveChangesAsync(ct);
 
-        // Immediate HybridCache Invalidation
-        var cacheKey = $"proj_role_{tenantId}_{userId}_{projectId}";
-        await _cache.RemoveAsync(cacheKey, ct);
-
         await _auditService.LogUserActivityAsync(
             "AssignProjectRole",
             $"Role '{role}' assigned to user '{userName}' ({userId}) on project '{projectId}'.",
@@ -208,7 +189,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
     public async Task<Result> RevokeUserRoleAsync(Guid projectId, string userId, CancellationToken ct = default)
     {
         var callerRole = await GetCurrentUserProjectRoleAsync(projectId, ct);
-        if (!_tenantContext.IsHost && (callerRole is null || !callerRole.Value.CanManageAccess()))
+        if (!_currentUser.IsRootAdmin && (callerRole is null || !callerRole.Value.CanManageAccess()))
         {
             return Result.Failure("Only Project Admins or Tenant Admins can revoke project roles.");
         }
@@ -227,11 +208,6 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         existing.DeletedBy = _currentUser.UserId;
 
         await _dbContext.SaveChangesAsync(ct);
-
-        // Immediate HybridCache Invalidation
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
-        var cacheKey = $"proj_role_{tenantId}_{userId}_{projectId}";
-        await _cache.RemoveAsync(cacheKey, ct);
 
         await _auditService.LogUserActivityAsync(
             "RevokeProjectRole",

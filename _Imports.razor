@@ -1,5 +1,7 @@
 @using System.Net.Http
 @using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
@@ -8,15 +10,17 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @using Microsoft.JSInterop
+@using Blazored.FluentValidation
 @using BlazorFluent
 @using BlazorFluent.Components
-@using BlazorFluent.Components.Layout
 @using BlazorFluent.Components.Common
+@using BlazorFluent.Components.Layout
+@using BlazorFluent.Components.Pages.Settings
 @using BlazorFluent.Core.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
-@using BlazorFluent.Core.DTOs
 @using BlazorFluent.Core.Domain.Base
+@using BlazorFluent.Core.DTOs
 @using BlazorFluent.Jobs.Abstractions
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]

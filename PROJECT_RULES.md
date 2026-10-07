@@ -548,4 +548,12 @@ BlazorFluent/
 
 ---
 
-> **Last Updated**: September 2026 | **Target Framework**: .NET 10 | **UI**: Microsoft Fluent UI Blazor V5
+## 13. Git Workflow & Staging Governance
+
+1. **Never Auto-Stage Changed Files**: AI coding assistants and automated tools MUST NEVER automatically stage files using `git add` or `git add -A`.
+2. **Keep All Modifications Unstaged**: All modified, newly created, or refactored files must remain unstaged in the working directory (`??` and ` M`) so the developer can review diffs, test locally, and selectively stage files for commits.
+3. **Commit Integrity**: The developer retains sole discretion over staging, committing, and pushing changes.
+
+---
+
+> **Last Updated**: October 2026 | **Target Framework**: .NET 10 | **UI**: Microsoft Fluent UI Blazor V5

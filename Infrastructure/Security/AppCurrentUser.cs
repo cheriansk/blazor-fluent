@@ -8,10 +8,28 @@ namespace BlazorFluent.Infrastructure.Security;
 /// </summary>
 public class AppCurrentUser : ICurrentUser
 {
+    private readonly IRootAdminService _rootAdminService;
+
+    public AppCurrentUser(IRootAdminService rootAdminService)
+    {
+        _rootAdminService = rootAdminService;
+    }
+
     public string Email { get; set; } = string.Empty;
     public string? UserId { get; set; } = null;
     public string? UserName { get; set; } = null;
     public bool IsAuthenticated { get; set; } = false;
+
+    /// <summary>
+    /// Computes root administrator privileges on-demand.
+    /// Strict security: Must be Authenticated, NOT Impersonated, with non-empty Email matching configured root admins.
+    /// Has no setter or mutable backing field.
+    /// </summary>
+    public bool IsRootAdmin =>
+        IsAuthenticated &&
+        !IsImpersonated &&
+        !string.IsNullOrWhiteSpace(Email) &&
+        _rootAdminService.IsRootAdmin(Email);
 
     private readonly List<string> _roles = [];
 
@@ -33,6 +51,10 @@ public class AppCurrentUser : ICurrentUser
     public bool IsImpersonated { get; set; }
     public string? ImpersonatedBy { get; set; }
     public string? SessionId { get; set; }
+    public string? OriginalUserId { get; private set; }
+    public string? OriginalEmail { get; private set; }
+    public string? OriginalUserName { get; private set; }
+    private readonly List<string> _originalRoles = new();
 
     public void SetUser(string userId, string email, string userName, bool isAuthenticated = true)
     {
@@ -44,20 +66,47 @@ public class AppCurrentUser : ICurrentUser
 
     public void SetImpersonation(string targetUserId, string targetEmail, string targetUserName, string adminId)
     {
+        OriginalUserId = UserId;
+        OriginalEmail = Email;
+        OriginalUserName = UserName;
+        _originalRoles.Clear();
+        _originalRoles.AddRange(_roles);
+
         IsImpersonated = true;
         ImpersonatedBy = adminId;
         UserId = targetUserId;
         Email = targetEmail;
         UserName = targetUserName;
+        _roles.Clear();
     }
 
-    public void ClearImpersonation(string adminId, string adminEmail, string adminName)
+    public void ClearImpersonation(string? adminId = null, string? adminEmail = null, string? adminName = null)
     {
         IsImpersonated = false;
         ImpersonatedBy = null;
-        UserId = adminId;
-        Email = adminEmail;
-        UserName = adminName;
+        UserId = adminId ?? OriginalUserId;
+        Email = adminEmail ?? OriginalEmail ?? string.Empty;
+        UserName = adminName ?? OriginalUserName;
+        _roles.Clear();
+        if (_originalRoles.Count > 0)
+        {
+            _roles.AddRange(_originalRoles);
+            _originalRoles.Clear();
+        }
+        OriginalUserId = null;
+        OriginalEmail = null;
+        OriginalUserName = null;
+    }
+
+    public bool IsSystemDaemon { get; private set; }
+
+    public void SetSystemDaemon(string daemonName = "SystemDaemon")
+    {
+        IsSystemDaemon = true;
+        UserId = "system";
+        UserName = daemonName;
+        Email = "system@daemon.local";
+        IsAuthenticated = true;
     }
 
     public void Clear()
@@ -69,6 +118,11 @@ public class AppCurrentUser : ICurrentUser
         IsImpersonated = false;
         ImpersonatedBy = null;
         SessionId = null;
+        IsSystemDaemon = false;
+        OriginalUserId = null;
+        OriginalEmail = null;
+        OriginalUserName = null;
+        _originalRoles.Clear();
         _roles.Clear();
     }
 }

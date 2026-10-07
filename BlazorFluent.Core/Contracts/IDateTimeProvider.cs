@@ -34,7 +34,7 @@ public class ConfigurableDateTimeProvider : IDateTimeProvider
 
     public DateTime Now => UseUtc
         ? DateTime.UtcNow
-        : DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+        : DateTime.SpecifyKind(DateTime.Now.ToUniversalTime(), DateTimeKind.Utc);
 
     public DateTime UtcNow => DateTime.UtcNow;
 

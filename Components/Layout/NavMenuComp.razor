@@ -21,26 +21,13 @@
     <FluentNav Id="main-menu" Width="@(NavState.IsCollapsed ? "54px" : "260px")">
         @if (CurrentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(TenantContext.TenantId))
         {
-            <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())" IconActive="@(new Icons.Filled.Size20.Home())" Tooltip="Home">Home</FluentNavItem>
-            <FluentNavItem Href="knowledge" IconRest="@(new Icons.Regular.Size20.BookOpen())" IconActive="@(new Icons.Filled.Size20.BookOpen())" Tooltip="Knowledge Base">Knowledge Base</FluentNavItem>
-            <FluentNavItem Href="tasks" IconRest="@(new Icons.Regular.Size20.TaskListLtr())" IconActive="@(new Icons.Filled.Size20.TaskListLtr())" Tooltip="Tasks">Tasks</FluentNavItem>
-            <FluentNavItem Href="imports" IconRest="@(new Icons.Regular.Size20.ArrowSync())" IconActive="@(new Icons.Filled.Size20.ArrowSync())" Tooltip="File Imports">File Imports</FluentNavItem>
-            <FluentNavItem Href="tenancy/projects" IconRest="@(new Icons.Regular.Size20.BuildingMultiple())" IconActive="@(new Icons.Filled.Size20.BuildingMultiple())" Tooltip="Projects">Projects (Tenancy)</FluentNavItem>
-            <FluentNavItem Href="tenancy/project-roles" IconRest="@(new Icons.Regular.Size20.PeopleTeam())" IconActive="@(new Icons.Filled.Size20.PeopleTeam())" Tooltip="Project Roles">Project Roles</FluentNavItem>
-            <FluentNavItem Href="catalog" IconRest="@(new Icons.Regular.Size20.Box())" IconActive="@(new Icons.Filled.Size20.Box())" Tooltip="Catalog">Catalog (Module)</FluentNavItem>
-            <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())" Tooltip="Counter">Counter</FluentNavItem>
-            <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())" Tooltip="Weather">Weather</FluentNavItem>
-
-            @if (TenantContext.IsHost)
-            {
-                <FluentNavGroup Title="Administration" Icon="@(new Icons.Regular.Size20.Shield())">
-                    <FluentNavItem Href="tenants" IconRest="@(new Icons.Regular.Size20.Building())" IconActive="@(new Icons.Filled.Size20.Building())" Tooltip="Tenants">Tenants</FluentNavItem>
-                    <FluentNavItem Href="auditing" IconRest="@(new Icons.Regular.Size20.DocumentBulletList())" IconActive="@(new Icons.Filled.Size20.DocumentBulletList())" Tooltip="Audit Trail">Audit Trail</FluentNavItem>
-                    <FluentNavItem Href="jobs" IconRest="@(new Icons.Regular.Size20.Clock())" IconActive="@(new Icons.Filled.Size20.Clock())" Tooltip="Background Jobs">Background Jobs</FluentNavItem>
-                    <FluentNavItem Href="events" IconRest="@(new Icons.Regular.Size20.Pulse())" IconActive="@(new Icons.Filled.Size20.Pulse())" Tooltip="Event Tracker">Event Tracker</FluentNavItem>
-                    <FluentNavItem Href="admin/sessions" IconRest="@(new Icons.Regular.Size20.Laptop())" IconActive="@(new Icons.Filled.Size20.Laptop())" Tooltip="Active Sessions">Active Sessions</FluentNavItem>
-                </FluentNavGroup>
-            }
+            <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())" IconActive="@(new Icons.Filled.Size20.Home())" Tooltip="Home">@(!NavState.IsCollapsed ? "Home" : null)</FluentNavItem>
+            <FluentNavItem Href="knowledge" IconRest="@(new Icons.Regular.Size20.BookOpen())" IconActive="@(new Icons.Filled.Size20.BookOpen())" Tooltip="Knowledge Base">@(!NavState.IsCollapsed ? "Knowledge Base" : null)</FluentNavItem>
+            <FluentNavItem Href="tasks" IconRest="@(new Icons.Regular.Size20.TaskListLtr())" IconActive="@(new Icons.Filled.Size20.TaskListLtr())" Tooltip="Tasks">@(!NavState.IsCollapsed ? "Tasks" : null)</FluentNavItem>
+            <FluentNavItem Href="imports" IconRest="@(new Icons.Regular.Size20.ArrowSync())" IconActive="@(new Icons.Filled.Size20.ArrowSync())" Tooltip="File Imports">@(!NavState.IsCollapsed ? "File Imports" : null)</FluentNavItem>
+            <FluentNavItem Href="catalog" IconRest="@(new Icons.Regular.Size20.Box())" IconActive="@(new Icons.Filled.Size20.Box())" Tooltip="Catalog">@(!NavState.IsCollapsed ? "Catalog (Module)" : null)</FluentNavItem>
+            <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())" Tooltip="Counter">@(!NavState.IsCollapsed ? "Counter" : null)</FluentNavItem>
+            <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())" Tooltip="Weather">@(!NavState.IsCollapsed ? "Weather" : null)</FluentNavItem>
         }
     </FluentNav>
 </div>

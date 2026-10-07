@@ -1,0 +1,231 @@
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Infrastructure.Security
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject ITenantContext TenantContext
+@inject IProjectContext ProjectContext
+@inject ITenantService TenantService
+@inject IAuditService AuditService
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager NavigationManager
+@inject IUnsavedChangesStateService UnsavedChanges
+@inject ILogger<TenantAndProjectSwitcherComp> Logger
+
+@if (string.IsNullOrWhiteSpace(TenantContext.TenantId))
+{
+    @* Not yet initialized — render nothing *@
+    return;
+}
+
+<div style="display: inline-flex; align-items: center; gap: 8px; background: var(--neutral-layer-2, #f5f5f5); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);">
+    <!-- 1. Tenant Selector Section -->
+    <div style="display: flex; align-items: center; gap: 6px;">
+        <FluentIcon Value="@(new Icons.Regular.Size16.Building())" Style="opacity: 0.7;" />
+        @if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
+        {
+            <FluentSelect TOption="TenantInfo"
+                          TValue="string"
+                          Items="@TenantContext.AllowedTenants.ToList()"
+                          OptionValue="@(t => t.Id)"
+                          OptionText="@(t => t.Name)"
+                          Value="@TenantContext.TenantId"
+                          ValueChanged="@OnTenantChanged"
+                          Style="min-width: 150px; max-width: 220px;"
+                          Title="Select Active Tenant" />
+        }
+        else if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count == 1)
+        {
+            <span style="font-weight: 600; font-size: 13px; color: var(--neutral-foreground-1, #242424);">
+                @TenantContext.TenantName
+            </span>
+        }
+        else
+        {
+            <FluentTooltip Anchor="header-tenant-lock" Position="TooltipPosition.Bottom">
+                Locked to assigned tenant
+            </FluentTooltip>
+            <span id="header-tenant-lock" style="font-weight: 600; font-size: 13px; color: var(--neutral-foreground-1, #242424); cursor: default;">
+                🔒 @TenantContext.TenantName
+            </span>
+        }
+    </div>
+
+    <!-- Divider / Chevron -->
+    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Style="opacity: 0.35;" />
+
+    <!-- 2. Project Selector Section -->
+    <div style="display: flex; align-items: center; gap: 6px;">
+        <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Style="opacity: 0.7;" />
+        @if (_isLoadingProjects)
+        {
+            <FluentProgressRing Size="SpinnerSize.Small" Style="width: 16px; height: 16px;" />
+        }
+        else if (_projects.Count == 0)
+        {
+            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #888); font-style: italic;">
+                (No Projects)
+            </span>
+        }
+        else if (_projects.Count == 1)
+        {
+            <!-- Exactly 1 project: Defaulted and Read-Only / Disabled -->
+            <FluentSelect TOption="ProjectInfo"
+                          TValue="string"
+                          Items="@_projects"
+                          OptionValue="@(p => p.Id.ToString())"
+                          OptionText="@(p => p.Name)"
+                          Value="@(_projects[0].Id.ToString())"
+                          Disabled="true"
+                          Style="min-width: 150px; max-width: 220px;"
+                          Title="Project locked (only 1 project available)" />
+        }
+        else
+        {
+            <!-- Multiple projects: Switchable dropdown -->
+            <FluentSelect TOption="ProjectInfo"
+                          TValue="string"
+                          Items="@_projects"
+                          OptionValue="@(p => p.Id.ToString())"
+                          OptionText="@(p => p.Name)"
+                          Value="@(ProjectContext.ProjectId?.ToString() ?? _projects[0].Id.ToString())"
+                          ValueChanged="@OnProjectChanged"
+                          Style="min-width: 150px; max-width: 220px;"
+                          Title="Select Active Project Workspace" />
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(_switchError))
+{
+    <FluentBadge Color="BadgeColor.Severe" Style="margin-left: 8px;">
+        @_switchError
+    </FluentBadge>
+}
+
+@code {
+    private List<ProjectInfo> _projects = new();
+    private bool _isLoadingProjects;
+    private string? _switchError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectsForCurrentTenantAsync();
+    }
+
+    private async Task LoadProjectsForCurrentTenantAsync()
+    {
+        if (string.IsNullOrWhiteSpace(TenantContext.TenantId)) return;
+
+        try
+        {
+            _isLoadingProjects = true;
+            var entities = await TenantService.GetTenantProjectsAsync(TenantContext.TenantId);
+            _projects = entities
+                .Select(e => new ProjectInfo(e.Id, e.Name, e.ShortCode, e.Status))
+                .ToList();
+
+            // Initialize ProjectContext
+            ProjectContext.Initialize(
+                ProjectContext.ProjectId,
+                ProjectContext.ProjectName,
+                ProjectContext.ProjectShortCode,
+                _projects);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load projects for tenant '{TenantId}'", TenantContext.TenantId);
+        }
+        finally
+        {
+            _isLoadingProjects = false;
+        }
+    }
+
+    private async Task OnTenantChanged(string? newTenantId)
+    {
+        if (string.IsNullOrWhiteSpace(newTenantId) || newTenantId == TenantContext.TenantId) return;
+
+        var prevTenant = TenantContext.TenantId ?? "unknown";
+        var result = TenantContext.SwitchTenant(newTenantId);
+        if (!result.Succeeded)
+        {
+            _switchError = result.Errors.FirstOrDefault() ?? "Switch failed.";
+            await AuditService.LogSecurityEventAsync(
+                "TenantSwitchBlocked",
+                AuditSeverity.Warning,
+                $"Attempted switch from '{prevTenant}' to '{newTenantId}' blocked: {_switchError}");
+            return;
+        }
+
+        _switchError = null;
+        await AuditService.LogTenantSwitchAsync(prevTenant, newTenantId);
+
+        // Reset project context & unsaved changes
+        ProjectContext.Reset();
+        UnsavedChanges.ResetAll();
+
+        // Update session storage so fresh circuit loads new tenant
+        try
+        {
+            var existing = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
+            if (existing.Success && existing.Value != null)
+            {
+                await SessionStorage.SetAsync("app_session", existing.Value with
+                {
+                    ActiveTenantId = newTenantId,
+                    ActiveProjectId = null
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to persist switched tenant to session storage.");
+        }
+
+        // Force full circuit reload to eliminate all stale state
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    private async Task OnProjectChanged(string? newProjectIdStr)
+    {
+        if (string.IsNullOrWhiteSpace(newProjectIdStr)) return;
+        if (!Guid.TryParse(newProjectIdStr, out var newProjectId)) return;
+        if (ProjectContext.ProjectId == newProjectId) return;
+
+        var result = ProjectContext.SetActiveProject(newProjectId);
+        if (!result.Succeeded)
+        {
+            _switchError = result.Errors.FirstOrDefault() ?? "Project switch failed.";
+            return;
+        }
+
+        _switchError = null;
+        UnsavedChanges.ResetAll();
+
+        // Persist active project to session storage
+        try
+        {
+            var existing = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
+            if (existing.Success && existing.Value != null)
+            {
+                await SessionStorage.SetAsync("app_session", existing.Value with
+                {
+                    ActiveProjectId = newProjectId
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to persist switched project to session storage.");
+        }
+
+        await AuditService.LogUserActivityAsync(
+            $"Switched active project to '{ProjectContext.ProjectName}'",
+            $"Tenant: {TenantContext.TenantId}, ProjectId: {newProjectId}");
+
+        // Force full circuit reload of the current page to ensure zero stale data
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+}

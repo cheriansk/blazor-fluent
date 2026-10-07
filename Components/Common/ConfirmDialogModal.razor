@@ -1,32 +1,30 @@
 @* Reusable confirmation dialog for destructive actions (Revoke, Delete, Impersonate, etc.) *@
 <FluentDialog @ref="_dialog"
-              @bind-Hidden="@_hidden"
               Modal="true"
-              TrapFocus="true"
-              PreventScroll="true"
-              AriaLabel="@Title">
-    <FluentDialogHeader ShowDismiss="false">
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center;">
-            <FluentIcon Value="@(new Icons.Filled.Size24.Warning())" Color="Color.Warning" />
-            <FluentLabel Typo="Typography.H6">@Title</FluentLabel>
-        </FluentStack>
-    </FluentDialogHeader>
+              Style="--dialog-width: 480px;">
     <FluentDialogBody>
-        <FluentLabel Typo="Typography.Body">@Message</FluentLabel>
+        <TitleTemplate>
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center;">
+                <FluentIcon Value="@(new Icons.Filled.Size24.Warning())" Color="Color.Warning" />
+                <FluentLabel Typo="Typography.H6">@Title</FluentLabel>
+            </FluentStack>
+        </TitleTemplate>
+        <ChildContent>
+            <FluentLabel Typo="Typography.Body">@Message</FluentLabel>
+        </ChildContent>
+        <ActionTemplate>
+            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAsync">Cancel</FluentButton>
+            <FluentButton Appearance="ButtonAppearance.Primary"
+                          Style="background: var(--error); color: white;"
+                          OnClick="@ConfirmAsync">
+                @ConfirmLabel
+            </FluentButton>
+        </ActionTemplate>
     </FluentDialogBody>
-    <FluentDialogFooter>
-        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAsync">Cancel</FluentButton>
-        <FluentButton Appearance="ButtonAppearance.Primary"
-                      Style="background: var(--error); color: white;"
-                      OnClick="@ConfirmAsync">
-            @ConfirmLabel
-        </FluentButton>
-    </FluentDialogFooter>
 </FluentDialog>
 
 @code {
     private FluentDialog? _dialog;
-    private bool _hidden = true;
 
     [Parameter, EditorRequired] public string Title { get; set; } = "Are you sure?";
     [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
@@ -34,17 +32,34 @@
     [Parameter] public EventCallback OnConfirmed { get; set; }
     [Parameter] public EventCallback OnCancelled { get; set; }
 
-    public void Show() => _hidden = false;
+    public async Task ShowAsync()
+    {
+        if (_dialog is not null)
+        {
+            await _dialog.ShowAsync();
+        }
+    }
+
+    public void Show()
+    {
+        _ = ShowAsync();
+    }
 
     private async Task ConfirmAsync()
     {
-        _hidden = true;
+        if (_dialog is not null)
+        {
+            await _dialog.HideAsync();
+        }
         await OnConfirmed.InvokeAsync();
     }
 
     private async Task CancelAsync()
     {
-        _hidden = true;
+        if (_dialog is not null)
+        {
+            await _dialog.HideAsync();
+        }
         await OnCancelled.InvokeAsync();
     }
 }

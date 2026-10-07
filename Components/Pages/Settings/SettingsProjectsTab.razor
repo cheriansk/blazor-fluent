@@ -1,0 +1,993 @@
+@using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Identity
+@using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Infrastructure.Security
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject AppDbContext DbContext
+@inject ITenantContext TenantContext
+@inject ITenantService TenantService
+@inject ICurrentUser CurrentUser
+@inject IProjectAuthorizationService ProjectAuth
+@inject IImpersonationService ImpersonationService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject IUnsavedChangesStateService UnsavedChanges
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <div>
+        <FluentLabel Typo="Typography.H4">Project Workspaces</FluentLabel>
+        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+            Select an authorized tenant to view, manage project details, and configure per-project roles.
+        </FluentLabel>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    <!-- Tenant Filter Toolbar -->
+    <FluentCard Style="padding: 16px;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <FluentSelect TOption="TenantFilterOption"
+                          TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelected"
+                          Disabled="@(_availableTenants.Count <= 1)"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant to view projects --"
+                          Style="min-width: 300px;" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+            {
+                @if (_availableTenants.Count > 1)
+                {
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                  OnClick="@ClearTenantFilter">
+                        Clear Filter
+                    </FluentButton>
+                }
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+                              OnClick="@LoadProjectsForTenantAsync">
+                    Refresh
+                </FluentButton>
+            }
+        </FluentStack>
+    </FluentCard>
+
+    @if (string.IsNullOrWhiteSpace(_selectedTenantId))
+    {
+        <!-- Empty State Prompt -->
+        <FluentMessageBar Intent="MessageBarIntent.Info" Style="padding: 16px;">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                <FluentIcon Value="@(new Icons.Regular.Size24.BuildingMultiple())" />
+                <div>
+                    <strong>No Tenant Selected:</strong> Please choose a tenant from the dropdown above to display its active projects.
+                </div>
+            </FluentStack>
+        </FluentMessageBar>
+    }
+    else
+    {
+        <!-- Projects Data Grid Card -->
+        <FluentCard Style="padding: 20px;">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+                <div>
+                    <FluentLabel Typo="Typography.H5">Projects for &ldquo;@_selectedTenantName&rdquo;</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                        Found @_projects.Count project(s) scoped to tenant <code>@_selectedTenantId</code>. Click <strong>Select</strong> to view details and roles.
+                    </FluentLabel>
+                </div>
+                <FluentTextInput Placeholder="Filter projects by name, code, location..."
+                                 @bind-Value="_projectSearchText"
+                                 @bind-Value:after="StateHasChanged"
+                                 Style="width: 280px;">
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+            </FluentStack>
+
+            @if (_isLoading)
+            {
+                <div style="display: flex; justify-content: center; padding: 40px;">
+                    <FluentProgressRing Size="SpinnerSize.Medium" />
+                </div>
+            }
+            else if (_projects.Count == 0)
+            {
+                <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Folder())" Color="Color.Neutral" />
+                    <div style="margin-top: 10px; font-weight: 500;">No projects found for this tenant.</div>
+                </div>
+            }
+            else
+            {
+                <FluentDataGrid Items="@FilteredProjects" ResizableColumns="true" GridTemplateColumns="110px 1.5fr 110px 140px 180px 220px">
+                    <PropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
+                    <PropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+                    <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
+                        @switch (context.Status)
+                        {
+                            case ProjectStatus.Active:
+                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                                break;
+                            case ProjectStatus.New:
+                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
+                                break;
+                            case ProjectStatus.OnHold:
+                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
+                                break;
+                            case ProjectStatus.Done:
+                                <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
+                                break;
+                        }
+                    </TemplateColumn>
+                    <PropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
+                    <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeStartDate))">
+                        <span style="font-size: 12px;">
+                            @TimeZoneService.FormatDate(context.TentativeStartDate) ~ @TimeZoneService.FormatDate(context.TentativeEndDate)
+                        </span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                            <FluentButton Appearance="@(_selectedProject?.Id == context.Id ? ButtonAppearance.Primary : ButtonAppearance.Outline)"
+                                          Size="ButtonSize.Small"
+                                          IconStart="@(new Icons.Regular.Size16.Checkmark())"
+                                          OnClick="@(() => SelectProjectAsync(context))">
+                                @(_selectedProject?.Id == context.Id ? "Selected" : "Select")
+                            </FluentButton>
+                            <FluentLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")" Style="font-size: 13px;">
+                                Tasks
+                            </FluentLink>
+                            <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
+                        </FluentStack>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            }
+        </FluentCard>
+
+        @* Selected Project Sub-Tabs Panel (Details & Roles) *@
+        @if (_selectedProject is not null)
+        {
+            <FluentCard Style="padding: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                            <FluentLabel Typo="Typography.H5">@_selectedProject.Name</FluentLabel>
+                            @if (!string.IsNullOrWhiteSpace(_selectedProject.ShortCode))
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">@_selectedProject.ShortCode</FluentBadge>
+                            }
+                            @switch (_selectedProject.Status)
+                            {
+                                case ProjectStatus.Active:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                                    break;
+                                case ProjectStatus.New:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
+                                    break;
+                                case ProjectStatus.OnHold:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
+                                    break;
+                                case ProjectStatus.Done:
+                                    <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
+                                    break;
+                            }
+                        </FluentStack>
+                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                            ID: <code>@_selectedProject.Id</code> &bull; Tenant: <code>@_selectedProject.TenantId</code>
+                        </div>
+                    </div>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedProject = null)">
+                        Close Panel
+                    </FluentButton>
+                </FluentStack>
+
+                <FluentTabs @bind-ActiveTabId="_activeProjectTab">
+                    <!-- Tab 1: Project Details -->
+                    <FluentTab Id="tab-details" Header="Details" IconStart="@(new Icons.Regular.Size16.DocumentBulletList())">
+                        <div style="padding-top: 16px;">
+                            @if (!_isEditingDetails)
+                            {
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="24" Wrap="true">
+                                        <div style="flex: 1; min-width: 200px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Project Name</span>
+                                            <strong>@_selectedProject.Name</strong>
+                                        </div>
+                                        <div style="flex: 1; min-width: 140px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Short Code</span>
+                                            <code>@(_selectedProject.ShortCode ?? "—")</code>
+                                        </div>
+                                        <div style="flex: 1; min-width: 140px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Status</span>
+                                            <span>@_selectedProject.Status</span>
+                                        </div>
+                                        <div style="flex: 1; min-width: 180px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Location</span>
+                                            <span>@(!string.IsNullOrWhiteSpace(_selectedProject.Location) ? _selectedProject.Location : "—")</span>
+                                        </div>
+                                    </FluentStack>
+
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="24" Wrap="true">
+                                        <div style="flex: 1; min-width: 200px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Tentative Start Date</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.TentativeStartDate)</span>
+                                        </div>
+                                        <div style="flex: 1; min-width: 200px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Tentative End Date</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.TentativeEndDate)</span>
+                                        </div>
+                                    </FluentStack>
+
+                                    <div>
+                                        <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Summary of Scope of Project</span>
+                                        <div style="margin-top: 4px; padding: 10px 14px; background: var(--neutral-layer-2, #fafafa); border-radius: 6px; line-height: 1.5; font-size: 13px;">
+                                            @(!string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : (!string.IsNullOrWhiteSpace(_selectedProject.Description) ? _selectedProject.Description : "No scope summary provided."))
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <FluentButton Appearance="ButtonAppearance.Outline" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@StartEditDetails">
+                                            Edit Details
+                                        </FluentButton>
+                                    </div>
+                                </FluentStack>
+                            }
+                            else
+                            {
+                                <!-- Edit Project Details Form -->
+                                <FluentCard Style="background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
+                                    <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">Edit Project Details</FluentLabel>
+                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                            <FluentTextInput Label="Project Name" @bind-Value="_editName" Required="true" Style="flex: 2;" />
+                                            <FluentTextInput Label="Project Short Code" @bind-Value="_editShortCode" Required="true" Style="flex: 1;" />
+                                        </FluentStack>
+
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                            <FluentTextInput Label="Location" @bind-Value="_editLocation" Style="flex: 2;" />
+                                            <div style="flex: 1;">
+                                                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                                                <FluentSelect TOption="string" TValue="string"
+                                                              Value="@_editStatus.ToString()"
+                                                              ValueChanged="@(val => _editStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
+                                                              Style="width: 100%;">
+                                                    <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
+                                                </FluentSelect>
+                                            </div>
+                                        </FluentStack>
+
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                                            <FluentDatePicker Label="Tentative Start Date" @bind-Value="_editStartDate" />
+                                            <FluentDatePicker Label="Tentative End Date" @bind-Value="_editEndDate" />
+                                        </FluentStack>
+
+                                        <div>
+                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Summary of Scope of Project</FluentLabel>
+                                            <FluentTextArea @bind-Value="_editScopeSummary" Rows="3" Style="width: 100%;" />
+                                        </div>
+
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                                          Disabled="@(!IsEditDetailsValid)"
+                                                          OnClick="@SaveProjectDetailsAsync">
+                                                Save Changes
+                                            </FluentButton>
+                                            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelEditDetails">
+                                                Cancel
+                                            </FluentButton>
+                                        </FluentStack>
+                                    </FluentStack>
+                                </FluentCard>
+                            }
+                        </div>
+                    </FluentTab>
+
+                    <!-- Tab 2: Project Roles & Access Management -->
+                    <FluentTab Id="tab-roles" Header="Project Roles" IconStart="@(new Icons.Regular.Size16.PeopleTeam())">
+                        <div style="padding-top: 16px;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                                <div>
+                                    <FluentLabel Typo="Typography.H6">Project Access &amp; Member Roles</FluentLabel>
+                                    <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                                        Assign roles (Admin, Dev, QA, ReadOnly) to tenant members for project <strong>@_selectedProject.Name</strong>.
+                                    </div>
+                                </div>
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                                    <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.PersonAdd())" OnClick="@OpenAddRoleModal">
+                                        Assign User
+                                    </FluentButton>
+                                    <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.ArrowClockwise())" OnClick="@LoadProjectMembersAsync">
+                                        Refresh
+                                    </FluentButton>
+                                </FluentStack>
+                            </FluentStack>
+
+                            <!-- Role Assignment Form (Collapsible Card) -->
+                            @if (_showAssignRoleModal)
+                            {
+                                <FluentCard Style="margin-bottom: 16px; border-left: 4px solid var(--accent-fill-rest, #0078d4); padding: 16px;">
+                                    <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">
+                                        @(_isEditingRole ? "Update Project Role" : "Assign Tenant User to Project")
+                                    </FluentLabel>
+
+                                    @if (!_isEditingRole && _tenantUsers.Count == 0)
+                                    {
+                                        <FluentMessageBar Intent="MessageBarIntent.Warning" Style="margin-bottom: 12px;">
+                                            No active users are provisioned for tenant '@_selectedTenantName'. Please add users to this tenant first in the Tenants tab.
+                                        </FluentMessageBar>
+                                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showAssignRoleModal = false)">
+                                            Close
+                                        </FluentButton>
+                                    }
+                                    else
+                                    {
+                                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                            @if (!_isEditingRole)
+                                            {
+                                                <FluentSelect TOption="UserEntity"
+                                                              TValue="string"
+                                                              Items="@_tenantUsers"
+                                                              OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserType.CompanyUser ? "Internal Staff" : "External Client")}]")"
+                                                              OptionValue="@(u => u.Id.ToString())"
+                                                              Value="@_selectedTenantUserId"
+                                                              ValueChanged="@OnTenantUserSelected"
+                                                              Label="Select Tenant User"
+                                                              Required="true"
+                                                              Style="width: 100%;" />
+
+                                                @if (!string.IsNullOrWhiteSpace(_formEmail))
+                                                {
+                                                    <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-2, #fafafa); padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 16px;">
+                                                        <span>Member: <strong>@_formUserName</strong></span>
+                                                        <span>Email: <code>@_formEmail</code></span>
+                                                        <span>Type:
+                                                            @if (_formUserType == UserType.CompanyUser)
+                                                            {
+                                                                <FluentBadge Appearance="BadgeAppearance.Filled">Internal Staff</FluentBadge>
+                                                            }
+                                                            else
+                                                            {
+                                                                <FluentBadge Appearance="BadgeAppearance.Tint">External Client</FluentBadge>
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-2, #fafafa); padding: 8px 12px; border-radius: 6px;">
+                                                    Updating Role for: <strong>@_formUserName</strong> (<code>@_formEmail</code>)
+                                                </div>
+                                            }
+
+                                            <div style="width: 50%;">
+                                                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
+                                                <FluentSelect TOption="string" TValue="string"
+                                                              Value="@_formRole.ToString()"
+                                                              ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
+                                                              Style="width: 100%;">
+                                                    <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.QA)">🧪 QA</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.Dev)">💻 Dev</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
+                                                </FluentSelect>
+                                            </div>
+
+                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 12px;">
+                                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                                              Disabled="@(string.IsNullOrWhiteSpace(_formUserId))"
+                                                              OnClick="@SaveAssignmentAsync">
+                                                    Save Assignment
+                                                </FluentButton>
+                                                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showAssignRoleModal = false)">
+                                                    Cancel
+                                                </FluentButton>
+                                            </FluentStack>
+                                        </FluentStack>
+                                    }
+                                </FluentCard>
+                            }
+
+                            <!-- Impersonation Form (Collapsible Card) -->
+                            @if (_showImpersonateModal)
+                            {
+                                <FluentCard Style="margin-bottom: 16px; border-left: 4px solid #ffd335; background-color: #fffdf5; padding: 16px;">
+                                    <FluentLabel Typo="Typography.H6" Style="margin-bottom: 8px; color: #424242;">
+                                        ⚠️ Operator Impersonation (SuperAdmin Troubleshooting)
+                                    </FluentLabel>
+
+                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
+                                        You are about to impersonate <strong>@_impersonateTargetName</strong> (<code>@_impersonateTargetEmail</code>).
+                                        This allows you to experience the application under this user's exact permissions.
+                                    </FluentLabel>
+
+                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                        <FluentTextInput Label="Justification / Incident Ticket (Required)"
+                                                         @bind-Value="_impersonateReason"
+                                                         Placeholder="e.g. INC-4029: User reports cannot view analytics"
+                                                         Required="true"
+                                                         Style="width: 100%;" />
+
+                                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                                            ⏳ Max Duration: 60 minutes. An exit button will be pinned to the top of all pages.
+                                        </div>
+
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="12">
+                                            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showImpersonateModal = false)">
+                                                Cancel
+                                            </FluentButton>
+                                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                                          Style="background-color: #d83b01; border-color: #d83b01;"
+                                                          Disabled="@(string.IsNullOrWhiteSpace(_impersonateReason))"
+                                                          OnClick="StartImpersonationAsync">
+                                                Start Impersonating
+                                            </FluentButton>
+                                        </FluentStack>
+                                    </FluentStack>
+                                </FluentCard>
+                            }
+
+                            <!-- Members Grid -->
+                            @if (_isLoadingMembers)
+                            {
+                                <div style="display: flex; justify-content: center; padding: 24px;">
+                                    <FluentProgressRing Size="SpinnerSize.Medium" />
+                                </div>
+                            }
+                            else if (_members.Count == 0)
+                            {
+                                <FluentMessageBar Intent="MessageBarIntent.Info">
+                                    No users assigned to this project yet. Click &ldquo;Assign User&rdquo; above to grant access.
+                                </FluentMessageBar>
+                            }
+                            else
+                            {
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                                    <FluentTextInput Placeholder="Filter members by name, email, or role..."
+                                                     @bind-Value="_memberFilterText"
+                                                     @bind-Value:after="StateHasChanged"
+                                                     Style="width: 320px;">
+                                        <StartTemplate>
+                                            <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                                        </StartTemplate>
+                                    </FluentTextInput>
+                                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                                        Showing @FilteredMembers.Count() of @_members.Count members
+                                    </span>
+                                </FluentStack>
+
+                                <FluentDataGrid Items="@FilteredMembers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 110px 120px 220px">
+                                    <TemplateColumn Title="Member" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserName))">
+                                        <div>
+                                            <strong>@context.UserName</strong>
+                                            <div style="font-size: 11px; color: var(--neutral-foreground-hint, #666);">@context.UserId</div>
+                                        </div>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
+                                    <TemplateColumn Title="Type" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserType))">
+                                        @if (context.UserType == UserType.CompanyUser)
+                                        {
+                                            <FluentBadge Appearance="BadgeAppearance.Filled">Company</FluentBadge>
+                                        }
+                                        else
+                                        {
+                                            <FluentBadge Appearance="BadgeAppearance.Tint">Client</FluentBadge>
+                                        }
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Role" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.Role))">
+                                        @switch (context.Role)
+                                        {
+                                            case ProjectRole.Admin:
+                                                <FluentBadge Appearance="BadgeAppearance.Filled">👑 Admin</FluentBadge>
+                                                break;
+                                            case ProjectRole.Dev:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">💻 Dev</FluentBadge>
+                                                break;
+                                            case ProjectRole.QA:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">🧪 QA</FluentBadge>
+                                                break;
+                                            case ProjectRole.ReadOnly:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">👁️ ReadOnly</FluentBadge>
+                                                break;
+                                        }
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Actions">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditAssignment(context))">
+                                                Edit
+                                            </FluentButton>
+                                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
+                                                Revoke
+                                            </FluentButton>
+                                            <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View role history" />
+                                            @if (CurrentUser.IsRootAdmin && context.UserId != CurrentUser.UserId)
+                                            {
+                                                <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.PersonCircle())" OnClick="@(() => PromptImpersonation(context))">
+                                                    Impersonate
+                                                </FluentButton>
+                                            }
+                                        </FluentStack>
+                                    </TemplateColumn>
+                                </FluentDataGrid>
+                            }
+                        </div>
+                    </FluentTab>
+                </FluentTabs>
+            </FluentCard>
+        }
+
+        <!-- Multi-Tenant Architecture Callout -->
+        <FluentCard Style="padding: 16px; background-color: var(--neutral-layer-2);">
+            <FluentLabel Typo="Typography.Subject" Style="font-weight: 600; margin-bottom: 6px;">Multi-Tenant Workspace Isolation &amp; Defense-in-Depth</FluentLabel>
+            <div style="font-size: 13px; color: var(--neutral-foreground-hint); line-height: 1.6;">
+                Projects are securely partitioned per-tenant. Role updates instantly invalidate <code>proj_role_{tenantId}_{userId}_{projectId}</code> in HybridCache memory so member authorizations update immediately without requiring re-login.
+            </div>
+        </FluentCard>
+    }
+</FluentStack>
+
+@code {
+    public record TenantFilterOption(string Id, string Name);
+
+    private List<TenantFilterOption> _availableTenants = new();
+    private string? _selectedTenantId;
+    private string _selectedTenantName = string.Empty;
+    private List<ProjectEntity> _projects = new();
+    private string _projectSearchText = string.Empty;
+    private bool _isLoading;
+    private string? _statusMessage;
+    private bool _isError;
+
+    // Selected project sub-tabs state
+    private ProjectEntity? _selectedProject;
+    private string _activeProjectTab = "tab-details";
+
+    // Edit details state
+    private bool _isEditingDetails;
+    private string _editName = string.Empty;
+    private string _editShortCode = string.Empty;
+    private string? _editLocation;
+    private ProjectStatus _editStatus = ProjectStatus.New;
+    private DateTime? _editStartDate;
+    private DateTime? _editEndDate;
+    private string? _editScopeSummary;
+
+    // Roles tab state
+    private List<ProjectUserRoleEntity> _members = new();
+    private string _memberFilterText = string.Empty;
+    private bool _isLoadingMembers;
+    private bool _showAssignRoleModal;
+    private bool _isEditingRole;
+    private List<UserEntity> _tenantUsers = new();
+    private string? _selectedTenantUserId;
+    private string _formUserId = string.Empty;
+    private string _formUserName = string.Empty;
+    private string _formEmail = string.Empty;
+    private UserType _formUserType = UserType.CompanyUser;
+    private ProjectRole _formRole = ProjectRole.Dev;
+
+    // Impersonation state
+    private bool _showImpersonateModal;
+    private string _impersonateTargetUserId = string.Empty;
+    private string _impersonateTargetName = string.Empty;
+    private string _impersonateTargetEmail = string.Empty;
+    private string _impersonateReason = string.Empty;
+
+    private IQueryable<ProjectEntity> FilteredProjects
+    {
+        get
+        {
+            var query = _projects.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_projectSearchText))
+            {
+                var term = _projectSearchText.Trim();
+                query = query.Where(p =>
+                    p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (p.ShortCode != null && p.ShortCode.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Location != null && p.Location.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.ScopeSummary != null && p.ScopeSummary.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Description != null && p.Description.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query;
+        }
+    }
+
+    private IQueryable<ProjectUserRoleEntity> FilteredMembers
+    {
+        get
+        {
+            var query = _members.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_memberFilterText))
+            {
+                var term = _memberFilterText.Trim();
+                query = query.Where(m =>
+                    (m.UserName != null && m.UserName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (m.UserEmail != null && m.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (m.UserId != null && m.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    m.Role.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    private bool IsEditDetailsValid =>
+        !string.IsNullOrWhiteSpace(_editName) &&
+        !string.IsNullOrWhiteSpace(_editShortCode) &&
+        (!_editStartDate.HasValue || !_editEndDate.HasValue || _editEndDate.Value >= _editStartDate.Value);
+
+    protected override async Task OnInitializedAsync()
+    {
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
+        await LoadAvailableTenantsAsync();
+    }
+
+    private async Task LoadAvailableTenantsAsync()
+    {
+        if (CurrentUser.IsRootAdmin)
+        {
+            var dbTenants = await DbContext.Tenants
+                .AsNoTracking()
+                .Where(t => t.IsActive && t.Slug != "default")
+                .OrderBy(t => t.Name)
+                .Select(t => new TenantFilterOption(t.Slug, t.Name))
+                .ToListAsync();
+
+            _availableTenants = dbTenants;
+        }
+        else
+        {
+            _availableTenants = TenantContext.AllowedTenants
+                .Where(t => t.IsActive && t.Id != "default")
+                .OrderBy(t => t.Name)
+                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .ToList();
+        }
+
+        if (_availableTenants.Count == 1)
+        {
+            await OnTenantSelected(_availableTenants[0].Id);
+        }
+    }
+
+    private async Task OnTenantSelected(string? tenantId)
+    {
+        _selectedTenantId = tenantId;
+        _selectedTenantName = _availableTenants.FirstOrDefault(t => t.Id == tenantId)?.Name ?? tenantId ?? string.Empty;
+        _selectedProject = null;
+        _members.Clear();
+
+        if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+        {
+            await LoadProjectsForTenantAsync();
+        }
+        else
+        {
+            _projects.Clear();
+        }
+    }
+
+    private void ClearTenantFilter()
+    {
+        _selectedTenantId = null;
+        _selectedTenantName = string.Empty;
+        _selectedProject = null;
+        _projects.Clear();
+        _members.Clear();
+    }
+
+    private async Task LoadProjectsForTenantAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+
+        _isLoading = true;
+        try
+        {
+            _projects = await DbContext.Projects
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(p => p.TenantId == _selectedTenantId && !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            if (_selectedProject != null)
+            {
+                _selectedProject = _projects.FirstOrDefault(p => p.Id == _selectedProject.Id);
+            }
+
+            if (_selectedProject == null && _projects.Count == 1)
+            {
+                await SelectProjectAsync(_projects[0]);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SelectProjectAsync(ProjectEntity project)
+    {
+        _selectedProject = project;
+        _isEditingDetails = false;
+        _activeProjectTab = "tab-details";
+        await LoadTenantUsersForProjectAsync();
+        await LoadProjectMembersAsync();
+    }
+
+    // --- Details Tab Methods ---
+    private void StartEditDetails()
+    {
+        if (_selectedProject == null) return;
+        _editName = _selectedProject.Name;
+        _editShortCode = _selectedProject.ShortCode;
+        _editLocation = _selectedProject.Location;
+        _editStatus = _selectedProject.Status;
+        _editStartDate = _selectedProject.TentativeStartDate;
+        _editEndDate = _selectedProject.TentativeEndDate;
+        _editScopeSummary = !string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : _selectedProject.Description;
+        _isEditingDetails = true;
+        UnsavedChanges.RegisterChange("Settings > Projects", $"Editing project '{_selectedProject.Name}' details");
+    }
+
+    private void CancelEditDetails()
+    {
+        _isEditingDetails = false;
+        UnsavedChanges.ClearChange("Settings > Projects");
+    }
+
+    private async Task SaveProjectDetailsAsync()
+    {
+        if (_selectedProject == null || string.IsNullOrWhiteSpace(_selectedTenantId) || !IsEditDetailsValid) return;
+
+        var result = await TenantService.UpdateTenantProjectAsync(
+            _selectedTenantId,
+            _selectedProject.Id,
+            _editName,
+            _editShortCode,
+            _editLocation,
+            _editStartDate,
+            _editEndDate,
+            _editScopeSummary,
+            _editStatus);
+
+        if (result.Succeeded && result.Data is not null)
+        {
+            _statusMessage = $"Project '{result.Data.Name}' updated successfully.";
+            _isError = false;
+            _isEditingDetails = false;
+            UnsavedChanges.ClearChange("Settings > Projects");
+            await LoadProjectsForTenantAsync();
+            _selectedProject = _projects.FirstOrDefault(p => p.Id == result.Data.Id) ?? result.Data;
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update project details.";
+            _isError = true;
+        }
+    }
+
+    // --- Roles Tab Methods ---
+    private async Task LoadTenantUsersForProjectAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        try
+        {
+            _tenantUsers = await DbContext.Users
+                .AsNoTracking()
+                .Where(u => (u.DefaultTenantId == _selectedTenantId || (_selectedTenantId == "default" && string.IsNullOrEmpty(u.DefaultTenantId))) && !u.IsDeleted && u.IsActive)
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
+        }
+        catch
+        {
+            _tenantUsers = [];
+        }
+    }
+
+    private async Task LoadProjectMembersAsync()
+    {
+        if (_selectedProject == null) return;
+
+        _isLoadingMembers = true;
+        try
+        {
+            var members = await ProjectAuth.GetProjectMembersAsync(_selectedProject.Id);
+            _members = members.ToList();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load project members: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoadingMembers = false;
+        }
+    }
+
+    private void OpenAddRoleModal()
+    {
+        _isEditingRole = false;
+        var firstUser = _tenantUsers.FirstOrDefault();
+        if (firstUser != null)
+        {
+            OnTenantUserSelected(firstUser.Id.ToString());
+        }
+        else
+        {
+            _selectedTenantUserId = null;
+            _formUserId = string.Empty;
+            _formUserName = string.Empty;
+            _formEmail = string.Empty;
+            _formUserType = UserType.CompanyUser;
+        }
+        _formRole = ProjectRole.Dev;
+        _showAssignRoleModal = true;
+    }
+
+    private void EditAssignment(ProjectUserRoleEntity member)
+    {
+        _isEditingRole = true;
+        _selectedTenantUserId = member.UserId;
+        _formUserId = member.UserId;
+        _formUserName = member.UserName;
+        _formEmail = member.UserEmail;
+        _formUserType = member.UserType;
+        _formRole = member.Role;
+        _showAssignRoleModal = true;
+    }
+
+    private void OnTenantUserSelected(string? userId)
+    {
+        _selectedTenantUserId = userId;
+        var user = _tenantUsers.FirstOrDefault(u => u.Id.ToString() == userId);
+        if (user != null)
+        {
+            _formUserId = user.Id.ToString();
+            _formUserName = user.FullName;
+            _formEmail = user.Email;
+            _formUserType = user.UserType;
+        }
+        else
+        {
+            _formUserId = string.Empty;
+            _formUserName = string.Empty;
+            _formEmail = string.Empty;
+        }
+    }
+
+    private async Task SaveAssignmentAsync()
+    {
+        if (_selectedProject == null) return;
+
+        if (string.IsNullOrWhiteSpace(_formUserId) || string.IsNullOrWhiteSpace(_formEmail))
+        {
+            _statusMessage = "User ID and Email are required.";
+            _isError = true;
+            return;
+        }
+
+        try
+        {
+            var result = await ProjectAuth.AssignUserRoleAsync(
+                _selectedProject.Id,
+                _formUserId,
+                _formEmail,
+                _formUserName,
+                _formUserType,
+                _formRole);
+
+            if (result.IsSuccess)
+            {
+                _statusMessage = $"Successfully assigned role '{_formRole}' to '{_formUserName}'. HybridCache invalidated.";
+                _isError = false;
+                _showAssignRoleModal = false;
+                await LoadProjectMembersAsync();
+            }
+            else
+            {
+                _statusMessage = result.Error;
+                _isError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error saving role assignment: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    private async Task RevokeAssignmentAsync(string userId)
+    {
+        if (_selectedProject == null) return;
+
+        try
+        {
+            var result = await ProjectAuth.RevokeUserRoleAsync(_selectedProject.Id, userId);
+            if (result.IsSuccess)
+            {
+                _statusMessage = $"Access revoked for user '{userId}'. Cache purged.";
+                _isError = false;
+                await LoadProjectMembersAsync();
+            }
+            else
+            {
+                _statusMessage = result.Error;
+                _isError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error revoking role: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    // --- Impersonation Methods ---
+    private void PromptImpersonation(ProjectUserRoleEntity member)
+    {
+        _impersonateTargetUserId = member.UserId;
+        _impersonateTargetName = member.UserName;
+        _impersonateTargetEmail = member.UserEmail;
+        _impersonateReason = string.Empty;
+        _showImpersonateModal = true;
+    }
+
+    private async Task StartImpersonationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_impersonateReason)) return;
+
+        var result = await ImpersonationService.StartImpersonationAsync(
+            _impersonateTargetUserId,
+            _impersonateReason,
+            durationMinutes: 60);
+
+        if (result.IsSuccess)
+        {
+            if (CurrentUser is AppCurrentUser appUser)
+            {
+                var adminId = appUser.UserId ?? string.Empty;
+                appUser.SetImpersonation(_impersonateTargetUserId, _impersonateTargetEmail, _impersonateTargetName, adminId);
+            }
+
+            AuthStateProvider.NotifyUserChanged();
+            _showImpersonateModal = false;
+            NavigationManager.NavigateTo("/", forceLoad: false);
+        }
+        else
+        {
+            _statusMessage = result.Error;
+            _isError = true;
+        }
+    }
+
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
+        UnsavedChanges.ClearChange("Settings > Projects");
+    }
+}

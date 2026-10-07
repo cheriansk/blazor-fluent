@@ -5,6 +5,7 @@ using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Events;
+using BlazorFluent.Core.Events;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,9 @@ public class EventTrackerService : IEventTrackerService
         string? sourceClass = null,
         [CallerMemberName] string sourceMethod = "",
         [CallerFilePath] string sourceFilePath = "",
+        string? senderOrigin = null,
+        string? senderUserId = null,
+        string? senderUserEmail = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -98,6 +102,21 @@ public class EventTrackerService : IEventTrackerService
                 payloadJson = $"{{\"serializationError\": \"{ex.Message}\"}}";
             }
 
+            var jobEvent = @event as IJobEvent;
+            var resolvedSenderOrigin = senderOrigin ?? jobEvent?.SenderOrigin ?? triggerSource;
+            var resolvedUserId = senderUserId ?? jobEvent?.SenderUserId ?? _currentUser.UserId;
+            var resolvedUserEmail = senderUserEmail ?? jobEvent?.SenderUserEmail ?? _currentUser.Email;
+
+            if (string.IsNullOrWhiteSpace(resolvedUserId) && isSystemOrCron)
+            {
+                var daemonName = $"SystemDaemon ({eventName.Replace("Event", string.Empty)})";
+                resolvedUserId = daemonName;
+                if (string.IsNullOrWhiteSpace(resolvedUserEmail))
+                {
+                    resolvedUserEmail = daemonName;
+                }
+            }
+
             var record = new EventPublishTrackerEntity
             {
                 Id = Guid.CreateVersion7(),
@@ -109,9 +128,9 @@ public class EventTrackerService : IEventTrackerService
                 SourceClass = resolvedSourceClass,
                 SourceMethod = sourceMethod,
                 SourceFilePath = sourceFilePath,
-                UserId = _currentUser.UserId ?? "system",
-                UserEmail = _currentUser.Email,
-                TriggerSource = triggerSource ?? (isSystemOrCron ? "System" : "Manual"),
+                UserId = resolvedUserId ?? "system",
+                UserEmail = resolvedUserEmail,
+                TriggerSource = resolvedSenderOrigin ?? triggerSource ?? (isSystemOrCron ? "System" : "Manual"),
                 PayloadJson = payloadJson,
                 PublishedAtUtc = DateTime.UtcNow,
                 Status = EventTrackerStatus.Published,
@@ -288,7 +307,14 @@ public class EventTrackerService : IEventTrackerService
         }
         else if (!string.IsNullOrWhiteSpace(filter.TenantId))
         {
-            query = query.Where(e => e.TenantId == filter.TenantId);
+            if (string.Equals(filter.TenantId, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e => e.TenantId == IRootAdminService.DefaultTenantSlug || e.TenantId == "system" || e.TenantId == "host");
+            }
+            else
+            {
+                query = query.Where(e => e.TenantId == filter.TenantId);
+            }
         }
 
         if (filter.Status.HasValue)

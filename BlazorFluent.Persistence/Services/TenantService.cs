@@ -17,6 +17,8 @@ public class TenantService : ITenantService
     private readonly IAuditService _auditService;
     private readonly ITenantCacheService _cacheService;
     private readonly IConfiguration _configuration;
+    private readonly IRootAdminService _rootAdminService;
+    private readonly ICurrentUser _currentUser;
     private readonly ILogger<TenantService> _logger;
 
     public TenantService(
@@ -24,12 +26,16 @@ public class TenantService : ITenantService
         IAuditService auditService,
         ITenantCacheService cacheService,
         IConfiguration configuration,
+        IRootAdminService rootAdminService,
+        ICurrentUser currentUser,
         ILogger<TenantService> logger)
     {
         _dbContext = dbContext;
         _auditService = auditService;
         _cacheService = cacheService;
         _configuration = configuration;
+        _rootAdminService = rootAdminService;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -41,6 +47,7 @@ public class TenantService : ITenantService
             {
                 return (IReadOnlyList<TenantEntity>)await _dbContext.Tenants
                     .AsNoTracking()
+                    .Where(t => t.Slug != "default")
                     .OrderBy(t => t.Name)
                     .ToListAsync(token);
             },
@@ -58,8 +65,14 @@ public class TenantService : ITenantService
         DateTime endDate,
         CancellationToken cancellationToken = default)
     {
+        if (!_currentUser.IsRootAdmin)
+            return Result<TenantEntity>.Failure("Access Denied: Only designated root super-administrators can provision new tenants.");
+
         if (string.IsNullOrWhiteSpace(slug))
             return Result<TenantEntity>.Failure("Slug is required.");
+
+        if (string.Equals(slug.Trim(), "default", StringComparison.OrdinalIgnoreCase))
+            return Result<TenantEntity>.Failure("The 'default' slug is reserved for internal system administration.");
 
         if (string.IsNullOrWhiteSpace(code))
             return Result<TenantEntity>.Failure("Code is required.");
@@ -183,12 +196,26 @@ public class TenantService : ITenantService
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
+        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
+            return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
+
         var tenant = await _dbContext.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
 
         if (tenant is null)
             return Result<UserEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
+
+        // Enforce maximum 3 users in the default system root tenant
+        if (string.Equals(normalizedSlug, "default", StringComparison.OrdinalIgnoreCase))
+        {
+            var defaultUserCount = await _dbContext.Users
+                .CountAsync(u => u.DefaultTenantId == "default" && !u.IsDeleted, cancellationToken);
+            if (defaultUserCount >= 3)
+            {
+                return Result<UserEntity>.Failure("The default system root tenant cannot exceed a maximum of 3 administrator accounts.");
+            }
+        }
 
         // Automatically determine UserType from configured tenant domains
         UserType userType;
@@ -265,6 +292,9 @@ public class TenantService : ITenantService
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
+        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
+            return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
+
         var tenant = await _dbContext.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
@@ -330,10 +360,16 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantStatusAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default)
     {
+        if (!_currentUser.IsRootAdmin)
+            return Result.Failure("Access Denied: Only designated root super-administrators can modify tenants.");
+
         var tenant = await _dbContext.Tenants
             .AsTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
+
+        if (string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+            return Result.Failure("The default system root anchor tenant cannot be deactivated or modified.");
 
         tenant.IsActive = isActive;
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -361,6 +397,9 @@ public class TenantService : ITenantService
 
     public async Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
+        if (!_currentUser.IsRootAdmin)
+            return Result.Failure("Access Denied: Only designated root super-administrators can modify tenants.");
+
         if (endDate < startDate)
             return Result.Failure("End date cannot precede start date.");
 
@@ -368,6 +407,9 @@ public class TenantService : ITenantService
             .AsTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
+
+        if (string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+            return Result.Failure("The default system root anchor tenant cannot be modified.");
 
         tenant.StartDate = startDate;
         tenant.EndDate = endDate;
@@ -385,5 +427,153 @@ public class TenantService : ITenantService
             cancellationToken);
 
         return Result.Success();
+    }
+
+    public async Task<IReadOnlyList<ProjectEntity>> GetTenantProjectsAsync(string tenantSlug, CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+        return await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(p => p.TenantId == normalizedSlug && !p.IsDeleted)
+            .OrderBy(p => p.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Result<ProjectEntity>> CreateTenantProjectAsync(
+        string tenantSlug,
+        string name,
+        string shortCode,
+        string? location,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? scopeSummary,
+        ProjectStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProjectEntity>.Failure("Project Name is required.");
+
+        if (string.IsNullOrWhiteSpace(shortCode))
+            return Result<ProjectEntity>.Failure("Project Short Code is required.");
+
+        if (startDate.HasValue && endDate.HasValue && endDate < startDate)
+            return Result<ProjectEntity>.Failure("End date cannot precede start date.");
+
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+        var tenant = await _dbContext.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
+
+        if (tenant is null)
+            return Result<ProjectEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
+
+        var trimmedName = name.Trim();
+        var trimmedCode = shortCode.Trim();
+
+        var duplicate = await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.TenantId == normalizedSlug && !p.IsDeleted &&
+                           (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
+                      cancellationToken);
+
+        if (duplicate)
+            return Result<ProjectEntity>.Failure($"A project with name '{trimmedName}' or short code '{trimmedCode}' already exists for this tenant.");
+
+        var project = new ProjectEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = trimmedName,
+            ShortCode = trimmedCode,
+            Location = location?.Trim(),
+            TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null,
+            TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null,
+            ScopeSummary = scopeSummary?.Trim(),
+            Description = scopeSummary?.Trim() ?? string.Empty,
+            Status = status,
+            IsActive = status == ProjectStatus.Active || status == ProjectStatus.New,
+            TenantEntityId = tenant.Id,
+            TenantId = normalizedSlug
+        };
+
+        _dbContext.Projects.Add(project);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Created project '{ProjectName}' ({ShortCode}) in tenant '{TenantSlug}'", project.Name, project.ShortCode, tenantSlug);
+
+        await _auditService.LogUserActivityAsync(
+            $"Created tenant project '{project.Name}' ({project.ShortCode})",
+            $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
+            cancellationToken);
+
+        return Result<ProjectEntity>.Success(project);
+    }
+
+    public async Task<Result<ProjectEntity>> UpdateTenantProjectAsync(
+        string tenantSlug,
+        Guid projectId,
+        string name,
+        string shortCode,
+        string? location,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? scopeSummary,
+        ProjectStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProjectEntity>.Failure("Project Name is required.");
+
+        if (string.IsNullOrWhiteSpace(shortCode))
+            return Result<ProjectEntity>.Failure("Project Short Code is required.");
+
+        if (startDate.HasValue && endDate.HasValue && endDate < startDate)
+            return Result<ProjectEntity>.Failure("End date cannot precede start date.");
+
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        var project = await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AsTracking()
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == normalizedSlug && !p.IsDeleted, cancellationToken);
+
+        if (project is null)
+            return Result<ProjectEntity>.Failure($"Project was not found in tenant '{tenantSlug}'.");
+
+        var trimmedName = name.Trim();
+        var trimmedCode = shortCode.Trim();
+
+        var duplicate = await _dbContext.Projects
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.TenantId == normalizedSlug && p.Id != projectId && !p.IsDeleted &&
+                           (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
+                      cancellationToken);
+
+        if (duplicate)
+            return Result<ProjectEntity>.Failure($"Another project with name '{trimmedName}' or short code '{trimmedCode}' already exists for this tenant.");
+
+        project.Name = trimmedName;
+        project.ShortCode = trimmedCode;
+        project.Location = location?.Trim();
+        project.TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null;
+        project.TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null;
+        project.ScopeSummary = scopeSummary?.Trim();
+        if (!string.IsNullOrWhiteSpace(scopeSummary))
+        {
+            project.Description = scopeSummary.Trim();
+        }
+        project.Status = status;
+        project.IsActive = status == ProjectStatus.Active || status == ProjectStatus.New;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Updated project '{ProjectName}' ({ShortCode}) in tenant '{TenantSlug}'", project.Name, project.ShortCode, tenantSlug);
+
+        await _auditService.LogUserActivityAsync(
+            $"Updated tenant project '{project.Name}' ({project.ShortCode})",
+            $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
+            cancellationToken);
+
+        return Result<ProjectEntity>.Success(project);
     }
 }

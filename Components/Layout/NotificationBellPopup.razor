@@ -7,6 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject BlazorFluent.Core.Contracts.INotificationService MyNotificationService
 @inject ICurrentUser CurrentUser
+@inject IUserTimeZoneService TimeZoneService
 @inject ILogger<NotificationBellPopup> Logger
 
 <div style="position: relative; display: inline-flex; align-items: center; margin-right: 8px;">
@@ -141,7 +142,7 @@
                                         </div>
 
                                         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--neutral-foreground-3, #8a8886);">
-                                            <span>@GetRelativeTime(notification.Created)</span>
+                                            <span title="@TimeZoneService.FormatDateTime(notification.Created)">@GetRelativeTime(notification.Created)</span>
                                             <div style="display: flex; align-items: center; gap: 6px;">
                                                 @if (notification.SentToTeams)
                                                 {
@@ -312,12 +313,12 @@
         }
     }
 
-    private static string GetRelativeTime(DateTime dateTime)
+    private string GetRelativeTime(DateTime dateTime)
     {
         var span = DateTime.UtcNow - dateTime.ToUniversalTime();
         if (span.TotalMinutes < 1) return "just now";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
-        return dateTime.ToString("MMM dd");
+        return TimeZoneService.FormatDate(dateTime, "MMM dd");
     }
 }

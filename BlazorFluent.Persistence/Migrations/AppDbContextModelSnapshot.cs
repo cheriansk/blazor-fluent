@@ -532,6 +532,10 @@ namespace BlazorFluent.Persistence.Migrations
                     b.Property<DateTime>("StartDateUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
@@ -993,7 +997,7 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobExecutions");
+                    b.ToTable("JobExecutions", (string)null);
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Knowledge.KnowledgeArticleEntity", b =>
@@ -1510,10 +1514,27 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<string>("Location")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ScopeSummary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("ShortCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("TeamsWebhookUrl")
                         .HasMaxLength(2000)
@@ -1526,6 +1547,12 @@ namespace BlazorFluent.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("TentativeEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("TentativeStartDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -1729,7 +1756,7 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataProtectionKeys");
+                    b.ToTable("DataProtectionKeys", (string)null);
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Events.EventConsumptionTrackerEntity", b =>

@@ -59,8 +59,7 @@ public class AuditService : IAuditService
             CreatedBy = currentUserId
         };
 
-        _dbContext.AuditRecords.Add(record);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await SaveAuditRecordAsync(record, cancellationToken);
 
         _logger.LogInformation(
             "AUDIT [TenantSwitch]: User {UserId} switched tenant from {FromTenant} to {ToTenant}. Reason: {Reason}",
@@ -91,8 +90,7 @@ public class AuditService : IAuditService
             CreatedBy = currentUserId
         };
 
-        _dbContext.AuditRecords.Add(record);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await SaveAuditRecordAsync(record, cancellationToken);
 
         var logLevel = severity switch
         {
@@ -132,12 +130,29 @@ public class AuditService : IAuditService
             CreatedBy = currentUserId
         };
 
-        _dbContext.AuditRecords.Add(record);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await SaveAuditRecordAsync(record, cancellationToken);
 
         _logger.LogInformation(
             "AUDIT [UserActivity]: Action={Action}, Tenant={TenantId}, User={UserId}, Details={Details}",
             action, tenantId, currentUserId, details);
+    }
+
+    private async Task SaveAuditRecordAsync(AuditRecordEntity record, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("AuditTrailLogger");
+            var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            isolatedDbContext.AuditRecords.Add(record);
+            await isolatedDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist audit record {RecordId} via isolated scope: {Description}", record.Id, record.Description);
+        }
     }
 
     public async Task<PagedResult<AuditRecordEntity>> GetAuditTrailAsync(
@@ -149,7 +164,18 @@ public class AuditService : IAuditService
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(filter.TenantId))
+        {
             query = query.Where(a => a.TenantId == filter.TenantId);
+        }
+        else if (filter.AllowedTenantIds != null && filter.AllowedTenantIds.Count > 0)
+        {
+            query = query.Where(a => filter.AllowedTenantIds.Contains(a.TenantId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.UserId))
+        {
+            query = query.Where(a => a.UserId == filter.UserId || a.UserEmail == filter.UserId);
+        }
 
         if (filter.EventType.HasValue)
             query = query.Where(a => a.EventType == filter.EventType.Value);
@@ -227,6 +253,8 @@ public class AuditService : IAuditService
         try
         {
             using var scope = _scopeFactory.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("ForensicAuditLogger");
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             var record = new AuditRecordEntity

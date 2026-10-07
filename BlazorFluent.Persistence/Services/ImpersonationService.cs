@@ -4,7 +4,6 @@ using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
@@ -15,7 +14,6 @@ public class ImpersonationService : IImpersonationService
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IAuditService _auditService;
-    private readonly HybridCache _cache;
     private readonly ILogger<ImpersonationService> _logger;
 
     public ImpersonationService(
@@ -23,14 +21,12 @@ public class ImpersonationService : IImpersonationService
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IAuditService auditService,
-        HybridCache cache,
         ILogger<ImpersonationService> logger)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
-        _cache = cache;
         _logger = logger;
     }
 
@@ -41,7 +37,7 @@ public class ImpersonationService : IImpersonationService
         CancellationToken ct = default)
     {
         // 1. Strict Host Admin Security Boundary
-        if (!_tenantContext.IsHost && !_currentUser.IsInRole("Admin") && _currentUser.UserId != "dev_admin")
+        if (!_currentUser.IsRootAdmin)
         {
             _logger.LogWarning("Unauthorized impersonation attempt by user {UserId}", _currentUser.UserId);
             return Result<ImpersonationGrantEntity>.Failure("Only Host Administrators can initiate operator impersonation.");
@@ -94,9 +90,6 @@ public class ImpersonationService : IImpersonationService
         _dbContext.ImpersonationGrants.Add(grant);
         await _dbContext.SaveChangesAsync(ct);
 
-        // Invalidate cached state
-        await _cache.SetAsync($"active_impersonation_{adminId}", grant, cancellationToken: ct);
-
         // Forensic Security Audit Log
         await _auditService.LogSecurityEventAsync(
             "OperatorImpersonationStarted",
@@ -130,7 +123,6 @@ public class ImpersonationService : IImpersonationService
         }
 
         await _dbContext.SaveChangesAsync(ct);
-        await _cache.RemoveAsync($"active_impersonation_{adminId}", cancellationToken: ct);
 
         return Result.Success();
     }
@@ -140,15 +132,9 @@ public class ImpersonationService : IImpersonationService
         var adminId = _currentUser.UserId ?? "admin";
         var now = DateTime.UtcNow;
 
-        return await _cache.GetOrCreateAsync(
-            $"active_impersonation_{adminId}",
-            async token =>
-            {
-                return await _dbContext.ImpersonationGrants
-                    .AsNoTracking()
-                    .OrderByDescending(g => g.StartedAtUtc)
-                    .FirstOrDefaultAsync(g => g.SourceAdminId == adminId && !g.IsRevoked && g.ExpiresAtUtc > now, token);
-            },
-            cancellationToken: ct);
+        return await _dbContext.ImpersonationGrants
+            .AsNoTracking()
+            .OrderByDescending(g => g.StartedAtUtc)
+            .FirstOrDefaultAsync(g => g.SourceAdminId == adminId && !g.IsRevoked && g.ExpiresAtUtc > now, ct);
     }
 }

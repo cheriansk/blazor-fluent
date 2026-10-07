@@ -34,11 +34,12 @@ public class NoTrackingMutationGuardInterceptor : SaveChangesInterceptor, IMater
             lock (_lock)
             {
                 // Prune dead references to keep memory minimal
-                _untrackedSnapshots.RemoveAll(s => !s.WeakRef.TryGetTarget(out _));
+                _untrackedSnapshots.RemoveAll(s => !s.WeakRef.TryGetTarget(out _) || !s.ContextRef.TryGetTarget(out _));
 
                 var snapshot = CapturePropertySnapshot(baseEntity);
                 _untrackedSnapshots.Add(new NoTrackingSnapshotEntry(
                     new WeakReference<BaseEntity>(baseEntity),
+                    new WeakReference<DbContext>(materializationData.Context),
                     baseEntity.GetType(),
                     baseEntity.Id,
                     snapshot));
@@ -63,6 +64,32 @@ public class NoTrackingMutationGuardInterceptor : SaveChangesInterceptor, IMater
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
+    public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
+    {
+        PurgeSavedContextSnapshots(eventData.Context);
+        return base.SavedChanges(eventData, result);
+    }
+
+    public override ValueTask<int> SavedChangesAsync(
+        SaveChangesCompletedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        PurgeSavedContextSnapshots(eventData.Context);
+        return base.SavedChangesAsync(eventData, result, cancellationToken);
+    }
+
+    private void PurgeSavedContextSnapshots(DbContext? context)
+    {
+        if (context == null) return;
+        lock (_lock)
+        {
+            _untrackedSnapshots.RemoveAll(s =>
+                !s.ContextRef.TryGetTarget(out var targetContext) ||
+                ReferenceEquals(targetContext, context));
+        }
+    }
+
     private void ValidateUntrackedMutations(DbContext? context)
     {
         if (context == null) return;
@@ -71,6 +98,13 @@ public class NoTrackingMutationGuardInterceptor : SaveChangesInterceptor, IMater
         {
             foreach (var entry in _untrackedSnapshots)
             {
+                // Only validate entities materialized by THIS DbContext instance
+                if (!entry.ContextRef.TryGetTarget(out var originatingContext) ||
+                    !ReferenceEquals(originatingContext, context))
+                {
+                    continue;
+                }
+
                 if (entry.WeakRef.TryGetTarget(out var liveEntity))
                 {
                     // If the entity is currently tracked in ChangeTracker, it is legitimate (.AsTracking() or dbContext.Update())
@@ -145,6 +179,7 @@ public class NoTrackingMutationGuardInterceptor : SaveChangesInterceptor, IMater
 
     private sealed record NoTrackingSnapshotEntry(
         WeakReference<BaseEntity> WeakRef,
+        WeakReference<DbContext> ContextRef,
         Type EntityType,
         Guid EntityId,
         Dictionary<string, object?> OriginalValues);

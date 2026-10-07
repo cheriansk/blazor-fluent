@@ -5,7 +5,7 @@ namespace BlazorFluent.Core.Contracts;
 public interface IUserSessionService
 {
     /// <summary>
-    /// Creates a new user session record in PostgreSQL and registers it in HybridCache.
+    /// Creates a new user session record in PostgreSQL.
     /// </summary>
     Task<UserSessionEntity> CreateSessionAsync(
         string userId,
@@ -20,8 +20,8 @@ public interface IUserSessionService
     Task UpdateHeartbeatAsync(Guid sessionId, CancellationToken ct = default);
 
     /// <summary>
-    /// Checks whether the given session has been revoked by an administrator.
-    /// Uses HybridCache for ultra-fast (nanosecond) lookups.
+    /// Checks whether the given session has been revoked by an administrator via live database query.
+    /// Guarantees zero stale authorization data.
     /// </summary>
     Task<bool> IsSessionRevokedAsync(Guid sessionId, CancellationToken ct = default);
 
@@ -31,7 +31,18 @@ public interface IUserSessionService
     Task<bool> RevokeSessionAsync(Guid sessionId, string revokedBy, CancellationToken ct = default);
 
     /// <summary>
-    /// Returns all non-deleted user sessions for the active tenant (or all tenants for Host Admin).
+    /// Revokes any existing active sessions for a specific user to enforce single-active-session policy.
     /// </summary>
-    Task<IReadOnlyList<UserSessionEntity>> GetActiveSessionsAsync(CancellationToken ct = default);
+    Task RevokePreviousSessionsAsync(string userId, Guid? exceptSessionId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Revokes all stale sessions whose last activity is older than the specified timeout.
+    /// Returns the number of sessions revoked.
+    /// </summary>
+    Task<int> RevokeStaleSessionsAsync(TimeSpan timeout, string revokedBy, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns active user sessions. If includeTerminated is true, includes expired and revoked sessions.
+    /// </summary>
+    Task<IReadOnlyList<UserSessionEntity>> GetActiveSessionsAsync(bool includeTerminated = false, CancellationToken ct = default);
 }

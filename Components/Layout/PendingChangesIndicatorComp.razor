@@ -1,0 +1,101 @@
+@rendermode InteractiveServer
+@using BlazorFluent.Core.Contracts
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IUnsavedChangesStateService UnsavedChanges
+@implements IDisposable
+
+<div style="position: relative; display: inline-flex; align-items: center; margin-right: 8px;">
+    @* Pending Changes Button with Count Badge *@
+    <FluentButton Appearance="ButtonAppearance.Subtle"
+                  OnClick="TogglePanel"
+                  Title="@(UnsavedChanges.HasPendingChanges ? $"{UnsavedChanges.PendingChanges.Count} pending unsaved changes" : "No unsaved changes")"
+                  Style="position: relative; padding: 6px;">
+        <FluentIcon Value="@(new Icons.Regular.Size20.SaveEdit())"
+                    Color="@(UnsavedChanges.HasPendingChanges ? Color.Warning : Color.Neutral)" />
+        @if (UnsavedChanges.HasPendingChanges)
+        {
+            <span style="position: absolute; top: 0; right: 0; background-color: #d83b01; color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 5px; line-height: 1.2;">
+                @UnsavedChanges.PendingChanges.Count
+            </span>
+        }
+    </FluentButton>
+
+    @* Unsaved Changes Flyout Panel *@
+    @if (_isOpen)
+    {
+        <div style="position: absolute; top: calc(100% + 8px); right: 0; width: 340px; background: var(--neutral-layer-1, #ffffff); border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0); border-radius: 8px; box-shadow: var(--elevation-shadow-flyout, 0 8px 24px rgba(0,0,0,0.16)); z-index: 1050; display: flex; flex-direction: column; overflow: hidden;">
+            @* Header *@
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--neutral-stroke-subtle, #f0f0f0); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.SaveEdit())" Color="Color.Warning" />
+                    <FluentLabel Typo="Typography.BodyStrong">Pending Changes</FluentLabel>
+                </div>
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              Size="ButtonSize.Small"
+                              IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                              OnClick="@(() => _isOpen = false)" />
+            </div>
+
+            @* Body Content *@
+            <div style="padding: 14px 16px; max-height: 280px; overflow-y: auto;">
+                @if (UnsavedChanges.HasPendingChanges)
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Warning" Style="margin-bottom: 12px; font-size: 12px;">
+                        Changes are kept in memory and will NOT persist to the database until you click <strong>Save Changes</strong> on the corresponding tab.
+                    </FluentMessageBar>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        @foreach (var (source, desc) in UnsavedChanges.PendingChanges)
+                        {
+                            <div style="padding: 8px 10px; background: var(--neutral-layer-2, #f5f5f5); border-radius: 6px; font-size: 12px; border-left: 3px solid #d83b01;">
+                                <div style="font-weight: 600; color: var(--neutral-foreground-1, #242424);">@source</div>
+                                <div style="color: var(--neutral-foreground-hint, #666); margin-top: 2px;">@desc</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 20px 0; color: var(--neutral-foreground-hint, #888);">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.CheckmarkCircle())" Color="Color.Success" />
+                        <div style="margin-top: 8px; font-size: 13px;">All changes are saved.</div>
+                    </div>
+                }
+            </div>
+
+            @* Footer *@
+            @if (UnsavedChanges.HasPendingChanges)
+            {
+                <div style="padding: 8px 16px; border-top: 1px solid var(--neutral-stroke-subtle, #f0f0f0); display: flex; justify-content: flex-end; background: var(--neutral-layer-2, #fafafa);">
+                    <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="@(() => { UnsavedChanges.ResetAll(); _isOpen = false; })">
+                        Discard All
+                    </FluentButton>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+
+    protected override void OnInitialized()
+    {
+        UnsavedChanges.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void TogglePanel()
+    {
+        _isOpen = !_isOpen;
+    }
+
+    public void Dispose()
+    {
+        UnsavedChanges.OnChange -= HandleStateChanged;
+    }
+}

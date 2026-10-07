@@ -1,0 +1,1340 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Identity
+@using BlazorFluent.Core.Domain.Tenancy
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject ITenantService TenantService
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject IUnsavedChangesStateService UnsavedChanges
+@inject IUserTimeZoneService TimeZoneService
+@implements IDisposable
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H3">Tenant Directory</FluentLabel>
+            <FluentLabel Typo="Typography.Body">Manage tenant contracts, email domains, and user directories.</FluentLabel>
+        </div>
+        @if (IsRootAdmin)
+        {
+            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@StartAddTenant">
+                Add Tenant
+            </FluentButton>
+        }
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+        @* Step 1: Provision New Tenant Form *@
+        @if (_showAddModal && !_showConfirmCreate)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Provision New Tenant</FluentLabel>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                        <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Style="flex: 1;" />
+                        <FluentTextInput Label="Tenant Code (Max 15 chars)" @bind-Value="_newCode" Placeholder="e.g. ACME" Required="true" Style="flex: 1;" />
+                    </FluentStack>
+                    
+                    <FluentTextInput Label="Display Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Style="width: 100%;" />
+
+                    @* Internal Email Domains (1-5) *@
+                    <div>
+                        <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 4px;">
+                            Internal Email Domains (@_newInternalDomains.Count/5) <span style="color: #d13438;">*</span>
+                        </FluentLabel>
+                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-bottom: 6px;">
+                            Staff members whose email ends with any of these domains will be categorized as Internal Staff (CompanyUser).
+                        </div>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true" Style="margin-bottom: 8px;">
+                            @foreach (var domain in _newInternalDomains)
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand" Style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;">
+                                    @domain
+                                    <span @onclick="@(() => RemoveInternalDomain(domain))" style="cursor: pointer; font-weight: bold; margin-left: 4px;" title="Remove domain">✕</span>
+                                </FluentBadge>
+                            }
+                        </FluentStack>
+                        @if (_newInternalDomains.Count < 5)
+                        {
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                                <FluentTextInput Placeholder="e.g. \"@microsoft.com" @bind-Value="_tempInternalDomain" Style="width: 260px;" />
+                                <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" OnClick="@AddInternalDomain">
+                                    + Add Domain
+                                </FluentButton>
+                            </FluentStack>
+                        }
+                    </div>
+
+                    @* External Email Domains (1-5) *@
+                    <div>
+                        <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 4px;">
+                            External Email Domains (@_newExternalDomains.Count/5) <span style="color: #d13438;">*</span>
+                        </FluentLabel>
+                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-bottom: 6px;">
+                            Client users whose email ends with any of these domains will be categorized as External Clients (ClientUser). Must not overlap with Internal.
+                        </div>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true" Style="margin-bottom: 8px;">
+                            @foreach (var domain in _newExternalDomains)
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;">
+                                    @domain
+                                    <span @onclick="@(() => RemoveExternalDomain(domain))" style="cursor: pointer; font-weight: bold; margin-left: 4px;" title="Remove domain">✕</span>
+                                </FluentBadge>
+                            }
+                        </FluentStack>
+                        @if (_newExternalDomains.Count < 5)
+                        {
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                                <FluentTextInput Placeholder="e.g. \" @salesforce.com" @bind-Value="_tempExternalDomain" Style="width: 260px;" />
+                                <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" OnClick="@AddExternalDomain">
+                                    + Add Domain
+                                </FluentButton>
+                            </FluentStack>
+                        }
+                    </div>
+
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                        <FluentDatePicker Label="Start Date" @bind-Value="_newStartDate" Required="true" />
+                        <FluentDatePicker Label="End Date" @bind-Value="_newEndDate" Required="true" />
+                    </FluentStack>
+
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                        ⚠️ Note: Slug, Code, Name, Internal Domains, and External Domains cannot be changed after creation.
+                    </div>
+
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@PromptConfirmCreate">Review &amp; Confirm</FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAdd">Cancel</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        }
+
+        @* Step 2: Mandatory Permanent Configuration Confirmation Modal *@
+        @if (_showConfirmCreate)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #d83b01; background-color: #fff9f5;">
+                <FluentLabel Typo="Typography.H5" Style="color: #a80000; margin-bottom: 8px;">
+                    ⚠️ Permanent Configuration Confirmation
+                </FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
+                    Please confirm the following tenant details. <strong>None of this data can be edited later</strong>:
+                </FluentLabel>
+
+                <ul style="line-height: 1.8; margin-left: 16px; margin-bottom: 16px;">
+                    <li><strong>Slug:</strong> <code>@_newSlug.Trim().ToLowerInvariant()</code></li>
+                    <li><strong>Code:</strong> <code>@_newCode.Trim()</code></li>
+                    <li><strong>Display Name:</strong> <code>@_newName.Trim()</code></li>
+                    <li><strong>Internal Domains:</strong> <code>@string.Join(", ", _newInternalDomains)</code> (Internal Staff)</li>
+                    <li><strong>External Domains:</strong> <code>@string.Join(", ", _newExternalDomains)</code> (Client Users)</li>
+                    <li><strong>Contract Window:</strong> @_newStartDate?.ToString("yyyy-MM-dd") to @_newEndDate?.ToString("yyyy-MM-dd")</li>
+                </ul>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
+                    <FluentButton Appearance="ButtonAppearance.Primary" Style="background-color: #d83b01; border-color: #d83b01;" OnClick="@CreateTenantAsync">
+                        Confirm &amp; Provision Tenant
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showConfirmCreate = false)">
+                        Back to Edit
+                    </FluentButton>
+                </FluentStack>
+            </FluentCard>
+        }
+
+        @* Edit Dates Modal (Slug, Code, Name, and Domains are strictly locked) *@
+        @if (_editingTenant is not null)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Code)</FluentLabel>
+                <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); margin-bottom: 12px;">
+                    Slug (<code>@_editingTenant.Slug</code>), Code (<code>@_editingTenant.Code</code>), Internal Domains (<code>@_editingTenant.InternalEmailDomains</code>), and External Domains (<code>@_editingTenant.ExternalEmailDomains</code>) are permanent and cannot be modified.
+                </div>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                        <FluentDatePicker Label="Start Date" @bind-Value="_editStartDate" Required="true" />
+                        <FluentDatePicker Label="End Date" @bind-Value="_editEndDate" Required="true" />
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@SaveDatesAsync">Save Dates</FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelEditDates">Cancel</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        }
+
+        @* Tenant User Management Panel *@
+        @if (_managingUsersTenant is not null)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #107c41;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <FluentLabel Typo="Typography.H5">Users for @_managingUsersTenant.Name (@_managingUsersTenant.Code)</FluentLabel>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 4px; font-size: 13px;" Wrap="true">
+                            <span>Internal: @foreach(var d in _managingUsersTenant.GetInternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Filled" Style="margin-right: 4px;">@d</FluentBadge> }</span>
+                            <span>External: @foreach(var d in _managingUsersTenant.GetExternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Tint" Style="margin-right: 4px;">@d</FluentBadge> }</span>
+                            <EntityHistoryButton EntityName="TenantEntity" EntityId="@_managingUsersTenant.Id.ToString()" PropertyName="InternalEmailDomains" Label="Domain History" IconOnly="false" Appearance="ButtonAppearance.Primary" />
+                        </FluentStack>
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.PersonAdd())" OnClick="@OpenAddUserForm">
+                            Add User
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseUserManagement">
+                            Close
+                        </FluentButton>
+                    </FluentStack>
+                </FluentStack>
+
+                @* Add User Sub-Card *@
+                @if (_showAddUserForm)
+                {
+                    <FluentCard Style="margin-bottom: 16px; background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
+                        <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">Add User to @_managingUsersTenant.Name</FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                            <FluentTextInput Label="Full Name" @bind-Value="_userFullName" Required="true" Style="width: 100%;" Placeholder="e.g. John Doe" />
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                <div style="flex: 2;">
+                                    <FluentTextInput Label="Email Address"
+                                                     Value="@_userEmail"
+                                                     ValueChanged="@OnUserEmailChanged"
+                                                     Placeholder="e.g. user@domain.com"
+                                                     Required="true"
+                                                     Style="width: 100%;" />
+                                </div>
+                                <div style="flex: 1;">
+                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">User Type (Auto-derived)</FluentLabel>
+                                    <FluentTextInput Value="@GetUserTypeDisplay()" ReadOnly="true" Style="width: 100%;" />
+                                </div>
+                            </FluentStack>
+
+                            @if (!string.IsNullOrWhiteSpace(_userDomainError))
+                            {
+                                <div style="font-size: 12px; color: #d13438;">
+                                    @_userDomainError
+                                </div>
+                            }
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                                <FluentDatePicker Label="Start Date" @bind-Value="_userStartDate" Required="true" />
+                                <FluentDatePicker Label="End Date" @bind-Value="_userEndDate" Required="true" />
+                                <div style="display: flex; align-items: flex-end; padding-bottom: 6px;">
+                                    <FluentSwitch @bind-Value="_userIsActive" Label="Active" />
+                                </div>
+                            </FluentStack>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              Disabled="@(!IsUserFormValid)"
+                                              OnClick="@CreateTenantUserAsync">
+                                    Save User
+                                </FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showAddUserForm = false)">
+                                    Cancel
+                                </FluentButton>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                }
+
+                @* Edit User Sub-Card *@
+                @if (_editingUser is not null)
+                {
+                    <FluentCard Style="margin-bottom: 16px; background-color: #f0f7ff; border: 1px solid #c7e0f4; padding: 16px;">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                            <FluentLabel Typo="Typography.H6">Edit User: @_editingUser.FullName</FluentLabel>
+                    <EntityHistoryButton EntityName="UserEntity" EntityId="@_editingUser.Id.ToString()" Label="Field History" IconOnly="false" Appearance="ButtonAppearance.Subtle" />
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                            <FluentTextInput Label="Full Name" @bind-Value="_editUserFullName" Required="true" Style="width: 100%;" />
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                <div style="flex: 2;">
+                                    <FluentTextInput Label="Email Address"
+                                                     Value="@_editUserEmail"
+                                                     ValueChanged="@OnEditUserEmailChanged"
+                                                     Required="true"
+                                                     Style="width: 100%;" />
+                                </div>
+                                <div style="flex: 1;">
+                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">User Type (Auto-derived)</FluentLabel>
+                                    <FluentTextInput Value="@GetEditUserTypeDisplay()" ReadOnly="true" Style="width: 100%;" />
+                                </div>
+                            </FluentStack>
+
+                            @if (!string.IsNullOrWhiteSpace(_editUserDomainError))
+                            {
+                                <div style="font-size: 12px; color: #d13438;">
+                                    @_editUserDomainError
+                                </div>
+                            }
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                                <FluentDatePicker Label="Start Date" @bind-Value="_editUserStartDate" Required="true" />
+                                <FluentDatePicker Label="End Date" @bind-Value="_editUserEndDate" Required="true" />
+                                <div style="display: flex; align-items: flex-end; padding-bottom: 6px;">
+                                    <FluentSwitch @bind-Value="_editUserIsActive" Label="@(_editUserIsActive ? "Active" : "Inactive")" />
+                                </div>
+                            </FluentStack>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              Disabled="@(!IsEditUserFormValid)"
+                                              OnClick="@SaveEditUserAsync">
+                                    Update User
+                                </FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _editingUser = null)">
+                                    Cancel
+                                </FluentButton>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                }
+
+                @* Search & Filter Toolbar for Users *@
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px; margin-bottom: 8px;">
+                    <FluentTextInput Placeholder="Filter users by name or email..."
+                                  @bind-Value="_userSearchText"
+                                  @bind-Value:after="StateHasChanged"
+                                  Style="width: 320px;" >
+                    <StartTemplate>    
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                        Showing @FilteredTenantUsers.Count() of @_tenantUsers.Count users
+                    </span>
+                </FluentStack>
+
+                @if (_isLoadingUsers)
+                {
+                    <FluentProgressRing Style="margin: 20px auto;" />
+                }
+                else if (!_tenantUsers.Any())
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-top: 8px;">
+                        No users have been added to this tenant yet. Click &ldquo;Add User&rdquo; above to provision the first member.
+                    </FluentMessageBar>
+                }
+                else
+                {
+                    <FluentDataGrid Items="@FilteredTenantUsers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 120px 100px 140px" Style="margin-top: 8px;">
+                        <PropertyColumn Property="@(u => u.FullName)" Title="Name" Sortable="true" />
+                        <PropertyColumn Property="@(u => u.Email)" Title="Email" Sortable="true" />
+                        <TemplateColumn Title="Type" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.UserType))">
+                            @if (context.UserType == UserType.CompanyUser)
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Filled">Internal</FluentBadge>
+                            }
+                            else
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Tint">External</FluentBadge>
+                            }
+                        </TemplateColumn>
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.StartDateUtc))">
+                            @TimeZoneService.FormatDate(context.StartDateUtc)
+                        </TemplateColumn>
+                        <TemplateColumn Title="End Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.EndDateUtc))">
+                            @TimeZoneService.FormatDate(context.EndDateUtc)
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.IsActive))">
+                            <FluentBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                                         Color="@(context.IsActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                                @(context.IsActive ? "Active" : "Inactive")
+                            </FluentBadge>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.Edit())"
+                                              Title="Edit User"
+                                              OnClick="@(() => StartEditUser(context))">
+                                    Edit
+                                </FluentButton>
+                        <EntityHistoryButton EntityName="UserEntity" EntityId="@context.Id.ToString()" Tooltip="View user change history" />
+                            </FluentStack>
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                }
+            </FluentCard>
+        }
+
+        @* Tenant Project Management Panel *@
+        @if (_managingProjectsTenant is not null)
+        {
+            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #0078d4;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <FluentLabel Typo="Typography.H5">Projects for @_managingProjectsTenant.Name (@_managingProjectsTenant.Code)</FluentLabel>
+                        <div style="font-size: 13px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                            Manage project workspaces, timelines, and scopes scoped to tenant <code>@_managingProjectsTenant.Slug</code>.
+                        </div>
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@OpenAddProjectForm">
+                            Add Project
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseProjectManagement">
+                            Close
+                        </FluentButton>
+                    </FluentStack>
+                </FluentStack>
+
+                @* Add / Edit Project Sub-Card *@
+                @if (_showAddProjectForm)
+                {
+                    <FluentCard Style="margin-bottom: 16px; background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
+                        <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">
+                            @(_editingProject is not null ? $"Edit Project: {_editingProject.Name}" : $"Add Project to {_managingProjectsTenant.Name}")
+                        </FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                <FluentTextInput Label="Project Name" @bind-Value="_projName" Required="true" Style="flex: 2;" Placeholder="e.g. Enterprise Cloud Migration" />
+                                <FluentTextInput Label="Project Short Code" @bind-Value="_projShortCode" Required="true" Style="flex: 1;" Placeholder="e.g. CLOUD-01" />
+                            </FluentStack>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                <FluentTextInput Label="Location" @bind-Value="_projLocation" Style="flex: 2;" Placeholder="e.g. Seattle, WA / Remote" />
+                                <div style="flex: 1;">
+                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                                    <FluentSelect TOption="string" TValue="string"
+                                                  Value="@_projStatus.ToString()"
+                                                  ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
+                                                  Style="width: 100%;">
+                                        <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
+                                        <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
+                                        <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
+                                        <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
+                                    </FluentSelect>
+                                </div>
+                            </FluentStack>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                                <FluentDatePicker Label="Tentative Start Date" @bind-Value="_projStartDate" />
+                                <FluentDatePicker Label="Tentative End Date" @bind-Value="_projEndDate" />
+                            </FluentStack>
+
+                            <div>
+                                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Summary of Scope of Project</FluentLabel>
+                                <FluentTextArea @bind-Value="_projScopeSummary" Placeholder="Brief summary of project scope, deliverables, and goals..." Rows="3" Style="width: 100%;" />
+                            </div>
+
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              Disabled="@(!IsProjectFormValid)"
+                                              OnClick="@SaveTenantProjectAsync">
+                                    @(_editingProject is not null ? "Update Project" : "Save Project")
+                                </FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseProjectForm">
+                                    Cancel
+                                </FluentButton>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                }
+
+                @* Search & Filter Toolbar for Projects *@
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px; margin-bottom: 8px;">
+                    <FluentTextInput Placeholder="Filter projects by name, short code, or location..."
+                                     @bind-Value="_projectSearchText"
+                                     @bind-Value:after="StateHasChanged"
+                                     Style="width: 320px;">
+                        <StartTemplate>
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                        </StartTemplate>
+                    </FluentTextInput>
+                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                        Showing @FilteredTenantProjects.Count() of @_tenantProjects.Count projects
+                    </span>
+                </FluentStack>
+
+                @if (_isLoadingProjects)
+                {
+                    <FluentProgressRing Style="margin: 20px auto;" />
+                }
+                else if (!_tenantProjects.Any())
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-top: 8px;">
+                        No projects have been added to this tenant yet. Click &ldquo;Add Project&rdquo; above to create the first workspace.
+                    </FluentMessageBar>
+                }
+                else
+                {
+                    <FluentDataGrid Items="@FilteredTenantProjects" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 120px 120px 140px" Style="margin-top: 8px;">
+                        <PropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
+                        <PropertyColumn Property="@(p => p.Name)" Title="Name" Sortable="true" />
+                        <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
+                            @switch (context.Status)
+                            {
+                                case ProjectStatus.Active:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                                    break;
+                                case ProjectStatus.New:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
+                                    break;
+                                case ProjectStatus.OnHold:
+                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
+                                    break;
+                                case ProjectStatus.Done:
+                                    <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
+                                    break;
+                            }
+                        </TemplateColumn>
+                        <PropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeStartDate))">
+                            @(context.TentativeStartDate?.ToString("yyyy-MM-dd") ?? "—")
+                        </TemplateColumn>
+                        <TemplateColumn Title="End Date" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeEndDate))">
+                            @(context.TentativeEndDate?.ToString("yyyy-MM-dd") ?? "—")
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.Edit())"
+                                              Title="Edit Project"
+                                              OnClick="@(() => StartEditProject(context))">
+                                    Edit
+                                </FluentButton>
+                                <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project change history" />
+                            </FluentStack>
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                }
+            </FluentCard>
+        }
+
+        @* Search & Filter Toolbar for Tenants *@
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+            <FluentTextInput Placeholder="Filter tenants by name, code, slug, or domain..."
+                          @bind-Value="_tenantSearchText"
+                          @bind-Value:after="StateHasChanged"
+                          Style="width: 360px;" >
+                    <StartTemplate>    
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    </StartTemplate>
+                </FluentTextInput>
+            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                Showing @FilteredTenants.Count() of @_tenants.Count tenants
+            </span>
+        </FluentStack>
+
+        @* Tenants Table *@
+        @if (_isLoading)
+        {
+            <FluentProgressRing Style="margin: 30px auto;" />
+        }
+        else
+        {
+            <FluentDataGrid Items="@FilteredTenants" ResizableColumns="true" GridTemplateColumns="120px 80px 1.5fr 150px 150px 100px 110px 110px 210px">
+                <PropertyColumn Property="@(t => t.Slug)" Title="Slug" Sortable="true" />
+                <PropertyColumn Property="@(t => t.Code)" Title="Code" Sortable="true" />
+                <PropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true" />
+                <TemplateColumn Title="Internal Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.InternalEmailDomains))">
+                    @foreach (var d in context.GetInternalDomains())
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Style="margin-right: 4px; font-size: 11px;">@d</FluentBadge>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="External Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.ExternalEmailDomains))">
+                    @foreach (var d in context.GetExternalDomains())
+                    {
+                        <FluentBadge Appearance="BadgeAppearance.Tint" Style="margin-right: 4px; font-size: 11px;">@d</FluentBadge>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Status" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.IsActive))">
+                    @if (IsRootAdmin)
+                    {
+                        <FluentSwitch Value="@context.IsActive"
+                                      ValueChanged="@((bool val) => ToggleStatusAsync(context, val))"
+                                      Label="@(context.IsActive ? "Active" : "Inactive")" />
+                    }
+                    else
+                    {
+                        <FluentBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                                     Color="@(context.IsActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                            @(context.IsActive ? "Active" : "Inactive")
+                        </FluentBadge>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Start Date" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.StartDate))">
+                    @context.StartDate.ToString("yyyy-MM-dd")
+                </TemplateColumn>
+                <TemplateColumn Title="End Date" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.EndDate))">
+                    @context.EndDate?.ToString("yyyy-MM-dd")
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                        @if (IsRootAdmin)
+                        {
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Folder())" Title="Manage Projects" OnClick="@(() => OpenProjectManagement(context))">
+                                Projects
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.People())" Title="Manage Users" OnClick="@(() => OpenUserManagement(context))">
+                                Users
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" Title="Edit Dates" OnClick="@(() => StartEdit(context))">
+                                Dates
+                            </FluentButton>
+                        }
+                        <EntityHistoryButton EntityName="TenantEntity" EntityId="@context.Id.ToString()" Tooltip="View tenant change history" />
+                    </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+</FluentStack>
+
+@code {
+    private bool IsRootAdmin => CurrentUser.IsRootAdmin;
+    private List<TenantEntity> _tenants = [];
+    private bool _isLoading = true;
+    private string? _statusMessage;
+    private bool _isError;
+
+    // Search filters for Grids
+    private string _tenantSearchText = string.Empty;
+    private string _userSearchText = string.Empty;
+
+    private IQueryable<TenantEntity> FilteredTenants
+    {
+        get
+        {
+            var query = _tenants.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_tenantSearchText))
+            {
+                var term = _tenantSearchText.Trim();
+                query = query.Where(t =>
+                    t.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    t.Code.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    t.Slug.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    t.InternalEmailDomains.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    t.ExternalEmailDomains.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    private IQueryable<UserEntity> FilteredTenantUsers
+    {
+        get
+        {
+            var query = _tenantUsers.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_userSearchText))
+            {
+                var term = _userSearchText.Trim();
+                query = query.Where(u =>
+                    u.FullName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    u.Email.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    // Add tenant modal state
+    private bool _showAddModal;
+    private bool _showConfirmCreate;
+    private string _newSlug = string.Empty;
+    private string _newCode = string.Empty;
+    private string _newName = string.Empty;
+    private List<string> _newInternalDomains = [];
+    private string _tempInternalDomain = string.Empty;
+    private List<string> _newExternalDomains = [];
+    private string _tempExternalDomain = string.Empty;
+    private DateTime? _newStartDate = DateTime.UtcNow.Date;
+    private DateTime? _newEndDate = DateTime.UtcNow.Date.AddYears(1);
+
+    // Edit tenant modal state
+    private TenantEntity? _editingTenant;
+    private DateTime? _editStartDate;
+    private DateTime? _editEndDate;
+
+    // Tenant user management state
+    private TenantEntity? _managingUsersTenant;
+    private List<UserEntity> _tenantUsers = [];
+    private bool _isLoadingUsers;
+    private bool _showAddUserForm;
+
+    // Add user form inputs
+    private string _userFullName = string.Empty;
+    private string _userEmail = string.Empty;
+    private UserType? _detectedUserType;
+    private string? _userDomainError;
+    private DateTime? _userStartDate = DateTime.UtcNow.Date;
+    private DateTime? _userEndDate = DateTime.UtcNow.Date.AddYears(1);
+    private bool _userIsActive = true;
+
+    // Edit user form state
+    private UserEntity? _editingUser;
+    private string _editUserFullName = string.Empty;
+    private string _editUserEmail = string.Empty;
+    private UserType? _editDetectedUserType;
+    private string? _editUserDomainError;
+    private DateTime? _editUserStartDate;
+    private DateTime? _editUserEndDate;
+    private bool _editUserIsActive;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTenantsAsync();
+    }
+
+    private async Task LoadTenantsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await TenantService.GetAllTenantsAsync();
+            _tenants = result.ToList();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string NormalizeDomain(string domain)
+    {
+        var trimmed = domain.Trim().ToLowerInvariant();
+        return trimmed.StartsWith('@') ? trimmed : "@" + trimmed;
+    }
+
+    private void AddInternalDomain()
+    {
+        if (string.IsNullOrWhiteSpace(_tempInternalDomain)) return;
+        var normalized = NormalizeDomain(_tempInternalDomain);
+
+        if (_newInternalDomains.Any(d => d.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            _statusMessage = $"Internal domain '{normalized}' is already added.";
+            _isError = true;
+            return;
+        }
+
+        if (_newExternalDomains.Any(d => d.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            _statusMessage = $"Domain '{normalized}' cannot exist in both Internal and External lists.";
+            _isError = true;
+            return;
+        }
+
+        if (_newInternalDomains.Count >= 5)
+        {
+            _statusMessage = "Maximum of 5 Internal email domains reached.";
+            _isError = true;
+            return;
+        }
+
+        _newInternalDomains.Add(normalized);
+        _tempInternalDomain = string.Empty;
+        _statusMessage = null;
+        _isError = false;
+    }
+
+    private void RemoveInternalDomain(string domain)
+    {
+        _newInternalDomains.RemoveAll(d => d.Equals(domain, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void AddExternalDomain()
+    {
+        if (string.IsNullOrWhiteSpace(_tempExternalDomain)) return;
+        var normalized = NormalizeDomain(_tempExternalDomain);
+
+        if (_newExternalDomains.Any(d => d.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            _statusMessage = $"External domain '{normalized}' is already added.";
+            _isError = true;
+            return;
+        }
+
+        if (_newInternalDomains.Any(d => d.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            _statusMessage = $"Domain '{normalized}' cannot exist in both Internal and External lists.";
+            _isError = true;
+            return;
+        }
+
+        if (_newExternalDomains.Count >= 5)
+        {
+            _statusMessage = "Maximum of 5 External email domains reached.";
+            _isError = true;
+            return;
+        }
+
+        _newExternalDomains.Add(normalized);
+        _tempExternalDomain = string.Empty;
+        _statusMessage = null;
+        _isError = false;
+    }
+
+    private void RemoveExternalDomain(string domain)
+    {
+        _newExternalDomains.RemoveAll(d => d.Equals(domain, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void PromptConfirmCreate()
+    {
+        if (string.IsNullOrWhiteSpace(_newSlug) || string.IsNullOrWhiteSpace(_newCode) || string.IsNullOrWhiteSpace(_newName))
+        {
+            _statusMessage = "Slug, Code and Display Name are required.";
+            _isError = true;
+            return;
+        }
+
+        if (!_newInternalDomains.Any())
+        {
+            _statusMessage = "At least one Internal email domain is required (e.g. @microsoft.com).";
+            _isError = true;
+            return;
+        }
+
+        if (!_newExternalDomains.Any())
+        {
+            _statusMessage = "At least one External email domain is required (e.g. @salesforce.com).";
+            _isError = true;
+            return;
+        }
+
+        var overlap = _newInternalDomains.Intersect(_newExternalDomains, StringComparer.OrdinalIgnoreCase).ToList();
+        if (overlap.Any())
+        {
+            _statusMessage = $"Internal and External email domains cannot overlap: {string.Join(", ", overlap)}.";
+            _isError = true;
+            return;
+        }
+
+        if (!_newStartDate.HasValue || !_newEndDate.HasValue)
+        {
+            _statusMessage = "Both Start Date and End Date are strictly required.";
+            _isError = true;
+            return;
+        }
+
+        if (_newEndDate.Value < _newStartDate.Value)
+        {
+            _statusMessage = "End Date cannot precede Start Date.";
+            _isError = true;
+            return;
+        }
+
+        _statusMessage = null;
+        _isError = false;
+        _showConfirmCreate = true;
+    }
+
+    private async Task CreateTenantAsync()
+    {
+        if (!IsRootAdmin) return;
+
+        var result = await TenantService.CreateTenantAsync(
+            _newSlug,
+            _newCode,
+            _newName,
+            _newInternalDomains,
+            _newExternalDomains,
+            _newStartDate!.Value,
+            _newEndDate!.Value);
+
+        if (result.Succeeded && result.Data is not null)
+        {
+            _statusMessage = $"Tenant '{result.Data.Name} ({result.Data.Code})' created successfully.";
+            _isError = false;
+            CancelAdd();
+            await LoadTenantsAsync();
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to create tenant.";
+            _isError = true;
+            _showConfirmCreate = false;
+        }
+    }
+
+    private void StartAddTenant()
+    {
+        _showAddModal = true;
+        _showConfirmCreate = false;
+        UnsavedChanges.RegisterChange("Settings > Tenants", "Provisioning new tenant");
+    }
+
+    private void CancelAdd()
+    {
+        _showAddModal = false;
+        _showConfirmCreate = false;
+        _newSlug = string.Empty;
+        _newCode = string.Empty;
+        _newName = string.Empty;
+        _newInternalDomains.Clear();
+        _tempInternalDomain = string.Empty;
+        _newExternalDomains.Clear();
+        _tempExternalDomain = string.Empty;
+        _newStartDate = DateTime.UtcNow.Date;
+        _newEndDate = DateTime.UtcNow.Date.AddYears(1);
+        UnsavedChanges.ClearChange("Settings > Tenants");
+    }
+
+    private async Task ToggleStatusAsync(TenantEntity tenant, bool isActive)
+    {
+        if (!IsRootAdmin) return;
+
+        var result = await TenantService.UpdateTenantStatusAsync(tenant.Id, isActive);
+        if (result.Succeeded)
+        {
+            tenant.IsActive = isActive;
+            _statusMessage = $"Tenant '{tenant.Name}' status changed to {(isActive ? "Active" : "Inactive")}.";
+            _isError = false;
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update tenant status.";
+            _isError = true;
+        }
+    }
+
+    private void StartEdit(TenantEntity tenant)
+    {
+        if (!IsRootAdmin) return;
+
+        _editingTenant = tenant;
+        _editStartDate = tenant.StartDate;
+        _editEndDate = tenant.EndDate;
+        UnsavedChanges.RegisterChange("Settings > Tenants", $"Editing contract dates for '{tenant.Name}'");
+    }
+
+    private void CancelEditDates()
+    {
+        _editingTenant = null;
+        UnsavedChanges.ClearChange("Settings > Tenants");
+    }
+
+    private async Task SaveDatesAsync()
+    {
+        if (!IsRootAdmin || _editingTenant is null) return;
+
+        if (!_editStartDate.HasValue || !_editEndDate.HasValue)
+        {
+            _statusMessage = "Both Start Date and End Date are strictly required.";
+            _isError = true;
+            return;
+        }
+
+        if (_editEndDate.Value < _editStartDate.Value)
+        {
+            _statusMessage = "End Date cannot precede Start Date.";
+            _isError = true;
+            return;
+        }
+
+        var result = await TenantService.UpdateTenantDatesAsync(_editingTenant.Id, _editStartDate.Value, _editEndDate.Value);
+        if (result.Succeeded)
+        {
+            _editingTenant.StartDate = _editStartDate.Value;
+            _editingTenant.EndDate = _editEndDate.Value;
+            _statusMessage = $"Contract dates updated successfully for '{_editingTenant.Name}'.";
+            _isError = false;
+            _editingTenant = null;
+            UnsavedChanges.ClearChange("Settings > Tenants");
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update contract dates.";
+            _isError = true;
+        }
+    }
+
+    // --- Tenant User Management ---
+    private async Task OpenUserManagement(TenantEntity tenant)
+    {
+        if (!IsRootAdmin) return;
+
+        _managingUsersTenant = tenant;
+        _managingProjectsTenant = null;
+        _showAddUserForm = false;
+        _editingUser = null;
+        _userFullName = string.Empty;
+        _userEmail = string.Empty;
+        _detectedUserType = null;
+        _userDomainError = null;
+        _userStartDate = DateTime.UtcNow.Date;
+        _userEndDate = DateTime.UtcNow.Date.AddYears(1);
+        _userIsActive = true;
+        _userSearchText = string.Empty;
+
+        await LoadTenantUsersAsync();
+    }
+
+    private void OpenAddUserForm()
+    {
+        _editingUser = null;
+        _showAddUserForm = true;
+    }
+
+    private void CloseUserManagement()
+    {
+        _managingUsersTenant = null;
+        _tenantUsers.Clear();
+        _showAddUserForm = false;
+        _editingUser = null;
+    }
+
+    private async Task LoadTenantUsersAsync()
+    {
+        if (_managingUsersTenant is null) return;
+
+        _isLoadingUsers = true;
+        try
+        {
+            var users = await TenantService.GetTenantUsersAsync(_managingUsersTenant.Slug);
+            _tenantUsers = users.ToList();
+        }
+        finally
+        {
+            _isLoadingUsers = false;
+        }
+    }
+
+    private void OnUserEmailChanged(string? value)
+    {
+        _userEmail = value ?? string.Empty;
+        if (_managingUsersTenant is null || string.IsNullOrWhiteSpace(_userEmail))
+        {
+            _detectedUserType = null;
+            _userDomainError = null;
+            return;
+        }
+
+        var normalizedEmail = _userEmail.Trim().ToLowerInvariant();
+        var internalDomains = _managingUsersTenant.GetInternalDomains();
+        var externalDomains = _managingUsersTenant.GetExternalDomains();
+
+        if (internalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
+        {
+            _detectedUserType = UserType.CompanyUser;
+            _userDomainError = null;
+        }
+        else if (externalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
+        {
+            _detectedUserType = UserType.ClientUser;
+            _userDomainError = null;
+        }
+        else
+        {
+            _detectedUserType = null;
+            _userDomainError = $"Email must end with configured Internal domains ({string.Join(", ", internalDomains)}) or External domains ({string.Join(", ", externalDomains)}).";
+        }
+    }
+
+    private string GetUserTypeDisplay()
+    {
+        return _detectedUserType switch
+        {
+            UserType.CompanyUser => "Internal Staff (CompanyUser)",
+            UserType.ClientUser => "External Client (ClientUser)",
+            _ => "(Enter email matching configured domain)"
+        };
+    }
+
+    private bool IsUserFormValid =>
+        !string.IsNullOrWhiteSpace(_userFullName) &&
+        !string.IsNullOrWhiteSpace(_userEmail) &&
+        _detectedUserType.HasValue &&
+        _userStartDate.HasValue &&
+        _userEndDate.HasValue &&
+        _userEndDate.Value >= _userStartDate.Value;
+
+    private async Task CreateTenantUserAsync()
+    {
+        if (!IsRootAdmin || _managingUsersTenant is null || !IsUserFormValid) return;
+
+        var result = await TenantService.AddTenantUserAsync(
+            _managingUsersTenant.Slug,
+            _userFullName,
+            _userEmail,
+            _userStartDate!.Value,
+            _userEndDate!.Value,
+            _userIsActive);
+
+        if (result.Succeeded && result.Data is not null)
+        {
+            _statusMessage = $"User '{result.Data.FullName}' ({result.Data.Email}) added to tenant '{_managingUsersTenant.Name}'.";
+            _isError = false;
+            _showAddUserForm = false;
+            _userFullName = string.Empty;
+            _userEmail = string.Empty;
+            _detectedUserType = null;
+            _userDomainError = null;
+            await LoadTenantUsersAsync();
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to add tenant user.";
+            _isError = true;
+        }
+    }
+
+    // --- Edit User Functionality ---
+    private void StartEditUser(UserEntity user)
+    {
+        _showAddUserForm = false;
+        _editingUser = user;
+        _editUserFullName = user.FullName;
+        _editUserEmail = user.Email;
+        _editDetectedUserType = user.UserType;
+        _editUserDomainError = null;
+        _editUserStartDate = user.StartDateUtc.ToLocalTime().Date;
+        _editUserEndDate = user.EndDateUtc.ToLocalTime().Date;
+        _editUserIsActive = user.IsActive;
+    }
+
+    private void OnEditUserEmailChanged(string? value)
+    {
+        _editUserEmail = value ?? string.Empty;
+        if (_managingUsersTenant is null || string.IsNullOrWhiteSpace(_editUserEmail))
+        {
+            _editDetectedUserType = null;
+            _editUserDomainError = null;
+            return;
+        }
+
+        var normalizedEmail = _editUserEmail.Trim().ToLowerInvariant();
+        var internalDomains = _managingUsersTenant.GetInternalDomains();
+        var externalDomains = _managingUsersTenant.GetExternalDomains();
+
+        if (internalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
+        {
+            _editDetectedUserType = UserType.CompanyUser;
+            _editUserDomainError = null;
+        }
+        else if (externalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
+        {
+            _editDetectedUserType = UserType.ClientUser;
+            _editUserDomainError = null;
+        }
+        else
+        {
+            _editDetectedUserType = null;
+            _editUserDomainError = $"Email must end with configured Internal ({string.Join(", ", internalDomains)}) or External ({string.Join(", ", externalDomains)}) domains.";
+        }
+    }
+
+    private string GetEditUserTypeDisplay()
+    {
+        return _editDetectedUserType switch
+        {
+            UserType.CompanyUser => "Internal Staff (CompanyUser)",
+            UserType.ClientUser => "External Client (ClientUser)",
+            _ => "(Enter email matching configured domain)"
+        };
+    }
+
+    private bool IsEditUserFormValid =>
+        _editingUser is not null &&
+        !string.IsNullOrWhiteSpace(_editUserFullName) &&
+        !string.IsNullOrWhiteSpace(_editUserEmail) &&
+        _editDetectedUserType.HasValue &&
+        _editUserStartDate.HasValue &&
+        _editUserEndDate.HasValue &&
+        _editUserEndDate.Value >= _editUserStartDate.Value;
+
+    private async Task SaveEditUserAsync()
+    {
+        if (!IsRootAdmin || _managingUsersTenant is null || _editingUser is null || !IsEditUserFormValid) return;
+
+        var result = await TenantService.UpdateTenantUserAsync(
+            _managingUsersTenant.Slug,
+            _editingUser.Id,
+            _editUserFullName,
+            _editUserEmail,
+            _editUserStartDate!.Value,
+            _editUserEndDate!.Value,
+            _editUserIsActive);
+
+        if (result.Succeeded && result.Data is not null)
+        {
+            _statusMessage = $"User '{result.Data.FullName}' updated successfully.";
+            _isError = false;
+            _editingUser = null;
+            await LoadTenantUsersAsync();
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update tenant user.";
+            _isError = true;
+        }
+    }
+
+    // --- Tenant Project Management ---
+    private TenantEntity? _managingProjectsTenant;
+    private List<ProjectEntity> _tenantProjects = [];
+    private bool _isLoadingProjects;
+    private bool _showAddProjectForm;
+    private ProjectEntity? _editingProject;
+
+    // Project form inputs
+    private string _projName = string.Empty;
+    private string _projShortCode = string.Empty;
+    private string? _projLocation;
+    private ProjectStatus _projStatus = ProjectStatus.New;
+    private DateTime? _projStartDate;
+    private DateTime? _projEndDate;
+    private string? _projScopeSummary;
+    private string _projectSearchText = string.Empty;
+
+    private IQueryable<ProjectEntity> FilteredTenantProjects
+    {
+        get
+        {
+            var query = _tenantProjects.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_projectSearchText))
+            {
+                var term = _projectSearchText.Trim();
+                query = query.Where(p =>
+                    p.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (p.ShortCode != null && p.ShortCode.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Location != null && p.Location.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.ScopeSummary != null && p.ScopeSummary.Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+            return query;
+        }
+    }
+
+    private bool IsProjectFormValid =>
+        !string.IsNullOrWhiteSpace(_projName) &&
+        !string.IsNullOrWhiteSpace(_projShortCode) &&
+        (!_projStartDate.HasValue || !_projEndDate.HasValue || _projEndDate.Value >= _projStartDate.Value);
+
+    private async Task OpenProjectManagement(TenantEntity tenant)
+    {
+        _managingProjectsTenant = tenant;
+        _managingUsersTenant = null;
+        _showAddProjectForm = false;
+        _editingProject = null;
+        _projectSearchText = string.Empty;
+        await LoadTenantProjectsAsync();
+    }
+
+    private void CloseProjectManagement()
+    {
+        _managingProjectsTenant = null;
+        _showAddProjectForm = false;
+        _editingProject = null;
+        _tenantProjects.Clear();
+    }
+
+    private async Task LoadTenantProjectsAsync()
+    {
+        if (_managingProjectsTenant is null) return;
+        _isLoadingProjects = true;
+        try
+        {
+            var projects = await TenantService.GetTenantProjectsAsync(_managingProjectsTenant.Slug);
+            _tenantProjects = projects.ToList();
+        }
+        finally
+        {
+            _isLoadingProjects = false;
+        }
+    }
+
+    private void OpenAddProjectForm()
+    {
+        _editingProject = null;
+        _projName = string.Empty;
+        _projShortCode = string.Empty;
+        _projLocation = null;
+        _projStatus = ProjectStatus.New;
+        _projStartDate = DateTime.UtcNow.Date;
+        _projEndDate = DateTime.UtcNow.Date.AddMonths(6);
+        _projScopeSummary = null;
+        _showAddProjectForm = true;
+    }
+
+    private void StartEditProject(ProjectEntity project)
+    {
+        _editingProject = project;
+        _projName = project.Name;
+        _projShortCode = project.ShortCode;
+        _projLocation = project.Location;
+        _projStatus = project.Status;
+        _projStartDate = project.TentativeStartDate;
+        _projEndDate = project.TentativeEndDate;
+        _projScopeSummary = project.ScopeSummary;
+        _showAddProjectForm = true;
+    }
+
+    private void CloseProjectForm()
+    {
+        _showAddProjectForm = false;
+        _editingProject = null;
+    }
+
+    private async Task SaveTenantProjectAsync()
+    {
+        if (_managingProjectsTenant is null || !IsProjectFormValid) return;
+
+        if (_editingProject is null)
+        {
+            var result = await TenantService.CreateTenantProjectAsync(
+                _managingProjectsTenant.Slug,
+                _projName,
+                _projShortCode,
+                _projLocation,
+                _projStartDate,
+                _projEndDate,
+                _projScopeSummary,
+                _projStatus);
+
+            if (result.Succeeded && result.Data is not null)
+            {
+                _statusMessage = $"Project '{result.Data.Name}' ({result.Data.ShortCode}) created successfully.";
+                _isError = false;
+                CloseProjectForm();
+                await LoadTenantProjectsAsync();
+            }
+            else
+            {
+                _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to create project.";
+                _isError = true;
+            }
+        }
+        else
+        {
+            var result = await TenantService.UpdateTenantProjectAsync(
+                _managingProjectsTenant.Slug,
+                _editingProject.Id,
+                _projName,
+                _projShortCode,
+                _projLocation,
+                _projStartDate,
+                _projEndDate,
+                _projScopeSummary,
+                _projStatus);
+
+            if (result.Succeeded && result.Data is not null)
+            {
+                _statusMessage = $"Project '{result.Data.Name}' updated successfully.";
+                _isError = false;
+                CloseProjectForm();
+                await LoadTenantProjectsAsync();
+            }
+            else
+            {
+                _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update project.";
+                _isError = true;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        UnsavedChanges.ClearChange("Settings > Tenants");
+    }
+}

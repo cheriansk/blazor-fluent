@@ -5,35 +5,26 @@ using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Interceptors;
 
 /// <summary>
-/// Fail-closed EF Core SaveChangesInterceptor that enforces project-level write security.
+/// Fail-closed singleton EF Core SaveChangesInterceptor that enforces project-level write security.
 /// Automatically intercepts any Added, Modified, or Deleted entities implementing <see cref="IProjectScopedEntity"/>
 /// and verifies that the active user possesses write permissions (Dev, QA, Admin) in that project.
+/// Dynamically extracts user and tenant context from AppDbContext per invocation.
 /// </summary>
 public class ProjectSecurityInterceptor : SaveChangesInterceptor
 {
-    private readonly ICurrentUser _currentUser;
-    private readonly ITenantContext _tenantContext;
-    private readonly HybridCache _cache;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProjectSecurityInterceptor> _logger;
 
     public ProjectSecurityInterceptor(
-        ICurrentUser currentUser,
-        ITenantContext tenantContext,
-        HybridCache cache,
         IServiceScopeFactory scopeFactory,
         ILogger<ProjectSecurityInterceptor>? logger = null)
     {
-        _currentUser = currentUser;
-        _tenantContext = tenantContext;
-        _cache = cache;
         _scopeFactory = scopeFactory;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ProjectSecurityInterceptor>.Instance;
     }
@@ -57,8 +48,12 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
     {
         if (context is null) return;
 
-        // System processes, migrations, and Host/Tenant SuperAdmins have bypass
-        if (_tenantContext.IsHost || _currentUser.IsInRole("Admin") || _currentUser.UserId == "system")
+        var appDb = context as AppDbContext;
+        var currentUser = appDb?.CurrentUser ?? new DefaultCurrentUser();
+        var tenantContext = appDb?.TenantContext ?? new TenantContext();
+
+        // System daemon workers, migrations, and Root SuperAdmins have bypass
+        if (currentUser.IsRootAdmin || currentUser.IsSystemDaemon)
         {
             return;
         }
@@ -72,8 +67,8 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
             return;
         }
 
-        var userId = _currentUser.UserId ?? "anonymous";
-        var tenantId = _tenantContext.TenantId ?? "no_tenant";
+        var userId = currentUser.UserId ?? "anonymous";
+        var tenantId = tenantContext.TenantId ?? "no_tenant";
 
         // Allow users to update their own personal notifications (e.g., mark as read)
         var projectEntitiesToValidate = modifiedProjectEntities
@@ -94,7 +89,7 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
 
         foreach (var projectId in projectIds)
         {
-            var role = ResolveRoleForProject(tenantId, userId, projectId);
+            var role = ResolveRoleForProject(userId, projectId);
             if (role is null || !role.Value.CanWrite())
             {
                 _logger.LogCritical(
@@ -107,13 +102,12 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         }
     }
 
-    private ProjectRole? ResolveRoleForProject(string tenantId, string userId, Guid projectId)
+    private ProjectRole? ResolveRoleForProject(string userId, Guid projectId)
     {
-        var cacheKey = $"proj_role_{tenantId}_{userId}_{projectId}";
-
-        // Synchronous cache lookup or isolated scope query
-        // Using an isolated DbContext avoids concurrency issues with the currently saving context
+        // Isolated scope query avoids DbContext concurrency collisions
         using var scope = _scopeFactory.CreateScope();
+        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+        currentUser?.SetSystemDaemon("ProjectSecurityInterceptor");
         var isolatedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var roleEntity = isolatedDb.ProjectUserRoles

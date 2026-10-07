@@ -24,6 +24,28 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
             .HasMaxLength(1000)
             .IsRequired(false);
 
+        builder.Property(p => p.ShortCode)
+            .HasMaxLength(50)
+            .IsRequired(false);
+
+        builder.Property(p => p.Location)
+            .HasMaxLength(250)
+            .IsRequired(false);
+
+        builder.Property(p => p.TentativeStartDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.TentativeEndDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.ScopeSummary)
+            .HasMaxLength(4000)
+            .IsRequired(false);
+
+        builder.Property(p => p.Status)
+            .IsRequired()
+            .HasDefaultValue(BlazorFluent.Core.DataListTypes.ProjectStatus.New);
+
         builder.Property(p => p.IsActive)
             .IsRequired()
             .HasDefaultValue(true);

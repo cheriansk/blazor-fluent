@@ -13,9 +13,14 @@
 @inject NavigationManager NavigationManager
 @inject ProtectedSessionStorage SessionStorage
 @inject IUserSessionService SessionService
+@inject ICircuitSessionTracker CircuitTracker
+@inject IInternalAuthenticationService AuthVerificationService
 @inject AppDbContext DbContext
+@inject IConfiguration Configuration
 @inject ILogger<MainLayout> Logger
 @inject INavigationStateService NavState
+@inject IProjectContext ProjectContext
+@inject IUserTimeZoneService TimeZoneService
 @implements IDisposable
 
 <ImpersonationBannerComp />
@@ -36,8 +41,13 @@
         <FluentSpacer />
         @if (HasActiveTenantSession)
         {
+            <TenantAndProjectSwitcherComp />
+        }
+        <FluentSpacer />
+        @if (HasActiveTenantSession)
+        {
+            <PendingChangesIndicatorComp />
             <NotificationBellPopup />
-            <TenantSwitcherComp />
         }
         @if (CurrentUser.IsAuthenticated)
         {
@@ -61,7 +71,7 @@
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
             <AppErrorBoundaryComp>
-                @if (CurrentUser.IsAuthenticated && !TenantContext.IsHost && string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+                @if (CurrentUser.IsAuthenticated && !CurrentUser.IsRootAdmin && string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
                 {
                     <div style="padding: 40px; max-width: 800px; margin: 40px auto;">
                         <FluentCard Style="border-left: 4px solid var(--error); padding: 24px;">
@@ -91,8 +101,8 @@
 
     <FluentLayoutItem Area="LayoutArea.Footer">
         <div style="display: flex">
-            <FluentLink Href="https://www.fluentui-blazor.net" Target="LinkTarget.Blank" IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
-                Documentation and demos
+            <FluentLink Href="settings" IconStart="@(new Icons.Regular.Size16.Settings())">
+                Settings
             </FluentLink>
             <FluentSpacer />
             <FluentLink Href="https://learn.microsoft.com/en-us/aspnet/core/blazor" Target="LinkTarget.Blank" IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
@@ -123,6 +133,7 @@
     protected override void OnInitialized()
     {
         NavState.OnChange += HandleNavStateChanged;
+        TimeZoneService.OnChange += HandleTimeZoneChanged;
     }
 
     private void HandleNavStateChanged()
@@ -130,14 +141,41 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void HandleTimeZoneChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private System.Threading.Timer? _heartbeatTimer;
+
+    private void StartHeartbeat(Guid sessionId)
+    {
+        _heartbeatTimer?.Dispose();
+        _heartbeatTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                await SessionService.UpdateHeartbeatAsync(sessionId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Session heartbeat tick skipped.");
+            }
+        }, null, TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
+    }
+
     public void Dispose()
     {
         NavState.OnChange -= HandleNavStateChanged;
+        TimeZoneService.OnChange -= HandleTimeZoneChanged;
+        _heartbeatTimer?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+
+        await TimeZoneService.InitializeAsync();
 
         if (!CurrentUser.IsAuthenticated)
         {
@@ -148,69 +186,85 @@
                 {
                     var data = result.Value;
 
-                    // Validate session against database
-                    var isRevoked = await SessionService.IsSessionRevokedAsync(data.SessionId);
-                    if (!isRevoked)
+                    var rehydrateResult = await AuthVerificationService.VerifyAndRehydrateSessionAsync(data.UserId, data.SessionId);
+                    if (rehydrateResult.IsSuccess)
                     {
-                        var user = await DbContext.Users
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(u => u.Id.ToString() == data.UserId && !u.IsDeleted);
+                        var verified = rehydrateResult.Value!;
+                        var user = verified.User;
+                        var isHost = verified.IsRootAdmin;
 
-                        if (user != null && user.IsActive)
+                        if (CurrentUser is AppCurrentUser appUser)
                         {
-                            var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
-                            var activeTenant = await DbContext.Tenants
-                                .AsNoTracking()
-                                .FirstOrDefaultAsync(t => t.Slug == data.ActiveTenantId || t.Id.ToString() == data.ActiveTenantId);
-
-                            var resolvedTenantId = activeTenant?.Slug ?? data.ActiveTenantId;
-                            var resolvedTenantName = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
-
-                            List<TenantInfo> allowedTenants;
-                            if (isHost || user.UserType == UserType.CompanyUser)
+                            appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
+                            appUser.SessionId = data.SessionId.ToString();
+                            if (isHost)
                             {
-                                var dbTenants = await DbContext.Tenants
-                                    .AsNoTracking()
-                                    .Where(t => t.IsActive)
-                                    .OrderBy(t => t.Name)
-                                    .ToListAsync();
+                                appUser.AddRole("Admin");
+                                appUser.AddRole("RootAdmin");
+                            }
+                        }
 
-                                allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
-                                if (allowedTenants.Count == 0)
-                                {
-                                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, isHost)];
-                                }
+                        // Apply persisted user timezone immediately upon rehydration
+                        var tzToApply = !string.IsNullOrWhiteSpace(user.TimeZoneId)
+                            ? user.TimeZoneId
+                            : data.TimeZoneId;
+                        if (!string.IsNullOrWhiteSpace(tzToApply))
+                        {
+                            TimeZoneService.ApplyUserTimeZone(tzToApply);
+                        }
+
+                        // Prefer the intra-session active tenant if still permitted in allowed tenants
+                        var resolvedTenantId = verified.ResolvedTenantId;
+                        var resolvedTenantName = verified.ResolvedTenantName;
+
+                        if (!string.IsNullOrWhiteSpace(data.ActiveTenantId))
+                        {
+                            var activeMatch = verified.AllowedTenants.FirstOrDefault(t => t.Id == data.ActiveTenantId);
+                            if (activeMatch != null)
+                            {
+                                resolvedTenantId = activeMatch.Id;
+                                resolvedTenantName = activeMatch.Name;
+                            }
+                        }
+
+                        TenantContext.Initialize(
+                            tenantId: resolvedTenantId,
+                            tenantName: resolvedTenantName,
+                            userType: user.UserType,
+                            allowedTenants: verified.AllowedTenants,
+                            isHost: isHost);
+
+                        if (data.ActiveProjectId.HasValue)
+                        {
+                            ProjectContext.Initialize(data.ActiveProjectId.Value, null, null, Array.Empty<ProjectInfo>());
+                        }
+
+                        StartHeartbeat(data.SessionId);
+                        AuthStateProvider.NotifyUserChanged();
+                        StateHasChanged();
+
+                        // If user is currently on an anonymous/login page, navigate back to returnUrl or home
+                        if (IsAnonymousPage)
+                        {
+                            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+                            var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+                            if (queryParams.TryGetValue("returnUrl", out var returnUrl) && !string.IsNullOrWhiteSpace(returnUrl))
+                            {
+                                NavigationManager.NavigateTo(returnUrl.ToString(), replace: true);
                             }
                             else
                             {
-                                allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
+                                NavigationManager.NavigateTo("/", replace: true);
                             }
-
-                            TenantContext.Initialize(
-                                tenantId: resolvedTenantId,
-                                tenantName: resolvedTenantName,
-                                userType: user.UserType,
-                                allowedTenants: allowedTenants,
-                                isHost: isHost);
-
-                            if (CurrentUser is AppCurrentUser appUser)
-                            {
-                                appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
-                                appUser.SessionId = data.SessionId.ToString();
-                                if (isHost)
-                                {
-                                    appUser.AddRole("Admin");
-                                }
-                            }
-
-                            AuthStateProvider.NotifyUserChanged();
-                            StateHasChanged();
-                            return;
                         }
+                        return;
                     }
-
-                    // Session revoked or invalid: clear storage
-                    await SessionStorage.DeleteAsync("app_session");
+                    else
+                    {
+                        Logger.LogWarning("Session restoration rejected: {Error}", rehydrateResult.Error);
+                        // Session revoked or invalid: clear storage
+                        await SessionStorage.DeleteAsync("app_session");
+                    }
                 }
             }
             catch (Exception ex)
@@ -235,11 +289,16 @@
                     var user = await DbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id.ToString() == userId);
                     if (user != null)
                     {
-                        var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
-                        var tenantId = user.DefaultTenantId ?? "default";
-                        var activeTenant = await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId);
-                        var name = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
-                        TenantContext.Initialize(tenantId, name, user.UserType, [new TenantInfo(tenantId, name, isHost)], isHost);
+                        var isHost = CurrentUser.IsRootAdmin;
+                        var tenantId = (user.DefaultTenantId != null && user.DefaultTenantId != IRootAdminService.DefaultTenantSlug)
+                            ? user.DefaultTenantId
+                            : "";
+                        var activeTenant = !string.IsNullOrEmpty(tenantId)
+                            ? await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId && t.Slug != IRootAdminService.DefaultTenantSlug)
+                            : null;
+                        var name = activeTenant?.Name ?? (isHost ? "System Root Administration" : "Organization");
+                        var allowed = !string.IsNullOrEmpty(tenantId) ? [new TenantInfo(tenantId, name, isHost)] : new List<TenantInfo>();
+                        TenantContext.Initialize(tenantId, name, user.UserType, allowed, isHost);
                         StateHasChanged();
                     }
                 }
@@ -253,6 +312,7 @@
 
     private async Task SignOut()
     {
+        _heartbeatTimer?.Dispose();
         try
         {
             var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
@@ -274,6 +334,7 @@
         }
 
         TenantContext.Reset();
+        ProjectContext.Reset();
         AuthStateProvider.NotifyUserChanged();
         NavigationManager.NavigateTo("/login", forceLoad: true);
     }

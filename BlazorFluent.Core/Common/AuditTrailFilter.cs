@@ -5,6 +5,8 @@ namespace BlazorFluent.Core.Common;
 public class AuditTrailFilter
 {
     public string? TenantId { get; set; }
+    public string? UserId { get; set; }
+    public List<string>? AllowedTenantIds { get; set; }
     public AuditEventType? EventType { get; set; }
     public AuditSeverity? Severity { get; set; }
     public DateTime? FromDate { get; set; }

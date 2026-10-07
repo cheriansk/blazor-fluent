@@ -23,18 +23,26 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUser _currentUser;
     private readonly IServiceProvider? _serviceProvider;
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
         IDateTimeProvider dateTimeProvider,
         ITenantContext tenantContext,
+        ICurrentUser? currentUser = null,
         IServiceProvider? serviceProvider = null) : base(options)
     {
         _dateTimeProvider = dateTimeProvider;
         _tenantContext = tenantContext;
+        _currentUser = currentUser ?? new DefaultCurrentUser();
         _serviceProvider = serviceProvider;
     }
+
+    public IDateTimeProvider DateTimeProvider => _dateTimeProvider;
+    public ITenantContext TenantContext => _tenantContext;
+    public ICurrentUser CurrentUser => _currentUser;
+    public IServiceProvider? ServiceProvider => _serviceProvider;
 
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
@@ -55,6 +63,17 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();
     public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
     public DbSet<StagedTaskEntity> StagedTasks => Set<StagedTaskEntity>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion<UtcDateTimeConverter>();
+
+        configurationBuilder.Properties<DateTime?>()
+            .HaveConversion<NullableUtcDateTimeConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

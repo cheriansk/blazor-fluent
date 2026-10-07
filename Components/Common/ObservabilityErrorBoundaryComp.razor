@@ -4,6 +4,7 @@
 @inject ILogger<ObservabilityErrorBoundaryComp> Logger
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject NavigationManager NavigationManager
 
 @if (CurrentException is null)
 {
@@ -16,20 +17,26 @@ else if (ErrorContent is not null)
 else
 {
     <FluentMessageBar Title="Unexpected Error" Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@Recover">
-        An unexpected error occurred in this view. The system administrator has been notified.
+        An unexpected error occurred in page '@(PageName ?? "Current View")'. The error details have been logged for diagnosis.
         <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@Recover">Try Again</FluentButton>
     </FluentMessageBar>
 }
 
 @code {
+    [Parameter] public string? PageName { get; set; }
+    [Parameter] public Type? PageType { get; set; }
+
     protected override Task OnErrorAsync(Exception exception)
     {
         Logger.LogError(
             exception,
-            "Unhandled Blazor component exception in circuit. TenantId={TenantId}, UserId={UserId}, ErrorType={ErrorType}",
+            "Razor Page Execution Error: Unhandled exception in page '{PageName}' ({PageType}) at URL '{CurrentUri}'. TenantId='{TenantId}', UserId='{UserId}', ErrorMessage='{ErrorMessage}'",
+            PageName ?? "UnknownPage",
+            PageType?.FullName ?? "UnknownType",
+            NavigationManager.Uri,
             TenantContext.TenantId ?? "host",
             CurrentUser.UserId ?? "anonymous",
-            exception.GetType().Name);
+            exception.Message);
 
         return Task.CompletedTask;
     }

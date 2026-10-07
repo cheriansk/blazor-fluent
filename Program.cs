@@ -26,6 +26,9 @@ using Serilog.Enrichers.Span;
 using Serilog.Events;
 using System.Threading.RateLimiting;
 
+// 0. Npgsql PostgreSQL Timestamp Compatibility (prevents DateTimeKind.Unspecified crashes)
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 // 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -86,6 +89,7 @@ try
         .AddInteractiveServerComponents();
     builder.Services.AddFluentUIComponents();
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
+    builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();
 
     // 4. Authentication & Authorization State Provider with Dual Policy Wiring (FSH Standard)
     builder.Services.AddAuthentication();
@@ -96,6 +100,7 @@ try
             .Build();
 
         options.DefaultPolicy = defaultPolicy;
+        options.FallbackPolicy = defaultPolicy;
     });
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<AppCurrentUser>();
@@ -162,20 +167,39 @@ try
 
     var app = builder.Build();
 
-    // 10. Database Migration in Development (creates DataProtectionKeys and all entity tables)
+    // 10. Database Migration and Root Seeding in Development (creates tables and seeds root anchor)
     if (app.Environment.IsDevelopment())
     {
         try
         {
             Log.Information("Applying EF Core database migrations in Development...");
             using var scope = app.Services.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("StartupMigration");
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Inspect for pending entity changes not captured in a migration
+            try
+            {
+                if (db.Database.HasPendingModelChanges())
+                {
+                    Log.Fatal("⚠️ [FATAL SCHEMA DRIFT DETECTED] The EF Core model for 'AppDbContext' has pending entity changes that have not been captured in a migration! Please run 'dotnet ef migrations add <Name>' to generate the missing migration.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not evaluate pending model changes during startup check.");
+            }
+
             db.Database.Migrate();
             Log.Information("Database migrations applied successfully.");
+
+            Log.Information("Seeding default root tenant anchor and designated super-administrators...");
+            await BlazorFluent.Persistence.Initialization.InitialDatabaseSeeder.SeedAsync(app.Services);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Failed to apply database migrations on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
+            Log.Fatal(ex, "Failed to apply database migrations or seed initial data on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
             throw;
         }
     }
@@ -259,22 +283,24 @@ try
     app.UseRateLimiter();
     app.UseAuthorization();
 
-    app.MapStaticAssets();
+    app.MapStaticAssets()
+        .AllowAnonymous();
     app.MapRazorComponents<App>()
-        .AddInteractiveServerRenderMode();
+        .AddInteractiveServerRenderMode()
+        .AllowAnonymous();
 
     // Health Check endpoints (unauthenticated probes)
     app.MapHealthChecks("/healthz", new HealthCheckOptions
     {
         Predicate = _ => false,
         AllowCachingResponses = false
-    });
+    }).AllowAnonymous();
 
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
         AllowCachingResponses = false
-    });
+    }).AllowAnonymous();
 
     app.Run();
 }

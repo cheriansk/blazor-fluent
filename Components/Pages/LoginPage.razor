@@ -11,16 +11,18 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@inject AppDbContext DbContext
+@inject IInternalAuthenticationService AuthVerificationService
 @inject IServiceScopeFactory ScopeFactory
 @inject IConfiguration Configuration
 @inject IWebHostEnvironment HostEnvironment
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject IRootAdminService RootAdminService
 @inject IUserSessionService SessionService
 @inject IAuditService AuditService
 @inject ProtectedSessionStorage SessionStorage
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject IUserTimeZoneService TimeZoneService
 @inject NavigationManager NavigationManager
 @inject ILogger<LoginPage> Logger
 
@@ -95,11 +97,19 @@
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                         <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                       OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
-                            ✅ Sign in as SuperAdmin (Valid Active)
+                            👑 Sign in as Root Admin 1 (admin@blazorfluent.local)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("admin2@blazorfluent.local"))">
+                            👑 Sign in as Root Admin 2 (admin2@blazorfluent.local)
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                      OnClick="@(() => TestSignInAsync("admin3@blazorfluent.local"))">
+                            👑 Sign in as Root Admin 3 (admin3@blazorfluent.local)
                         </FluentButton>
                         <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                       OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
-                            ✅ Sign in as Developer (Valid Active)
+                            👤 Sign in as Standard Developer (dev@blazorfluent.local)
                         </FluentButton>
                         <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
                                       OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
@@ -158,71 +168,22 @@
 
         try
         {
-            var now = DateTime.UtcNow;
-            var user = await DbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
-
-            // Gate: User exists check
-            if (user == null)
+            var authResult = await AuthVerificationService.VerifyLoginCredentialsAsync(email);
+            if (!authResult.IsSuccess)
             {
-                await AuditService.LogSecurityEventAsync(
-                    "LoginFailedUnprovisioned",
-                    AuditSeverity.Warning,
-                    $"Authentication rejected for unprovisioned email '{email}'.");
-
-                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString("Your account is not provisioned in this system.")}");
+                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(authResult.Error ?? "Authentication failed.")}");
                 return;
             }
 
-            // Gate: Date validity and HMAC tamper seal check
-            if (!user.IsValidForLogin(now, _secretKey, out var failureReason))
-            {
-                await AuditService.LogSecurityEventAsync(
-                    "LoginFailedValidityGate",
-                    AuditSeverity.Warning,
-                    $"Login rejected for '{email}': {failureReason}");
-
-                NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(failureReason)}");
-                return;
-            }
-
-            // All gates passed: Resolve active tenant from database
-            var isHost = user.Email.Contains("admin", StringComparison.OrdinalIgnoreCase);
-            var tenantIdentifier = user.DefaultTenantId ?? "default";
-
-            var activeTenant = await DbContext.Tenants
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Slug == tenantIdentifier || t.Id.ToString() == tenantIdentifier || t.Code == tenantIdentifier);
-
-            var resolvedTenantId = activeTenant?.Slug ?? tenantIdentifier;
-            var resolvedTenantName = activeTenant?.Name ?? (isHost ? "Root System Organization" : "Default Organization");
-
-            List<TenantInfo> allowedTenants;
-            if (isHost || user.UserType == UserType.CompanyUser)
-            {
-                var dbTenants = await DbContext.Tenants
-                    .AsNoTracking()
-                    .Where(t => t.IsActive)
-                    .OrderBy(t => t.Name)
-                    .ToListAsync();
-
-                allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
-                if (allowedTenants.Count == 0)
-                {
-                    allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, isHost)];
-                }
-            }
-            else
-            {
-                allowedTenants = [new TenantInfo(resolvedTenantId, resolvedTenantName, false)];
-            }
+            var verified = authResult.Value!;
+            var user = verified.User;
+            var isHost = verified.IsRootAdmin;
 
             TenantContext.Initialize(
-                tenantId: resolvedTenantId,
-                tenantName: resolvedTenantName,
+                tenantId: verified.ResolvedTenantId,
+                tenantName: verified.ResolvedTenantName,
                 userType: user.UserType,
-                allowedTenants: allowedTenants,
+                allowedTenants: verified.AllowedTenants,
                 isHost: isHost);
 
             // Create active session
@@ -239,7 +200,8 @@
                     session.Id,
                     user.Id.ToString(),
                     user.Email,
-                    resolvedTenantId));
+                    verified.ResolvedTenantId,
+                    TimeZoneId: user.TimeZoneId));
             }
             catch (Exception ex)
             {
@@ -254,14 +216,20 @@
                 if (isHost)
                 {
                     appUser.AddRole("Admin");
+                    appUser.AddRole("RootAdmin");
                 }
             }
 
-            AuthStateProvider.NotifyUserChanged();
+            if (!string.IsNullOrWhiteSpace(user.TimeZoneId))
+            {
+                TimeZoneService.ApplyUserTimeZone(user.TimeZoneId);
+            }
 
             await AuditService.LogUserActivityAsync(
                 "UserLoginSuccess",
                 $"User '{user.Email}' logged in successfully. SessionId: {session.Id}");
+
+            AuthStateProvider.NotifyUserChanged();
 
             // Navigate to Home
             NavigationManager.NavigateTo("/");
@@ -282,6 +250,8 @@
         try
         {
             using var scope = ScopeFactory.CreateScope();
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            currentUser?.SetSystemDaemon("LoginDevSeeder");
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             // 1. Ensure Root Default Tenant exists

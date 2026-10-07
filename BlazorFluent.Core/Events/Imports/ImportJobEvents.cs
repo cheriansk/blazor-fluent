@@ -51,8 +51,11 @@ public record FileImportBatchJobEvent(
     Guid ProjectId,
     string? TenantId = null,
     string? CorrelationId = null,
-    Guid? ParentExecutionId = null)
-    : BaseJobEvent("FileImportBatchModule", TenantId, CorrelationId, ParentExecutionId);
+    Guid? ParentExecutionId = null,
+    string? SenderOrigin = null,
+    string? SenderUserId = null,
+    string? SenderUserEmail = null)
+    : BaseJobEvent("FileImportBatchModule", TenantId, CorrelationId, ParentExecutionId, SenderOrigin, SenderUserId, SenderUserEmail);
 
 /// <summary>
 /// Dispatched after staged records are committed to live domain tables.

@@ -23,8 +23,10 @@ public static class InfrastructureExtensions
         services.TryAddScoped<ITeamsNotificationSender, TeamsNotificationSender>();
         services.TryAddScoped<IEmailNotificationSender, EmailNotificationSender>();
 
-        // 2. Blazor Circuit Observability Lifecycle Handler
+        // 2. Blazor Circuit Observability Lifecycle Handler & Session Circuit Tracker
+        services.AddSingleton<ICircuitSessionTracker, CircuitSessionTracker>();
         services.AddScoped<CircuitHandler, BlazorCircuitObservabilityHandler>();
+        services.AddScoped<CircuitHandler, UserSessionCircuitHandler>();
 
         // 3. Path-Aware Authorization Middleware Result Handler
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
@@ -53,6 +55,12 @@ public static class InfrastructureExtensions
 
         // 11. Tenant Blob Storage Service (Azure Blob Storage with local filesystem fallback)
         services.TryAddSingleton<ITenantBlobStorageService, AzureAndLocalBlobStorageService>();
+
+        // 12. Settings In-Memory Navigation State
+        services.TryAddScoped<ISettingsNavigationState, SettingsNavigationState>();
+
+        // 13. Root Administrator Security Service (Max 3 super-administrators from configuration)
+        services.TryAddSingleton<IRootAdminService, RootAdminService>();
 
         return services;
     }

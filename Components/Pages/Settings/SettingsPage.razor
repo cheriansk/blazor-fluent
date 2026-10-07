@@ -1,0 +1,125 @@
+@page "/settings"
+@rendermode InteractiveServer
+@using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject ISettingsNavigationState SettingsNav
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+
+<PageTitle>Settings — BlazorFluent</PageTitle>
+
+<PageHeaderComp Title="Settings"
+                Subtitle="Centralized administration: manage tenant contracts, project workspaces, background batch jobs, event ledgers, and active user sessions." />
+
+<div style="margin-top: 20px;">
+    <FluentTabs @bind-ActiveTabId="_activeTabId" @bind-ActiveTabId:after="OnTabChanged" Orientation="Orientation.Horizontal">
+        <FluentTab Id="tenants" Header="Tenants" IconStart="@(new Icons.Regular.Size20.Building())">
+            @if (_visitedTabs.Contains("tenants"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsTenantsTab />
+                </div>
+            }
+        </FluentTab>
+
+        <FluentTab Id="projects" Header="Projects" IconStart="@(new Icons.Regular.Size20.BuildingMultiple())">
+            @if (_visitedTabs.Contains("projects"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsProjectsTab />
+                </div>
+            }
+        </FluentTab>
+
+        <FluentTab Id="jobs" Header="Jobs" IconStart="@(new Icons.Regular.Size20.Clock())">
+            @if (_visitedTabs.Contains("jobs"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsJobsTab />
+                </div>
+            }
+        </FluentTab>
+
+        <FluentTab Id="events" Header="Events" IconStart="@(new Icons.Regular.Size20.Pulse())">
+            @if (_visitedTabs.Contains("events"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsEventsTab />
+                </div>
+            }
+        </FluentTab>
+
+        @if (CanViewAuditTrail)
+        {
+            <FluentTab Id="auditing" Header="Audit Trail" IconStart="@(new Icons.Regular.Size20.DocumentBulletList())">
+                @if (_visitedTabs.Contains("auditing"))
+                {
+                    <div style="padding-top: 16px;">
+                        <SettingsAuditTab />
+                    </div>
+                }
+            </FluentTab>
+        }
+
+        @if (CurrentUser.IsRootAdmin)
+        {
+            <FluentTab Id="sessions" Header="Sessions" IconStart="@(new Icons.Regular.Size20.Laptop())">
+                @if (_visitedTabs.Contains("sessions"))
+                {
+                    <div style="padding-top: 16px;">
+                        <SettingsSessionsTab />
+                    </div>
+                }
+            </FluentTab>
+        }
+
+        <FluentTab Id="user" Header="User" IconStart="@(new Icons.Regular.Size20.Person())">
+            @if (_visitedTabs.Contains("user"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsUserTab />
+                </div>
+            }
+        </FluentTab>
+    </FluentTabs>
+</div>
+
+@code {
+    private string _activeTabId = "tenants";
+    private readonly HashSet<string> _visitedTabs = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(SettingsNav.InitialTab))
+        {
+            _activeTabId = SettingsNav.InitialTab;
+            SettingsNav.InitialTab = null;
+        }
+
+        if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
+        {
+            _activeTabId = "tenants";
+        }
+
+        if (_activeTabId.Equals("auditing", StringComparison.OrdinalIgnoreCase) && !CanViewAuditTrail)
+        {
+            _activeTabId = "tenants";
+        }
+
+        _visitedTabs.Add(_activeTabId);
+    }
+
+    private bool CanViewAuditTrail =>
+        CurrentUser.IsRootAdmin ||
+        CurrentUser.IsInRole("Admin") ||
+        CurrentUser.IsInRole("CompanyAdmin");
+
+    private void OnTabChanged()
+    {
+        if (!string.IsNullOrWhiteSpace(_activeTabId))
+        {
+            _visitedTabs.Add(_activeTabId);
+        }
+    }
+}
