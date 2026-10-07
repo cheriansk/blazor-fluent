@@ -65,12 +65,22 @@ public class UserSessionService : IUserSessionService
         return session;
     }
 
+    private static readonly Func<AppDbContext, Guid, Task<bool?>> IsSessionRevokedCompiledQuery =
+        EF.CompileAsyncQuery((AppDbContext db, Guid id) =>
+            db.UserSessions
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(s => s.Id == id)
+                .Select(s => (bool?)s.IsRevoked)
+                .FirstOrDefault());
+
     public async Task RevokePreviousSessionsAsync(string userId, Guid? exceptSessionId = null, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
+        var now = DateTime.UtcNow;
+
         var query = dbContext.UserSessions
             .IgnoreQueryFilters()
-            .AsTracking()
             .Where(s => s.UserId == userId && !s.IsRevoked);
 
         if (exceptSessionId.HasValue)
@@ -78,46 +88,32 @@ public class UserSessionService : IUserSessionService
             query = query.Where(s => s.Id != exceptSessionId.Value);
         }
 
-        var sessionsToRevoke = await query.ToListAsync(ct);
-        if (sessionsToRevoke.Count == 0) return;
+        var count = await query.ExecuteUpdateAsync(setters => setters
+            .SetProperty(s => s.IsRevoked, true)
+            .SetProperty(s => s.RevokedAtUtc, now)
+            .SetProperty(s => s.RevokedBy, "System (New Login)"), ct);
 
-        var now = DateTime.UtcNow;
-        foreach (var session in sessionsToRevoke)
-        {
-            session.IsRevoked = true;
-            session.RevokedAtUtc = now;
-            session.RevokedBy = "System (New Login)";
-        }
-
-        await dbContext.SaveChangesAsync(ct);
-        _logger.LogInformation("Revoked {Count} prior active session(s) for user {UserId} upon new login.", sessionsToRevoke.Count, userId);
+        _logger.LogInformation("Revoked {Count} prior active session(s) for user {UserId} upon new login.", count, userId);
     }
 
     public async Task<int> RevokeStaleSessionsAsync(TimeSpan timeout, string revokedBy, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var cutoff = DateTime.UtcNow - timeout;
-        var staleSessions = await dbContext.UserSessions
-            .IgnoreQueryFilters()
-            .AsTracking()
-            .Where(s => !s.IsRevoked && s.LastActivityAtUtc < cutoff)
-            .ToListAsync(ct);
-
-        if (staleSessions.Count == 0) return 0;
-
         var now = DateTime.UtcNow;
-        foreach (var session in staleSessions)
-        {
-            session.IsRevoked = true;
-            session.RevokedAtUtc = now;
-            session.RevokedBy = revokedBy;
-        }
 
-        await dbContext.SaveChangesAsync(ct);
+        var count = await dbContext.UserSessions
+            .IgnoreQueryFilters()
+            .Where(s => !s.IsRevoked && s.LastActivityAtUtc < cutoff)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(s => s.IsRevoked, true)
+                .SetProperty(s => s.RevokedAtUtc, now)
+                .SetProperty(s => s.RevokedBy, revokedBy), ct);
+
         _logger.LogWarning("Admin '{RevokedBy}' revoked {Count} stale sessions older than {Timeout}.",
-            revokedBy, staleSessions.Count, timeout);
+            revokedBy, count, timeout);
 
-        return staleSessions.Count;
+        return count;
     }
 
     public async Task UpdateHeartbeatAsync(Guid sessionId, CancellationToken ct = default)
@@ -137,12 +133,8 @@ public class UserSessionService : IUserSessionService
     public async Task<bool> IsSessionRevokedAsync(Guid sessionId, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
-        var session = await dbContext.UserSessions
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
-
-        return session == null || session.IsRevoked;
+        var isRevoked = await IsSessionRevokedCompiledQuery(dbContext, sessionId);
+        return isRevoked is null or true;
     }
 
     public async Task<bool> RevokeSessionAsync(Guid sessionId, string revokedBy, CancellationToken ct = default)

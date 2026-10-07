@@ -64,13 +64,18 @@ public class PeriodicBatchScheduler : BackgroundService
             }
 
             var nextJob = upcoming.First();
-            var delay = nextJob.Value!.Value - DateTime.UtcNow;
+            var targetTime = nextJob.Value!.Value;
+            var delay = targetTime - DateTime.UtcNow;
 
-            if (delay > TimeSpan.Zero)
+            // Clamp delay to 24 hours to prevent ArgumentOutOfRangeException on large intervals (> 24.8 days)
+            var maxDelay = TimeSpan.FromHours(24);
+            var effectiveDelay = delay > maxDelay ? maxDelay : delay;
+
+            if (effectiveDelay > TimeSpan.Zero)
             {
                 try
                 {
-                    await Task.Delay(delay, stoppingToken);
+                    await Task.Delay(effectiveDelay, stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -79,6 +84,12 @@ public class PeriodicBatchScheduler : BackgroundService
             }
 
             if (stoppingToken.IsCancellationRequested) break;
+
+            // If we woke up from a capped intermediate delay before targetTime, re-evaluate loop
+            if (DateTime.UtcNow < targetTime)
+            {
+                continue;
+            }
 
             var targetSchedule = schedules.FirstOrDefault(s => s.Name == nextJob.Key);
             if (targetSchedule != null)
@@ -139,6 +150,19 @@ public class PeriodicBatchScheduler : BackgroundService
                     SenderOrigin: "DailyTaskSummaryJob",
                     SenderUserId: "SystemDaemon (DailyTaskSummaryJob)",
                     SenderUserEmail: "SystemDaemon (DailyTaskSummaryJob)")));
+        }
+
+        var cadenceCron = _configuration["Jobs:Schedules:TaskCadenceAlertJob"] ?? "0 8 * * *";
+        if (TryParseCron("TaskCadenceAlertJob", cadenceCron, out var parsedCadenceCron))
+        {
+            entries.Add(new ScheduleEntry(
+                "TaskCadenceAlertJob",
+                parsedCadenceCron,
+                () => new TaskCadenceAlertJobEvent(
+                    TriggerSource: "Cron",
+                    SenderOrigin: "TaskCadenceAlertJob",
+                    SenderUserId: "SystemDaemon (TaskCadenceAlertJob)",
+                    SenderUserEmail: "SystemDaemon (TaskCadenceAlertJob)")));
         }
 
         return entries;

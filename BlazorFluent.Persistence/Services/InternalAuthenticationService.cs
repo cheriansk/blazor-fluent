@@ -2,6 +2,7 @@ using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
+using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -96,43 +97,13 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         var isRootAdmin = _rootAdminService.IsRootAdmin(user.Email);
         var isHost = isRootAdmin;
 
-        List<TenantInfo> allowedTenants = [];
-        string resolvedTenantId = string.Empty;
-        string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
+        var dbTenants = await dbContext.Tenants
+            .AsNoTracking()
+            .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
+            .OrderBy(t => t.Name)
+            .ToListAsync(ct);
 
-        if (isHost || user.UserType == UserType.CompanyUser)
-        {
-            var dbTenants = await dbContext.Tenants
-                .AsNoTracking()
-                .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
-                .OrderBy(t => t.Name)
-                .ToListAsync(ct);
-
-            allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
-
-            var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
-            if (defaultMatch is not null)
-            {
-                resolvedTenantId = defaultMatch.Id;
-                resolvedTenantName = defaultMatch.Name;
-            }
-        }
-        else
-        {
-            if (!string.IsNullOrWhiteSpace(user.DefaultTenantId))
-            {
-                var clientTenant = await dbContext.Tenants
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Slug == user.DefaultTenantId && t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug, ct);
-
-                if (clientTenant is not null)
-                {
-                    allowedTenants = [new TenantInfo(clientTenant.Slug, clientTenant.Name, false)];
-                    resolvedTenantId = clientTenant.Slug;
-                    resolvedTenantName = clientTenant.Name;
-                }
-            }
-        }
+        var (allowedTenants, resolvedTenantId, resolvedTenantName) = ResolveUserTenants(user, isHost, dbTenants);
 
         return Result<AuthUserResult>.Success(new AuthUserResult(
             user,
@@ -188,19 +159,59 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         var isRootAdmin = _rootAdminService.IsRootAdmin(user.Email);
         var isHost = isRootAdmin;
 
+        var dbTenants = await dbContext.Tenants
+            .AsNoTracking()
+            .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
+            .OrderBy(t => t.Name)
+            .ToListAsync(ct);
+
+        var (allowedTenants, resolvedTenantId, resolvedTenantName) = ResolveUserTenants(user, isHost, dbTenants);
+
+        return Result<AuthUserResult>.Success(new AuthUserResult(
+            user,
+            isRootAdmin,
+            allowedTenants,
+            resolvedTenantId,
+            resolvedTenantName));
+    }
+
+    /// <summary>
+    /// Evaluates tenant access using strict Zero-Trust Default-Deny.
+    /// Only RootAdmin (Host) receives all active tenants.
+    /// Company users only receive tenants matching their verified email domain or explicit DefaultTenantId.
+    /// Client users are strictly constrained to their single DefaultTenantId.
+    /// </summary>
+    private static (List<TenantInfo> AllowedTenants, string ResolvedTenantId, string ResolvedTenantName) ResolveUserTenants(
+        UserEntity user,
+        bool isHost,
+        List<TenantEntity> activeTenants)
+    {
         List<TenantInfo> allowedTenants = [];
         string resolvedTenantId = string.Empty;
         string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
 
-        if (isHost || user.UserType == UserType.CompanyUser)
+        if (isHost)
         {
-            var dbTenants = await dbContext.Tenants
-                .AsNoTracking()
-                .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
-                .OrderBy(t => t.Name)
-                .ToListAsync(ct);
+            allowedTenants = activeTenants.Select(t => new TenantInfo(t.Slug, t.Name, t.IsActive)).ToList();
+            var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
+            if (defaultMatch is not null)
+            {
+                resolvedTenantId = defaultMatch.Id;
+                resolvedTenantName = defaultMatch.Name;
+            }
+        }
+        else if (user.UserType == UserType.CompanyUser)
+        {
+            // Zero Trust: Company user only receives access to tenants where their email domain matches
+            // or where they have an explicit DefaultTenantId assignment. Default deny for all other tenants.
+            var userEmail = (user.Email ?? string.Empty).Trim().ToLowerInvariant();
 
-            allowedTenants = dbTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost)).ToList();
+            allowedTenants = activeTenants
+                .Where(t => (!string.IsNullOrWhiteSpace(user.DefaultTenantId) && string.Equals(t.Slug, user.DefaultTenantId, StringComparison.OrdinalIgnoreCase)) ||
+                            t.GetInternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())) ||
+                            t.GetExternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())))
+                .Select(t => new TenantInfo(t.Slug, t.Name, t.IsActive))
+                .ToList();
 
             var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
             if (defaultMatch is not null)
@@ -211,26 +222,19 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         }
         else
         {
+            // ClientUser: Strictly bound to their designated DefaultTenantId
             if (!string.IsNullOrWhiteSpace(user.DefaultTenantId))
             {
-                var clientTenant = await dbContext.Tenants
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Slug == user.DefaultTenantId && t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug, ct);
-
+                var clientTenant = activeTenants.FirstOrDefault(t => string.Equals(t.Slug, user.DefaultTenantId, StringComparison.OrdinalIgnoreCase));
                 if (clientTenant is not null)
                 {
-                    allowedTenants = [new TenantInfo(clientTenant.Slug, clientTenant.Name, false)];
+                    allowedTenants = [new TenantInfo(clientTenant.Slug, clientTenant.Name, clientTenant.IsActive)];
                     resolvedTenantId = clientTenant.Slug;
                     resolvedTenantName = clientTenant.Name;
                 }
             }
         }
 
-        return Result<AuthUserResult>.Success(new AuthUserResult(
-            user,
-            isRootAdmin,
-            allowedTenants,
-            resolvedTenantId,
-            resolvedTenantName));
+        return (allowedTenants, resolvedTenantId, resolvedTenantName);
     }
 }

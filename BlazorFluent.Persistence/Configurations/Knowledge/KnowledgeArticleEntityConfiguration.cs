@@ -91,6 +91,9 @@ public class KnowledgeArticleEntityConfiguration : IEntityTypeConfiguration<Know
         builder.HasIndex(a => a.TenantId)
             .HasDatabaseName("IX_KnowledgeArticles_TenantId");
 
+        builder.HasIndex(a => new { a.TenantId, a.ProjectId })
+            .HasDatabaseName("IX_KnowledgeArticles_TenantId_ProjectId");
+
         builder.HasIndex(a => a.IsGlobal)
             .HasDatabaseName("IX_KnowledgeArticles_IsGlobal");
 

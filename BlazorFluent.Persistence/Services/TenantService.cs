@@ -19,6 +19,7 @@ public class TenantService : ITenantService
     private readonly IConfiguration _configuration;
     private readonly IRootAdminService _rootAdminService;
     private readonly ICurrentUser _currentUser;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<TenantService> _logger;
 
     public TenantService(
@@ -28,6 +29,7 @@ public class TenantService : ITenantService
         IConfiguration configuration,
         IRootAdminService rootAdminService,
         ICurrentUser currentUser,
+        ITenantContext tenantContext,
         ILogger<TenantService> logger)
     {
         _dbContext = dbContext;
@@ -36,11 +38,20 @@ public class TenantService : ITenantService
         _configuration = configuration;
         _rootAdminService = rootAdminService;
         _currentUser = currentUser;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
     public async Task<IReadOnlyList<TenantEntity>> GetAllTenantsAsync(CancellationToken cancellationToken = default)
     {
+        // Zero Trust: Tenant directory access is restricted strictly to designated Root Super-Administrators
+        if (!_currentUser.IsRootAdmin)
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' ({Email}) attempted to access tenant directory without RootAdmin privileges.",
+                _currentUser.UserId, _currentUser.Email);
+            return [];
+        }
+
         return await _cacheService.GetGlobalOrCreateAsync(
             TenantsCacheKey,
             async token =>
@@ -168,6 +179,15 @@ public class TenantService : ITenantService
     public async Task<IReadOnlyList<UserEntity>> GetTenantUsersAsync(string tenantSlug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        // Zero Trust: Non-root users can only query users within their own active tenant
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to access users of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
+                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+            return [];
+        }
+
         return await _dbContext.Users
             .AsNoTracking()
             .Where(u => u.DefaultTenantId == normalizedSlug && !u.IsDeleted)
@@ -184,6 +204,16 @@ public class TenantService : ITenantService
         bool isActive,
         CancellationToken cancellationToken = default)
     {
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        // Zero Trust: Non-root users can only add users to their own active tenant
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to add user to tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
+                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+            return Result<UserEntity>.Failure("Access Denied: You can only manage users within your active tenant.");
+        }
+
         if (string.IsNullOrWhiteSpace(fullName))
             return Result<UserEntity>.Failure("Full Name is required.");
 
@@ -194,7 +224,6 @@ public class TenantService : ITenantService
             return Result<UserEntity>.Failure("End date cannot precede start date.");
 
         var normalizedEmail = email.Trim().ToLowerInvariant();
-        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
             return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
@@ -280,6 +309,16 @@ public class TenantService : ITenantService
         bool isActive,
         CancellationToken cancellationToken = default)
     {
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        // Zero Trust: Non-root users can only modify users within their own active tenant
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to modify user in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
+                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+            return Result<UserEntity>.Failure("Access Denied: You can only manage users within your active tenant.");
+        }
+
         if (string.IsNullOrWhiteSpace(fullName))
             return Result<UserEntity>.Failure("Full Name is required.");
 
@@ -290,7 +329,6 @@ public class TenantService : ITenantService
             return Result<UserEntity>.Failure("End date cannot precede start date.");
 
         var normalizedEmail = email.Trim().ToLowerInvariant();
-        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
             return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
@@ -432,6 +470,15 @@ public class TenantService : ITenantService
     public async Task<IReadOnlyList<ProjectEntity>> GetTenantProjectsAsync(string tenantSlug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        // Zero Trust: Non-root users can only query projects within their active tenant
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to access projects of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
+                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+            return [];
+        }
+
         return await _dbContext.Projects
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -451,6 +498,16 @@ public class TenantService : ITenantService
         ProjectStatus status,
         CancellationToken cancellationToken = default)
     {
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        // Zero Trust: Non-root users can only create projects within their active tenant
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to create project in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
+                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+            return Result<ProjectEntity>.Failure("Access Denied: You cannot create projects for other tenants.");
+        }
+
         if (string.IsNullOrWhiteSpace(name))
             return Result<ProjectEntity>.Failure("Project Name is required.");
 
@@ -460,7 +517,6 @@ public class TenantService : ITenantService
         if (startDate.HasValue && endDate.HasValue && endDate < startDate)
             return Result<ProjectEntity>.Failure("End date cannot precede start date.");
 
-        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
         var tenant = await _dbContext.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);

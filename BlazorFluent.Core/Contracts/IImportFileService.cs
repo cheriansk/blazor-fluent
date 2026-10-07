@@ -28,17 +28,17 @@ public interface IImportFileService
     Task<IReadOnlyList<ImportFileSummaryDto>> GetImportHistoryAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
-    /// Retrieves all files belonging to a specific batch ImportId.
+    /// Retrieves all files belonging to a specific batch ImportId within a project workspace.
     /// </summary>
-    Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid importId, CancellationToken ct = default);
+    Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid projectId, Guid importId, CancellationToken ct = default);
 
     /// <summary>
-    /// Retrieves complete file details, blob storage references, and parsed validation error diagnostics.
+    /// Retrieves complete file details, blob storage references, and parsed validation error diagnostics within a project workspace.
     /// </summary>
-    Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid importFileId, CancellationToken ct = default);
+    Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid projectId, Guid importFileId, CancellationToken ct = default);
 
     /// <summary>
-    /// Soft-deletes an import file record and removes associated staging records.
+    /// Soft-deletes an import file record and removes associated staging records within a project workspace.
     /// </summary>
-    Task<Result<bool>> DeleteImportFileAsync(Guid importFileId, CancellationToken ct = default);
+    Task<Result<bool>> DeleteImportFileAsync(Guid projectId, Guid importFileId, CancellationToken ct = default);
 }

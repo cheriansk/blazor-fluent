@@ -64,5 +64,9 @@ public class UserSessionEntityConfiguration : IEntityTypeConfiguration<UserSessi
 
         builder.HasIndex(s => s.StartedAtUtc)
             .HasDatabaseName("IX_UserSessions_StartedAtUtc");
+
+        builder.HasIndex(s => s.LastActivityAtUtc)
+            .HasDatabaseName("IX_UserSessions_LastActivity_Active")
+            .HasFilter("\"IsRevoked\" = false AND \"IsDeleted\" = false");
     }
 }

@@ -21,6 +21,13 @@ public class UserTaskEntityValidator : AbstractValidator<UserTaskEntity>
         RuleFor(x => x.Description)
             .MaximumLength(10000).WithMessage("Task description cannot exceed 10,000 characters.");
 
+        RuleFor(x => x.DueDate)
+            .NotEmpty().WithMessage("Task Due Date is required.");
+
+        RuleFor(x => x.ReporterEmail)
+            .NotEmpty().WithMessage("Task reporter email is required.")
+            .MaximumLength(256).WithMessage("Reporter email cannot exceed 256 characters.");
+
         RuleFor(x => x.AssigneeEmails)
             .MaximumLength(2000).WithMessage("Assignee emails string cannot exceed 2,000 characters.");
 

@@ -14,9 +14,9 @@ public interface IUserTaskService
     Task<IReadOnlyList<UserTaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
-    /// Retrieves a single task by ID including its discussion comments.
+    /// Retrieves a single task by ID within a specific project including its discussion comments.
     /// </summary>
-    Task<UserTaskEntity?> GetTaskByIdAsync(Guid taskId, CancellationToken ct = default);
+    Task<UserTaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
     /// Creates a new project task, stamps audit context, and dispatches automated in-app notifications to all assignees.
@@ -29,22 +29,49 @@ public interface IUserTaskService
     Task<Result<UserTaskEntity>> UpdateTaskAsync(UserTaskEntity task, CancellationToken ct = default);
 
     /// <summary>
-    /// Marks a task as Closed with completion timestamp and user identifier.
+    /// Marks a task as Closed with completion timestamp and user identifier within a specific project.
     /// </summary>
-    Task<Result<bool>> CloseTaskAsync(Guid taskId, CancellationToken ct = default);
+    Task<Result<bool>> CloseTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
-    /// Reopens a previously closed task, setting Status back to Open.
+    /// Reopens a previously closed task, setting Status back to Open within a specific project.
     /// </summary>
-    Task<Result<bool>> ReopenTaskAsync(Guid taskId, CancellationToken ct = default);
+    Task<Result<bool>> ReopenTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
-    /// Appends a new chronological comment to the task discussion thread.
+    /// Cancels an existing task, setting its Status to Cancelled.
     /// </summary>
-    Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid taskId, string commentText, CancellationToken ct = default);
+    Task<Result<bool>> CancelTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
-    /// Retrieves all chronological comments for a task.
+    /// Appends a new chronological comment to the task discussion thread within a specific project.
     /// </summary>
-    Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid taskId, CancellationToken ct = default);
+    Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid projectId, Guid taskId, string commentText, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all chronological comments for a task within a specific project.
+    /// </summary>
+    Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all dependency links (blockers and blocked-by) for a specific task.
+    /// </summary>
+    Task<IReadOnlyList<BlazorFluent.Core.DataListTypes.TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Registers a blocking or prerequisite dependency between two tasks.
+    /// </summary>
+    Task<Result<bool>> AddTaskDependencyAsync(
+        Guid projectId,
+        Guid taskId,
+        Guid dependsOnTaskId,
+        BlazorFluent.Core.DataListTypes.TaskDependencyType dependencyType = BlazorFluent.Core.DataListTypes.TaskDependencyType.Blocks,
+        DateTime? resolveByUtc = null,
+        string? notes = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes a task dependency link.
+    /// </summary>
+    Task<Result<bool>> RemoveTaskDependencyAsync(Guid projectId, Guid dependencyId, CancellationToken ct = default);
 }

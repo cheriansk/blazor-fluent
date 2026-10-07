@@ -137,6 +137,12 @@ public static class PersistenceExtensions
         // 19. Zero-Trust Internal Authentication Verification Service (runs in isolated system scope)
         services.TryAddScoped<IInternalAuthenticationService, InternalAuthenticationService>();
 
+        // 20. Project Milestones & Delivery Cadence Service
+        services.TryAddScoped<IProjectMilestoneService, ProjectMilestoneService>();
+
+        // 21. Real-Time Project & Milestone Health Engine Service
+        services.TryAddScoped<IProjectHealthService, ProjectHealthService>();
+
         return services;
     }
 }

@@ -38,7 +38,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         string? searchTerm = null,
         KnowledgeArticleStatus? status = null,
         string? labelFilter = null,
-        bool? isGlobalOnly = null)
+        bool? isGlobalOnly = null,
+        CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
@@ -46,9 +47,12 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return new List<KnowledgeArticleListDto>();
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         var query = _context.KnowledgeArticles
             .AsNoTracking()
             .Include(a => a.Reviewers)
+            .Where(a => a.IsGlobal || a.TenantId == tenantId)
             .AsQueryable();
 
         if (status.HasValue)
@@ -80,7 +84,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
         var articles = await query
             .OrderByDescending(a => a.Created)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return articles.Select(a =>
         {
@@ -107,7 +111,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }).ToList();
     }
 
-    public async Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId)
+    public async Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
@@ -115,11 +119,13 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return null;
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         var a = await _context.KnowledgeArticles
             .AsNoTracking()
             .Include(x => x.Reviewers)
             .Include(x => x.Project)
-            .FirstOrDefaultAsync(x => x.Id == articleId);
+            .FirstOrDefaultAsync(x => x.Id == articleId && (x.IsGlobal || x.TenantId == tenantId), cancellationToken);
 
         if (a is null) return null;
 
@@ -153,7 +159,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         );
     }
 
-    public async Task<Guid> CreateArticleAsync(CreateArticleDto dto)
+    public async Task<Guid> CreateArticleAsync(CreateArticleDto dto, CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
@@ -196,7 +202,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             var reviewerUsers = await _context.Users
                 .AsNoTracking()
                 .Where(u => dto.ReviewerUserIds.Contains(u.Id.ToString()))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             foreach (var user in reviewerUsers)
             {
@@ -211,7 +217,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }
 
         _context.KnowledgeArticles.Add(article);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Knowledge article '{ArticleId}' created by '{Author}' (Scope: {Scope})",
             article.Id, article.AuthorUserEmail, isGlobal ? "Global" : "TenantOnly");
@@ -230,7 +236,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                     Title = "Knowledge Article Review Requested",
                     Message = $"{article.AuthorUserName} requested your review on '{article.Title}'.",
                     LinkUrl = $"/knowledge/{article.Id}"
-                });
+                }, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -241,16 +247,18 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         return article.Id;
     }
 
-    public async Task UpdateArticleAsync(UpdateArticleDto dto)
+    public async Task UpdateArticleAsync(UpdateArticleDto dto, CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
             throw new UnauthorizedAccessException("Only authenticated users can update knowledge articles.");
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var article = await _context.KnowledgeArticles
+            .AsTracking()
             .Include(a => a.Reviewers)
-            .FirstOrDefaultAsync(a => a.Id == dto.Id);
+            .FirstOrDefaultAsync(a => a.Id == dto.Id && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
 
         if (article is null)
         {
@@ -289,19 +297,21 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> ApproveArticleAsync(Guid articleId)
+    public async Task<bool> ApproveArticleAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
             return false;
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var article = await _context.KnowledgeArticles
+            .AsTracking()
             .Include(a => a.Reviewers)
-            .FirstOrDefaultAsync(a => a.Id == articleId);
+            .FirstOrDefaultAsync(a => a.Id == articleId && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
 
         if (article is null) return false;
 
@@ -329,7 +339,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         article.ApprovedByUserName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : _currentUser.Email;
         article.ApprovedAtUtc = now;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Knowledge article '{ArticleId}' approved by '{Approver}'", articleId, article.ApprovedByUserEmail);
 
         // Notify article author
@@ -344,7 +354,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                 Title = "Knowledge Article Approved",
                 Message = $"Your article '{article.Title}' was approved by {article.ApprovedByUserName}.",
                 LinkUrl = $"/knowledge/{article.Id}"
-            });
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -354,25 +364,28 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         return true;
     }
 
-    public async Task<bool> DeleteArticleAsync(Guid articleId)
+    public async Task<bool> DeleteArticleAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
             return false;
         }
 
-        var article = await _context.KnowledgeArticles.FirstOrDefaultAsync(a => a.Id == articleId);
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var article = await _context.KnowledgeArticles
+            .AsTracking()
+            .FirstOrDefaultAsync(a => a.Id == articleId && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
         if (article is null) return false;
 
         article.IsDeleted = true;
         article.DeletedAtUtc = DateTime.UtcNow;
         article.DeletedBy = _currentUser.Email;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task<List<UserDto>> GetAvailableReviewersAsync()
+    public async Task<List<UserDto>> GetAvailableReviewersAsync(CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
@@ -383,7 +396,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             .AsNoTracking()
             .Where(u => u.IsActive && !u.IsDeleted && u.UserType == UserType.CompanyUser)
             .OrderBy(u => u.FullName)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return users.Select(u => new UserDto(
             u.Id.ToString(),
@@ -393,17 +406,19 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         )).ToList();
     }
 
-    public async Task<List<string>> GetAllLabelsAsync()
+    public async Task<List<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated)
         {
             return new List<string>();
         }
 
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var labelStrings = await _context.KnowledgeArticles
             .AsNoTracking()
+            .Where(a => a.IsGlobal || a.TenantId == tenantId)
             .Select(a => a.Labels)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var labels = labelStrings
             .SelectMany(s => s.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))

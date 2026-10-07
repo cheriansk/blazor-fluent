@@ -4,6 +4,7 @@
 @inject ITenantContext TenantContext
 @inject IAuditService AuditService
 @inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager NavigationManager
 @using Microsoft.FluentUI.AspNetCore.Components
 
 @if (TenantContext.TenantId is null)
@@ -57,36 +58,40 @@ else
 
     private async Task OnTenantChanged(string? newTenantId)
     {
-        if (string.IsNullOrWhiteSpace(newTenantId)) return;
+        if (string.IsNullOrWhiteSpace(newTenantId) || newTenantId == TenantContext.TenantId) return;
 
         var prevTenant = TenantContext.TenantId ?? "unknown";
-        var result = TenantContext.SwitchTenant(newTenantId);
-        if (!result.Succeeded)
+
+        // Zero Trust: Validate that the requested tenant is authorized for this user
+        if (!TenantContext.AllowedTenants.Any(t => t.Id == newTenantId))
         {
-            _switchError = result.Errors.FirstOrDefault() ?? "Switch failed.";
+            _switchError = "You do not have permission to access the requested tenant.";
             await AuditService.LogSecurityEventAsync(
                 "TenantSwitchBlocked",
                 AuditSeverity.Warning,
-                $"Attempted switch from '{prevTenant}' to '{newTenantId}' blocked: {_switchError}");
+                $"Attempted unauthorized switch from '{prevTenant}' to '{newTenantId}'.");
+            return;
         }
-        else
-        {
-            _switchError = null;
-            await AuditService.LogTenantSwitchAsync(prevTenant, newTenantId);
 
-            // Update session storage so refreshes (F5) preserve the switched tenant
-            try
-            {
-                var existing = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
-                if (existing.Success && existing.Value != null)
-                {
-                    await SessionStorage.SetAsync("app_session", existing.Value with { ActiveTenantId = newTenantId });
-                }
-            }
-            catch
-            {
-                // Non-fatal if session storage update fails in browser
-            }
+        _switchError = null;
+
+        // 1. Audit tenant switch initiation
+        await AuditService.LogSecurityEventAsync(
+            "TenantSwitchInitiated",
+            AuditSeverity.Information,
+            $"User initiated tenant switch from '{prevTenant}' to '{newTenantId}'. Purging session and enforcing re-authentication.");
+
+        // 2. Purge browser session storage to eliminate cross-tenant state bleeding
+        try
+        {
+            await SessionStorage.DeleteAsync("app_session");
         }
+        catch { }
+
+        // 3. Reset in-memory tenant context
+        TenantContext.Reset();
+
+        // 4. Force full circuit teardown and navigate to login targeting the selected tenant
+        NavigationManager.NavigateTo($"/login?tenant={Uri.EscapeDataString(newTenantId)}", forceLoad: true);
     }
 }

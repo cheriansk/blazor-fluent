@@ -52,6 +52,18 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 
         var dispatchedCount = 0;
 
+        // Batch retrieve all actionable tasks across all target projects in a single query
+        var projectIds = projects.Select(p => p.Id).ToList();
+        var allTasks = await _dbContext.Tasks
+            .IgnoreQueryFilters()
+            .Where(t => projectIds.Contains(t.ProjectId) &&
+                        t.Status != UserTaskStatus.Closed &&
+                        t.Status != UserTaskStatus.Cancelled)
+            .OrderBy(t => t.DueDate)
+            .ToListAsync(cancellationToken);
+
+        var tasksByProject = allTasks.ToLookup(t => t.ProjectId);
+
         foreach (var project in projects)
         {
             var webhookUrl = !string.IsNullOrWhiteSpace(project.TeamsWebhookUrl)
@@ -63,21 +75,12 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
                 continue;
             }
 
-            // Retrieve active tasks for this project
-            var tasks = await _dbContext.Tasks
-                .IgnoreQueryFilters()
-                .Where(t => t.ProjectId == project.Id &&
-                            !t.IsDeleted &&
-                            !t.IsClosed &&
-                            t.Status != UserTaskStatus.Closed &&
-                            t.DueDate.HasValue)
-                .OrderBy(t => t.DueDate)
-                .ToListAsync(cancellationToken);
+            var tasks = tasksByProject[project.Id].ToList();
 
-            var pastDue = tasks.Where(t => t.DueDate!.Value.Date < today).ToList();
-            var dueToday = tasks.Where(t => t.DueDate!.Value.Date == today).ToList();
-            var dueTomorrow = tasks.Where(t => t.DueDate!.Value.Date == tomorrow).ToList();
-            var dueIn2Days = tasks.Where(t => t.DueDate!.Value.Date == in2Days).ToList();
+            var pastDue = tasks.Where(t => t.DueDate.Date < today).ToList();
+            var dueToday = tasks.Where(t => t.DueDate.Date == today).ToList();
+            var dueTomorrow = tasks.Where(t => t.DueDate.Date == tomorrow).ToList();
+            var dueIn2Days = tasks.Where(t => t.DueDate.Date == in2Days).ToList();
 
             var totalPending = pastDue.Count + dueToday.Count + dueTomorrow.Count + dueIn2Days.Count;
             if (totalPending == 0)

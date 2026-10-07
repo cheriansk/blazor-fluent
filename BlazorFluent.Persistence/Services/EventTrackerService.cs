@@ -297,6 +297,7 @@ public class EventTrackerService : IEventTrackerService
         var query = _dbContext.EventPublishTrackers
             .IgnoreQueryFilters()
             .Include(e => e.Consumptions)
+            .AsSplitQuery()
             .AsNoTracking();
 
         // Enforce tenant boundary unless user is host
@@ -376,6 +377,20 @@ public class EventTrackerService : IEventTrackerService
         Guid publishTrackerId,
         CancellationToken cancellationToken = default)
     {
+        var publishTracker = await _dbContext.EventPublishTrackers
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == publishTrackerId, cancellationToken);
+
+        if (publishTracker is null) return [];
+
+        if (!_tenantContext.IsHost && publishTracker.TenantId != (_tenantContext.TenantId ?? string.Empty))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to view consumption logs for event '{EventId}' in tenant '{EventTenant}' outside active tenant '{ActiveTenant}'.",
+                _currentUser.UserId, publishTrackerId, publishTracker.TenantId, _tenantContext.TenantId);
+            return [];
+        }
+
         return await _dbContext.EventConsumptionTrackers
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -388,10 +403,18 @@ public class EventTrackerService : IEventTrackerService
         Guid eventTrackerId,
         CancellationToken cancellationToken = default)
     {
-        return await _dbContext.EventPublishTrackers
+        var query = _dbContext.EventPublishTrackers
             .IgnoreQueryFilters()
             .Include(e => e.Consumptions)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == eventTrackerId || e.EventId == eventTrackerId, cancellationToken);
+            .AsSplitQuery()
+            .AsNoTracking();
+
+        if (!_tenantContext.IsHost)
+        {
+            var activeTenant = _tenantContext.TenantId ?? string.Empty;
+            query = query.Where(e => e.TenantId == activeTenant);
+        }
+
+        return await query.FirstOrDefaultAsync(e => e.Id == eventTrackerId || e.EventId == eventTrackerId, cancellationToken);
     }
 }

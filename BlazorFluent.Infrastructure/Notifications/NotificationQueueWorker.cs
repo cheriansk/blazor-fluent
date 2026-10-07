@@ -1,4 +1,5 @@
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,6 +39,7 @@ public class NotificationQueueWorker : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var emailSender = scope.ServiceProvider.GetRequiredService<IEmailNotificationSender>();
                 var teamsSender = scope.ServiceProvider.GetRequiredService<ITeamsNotificationSender>();
+                var config = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
 
                 var tempNotification = new NotificationEntity
                 {
@@ -45,10 +47,34 @@ public class NotificationQueueWorker : BackgroundService
                     Message = request.Message,
                     Category = request.Category,
                     Severity = request.Severity,
-                    LinkUrl = request.LinkUrl
+                    LinkUrl = request.LinkUrl,
+                    ProjectId = request.ProjectId,
+                    UserId = request.UserId
                 };
 
                 _logger.LogDebug("Processing background queued notification '{Title}'", request.Title);
+
+                // 1. Teams dispatch
+                if ((request.Channels & NotificationChannels.Teams) != 0)
+                {
+                    var webhookUrl = config[$"Notifications:Teams:ProjectWebhooks:{request.ProjectId}"]
+                                     ?? config["Notifications:Teams:DefaultWebhookUrl"];
+                    if (!string.IsNullOrWhiteSpace(webhookUrl))
+                    {
+                        await teamsSender.SendTeamsNotificationAsync(tempNotification, webhookUrl, stoppingToken);
+                    }
+                }
+
+                // 2. Email dispatch
+                if ((request.Channels & NotificationChannels.Email) != 0)
+                {
+                    var mailbox = config[$"Notifications:Email:ProjectMailboxes:{request.ProjectId}"]
+                                  ?? config["Notifications:Email:DefaultMailbox"];
+                    if (!string.IsNullOrWhiteSpace(mailbox))
+                    {
+                        await emailSender.SendEmailNotificationAsync(tempNotification, mailbox, stoppingToken);
+                    }
+                }
             }
             catch (Exception ex)
             {

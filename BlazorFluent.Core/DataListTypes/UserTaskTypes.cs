@@ -76,7 +76,10 @@ public enum UserTaskStatus
     InProgress = 2,
 
     [Display(Name = "Closed", Description = "Task has been resolved or completed.")]
-    Closed = 3
+    Closed = 3,
+
+    [Display(Name = "Cancelled", Description = "Task has been cancelled or aborted.")]
+    Cancelled = 4
 }
 
 #endregion

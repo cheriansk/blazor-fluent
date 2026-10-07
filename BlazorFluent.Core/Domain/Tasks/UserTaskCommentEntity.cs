@@ -1,17 +1,24 @@
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Tenancy;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
 /// <summary>
 /// Chronological Jira-style discussion comment attached to a parent task.
-/// Maintained within tenant scope with audit dates and soft-deletion support.
+/// Maintained within tenant and project scope with audit dates and soft-deletion support.
 /// </summary>
-public class UserTaskCommentEntity : TenantAuditableEntity, ISoftDeletableEntity
+public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// Foreign key to the parent <see cref="UserTaskEntity"/>.
     /// </summary>
     public Guid TaskId { get; set; }
+
+    /// <summary>
+    /// ID of the project to which this task comment belongs.
+    /// Guarded by ProjectSecurityInterceptor and compound query scoping.
+    /// </summary>
+    public Guid ProjectId { get; set; }
 
     /// <summary>
     /// User identifier of the comment author.

@@ -215,9 +215,11 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportHistoryAsync(Guid projectId, CancellationToken ct = default)
     {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         return await _context.ImportFiles
             .AsNoTracking()
-            .Where(f => f.ProjectId == projectId)
+            .Where(f => f.TenantId == tenantId && f.ProjectId == projectId)
             .OrderByDescending(f => f.Created)
             .Select(f => new ImportFileSummaryDto(
                 f.Id,
@@ -239,11 +241,13 @@ public class ImportFileService : IImportFileService
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid importId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid projectId, Guid importId, CancellationToken ct = default)
     {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         return await _context.ImportFiles
             .AsNoTracking()
-            .Where(f => f.ImportId == importId)
+            .Where(f => f.TenantId == tenantId && f.ProjectId == projectId && f.ImportId == importId)
             .OrderBy(f => f.Created)
             .Select(f => new ImportFileSummaryDto(
                 f.Id,
@@ -265,11 +269,13 @@ public class ImportFileService : IImportFileService
             .ToListAsync(ct);
     }
 
-    public async Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid importFileId, CancellationToken ct = default)
+    public async Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
         var file = await _context.ImportFiles
             .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.Id == importFileId, ct);
+            .FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
 
         if (file == null) return null;
 
@@ -305,9 +311,11 @@ public class ImportFileService : IImportFileService
             file.CreatedBy);
     }
 
-    public async Task<Result<bool>> DeleteImportFileAsync(Guid importFileId, CancellationToken ct = default)
+    public async Task<Result<bool>> DeleteImportFileAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var file = await _context.ImportFiles.FirstOrDefaultAsync(f => f.Id == importFileId, ct);
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+        var file = await _context.ImportFiles.FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
         if (file == null)
         {
             return Result<bool>.Failure("Import file record not found.");
@@ -317,9 +325,10 @@ public class ImportFileService : IImportFileService
         file.DeletedAtUtc = DateTime.UtcNow;
         file.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
-        // Clean up staged tasks for this file
-        var stagedTasks = await _context.StagedTasks.Where(s => s.ImportFileId == importFileId).ToListAsync(ct);
-        _context.StagedTasks.RemoveRange(stagedTasks);
+        // Clean up staged tasks for this file directly via SQL without materializing entities into memory
+        await _context.StagedTasks
+            .Where(s => s.TenantId == tenantId && s.ProjectId == projectId && s.ImportFileId == importFileId)
+            .ExecuteDeleteAsync(ct);
 
         await _context.SaveChangesAsync(ct);
         return Result<bool>.Success(true);

@@ -1,4 +1,5 @@
 using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,6 +20,9 @@ public class UserTaskEntityConfiguration : IEntityTypeConfiguration<UserTaskEnti
         builder.Property(t => t.ProjectId)
             .IsRequired();
 
+        builder.Property(t => t.MilestoneId)
+            .IsRequired(false);
+
         builder.Property(t => t.Title)
             .HasMaxLength(200)
             .IsRequired();
@@ -36,7 +40,12 @@ public class UserTaskEntityConfiguration : IEntityTypeConfiguration<UserTaskEnti
             .HasConversion<int>();
 
         builder.Property(t => t.DueDate)
-            .IsRequired(false);
+            .IsRequired();
+
+        builder.Property(t => t.ReporterEmail)
+            .HasMaxLength(256)
+            .IsRequired()
+            .HasDefaultValue(string.Empty);
 
         builder.Property(t => t.AssigneeEmails)
             .HasMaxLength(2000)
@@ -48,31 +57,17 @@ public class UserTaskEntityConfiguration : IEntityTypeConfiguration<UserTaskEnti
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(t => t.IsClosed)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.Property(t => t.ClosedAtUtc)
-            .IsRequired(false);
-
-        builder.Property(t => t.ClosedBy)
-            .HasMaxLength(256)
-            .IsRequired(false);
-
-        // Soft delete properties
-        builder.Property(t => t.IsDeleted)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.Property(t => t.DeletedBy)
-            .HasMaxLength(256)
-            .IsRequired(false);
-
-        // Relationship: Task belongs to Project
-        builder.HasOne(t => t.Project)
+        // Shadow relationship to ProjectEntity (retains PostgreSQL foreign key constraint without bloating C# entity model)
+        builder.HasOne<ProjectEntity>()
             .WithMany()
             .HasForeignKey(t => t.ProjectId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Optional relationship to ProjectMilestoneEntity
+        builder.HasOne<ProjectMilestoneEntity>()
+            .WithMany()
+            .HasForeignKey(t => t.MilestoneId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Relationship: Task has many Comments
         builder.HasMany(t => t.Comments)
@@ -87,10 +82,10 @@ public class UserTaskEntityConfiguration : IEntityTypeConfiguration<UserTaskEnti
         builder.HasIndex(t => new { t.TenantId, t.ProjectId })
             .HasDatabaseName("IX_Tasks_TenantId_ProjectId");
 
-        builder.HasIndex(t => new { t.ProjectId, t.Status, t.DueDate })
-            .HasDatabaseName("IX_Tasks_ProjectId_Status_DueDate");
+        builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
+            .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
 
-        builder.HasIndex(t => t.IsDeleted)
-            .HasDatabaseName("IX_Tasks_IsDeleted");
+        builder.HasIndex(t => t.MilestoneId)
+            .HasDatabaseName("IX_Tasks_MilestoneId");
     }
 }
