@@ -192,7 +192,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         if (isHost)
         {
-            allowedTenants = activeTenants.Select(t => new TenantInfo(t.Slug, t.Name, isHost: true)).ToList();
+            allowedTenants = activeTenants.Select(t => new TenantInfo(t.Slug, t.Name, t.IsActive)).ToList();
             var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
             if (defaultMatch is not null)
             {
@@ -210,7 +210,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
                 .Where(t => (!string.IsNullOrWhiteSpace(user.DefaultTenantId) && string.Equals(t.Slug, user.DefaultTenantId, StringComparison.OrdinalIgnoreCase)) ||
                             t.GetInternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())) ||
                             t.GetExternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())))
-                .Select(t => new TenantInfo(t.Slug, t.Name, isHost: false))
+                .Select(t => new TenantInfo(t.Slug, t.Name, t.IsActive))
                 .ToList();
 
             var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
@@ -228,7 +228,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
                 var clientTenant = activeTenants.FirstOrDefault(t => string.Equals(t.Slug, user.DefaultTenantId, StringComparison.OrdinalIgnoreCase));
                 if (clientTenant is not null)
                 {
-                    allowedTenants = [new TenantInfo(clientTenant.Slug, clientTenant.Name, isHost: false)];
+                    allowedTenants = [new TenantInfo(clientTenant.Slug, clientTenant.Name, clientTenant.IsActive)];
                     resolvedTenantId = clientTenant.Slug;
                     resolvedTenantName = clientTenant.Name;
                 }

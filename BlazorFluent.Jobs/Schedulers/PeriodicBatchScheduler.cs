@@ -152,6 +152,19 @@ public class PeriodicBatchScheduler : BackgroundService
                     SenderUserEmail: "SystemDaemon (DailyTaskSummaryJob)")));
         }
 
+        var cadenceCron = _configuration["Jobs:Schedules:TaskCadenceAlertJob"] ?? "0 8 * * *";
+        if (TryParseCron("TaskCadenceAlertJob", cadenceCron, out var parsedCadenceCron))
+        {
+            entries.Add(new ScheduleEntry(
+                "TaskCadenceAlertJob",
+                parsedCadenceCron,
+                () => new TaskCadenceAlertJobEvent(
+                    TriggerSource: "Cron",
+                    SenderOrigin: "TaskCadenceAlertJob",
+                    SenderUserId: "SystemDaemon (TaskCadenceAlertJob)",
+                    SenderUserEmail: "SystemDaemon (TaskCadenceAlertJob)")));
+        }
+
         return entries;
     }
 

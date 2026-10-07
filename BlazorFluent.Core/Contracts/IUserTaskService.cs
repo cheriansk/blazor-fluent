@@ -39,6 +39,11 @@ public interface IUserTaskService
     Task<Result<bool>> ReopenTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
+    /// Cancels an existing task, setting its Status to Cancelled.
+    /// </summary>
+    Task<Result<bool>> CancelTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+
+    /// <summary>
     /// Appends a new chronological comment to the task discussion thread within a specific project.
     /// </summary>
     Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid projectId, Guid taskId, string commentText, CancellationToken ct = default);
@@ -47,4 +52,26 @@ public interface IUserTaskService
     /// Retrieves all chronological comments for a task within a specific project.
     /// </summary>
     Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all dependency links (blockers and blocked-by) for a specific task.
+    /// </summary>
+    Task<IReadOnlyList<BlazorFluent.Core.DataListTypes.TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Registers a blocking or prerequisite dependency between two tasks.
+    /// </summary>
+    Task<Result<bool>> AddTaskDependencyAsync(
+        Guid projectId,
+        Guid taskId,
+        Guid dependsOnTaskId,
+        BlazorFluent.Core.DataListTypes.TaskDependencyType dependencyType = BlazorFluent.Core.DataListTypes.TaskDependencyType.Blocks,
+        DateTime? resolveByUtc = null,
+        string? notes = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes a task dependency link.
+    /// </summary>
+    Task<Result<bool>> RemoveTaskDependencyAsync(Guid projectId, Guid dependencyId, CancellationToken ct = default);
 }

@@ -57,10 +57,8 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
         var allTasks = await _dbContext.Tasks
             .IgnoreQueryFilters()
             .Where(t => projectIds.Contains(t.ProjectId) &&
-                        !t.IsDeleted &&
-                        !t.IsClosed &&
                         t.Status != UserTaskStatus.Closed &&
-                        t.DueDate.HasValue)
+                        t.Status != UserTaskStatus.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
 
@@ -79,10 +77,10 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 
             var tasks = tasksByProject[project.Id].ToList();
 
-            var pastDue = tasks.Where(t => t.DueDate!.Value.Date < today).ToList();
-            var dueToday = tasks.Where(t => t.DueDate!.Value.Date == today).ToList();
-            var dueTomorrow = tasks.Where(t => t.DueDate!.Value.Date == tomorrow).ToList();
-            var dueIn2Days = tasks.Where(t => t.DueDate!.Value.Date == in2Days).ToList();
+            var pastDue = tasks.Where(t => t.DueDate.Date < today).ToList();
+            var dueToday = tasks.Where(t => t.DueDate.Date == today).ToList();
+            var dueTomorrow = tasks.Where(t => t.DueDate.Date == tomorrow).ToList();
+            var dueIn2Days = tasks.Where(t => t.DueDate.Date == in2Days).ToList();
 
             var totalPending = pastDue.Count + dueToday.Count + dueTomorrow.Count + dueIn2Days.Count;
             if (totalPending == 0)

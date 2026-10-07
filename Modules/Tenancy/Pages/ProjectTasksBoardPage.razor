@@ -11,6 +11,8 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @inject IUserTaskService TaskService
+@inject IProjectMilestoneService MilestoneService
+@inject IProjectHealthService HealthService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject IProjectContext ProjectContext
@@ -19,7 +21,7 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<PageTitle>Tasks — @(_currentProject?.Name ?? "Project Work Items")</PageTitle>
+<PageTitle>Tasks & Milestones — @(_currentProject?.Name ?? "Project Work Items")</PageTitle>
 
 <div class="tasks-page-header">
     <div class="tasks-page-header-left">
@@ -28,7 +30,7 @@
             <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
             <FluentLink>@(_currentProject?.Name ?? "Tasks")</FluentLink>
             <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
-            <FluentLink >Task Board</FluentLink>
+            <FluentLink>Delivery Board</FluentLink>
         </FluentStack>
         <div class="tasks-header-title-row">
             <FluentLabel Typo="Typography.H3">@(_currentProject?.Name ?? "Project Tasks")</FluentLabel>
@@ -43,22 +45,39 @@
         <!-- Project Switcher -->
         @if (_availableProjects.Count > 1)
         {
-            <div style="min-width: 200px;">
+            <div style="min-width: 180px;">
                 <FluentSelect Items="@_availableProjects"
                               OptionText="@(p => p.Name)"
                               OptionValue="@(p => p.Id.ToString())"
                               SelectedOption="@_currentProject"
                               SelectedOptionChanged="OnProjectChanged"
-                              Label="Switch Project" />
+                              Label="Project" />
             </div>
         }
+
+        <!-- Milestone Filter -->
+        <div style="min-width: 200px;">
+            <FluentSelect TOption="MilestoneFilterItem"
+                          TValue="string"
+                          Items="@_milestoneFilterOptions"
+                          OptionText="@(o => o.Label)"
+                          OptionValue="@(o => o.Value)"
+                          @bind-Value="_selectedMilestoneFilter"
+                          Label="Milestone Filter" />
+        </div>
+
+        <FluentButton Appearance="ButtonAppearance.Subtle"
+                      IconStart="@(new Icons.Regular.Size16.Flag())"
+                      OnClick="OpenMilestonesModal">
+            Milestones (@_milestones.Count)
+        </FluentButton>
 
         <FluentButton Appearance="ButtonAppearance.Subtle"
                       IconStart="@(new Icons.Regular.Size16.ArrowSync())"
                       OnClick="@(() => Navigation.NavigateTo("/imports"))">
             Import
         </FluentButton>
-        <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="OpenCreateTaskModal">
+        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="OpenCreateTaskModal">
             New Task
         </FluentButton>
     </div>
@@ -76,42 +95,114 @@ else if (_currentProject is null)
 }
 else
 {
-    <!-- Swimlane Metrics Bar -->
-    <div class="metrics-bar">
-        <div class="metric-item">
-            <span class="metric-count">@_tasks.Count</span>
-            <span class="metric-label">Total Tasks</span>
+    <!-- Live Project Health & Cadence KPI Bar -->
+    <div class="health-kpi-container">
+        <div class="health-main-kpis">
+            <div class="health-rating-box">
+                <span class="health-pill health-pill-@(_projectHealth.Health.ToString().ToLowerInvariant())">
+                    @if (_projectHealth.Health == ProjectHealthRating.OnTrack)
+                    {
+                        <span>🟢 On Track</span>
+                    }
+                    else if (_projectHealth.Health == ProjectHealthRating.AtRisk)
+                    {
+                        <span>🟡 At Risk</span>
+                    }
+                    else
+                    {
+                        <span>🔴 Critical</span>
+                    }
+                </span>
+                <span class="metric-label">Project Health</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <div class="progress-container">
+                    <span class="progress-text">@_projectHealth.ProgressPercentage% Completed</span>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: @(_projectHealth.ProgressPercentage)%;"></div>
+                    </div>
+                </div>
+                <span class="metric-label">@_projectHealth.CompletedTasks / @_projectHealth.TotalTasks Deliverables</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <span class="metric-count @(_projectHealth.ActiveBlockersCount > 0 ? "text-danger" : "text-muted")">
+                    @_projectHealth.ActiveBlockersCount
+                </span>
+                <span class="metric-label">Active Blockers</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <span class="metric-count @(_projectHealth.OverdueTasks > 0 ? "text-danger" : "text-muted")">
+                    @_projectHealth.OverdueTasks
+                </span>
+                <span class="metric-label">Overdue Tasks</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <span class="metric-count text-info">
+                    @_projectHealth.CompletedMilestones / @_projectHealth.TotalMilestones
+                </span>
+                <span class="metric-label">Milestones Signed Off</span>
+            </div>
         </div>
-        <div class="metric-divider"></div>
-        <div class="metric-item">
-            <span class="metric-count text-danger">@_tasks.Count(t => !t.IsClosed && t.DueDate.HasValue && t.DueDate.Value.Date < _today)</span>
-            <span class="metric-label">Past Due</span>
-        </div>
-        <div class="metric-divider"></div>
-        <div class="metric-item">
-            <span class="metric-count text-warning">@_tasks.Count(t => !t.IsClosed && t.DueDate.HasValue && t.DueDate.Value.Date == _today)</span>
-            <span class="metric-label">Due Today</span>
-        </div>
-        <div class="metric-divider"></div>
-        <div class="metric-item">
-            <span class="metric-count text-success">@_tasks.Count(t => t.IsClosed || t.Status == UserTaskStatus.Closed)</span>
-            <span class="metric-label">Completed</span>
-        </div>
+
+        @if (_projectHealth.RiskReasons.Count > 0)
+        {
+            <div class="health-risk-reasons-panel">
+                <div class="risk-reasons-header">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="@Color.Warning" />
+                    <strong>Root-Cause Risk Attribution:</strong>
+                </div>
+                <ul class="risk-reasons-list">
+                    @foreach (var reason in _projectHealth.RiskReasons)
+                    {
+                        <li>@reason</li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
 
     <!-- Reusable 6-Column Swimlane Board -->
     <FluentSwimlaneBoardComp TItem="UserTaskEntity"
-                         Columns="@_columns"
-                         Items="@_tasks"
-                         OnItemClick="OpenTaskDetailsModal">
+                             Columns="@_columns"
+                             Items="@FilteredTasks"
+                             OnItemClick="OpenTaskDetailsModal">
         <ItemTemplate>
             <FluentCard Class="task-card">
                 <div class="task-card-header">
-                    <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(context.Priority)">
-                        @context.Priority
-                    </FluentBadge>
-                    <span class="task-card-due @(context.DueDate.HasValue && context.DueDate.Value.Date < _today && !context.IsClosed ? "due-overdue" : "")">
-                        @(context.DueDate.HasValue ? TimeZoneService.FormatDate(context.DueDate.Value, "MMM dd") : "No Due Date")
+                    <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                        <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(context.Priority)">
+                            @context.Priority
+                        </FluentBadge>
+
+                        @if (_activeBlockedTaskIds.Contains(context.Id))
+                        {
+                            <span class="blocker-pill" title="This task is blocked by one or more unresolved prerequisite tasks.">
+                                ⛔ Blocked
+                            </span>
+                        }
+
+                        @if (context.MilestoneId.HasValue && _milestoneLookup.TryGetValue(context.MilestoneId.Value, out var mName))
+                        {
+                            <span class="milestone-pill" title="Assigned Milestone">
+                                🚩 @mName
+                            </span>
+                        }
+                    </div>
+
+                    <span class="task-card-due @(context.DueDate.Date < _today && !context.IsClosed ? "due-overdue" : "")">
+                        @TimeZoneService.FormatDate(context.DueDate, "MMM dd")
                     </span>
                 </div>
 
@@ -142,8 +233,17 @@ else
                             <span class="unassigned-text">Unassigned</span>
                         }
                     </div>
-                    <div class="task-card-comments-count">
-                        💬 @(context.Comments?.Count ?? 0)
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        @if (!string.IsNullOrWhiteSpace(context.ReporterEmail))
+                        {
+                            <span class="reporter-pill" title="Reporter: @context.ReporterEmail">
+                                ✍️ @(context.ReporterEmail.Split('@').FirstOrDefault())
+                            </span>
+                        }
+                        <div class="task-card-comments-count">
+                            💬 @(context.Comments?.Count ?? 0)
+                        </div>
                     </div>
                 </div>
             </FluentCard>
@@ -162,9 +262,9 @@ else
             </div>
 
             <div class="modal-body">
-                <FluentTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Style="width: 100%;" Placeholder="Brief headline of the task..." />
+                <FluentTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Style="width: 100%;" Placeholder="Concise headline of the work item..." />
 
-                <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Details" Rows="4" Style="width: 100%; margin-top: 12px;" Placeholder="Add detailed description, acceptance criteria, or repro steps..." />
+                <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Style="width: 100%; margin-top: 12px;" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
 
                 <div class="modal-grid-row" style="margin-top: 12px;">
                     <FluentSelect TOption="DataListItem<UserTaskPriority>"
@@ -176,18 +276,35 @@ else
                                   @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _newTask.Priority = p; }"
                                   Label="Priority" Style="width: 100%;" />
 
-                    <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date" Style="width: 100%;" />
+                    <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Style="width: 100%;" Required="true" />
                 </div>
 
-                <FluentTextInput @bind-Value="_newTask.AssigneeEmails"
-                                 Label="Assignee Email(s) (Semicolon-Separated)"
-                                 Placeholder="alice@company.com; bob@company.com"
-                                 Style="width: 100%; margin-top: 12px;" />
+                <div class="modal-grid-row" style="margin-top: 12px;">
+                    <FluentSelect TOption="MilestoneOptionItem"
+                                  TValue="string"
+                                  Items="@_milestoneSelectOptions"
+                                  OptionText="@(m => m.Label)"
+                                  OptionValue="@(m => m.Id)"
+                                  @bind-Value="_newTaskMilestoneIdString"
+                                  Label="Milestone Association (Optional)" Style="width: 100%;" />
+
+                    <FluentTextInput @bind-Value="_newTask.AssigneeEmails"
+                                     Label="Assignee Email(s)"
+                                     Placeholder="alice@company.com; bob@company.com"
+                                     Style="width: 100%;" />
+                </div>
 
                 <FluentTextInput @bind-Value="_newTask.Labels"
                                  Label="Labels / Tags (Comma-Separated)"
                                  Placeholder="Frontend, Bug, HighPriority"
                                  Style="width: 100%; margin-top: 12px;" />
+
+                @if (!string.IsNullOrWhiteSpace(_createErrorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-top: 12px;">
+                        @_createErrorMessage
+                    </FluentMessageBar>
+                }
             </div>
 
             <div class="modal-footer">
@@ -198,7 +315,7 @@ else
     </div>
 }
 
-<!-- Task Details & Jira Discussion Modal -->
+<!-- Task Details, Dependencies & Discussion Modal -->
 @if (_selectedTask is not null)
 {
     <div class="modal-backdrop" @onclick="CloseModals">
@@ -210,99 +327,341 @@ else
                     </FluentBadge>
                     <FluentLabel Typo="Typography.H4">@_selectedTask.Title</FluentLabel>
                 </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <EntityHistoryButton EntityName="UserTaskEntity" EntityId="@_selectedTask.Id.ToString()" IconOnly="false" Label="History" Appearance="ButtonAppearance.Subtle" />
+                    <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
+                </div>
+            </div>
+
+            <div class="modal-tabs-header">
+                <button class="modal-tab-btn @(_selectedModalTab == "details" ? "active" : "")" @onclick="@(() => _selectedModalTab = "details")">
+                    Task Details
+                </button>
+                <button class="modal-tab-btn @(_selectedModalTab == "dependencies" ? "active" : "")" @onclick="@(() => _selectedModalTab = "dependencies")">
+                    Dependencies (@_selectedTaskDependencies.Count)
+                </button>
+                <button class="modal-tab-btn @(_selectedModalTab == "comments" ? "active" : "")" @onclick="@(() => _selectedModalTab = "comments")">
+                    Comments (@_selectedTaskComments.Count)
+                </button>
+            </div>
+
+            <div class="modal-body-tab-content">
+                @if (_selectedModalTab == "details")
+                {
+                    <div class="task-details-form">
+                        <FluentTextInput @bind-Value="_selectedTask.Title" Label="Title" Style="width: 100%;" />
+
+                        <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Style="width: 100%; margin-top: 12px;" />
+
+                        <div class="modal-grid-row" style="margin-top: 12px;">
+                            <FluentSelect TOption="DataListItem<UserTaskPriority>"
+                                          TValue="string"
+                                          Items="@(DataListExtensions.GetDataListItems<UserTaskPriority>())"
+                                          OptionText="@(i => i.DisplayName)"
+                                          OptionValue="@(i => i.Code)"
+                                          @bind-Value:get="_selectedTask.Priority.ToString()"
+                                          @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _selectedTask.Priority = p; }"
+                                          Label="Priority" Style="width: 100%;" />
+
+                            <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Style="width: 100%;" Required="true" />
+                        </div>
+
+                        <div class="modal-grid-row" style="margin-top: 12px;">
+                            <FluentSelect TOption="DataListItem<UserTaskStatus>"
+                                          TValue="string"
+                                          Items="@(DataListExtensions.GetDataListItems<UserTaskStatus>())"
+                                          OptionText="@(i => i.DisplayName)"
+                                          OptionValue="@(i => i.Code)"
+                                          @bind-Value:get="_selectedTask.Status.ToString()"
+                                          @bind-Value:set="code => { if (Enum.TryParse<UserTaskStatus>(code, out var s)) _selectedTask.Status = s; }"
+                                          Label="Status" Style="width: 100%;" />
+
+                            <FluentSelect TOption="MilestoneOptionItem"
+                                          TValue="string"
+                                          Items="@_milestoneSelectOptions"
+                                          OptionText="@(m => m.Label)"
+                                          OptionValue="@(m => m.Id)"
+                                          @bind-Value="_selectedTaskMilestoneIdString"
+                                          Label="Milestone" Style="width: 100%;" />
+                        </div>
+
+                        <div class="modal-grid-row" style="margin-top: 12px;">
+                            <FluentTextInput @bind-Value="_selectedTask.AssigneeEmails"
+                                             Label="Assignees (Semicolon-Separated)"
+                                             Placeholder="email1@co.com; email2@co.com"
+                                             Style="width: 100%;" />
+
+                            <FluentTextInput Value="@_selectedTask.ReporterEmail"
+                                             Label="Reporter"
+                                             ReadOnly="true"
+                                             Style="width: 100%;" />
+                        </div>
+
+                        <FluentTextInput @bind-Value="_selectedTask.Labels"
+                                         Label="Labels"
+                                         Placeholder="UI, Release-1.0"
+                                         Style="width: 100%; margin-top: 12px;" />
+
+                        <div class="task-action-toolbar" style="margin-top: 24px;">
+                            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
+                                Save Changes
+                            </FluentButton>
+
+                            @if (!_selectedTask.IsClosed)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseSelectedTaskAsync">
+                                    Mark as Closed
+                                </FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelSelectedTaskAsync" Style="color: #d13438;">
+                                    Cancel Task
+                                </FluentButton>
+                            }
+                            else
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="ReopenSelectedTaskAsync">
+                                    Reopen Task
+                                </FluentButton>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (_selectedModalTab == "dependencies")
+                {
+                    <div class="task-dependencies-pane">
+                        <FluentLabel Typo="Typography.H5">Task Dependencies & Blockers</FluentLabel>
+                        <p class="section-hint">Tasks linked here are monitored by the Cadence engine. Unresolved blockers trigger proactive alerts to assignees.</p>
+
+                        <div class="dependency-list">
+                            @if (_selectedTaskDependencies.Count == 0)
+                            {
+                                <div class="no-items-placeholder">No dependencies linked to this task.</div>
+                            }
+                            else
+                            {
+                                @foreach (var dep in _selectedTaskDependencies)
+                                {
+                                    <div class="dependency-card">
+                                        <div class="dependency-card-info">
+                                            <div style="display: flex; gap: 6px; align-items: center;">
+                                                <span class="dep-type-tag">@dep.DependencyType</span>
+                                                <strong>@dep.DependsOnTaskTitle</strong>
+                                            </div>
+                                            <div class="dep-meta">
+                                                <span>Status: @dep.DependsOnTaskStatus</span>
+                                                <span>• Assignee: @(string.IsNullOrWhiteSpace(dep.DependsOnAssigneeEmails) ? "Unassigned" : dep.DependsOnAssigneeEmails)</span>
+                                                @if (dep.ResolveByUtc.HasValue)
+                                                {
+                                                    <span>• Resolve By: @dep.ResolveByUtc.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="dependency-card-actions">
+                                            @if (dep.IsResolved)
+                                            {
+                                                <span class="dep-status-resolved">🟢 Resolved</span>
+                                            }
+                                            else if (dep.IsOverdue)
+                                            {
+                                                <span class="dep-status-overdue">🔴 Blocker Overdue</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="dep-status-active">🟡 Active Blocker</span>
+                                            }
+
+                                            <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                          IconStart="@(new Icons.Regular.Size16.Delete())"
+                                                          OnClick="@(() => RemoveDependencyAsync(dep.DependencyId))"
+                                                          Title="Remove Dependency Link" />
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Add Dependency Link Form -->
+                        <div class="add-dependency-box">
+                            <FluentLabel Typo="Typography.H6">Add New Dependency</FluentLabel>
+                            <div class="modal-grid-row" style="margin-top: 8px;">
+                                <FluentSelect TOption="UserTaskEntity"
+                                              TValue="string"
+                                              Items="@_otherProjectTasks"
+                                              OptionText="@(t => $"{t.Title} (Due {t.DueDate:yyyy-MM-dd})")"
+                                              OptionValue="@(t => t.Id.ToString())"
+                                              @bind-Value="_newDepTargetTaskId"
+                                              Label="Prerequisite / Target Task" Style="width: 100%;" />
+
+                                <FluentSelect TOption="DataListItem<TaskDependencyType>"
+                                              TValue="string"
+                                              Items="@(DataListExtensions.GetDataListItems<TaskDependencyType>())"
+                                              OptionText="@(i => i.DisplayName)"
+                                              OptionValue="@(i => i.Code)"
+                                              @bind-Value:get="_newDepType.ToString()"
+                                              @bind-Value:set="code => { if (Enum.TryParse<TaskDependencyType>(code, out var dt)) _newDepType = dt; }"
+                                              Label="Relationship" Style="width: 100%;" />
+                            </div>
+
+                            <div class="modal-grid-row" style="margin-top: 8px;">
+                                <FluentDatePicker @bind-Value="_newDepResolveByUtc" Label="Resolve By Target Date (Optional)" Style="width: 100%;" />
+                                <FluentTextInput @bind-Value="_newDepNotes" Label="Notes / Reason" Placeholder="e.g. Needs DB schema update first" Style="width: 100%;" />
+                            </div>
+
+                            <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 12px; align-self: flex-start;" OnClick="AddDependencyAsync" Loading="@_isAddingDependency">
+                                Add Dependency Link
+                            </FluentButton>
+                        </div>
+                    </div>
+                }
+                else if (_selectedModalTab == "comments")
+                {
+                    <div class="task-comments-pane">
+                        <FluentLabel Typo="Typography.H5">Activity & Comments (@(_selectedTaskComments.Count))</FluentLabel>
+
+                        <div class="comments-thread">
+                            @if (_selectedTaskComments.Count == 0)
+                            {
+                                <div class="no-comments-placeholder">No comments yet. Start the discussion below.</div>
+                            }
+                            else
+                            {
+                                @foreach (var c in _selectedTaskComments)
+                                {
+                                    <div class="comment-bubble">
+                                        <div class="comment-bubble-header">
+                                            <span class="comment-author">@c.AuthorName</span>
+                                            <span class="comment-time">@TimeZoneService.FormatDateTime(c.CreatedAtUtc, "MMM dd, yyyy HH:mm")</span>
+                                        </div>
+                                        <div class="comment-body">@c.CommentText</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Add Comment Form -->
+                        <div class="add-comment-box">
+                            <FluentTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Style="width: 100%;" />
+                            <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 8px; align-self: flex-end;" OnClick="PostCommentAsync" Loading="@_isPostingComment">
+                                Post Comment
+                            </FluentButton>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Manage Milestones Modal -->
+@if (_showMilestonesModal)
+{
+    <div class="modal-backdrop" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <FluentLabel Typo="Typography.H4">Project Milestones & Delivery Cadence</FluentLabel>
                 <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
             </div>
 
-            <div class="modal-body-split">
-                <!-- Left Pane: Task Details & Editing -->
-                <div class="modal-pane-left">
-                    <FluentTextInput @bind-Value="_selectedTask.Title" Label="Title" Style="width: 100%;" />
-
-                    <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="4" Style="width: 100%; margin-top: 12px;" />
-
-                    <div class="modal-grid-row" style="margin-top: 12px;">
-                        <FluentSelect TOption="DataListItem<UserTaskPriority>"
-                                      TValue="string"
-                                      Items="@(DataListExtensions.GetDataListItems<UserTaskPriority>())"
-                                      OptionText="@(i => i.DisplayName)"
-                                      OptionValue="@(i => i.Code)"
-                                      @bind-Value:get="_selectedTask.Priority.ToString()"
-                                      @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _selectedTask.Priority = p; }"
-                                      Label="Priority" Style="width: 100%;" />
-
-                        <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date" Style="width: 100%;" />
-                    </div>
-
-                    <div class="modal-grid-row" style="margin-top: 12px;">
-                        <FluentSelect TOption="DataListItem<UserTaskStatus>"
-                                      TValue="string"
-                                      Items="@(DataListExtensions.GetDataListItems<UserTaskStatus>())"
-                                      OptionText="@(i => i.DisplayName)"
-                                      OptionValue="@(i => i.Code)"
-                                      @bind-Value:get="_selectedTask.Status.ToString()"
-                                      @bind-Value:set="code => { if (Enum.TryParse<UserTaskStatus>(code, out var s)) _selectedTask.Status = s; }"
-                                      Label="Status" Style="width: 100%;" />
-
-                        <FluentTextInput @bind-Value="_selectedTask.AssigneeEmails"
-                                         Label="Assignees"
-                                         Placeholder="email1@co.com; email2@co.com"
-                                         Style="width: 100%;" />
-                    </div>
-
-                    <FluentTextInput @bind-Value="_selectedTask.Labels"
-                                     Label="Labels"
-                                     Placeholder="UI, Release-1.0"
-                                     Style="width: 100%; margin-top: 12px;" />
-
-                    <div style="display: flex; gap: 8px; margin-top: 20px;">
-                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
-                            Save Changes
-                        </FluentButton>
-
-                        @if (_selectedTask.IsClosed)
+            <div class="modal-body">
+                <div class="milestones-manager-layout">
+                    <!-- Milestones List -->
+                    <div class="milestones-list-section">
+                        <FluentLabel Typo="Typography.H5">Configured Milestones (@_milestones.Count)</FluentLabel>
+                        @if (_milestones.Count == 0)
                         {
-                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="ReopenSelectedTaskAsync">
-                                Reopen Task
-                            </FluentButton>
+                            <div class="no-items-placeholder">No milestones defined for this project yet. Create one below!</div>
                         }
                         else
                         {
-                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseSelectedTaskAsync">
-                                Mark as Closed
-                            </FluentButton>
-                        }
-                    </div>
-                </div>
-
-                <!-- Right Pane: Jira-Style Discussion Comments Thread -->
-                <div class="modal-pane-right">
-                    <FluentLabel Typo="Typography.H5">Activity & Comments (@(_selectedTaskComments.Count))</FluentLabel>
-
-                    <div class="comments-thread">
-                        @if (_selectedTaskComments.Count == 0)
-                        {
-                            <div class="no-comments-placeholder">No comments yet. Start the discussion below.</div>
-                        }
-                        else
-                        {
-                            @foreach (var c in _selectedTaskComments)
+                            @foreach (var m in _milestonesHealth)
                             {
-                                <div class="comment-bubble">
-                                    <div class="comment-bubble-header">
-                                        <span class="comment-author">@c.AuthorName</span>
-                                        <span class="comment-time">@TimeZoneService.FormatDateTime(c.CreatedAtUtc, "MMM dd, yyyy HH:mm")</span>
+                                <div class="milestone-card">
+                                    <div class="milestone-card-main">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <strong>@m.MilestoneName</strong>
+                                            <span class="milestone-status-badge milestone-status-@m.Status.ToString().ToLowerInvariant()">
+                                                @m.Status
+                                            </span>
+                                        </div>
+
+                                        <div class="milestone-meta-dates">
+                                            <span>📅 @m.StartDateUtc.ToString("yyyy-MM-dd") → @m.EndDateUtc.ToString("yyyy-MM-dd")</span>
+                                            <span>(@(m.DaysRemaining >= 0 ? $"{m.DaysRemaining} days remaining" : $"{Math.Abs(m.DaysRemaining)} days overdue"))</span>
+                                        </div>
+
+                                        <div class="milestone-progress-row">
+                                            <span>Tasks: @m.CompletedTasks / @m.TotalTasks (@m.ProgressPercentage%)</span>
+                                            @if (m.ActiveBlockersCount > 0)
+                                            {
+                                                <span class="text-danger">⛔ @m.ActiveBlockersCount Blockers</span>
+                                            }
+                                        </div>
+
+                                        @if (m.RiskReasons.Count > 0)
+                                        {
+                                            <div class="milestone-risk-alert">
+                                                @foreach (var rr in m.RiskReasons)
+                                                {
+                                                    <div>• @rr</div>
+                                                }
+                                            </div>
+                                        }
                                     </div>
-                                    <div class="comment-body">@c.CommentText</div>
+
+                                    <div class="milestone-card-actions">
+                                        @if (m.Status != MilestoneStatus.Completed)
+                                        {
+                                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                                          OnClick="@(() => SignOffMilestoneAsync(m.MilestoneId))"
+                                                          Title="Sign off and mark milestone as completed">
+                                                Sign-Off & Complete
+                                            </FluentButton>
+                                        }
+                                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                      IconStart="@(new Icons.Regular.Size16.Delete())"
+                                                      OnClick="@(() => DeleteMilestoneAsync(m.MilestoneId))"
+                                                      Title="Delete Milestone" />
+                                    </div>
                                 </div>
                             }
                         }
                     </div>
 
-                    <!-- Add Comment Form -->
-                    <div class="add-comment-box">
-                        <FluentTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Style="width: 100%;" />
-                        <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 8px; align-self: flex-end;" OnClick="PostCommentAsync" Loading="@_isPostingComment">
-                            Post Comment
+                    <!-- Add Milestone Form -->
+                    <div class="milestone-add-section">
+                        <FluentLabel Typo="Typography.H5">Create New Milestone</FluentLabel>
+
+                        <FluentTextInput @bind-Value="_newMilestone.Name" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Style="width: 100%; margin-top: 8px;" />
+
+                        <FluentTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Style="width: 100%; margin-top: 8px;" />
+
+                        <div class="modal-grid-row" style="margin-top: 8px;">
+                            <FluentDatePicker @bind-Value="_newMilestoneStartDate" Label="Start Date (UTC)" Style="width: 100%;" />
+                            <FluentDatePicker @bind-Value="_newMilestoneEndDate" Label="End Date (UTC)" Style="width: 100%;" />
+                        </div>
+
+                        @if (_milestones.Count > 0)
+                        {
+                            <div style="margin-top: 8px;">
+                                <FluentSelect TOption="ProjectMilestoneEntity"
+                                              TValue="string"
+                                              Items="@_milestones"
+                                              OptionText="@(m => $"{m.Name} (Ends {m.EndDateUtc:yyyy-MM-dd})")"
+                                              OptionValue="@(m => m.Id.ToString())"
+                                              @bind-Value="_newMilestonePredecessorId"
+                                              Label="Predecessor Milestone (Optional Dependency)" Style="width: 100%;" />
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(_milestoneErrorMessage))
+                        {
+                            <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-top: 8px;">
+                                @_milestoneErrorMessage
+                            </FluentMessageBar>
+                        }
+
+                        <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 14px;" OnClick="CreateMilestoneAsync" Loading="@_isCreatingMilestone">
+                            Create Milestone
                         </FluentButton>
                     </div>
                 </div>
@@ -316,7 +675,7 @@ else
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
         flex-wrap: wrap;
         gap: 1rem;
     }
@@ -331,23 +690,77 @@ else
     .tasks-page-header-actions {
         display: flex;
         align-items: flex-end;
-        gap: 12px;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
-    .metrics-bar {
-        display: flex;
-        align-items: center;
+    /* Live Project Health Bar */
+    .health-kpi-container {
         background-color: var(--neutral-layer-1, #ffffff);
         border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
         border-radius: 8px;
-        padding: 0.75rem 1.5rem;
+        padding: 0.85rem 1.5rem;
         margin-bottom: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .health-main-kpis {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
         gap: 2rem;
     }
 
-    .metric-item {
+    .health-rating-box {
         display: flex;
         flex-direction: column;
+        gap: 4px;
+    }
+
+    .health-pill {
+        display: inline-flex;
+        align-items: center;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 4px 10px;
+        border-radius: 12px;
+    }
+
+    .health-pill-ontrack { background-color: #e6f4ea; color: #137333; }
+    .health-pill-atrisk { background-color: #fef7e0; color: #b06000; }
+    .health-pill-critical { background-color: #fce8e6; color: #c5221f; }
+
+    .health-metric-box {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .progress-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 160px;
+    }
+
+    .progress-text {
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .progress-bar-bg {
+        width: 100%;
+        height: 6px;
+        background-color: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background-color: #107c41;
+        transition: width 0.3s ease;
     }
 
     .metric-count {
@@ -357,7 +770,7 @@ else
     }
 
     .metric-label {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: var(--neutral-foreground-hint, #707070);
     }
 
@@ -367,9 +780,27 @@ else
         background-color: var(--neutral-stroke-layer-rest, #e0e0e0);
     }
 
-    .text-danger { color: #d13438; }
-    .text-warning { color: #ff8c00; }
-    .text-success { color: #107c41; }
+    .health-risk-reasons-panel {
+        background-color: #fff8f0;
+        border-left: 4px solid #ff8c00;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0 4px 4px 0;
+        font-size: 0.85rem;
+    }
+
+    .risk-reasons-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #b06000;
+        margin-bottom: 4px;
+    }
+
+    .risk-reasons-list {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: #424242;
+    }
 
     /* Task Card Styles */
     .task-card {
@@ -385,17 +816,46 @@ else
     .task-card-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .blocker-pill {
+        background-color: #fce8e6;
+        color: #c5221f;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 4px;
+        border: 1px solid #f5c2c7;
+    }
+
+    .milestone-pill {
+        background-color: #e8f0fe;
+        color: #1a73e8;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 4px;
+    }
+
+    .reporter-pill {
+        font-size: 0.7rem;
+        color: #707070;
+        background-color: #f5f5f5;
+        padding: 1px 5px;
+        border-radius: 4px;
     }
 
     .task-card-due {
         font-size: 0.75rem;
         color: var(--neutral-foreground-hint, #707070);
+        white-space: nowrap;
     }
 
     .due-overdue {
         color: #d13438;
-        font-weight: 600;
+        font-weight: 700;
     }
 
     .task-card-title {
@@ -443,7 +903,11 @@ else
         font-style: italic;
     }
 
-    /* Modal Backdrop & Dialog Styles */
+    .text-danger { color: #d13438; }
+    .text-info { color: #0078d4; }
+    .text-muted { color: #707070; }
+
+    /* Modal Styles */
     .modal-backdrop {
         position: fixed;
         top: 0;
@@ -481,31 +945,33 @@ else
         border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
     }
 
-    .modal-body {
+    .modal-tabs-header {
+        display: flex;
+        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        background-color: #faf9f8;
+        padding: 0 1rem;
+    }
+
+    .modal-tab-btn {
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #605e5c;
+        cursor: pointer;
+    }
+
+    .modal-tab-btn.active {
+        color: #0078d4;
+        border-bottom-color: #0078d4;
+    }
+
+    .modal-body-tab-content {
         padding: 1.5rem;
+        max-height: calc(90vh - 140px);
         overflow-y: auto;
-    }
-
-    .modal-body-split {
-        display: flex;
-        gap: 1.5rem;
-        padding: 1.5rem;
-        max-height: calc(90vh - 120px);
-        overflow-y: auto;
-    }
-
-    .modal-pane-left {
-        flex: 1 1 50%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .modal-pane-right {
-        flex: 1 1 50%;
-        display: flex;
-        flex-direction: column;
-        border-left: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
-        padding-left: 1.5rem;
     }
 
     .modal-grid-row {
@@ -513,24 +979,97 @@ else
         gap: 1rem;
     }
 
-    .modal-footer {
+    .task-action-toolbar {
         display: flex;
-        justify-content: flex-end;
         gap: 8px;
-        padding: 1rem 1.5rem;
-        border-top: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        flex-wrap: wrap;
     }
 
-    /* Comments Thread Styles */
+    /* Dependencies Styles */
+    .section-hint {
+        font-size: 0.8rem;
+        color: #707070;
+        margin-top: 2px;
+        margin-bottom: 12px;
+    }
+
+    .dependency-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .dependency-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #faf9f8;
+        border: 1px solid #e1dfdd;
+        border-radius: 6px;
+        padding: 0.65rem 1rem;
+    }
+
+    .dep-type-tag {
+        background-color: #e8f0fe;
+        color: #1a73e8;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+
+    .dep-meta {
+        font-size: 0.75rem;
+        color: #707070;
+        margin-top: 3px;
+    }
+
+    .dependency-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dep-status-resolved {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #137333;
+    }
+
+    .dep-status-overdue {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #c5221f;
+    }
+
+    .dep-status-active {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #b06000;
+    }
+
+    .add-dependency-box {
+        background-color: #f3f2f1;
+        padding: 1rem;
+        border-radius: 6px;
+    }
+
+    .no-items-placeholder {
+        padding: 1.5rem;
+        text-align: center;
+        color: #8a8a8a;
+        font-style: italic;
+    }
+
+    /* Comments Styles */
     .comments-thread {
-        flex: 1;
+        max-height: 300px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
         margin: 1rem 0;
-        max-height: 360px;
-        padding-right: 0.5rem;
     }
 
     .comment-bubble {
@@ -549,11 +1088,10 @@ else
 
     .comment-author {
         font-weight: 600;
-        color: var(--neutral-foreground-rest, #242424);
     }
 
     .comment-time {
-        color: var(--neutral-foreground-hint, #8a8a8a);
+        color: #8a8a8a;
     }
 
     .comment-body {
@@ -561,19 +1099,93 @@ else
         white-space: pre-wrap;
     }
 
-    .no-comments-placeholder {
-        padding: 2rem 1rem;
-        text-align: center;
-        color: #8a8a8a;
-        font-size: 0.85rem;
-        font-style: italic;
-    }
-
     .add-comment-box {
         display: flex;
         flex-direction: column;
-        border-top: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        border-top: 1px solid #e0e0e0;
         padding-top: 1rem;
+    }
+
+    /* Milestones Manager Layout */
+    .milestones-manager-layout {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .milestones-list-section {
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .milestone-add-section {
+        flex: 2;
+        background-color: #faf9f8;
+        border: 1px solid #e1dfdd;
+        border-radius: 6px;
+        padding: 1rem;
+    }
+
+    .milestone-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        background-color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .milestone-card-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .milestone-status-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    .milestone-status-planned { background-color: #edebe9; color: #323130; }
+    .milestone-status-active { background-color: #e8f0fe; color: #1a73e8; }
+    .milestone-status-completed { background-color: #e6f4ea; color: #137333; }
+    .milestone-status-atrisk { background-color: #fef7e0; color: #b06000; }
+    .milestone-status-cancelled { background-color: #f3f2f1; color: #a19f9d; }
+
+    .milestone-meta-dates {
+        font-size: 0.75rem;
+        color: #707070;
+    }
+
+    .milestone-progress-row {
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        gap: 12px;
+    }
+
+    .milestone-risk-alert {
+        background-color: #fff8f0;
+        border-left: 3px solid #ff8c00;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        color: #b06000;
+        margin-top: 4px;
+    }
+
+    .milestone-card-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
     }
 </style>
 
@@ -581,25 +1193,71 @@ else
     [Parameter]
     public Guid ProjectId { get; set; }
 
+    public sealed record MilestoneFilterItem(string Value, string Label);
+    public sealed record MilestoneOptionItem(string Id, string Label);
+
     private bool _isLoading = true;
     private bool _isSaving = false;
     private bool _isPostingComment = false;
+    private bool _isAddingDependency = false;
+    private bool _isCreatingMilestone = false;
     private DateTime _today = DateTime.UtcNow.Date;
 
     private ProjectEntity? _currentProject;
     private List<ProjectEntity> _availableProjects = [];
     private List<UserTaskEntity> _tasks = [];
+    private List<ProjectMilestoneEntity> _milestones = [];
+    private List<MilestoneHealthSummaryDto> _milestonesHealth = [];
+    private ProjectHealthSummaryDto _projectHealth = new();
+    private Dictionary<Guid, string> _milestoneLookup = new();
+    private HashSet<Guid> _activeBlockedTaskIds = [];
+
     private List<SwimlaneColumn<UserTaskEntity>> _columns = [];
+    private List<MilestoneFilterItem> _milestoneFilterOptions = [];
+    private List<MilestoneOptionItem> _milestoneSelectOptions = [];
+    private string _selectedMilestoneFilter = "all";
 
     // Modal state
     private bool _showCreateModal = false;
+    private bool _showMilestonesModal = false;
+    private string _createErrorMessage = string.Empty;
+    private string _milestoneErrorMessage = string.Empty;
+
     private UserTaskEntity _newTask = new();
     private DateTime? _newTaskDueDate;
+    private string _newTaskMilestoneIdString = string.Empty;
 
     private UserTaskEntity? _selectedTask;
     private DateTime? _selectedTaskDueDate;
+    private string _selectedTaskMilestoneIdString = string.Empty;
+    private string _selectedModalTab = "details";
     private List<UserTaskCommentEntity> _selectedTaskComments = [];
+    private List<TaskDependencyItemDto> _selectedTaskDependencies = [];
+    private List<UserTaskEntity> _otherProjectTasks = [];
     private string _newCommentText = string.Empty;
+
+    // Dependency form
+    private string _newDepTargetTaskId = string.Empty;
+    private TaskDependencyType _newDepType = TaskDependencyType.Blocks;
+    private DateTime? _newDepResolveByUtc;
+    private string? _newDepNotes;
+
+    // Milestone create form
+    private ProjectMilestoneEntity _newMilestone = new();
+    private DateTime? _newMilestoneStartDate;
+    private DateTime? _newMilestoneEndDate;
+    private string _newMilestonePredecessorId = string.Empty;
+
+    private IReadOnlyList<UserTaskEntity> FilteredTasks
+    {
+        get
+        {
+            if (_selectedMilestoneFilter == "all") return _tasks;
+            if (_selectedMilestoneFilter == "adhoc") return _tasks.Where(t => t.MilestoneId == null).ToList();
+            if (Guid.TryParse(_selectedMilestoneFilter, out var mid)) return _tasks.Where(t => t.MilestoneId == mid).ToList();
+            return _tasks;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -624,12 +1282,12 @@ else
 
         _columns = new List<SwimlaneColumn<UserTaskEntity>>
         {
-            new("Past Due", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date < _today, "#d13438", "Overdue"),
-            new("Due Today", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == _today, "#ff8c00", "Today's priority"),
-            new("Due Tomorrow", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == tomorrow, "#0078d4", "Next 24 hours"),
-            new("Due in 2 Days", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.DueDate.HasValue && t.DueDate.Value.Date == in2Days, "#8764b8", "Upcoming"),
-            new("Due Later", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && (!t.DueDate.HasValue || t.DueDate.Value.Date > in2Days), "#605e5c", "Future pipeline"),
-            new("Closed", t => t.IsClosed || t.Status == UserTaskStatus.Closed, "#107c41", "Completed work")
+            new("Past Due", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled && t.DueDate.Date < _today, "#d13438", "Overdue"),
+            new("Due Today", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled && t.DueDate.Date == _today, "#ff8c00", "Today's priority"),
+            new("Due Tomorrow", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled && t.DueDate.Date == tomorrow, "#0078d4", "Next 24 hours"),
+            new("Due in 2 Days", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled && t.DueDate.Date == in2Days, "#8764b8", "Upcoming"),
+            new("Due Later", t => !t.IsClosed && t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled && t.DueDate.Date > in2Days, "#605e5c", "Future pipeline"),
+            new("Closed", t => t.IsClosed || t.Status == UserTaskStatus.Closed || t.Status == UserTaskStatus.Cancelled, "#107c41", "Completed work")
         };
     }
 
@@ -666,12 +1324,73 @@ else
                 ProjectId = _currentProject.Id;
             }
 
+            // Load tasks
             var result = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
             _tasks = result.ToList();
+
+            // Load milestones & health
+            _milestones = (await MilestoneService.GetMilestonesByProjectAsync(_currentProject.Id)).ToList();
+            _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Name);
+            _milestonesHealth = (await HealthService.GetProjectMilestonesHealthAsync(_currentProject.Id)).ToList();
+            _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
+
+            // Compute active blockers
+            await RefreshActiveBlockersAsync();
+
+            // Build filter options
+            BuildMilestoneOptions();
         }
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task RefreshActiveBlockersAsync()
+    {
+        if (_currentProject is null) return;
+
+        var dependencies = await DbContext.TaskDependencies
+            .AsNoTracking()
+            .Where(d => d.ProjectId == _currentProject.Id && d.DependencyType == TaskDependencyType.Blocks)
+            .ToListAsync();
+
+        var taskLookup = _tasks.ToDictionary(t => t.Id);
+        _activeBlockedTaskIds = new HashSet<Guid>();
+
+        foreach (var dep in dependencies)
+        {
+            if (taskLookup.TryGetValue(dep.DependsOnTaskId, out var blocker))
+            {
+                if (!blocker.IsClosed)
+                {
+                    _activeBlockedTaskIds.Add(dep.TaskId);
+                }
+            }
+        }
+    }
+
+    private void BuildMilestoneOptions()
+    {
+        _milestoneFilterOptions = new List<MilestoneFilterItem>
+        {
+            new("all", "All Deliverables"),
+            new("adhoc", "Ad-hoc Tasks (No Milestone)")
+        };
+
+        foreach (var m in _milestones)
+        {
+            _milestoneFilterOptions.Add(new(m.Id.ToString(), $"🚩 {m.Name} ({m.Status})"));
+        }
+
+        _milestoneSelectOptions = new List<MilestoneOptionItem>
+        {
+            new(string.Empty, "(None - Ad-hoc Task)")
+        };
+
+        foreach (var m in _milestones)
+        {
+            _milestoneSelectOptions.Add(new(m.Id.ToString(), m.Name));
         }
     }
 
@@ -685,40 +1404,78 @@ else
 
     private void OpenCreateTaskModal()
     {
+        _createErrorMessage = string.Empty;
         _newTask = new UserTaskEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
             Priority = UserTaskPriority.Medium,
             Status = UserTaskStatus.Open
         };
-        _newTaskDueDate = DateTime.UtcNow.Date.AddDays(1);
+        _newTaskDueDate = DateTime.UtcNow.Date.AddDays(7);
+        _newTaskMilestoneIdString = _selectedMilestoneFilter != "all" && _selectedMilestoneFilter != "adhoc"
+            ? _selectedMilestoneFilter
+            : string.Empty;
+
         _showCreateModal = true;
+    }
+
+    private void OpenMilestonesModal()
+    {
+        _milestoneErrorMessage = string.Empty;
+        _newMilestone = new ProjectMilestoneEntity
+        {
+            ProjectId = _currentProject?.Id ?? ProjectId,
+            OrderIndex = _milestones.Count + 1
+        };
+        _newMilestoneStartDate = DateTime.UtcNow.Date;
+        _newMilestoneEndDate = DateTime.UtcNow.Date.AddDays(14);
+        _newMilestonePredecessorId = string.Empty;
+        _showMilestonesModal = true;
     }
 
     private void CloseModals()
     {
         _showCreateModal = false;
+        _showMilestonesModal = false;
         _selectedTask = null;
         _selectedTaskComments.Clear();
+        _selectedTaskDependencies.Clear();
+        _otherProjectTasks.Clear();
         _newCommentText = string.Empty;
+        _selectedModalTab = "details";
     }
 
     private async Task SaveNewTaskAsync()
     {
-        if (string.IsNullOrWhiteSpace(_newTask.Title)) return;
+        if (string.IsNullOrWhiteSpace(_newTask.Title))
+        {
+            _createErrorMessage = "Task title is mandatory.";
+            return;
+        }
+
+        if (!_newTaskDueDate.HasValue)
+        {
+            _createErrorMessage = "Due date is mandatory for all tasks.";
+            return;
+        }
 
         _isSaving = true;
+        _createErrorMessage = string.Empty;
         try
         {
             _newTask.ProjectId = _currentProject!.Id;
-            _newTask.DueDate = _newTaskDueDate;
+            _newTask.DueDate = _newTaskDueDate.Value;
+            _newTask.MilestoneId = Guid.TryParse(_newTaskMilestoneIdString, out var mid) ? mid : null;
 
             var result = await TaskService.CreateTaskAsync(_newTask);
             if (result.IsSuccess)
             {
                 CloseModals();
-                var fresh = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
-                _tasks = fresh.ToList();
+                await ReloadDataAsync();
+            }
+            else
+            {
+                _createErrorMessage = result.Error ?? "Failed to create task.";
             }
         }
         finally
@@ -734,24 +1491,35 @@ else
         if (_selectedTask is not null)
         {
             _selectedTaskDueDate = _selectedTask.DueDate;
+            _selectedTaskMilestoneIdString = _selectedTask.MilestoneId?.ToString() ?? string.Empty;
             _selectedTaskComments = (await TaskService.GetCommentsAsync(_currentProject.Id, _selectedTask.Id)).ToList();
+            _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
+            _otherProjectTasks = _tasks.Where(t => t.Id != _selectedTask.Id).ToList();
+
+            _newDepTargetTaskId = _otherProjectTasks.FirstOrDefault()?.Id.ToString() ?? string.Empty;
+            _newDepType = TaskDependencyType.Blocks;
+            _newDepResolveByUtc = _selectedTask.DueDate;
+            _newDepNotes = string.Empty;
+            _selectedModalTab = "details";
         }
     }
 
     private async Task UpdateSelectedTaskAsync()
     {
         if (_selectedTask is null) return;
+        if (!_selectedTaskDueDate.HasValue) return;
 
         _isSaving = true;
         try
         {
-            _selectedTask.DueDate = _selectedTaskDueDate;
+            _selectedTask.DueDate = _selectedTaskDueDate.Value;
+            _selectedTask.MilestoneId = Guid.TryParse(_selectedTaskMilestoneIdString, out var mid) ? mid : null;
+
             var result = await TaskService.UpdateTaskAsync(_selectedTask);
             if (result.IsSuccess)
             {
                 CloseModals();
-                var fresh = await TaskService.GetTasksByProjectAsync(_currentProject!.Id);
-                _tasks = fresh.ToList();
+                await ReloadDataAsync();
             }
         }
         finally
@@ -768,8 +1536,19 @@ else
         if (result.IsSuccess)
         {
             CloseModals();
-            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
-            _tasks = fresh.ToList();
+            await ReloadDataAsync();
+        }
+    }
+
+    private async Task CancelSelectedTaskAsync()
+    {
+        if (_selectedTask is null || _currentProject is null) return;
+
+        var result = await TaskService.CancelTaskAsync(_currentProject.Id, _selectedTask.Id);
+        if (result.IsSuccess)
+        {
+            CloseModals();
+            await ReloadDataAsync();
         }
     }
 
@@ -781,8 +1560,49 @@ else
         if (result.IsSuccess)
         {
             CloseModals();
-            var fresh = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
-            _tasks = fresh.ToList();
+            await ReloadDataAsync();
+        }
+    }
+
+    private async Task AddDependencyAsync()
+    {
+        if (_selectedTask is null || _currentProject is null) return;
+        if (!Guid.TryParse(_newDepTargetTaskId, out var targetId)) return;
+
+        _isAddingDependency = true;
+        try
+        {
+            var result = await TaskService.AddTaskDependencyAsync(
+                _currentProject.Id,
+                _selectedTask.Id,
+                targetId,
+                _newDepType,
+                _newDepResolveByUtc,
+                _newDepNotes);
+
+            if (result.IsSuccess)
+            {
+                _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
+                await RefreshActiveBlockersAsync();
+                _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
+            }
+        }
+        finally
+        {
+            _isAddingDependency = false;
+        }
+    }
+
+    private async Task RemoveDependencyAsync(Guid depId)
+    {
+        if (_selectedTask is null || _currentProject is null) return;
+
+        var result = await TaskService.RemoveTaskDependencyAsync(_currentProject.Id, depId);
+        if (result.IsSuccess)
+        {
+            _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
+            await RefreshActiveBlockersAsync();
+            _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
         }
     }
 
@@ -804,6 +1624,90 @@ else
         {
             _isPostingComment = false;
         }
+    }
+
+    private async Task CreateMilestoneAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newMilestone.Name))
+        {
+            _milestoneErrorMessage = "Milestone name is required.";
+            return;
+        }
+
+        if (!_newMilestoneStartDate.HasValue || !_newMilestoneEndDate.HasValue)
+        {
+            _milestoneErrorMessage = "Start and End dates are required.";
+            return;
+        }
+
+        if (_newMilestoneEndDate.Value < _newMilestoneStartDate.Value)
+        {
+            _milestoneErrorMessage = "End date cannot precede Start date.";
+            return;
+        }
+
+        _isCreatingMilestone = true;
+        _milestoneErrorMessage = string.Empty;
+        try
+        {
+            _newMilestone.ProjectId = _currentProject!.Id;
+            _newMilestone.StartDateUtc = _newMilestoneStartDate.Value;
+            _newMilestone.EndDateUtc = _newMilestoneEndDate.Value;
+            _newMilestone.Status = MilestoneStatus.Active;
+
+            var res = await MilestoneService.CreateMilestoneAsync(_newMilestone);
+            if (res.IsSuccess)
+            {
+                if (Guid.TryParse(_newMilestonePredecessorId, out var predId) && predId != Guid.Empty)
+                {
+                    await MilestoneService.AddMilestoneDependencyAsync(_newMilestone.Id, predId);
+                }
+
+                _showMilestonesModal = false;
+                await ReloadDataAsync();
+            }
+            else
+            {
+                _milestoneErrorMessage = res.Error ?? "Failed to create milestone.";
+            }
+        }
+        finally
+        {
+            _isCreatingMilestone = false;
+        }
+    }
+
+    private async Task SignOffMilestoneAsync(Guid mid)
+    {
+        var res = await MilestoneService.CompleteMilestoneAsync(mid);
+        if (res.IsSuccess)
+        {
+            await ReloadDataAsync();
+        }
+    }
+
+    private async Task DeleteMilestoneAsync(Guid mid)
+    {
+        var res = await MilestoneService.DeleteMilestoneAsync(mid);
+        if (res.IsSuccess)
+        {
+            await ReloadDataAsync();
+        }
+    }
+
+    private async Task ReloadDataAsync()
+    {
+        if (_currentProject is null) return;
+        var freshTasks = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
+        _tasks = freshTasks.ToList();
+
+        _milestones = (await MilestoneService.GetMilestonesByProjectAsync(_currentProject.Id)).ToList();
+        _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Name);
+        _milestonesHealth = (await HealthService.GetProjectMilestonesHealthAsync(_currentProject.Id)).ToList();
+        _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
+
+        await RefreshActiveBlockersAsync();
+        BuildMilestoneOptions();
     }
 
     private static string GetPriorityColor(UserTaskPriority priority) => priority switch

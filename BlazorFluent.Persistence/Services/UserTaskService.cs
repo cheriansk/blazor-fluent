@@ -71,11 +71,12 @@ public class UserTaskService : IUserTaskService
                 task.TenantId = _tenantContext.TenantId ?? string.Empty;
             }
 
-            if (task.Status == UserTaskStatus.Closed)
+            // Automatically stamp creator as reporter
+            if (string.IsNullOrWhiteSpace(task.ReporterEmail))
             {
-                task.IsClosed = true;
-                task.ClosedAtUtc = DateTime.UtcNow;
-                task.ClosedBy = _currentUser.UserId;
+                task.ReporterEmail = !string.IsNullOrWhiteSpace(_currentUser.Email)
+                    ? _currentUser.Email
+                    : (!string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : "system");
             }
 
             _context.Tasks.Add(task);
@@ -122,8 +123,6 @@ public class UserTaskService : IUserTaskService
             // 3. Authorize caller against verified database project
             await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "UpdateTask", ct: ct);
 
-            var wasClosed = task.IsClosed;
-
             task.Title = updated.Title;
             task.Description = updated.Description;
             task.Priority = updated.Priority;
@@ -131,19 +130,7 @@ public class UserTaskService : IUserTaskService
             task.DueDate = updated.DueDate;
             task.AssigneeEmails = updated.AssigneeEmails;
             task.Labels = updated.Labels;
-
-            if (updated.Status == UserTaskStatus.Closed && !wasClosed)
-            {
-                task.IsClosed = true;
-                task.ClosedAtUtc = DateTime.UtcNow;
-                task.ClosedBy = _currentUser.UserId;
-            }
-            else if (updated.Status != UserTaskStatus.Closed && wasClosed)
-            {
-                task.IsClosed = false;
-                task.ClosedAtUtc = null;
-                task.ClosedBy = null;
-            }
+            task.MilestoneId = updated.MilestoneId;
 
             await _context.SaveChangesAsync(ct);
             return Result<UserTaskEntity>.Success(task);
@@ -170,9 +157,6 @@ public class UserTaskService : IUserTaskService
             if (task is null) return Result<bool>.Failure("Task not found.");
 
             task.Status = UserTaskStatus.Closed;
-            task.IsClosed = true;
-            task.ClosedAtUtc = DateTime.UtcNow;
-            task.ClosedBy = _currentUser.UserId;
 
             await _context.SaveChangesAsync(ct);
             return Result<bool>.Success(true);
@@ -199,9 +183,6 @@ public class UserTaskService : IUserTaskService
             if (task is null) return Result<bool>.Failure("Task not found.");
 
             task.Status = UserTaskStatus.Open;
-            task.IsClosed = false;
-            task.ClosedAtUtc = null;
-            task.ClosedBy = null;
 
             await _context.SaveChangesAsync(ct);
             return Result<bool>.Success(true);
@@ -210,6 +191,33 @@ public class UserTaskService : IUserTaskService
         {
             _logger.LogError(ex, "Failed to reopen task {Id}", taskId);
             return Result<bool>.Failure($"Failed to reopen task: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<bool>> CancelTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _projectAuth.EnsureCanEditAsync(projectId, operation: "CancelTask", ct: ct);
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+            var task = await _context.Tasks
+                .AsTracking()
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
+
+            if (task is null) return Result<bool>.Failure("Task not found.");
+
+            task.Status = UserTaskStatus.Cancelled;
+
+            await _context.SaveChangesAsync(ct);
+            _logger.LogInformation("Task '{Title}' ({Id}) marked Cancelled in project {ProjectId}", task.Title, task.Id, projectId);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to cancel task {Id}", taskId);
+            return Result<bool>.Failure($"Failed to cancel task: {ex.Message}");
         }
     }
 
@@ -270,12 +278,140 @@ public class UserTaskService : IUserTaskService
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
+    {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskDependencies", ct: ct);
+
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+        var dependencies = await _context.TaskDependencies
+            .AsNoTracking()
+            .Where(d => d.TenantId == tenantId && d.ProjectId == projectId && d.TaskId == taskId)
+            .ToListAsync(ct);
+
+        if (dependencies.Count == 0) return Array.Empty<TaskDependencyItemDto>();
+
+        var dependsOnIds = dependencies.Select(d => d.DependsOnTaskId).Distinct().ToList();
+        var targetTasks = await _context.Tasks
+            .AsNoTracking()
+            .Where(t => t.TenantId == tenantId && t.ProjectId == projectId && dependsOnIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, ct);
+
+        var result = new List<TaskDependencyItemDto>();
+        foreach (var dep in dependencies)
+        {
+            targetTasks.TryGetValue(dep.DependsOnTaskId, out var targetTask);
+            result.Add(new TaskDependencyItemDto
+            {
+                DependencyId = dep.Id,
+                TaskId = dep.TaskId,
+                DependsOnTaskId = dep.DependsOnTaskId,
+                DependsOnTaskTitle = targetTask?.Title ?? "Unknown Task",
+                DependsOnTaskStatus = targetTask?.Status ?? UserTaskStatus.Open,
+                DependsOnAssigneeEmails = targetTask?.AssigneeEmails ?? string.Empty,
+                DependsOnDueDate = targetTask?.DueDate,
+                DependencyType = dep.DependencyType,
+                ResolveByUtc = dep.ResolveByUtc
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<Result<bool>> AddTaskDependencyAsync(
+        Guid projectId,
+        Guid taskId,
+        Guid dependsOnTaskId,
+        TaskDependencyType dependencyType = TaskDependencyType.Blocks,
+        DateTime? resolveByUtc = null,
+        string? notes = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (taskId == dependsOnTaskId)
+            {
+                return Result<bool>.Failure("A task cannot depend on itself.");
+            }
+
+            await _projectAuth.EnsureCanEditAsync(projectId, operation: "AddTaskDependency", ct: ct);
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+            var task = await _context.Tasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
+
+            if (task == null) return Result<bool>.Failure("Source task not found in the project.");
+
+            var dependsOnTask = await _context.Tasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == dependsOnTaskId, ct);
+
+            if (dependsOnTask == null) return Result<bool>.Failure("Prerequisite task not found in the project.");
+
+            var exists = await _context.TaskDependencies
+                .AnyAsync(d => d.TenantId == tenantId && d.ProjectId == projectId && d.TaskId == taskId && d.DependsOnTaskId == dependsOnTaskId, ct);
+
+            if (exists) return Result<bool>.Failure("This dependency link already exists.");
+
+            var link = new TaskDependencyEntity
+            {
+                TenantId = tenantId,
+                ProjectId = projectId,
+                TaskId = taskId,
+                DependsOnTaskId = dependsOnTaskId,
+                DependencyType = dependencyType,
+                ResolveByUtc = resolveByUtc,
+                Notes = notes
+            };
+
+            _context.TaskDependencies.Add(link);
+            await _context.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Task dependency created: Task {TaskId} -> {DependsOnId} ({Type})", taskId, dependsOnTaskId, dependencyType);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add task dependency for task {TaskId}", taskId);
+            return Result<bool>.Failure($"Failed to add task dependency: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<bool>> RemoveTaskDependencyAsync(Guid projectId, Guid dependencyId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _projectAuth.EnsureCanEditAsync(projectId, operation: "RemoveTaskDependency", ct: ct);
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+            var link = await _context.TaskDependencies
+                .AsTracking()
+                .FirstOrDefaultAsync(d => d.TenantId == tenantId && d.ProjectId == projectId && d.Id == dependencyId, ct);
+
+            if (link == null) return Result<bool>.Failure("Dependency not found.");
+
+            _context.TaskDependencies.Remove(link);
+            await _context.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Task dependency {DependencyId} removed in project {ProjectId}", dependencyId, projectId);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove task dependency {DependencyId}", dependencyId);
+            return Result<bool>.Failure($"Failed to remove task dependency: {ex.Message}");
+        }
+    }
+
     private async Task NotifyAssigneesAsync(UserTaskEntity task, bool isNew, CancellationToken ct)
     {
         var emails = task.GetParsedAssigneeEmails();
         if (emails.Count == 0) return;
 
-        var dueDateFormatted = task.DueDate.HasValue ? task.DueDate.Value.ToString("yyyy-MM-dd") : "No due date";
+        var dueDateFormatted = task.DueDate.ToString("yyyy-MM-dd");
         var title = isNew ? $"New Task Assigned: {task.Title}" : $"Task Updated: {task.Title}";
         var message = $"You have been assigned to task '{task.Title}'. Priority: {task.Priority}, Due: {dueDateFormatted}.";
         var linkUrl = $"/projects/{task.ProjectId}/tasks";

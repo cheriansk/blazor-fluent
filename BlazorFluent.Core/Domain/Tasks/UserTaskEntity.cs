@@ -1,20 +1,26 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
-using BlazorFluent.Core.Domain.Tenancy;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
 /// <summary>
 /// Represents a work item or task strictly partitioned per-tenant and per-project.
-/// Supports multi-assignee tracking via semicolon-delimited emails and Jira-style tag labels.
+/// Supports multi-assignee tracking, reporter identity, mandatory due date,
+/// optional milestone linking (ad-hoc tasks supported), and derived unmapped completion metadata.
 /// </summary>
-public class UserTaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class UserTaskEntity : TenantAuditableEntity, IProjectScopedEntity
 {
     /// <summary>
     /// ID of the project to which this task belongs.
     /// Guarded by ProjectSecurityInterceptor and QueryFilters.Tenant.
     /// </summary>
     public Guid ProjectId { get; set; }
+
+    /// <summary>
+    /// Optional foreign key to a project milestone. Null indicates an ad-hoc task.
+    /// </summary>
+    public Guid? MilestoneId { get; set; }
 
     /// <summary>
     /// Concise headline title of the task. Required.
@@ -32,18 +38,25 @@ public class UserTaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoft
     public UserTaskPriority Priority { get; set; } = UserTaskPriority.Medium;
 
     /// <summary>
-    /// Current lifecycle status (Open, InProgress, Closed).
+    /// Current lifecycle status (Open, InProgress, Closed, Cancelled).
     /// </summary>
     public UserTaskStatus Status { get; set; } = UserTaskStatus.Open;
 
     /// <summary>
-    /// Target completion deadline. Drives swimlane column placement and daily Teams digest.
+    /// Target completion deadline (UTC). Mandatory for every task.
+    /// Drives cadence notifications (T-5, T-3, T-1, T-0, and daily overdue tracking).
     /// </summary>
-    public DateTime? DueDate { get; set; }
+    public DateTime DueDate { get; set; } = DateTime.UtcNow.AddDays(7);
+
+    /// <summary>
+    /// Email of the user who originated / created this task.
+    /// Automatically stamped from CurrentUser upon creation.
+    /// </summary>
+    public string ReporterEmail { get; set; } = string.Empty;
 
     /// <summary>
     /// Semicolon-delimited list of assignee email addresses (e.g. 'dev1@company.com; dev2@company.com').
-    /// Each assignee receives an automated in-app notification upon task creation.
+    /// Each assignee receives automated in-app notifications and cadence alerts.
     /// </summary>
     public string AssigneeEmails { get; set; } = string.Empty;
 
@@ -54,27 +67,29 @@ public class UserTaskEntity : TenantAuditableEntity, IProjectScopedEntity, ISoft
     public string Labels { get; set; } = string.Empty;
 
     /// <summary>
-    /// Flag indicating whether the task has been marked as completed/resolved.
+    /// Derived unmapped flag indicating whether the task is completed or cancelled.
+    /// Derived dynamically from Status (never stored as a redundant database column).
     /// </summary>
-    public bool IsClosed { get; set; }
+    [NotMapped]
+    public bool IsClosed => Status is UserTaskStatus.Closed or UserTaskStatus.Cancelled;
 
     /// <summary>
-    /// Timestamp when the task was moved to the Closed status.
+    /// Derived unmapped timestamp when the task was closed or cancelled.
+    /// Derived from the automatic audit stamp 'Updated' when IsClosed is true.
     /// </summary>
-    public DateTime? ClosedAtUtc { get; set; }
+    [NotMapped]
+    public DateTime? ClosedAtUtc => IsClosed ? Updated : null;
 
     /// <summary>
-    /// User identifier of the person who closed the task.
+    /// Derived unmapped identifier of the user who closed or cancelled the task.
+    /// Derived from the automatic audit stamp 'UpdatedBy' when IsClosed is true.
     /// </summary>
-    public string? ClosedBy { get; set; }
+    [NotMapped]
+    public string? ClosedBy => IsClosed ? UpdatedBy : null;
 
-    // --- ISoftDeletableEntity ---
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAtUtc { get; set; }
-    public string? DeletedBy { get; set; }
-
-    // --- Navigation Properties ---
-    public ProjectEntity? Project { get; set; }
+    /// <summary>
+    /// Navigation to Jira-style discussion comments thread.
+    /// </summary>
     public ICollection<UserTaskCommentEntity> Comments { get; set; } = new List<UserTaskCommentEntity>();
 
     /// <summary>

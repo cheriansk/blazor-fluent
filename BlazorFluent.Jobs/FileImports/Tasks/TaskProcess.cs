@@ -66,11 +66,10 @@ public class TaskProcess : IFileProcessor
                     Description = staged.Description,
                     Priority = priority,
                     Status = status,
-                    DueDate = staged.DueDate,
+                    DueDate = staged.DueDate ?? DateTime.UtcNow.AddDays(7),
+                    ReporterEmail = !string.IsNullOrWhiteSpace(file.CreatedBy) ? file.CreatedBy : "import-batch",
                     AssigneeEmails = staged.AssigneeEmails ?? string.Empty,
-                    Labels = staged.Labels ?? string.Empty,
-                    IsClosed = status == UserTaskStatus.Closed,
-                    ClosedAtUtc = status == UserTaskStatus.Closed ? DateTime.UtcNow : null
+                    Labels = staged.Labels ?? string.Empty
                 };
 
                 liveTasks.Add(liveTask);

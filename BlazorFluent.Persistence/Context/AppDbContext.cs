@@ -70,6 +70,9 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ImpersonationGrantEntity> ImpersonationGrants => Set<ImpersonationGrantEntity>();
     public DbSet<UserTaskEntity> Tasks => Set<UserTaskEntity>();
     public DbSet<UserTaskCommentEntity> TaskComments => Set<UserTaskCommentEntity>();
+    public DbSet<ProjectMilestoneEntity> Milestones => Set<ProjectMilestoneEntity>();
+    public DbSet<MilestoneDependencyEntity> MilestoneDependencies => Set<MilestoneDependencyEntity>();
+    public DbSet<TaskDependencyEntity> TaskDependencies => Set<TaskDependencyEntity>();
     public DbSet<KnowledgeArticleEntity> KnowledgeArticles => Set<KnowledgeArticleEntity>();
     public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();
     public DbSet<EventPublishTrackerEntity> EventPublishTrackers => Set<EventPublishTrackerEntity>();
