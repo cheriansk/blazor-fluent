@@ -1,5 +1,6 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Identity;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,15 +11,18 @@ public class UserSessionService : IUserSessionService
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUser _currentUser;
     private readonly ILogger<UserSessionService> _logger;
 
     public UserSessionService(
         IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
+        ICurrentUser currentUser,
         ILogger<UserSessionService> logger)
     {
         _dbFactory = dbFactory;
         _tenantContext = tenantContext;
+        _currentUser = currentUser;
         _logger = logger;
     }
 
@@ -38,7 +42,15 @@ public class UserSessionService : IUserSessionService
             throw new InvalidOperationException("System daemon service identities are non-interactive and cannot possess persistent user sessions.");
         }
 
-        var tenantId = _tenantContext.TenantId ?? "default";
+        // Zero-Trust: Ensure current execution context operates under authentic user identity
+        if (!_currentUser.IsAuthenticated)
+        {
+            _currentUser.RestoreUserContext(userId, userEmail, userEmail);
+        }
+
+        var tenantId = !string.IsNullOrWhiteSpace(_tenantContext.TenantId)
+            ? _tenantContext.TenantId
+            : SystemIdentityUtility.SystemTenantSlug;
 
         // Enforce strict single-active-session policy per user
         await RevokePreviousSessionsAsync(userId, null, ct);
@@ -88,10 +100,14 @@ public class UserSessionService : IUserSessionService
             query = query.Where(s => s.Id != exceptSessionId.Value);
         }
 
+        var revokedBy = _currentUser.IsAuthenticated 
+            ? (_currentUser.Email ?? _currentUser.UserId ?? $"Login:{userId}") 
+            : $"Login:{userId}";
+
         var count = await query.ExecuteUpdateAsync(setters => setters
             .SetProperty(s => s.IsRevoked, true)
             .SetProperty(s => s.RevokedAtUtc, now)
-            .SetProperty(s => s.RevokedBy, "System (New Login)"), ct);
+            .SetProperty(s => s.RevokedBy, revokedBy), ct);
 
         _logger.LogInformation("Revoked {Count} prior active session(s) for user {UserId} upon new login.", count, userId);
     }

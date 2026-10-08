@@ -192,14 +192,30 @@
                 allowedTenants: verified.AllowedTenants,
                 isHost: isHost);
 
-            // Create active session
+            // 1. Establish authenticated state on circuit immediately upon verified credentials
+            if (CurrentUser is AppCurrentUser appUser)
+            {
+                appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
+                if (isHost)
+                {
+                    appUser.AddRole("Admin");
+                    appUser.AddRole("RootAdmin");
+                }
+            }
+
+            // 2. Create active session under authenticated context
             var session = await SessionService.CreateSessionAsync(
                 user.Id.ToString(),
                 user.Email,
                 "127.0.0.1 (Local Dev)",
                 "Edge / Windows 11");
 
-            // Store in browser sessionStorage for F5 refresh / intra-session preservation
+            if (CurrentUser is AppCurrentUser authenticatedUser)
+            {
+                authenticatedUser.SessionId = session.Id.ToString();
+            }
+
+            // 3. Store in browser sessionStorage for F5 refresh / intra-session preservation
             try
             {
                 await SessionStorage.SetAsync("app_session", new UserSessionStorageData(
@@ -212,18 +228,6 @@
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Could not persist session to browser sessionStorage.");
-            }
-
-            // Update circuit authenticated state
-            if (CurrentUser is AppCurrentUser appUser)
-            {
-                appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
-                appUser.SessionId = session.Id.ToString();
-                if (isHost)
-                {
-                    appUser.AddRole("Admin");
-                    appUser.AddRole("RootAdmin");
-                }
             }
 
             if (!string.IsNullOrWhiteSpace(user.TimeZoneId))
