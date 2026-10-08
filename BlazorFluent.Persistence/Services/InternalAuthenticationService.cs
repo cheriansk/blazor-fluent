@@ -132,7 +132,9 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Verify session validity directly in database (ignore tenant query filters for global session primary key)
+        // ARCHITECTURAL ZERO-TRUST EXEMPTION:
+        // Primary-key GUID session lookup executes during initial pre-auth handshake before tenant identity is resolved.
+        // Bypassing tenant filters here is strictly scoped to the exact unique session GUID primary key.
         var session = await dbContext.UserSessions
             .AsNoTracking()
             .IgnoreQueryFilters()

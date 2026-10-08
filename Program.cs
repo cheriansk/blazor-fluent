@@ -106,9 +106,32 @@ try
                 outputTemplate: logOutputTemplate);
     });
 
-    // 3. Add presentation and UI services
+    // 3. Add presentation and UI services (with enterprise SignalR & Circuit options)
     builder.Services.AddRazorComponents()
-        .AddInteractiveServerComponents();
+        .AddInteractiveServerComponents(options =>
+        {
+            options.DetailedErrors = builder.Environment.IsDevelopment();
+            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+            options.DisconnectedCircuitMaxRetained = 100;
+            options.MaxBufferedUnacknowledgedRenderBatches = 10;
+        });
+
+    builder.Services.AddServerSideBlazor(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+        options.DisconnectedCircuitMaxRetained = 100;
+    });
+
+    builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
+    {
+        options.MaximumReceiveMessageSize = 128 * 1024; // 128 KB
+        options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+        options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+        options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    });
+
     builder.Services.AddFluentUIComponents();
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
     builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();
@@ -151,6 +174,41 @@ try
 
     builder.Services.AddRateLimiter(options =>
     {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Global Rate Limiter: IP-partitioned sliding window (200 requests/minute), exempting static assets and health checks
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            var path = httpContext.Request.Path.Value ?? string.Empty;
+
+            // Exempt static assets, blazor framework bundles, and health check probes
+            if (path.StartsWith("/_content") ||
+                path.StartsWith("/_framework") ||
+                path.StartsWith("/healthz") ||
+                path.StartsWith("/health/ready") ||
+                path.EndsWith(".css") ||
+                path.EndsWith(".js") ||
+                path.EndsWith(".ico") ||
+                path.EndsWith(".png") ||
+                path.EndsWith(".svg") ||
+                path.EndsWith(".woff2"))
+            {
+                return RateLimitPartition.GetNoLimiter("StaticOrHealth");
+            }
+
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+            return RateLimitPartition.GetSlidingWindowLimiter(
+                clientIp,
+                _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 200,
+                    Window = TimeSpan.FromMinutes(1),
+                    SegmentsPerWindow = 6,
+                    QueueLimit = 0
+                });
+        });
+
+        // Dedicated Named Policy: Login Endpoint (10 requests/minute fixed window)
         options.AddFixedWindowLimiter("login", opt =>
         {
             opt.Window = TimeSpan.FromMinutes(1);
@@ -158,7 +216,49 @@ try
             opt.QueueLimit = 0;
             opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         });
-        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Dedicated Named Policy: API Endpoints (60 requests/minute sliding window)
+        options.AddPolicy("api", httpContext =>
+        {
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+            return RateLimitPartition.GetSlidingWindowLimiter(
+                clientIp,
+                _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 60,
+                    Window = TimeSpan.FromMinutes(1),
+                    SegmentsPerWindow = 6,
+                    QueueLimit = 0
+                });
+        });
+
+        // Dedicated Named Policy: File Upload Pipeline (10 uploads/minute fixed window)
+        options.AddPolicy("file-upload", httpContext =>
+        {
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+            return RateLimitPartition.GetFixedWindowLimiter(
+                clientIp,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+        });
+
+        // Dedicated Named Policy: Data Export Operations (5 exports/minute fixed window)
+        options.AddPolicy("export", httpContext =>
+        {
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+            return RateLimitPartition.GetFixedWindowLimiter(
+                clientIp,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+        });
     });
 
     builder.Services.AddCookiePolicy(options =>

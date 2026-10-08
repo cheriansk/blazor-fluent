@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using BlazorFluent.Persistence.Extensions;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -25,17 +26,20 @@ public class EventTrackerService : IEventTrackerService
     private readonly AppDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
+    private readonly IAuditService _auditService;
     private readonly ILogger<EventTrackerService> _logger;
 
     public EventTrackerService(
         AppDbContext dbContext,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
+        IAuditService auditService,
         ILogger<EventTrackerService> logger)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -184,8 +188,8 @@ public class EventTrackerService : IEventTrackerService
             // Lookup parent publication tracker by EventId or primary key Id with AsTracking
             var parent = await _dbContext.EventPublishTrackers
                 .AsTracking()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(e => e.EventId == eventId || e.Id == eventId, cancellationToken);
+                .Where(e => e.EventId == eventId || e.Id == eventId)
+                .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"Event consumption worker tracking for EventId '{eventId}' ({consumerClass}.{consumerMethod})", cancellationToken);
 
             var tenantId = parent?.TenantId ?? (!string.IsNullOrWhiteSpace(_tenantContext.TenantId) ? _tenantContext.TenantId : IRootAdminService.DefaultTenantSlug);
             var correlationId = parent?.CorrelationId ?? eventId.ToString("N")[..12];
@@ -243,9 +247,9 @@ public class EventTrackerService : IEventTrackerService
         {
             var consumption = await _dbContext.EventConsumptionTrackers
                 .AsTracking()
-                .IgnoreQueryFilters()
                 .Include(c => c.PublishTracker)
-                .FirstOrDefaultAsync(c => c.Id == consumptionTrackerId, cancellationToken);
+                .Where(c => c.Id == consumptionTrackerId)
+                .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"Event consumption completion tracking for ConsumptionId '{consumptionTrackerId}'", cancellationToken);
 
             if (consumption is null)
             {
@@ -266,9 +270,8 @@ public class EventTrackerService : IEventTrackerService
             {
                 var siblingConsumptions = await _dbContext.EventConsumptionTrackers
                     .AsNoTracking()
-                    .IgnoreQueryFilters()
                     .Where(c => c.EventPublishTrackerId == consumption.EventPublishTrackerId)
-                    .ToListAsync(cancellationToken);
+                    .ToListWithAuditedBypassAsync(_auditService, $"Event consumption status aggregation for ParentEvent '{consumption.EventPublishTrackerId}'", cancellationToken);
 
                 var total = siblingConsumptions.Count;
                 var succeededCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? isSuccess : c.Status == EventConsumptionStatus.Succeeded);

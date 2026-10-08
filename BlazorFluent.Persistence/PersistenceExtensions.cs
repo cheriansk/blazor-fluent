@@ -37,7 +37,7 @@ public static class PersistenceExtensions
         services.AddSingleton<ProjectSecurityInterceptor>();
         services.AddSingleton<NoTrackingMutationGuardInterceptor>();
 
-        // 5. Strict connection string loading from appsettings.json
+        // 5. Strict connection string loading and NpgsqlDataSource registration with connection pooling
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -45,6 +45,10 @@ public static class PersistenceExtensions
                 "Database connection string 'DefaultConnection' was not found or is empty in configuration (appsettings.json). " +
                 "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.json.");
         }
+
+        var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+        var npgsqlDataSource = dataSourceBuilder.Build();
+        services.AddSingleton(npgsqlDataSource);
 
         // 6. Register AppDbContext and IDbContextFactory with Npgsql, validation, audit & security interceptors, and DataProtection support
         Action<IServiceProvider, DbContextOptionsBuilder> configureDbContext = (sp, options) =>
@@ -59,8 +63,10 @@ public static class PersistenceExtensions
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
             var noTrackingGuard = sp.GetRequiredService<NoTrackingMutationGuardInterceptor>();
+            var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
+
             options.UseExceptionProcessor();
-            options.UseNpgsql(connectionString, npgsqlOptions =>
+            options.UseNpgsql(dataSource, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
             })

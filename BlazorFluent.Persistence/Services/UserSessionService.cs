@@ -77,6 +77,10 @@ public class UserSessionService : IUserSessionService
         return session;
     }
 
+    // ARCHITECTURAL ZERO-TRUST EXEMPTION:
+    // Session token validation queries operate on unique cryptographic GUID primary keys across tenants.
+    // Bypassing tenant filters here is strictly permitted and required prior to circuit tenant context rehydration,
+    // avoiding infinite recursive audit logging on high-frequency session verification polling.
     private static readonly Func<AppDbContext, Guid, Task<bool?>> IsSessionRevokedCompiledQuery =
         EF.CompileAsyncQuery((AppDbContext db, Guid id) =>
             db.UserSessions
