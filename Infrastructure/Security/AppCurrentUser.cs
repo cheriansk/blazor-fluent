@@ -100,13 +100,27 @@ public class AppCurrentUser : ICurrentUser
 
     public bool IsSystemDaemon { get; private set; }
 
-    public void SetSystemDaemon(string daemonName = "SystemDaemon")
+    public void SetSystemDaemon(string daemonName = "SystemDaemon", string serviceEmail = "daemon@system.local")
     {
         IsSystemDaemon = true;
-        UserId = "system";
+        UserId = $"daemon:{daemonName}";
         UserName = daemonName;
-        Email = "system@daemon.local";
+        Email = serviceEmail;
         IsAuthenticated = true;
+    }
+
+    public void RestoreUserContext(string userId, string email, string userName, bool isRootAdmin = false)
+    {
+        UserId = userId;
+        Email = email;
+        UserName = userName;
+        IsAuthenticated = true;
+        IsSystemDaemon = false;
+        if (isRootAdmin)
+        {
+            AddRole("Admin");
+            AddRole("RootAdmin");
+        }
     }
 
     public void Clear()

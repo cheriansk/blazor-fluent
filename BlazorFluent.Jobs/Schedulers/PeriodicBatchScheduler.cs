@@ -1,10 +1,14 @@
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Audit;
 using BlazorFluent.Jobs.Jobs.Catalog;
 using BlazorFluent.Jobs.Jobs.Tasks;
+using BlazorFluent.Persistence.Context;
 using Cronos;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -12,24 +16,28 @@ namespace BlazorFluent.Jobs.Schedulers;
 
 /// <summary>
 /// Multi-job background cron scheduler using Cronos for precise, zero-polling schedule calculation.
+/// Iterates over all active tenants to guarantee strict tenant-scoped execution under a configured service principal.
 /// </summary>
 public class PeriodicBatchScheduler : BackgroundService
 {
     private readonly IJobEventQueue _queue;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PeriodicBatchScheduler> _logger;
 
     private sealed record ScheduleEntry(
         string Name,
         CronExpression Cron,
-        Func<IJobEvent> EventFactory);
+        Func<string, string, IJobEvent> EventFactory);
 
     public PeriodicBatchScheduler(
         IJobEventQueue queue,
+        IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
         ILogger<PeriodicBatchScheduler> logger)
     {
         _queue = queue;
+        _scopeFactory = scopeFactory;
         _configuration = configuration;
         _logger = logger;
     }
@@ -94,8 +102,39 @@ public class PeriodicBatchScheduler : BackgroundService
             var targetSchedule = schedules.FirstOrDefault(s => s.Name == nextJob.Key);
             if (targetSchedule != null)
             {
-                _logger.LogInformation("Cron schedule elapsed for '{JobName}'. Enqueuing event...", targetSchedule.Name);
-                await _queue.EnqueueAsync(targetSchedule.EventFactory(), stoppingToken);
+                var cronServiceEmail = _configuration["Jobs:CronServiceAccountEmail"] ?? "cron-daemon@blazorfluent.local";
+
+                List<string> activeTenants = [];
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    activeTenants = await db.Tenants
+                        .AsNoTracking()
+                        .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
+                        .Select(t => t.Slug)
+                        .ToListAsync(stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to query active tenants for cron job '{JobName}'.", targetSchedule.Name);
+                }
+
+                if (activeTenants.Count == 0)
+                {
+                    activeTenants.Add(IRootAdminService.DefaultTenantSlug);
+                }
+
+                _logger.LogInformation(
+                    "Cron schedule elapsed for '{JobName}'. Dispatching for {TenantCount} active tenant(s)...",
+                    targetSchedule.Name, activeTenants.Count);
+
+                foreach (var tenantId in activeTenants)
+                {
+                    var jobEvent = targetSchedule.EventFactory(tenantId, cronServiceEmail);
+                    await _queue.EnqueueAsync(jobEvent, stoppingToken);
+                }
+
                 nextFires[targetSchedule.Name] = targetSchedule.Cron.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
             }
             else
@@ -117,13 +156,13 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "CatalogSyncJob",
                 parsedCatalog,
-                () => new CatalogSyncJobEvent(
+                (tenantId, email) => new CatalogSyncJobEvent(
                     TriggerSource: "Cron",
-                    TenantId: "system",
+                    TenantId: tenantId,
                     CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "CatalogSyncJob",
-                    SenderUserId: "SystemDaemon (CatalogSyncJob)",
-                    SenderUserEmail: "SystemDaemon (CatalogSyncJob)")));
+                    SenderUserId: "cron:CatalogSyncJob",
+                    SenderUserEmail: email)));
         }
 
         var auditPurgeCron = _configuration["Jobs:Schedules:AuditPurgeJob"] ?? "0 2 * * *";
@@ -133,13 +172,13 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "AuditPurgeJob",
                 parsedPurge,
-                () => new AuditPurgeJobEvent(
+                (tenantId, email) => new AuditPurgeJobEvent(
                     TriggerSource: "Cron",
-                    TenantId: "system",
+                    TenantId: tenantId,
                     CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "AuditPurgeJob",
-                    SenderUserId: "SystemDaemon (AuditPurgeJob)",
-                    SenderUserEmail: "SystemDaemon (AuditPurgeJob)",
+                    SenderUserId: "cron:AuditPurgeJob",
+                    SenderUserEmail: email,
                     RetentionDays: retentionDays)));
         }
 
@@ -149,13 +188,13 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "DailyTaskSummaryJob",
                 parsedTaskCron,
-                () => new DailyTaskSummaryJobEvent(
+                (tenantId, email) => new DailyTaskSummaryJobEvent(
                     TriggerSource: "Cron",
-                    TenantId: "system",
+                    TenantId: tenantId,
                     CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "DailyTaskSummaryJob",
-                    SenderUserId: "SystemDaemon (DailyTaskSummaryJob)",
-                    SenderUserEmail: "SystemDaemon (DailyTaskSummaryJob)")));
+                    SenderUserId: "cron:DailyTaskSummaryJob",
+                    SenderUserEmail: email)));
         }
 
         var cadenceCron = _configuration["Jobs:Schedules:TaskCadenceAlertJob"] ?? "0 8 * * *";
@@ -164,13 +203,13 @@ public class PeriodicBatchScheduler : BackgroundService
             entries.Add(new ScheduleEntry(
                 "TaskCadenceAlertJob",
                 parsedCadenceCron,
-                () => new TaskCadenceAlertJobEvent(
+                (tenantId, email) => new TaskCadenceAlertJobEvent(
                     TriggerSource: "Cron",
-                    TenantId: "system",
+                    TenantId: tenantId,
                     CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "TaskCadenceAlertJob",
-                    SenderUserId: "SystemDaemon (TaskCadenceAlertJob)",
-                    SenderUserEmail: "SystemDaemon (TaskCadenceAlertJob)")));
+                    SenderUserId: "cron:TaskCadenceAlertJob",
+                    SenderUserEmail: email)));
         }
 
         return entries;

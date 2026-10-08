@@ -9,6 +9,7 @@ using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Events.Imports;
 using BlazorFluent.Core.Security;
 using BlazorFluent.Core.Storage;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -147,8 +148,8 @@ public class ImportFileService : IImportFileService
             // 3. Enqueue generic batch event
             var correlationId = Guid.CreateVersion7().ToString("N")[..12];
             var senderOrigin = "ImportFileService.UploadBatchAsync";
-            var senderUserId = _currentUser.UserId ?? "authenticated_user";
-            var senderUserEmail = _currentUser.Email ?? _currentUser.UserId ?? "authenticated_user@domain.local";
+            var senderUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "UploadBatch");
+            var senderUserEmail = _currentUser.Email;
 
             var batchEvent = new FileImportBatchJobEvent(
                 ImportId: importId,

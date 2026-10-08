@@ -70,11 +70,16 @@ public class JobManagerService : IJobManagerService
             return Result.Failure("Cannot trigger job: active tenant context is missing.");
         }
 
+        if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
+        {
+            return Result.Failure("Authentication and active user email are required to manually trigger background jobs.");
+        }
+
         _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
 
         var senderOrigin = $"Button:Run{jobName}";
-        var senderUserId = _currentUser.UserId ?? "system";
-        var senderUserEmail = _currentUser.Email ?? _currentUser.UserId ?? "system@daemon.local";
+        var senderUserId = _currentUser.UserId ?? _currentUser.Email;
+        var senderUserEmail = _currentUser.Email;
         var correlationId = Guid.CreateVersion7().ToString("N")[..12];
 
         // Map known job names to their respective typed event triggers
@@ -130,12 +135,17 @@ public class JobManagerService : IJobManagerService
             return Result.Failure("Access Denied: You cannot retry jobs belonging to another tenant.");
         }
 
+        if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
+        {
+            return Result.Failure("Authentication and active user email are required to retry background jobs.");
+        }
+
         _logger.LogInformation("Initiating manual retry for job {JobName} (Previous Execution: {ExecutionId})",
             execution.JobName, executionId);
 
         var senderOrigin = $"Button:Retry{execution.JobName}";
-        var retryUserId = _currentUser.UserId ?? "system";
-        var retryUserEmail = _currentUser.Email ?? _currentUser.UserId ?? "system@daemon.local";
+        var retryUserId = _currentUser.UserId ?? _currentUser.Email;
+        var retryUserEmail = _currentUser.Email;
         var retryEvent = new CatalogSyncJobEvent(
             TriggerSource: senderOrigin,
             TenantId: execution.TenantId,

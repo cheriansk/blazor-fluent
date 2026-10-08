@@ -175,7 +175,8 @@ try
             Log.Information("Applying EF Core database migrations in Development...");
             using var scope = app.Services.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            currentUser?.SetSystemDaemon("StartupMigration");
+            var bootstrapEmail = app.Configuration["Security:SystemBootstrapEmail"] ?? "provisioner@blazorfluent.local";
+            currentUser?.SetSystemDaemon("StartupMigration", bootstrapEmail);
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             // Inspect for pending entity changes not captured in a migration

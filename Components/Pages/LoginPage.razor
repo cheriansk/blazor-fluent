@@ -257,7 +257,8 @@
         {
             using var scope = ScopeFactory.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            currentUser?.SetSystemDaemon("LoginDevSeeder");
+            var bootstrapEmail = Configuration["Security:SystemBootstrapEmail"] ?? "provisioner@blazorfluent.local";
+            currentUser?.SetSystemDaemon("LoginDevSeeder", bootstrapEmail);
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             // 1. Ensure Root Default Tenant exists

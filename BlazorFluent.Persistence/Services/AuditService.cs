@@ -2,6 +2,7 @@ using System.Text.Json;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,8 +43,9 @@ internal class AuditService : IAuditService
         string? reason = null,
         CancellationToken cancellationToken = default)
     {
+        SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, "LogTenantSwitch");
+        var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "LogTenantSwitch");
         var now = _dateTimeProvider.Now;
-        var currentUserId = _currentUser.UserId ?? "system";
 
         var record = new AuditRecordEntity
         {
@@ -56,7 +58,9 @@ internal class AuditService : IAuditService
             Severity = AuditSeverity.Information,
             Description = $"User switched active tenant from '{fromTenantId}' to '{toTenantId}'. Reason: {reason ?? "User interactive selection"}",
             Created = now,
-            CreatedBy = currentUserId
+            CreatedBy = currentUserId,
+            Updated = now,
+            UpdatedBy = currentUserId
         };
 
         await SaveAuditRecordAsync(record, cancellationToken);
@@ -72,9 +76,10 @@ internal class AuditService : IAuditService
         string? details = null,
         CancellationToken cancellationToken = default)
     {
+        SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, $"LogSecurityEvent:{action}");
+        var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"LogSecurityEvent:{action}");
+        var tenantId = _tenantContext.TenantId!;
         var now = _dateTimeProvider.Now;
-        var currentUserId = _currentUser.UserId ?? "system";
-        var tenantId = _tenantContext.TenantId ?? "host";
 
         var record = new AuditRecordEntity
         {
@@ -87,7 +92,9 @@ internal class AuditService : IAuditService
             Severity = severity,
             Description = $"{action}. Details: {details}",
             Created = now,
-            CreatedBy = currentUserId
+            CreatedBy = currentUserId,
+            Updated = now,
+            UpdatedBy = currentUserId
         };
 
         await SaveAuditRecordAsync(record, cancellationToken);
@@ -112,9 +119,10 @@ internal class AuditService : IAuditService
         string? details = null,
         CancellationToken cancellationToken = default)
     {
+        SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, $"LogUserActivity:{action}");
+        var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"LogUserActivity:{action}");
+        var tenantId = _tenantContext.TenantId!;
         var now = _dateTimeProvider.Now;
-        var currentUserId = _currentUser.UserId ?? "system";
-        var tenantId = _tenantContext.TenantId ?? "host";
 
         var record = new AuditRecordEntity
         {
@@ -127,7 +135,9 @@ internal class AuditService : IAuditService
             Severity = AuditSeverity.Information,
             Description = $"{action}. Details: {details}",
             Created = now,
-            CreatedBy = currentUserId
+            CreatedBy = currentUserId,
+            Updated = now,
+            UpdatedBy = currentUserId
         };
 
         await SaveAuditRecordAsync(record, cancellationToken);
@@ -213,8 +223,9 @@ internal class AuditService : IAuditService
     {
         var errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
         var now = _dateTimeProvider.Now;
-        var currentUserId = _currentUser.UserId ?? "system";
-        var tenantId = _tenantContext.TenantId ?? "host";
+        SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, "LogException");
+        var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "LogException");
+        var tenantId = _tenantContext.TenantId!;
 
         // Structured JSON payload detailing the incident
         var exceptionPayload = new
@@ -250,7 +261,7 @@ internal class AuditService : IAuditService
         {
             using var scope = _scopeFactory.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            currentUser?.SetSystemDaemon("ForensicAuditLogger");
+            currentUser?.SetSystemDaemon("ForensicAuditLogger", "audit-logger@blazorfluent.local");
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             var record = new AuditRecordEntity
@@ -268,7 +279,9 @@ internal class AuditService : IAuditService
                 ChangesJson = changesJson,
                 TraceId = errorId,
                 Created = now,
-                CreatedBy = currentUserId
+                CreatedBy = currentUserId,
+                Updated = now,
+                UpdatedBy = currentUserId
             };
 
             isolatedDbContext.AuditRecords.Add(record);
@@ -322,7 +335,7 @@ internal class AuditService : IAuditService
                     PropertyName = propertyName ?? "Entity Record",
                     OldValue = null,
                     NewValue = record.Operation?.ToString() ?? record.EventType.ToString(),
-                    UserId = record.UserId ?? "system",
+                    UserId = record.UserId ?? "Unknown",
                     UserEmail = userEmail,
                     UserType = record.UserType,
                     Operation = record.Operation ?? EntityOperation.Update,
@@ -381,7 +394,7 @@ internal class AuditService : IAuditService
                         PropertyName = propName,
                         OldValue = oldVal,
                         NewValue = newVal,
-                        UserId = record.UserId ?? "system",
+                        UserId = record.UserId ?? "Unknown",
                         UserEmail = userEmail,
                         UserType = record.UserType,
                         Operation = record.Operation ?? EntityOperation.Update,
