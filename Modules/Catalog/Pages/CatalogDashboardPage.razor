@@ -90,6 +90,7 @@
         var jobEvent = new CatalogSyncJobEvent(
             TriggerSource: "Button:TriggerManualBatchJob",
             TenantId: TenantContext.TenantId,
+            CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
             BatchSize: 250,
             SenderOrigin: "Button:TriggerManualBatchJob",
             SenderUserId: CurrentUser.UserId,

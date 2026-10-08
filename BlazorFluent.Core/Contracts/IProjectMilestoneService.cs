@@ -1,6 +1,6 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Tenancy;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Core.Contracts;
 

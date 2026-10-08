@@ -4,6 +4,7 @@ using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -54,12 +55,28 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
         var tenantContext = appDb?.TenantContext ?? new TenantContext();
         var dateTimeProvider = appDb?.DateTimeProvider ?? new ConfigurableDateTimeProvider(true);
 
+        // Check if there are non-exempt entities being modified
+        var hasAuditableEntries = context.ChangeTracker.Entries()
+            .Any(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+                      && e.Entity is not DataProtectionKey 
+                      && e.Entity is not AuditRecordEntity);
+
+        if (!hasAuditableEntries) return;
+
+        // Zero-Trust security: any business entity modification strictly requires an authenticated user or daemon
+        if (!currentUser.IsAuthenticated)
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: Entity modifications require an established authenticated user or system daemon context.");
+        }
+
         var now = dateTimeProvider.Now.Kind == DateTimeKind.Utc
             ? dateTimeProvider.Now
             : DateTime.SpecifyKind(dateTimeProvider.Now, DateTimeKind.Utc);
+
+        var baseUserId = SystemIdentityUtility.ResolveAuditableUserId(currentUser, "SaveChanges");
         var currentUserId = currentUser.IsImpersonated
-            ? $"{currentUser.UserId} [Impersonated by {currentUser.ImpersonatedBy}]"
-            : (currentUser.IsAuthenticated ? (currentUser.UserId ?? "authenticated_user") : (currentUser.IsSystemDaemon ? "system" : "anonymous"));
+            ? $"{baseUserId} [Impersonated by {currentUser.ImpersonatedBy}]"
+            : baseUserId;
 
         // 1. Stamp Level 1 audit properties & enforce tenant isolation
         UpdateAuditFields(context, now, currentUserId, tenantContext);
@@ -183,8 +200,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 {
                     auditableEntity.Created = now;
                     auditableEntity.CreatedBy = currentUserId;
-                    auditableEntity.Updated = null;
-                    auditableEntity.UpdatedBy = null;
+                    auditableEntity.Updated = now;
+                    auditableEntity.UpdatedBy = currentUserId;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
@@ -208,6 +225,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 {
                     if (hasCreated) entry.Property(CreatedProperty).CurrentValue = now;
                     if (hasCreatedBy) entry.Property(CreatedByProperty).CurrentValue = currentUserId;
+                    if (hasUpdated) entry.Property(UpdatedProperty).CurrentValue = now;
+                    if (hasUpdatedBy) entry.Property(UpdatedByProperty).CurrentValue = currentUserId;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
@@ -311,7 +330,17 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
 
-            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? tenantContext.TenantId ?? "host";
+            var tenantId = (entry.Entity as ITenantEntity)?.TenantId;
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                tenantId = tenantContext.TenantId;
+            }
+
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                throw new InvalidOperationException(
+                    $"Zero-Trust Security Violation: Cannot record entity audit for '{entityName}'. Active tenant context is missing.");
+            }
 
             var record = new AuditRecordEntity
             {
@@ -327,7 +356,9 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 Operation = operation,
                 ChangesJson = changes.Count > 0 ? JsonSerializer.Serialize(changes) : null,
                 Created = now,
-                CreatedBy = currentUserId
+                CreatedBy = currentUserId,
+                Updated = now,
+                UpdatedBy = currentUserId
             };
 
             auditRecords.Add(record);
@@ -338,7 +369,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             context.Set<AuditRecordEntity>().AddRange(auditRecords);
             _logger.LogDebug(
                 "Captured {AuditRecordCount} Level-2 entity audit record(s) for Tenant '{TenantId}'",
-                auditRecords.Count, tenantContext.TenantId ?? "host");
+                auditRecords.Count, tenantContext.TenantId);
         }
     }
 

@@ -1,7 +1,7 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
+using BlazorFluent.Core.Dtos;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +37,57 @@ public class NotificationService : INotificationService
         _configuration = configuration;
         _logger = logger;
     }
+    /// <summary>
+    /// Handles background notification operations within an isolated dependency injection scope.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>1. Eliminates Blazor Server DbContext Concurrency Crashes</b><br/>
+    /// In Blazor InteractiveServer, an entire user session (circuit) shares a single scoped AppDbContext. 
+    /// Components like the Bell Icon (<see cref="NotificationBellPopup"/>) live in the main layout shell 
+    /// and load or refresh notifications in the background. If the bell icon queries the database at the 
+    /// exact same millisecond that a user saves a task, posts a comment, or loads a project board, 
+    /// EF Core will crash with a <see cref="System.InvalidOperationException"/> (indicating a second operation 
+    /// was started on this context instance before a previous operation completed).
+    /// </para>
+    /// <para>
+    /// By creating a fresh scope via <c>_scopeFactory.CreateScope()</c>, the notification engine gets 
+    /// its own dedicated AppDbContext that never collides with the user's active page circuit.
+    /// </para>
+    /// <para>
+    /// <b>2. Protects Long-Running Dispatches (Teams Webhooks &amp; Emails)</b><br/>
+    /// The dispatch process does not simply save to the database; it also handles long-running outbound network calls, 
+    /// including Teams webhooks via <c>_teamsSender.SendTeamsNotificationAsync</c> and SMTP emails via 
+    /// <c>_emailSender.SendEmailNotificationAsync</c>. 
+    /// </para>
+    /// <para>
+    /// Because network calls can take 1 to 5 seconds, holding onto the user's primary DbContext would freeze 
+    /// the entire user interface while waiting for the operations to complete. Executing within an isolated 
+    /// scope ensures the notification transaction and external dispatches run independently, allowing them 
+    /// to complete without blocking the UI or being prematurely cancelled if the user navigates away.
+    /// </para>
+    /// <para>
+    /// <b>3. Elevated System Daemon Authority (SetSystemDaemon)</b><br/>
+    /// In BlazorFluent's Zero-Trust architecture, database queries are inspected by interceptors such as 
+    /// <c>ZeroTrustDbCommandInterceptor</c> and <c>AuditableEntityInterceptor</c>. 
+    /// </para>
+    /// <para>
+    /// When automated background processes (like <c>TaskCadenceAlertJobHandler</c> or background task creators) 
+    /// dispatch alerts, they may operate without an active interactive user. Resolving the <see cref="ICurrentUser"/> 
+    /// within the scope and calling <c>SetSystemDaemon("NotificationService")</c> grants the notification engine 
+    /// system-level permission to successfully record alerts across tenant boundaries.
+    /// </para>
+    /// <para>
+    /// <b>4. Explicit Multi-Tenant Context Propagation</b><br/>
+    /// Because creating a new DI scope generates fresh, uninitialized instances of scoped services, the newly 
+    /// created scope's <see cref="ITenantContext"/> begins empty. 
+    /// </para>
+    /// <para>
+    /// This implementation explicitly copies over the caller's active tenant properties (including TenantId, 
+    /// TenantName, UserType, AllowedTenants, and IsHost). This ensures that EF Core's global query filters 
+    /// remain intact and continue to isolate notification data strictly to the correct tenant.
+    /// </para>
+    /// </remarks>
 
     private IServiceScope CreateScopedContext()
     {
@@ -58,7 +109,7 @@ public class NotificationService : INotificationService
         return scope;
     }
 
-    public async Task<NotificationEntity> SendAsync(SendNotificationRequest request, CancellationToken ct = default)
+    public async Task<NotificationEntity> SendAsync(SendNotificationReqDto request, CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -119,8 +170,8 @@ public class NotificationService : INotificationService
 
         return notification;
     }
-
-    public async Task<IReadOnlyList<NotificationEntity>> GetNotificationsAsync(NotificationFilterRequest filter, CancellationToken ct = default)
+    //REVIEWED-CSK
+    public async Task<IReadOnlyList<NotificationEntity>> GetNotificationsAsync(NotificationFilterReqDto filter, CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -160,11 +211,11 @@ public class NotificationService : INotificationService
 
         return await query
             .OrderByDescending(n => n.Created)
-            .Take(filter.Take > 0 ? filter.Take : 30)
+            .Take(filter.Take > 0 ? filter.Take : 50)
             .ToListAsync(ct);
     }
 
-    public async Task<UnreadNotificationCounts> GetUnreadCountsAsync(CancellationToken ct = default)
+    public async Task<UnreadNotificationCountsRespDto> GetUnreadCountsAsync(CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -195,7 +246,7 @@ public class NotificationService : INotificationService
                 .CountAsync(ct);
         }
 
-        return new UnreadNotificationCounts
+        return new UnreadNotificationCountsRespDto
         {
             GenericUnread = genericCount,
             PersonalUnread = personalCount

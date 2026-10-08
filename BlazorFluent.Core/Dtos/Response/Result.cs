@@ -1,4 +1,4 @@
-namespace BlazorFluent.Core.Common;
+namespace BlazorFluent.Core.Dtos.Response;
 
 public class Result
 {

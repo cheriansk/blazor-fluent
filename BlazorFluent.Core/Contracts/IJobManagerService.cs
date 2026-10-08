@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Domain.Jobs;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Core.Contracts;
 

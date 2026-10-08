@@ -236,7 +236,7 @@
 
                         if (data.ActiveProjectId.HasValue)
                         {
-                            ProjectContext.Initialize(data.ActiveProjectId.Value, null, null, Array.Empty<ProjectInfo>());
+                            ProjectContext.Initialize(data.ActiveProjectId.Value, null, null, Array.Empty<ProjectInfoDto>());
                         }
 
                         StartHeartbeat(data.SessionId);

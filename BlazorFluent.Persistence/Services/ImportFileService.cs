@@ -1,13 +1,15 @@
 using System.Text.Json;
 using BlazorFluent.Core.Abstractions.Imports;
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
-using BlazorFluent.Core.DTOs.Imports;
+using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Dtos.Imports;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Events.Imports;
 using BlazorFluent.Core.Security;
 using BlazorFluent.Core.Storage;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -144,13 +146,19 @@ public class ImportFileService : IImportFileService
                 importId, importFiles.Count, tenantId, request.ProjectId);
 
             // 3. Enqueue generic batch event
+            var correlationId = Guid.CreateVersion7().ToString("N")[..12];
+            var senderOrigin = "ImportFileService.UploadBatchAsync";
+            var senderUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "UploadBatch");
+            var senderUserEmail = _currentUser.Email;
+
             var batchEvent = new FileImportBatchJobEvent(
                 ImportId: importId,
                 ProjectId: request.ProjectId,
                 TenantId: tenantId,
-                SenderOrigin: "ImportFileService.UploadBatchAsync",
-                SenderUserId: _currentUser.UserId,
-                SenderUserEmail: _currentUser.Email);
+                CorrelationId: correlationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: senderUserId,
+                SenderUserEmail: senderUserEmail);
 
             await _eventPublisher.PublishAsync(batchEvent, ct);
 
@@ -341,7 +349,7 @@ public class ImportFileService : IImportFileService
             var userId = _currentUser.UserId;
             if (string.IsNullOrWhiteSpace(userId)) return;
 
-            var request = new SendNotificationRequest
+            var request = new SendNotificationReqDto
             {
                 Category = NotificationCategory.Generic,
                 Severity = severity,

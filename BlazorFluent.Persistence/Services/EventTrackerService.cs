@@ -1,14 +1,16 @@
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Events;
+using BlazorFluent.Core.Dtos.Requests;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Events;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -64,8 +66,10 @@ public class EventTrackerService : IEventTrackerService
             string tenantId;
             if (isSystemOrCron)
             {
-                // System/Cron batch triggers default to 'system' context
-                tenantId = !string.IsNullOrWhiteSpace(_tenantContext.TenantId) ? _tenantContext.TenantId : "system";
+                // System/Cron batch triggers default to active tenant context or default anchor tenant
+                tenantId = !string.IsNullOrWhiteSpace(_tenantContext.TenantId) 
+                    ? _tenantContext.TenantId 
+                    : IRootAdminService.DefaultTenantSlug;
             }
             else
             {
@@ -79,7 +83,7 @@ public class EventTrackerService : IEventTrackerService
                 }
 
                 tenantId = _tenantContext.IsHost
-                    ? (!string.IsNullOrWhiteSpace(_tenantContext.TenantId) ? _tenantContext.TenantId : "host")
+                    ? (!string.IsNullOrWhiteSpace(_tenantContext.TenantId) ? _tenantContext.TenantId : IRootAdminService.DefaultTenantSlug)
                     : _tenantContext.TenantId!;
             }
 
@@ -109,12 +113,22 @@ public class EventTrackerService : IEventTrackerService
 
             if (string.IsNullOrWhiteSpace(resolvedUserId) && isSystemOrCron)
             {
-                var daemonName = $"SystemDaemon ({eventName.Replace("Event", string.Empty)})";
+                var daemonName = $"cron:{eventName.Replace("Event", string.Empty)}";
                 resolvedUserId = daemonName;
                 if (string.IsNullOrWhiteSpace(resolvedUserEmail))
                 {
-                    resolvedUserEmail = daemonName;
+                    resolvedUserEmail = "cron-daemon@blazorfluent.local";
                 }
+            }
+            else if (string.IsNullOrWhiteSpace(resolvedUserId) && string.IsNullOrWhiteSpace(resolvedUserEmail))
+            {
+                resolvedUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"PublishEvent:{eventName}");
+                resolvedUserEmail = _currentUser.Email;
+            }
+
+            if (string.IsNullOrWhiteSpace(resolvedUserId))
+            {
+                throw new InvalidOperationException($"Zero-Trust Security Violation: Cannot track event publish for '{eventName}'. Sender identity is missing.");
             }
 
             var record = new EventPublishTrackerEntity
@@ -128,8 +142,8 @@ public class EventTrackerService : IEventTrackerService
                 SourceClass = resolvedSourceClass,
                 SourceMethod = sourceMethod,
                 SourceFilePath = sourceFilePath,
-                UserId = resolvedUserId ?? "system",
-                UserEmail = resolvedUserEmail,
+                UserId = resolvedUserId,
+                UserEmail = resolvedUserEmail ?? resolvedUserId,
                 TriggerSource = resolvedSenderOrigin ?? triggerSource ?? (isSystemOrCron ? "System" : "Manual"),
                 PayloadJson = payloadJson,
                 PublishedAtUtc = DateTime.UtcNow,
@@ -173,7 +187,7 @@ public class EventTrackerService : IEventTrackerService
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(e => e.EventId == eventId || e.Id == eventId, cancellationToken);
 
-            var tenantId = parent?.TenantId ?? (!string.IsNullOrWhiteSpace(_tenantContext.TenantId) ? _tenantContext.TenantId : "system");
+            var tenantId = parent?.TenantId ?? (!string.IsNullOrWhiteSpace(_tenantContext.TenantId) ? _tenantContext.TenantId : IRootAdminService.DefaultTenantSlug);
             var correlationId = parent?.CorrelationId ?? eventId.ToString("N")[..12];
 
             var consumption = new EventConsumptionTrackerEntity
@@ -290,8 +304,8 @@ public class EventTrackerService : IEventTrackerService
         }
     }
 
-    public async Task<PagedResult<EventPublishTrackerEntity>> GetEventsAsync(
-        EventTrackerFilter filter,
+    public async Task<PagedResultRespDto<EventPublishTrackerEntity>> GetEventsAsync(
+        EventTrackerFilterReqDto filter,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.EventPublishTrackers
@@ -310,7 +324,7 @@ public class EventTrackerService : IEventTrackerService
         {
             if (string.Equals(filter.TenantId, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(e => e.TenantId == IRootAdminService.DefaultTenantSlug || e.TenantId == "system" || e.TenantId == "host");
+                query = query.Where(e => e.TenantId == IRootAdminService.DefaultTenantSlug);
             }
             else
             {
@@ -370,7 +384,7 @@ public class EventTrackerService : IEventTrackerService
             .Take(filter.PageSize)
             .ToListAsync(cancellationToken);
 
-        return PagedResult<EventPublishTrackerEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
+        return PagedResultRespDto<EventPublishTrackerEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
     }
 
     public async Task<IReadOnlyList<EventConsumptionTrackerEntity>> GetConsumptionsAsync(

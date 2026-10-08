@@ -36,7 +36,7 @@ BlazorFluent.Core/
 ├── Common/                          # Shared domain DTO envelopes & query constants
 │   ├── AuditTrailFilter.cs          # Query filter model for audit trail pagination
 │   ├── DateTimeSettings.cs          # Timezone preference settings (UTC vs Local)
-│   ├── NotificationRequests.cs      # DTOs for notification commands and queries
+│   ├── NotificationRequests.cs      # Dtos for notification commands and queries
 │   ├── PagedResult.cs               # Generic paginated result envelope PagedResult<T>
 │   ├── ProjectAuthorizationExtensions.cs # LINQ extensions for ProjectRole evaluation
 │   ├── QueryFilters.cs              # EF Core named query filter string constants
@@ -92,7 +92,7 @@ BlazorFluent.Core/
 ├── Events/                          # In-process background job events
 │   └── IJobEvent.cs                 # Base IJobEvent interface and BaseJobEvent record
 └── Validation/                      # Declarative input validators (FluentValidation)
-    └── NotificationRequestValidator.cs # SendNotificationRequest validation rules
+    └── NotificationRequestValidator.cs # SendNotificationReqDto validation rules
 ```
 
 ---

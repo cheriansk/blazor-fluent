@@ -1,12 +1,13 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Dtos.Requests;
 using FluentValidation;
 
 namespace BlazorFluent.Core.Validation;
 
-public class SendNotificationRequestValidator : AbstractValidator<SendNotificationRequest>
+public class SendNotificationReqDtoValidator : AbstractValidator<SendNotificationReqDto>
 {
-    public SendNotificationRequestValidator()
+    public SendNotificationReqDtoValidator()
     {
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Title is required.")

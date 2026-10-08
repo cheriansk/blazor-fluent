@@ -1,5 +1,7 @@
-@using BlazorFluent.Core.Common
+
 @using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Dtos.Requests
+@using BlazorFluent.Core.Dtos.Response
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Auditing
 @using BlazorFluent.Persistence.Context
@@ -198,8 +200,8 @@
     private List<UserFilterOption> _availableUsers = new();
     private string? _selectedUserId;
 
-    private AuditTrailFilter _filter = new() { PageSize = 15 };
-    private PagedResult<AuditRecordEntity>? _auditResult;
+    private AuditTrailFilterReqDto _filter = new() { PageSize = 15 };
+    private PagedResultRespDto<AuditRecordEntity>? _auditResult;
     private bool _isLoading = true;
     private AuditRecordEntity? _selectedAuditRecord;
     private string _inGridSearchText = string.Empty;
@@ -386,7 +388,7 @@
     {
         _selectedTenantId = null;
         _selectedUserId = null;
-        _filter = new AuditTrailFilter { PageSize = 15 };
+        _filter = new AuditTrailFilterReqDto { PageSize = 15 };
         _selectedEventType = "All";
         _selectedSeverity = "All";
         await LoadAvailableUsersAsync();

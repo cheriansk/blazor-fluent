@@ -1,8 +1,9 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
+using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,20 +23,17 @@ public class InternalAuthenticationService : IInternalAuthenticationService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
     private readonly IRootAdminService _rootAdminService;
-    private readonly IAuditService _auditService;
     private readonly ILogger<InternalAuthenticationService> _logger;
 
     public InternalAuthenticationService(
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
         IRootAdminService rootAdminService,
-        IAuditService auditService,
         ILogger<InternalAuthenticationService> logger)
     {
         _scopeFactory = scopeFactory;
         _configuration = configuration;
         _rootAdminService = rootAdminService;
-        _auditService = auditService;
         _logger = logger;
     }
 
@@ -48,10 +46,19 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
+        // Execute pre-authentication checks and queries inside an isolated, private scope with explicit pre-auth context
+        using var scope = _scopeFactory.CreateScope();
+        var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, normalizedEmail, "VerifyLogin");
+
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
         // Security Gate: Reject background system daemon identity logins
         if (normalizedEmail == "system" || normalizedEmail == "system@daemon.local" || normalizedEmail.Contains("@daemon.local"))
         {
-            await _auditService.LogSecurityEventAsync(
+            await auditService.LogSecurityEventAsync(
                 "SecurityViolationSystemLoginAttempt",
                 AuditSeverity.Critical,
                 $"Illicit login attempt blocked for reserved system daemon identity '{email}'.",
@@ -60,20 +67,13 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("System daemon identities are non-interactive background workers and cannot log in.");
         }
 
-        // Execute query inside an isolated, private system daemon scope
-        using var scope = _scopeFactory.CreateScope();
-        var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
-        currentUser.SetSystemDaemon("InternalAuthService:VerifyLogin");
-
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
         var user = await dbContext.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && !u.IsDeleted, ct);
 
         if (user is null)
         {
-            await _auditService.LogSecurityEventAsync(
+            await auditService.LogSecurityEventAsync(
                 "LoginFailedUnprovisioned",
                 AuditSeverity.Warning,
                 $"Authentication rejected for unprovisioned email '{email}'.",
@@ -85,7 +85,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         var secretKey = _configuration["Security:IntegritySecret"] ?? "BlazorFluent-Secret-Key-Change-In-Production-2026";
         if (!user.IsValidForLogin(DateTime.UtcNow, secretKey, out var failureReason))
         {
-            await _auditService.LogSecurityEventAsync(
+            await auditService.LogSecurityEventAsync(
                 "LoginFailedValidityGate",
                 AuditSeverity.Warning,
                 $"Login rejected for '{email}': {failureReason}",
@@ -120,10 +120,11 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("Invalid session parameters.");
         }
 
-        // Execute query inside an isolated, private system daemon scope
+        // Execute query inside an isolated, private system daemon scope with explicit pre-auth identity
         using var scope = _scopeFactory.CreateScope();
         var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
-        currentUser.SetSystemDaemon("InternalAuthService:RehydrateSession");
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, userId, "RehydrateSession");
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 

@@ -1,6 +1,6 @@
 using BlazorFluent.Core.Domain.Base;
 
-namespace BlazorFluent.Core.Common;
+namespace BlazorFluent.Core.Extensions;
 
 /// <summary>
 /// Query extensions for enforcing project-level authorization filters in EF Core.

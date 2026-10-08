@@ -1,7 +1,7 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.DTOs;
 using BlazorFluent.Core.Domain.Auditing;
+using BlazorFluent.Core.Dtos.Requests;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Core.Contracts;
 
@@ -14,7 +14,7 @@ public interface IAuditService
     /// <summary>
     /// Queries historical audit records with filtering and pagination.
     /// </summary>
-    Task<PagedResult<AuditRecordEntity>> GetAuditTrailAsync(AuditTrailFilter filter, CancellationToken cancellationToken = default);
+    Task<PagedResultRespDto<AuditRecordEntity>> GetAuditTrailAsync(AuditTrailFilterReqDto filter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Records a tenant switch operation performed by an authorized company user.
@@ -45,7 +45,7 @@ public interface IAuditService
     /// <summary>
     /// Retrieves property-level mutation history for a specific entity or field.
     /// </summary>
-    Task<List<EntityFieldHistoryDto>> GetEntityHistoryAsync(
+    Task<List<EntityFieldHistoryRespDto>> GetEntityHistoryAsync(
         string entityName,
         string entityId,
         string? propertyName = null,

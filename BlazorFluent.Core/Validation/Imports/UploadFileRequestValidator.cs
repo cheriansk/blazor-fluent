@@ -1,5 +1,5 @@
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.DTOs.Imports;
+using BlazorFluent.Core.Dtos.Imports;
 using FluentValidation;
 
 namespace BlazorFluent.Core.Validation.Imports;

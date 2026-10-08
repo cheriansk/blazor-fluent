@@ -1,4 +1,4 @@
-namespace BlazorFluent.Core.DataListTypes;
+namespace BlazorFluent.Core.Attributes;
 
 /// <summary>
 /// Specifies filter criteria requirements for an enum member.

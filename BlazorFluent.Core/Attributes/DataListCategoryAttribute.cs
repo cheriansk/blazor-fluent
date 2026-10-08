@@ -1,4 +1,4 @@
-namespace BlazorFluent.Core.DataListTypes;
+namespace BlazorFluent.Core.Attributes;
 
 /// <summary>
 /// Categorizes an enum member by specifying its category code.

@@ -1,7 +1,8 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -74,9 +75,11 @@ public class UserTaskService : IUserTaskService
             // Automatically stamp creator as reporter
             if (string.IsNullOrWhiteSpace(task.ReporterEmail))
             {
-                task.ReporterEmail = !string.IsNullOrWhiteSpace(_currentUser.Email)
-                    ? _currentUser.Email
-                    : (!string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : "system");
+                if (string.IsNullOrWhiteSpace(_currentUser.Email))
+                {
+                    return Result<UserTaskEntity>.Failure("Authenticated user email is required to create a task.");
+                }
+                task.ReporterEmail = _currentUser.Email;
             }
 
             _context.Tasks.Add(task);
@@ -240,14 +243,19 @@ public class UserTaskService : IUserTaskService
 
             if (task is null) return Result<UserTaskCommentEntity>.Failure("Task not found.");
 
+            if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
+            {
+                return Result<UserTaskCommentEntity>.Failure("Authenticated user identity is required to add comments.");
+            }
+
             var comment = new UserTaskCommentEntity
             {
                 TaskId = taskId,
                 ProjectId = projectId,
                 TenantId = task.TenantId,
-                AuthorUserId = _currentUser.UserId ?? "system",
-                AuthorName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Anonymous"),
-                AuthorEmail = _currentUser.Email ?? string.Empty,
+                AuthorUserId = _currentUser.UserId ?? _currentUser.Email,
+                AuthorName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : _currentUser.Email,
+                AuthorEmail = _currentUser.Email,
                 CommentText = commentText.Trim(),
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -430,7 +438,7 @@ public class UserTaskService : IUserTaskService
                 var norm = email.Trim().ToLowerInvariant();
                 var targetUserId = targetUsers.TryGetValue(norm, out var uid) ? uid : email;
 
-                var request = new SendNotificationRequest
+                var request = new SendNotificationReqDto
                 {
                     Category = NotificationCategory.Personal,
                     Severity = task.Priority == UserTaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,

@@ -1,8 +1,9 @@
 using System.Text;
-using BlazorFluent.Core.Common;
+
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Dtos;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -150,7 +151,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 ? $"⚠️ Task '{tasks[0].Title}' is past its due date ({tasks[0].DueDate:yyyy-MM-dd}). Please update or close it."
                 : $"⚠️ You have {tasks.Count} overdue tasks past their deadlines: {string.Join(", ", tasks.Take(3).Select(t => $"'{t.Title}'"))}{(tasks.Count > 3 ? "..." : "")}.";
 
-            await _notificationService.SendAsync(new SendNotificationRequest
+            await _notificationService.SendAsync(new SendNotificationReqDto
             {
                 Category = NotificationCategory.Personal,
                 Severity = NotificationSeverity.Error,
@@ -175,7 +176,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 ? $"⏰ Task '{tasks[0].Title}' is due today ({today:yyyy-MM-dd})."
                 : $"⏰ You have {tasks.Count} tasks due today: {string.Join(", ", tasks.Take(3).Select(t => $"'{t.Title}'"))}{(tasks.Count > 3 ? "..." : "")}.";
 
-            await _notificationService.SendAsync(new SendNotificationRequest
+            await _notificationService.SendAsync(new SendNotificationReqDto
             {
                 Category = NotificationCategory.Personal,
                 Severity = NotificationSeverity.Warning,
@@ -204,7 +205,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 sb.AppendLine($"• [{cadenceLabel}] {item.Task.Title} (Due {item.Task.DueDate:yyyy-MM-dd})");
             }
 
-            await _notificationService.SendAsync(new SendNotificationRequest
+            await _notificationService.SendAsync(new SendNotificationReqDto
             {
                 Category = NotificationCategory.Personal,
                 Severity = NotificationSeverity.Info,
@@ -233,7 +234,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 sb.AppendLine($"• Your task '{blocker.Title}' blocks '{blocked.Title}'{resolveByText}");
             }
 
-            await _notificationService.SendAsync(new SendNotificationRequest
+            await _notificationService.SendAsync(new SendNotificationReqDto
             {
                 Category = NotificationCategory.Personal,
                 Severity = NotificationSeverity.Warning,

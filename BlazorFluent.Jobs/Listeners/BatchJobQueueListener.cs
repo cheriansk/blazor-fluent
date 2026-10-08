@@ -87,16 +87,43 @@ public class BatchJobQueueListener : BackgroundService
 
             // ─── 1. RESTORE TENANT CONTEXT (LEAST PRIVILEGE) ─────────────────────────────
             var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-            var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) ? jobEvent.TenantId : "system";
+            var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) 
+                ? jobEvent.TenantId 
+                : IRootAdminService.DefaultTenantSlug;
+
             tenantContext.Initialize(
                 tenantId: targetTenantId,
-                tenantName: targetTenantId == "system" ? "System Daemon" : null,
+                tenantName: targetTenantId,
                 userType: UserType.CompanyUser,
                 allowedTenants: [],
                 isHost: false);
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            currentUser?.SetSystemDaemon($"BatchJob:{jobName}");
+            if (currentUser != null)
+            {
+                var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);
+                if (isCron)
+                {
+                    var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
+                        ? jobEvent.SenderUserEmail 
+                        : "cron-daemon@blazorfluent.local";
+                    currentUser.SetSystemDaemon($"BatchJob:{jobName}", cronEmail);
+                }
+                else
+                {
+                    // User-triggered event: Restore initiating user context
+                    var userId = !string.IsNullOrWhiteSpace(jobEvent.SenderUserId) 
+                        ? jobEvent.SenderUserId 
+                        : Guid.Empty.ToString();
+                    var userEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
+                        ? jobEvent.SenderUserEmail 
+                        : "user@company.local";
+                    var userName = !string.IsNullOrWhiteSpace(jobEvent.SenderOrigin) 
+                        ? jobEvent.SenderOrigin 
+                        : userEmail;
+                    currentUser.RestoreUserContext(userId, userEmail, userName);
+                }
+            }
 
             // ─── 2. RECORD INITIAL EXECUTION STAMP ────────────────────────────────────────
             var execution = new JobExecutionEntity

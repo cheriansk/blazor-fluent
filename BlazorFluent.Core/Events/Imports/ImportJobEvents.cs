@@ -10,10 +10,13 @@ public record FileImportedJobEvent(
     Guid ImportFileId,
     ImportFileType FileType,
     Guid ProjectId,
-    string? TenantId = null,
-    string? CorrelationId = null,
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
     Guid? ParentExecutionId = null)
-    : BaseJobEvent("FileImportModule", TenantId, CorrelationId, ParentExecutionId);
+    : BaseJobEvent("FileImportModule", TenantId, CorrelationId, SenderOrigin, SenderUserId, SenderUserEmail, ParentExecutionId);
 
 /// <summary>
 /// Dispatched by the file validation worker with schema and invariant validation outcomes.
@@ -24,10 +27,13 @@ public record FileValidationResultJobEvent(
     int TotalRows,
     int ValidRows,
     int ErrorRows,
-    string? TenantId = null,
-    string? CorrelationId = null,
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
     Guid? ParentExecutionId = null)
-    : BaseJobEvent("FileValidationEngine", TenantId, CorrelationId, ParentExecutionId);
+    : BaseJobEvent("FileValidationEngine", TenantId, CorrelationId, SenderOrigin, SenderUserId, SenderUserEmail, ParentExecutionId);
 
 /// <summary>
 /// Dispatched after records are written into staging tables or when staging fails.
@@ -36,11 +42,14 @@ public record FileStagingCompletedJobEvent(
     Guid ImportFileId,
     bool IsSuccess,
     int StagedCount,
-    string? ErrorMessage = null,
-    string? TenantId = null,
-    string? CorrelationId = null,
+    string? ErrorMessage,
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
     Guid? ParentExecutionId = null)
-    : BaseJobEvent("FileStagingWorker", TenantId, CorrelationId, ParentExecutionId);
+    : BaseJobEvent("FileStagingWorker", TenantId, CorrelationId, SenderOrigin, SenderUserId, SenderUserEmail, ParentExecutionId);
 
 /// <summary>
 /// Dispatched immediately after an entire batch of files is uploaded and encrypted into a batch folder.
@@ -49,13 +58,13 @@ public record FileStagingCompletedJobEvent(
 public record FileImportBatchJobEvent(
     Guid ImportId,
     Guid ProjectId,
-    string? TenantId = null,
-    string? CorrelationId = null,
-    Guid? ParentExecutionId = null,
-    string? SenderOrigin = null,
-    string? SenderUserId = null,
-    string? SenderUserEmail = null)
-    : BaseJobEvent("FileImportBatchModule", TenantId, CorrelationId, ParentExecutionId, SenderOrigin, SenderUserId, SenderUserEmail);
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
+    Guid? ParentExecutionId = null)
+    : BaseJobEvent("FileImportBatchModule", TenantId, CorrelationId, SenderOrigin, SenderUserId, SenderUserEmail, ParentExecutionId);
 
 /// <summary>
 /// Dispatched after staged records are committed to live domain tables.
@@ -64,8 +73,11 @@ public record FileProcessingCompletedJobEvent(
     Guid ImportFileId,
     bool IsSuccess,
     int ProcessedCount,
-    string? ErrorMessage = null,
-    string? TenantId = null,
-    string? CorrelationId = null,
+    string? ErrorMessage,
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
     Guid? ParentExecutionId = null)
-    : BaseJobEvent("FileDomainProcessor", TenantId, CorrelationId, ParentExecutionId);
+    : BaseJobEvent("FileDomainProcessor", TenantId, CorrelationId, SenderOrigin, SenderUserId, SenderUserEmail, ParentExecutionId);

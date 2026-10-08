@@ -76,7 +76,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -165,7 +165,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -246,7 +246,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -342,7 +342,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -454,7 +454,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -536,7 +536,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -647,7 +647,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -672,6 +672,10 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LastActivityAtUtc")
+                        .HasDatabaseName("IX_UserSessions_LastActivity_Active")
+                        .HasFilter("\"IsRevoked\" = false AND \"IsDeleted\" = false");
 
                     b.HasIndex("StartedAtUtc")
                         .HasDatabaseName("IX_UserSessions_StartedAtUtc");
@@ -792,7 +796,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -900,7 +904,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -986,7 +990,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -997,7 +1001,7 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobExecutions", (string)null);
+                    b.ToTable("JobExecutions");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Knowledge.KnowledgeArticleEntity", b =>
@@ -1089,7 +1093,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1113,6 +1117,9 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_KnowledgeArticles_TenantId");
+
+                    b.HasIndex("TenantId", "ProjectId")
+                        .HasDatabaseName("IX_KnowledgeArticles_TenantId_ProjectId");
 
                     b.ToTable("KnowledgeArticles", "app");
                 });
@@ -1144,7 +1151,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1262,7 +1269,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1292,6 +1299,72 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("Notifications", "app");
+                });
+
+            modelBuilder.Entity("BlazorFluent.Core.Domain.Tasks.TaskDependencyEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<int>("DependencyType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DependsOnTaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ResolveByUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("DependsOnTaskId", "ResolveByUtc")
+                        .HasDatabaseName("IX_TaskDependencies_DependsOn_ResolveBy");
+
+                    b.HasIndex("TaskId", "DependsOnTaskId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TaskDependencies_Task_DependsOn");
+
+                    b.HasIndex("TenantId", "ProjectId")
+                        .HasDatabaseName("IX_TaskDependencies_Tenant_Project");
+
+                    b.ToTable("TaskDependencies", "app");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tasks.UserTaskCommentEntity", b =>
@@ -1345,6 +1418,9 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid");
 
@@ -1353,7 +1429,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1370,6 +1446,9 @@ namespace BlazorFluent.Persistence.Migrations
                     b.HasIndex("TaskId", "CreatedAtUtc")
                         .HasDatabaseName("IX_TaskComments_TaskId_CreatedAtUtc");
 
+                    b.HasIndex("TenantId", "ProjectId", "TaskId")
+                        .HasDatabaseName("IX_TaskComments_Tenant_Project_Task");
+
                     b.ToTable("TaskComments", "app");
                 });
 
@@ -1385,13 +1464,6 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasDefaultValue("");
 
-                    b.Property<DateTime?>("ClosedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ClosedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<DateTime>("Created")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Created");
@@ -1402,29 +1474,12 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("CreatedBy");
 
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<string>("Description")
                         .HasMaxLength(10000)
                         .HasColumnType("character varying(10000)");
 
-                    b.Property<DateTime?>("DueDate")
+                    b.Property<DateTime>("DueDate")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsClosed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<string>("Labels")
                         .ValueGeneratedOnAdd()
@@ -1432,11 +1487,21 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasDefaultValue("");
 
+                    b.Property<Guid?>("MilestoneId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ReporterEmail")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasDefaultValue("");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1451,7 +1516,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1462,8 +1527,10 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsDeleted")
-                        .HasDatabaseName("IX_Tasks_IsDeleted");
+                    b.HasIndex("MilestoneId")
+                        .HasDatabaseName("IX_Tasks_MilestoneId");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Tasks_TenantId");
@@ -1471,10 +1538,69 @@ namespace BlazorFluent.Persistence.Migrations
                     b.HasIndex("TenantId", "ProjectId")
                         .HasDatabaseName("IX_Tasks_TenantId_ProjectId");
 
-                    b.HasIndex("ProjectId", "Status", "DueDate")
-                        .HasDatabaseName("IX_Tasks_ProjectId_Status_DueDate");
+                    b.HasIndex("TenantId", "ProjectId", "Status", "DueDate")
+                        .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
 
                     b.ToTable("Tasks", "app");
+                });
+
+            modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.MilestoneDependencyEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<Guid>("DependsOnMilestoneId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MilestoneId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DependsOnMilestoneId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("MilestoneId", "DependsOnMilestoneId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MilestoneDependencies_Milestone_DependsOn");
+
+                    b.HasIndex("TenantId", "ProjectId")
+                        .HasDatabaseName("IX_MilestoneDependencies_Tenant_Project");
+
+                    b.ToTable("MilestoneDependencies", "app");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.ProjectEntity", b =>
@@ -1554,7 +1680,7 @@ namespace BlazorFluent.Persistence.Migrations
                     b.Property<DateTime?>("TentativeStartDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1574,6 +1700,76 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasDatabaseName("IX_Projects_TenantId_Name");
 
                     b.ToTable("Projects", "tenancy");
+                });
+
+            modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.ProjectMilestoneEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("EndDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("OrderIndex")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_ProjectMilestones_TenantId");
+
+                    b.HasIndex("TenantId", "ProjectId")
+                        .HasDatabaseName("IX_ProjectMilestones_TenantId_ProjectId");
+
+                    b.HasIndex("ProjectId", "Status", "EndDateUtc")
+                        .HasDatabaseName("IX_ProjectMilestones_Project_Status_EndDate");
+
+                    b.ToTable("ProjectMilestones", "app");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.ProjectUserRoleEntity", b =>
@@ -1615,7 +1811,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1718,7 +1914,7 @@ namespace BlazorFluent.Persistence.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("Updated")
+                    b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Updated");
 
@@ -1756,7 +1952,7 @@ namespace BlazorFluent.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataProtectionKeys", (string)null);
+                    b.ToTable("DataProtectionKeys");
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Events.EventConsumptionTrackerEntity", b =>
@@ -1792,6 +1988,21 @@ namespace BlazorFluent.Persistence.Migrations
                     b.Navigation("Article");
                 });
 
+            modelBuilder.Entity("BlazorFluent.Core.Domain.Tasks.TaskDependencyEntity", b =>
+                {
+                    b.HasOne("BlazorFluent.Core.Domain.Tasks.UserTaskEntity", null)
+                        .WithMany()
+                        .HasForeignKey("DependsOnTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BlazorFluent.Core.Domain.Tasks.UserTaskEntity", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tasks.UserTaskCommentEntity", b =>
                 {
                     b.HasOne("BlazorFluent.Core.Domain.Tasks.UserTaskEntity", "Task")
@@ -1805,13 +2016,31 @@ namespace BlazorFluent.Persistence.Migrations
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tasks.UserTaskEntity", b =>
                 {
-                    b.HasOne("BlazorFluent.Core.Domain.Tenancy.ProjectEntity", "Project")
+                    b.HasOne("BlazorFluent.Core.Domain.Tenancy.ProjectMilestoneEntity", null)
+                        .WithMany()
+                        .HasForeignKey("MilestoneId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BlazorFluent.Core.Domain.Tenancy.ProjectEntity", null)
                         .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
 
-                    b.Navigation("Project");
+            modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.MilestoneDependencyEntity", b =>
+                {
+                    b.HasOne("BlazorFluent.Core.Domain.Tenancy.ProjectMilestoneEntity", null)
+                        .WithMany()
+                        .HasForeignKey("DependsOnMilestoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BlazorFluent.Core.Domain.Tenancy.ProjectMilestoneEntity", null)
+                        .WithMany()
+                        .HasForeignKey("MilestoneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.ProjectEntity", b =>
@@ -1823,6 +2052,15 @@ namespace BlazorFluent.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("TenantEntity");
+                });
+
+            modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.ProjectMilestoneEntity", b =>
+                {
+                    b.HasOne("BlazorFluent.Core.Domain.Tenancy.ProjectEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BlazorFluent.Core.Domain.Tenancy.ProjectUserRoleEntity", b =>

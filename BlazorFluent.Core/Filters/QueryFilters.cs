@@ -1,4 +1,4 @@
-namespace BlazorFluent.Core.Common;
+namespace BlazorFluent.Core.Filters;
 
 /// <summary>
 /// Stable names for EF Core 10 Named Global Query Filters.

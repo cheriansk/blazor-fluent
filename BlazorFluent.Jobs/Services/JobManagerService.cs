@@ -1,6 +1,6 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Jobs;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Catalog;
 using BlazorFluent.Persistence.Context;
@@ -70,11 +70,17 @@ public class JobManagerService : IJobManagerService
             return Result.Failure("Cannot trigger job: active tenant context is missing.");
         }
 
+        if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
+        {
+            return Result.Failure("Authentication and active user email are required to manually trigger background jobs.");
+        }
+
         _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
 
         var senderOrigin = $"Button:Run{jobName}";
-        var senderUserId = _currentUser.UserId;
+        var senderUserId = _currentUser.UserId ?? _currentUser.Email;
         var senderUserEmail = _currentUser.Email;
+        var correlationId = Guid.CreateVersion7().ToString("N")[..12];
 
         // Map known job names to their respective typed event triggers
         if (jobName.Equals("CatalogSyncJob", StringComparison.OrdinalIgnoreCase) ||
@@ -83,6 +89,7 @@ public class JobManagerService : IJobManagerService
             var jobEvent = new CatalogSyncJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
+                CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
                 SenderUserEmail: senderUserEmail);
@@ -95,6 +102,7 @@ public class JobManagerService : IJobManagerService
             var jobEvent = new CatalogSyncJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
+                CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
                 SenderUserEmail: senderUserEmail);
@@ -127,18 +135,25 @@ public class JobManagerService : IJobManagerService
             return Result.Failure("Access Denied: You cannot retry jobs belonging to another tenant.");
         }
 
+        if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
+        {
+            return Result.Failure("Authentication and active user email are required to retry background jobs.");
+        }
+
         _logger.LogInformation("Initiating manual retry for job {JobName} (Previous Execution: {ExecutionId})",
             execution.JobName, executionId);
 
         var senderOrigin = $"Button:Retry{execution.JobName}";
+        var retryUserId = _currentUser.UserId ?? _currentUser.Email;
+        var retryUserEmail = _currentUser.Email;
         var retryEvent = new CatalogSyncJobEvent(
             TriggerSource: senderOrigin,
             TenantId: execution.TenantId,
             CorrelationId: execution.CorrelationId,
-            ParentExecutionId: execution.Id,
             SenderOrigin: senderOrigin,
-            SenderUserId: _currentUser.UserId,
-            SenderUserEmail: _currentUser.Email);
+            SenderUserId: retryUserId,
+            SenderUserEmail: retryUserEmail,
+            ParentExecutionId: execution.Id);
 
         await _queue.EnqueueAsync(retryEvent, cancellationToken);
 

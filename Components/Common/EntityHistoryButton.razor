@@ -1,5 +1,6 @@
 @namespace BlazorFluent.Components.Common
-@using BlazorFluent.Core.DTOs
+@using BlazorFluent.Core.Dtos
+@using BlazorFluent.Core.Dtos.Response
 @inject IDialogService DialogService
 
 <FluentButton Appearance="@Appearance"
@@ -25,7 +26,7 @@
     {
         if (!string.IsNullOrWhiteSpace(EntityName) && !string.IsNullOrWhiteSpace(EntityId))
         {
-            var data = new EntityHistoryData
+            var data = new EntityHistoryDataRespDto
             {
                 EntityName = EntityName,
                 EntityId = EntityId,

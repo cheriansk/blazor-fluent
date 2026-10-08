@@ -59,43 +59,27 @@ public abstract record BaseJobEvent : IJobEvent
 
     protected BaseJobEvent(
         string triggerSource,
-        string? tenantId = null,
-        string? correlationId = null,
-        Guid? parentExecutionId = null,
-        string? senderOrigin = null,
-        string? senderUserId = null,
-        string? senderUserEmail = null)
+        string tenantId,
+        string correlationId,
+        string senderOrigin,
+        string senderUserId,
+        string senderUserEmail,
+        Guid? parentExecutionId = null)
     {
-        var jobName = GetType().Name.Replace("Event", string.Empty);
+        ArgumentException.ThrowIfNullOrWhiteSpace(triggerSource);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(senderOrigin);
+        ArgumentException.ThrowIfNullOrWhiteSpace(senderUserId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(senderUserEmail);
 
-        TriggerSource = !string.IsNullOrWhiteSpace(triggerSource)
-            ? triggerSource
-            : (!string.IsNullOrWhiteSpace(senderOrigin) ? senderOrigin : "System");
-
-        TenantId = !string.IsNullOrWhiteSpace(tenantId)
-            ? tenantId
-            : "system";
-
-        CorrelationId = !string.IsNullOrWhiteSpace(correlationId)
-            ? correlationId
-            : Guid.CreateVersion7().ToString("N")[..12];
-
+        TriggerSource = triggerSource;
+        TenantId = tenantId;
+        CorrelationId = correlationId;
+        SenderOrigin = senderOrigin;
+        SenderUserId = senderUserId;
+        SenderUserEmail = senderUserEmail;
         ParentExecutionId = parentExecutionId;
-
-        SenderOrigin = !string.IsNullOrWhiteSpace(senderOrigin)
-            ? senderOrigin
-            : (!string.IsNullOrWhiteSpace(triggerSource) ? triggerSource : jobName);
-
-        var defaultDaemonId = $"SystemDaemon ({jobName})";
-
-        SenderUserId = !string.IsNullOrWhiteSpace(senderUserId)
-            ? senderUserId
-            : defaultDaemonId;
-
-        // For human user, if email is provided use it; for batch user (or missing email), userEmail matches userId
-        SenderUserEmail = !string.IsNullOrWhiteSpace(senderUserEmail)
-            ? senderUserEmail
-            : (!string.IsNullOrWhiteSpace(senderUserId) ? senderUserId : defaultDaemonId);
     }
 }
 

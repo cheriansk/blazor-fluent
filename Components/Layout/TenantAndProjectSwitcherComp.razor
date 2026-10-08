@@ -71,7 +71,7 @@
         else if (_projects.Count == 1)
         {
             <!-- Exactly 1 project: Defaulted and Read-Only / Disabled -->
-            <FluentSelect TOption="ProjectInfo"
+            <FluentSelect TOption="ProjectInfoDto"
                           TValue="string"
                           Items="@_projects"
                           OptionValue="@(p => p.Id.ToString())"
@@ -84,7 +84,7 @@
         else
         {
             <!-- Multiple projects: Switchable dropdown -->
-            <FluentSelect TOption="ProjectInfo"
+            <FluentSelect TOption="ProjectInfoDto"
                           TValue="string"
                           Items="@_projects"
                           OptionValue="@(p => p.Id.ToString())"
@@ -105,7 +105,7 @@
 }
 
 @code {
-    private List<ProjectInfo> _projects = new();
+    private List<ProjectInfoDto> _projects = new();
     private bool _isLoadingProjects;
     private string? _switchError;
 
@@ -123,7 +123,7 @@
             _isLoadingProjects = true;
             var entities = await TenantService.GetTenantProjectsAsync(TenantContext.TenantId);
             _projects = entities
-                .Select(e => new ProjectInfo(e.Id, e.Name, e.ShortCode, e.Status))
+                .Select(e => new ProjectInfoDto(e.Id, e.Name, e.ShortCode, e.Status))
                 .ToList();
 
             // Initialize ProjectContext

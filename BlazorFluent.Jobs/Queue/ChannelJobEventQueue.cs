@@ -48,10 +48,12 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                 var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
                 if (tenantContext != null)
                 {
-                    var targetTenantId = jobEvent.TenantId;
+                    var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId)
+                        ? jobEvent.TenantId
+                        : IRootAdminService.DefaultTenantSlug;
                     tenantContext.Initialize(
                         tenantId: targetTenantId,
-                        tenantName: targetTenantId == "system" ? "System Daemon" : null,
+                        tenantName: targetTenantId,
                         userType: Core.DataListTypes.UserType.CompanyUser,
                         allowedTenants: [],
                         isHost: false);
@@ -62,7 +64,24 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                     : jobEvent.GetType().Name.Replace("Event", string.Empty);
 
                 var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-                currentUser?.SetSystemDaemon($"ChannelJob:{jobName}");
+                if (currentUser != null)
+                {
+                    if (!string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail))
+                    {
+                        currentUser.RestoreUserContext(
+                            jobEvent.SenderUserId ?? string.Empty,
+                            jobEvent.SenderUserEmail,
+                            jobEvent.SenderOrigin ?? jobEvent.SenderUserEmail);
+                    }
+                    else
+                    {
+                        var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail)
+                            ? jobEvent.SenderUserEmail
+                            : "cron-daemon@blazorfluent.local";
+                        currentUser.SetSystemDaemon($"ChannelJob:{jobName}", cronEmail);
+                    }
+                }
 
                 var eventTracker = scope.ServiceProvider.GetService<IEventTrackerService>();
                 if (eventTracker != null)

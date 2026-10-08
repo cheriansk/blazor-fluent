@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Common;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Core.Contracts;
 
@@ -18,7 +18,7 @@ public interface IProjectContext
     string? ProjectShortCode { get; }
 
     /// <summary>The list of projects in the active tenant available to the current user.</summary>
-    IReadOnlyList<ProjectInfo> AllowedProjects { get; }
+    IReadOnlyList<ProjectInfoDto> AllowedProjects { get; }
 
     /// <summary>Whether a project is currently selected.</summary>
     bool HasProject => ProjectId.HasValue;
@@ -26,7 +26,7 @@ public interface IProjectContext
     /// <summary>
     /// Populates the project context for the current tenant.
     /// </summary>
-    void Initialize(Guid? projectId, string? projectName, string? projectCode, IEnumerable<ProjectInfo> allowedProjects);
+    void Initialize(Guid? projectId, string? projectName, string? projectCode, IEnumerable<ProjectInfoDto> allowedProjects);
 
     /// <summary>
     /// Switches the active project to the specified project ID.
