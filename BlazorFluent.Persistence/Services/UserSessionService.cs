@@ -145,7 +145,18 @@ public class UserSessionService : IUserSessionService
             .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
         if (session != null && !session.IsRevoked)
         {
-            session.LastActivityAtUtc = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            if (session.StartedAtUtc.AddHours(8) < now)
+            {
+                session.IsRevoked = true;
+                session.RevokedAtUtc = now;
+                session.RevokedBy = "System:MaxSessionLifetimeExceeded";
+                _logger.LogWarning("Session heartbeat rejected: session {SessionId} exceeded 8-hour lifetime and was revoked.", sessionId);
+            }
+            else
+            {
+                session.LastActivityAtUtc = now;
+            }
             await dbContext.SaveChangesAsync(ct);
         }
     }
