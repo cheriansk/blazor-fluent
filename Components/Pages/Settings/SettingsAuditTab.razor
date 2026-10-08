@@ -283,9 +283,7 @@
         try
         {
             var userQuery = DbContext.Users
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .Where(u => !u.IsDeleted);
+                .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(_selectedTenantId))
             {

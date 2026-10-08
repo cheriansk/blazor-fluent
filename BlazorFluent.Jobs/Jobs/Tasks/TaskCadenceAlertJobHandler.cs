@@ -39,9 +39,8 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
         var today = DateTime.UtcNow.Date;
 
-        // 1. Fetch active tasks across all tenants
+        // 1. Fetch active tasks for the scoped tenant
         var activeTasks = await _dbContext.Tasks
-            .IgnoreQueryFilters()
             .Where(t => t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
@@ -56,11 +55,10 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
         // 2. Fetch blocking dependencies
         var blockingDependencies = await _dbContext.TaskDependencies
-            .IgnoreQueryFilters()
             .Where(d => d.DependencyType == TaskDependencyType.Blocks)
             .ToListAsync(cancellationToken);
 
-        // 3. User email to ID lookup for in-app notification routing
+        // 3. User email to ID lookup for in-app notification routing (global non-deleted users)
         var allUserEmails = activeTasks
             .SelectMany(t => t.GetParsedAssigneeEmails())
             .Select(e => e.Trim().ToLowerInvariant())
@@ -68,7 +66,6 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
             .ToList();
 
         var usersByEmail = await _dbContext.Users
-            .IgnoreQueryFilters()
             .Where(u => allUserEmails.Contains(u.Email.ToLower()))
             .ToDictionaryAsync(u => u.Email.ToLower(), u => u.Id.ToString(), cancellationToken);
 

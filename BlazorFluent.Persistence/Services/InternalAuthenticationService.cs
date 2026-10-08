@@ -82,7 +82,11 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("Your account is not provisioned in this system.");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"] ?? "BlazorFluent-Secret-Key-Change-In-Production-2026";
+        var secretKey = _configuration["Security:IntegritySecret"];
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' is not configured in KeyVault, environment, or User Secrets.");
+        }
         if (!user.IsValidForLogin(DateTime.UtcNow, secretKey, out var failureReason))
         {
             await auditService.LogSecurityEventAsync(
@@ -150,7 +154,11 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("User account is no longer valid or has been removed.");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"] ?? "BlazorFluent-Secret-Key-Change-In-Production-2026";
+        var secretKey = _configuration["Security:IntegritySecret"];
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' is not configured in KeyVault, environment, or User Secrets.");
+        }
         if (!user.IsValidForLogin(DateTime.UtcNow, secretKey, out var failureReason))
         {
             _logger.LogWarning("Session rehydration rejected for user {Email}: {Reason}", user.Email, failureReason);

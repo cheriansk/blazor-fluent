@@ -44,18 +44,16 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 
         var globalWebhook = _configuration["Teams:DefaultWebhookUrl"];
 
-        // Query all active projects across tenants
+        // Query active projects for the scoped tenant
         var projects = await _dbContext.Projects
-            .IgnoreQueryFilters()
             .Where(p => p.IsActive && !p.IsDeleted)
             .ToListAsync(cancellationToken);
 
         var dispatchedCount = 0;
 
-        // Batch retrieve all actionable tasks across all target projects in a single query
+        // Batch retrieve all actionable tasks across target projects in a single query
         var projectIds = projects.Select(p => p.Id).ToList();
         var allTasks = await _dbContext.Tasks
-            .IgnoreQueryFilters()
             .Where(t => projectIds.Contains(t.ProjectId) &&
                         t.Status != UserTaskStatus.Closed &&
                         t.Status != UserTaskStatus.Cancelled)
