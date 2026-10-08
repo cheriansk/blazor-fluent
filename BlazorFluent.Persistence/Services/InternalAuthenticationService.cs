@@ -146,6 +146,38 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("Your active session has expired or was revoked by an administrator.");
         }
 
+        var now = DateTime.UtcNow;
+
+        // Hard Limit: 8-Hour Absolute Maximum Session Lifetime
+        if (session.StartedAtUtc.AddHours(8) < now)
+        {
+            await dbContext.UserSessions
+                .IgnoreQueryFilters()
+                .Where(s => s.Id == sessionId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.IsRevoked, true)
+                    .SetProperty(x => x.RevokedAtUtc, now)
+                    .SetProperty(x => x.RevokedBy, "System:MaxSessionLifetimeExceeded"), ct);
+
+            _logger.LogWarning("Session rehydration rejected: session {SessionId} exceeded absolute 8-hour maximum lifetime.", sessionId);
+            return Result<AuthUserResult>.Failure("Your session has reached the maximum 8-hour limit. Please sign in again.");
+        }
+
+        // Hard Limit: 30-Minute Idle Inactivity Timeout
+        if (session.LastActivityAtUtc.AddMinutes(30) < now)
+        {
+            await dbContext.UserSessions
+                .IgnoreQueryFilters()
+                .Where(s => s.Id == sessionId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.IsRevoked, true)
+                    .SetProperty(x => x.RevokedAtUtc, now)
+                    .SetProperty(x => x.RevokedBy, "System:IdleTimeoutExceeded"), ct);
+
+            _logger.LogWarning("Session rehydration rejected: session {SessionId} exceeded 30-minute idle threshold.", sessionId);
+            return Result<AuthUserResult>.Failure("Your session has expired due to 30 minutes of inactivity. Please sign in again.");
+        }
+
         var user = await dbContext.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id.ToString() == userId && !u.IsDeleted, ct);

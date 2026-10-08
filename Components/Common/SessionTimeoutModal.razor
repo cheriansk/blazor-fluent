@@ -1,0 +1,297 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Infrastructure.Security
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.JSInterop
+@inject ICurrentUser CurrentUser
+@inject IUserSessionService SessionService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject ProtectedSessionStorage SessionStorage
+@inject IJSRuntime JSRuntime
+@inject ILogger<SessionTimeoutModal> Logger
+@implements IAsyncDisposable
+
+@if (_showIdleWarning)
+{
+    @* Inactivity Warning Modal *@
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); z-index: 9998; display: flex; align-items: center; justify-content: center;">
+        <FluentCard Style="max-width: 480px; width: 92%; padding: 32px 28px; text-align: center; border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.35);">
+            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="14">
+                <div style="background-color: var(--warning-background, #fff4ce); padding: 18px; border-radius: 50%; display: inline-flex;">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.Timer())" Color="Color.Warning" />
+                </div>
+
+                <FluentLabel Typo="Typography.H4" Style="margin: 0; font-weight: 700;">Inactivity Warning</FluentLabel>
+
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); line-height: 1.5;">
+                    You have been inactive for over 15 minutes. For your security, you will be automatically signed out in:
+                </FluentLabel>
+
+                <div style="font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent-fill-rest, #0078d4); margin: 6px 0;">
+                    @FormatTimeRemaining(_idleTimeRemainingSeconds)
+                </div>
+
+                <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-3, #757575);">
+                    Click "Stay Logged In" or interact with the page to keep working.
+                </FluentLabel>
+
+                <FluentDivider Style="width: 100%; margin: 6px 0;" />
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" Style="width: 100%;" HorizontalGap="12">
+                    <FluentButton Appearance="ButtonAppearance.Default"
+                                  Style="flex: 1; height: 38px; font-weight: 600;"
+                                  OnClick="HandleStayLoggedIn">
+                        Stay Logged In
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Outline"
+                                  Style="flex: 1; height: 38px;"
+                                  OnClick="@(() => HandleLogout("idle_timeout"))">
+                        Sign Out Now
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+    </div>
+}
+else if (_showMaxLifetimeWarning)
+{
+    @* 8-Hour Maximum Session Lifetime Warning Modal *@
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); z-index: 9998; display: flex; align-items: center; justify-content: center;">
+        <FluentCard Style="max-width: 480px; width: 92%; padding: 32px 28px; text-align: center; border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.35);">
+            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="14">
+                <div style="background-color: var(--warning-background, #fff4ce); padding: 18px; border-radius: 50%; display: inline-flex;">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.ClockAlarm())" Color="Color.Warning" />
+                </div>
+
+                <FluentLabel Typo="Typography.H4" Style="margin: 0; font-weight: 700;">Maximum Session Expiration</FluentLabel>
+
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); line-height: 1.5;">
+                    Your maximum 8-hour session will expire in:
+                </FluentLabel>
+
+                <div style="font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--error-fill-rest, #d13438); margin: 6px 0;">
+                    @FormatTimeRemaining(_maxLifetimeRemainingSeconds)
+                </div>
+
+                <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-2, #616161);">
+                    Please save any unsaved work. You will be required to sign in again once this maximum limit is reached.
+                </FluentLabel>
+
+                <FluentDivider Style="width: 100%; margin: 6px 0;" />
+
+                <FluentButton Appearance="ButtonAppearance.Default"
+                              Style="width: 100%; height: 38px; font-weight: 600;"
+                              OnClick="@(() => _showMaxLifetimeWarning = false)">
+                    I Understand (Continue Working)
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
+    </div>
+}
+
+@code {
+    private bool _showIdleWarning;
+    private bool _showMaxLifetimeWarning;
+    private int _idleTimeRemainingSeconds;
+    private int _maxLifetimeRemainingSeconds;
+
+    private DateTime _lastActivityUtc = DateTime.UtcNow;
+    private DateTime _lastHeartbeatUtc = DateTime.UtcNow;
+    private DateTime _sessionStartedAtUtc = DateTime.UtcNow;
+    private bool _isLoggingOut;
+
+    private PeriodicTimer? _timer;
+    private DotNetObjectReference<SessionTimeoutModal>? _dotNetRef;
+
+    protected override void OnInitialized()
+    {
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = RunTimeoutWatchdogAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _dotNetRef = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("sessionTracker.init", _dotNetRef);
+
+                var sessionData = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
+                if (sessionData.Success && sessionData.Value?.StartedAtUtc.HasValue == true)
+                {
+                    _sessionStartedAtUtc = sessionData.Value.StartedAtUtc.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Could not initialize sessionTracker JS listener.");
+            }
+        }
+    }
+
+    private async Task RunTimeoutWatchdogAsync()
+    {
+        if (_timer is null) return;
+
+        try
+        {
+            while (await _timer.WaitForNextTickAsync())
+            {
+                if (!CurrentUser.IsAuthenticated || string.IsNullOrWhiteSpace(CurrentUser.SessionId) || _isLoggingOut)
+                {
+                    continue;
+                }
+
+                var now = DateTime.UtcNow;
+                var idleSeconds = (now - _lastActivityUtc).TotalSeconds;
+                var sessionSeconds = (now - _sessionStartedAtUtc).TotalSeconds;
+
+                // 1. Check Absolute Maximum 8-Hour Session Lifetime (28,800 seconds)
+                if (sessionSeconds >= 28800)
+                {
+                    await HandleLogout("max_session_timeout");
+                    break;
+                }
+                else if (sessionSeconds >= 27900) // 7 hours 45 minutes
+                {
+                    _maxLifetimeRemainingSeconds = (int)(28800 - sessionSeconds);
+                    if (!_showMaxLifetimeWarning && !_showIdleWarning)
+                    {
+                        _showMaxLifetimeWarning = true;
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+
+                // 2. Check 30-Minute Idle Timeout (1800 seconds total: 15m idle + 15m countdown)
+                if (idleSeconds >= 1800)
+                {
+                    await HandleLogout("idle_timeout");
+                    break;
+                }
+                else if (idleSeconds >= 900) // 15 minutes idle
+                {
+                    _idleTimeRemainingSeconds = (int)(1800 - idleSeconds);
+                    if (!_showIdleWarning)
+                    {
+                        _showIdleWarning = true;
+                    }
+                    await InvokeAsync(StateHasChanged);
+                }
+                else
+                {
+                    if (_showIdleWarning)
+                    {
+                        _showIdleWarning = false;
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Timeout watchdog stopped.");
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnUserActivityDetected()
+    {
+        _lastActivityUtc = DateTime.UtcNow;
+
+        if (_showIdleWarning)
+        {
+            _showIdleWarning = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        // Heartbeat renewal: only dispatch to DB if at least 60 seconds have elapsed
+        if ((DateTime.UtcNow - _lastHeartbeatUtc).TotalSeconds >= 60 && Guid.TryParse(CurrentUser.SessionId, out var sessionId))
+        {
+            _lastHeartbeatUtc = DateTime.UtcNow;
+            try
+            {
+                await SessionService.UpdateHeartbeatAsync(sessionId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Heartbeat renewal failed.");
+            }
+        }
+    }
+
+    private async Task HandleStayLoggedIn()
+    {
+        _lastActivityUtc = DateTime.UtcNow;
+        _showIdleWarning = false;
+
+        if (Guid.TryParse(CurrentUser.SessionId, out var sessionId))
+        {
+            try
+            {
+                await SessionService.UpdateHeartbeatAsync(sessionId);
+                _lastHeartbeatUtc = DateTime.UtcNow;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Failed to refresh heartbeat on Stay Logged In.");
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleLogout(string reason)
+    {
+        if (_isLoggingOut) return;
+        _isLoggingOut = true;
+
+        try
+        {
+            if (Guid.TryParse(CurrentUser.SessionId, out var sessionId))
+            {
+                await SessionService.RevokeSessionAsync(sessionId, $"Client:{reason}");
+            }
+
+            await SessionStorage.DeleteAsync("app_session");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error while revoking session during {Reason}", reason);
+        }
+
+        if (CurrentUser is AppCurrentUser appUser)
+        {
+            appUser.IsAuthenticated = false;
+            appUser.SessionId = null;
+        }
+
+        AuthStateProvider.NotifyUserChanged();
+        NavigationManager.NavigateTo($"/login?reason={reason}", forceLoad: true);
+    }
+
+    private static string FormatTimeRemaining(int totalSeconds)
+    {
+        if (totalSeconds < 0) totalSeconds = 0;
+        var minutes = totalSeconds / 60;
+        var seconds = totalSeconds % 60;
+        return $"{minutes:D2}:{seconds:D2}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _timer?.Dispose();
+        try
+        {
+            if (_dotNetRef != null)
+            {
+                await JSRuntime.InvokeVoidAsync("sessionTracker.dispose");
+                _dotNetRef.Dispose();
+            }
+        }
+        catch { }
+    }
+}

@@ -79,6 +79,13 @@
                 }
             </FluentButton>
 
+            @if (!string.IsNullOrEmpty(_infoMessage))
+            {
+                <FluentMessageBar Intent="MessageBarIntent.Warning">
+                    @_infoMessage
+                </FluentMessageBar>
+            }
+
             @if (!string.IsNullOrEmpty(_errorMessage))
             {
                 <FluentMessageBar Intent="MessageBarIntent.Error">
@@ -131,13 +138,27 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "reason")]
+    public string? Reason { get; set; }
+
     private bool _isAcknowledged;
     private bool _isLoading;
     private string? _errorMessage;
+    private string? _infoMessage;
     private string _secretKey = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(Reason))
+        {
+            _infoMessage = Reason switch
+            {
+                "idle_timeout" => "Your session has expired due to 30 minutes of inactivity. Please sign in again.",
+                "max_session_timeout" => "Your session has reached the maximum 8-hour limit. Please sign in again.",
+                _ => null
+            };
+        }
+
         _secretKey = Configuration["Security:IntegritySecret"] ?? string.Empty;
         if (string.IsNullOrWhiteSpace(_secretKey) || _secretKey.StartsWith("__SET_VIA_"))
         {
@@ -228,7 +249,8 @@
                     user.Id.ToString(),
                     user.Email,
                     verified.ResolvedTenantId,
-                    TimeZoneId: user.TimeZoneId));
+                    TimeZoneId: user.TimeZoneId,
+                    StartedAtUtc: session.StartedAtUtc));
             }
             catch (Exception ex)
             {

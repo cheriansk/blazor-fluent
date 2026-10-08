@@ -10,4 +10,5 @@ public record UserSessionStorageData(
     string Email,
     string ActiveTenantId,
     Guid? ActiveProjectId = null,
-    string? TimeZoneId = null);
+    string? TimeZoneId = null,
+    DateTime? StartedAtUtc = null);
