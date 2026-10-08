@@ -134,11 +134,16 @@
     private bool _isAcknowledged;
     private bool _isLoading;
     private string? _errorMessage;
-    private string _secretKey = "BlazorFluent-Secret-Key-Change-In-Production-2026";
+    private string _secretKey = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        _secretKey = Configuration["Security:IntegritySecret"] ?? _secretKey;
+        _secretKey = Configuration["Security:IntegritySecret"] ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(_secretKey) || _secretKey.StartsWith("__SET_VIA_"))
+        {
+            Logger.LogError("CRITICAL SECURITY ERROR: 'Security:IntegritySecret' is missing or unconfigured.");
+        }
+
         if (HostEnvironment.IsDevelopment())
         {
             await EnsureSeedUsersAsync();

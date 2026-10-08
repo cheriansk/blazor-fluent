@@ -60,8 +60,30 @@ try
         }
         else
         {
-            Log.Warning("KeyVault:Uri not configured — running without Azure Key Vault in production.");
+            Log.Warning("KeyVault:Uri not configured — checking environment and secret providers for production secrets.");
         }
+
+        // Production Security Startup Gate: Fail-closed on missing or placeholder secrets
+        var dbConn = builder.Configuration.GetConnectionString("DefaultConnection");
+        var integritySecret = builder.Configuration["Security:IntegritySecret"];
+        var masterKey = builder.Configuration["Security:MasterEncryptionKey"];
+
+        if (string.IsNullOrWhiteSpace(dbConn) || dbConn.Contains("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'ConnectionStrings:DefaultConnection' is not configured or contains placeholder credentials.");
+        }
+
+        if (string.IsNullOrWhiteSpace(integritySecret) || integritySecret.Contains("__SET_VIA_") || integritySecret.Length < 32)
+        {
+            throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'Security:IntegritySecret' must be configured in Azure Key Vault or environment variables with at least 32 characters.");
+        }
+
+        if (string.IsNullOrWhiteSpace(masterKey) || masterKey.Contains("__SET_VIA_") || masterKey.Length < 32)
+        {
+            throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'Security:MasterEncryptionKey' must be configured in Azure Key Vault or environment variables with at least 32 characters.");
+        }
+
+        Log.Information("Production Security Startup Gate passed: All required secrets and connection strings validated.");
     }
 
     // 2. Configure Serilog using Host Integration, appsettings.json, and Timezone Settings

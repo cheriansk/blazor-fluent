@@ -5,12 +5,14 @@
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Infrastructure.Security
 @using BlazorFluent.Persistence.Context
+@using BlazorFluent.Persistence.Extensions
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject ITenantService TenantService
 @inject ICurrentUser CurrentUser
+@inject IAuditService AuditService
 @inject IProjectAuthorizationService ProjectAuth
 @inject IImpersonationService ImpersonationService
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
@@ -701,12 +703,21 @@
         _isLoading = true;
         try
         {
-            _projects = await DbContext.Projects
-                .IgnoreQueryFilters()
+            var query = DbContext.Projects
                 .AsNoTracking()
                 .Where(p => p.TenantId == _selectedTenantId && !p.IsDeleted)
-                .OrderBy(p => p.Name)
-                .ToListAsync();
+                .OrderBy(p => p.Name);
+
+            if (_selectedTenantId != TenantContext.TenantId)
+            {
+                _projects = await query.ToListWithAuditedBypassAsync(
+                    AuditService,
+                    $"Host user inspected projects in tenant '{_selectedTenantId}'");
+            }
+            else
+            {
+                _projects = await query.ToListAsync();
+            }
 
             if (_selectedProject != null)
             {

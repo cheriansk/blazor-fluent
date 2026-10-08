@@ -26,15 +26,13 @@ public class TenantAesGcmEncryptionService : ITenantEncryptionService
         _logger = logger;
 
         var keyConfig = configuration["Security:MasterEncryptionKey"];
-        if (!string.IsNullOrWhiteSpace(keyConfig) && keyConfig.Length >= 32)
+        if (string.IsNullOrWhiteSpace(keyConfig) || keyConfig.Length < 32 || keyConfig.StartsWith("__SET_VIA_"))
         {
-            _masterKey = Encoding.UTF8.GetBytes(keyConfig[..32]);
+            throw new InvalidOperationException(
+                "Zero-Trust Security Violation: 'Security:MasterEncryptionKey' must be configured in KeyVault, environment, or User Secrets with at least 32 characters.");
         }
-        else
-        {
-            // Deterministic default development master key (32 bytes)
-            _masterKey = SHA256.HashData(Encoding.UTF8.GetBytes("BlazorFluent-Dev-Master-Encryption-Secret-Key-2026"));
-        }
+
+        _masterKey = Encoding.UTF8.GetBytes(keyConfig[..32]);
     }
 
     public async Task<Stream> EncryptStreamAsync(Stream plaintextStream, string tenantId, CancellationToken cancellationToken = default)

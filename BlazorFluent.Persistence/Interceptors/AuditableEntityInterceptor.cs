@@ -362,6 +362,32 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             };
 
             auditRecords.Add(record);
+
+            // Forensic Oversight: Audit Host user exercising cross-tenant modification privilege
+            if (tenantContext.IsHost &&
+                !string.IsNullOrWhiteSpace(tenantContext.TenantId) &&
+                !string.Equals(tenantId, tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+            {
+                var crossTenantSecurityAudit = new AuditRecordEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    TenantId = tenantId,
+                    UserId = currentUserId,
+                    UserEmail = currentUser.Email,
+                    UserType = tenantContext.UserType,
+                    EventType = AuditEventType.Security,
+                    Severity = AuditSeverity.Warning,
+                    EntityName = entityName,
+                    EntityId = entityId,
+                    Operation = operation,
+                    Description = $"[Host Oversight] Host user '{currentUserId}' performed cross-tenant {operation} on entity '{entityName}' (ID: {entityId}) in tenant '{tenantId}'.",
+                    Created = now,
+                    CreatedBy = currentUserId,
+                    Updated = now,
+                    UpdatedBy = currentUserId
+                };
+                auditRecords.Add(crossTenantSecurityAudit);
+            }
         }
 
         if (auditRecords.Count > 0)

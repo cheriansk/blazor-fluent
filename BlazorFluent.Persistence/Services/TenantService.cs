@@ -271,7 +271,11 @@ public class TenantService : ITenantService
             return Result<UserEntity>.Failure($"A user with email '{normalizedEmail}' already exists.");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"] ?? "BlazorFluent-Secret-Key-Change-In-Production-2026";
+        var secretKey = _configuration["Security:IntegritySecret"];
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
+        }
         var user = new UserEntity
         {
             Id = Guid.NewGuid(),
@@ -381,7 +385,11 @@ public class TenantService : ITenantService
         user.EndDateUtc = endDate.ToUniversalTime();
         user.IsActive = isActive;
 
-        var secretKey = _configuration["Security:IntegritySecret"] ?? "BlazorFluent-Secret-Key-Change-In-Production-2026";
+        var secretKey = _configuration["Security:IntegritySecret"];
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
+        }
         user.RowSignature = user.ComputeIntegritySignature(secretKey);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -480,9 +488,8 @@ public class TenantService : ITenantService
         }
 
         return await _dbContext.Projects
-            .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(p => p.TenantId == normalizedSlug && !p.IsDeleted)
+            .Where(p => p.TenantId == normalizedSlug)
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
     }
@@ -528,8 +535,7 @@ public class TenantService : ITenantService
         var trimmedCode = shortCode.Trim();
 
         var duplicate = await _dbContext.Projects
-            .IgnoreQueryFilters()
-            .AnyAsync(p => p.TenantId == normalizedSlug && !p.IsDeleted &&
+            .AnyAsync(p => p.TenantId == normalizedSlug &&
                            (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
                       cancellationToken);
 
@@ -562,6 +568,15 @@ public class TenantService : ITenantService
             $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
             cancellationToken);
 
+        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            await _auditService.LogSecurityEventAsync(
+                "HostCrossTenantAction",
+                AuditSeverity.Warning,
+                $"[Host Privilege] Host user '{_currentUser.UserId}' created project '{project.Name}' in tenant '{normalizedSlug}'.",
+                cancellationToken);
+        }
+
         return Result<ProjectEntity>.Success(project);
     }
 
@@ -589,9 +604,8 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         var project = await _dbContext.Projects
-            .IgnoreQueryFilters()
             .AsTracking()
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == normalizedSlug && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == normalizedSlug, cancellationToken);
 
         if (project is null)
             return Result<ProjectEntity>.Failure($"Project was not found in tenant '{tenantSlug}'.");
@@ -600,8 +614,7 @@ public class TenantService : ITenantService
         var trimmedCode = shortCode.Trim();
 
         var duplicate = await _dbContext.Projects
-            .IgnoreQueryFilters()
-            .AnyAsync(p => p.TenantId == normalizedSlug && p.Id != projectId && !p.IsDeleted &&
+            .AnyAsync(p => p.TenantId == normalizedSlug && p.Id != projectId &&
                            (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
                       cancellationToken);
 
@@ -629,6 +642,15 @@ public class TenantService : ITenantService
             $"Updated tenant project '{project.Name}' ({project.ShortCode})",
             $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
             cancellationToken);
+
+        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            await _auditService.LogSecurityEventAsync(
+                "HostCrossTenantAction",
+                AuditSeverity.Warning,
+                $"[Host Privilege] Host user '{_currentUser.UserId}' updated project '{project.Name}' in tenant '{normalizedSlug}'.",
+                cancellationToken);
+        }
 
         return Result<ProjectEntity>.Success(project);
     }

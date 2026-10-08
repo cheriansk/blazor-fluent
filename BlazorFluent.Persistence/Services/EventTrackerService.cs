@@ -309,7 +309,6 @@ public class EventTrackerService : IEventTrackerService
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.EventPublishTrackers
-            .IgnoreQueryFilters()
             .Include(e => e.Consumptions)
             .AsSplitQuery()
             .AsNoTracking();
@@ -392,7 +391,6 @@ public class EventTrackerService : IEventTrackerService
         CancellationToken cancellationToken = default)
     {
         var publishTracker = await _dbContext.EventPublishTrackers
-            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == publishTrackerId, cancellationToken);
 
@@ -406,7 +404,6 @@ public class EventTrackerService : IEventTrackerService
         }
 
         return await _dbContext.EventConsumptionTrackers
-            .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(c => c.EventPublishTrackerId == publishTrackerId)
             .OrderBy(c => c.StartedAtUtc)
@@ -418,7 +415,6 @@ public class EventTrackerService : IEventTrackerService
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.EventPublishTrackers
-            .IgnoreQueryFilters()
             .Include(e => e.Consumptions)
             .AsSplitQuery()
             .AsNoTracking();

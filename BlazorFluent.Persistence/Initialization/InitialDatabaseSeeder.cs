@@ -6,6 +6,7 @@ using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Initialization;
@@ -29,9 +30,15 @@ public static class InitialDatabaseSeeder
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var hostEnvironment = scope.ServiceProvider.GetService<IHostEnvironment>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(InitialDatabaseSeeder));
+        var isDevelopment = hostEnvironment?.IsDevelopment() ?? false;
 
-        var integrityKey = configuration["Security:IntegritySecret"] ?? "BlazorFluent-Secret-Key-Change-In-Production-2026";
+        var integrityKey = configuration["Security:IntegritySecret"];
+        if (string.IsNullOrWhiteSpace(integrityKey) || integrityKey.StartsWith("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
+        }
         var adminEmails = rootAdminService.GetRootAdminEmails();
 
         // 1. Ensure internal root anchor Default Tenant exists
@@ -76,7 +83,7 @@ public static class InitialDatabaseSeeder
             .CountAsync(u => u.DefaultTenantId == DefaultTenantSlug && !u.IsDeleted, cancellationToken);
 
         var index = 1;
-        var usersAdded = false;
+        var changesMade = false;
 
         foreach (var email in adminEmails)
         {
@@ -112,16 +119,36 @@ public static class InitialDatabaseSeeder
                 user.RowSignature = user.ComputeIntegritySignature(integrityKey);
                 dbContext.Users.Add(user);
                 existingCount++;
-                usersAdded = true;
+                changesMade = true;
             }
 
             index++;
         }
 
-        if (usersAdded)
+        // 3. Self-healing signature synchronization strictly restricted to Development mode.
+        // In Development, if the integrity secret is rotated or updated, automatically re-sign valid seed users.
+        // Production environments remain strictly zero-trust and never automatically re-sign mismatched rows.
+        if (isDevelopment)
+        {
+            var devUsers = await dbContext.Users
+                .Where(u => !u.IsDeleted && u.Email != "tampered@blazorfluent.local")
+                .ToListAsync(cancellationToken);
+
+            foreach (var user in devUsers)
+            {
+                if (!user.VerifyIntegritySignature(integrityKey))
+                {
+                    user.RowSignature = user.ComputeIntegritySignature(integrityKey);
+                    changesMade = true;
+                    logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for '{Email}'.", user.Email);
+                }
+            }
+        }
+
+        if (changesMade)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Root super-administrators seeded successfully in default tenant.");
+            logger.LogInformation("Root super-administrators and integrity signatures synchronized successfully.");
         }
     }
 }
