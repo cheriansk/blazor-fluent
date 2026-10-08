@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BlazorFluent.Core.Dtos.Requests;
 using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Persistence.Extensions;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -170,7 +171,6 @@ internal class AuditService : IAuditService
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.AuditRecords.Where(a => a.TenantId == filter.TenantId)
-            .IgnoreQueryFilters()
             .AsNoTracking();
 
         if (filter.AllowedTenantIds != null && filter.AllowedTenantIds.Count > 0)
@@ -204,13 +204,13 @@ internal class AuditService : IAuditService
                 (a.EntityName != null && a.EntityName.ToLower().Contains(term)));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await query.CountWithAuditedBypassAsync(this, $"Audit trail search for Tenant '{filter.TenantId}'", cancellationToken);
 
         var items = await query
             .OrderByDescending(a => a.Created)
             .Skip((filter.PageNumber - 1) * filter.PageSize)
             .Take(filter.PageSize)
-            .ToListAsync(cancellationToken);
+            .ToListWithAuditedBypassAsync(this, $"Audit trail paged view for Tenant '{filter.TenantId}'", cancellationToken);
 
         return PagedResultRespDto<AuditRecordEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
     }
@@ -302,7 +302,6 @@ internal class AuditService : IAuditService
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.AuditRecords
-            .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(a => a.EntityName == entityName && a.EntityId == entityId);
 
@@ -315,7 +314,7 @@ internal class AuditService : IAuditService
 
         var records = await query
             .OrderByDescending(a => a.Created)
-            .ToListAsync(cancellationToken);
+            .ToListWithAuditedBypassAsync(this, $"Entity field history lookup for '{entityName}:{entityId}'", cancellationToken);
 
         var result = new List<EntityFieldHistoryRespDto>();
 
