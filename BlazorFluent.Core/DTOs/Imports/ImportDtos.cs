@@ -1,7 +1,7 @@
 using BlazorFluent.Core.Abstractions.Imports;
 using BlazorFluent.Core.DataListTypes;
 
-namespace BlazorFluent.Core.DTOs.Imports;
+namespace BlazorFluent.Core.Dtos.Imports;
 
 /// <summary>
 /// UI form request DTO for uploading a file to be imported.

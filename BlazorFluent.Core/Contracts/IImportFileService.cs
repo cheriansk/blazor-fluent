@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Common;
-using BlazorFluent.Core.DTOs.Imports;
+using BlazorFluent.Core.Dtos.Imports;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Core.Contracts;
 

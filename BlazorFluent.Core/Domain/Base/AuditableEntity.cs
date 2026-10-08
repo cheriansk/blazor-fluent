@@ -7,10 +7,8 @@ namespace BlazorFluent.Core.Domain.Base;
 /// Automatically populated by AuditableEntityInterceptor in BlazorFluent.Persistence.
 /// Used for host-wide (global) auditable entities like UserEntity, TenantEntity, and ImpersonationGrantEntity.
 /// </summary>
-public abstract class AuditableEntity : BaseEntity, IAuditableEntity
+public abstract class AuditableEntity : BaseEntity
 {
-    public DateTime Created { get; set; }
-    public string? CreatedBy { get; set; }
-    public DateTime? Updated { get; set; }
-    public string? UpdatedBy { get; set; }
+    // Inherits Id, Created, CreatedBy, Updated, UpdatedBy, and IsModifiedSinceCreation from BaseEntity.
+    // Retained as backward-compatible pass-through for entities inheriting from AuditableEntity.
 }

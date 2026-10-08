@@ -728,7 +728,7 @@ sequenceDiagram
 The application enforces a dual-layer validation pipeline to ensure rock-solid data integrity with zero developer ambiguity:
 
 1. **Tier 1: Page / Feature Form Validation** (`BlazorFluent.Core/Validation/<Module>/`)
-   - Validates user input commands and form DTOs.
+   - Validates user input commands and form Dtos.
    - Automatically integrated with Blazor `<EditForm>` and `<FluentValidationValidator />`.
    - Provides instant, field-level red error feedback as users type or submit, blocking navigation and server calls for invalid data.
 

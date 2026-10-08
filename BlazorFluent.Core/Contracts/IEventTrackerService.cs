@@ -1,6 +1,7 @@
-using System.Runtime.CompilerServices;
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Domain.Events;
+using BlazorFluent.Core.Dtos.Requests;
+using BlazorFluent.Core.Dtos.Response;
+using System.Runtime.CompilerServices;
 
 namespace BlazorFluent.Core.Contracts;
 
@@ -54,8 +55,8 @@ public interface IEventTrackerService
     /// <summary>
     /// Retrieves a paginated list of published events according to specified search criteria.
     /// </summary>
-    Task<PagedResult<EventPublishTrackerEntity>> GetEventsAsync(
-        EventTrackerFilter filter,
+    Task<PagedResultRespDto<EventPublishTrackerEntity>> GetEventsAsync(
+        EventTrackerFilterReqDto filter,
         CancellationToken cancellationToken = default);
 
     /// <summary>

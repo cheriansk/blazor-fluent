@@ -1,7 +1,8 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -430,7 +431,7 @@ public class UserTaskService : IUserTaskService
                 var norm = email.Trim().ToLowerInvariant();
                 var targetUserId = targetUsers.TryGetValue(norm, out var uid) ? uid : email;
 
-                var request = new SendNotificationRequest
+                var request = new SendNotificationReqDto
                 {
                     Category = NotificationCategory.Personal,
                     Severity = task.Priority == UserTaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,

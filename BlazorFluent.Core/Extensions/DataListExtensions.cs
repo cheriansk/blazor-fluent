@@ -1,8 +1,38 @@
+using BlazorFluent.Core.Attributes;
+using BlazorFluent.Core.DataListTypes;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace BlazorFluent.Core.DataListTypes;
+namespace BlazorFluent.Core.Extensions;
+/// <summary>
+/// Metadata for an enum category grouping.
+/// </summary>
+public record CategoryInfo(
+    string Code,
+    string DisplayName,
+    string? Description = null);
+
+/// <summary>
+/// Metadata for an enum visibility filter criteria.
+/// </summary>
+public record FilterInfo(
+    string Code,
+    string DisplayName,
+    string? Description = null);
+
+/// <summary>
+/// Immutable projection model representing an enum value for UI data binding (e.g., FluentSelect, grids, dropdowns).
+/// </summary>
+/// <typeparam name="TEnum">The underlying enum type.</typeparam>
+public record DataListItem<TEnum>(
+    TEnum Value,
+    string Code,
+    string DisplayName,
+    string? Description = null,
+    CategoryInfo? Category = null,
+    IReadOnlyList<FilterInfo>? Filters = null
+) where TEnum : struct, Enum;
 
 /// <summary>
 /// Cached reflection extension methods for DataListTypes enums.
@@ -266,7 +296,7 @@ public static class DataListExtensions
     }
 
     /// <summary>
-    /// Projects enum values into DataListItem DTOs tailored for direct binding to FluentSelect or UI grids.
+    /// Projects enum values into DataListItem Dtos tailored for direct binding to FluentSelect or UI grids.
     /// Includes full Category and Filter metadata resolved from companion definition classes.
     /// </summary>
     public static IReadOnlyList<DataListItem<TEnum>> ToDataListItems<TEnum>(
@@ -290,20 +320,20 @@ public static class DataListExtensions
     }
 
     /// <summary>
-    /// Retrieves all enum values projected as DataListItem DTOs as-is without filtering.
+    /// Retrieves all enum values projected as DataListItem Dtos as-is without filtering.
     /// </summary>
     public static IReadOnlyList<DataListItem<TEnum>> GetDataListItems<TEnum>() where TEnum : struct, Enum =>
         ToDataListItems<TEnum>(categoryCode: null, filterCriteria: null);
 
     /// <summary>
-    /// Retrieves enum values projected as DataListItem DTOs filtered by a specific filter criteria code.
+    /// Retrieves enum values projected as DataListItem Dtos filtered by a specific filter criteria code.
     /// If the enum does not declare filter criteria or the criteria is null/empty, returns all items.
     /// </summary>
     public static IReadOnlyList<DataListItem<TEnum>> GetFilteredDataListItems<TEnum>(string? filterCriteria) where TEnum : struct, Enum =>
         ToDataListItems<TEnum>(categoryCode: null, filterCriteria: filterCriteria);
 
     /// <summary>
-    /// Extension method on an enum instance to retrieve all items of its enum type as DataListItem DTOs.
+    /// Extension method on an enum instance to retrieve all items of its enum type as DataListItem Dtos.
     /// </summary>
     public static IReadOnlyList<DataListItem<TEnum>> GetDataListItems<TEnum>(this TEnum _) where TEnum : struct, Enum =>
         GetDataListItems<TEnum>();

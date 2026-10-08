@@ -1,6 +1,7 @@
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
-@using BlazorFluent.Core.DTOs
+@using BlazorFluent.Core.Dtos
+@using BlazorFluent.Core.Dtos.Response
 @inject IAuditService AuditService
 
 <FluentDialogBody Style="padding: 16px;">
@@ -142,12 +143,12 @@
 </FluentDialogBody>
 
 @code {
-    public EntityHistoryData? Content => Dialog?.Options?.Data as EntityHistoryData ?? Dialog?.Options?.Data as EntityHistoryData;
+    public EntityHistoryDataRespDto? Content => Dialog?.Options?.Data as EntityHistoryDataRespDto ?? Dialog?.Options?.Data as EntityHistoryDataRespDto;
     [CascadingParameter] public IDialogInstance Dialog { get; set; } = default!;
 
     private bool _isLoading = true;
     private string _searchTerm = string.Empty;
-    private List<EntityFieldHistoryDto> _historyItems = new();
+    private List<EntityFieldHistoryRespDto> _historyItems = new();
     private Dictionary<string, bool> _expandedState = new();
 
     public class HistoryGroupModel
@@ -156,11 +157,11 @@
         public DateTime Timestamp { get; set; }
         public string UserEmail { get; set; } = string.Empty;
         public string? UserType { get; set; }
-        public List<EntityFieldHistoryDto> Items { get; set; } = new();
+        public List<EntityFieldHistoryRespDto> Items { get; set; } = new();
         public bool IsExpanded { get; set; } = false;
     }
 
-    private List<EntityFieldHistoryDto> FilteredHistory
+    private List<EntityFieldHistoryRespDto> FilteredHistory
     {
         get
         {

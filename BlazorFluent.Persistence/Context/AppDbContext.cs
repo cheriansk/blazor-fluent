@@ -1,5 +1,4 @@
 using System.Reflection;
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Catalog;
@@ -16,6 +15,7 @@ using BlazorFluent.Persistence.Interceptors;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using BlazorFluent.Core.Filters;
 
 namespace BlazorFluent.Persistence.Context;
 
@@ -196,7 +196,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                     builder.Property(nameof(IAuditableEntity.Updated))
                         .HasColumnName("Updated")
                         .HasColumnType(timestampColumnType)
-                        .IsRequired(false);
+                        .IsRequired();
 
                     builder.Property(nameof(IAuditableEntity.UpdatedBy))
                         .HasColumnName("UpdatedBy")

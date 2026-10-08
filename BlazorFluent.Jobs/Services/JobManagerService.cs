@@ -1,6 +1,6 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Jobs;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Catalog;
 using BlazorFluent.Persistence.Context;
@@ -73,8 +73,9 @@ public class JobManagerService : IJobManagerService
         _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
 
         var senderOrigin = $"Button:Run{jobName}";
-        var senderUserId = _currentUser.UserId;
-        var senderUserEmail = _currentUser.Email;
+        var senderUserId = _currentUser.UserId ?? "system";
+        var senderUserEmail = _currentUser.Email ?? _currentUser.UserId ?? "system@daemon.local";
+        var correlationId = Guid.CreateVersion7().ToString("N")[..12];
 
         // Map known job names to their respective typed event triggers
         if (jobName.Equals("CatalogSyncJob", StringComparison.OrdinalIgnoreCase) ||
@@ -83,6 +84,7 @@ public class JobManagerService : IJobManagerService
             var jobEvent = new CatalogSyncJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
+                CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
                 SenderUserEmail: senderUserEmail);
@@ -95,6 +97,7 @@ public class JobManagerService : IJobManagerService
             var jobEvent = new CatalogSyncJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
+                CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
                 SenderUserEmail: senderUserEmail);
@@ -131,14 +134,16 @@ public class JobManagerService : IJobManagerService
             execution.JobName, executionId);
 
         var senderOrigin = $"Button:Retry{execution.JobName}";
+        var retryUserId = _currentUser.UserId ?? "system";
+        var retryUserEmail = _currentUser.Email ?? _currentUser.UserId ?? "system@daemon.local";
         var retryEvent = new CatalogSyncJobEvent(
             TriggerSource: senderOrigin,
             TenantId: execution.TenantId,
             CorrelationId: execution.CorrelationId,
-            ParentExecutionId: execution.Id,
             SenderOrigin: senderOrigin,
-            SenderUserId: _currentUser.UserId,
-            SenderUserEmail: _currentUser.Email);
+            SenderUserId: retryUserId,
+            SenderUserEmail: retryUserEmail,
+            ParentExecutionId: execution.Id);
 
         await _queue.EnqueueAsync(retryEvent, cancellationToken);
 

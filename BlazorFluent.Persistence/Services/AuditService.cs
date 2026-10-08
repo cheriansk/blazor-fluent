@@ -1,17 +1,17 @@
 using System.Text.Json;
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
-using BlazorFluent.Core.DTOs;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using BlazorFluent.Core.Dtos.Requests;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Persistence.Services;
 
-public class AuditService : IAuditService
+internal class AuditService : IAuditService
 {
     private readonly AppDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
@@ -154,20 +154,16 @@ public class AuditService : IAuditService
             _logger.LogError(ex, "Failed to persist audit record {RecordId} via isolated scope: {Description}", record.Id, record.Description);
         }
     }
-
-    public async Task<PagedResult<AuditRecordEntity>> GetAuditTrailAsync(
-        AuditTrailFilter filter,
+    //REVIEWED-CSK
+    public async Task<PagedResultRespDto<AuditRecordEntity>> GetAuditTrailAsync(
+        AuditTrailFilterReqDto filter,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.AuditRecords
+        var query = _dbContext.AuditRecords.Where(a => a.TenantId == filter.TenantId)
             .IgnoreQueryFilters()
             .AsNoTracking();
 
-        if (!string.IsNullOrWhiteSpace(filter.TenantId))
-        {
-            query = query.Where(a => a.TenantId == filter.TenantId);
-        }
-        else if (filter.AllowedTenantIds != null && filter.AllowedTenantIds.Count > 0)
+        if (filter.AllowedTenantIds != null && filter.AllowedTenantIds.Count > 0)
         {
             query = query.Where(a => filter.AllowedTenantIds.Contains(a.TenantId));
         }
@@ -206,7 +202,7 @@ public class AuditService : IAuditService
             .Take(filter.PageSize)
             .ToListAsync(cancellationToken);
 
-        return PagedResult<AuditRecordEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
+        return PagedResultRespDto<AuditRecordEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
     }
 
     public async Task<string> LogExceptionAsync(
@@ -286,7 +282,7 @@ public class AuditService : IAuditService
         return errorId;
     }
 
-    public async Task<List<EntityFieldHistoryDto>> GetEntityHistoryAsync(
+    public async Task<List<EntityFieldHistoryRespDto>> GetEntityHistoryAsync(
         string entityName,
         string entityId,
         string? propertyName = null,
@@ -308,7 +304,7 @@ public class AuditService : IAuditService
             .OrderByDescending(a => a.Created)
             .ToListAsync(cancellationToken);
 
-        var result = new List<EntityFieldHistoryDto>();
+        var result = new List<EntityFieldHistoryRespDto>();
 
         foreach (var record in records)
         {
@@ -318,7 +314,7 @@ public class AuditService : IAuditService
 
             if (string.IsNullOrWhiteSpace(record.ChangesJson))
             {
-                result.Add(new EntityFieldHistoryDto
+                result.Add(new EntityFieldHistoryRespDto
                 {
                     AuditRecordId = record.Id.ToString(),
                     EntityName = record.EntityName ?? entityName,
@@ -377,7 +373,7 @@ public class AuditService : IAuditService
                         oldVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
                     }
 
-                    result.Add(new EntityFieldHistoryDto
+                    result.Add(new EntityFieldHistoryRespDto
                     {
                         AuditRecordId = record.Id.ToString(),
                         EntityName = record.EntityName ?? entityName,

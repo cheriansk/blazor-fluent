@@ -1,4 +1,6 @@
-namespace BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Base;
+
+namespace BlazorFluent.Core.Extensions;
 
 /// <summary>
 /// Temporal LINQ and in-memory extension methods for entities implementing IEffectiveDatedEntity.

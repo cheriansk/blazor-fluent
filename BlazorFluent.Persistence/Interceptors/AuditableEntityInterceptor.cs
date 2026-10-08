@@ -183,8 +183,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 {
                     auditableEntity.Created = now;
                     auditableEntity.CreatedBy = currentUserId;
-                    auditableEntity.Updated = null;
-                    auditableEntity.UpdatedBy = null;
+                    auditableEntity.Updated = now;
+                    auditableEntity.UpdatedBy = currentUserId;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
@@ -208,6 +208,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 {
                     if (hasCreated) entry.Property(CreatedProperty).CurrentValue = now;
                     if (hasCreatedBy) entry.Property(CreatedByProperty).CurrentValue = currentUserId;
+                    if (hasUpdated) entry.Property(UpdatedProperty).CurrentValue = now;
+                    if (hasUpdatedBy) entry.Property(UpdatedByProperty).CurrentValue = currentUserId;
                 }
                 else if (entry.State == EntityState.Modified)
                 {

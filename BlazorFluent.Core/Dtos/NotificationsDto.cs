@@ -1,11 +1,11 @@
 using BlazorFluent.Core.DataListTypes;
 
-namespace BlazorFluent.Core.Common;
+namespace BlazorFluent.Core.Dtos;
 
 /// <summary>
 /// Command to publish and dispatch a notification.
 /// </summary>
-public record SendNotificationRequest
+public record SendNotificationReqDto
 {
     public Guid ProjectId { get; init; } = Guid.Empty;
     public string? UserId { get; init; }
@@ -21,7 +21,7 @@ public record SendNotificationRequest
 /// <summary>
 /// Query filter for retrieving notifications.
 /// </summary>
-public record NotificationFilterRequest
+public record NotificationFilterReqDto
 {
     public NotificationCategory Category { get; init; } = NotificationCategory.Generic;
     public bool OnlyUnread { get; init; }
@@ -32,7 +32,7 @@ public record NotificationFilterRequest
 /// <summary>
 /// Aggregated unread notification counters.
 /// </summary>
-public record UnreadNotificationCounts
+public record UnreadNotificationCountsRespDto
 {
     public int GenericUnread { get; init; }
     public int PersonalUnread { get; init; }

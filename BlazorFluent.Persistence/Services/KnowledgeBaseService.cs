@@ -1,8 +1,7 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Knowledge;
-using BlazorFluent.Core.DTOs;
+using BlazorFluent.Core.Dtos;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -227,7 +226,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         {
             try
             {
-                await _notificationService.SendAsync(new SendNotificationRequest
+                await _notificationService.SendAsync(new SendNotificationReqDto
                 {
                     ProjectId = article.ProjectId,
                     UserId = reviewer.UserId,
@@ -345,7 +344,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         // Notify article author
         try
         {
-            await _notificationService.SendAsync(new SendNotificationRequest
+            await _notificationService.SendAsync(new SendNotificationReqDto
             {
                 ProjectId = article.ProjectId,
                 UserId = article.AuthorUserId,

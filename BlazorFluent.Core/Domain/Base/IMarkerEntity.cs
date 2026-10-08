@@ -9,6 +9,24 @@ namespace BlazorFluent.Core.Domain.Base;
 public interface IMarkerEntity { }
 
 /// <summary>
+/// Enables Level 1 row-level auditing. AuditableEntityInterceptor automatically stamps
+/// Created/CreatedBy on insert, and Updated/UpdatedBy on update.
+/// </summary>
+public interface IAuditableEntity : IMarkerEntity
+{
+    DateTime Created { get; set; }
+    string CreatedBy { get; set; }
+    DateTime Updated { get; set; }
+    string UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
+/// AppDbContext enforces at startup that every entity implements either ITenantEntity or IGlobalEntity (fail-closed guard).
+/// </summary>
+public interface IGlobalEntity : IMarkerEntity { }
+
+/// <summary>
 /// Enforces multi-tenant data isolation. All tenant-scoped entities MUST implement this interface.
 /// Protected by EF Core named query filter: QueryFilters.Tenant.
 /// TenantId is immutable after insertion (enforced by AuditableEntityInterceptor).
@@ -19,10 +37,15 @@ public interface ITenantEntity : IMarkerEntity
 }
 
 /// <summary>
-/// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
-/// AppDbContext enforces at startup that every entity implements either ITenantEntity or IGlobalEntity (fail-closed guard).
+/// Scopes an entity to a specific project workspace.
+/// ProjectSecurityInterceptor intercepts write operations (Insert/Update/Delete) on this entity,
+/// validating the user's ProjectRole against required write permissions.
 /// </summary>
-public interface IGlobalEntity : IMarkerEntity { }
+public interface IProjectScopedEntity : ITenantEntity
+{
+    Guid ProjectId { get; set; }
+}
+
 
 /// <summary>
 /// Enables automatic soft deletion. When DbContext.Remove() is invoked on this entity,
@@ -36,27 +59,6 @@ public interface ISoftDeletableEntity : IMarkerEntity
     string? DeletedBy { get; set; }
 }
 
-/// <summary>
-/// Scopes an entity to a specific project workspace.
-/// ProjectSecurityInterceptor intercepts write operations (Insert/Update/Delete) on this entity,
-/// validating the user's ProjectRole against required write permissions.
-/// </summary>
-public interface IProjectScopedEntity : IMarkerEntity
-{
-    Guid ProjectId { get; set; }
-}
-
-/// <summary>
-/// Enables Level 1 row-level auditing. AuditableEntityInterceptor automatically stamps
-/// Created/CreatedBy on insert, and Updated/UpdatedBy on update.
-/// </summary>
-public interface IAuditableEntity : IMarkerEntity
-{
-    DateTime Created { get; set; }
-    string? CreatedBy { get; set; }
-    DateTime? Updated { get; set; }
-    string? UpdatedBy { get; set; }
-}
 
 /// <summary>
 /// Exempts an entity from Level 2 before/after property diff logging in audit.AuditRecords.

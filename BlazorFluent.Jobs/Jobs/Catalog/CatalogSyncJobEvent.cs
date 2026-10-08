@@ -8,11 +8,12 @@ namespace BlazorFluent.Jobs.Jobs.Catalog;
 /// </summary>
 public record CatalogSyncJobEvent(
     string TriggerSource,
-    string? TenantId = null,
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
     int BatchSize = 100,
-    string? CorrelationId = null,
-    Guid? ParentExecutionId = null,
-    string? SenderOrigin = null,
-    string? SenderUserId = null,
-    string? SenderUserEmail = null) : BaseJobEvent(TriggerSource, TenantId, CorrelationId, ParentExecutionId, SenderOrigin, SenderUserId, SenderUserEmail);
+    Guid? ParentExecutionId = null)
+    : BaseJobEvent(TriggerSource, TenantId, CorrelationId, SenderOrigin, SenderUserId, SenderUserEmail, ParentExecutionId);
 

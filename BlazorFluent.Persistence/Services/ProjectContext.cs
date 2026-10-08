@@ -1,6 +1,6 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Dtos.Response;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
@@ -15,7 +15,7 @@ public sealed class ProjectContext : IProjectContext
     private Guid? _projectId;
     private string? _projectName;
     private string? _projectShortCode;
-    private List<ProjectInfo> _allowedProjects = new();
+    private List<ProjectInfoDto> _allowedProjects = new();
 
     public event Action? OnChange;
 
@@ -27,11 +27,11 @@ public sealed class ProjectContext : IProjectContext
     public Guid? ProjectId => _projectId;
     public string? ProjectName => _projectName;
     public string? ProjectShortCode => _projectShortCode;
-    public IReadOnlyList<ProjectInfo> AllowedProjects => _allowedProjects.AsReadOnly();
+    public IReadOnlyList<ProjectInfoDto> AllowedProjects => _allowedProjects.AsReadOnly();
 
-    public void Initialize(Guid? projectId, string? projectName, string? projectCode, IEnumerable<ProjectInfo> allowedProjects)
+    public void Initialize(Guid? projectId, string? projectName, string? projectCode, IEnumerable<ProjectInfoDto> allowedProjects)
     {
-        _allowedProjects = new List<ProjectInfo>(allowedProjects);
+        _allowedProjects = new List<ProjectInfoDto>(allowedProjects);
 
         // If a specific project was passed and is allowed, set it
         if (projectId.HasValue && _allowedProjects.Any(p => p.Id == projectId.Value))

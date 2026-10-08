@@ -1,11 +1,11 @@
-namespace BlazorFluent.Core.DTOs;
+namespace BlazorFluent.Core.Dtos.Response;
 
 using BlazorFluent.Core.DataListTypes;
 
 /// <summary>
 /// Immutable DTO record representing a property-level diff for entity/field history.
 /// </summary>
-public record EntityFieldHistoryDto
+public record EntityFieldHistoryRespDto
 {
     public string AuditRecordId { get; init; } = string.Empty;
     public string EntityName { get; init; } = string.Empty;

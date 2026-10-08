@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Dtos.Response;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Core.Contracts;

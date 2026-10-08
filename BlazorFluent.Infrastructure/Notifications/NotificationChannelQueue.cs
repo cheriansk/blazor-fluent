@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using BlazorFluent.Core.Common;
+using BlazorFluent.Core.Dtos;
 
 namespace BlazorFluent.Infrastructure.Notifications;
 
@@ -9,7 +9,7 @@ namespace BlazorFluent.Infrastructure.Notifications;
 /// </summary>
 public class NotificationChannelQueue
 {
-    private readonly Channel<SendNotificationRequest> _channel;
+    private readonly Channel<SendNotificationReqDto> _channel;
 
     public NotificationChannelQueue()
     {
@@ -20,13 +20,13 @@ public class NotificationChannelQueue
             SingleWriter = false
         };
 
-        _channel = Channel.CreateBounded<SendNotificationRequest>(options);
+        _channel = Channel.CreateBounded<SendNotificationReqDto>(options);
     }
 
     /// <summary>
     /// Asynchronously enqueues a notification dispatch request into the channel.
     /// </summary>
-    public ValueTask EnqueueAsync(SendNotificationRequest request, CancellationToken cancellationToken = default)
+    public ValueTask EnqueueAsync(SendNotificationReqDto request, CancellationToken cancellationToken = default)
     {
         return _channel.Writer.WriteAsync(request, cancellationToken);
     }
@@ -34,7 +34,7 @@ public class NotificationChannelQueue
     /// <summary>
     /// Attempts non-blocking synchronous enqueue. Returns false if channel buffer is full.
     /// </summary>
-    public bool TryEnqueue(SendNotificationRequest request)
+    public bool TryEnqueue(SendNotificationReqDto request)
     {
         return _channel.Writer.TryWrite(request);
     }
@@ -42,7 +42,7 @@ public class NotificationChannelQueue
     /// <summary>
     /// Reads all queued notification requests asynchronously for background consumption.
     /// </summary>
-    public IAsyncEnumerable<SendNotificationRequest> ReadAllAsync(CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<SendNotificationReqDto> ReadAllAsync(CancellationToken cancellationToken = default)
     {
         return _channel.Reader.ReadAllAsync(cancellationToken);
     }

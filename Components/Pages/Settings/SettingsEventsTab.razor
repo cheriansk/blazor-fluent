@@ -1,5 +1,7 @@
-@using BlazorFluent.Core.Common
+
 @using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Dtos.Requests
+@using BlazorFluent.Core.Dtos.Response
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Events
 @using BlazorFluent.Persistence.Context
@@ -341,8 +343,8 @@
     private string? _selectedTenantId;
     private string _selectedTenantName = string.Empty;
 
-    private EventTrackerFilter _filter = new() { PageSize = 20 };
-    private PagedResult<EventPublishTrackerEntity>? _eventResult;
+    private EventTrackerFilterReqDto _filter = new() { PageSize = 20 };
+    private PagedResultRespDto<EventPublishTrackerEntity>? _eventResult;
     private EventPublishTrackerEntity? _selectedEvent;
     private bool _isLoading;
     private bool _copied;
@@ -497,7 +499,7 @@
 
     private async Task ResetFiltersAsync()
     {
-        _filter = new EventTrackerFilter { PageSize = 20, TenantId = _selectedTenantId };
+        _filter = new EventTrackerFilterReqDto { PageSize = 20, TenantId = _selectedTenantId };
         _selectedStatus = "All";
         _inGridSearchText = string.Empty;
         await LoadEventsAsync();

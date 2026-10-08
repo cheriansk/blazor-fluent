@@ -119,6 +119,8 @@ public class PeriodicBatchScheduler : BackgroundService
                 parsedCatalog,
                 () => new CatalogSyncJobEvent(
                     TriggerSource: "Cron",
+                    TenantId: "system",
+                    CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "CatalogSyncJob",
                     SenderUserId: "SystemDaemon (CatalogSyncJob)",
                     SenderUserEmail: "SystemDaemon (CatalogSyncJob)")));
@@ -133,10 +135,12 @@ public class PeriodicBatchScheduler : BackgroundService
                 parsedPurge,
                 () => new AuditPurgeJobEvent(
                     TriggerSource: "Cron",
-                    RetentionDays: retentionDays,
+                    TenantId: "system",
+                    CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "AuditPurgeJob",
                     SenderUserId: "SystemDaemon (AuditPurgeJob)",
-                    SenderUserEmail: "SystemDaemon (AuditPurgeJob)")));
+                    SenderUserEmail: "SystemDaemon (AuditPurgeJob)",
+                    RetentionDays: retentionDays)));
         }
 
         var dailyTaskCron = _configuration["Jobs:Schedules:DailyTaskSummaryJob"] ?? "0 18 * * *";
@@ -147,6 +151,8 @@ public class PeriodicBatchScheduler : BackgroundService
                 parsedTaskCron,
                 () => new DailyTaskSummaryJobEvent(
                     TriggerSource: "Cron",
+                    TenantId: "system",
+                    CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "DailyTaskSummaryJob",
                     SenderUserId: "SystemDaemon (DailyTaskSummaryJob)",
                     SenderUserEmail: "SystemDaemon (DailyTaskSummaryJob)")));
@@ -160,6 +166,8 @@ public class PeriodicBatchScheduler : BackgroundService
                 parsedCadenceCron,
                 () => new TaskCadenceAlertJobEvent(
                     TriggerSource: "Cron",
+                    TenantId: "system",
+                    CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
                     SenderOrigin: "TaskCadenceAlertJob",
                     SenderUserId: "SystemDaemon (TaskCadenceAlertJob)",
                     SenderUserEmail: "SystemDaemon (TaskCadenceAlertJob)")));

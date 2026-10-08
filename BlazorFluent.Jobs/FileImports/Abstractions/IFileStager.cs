@@ -1,6 +1,6 @@
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
+using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Jobs.FileImports.Abstractions;
 

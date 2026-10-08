@@ -1,14 +1,15 @@
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using BlazorFluent.Core.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Events;
+using BlazorFluent.Core.Dtos.Requests;
+using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -290,8 +291,8 @@ public class EventTrackerService : IEventTrackerService
         }
     }
 
-    public async Task<PagedResult<EventPublishTrackerEntity>> GetEventsAsync(
-        EventTrackerFilter filter,
+    public async Task<PagedResultRespDto<EventPublishTrackerEntity>> GetEventsAsync(
+        EventTrackerFilterReqDto filter,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.EventPublishTrackers
@@ -370,7 +371,7 @@ public class EventTrackerService : IEventTrackerService
             .Take(filter.PageSize)
             .ToListAsync(cancellationToken);
 
-        return PagedResult<EventPublishTrackerEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
+        return PagedResultRespDto<EventPublishTrackerEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
     }
 
     public async Task<IReadOnlyList<EventConsumptionTrackerEntity>> GetConsumptionsAsync(

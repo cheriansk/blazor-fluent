@@ -1,7 +1,7 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
-using BlazorFluent.Core.Common;
+
 using BlazorFluent.Core.Events.Imports;
 using BlazorFluent.Core.Security;
 using BlazorFluent.Core.Storage;
@@ -10,6 +10,7 @@ using BlazorFluent.Jobs.FileImports.Abstractions;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using BlazorFluent.Core.Dtos;
 
 namespace BlazorFluent.Jobs.FileImports;
 
@@ -128,6 +129,9 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     ErrorMessage: stageResult.Error,
                     TenantId: file.TenantId,
                     CorrelationId: jobEvent.CorrelationId,
+                    SenderOrigin: jobEvent.SenderOrigin,
+                    SenderUserId: jobEvent.SenderUserId,
+                    SenderUserEmail: jobEvent.SenderUserEmail,
                     ParentExecutionId: jobEvent.EventId), ct);
 
                 await SendNotificationAsync(
@@ -147,6 +151,9 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 ErrorMessage: null,
                 TenantId: file.TenantId,
                 CorrelationId: jobEvent.CorrelationId,
+                SenderOrigin: jobEvent.SenderOrigin,
+                SenderUserId: jobEvent.SenderUserId,
+                SenderUserEmail: jobEvent.SenderUserEmail,
                 ParentExecutionId: jobEvent.EventId), ct);
 
             // ─── 4. EXECUTE DOMAIN PROMOTION ──────────────────────────────────────
@@ -164,6 +171,9 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     ErrorMessage: processResult.Error,
                     TenantId: file.TenantId,
                     CorrelationId: jobEvent.CorrelationId,
+                    SenderOrigin: jobEvent.SenderOrigin,
+                    SenderUserId: jobEvent.SenderUserId,
+                    SenderUserEmail: jobEvent.SenderUserEmail,
                     ParentExecutionId: jobEvent.EventId), ct);
 
                 await SendNotificationAsync(
@@ -184,6 +194,9 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 ErrorMessage: null,
                 TenantId: file.TenantId,
                 CorrelationId: jobEvent.CorrelationId,
+                SenderOrigin: jobEvent.SenderOrigin,
+                SenderUserId: jobEvent.SenderUserId,
+                SenderUserEmail: jobEvent.SenderUserEmail,
                 ParentExecutionId: jobEvent.EventId), ct);
 
             await SendNotificationAsync(
@@ -227,7 +240,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             var uploader = file.CreatedBy;
             if (string.IsNullOrWhiteSpace(uploader)) return;
 
-            var request = new SendNotificationRequest
+            var request = new SendNotificationReqDto
             {
                 Category = NotificationCategory.Generic,
                 Severity = severity,

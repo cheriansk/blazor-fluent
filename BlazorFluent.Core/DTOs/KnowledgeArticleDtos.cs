@@ -1,6 +1,6 @@
 using BlazorFluent.Core.DataListTypes;
 
-namespace BlazorFluent.Core.DTOs;
+namespace BlazorFluent.Core.Dtos;
 
 public record KnowledgeArticleListDto(
     Guid Id,

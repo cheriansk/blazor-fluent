@@ -1,3 +1,4 @@
+using BlazorFluent.Core.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Core.DataListTypes;
