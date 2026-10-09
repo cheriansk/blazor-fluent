@@ -111,7 +111,7 @@ public class PeriodicBatchScheduler : BackgroundService
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     activeTenants = await db.Tenants
                         .AsNoTracking()
-                        .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
+                        .Where(t => t.IsActive)
                         .Select(t => t.Slug)
                         .ToListAsync(stoppingToken);
                 }

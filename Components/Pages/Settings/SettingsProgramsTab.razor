@@ -1,0 +1,817 @@
+@using BlazorFluent.Components.Common
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject AppDbContext DbContext
+@inject ITenantContext TenantContext
+@inject ITenantService TenantService
+@inject IProgramService ProgramService
+@inject IHierarchyAuthorizationService HierarchyAuth
+@inject ICurrentUser CurrentUser
+@inject IUserTimeZoneService TimeZoneService
+@inject IUnsavedChangesStateService UnsavedChanges
+@implements IDisposable
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H4">Enterprise Programs</FluentLabel>
+            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                Manage multi-year programs, cross-project dependencies, program health roll-ups, and project scoping.
+            </FluentLabel>
+        </div>
+        @if (_isTenantAdmin || CurrentUser.IsRootAdmin)
+        {
+            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@OpenCreateProgramModal">
+                Add Program
+            </FluentButton>
+        }
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </FluentMessageBar>
+    }
+
+    <!-- Tenant Selection Toolbar -->
+    <FluentCard Style="padding: 16px;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <FluentSelect TOption="TenantFilterOption"
+                          TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelectedAsync"
+                          Disabled="@(_availableTenants.Count <= 1)"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant --"
+                          Style="min-width: 300px;" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+            {
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+                              OnClick="@LoadProgramsAsync">
+                    Refresh
+                </FluentButton>
+            }
+        </FluentStack>
+    </FluentCard>
+
+    @* Add / Edit Program Form Card *@
+    @if (_showProgramModal)
+    {
+        <FluentCard Style="padding: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+            <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">
+                @(_editingProgramId.HasValue ? $"Edit Program: {_programFormName}" : "Create New Program")
+            </FluentLabel>
+
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                    <FluentTextInput Label="Program Code" @bind-Value="_programFormCode" Required="true" Style="flex: 1;" Placeholder="e.g. PRG-CORE" Disabled="@_editingProgramId.HasValue" />
+                    <FluentTextInput Label="Program Name" @bind-Value="_programFormName" Required="true" Style="flex: 2;" Placeholder="e.g. Cloud Modernization Program" />
+                </FluentStack>
+
+                <div>
+                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Description / Strategic Scope</FluentLabel>
+                    <FluentTextArea @bind-Value="_programFormDescription" Placeholder="Enter the high-level scope, strategic objectives, and milestones..." Rows="3" Style="width: 100%;" />
+                </div>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                    <FluentDatePicker Label="Start Date" @bind-Value="_programFormStartDate" Style="flex: 1;" />
+                    <FluentDatePicker Label="Target Completion Date" @bind-Value="_programFormTargetEndDate" Style="flex: 1;" />
+                    <div style="flex: 1;">
+                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                        <FluentSelect TOption="string" TValue="string"
+                                      Value="@_programFormStatus.ToString()"
+                                      ValueChanged="@(v => _programFormStatus = Enum.TryParse<ProgramStatus>(v, out var ps) ? ps : ProgramStatus.Active)"
+                                      Style="width: 100%;">
+                            <FluentOption Value="@nameof(ProgramStatus.Planning)">Planning</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatus.Active)">Active</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatus.AtRisk)">At Risk</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatus.OnHold)">On Hold</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatus.Completed)">Completed</FluentOption>
+                        </FluentSelect>
+                    </div>
+                </FluentStack>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 10px;">
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  Disabled="@(!IsProgramFormValid)"
+                                  OnClick="@SaveProgramAsync">
+                        @(_editingProgramId.HasValue ? "Update Program" : "Create Program")
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseProgramModal">
+                        Cancel
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentCard>
+    }
+
+    @* Programs DataGrid *@
+    <FluentCard Style="padding: 20px;">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+            <div>
+                <FluentLabel Typo="Typography.H5">Programs for &ldquo;@_selectedTenantName&rdquo;</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                    Showing @_programs.Count program(s). Select a program to inspect health and manage member projects.
+                </FluentLabel>
+            </div>
+            <FluentTextInput Placeholder="Filter programs by name, code..."
+                             @bind-Value="_programSearchText"
+                             @bind-Value:after="StateHasChanged"
+                             Style="width: 280px;">
+                <StartTemplate>
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                </StartTemplate>
+            </FluentTextInput>
+        </FluentStack>
+
+        @if (_isLoading)
+        {
+            <div style="display: flex; justify-content: center; padding: 40px;">
+                <FluentSpinner Size="SpinnerSize.Medium" />
+            </div>
+        }
+        else if (_programs.Count == 0)
+        {
+            <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Folder())" Color="Color.Default" />
+                <div style="margin-top: 10px; font-weight: 500;">No programs found for this tenant or your assigned roles.</div>
+            </div>
+        }
+        else
+        {
+            <FluentDataGrid Items="@FilteredPrograms" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 100px 220px">
+                <PropertyColumn Property="@(p => p.Code)" Title="Code" Sortable="true" />
+                <PropertyColumn Property="@(p => p.Name)" Title="Program Name" Sortable="true" />
+                <TemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
+                    @switch (context.Status)
+                    {
+                        case ProgramStatus.Active:
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                            break;
+                        case ProgramStatus.Planning:
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">Planning</FluentBadge>
+                            break;
+                        case ProgramStatus.AtRisk:
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">At Risk</FluentBadge>
+                            break;
+                        case ProgramStatus.OnHold:
+                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">On Hold</FluentBadge>
+                            break;
+                        case ProgramStatus.Completed:
+                            <FluentBadge Appearance="BadgeAppearance.Tint">Completed</FluentBadge>
+                            break;
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDateUtc))">
+                    <span style="font-size: 12px;">
+                        @TimeZoneService.FormatDate(context.StartDateUtc) ~ @TimeZoneService.FormatDate(context.TargetEndDateUtc)
+                    </span>
+                </TemplateColumn>
+                <TemplateColumn Title="Projects">
+                    <FluentBadge Appearance="BadgeAppearance.Tint">@context.Projects.Count</FluentBadge>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                        <FluentButton Appearance="@(_selectedProgram?.Id == context.Id ? ButtonAppearance.Primary : ButtonAppearance.Outline)"
+                                      Size="ButtonSize.Small"
+                                      IconStart="@(new Icons.Regular.Size16.Checkmark())"
+                                      OnClick="@(() => SelectProgramAsync(context))">
+                            @(_selectedProgram?.Id == context.Id ? "Selected" : "Select")
+                        </FluentButton>
+                        @if (_isTenantAdmin || CurrentUser.IsRootAdmin || _programAdminIds.Contains(context.Id))
+                        {
+                            <FluentButton Appearance="ButtonAppearance.Subtle"
+                                          Size="ButtonSize.Small"
+                                          IconStart="@(new Icons.Regular.Size16.Edit())"
+                                          OnClick="@(() => OpenEditProgramModal(context))">
+                                Edit
+                            </FluentButton>
+                        }
+                        <EntityHistoryButton EntityName="ProgramEntity" EntityId="@context.Id.ToString()" Tooltip="View program history" />
+                    </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentCard>
+
+    @* Selected Program Workspace Panel *@
+    @if (_selectedProgram is not null)
+    {
+        <FluentCard Style="padding: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+                <div>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                        <FluentLabel Typo="Typography.H5">@_selectedProgram.Name</FluentLabel>
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">@_selectedProgram.Code</FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">@_selectedProgram.Status</FluentBadge>
+                    </FluentStack>
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                        ID: <code>@_selectedProgram.Id</code> &bull; Tenant: <code>@_selectedProgram.TenantId</code>
+                    </div>
+                </div>
+                <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedProgram = null)">
+                    Close Panel
+                </FluentButton>
+            </FluentStack>
+
+            <FluentTabs @bind-ActiveTabId="_activeProgramTab">
+                <!-- Tab 1: Health & Cross-Project Dependencies -->
+                <FluentTab Id="tab-health" Header="Health & Roll-Up" IconStart="@(new Icons.Regular.Size16.LightbulbPulse())">
+                    <div style="padding-top: 16px;">
+                        @if (_isLoadingHealth)
+                        {
+                            <FluentSpinner Size="SpinnerSize.Small" />
+                        }
+                        else if (_healthSummary is not null)
+                        {
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+                                <!-- Health KPI Cards -->
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
+                                    <FluentCard Style="flex: 1; min-width: 180px; padding: 14px;">
+                                        <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Overall Health</div>
+                                        <div style="margin-top: 6px;">
+                                            @switch (_healthSummary.Health)
+                                            {
+                                                case ProgramHealthRating.OnTrack:
+                                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success" Style="font-size: 14px; padding: 4px 10px;">🟢 Healthy (On Track)</FluentBadge>
+                                                    break;
+                                                case ProgramHealthRating.AtRisk:
+                                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Style="font-size: 14px; padding: 4px 10px;">🟡 At Risk</FluentBadge>
+                                                    break;
+                                                case ProgramHealthRating.Critical:
+                                                    <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger" Style="font-size: 14px; padding: 4px 10px;">🔴 Critical</FluentBadge>
+                                                    break;
+                                            }
+                                        </div>
+                                    </FluentCard>
+
+                                    <FluentCard Style="flex: 1; min-width: 140px; padding: 14px;">
+                                        <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Member Projects</div>
+                                        <div style="font-size: 22px; font-weight: bold; margin-top: 4px;">
+                                            @_healthSummary.ActiveProjects / @_healthSummary.TotalProjects
+                                        </div>
+                                    </FluentCard>
+
+                                    <FluentCard Style="flex: 1; min-width: 140px; padding: 14px;">
+                                        <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Overdue Tasks</div>
+                                        <div style="font-size: 22px; font-weight: bold; margin-top: 4px; color: @(_healthSummary.OverdueTasks > 0 ? "#d13438" : "inherit");">
+                                            @_healthSummary.OverdueTasks
+                                        </div>
+                                    </FluentCard>
+
+                                    <FluentCard Style="flex: 1; min-width: 180px; padding: 14px;">
+                                        <div style="font-size: 12px; color: var(--neutral-foreground-hint);">Cross-Project Blockers</div>
+                                        <div style="font-size: 22px; font-weight: bold; margin-top: 4px; color: @(_healthSummary.CrossProjectBlockersCount > 0 ? "#d13438" : "inherit");">
+                                            @_healthSummary.CrossProjectBlockersCount
+                                        </div>
+                                    </FluentCard>
+                                </FluentStack>
+
+                                <!-- Cross-Project Dependencies Breakdown -->
+                                <FluentLabel Typo="Typography.H6" Style="margin-top: 8px;">Cross-Project Dependencies</FluentLabel>
+                                @if (_healthSummary.CrossProjectDependencies.Count == 0)
+                                {
+                                    <div style="color: var(--neutral-foreground-hint); font-size: 13px;">
+                                        No cross-project dependencies detected between member projects.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <FluentDataGrid Items="@_healthSummary.CrossProjectDependencies.AsQueryable()" ResizableColumns="true">
+                                        <TemplateColumn Title="Blocked Task">
+                                            <strong>@context.SourceTaskTitle</strong>
+                                            <span style="font-size: 11px; color: var(--neutral-foreground-hint); display: block;">in @context.SourceProjectName</span>
+                                        </TemplateColumn>
+                                        <PropertyColumn Property="@(d => d.DependencyType)" Title="Relation" />
+                                        <TemplateColumn Title="Depends On (Blocker)">
+                                            <strong>@context.TargetTaskTitle</strong>
+                                            <span style="font-size: 11px; color: var(--neutral-foreground-hint); display: block;">in @context.TargetProjectName</span>
+                                        </TemplateColumn>
+                                        <TemplateColumn Title="Blocker Status">
+                                            @if (context.IsResolved)
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Resolved</FluentBadge>
+                                            }
+                                            else
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">Blocking</FluentBadge>
+                                            }
+                                        </TemplateColumn>
+                                    </FluentDataGrid>
+                                }
+                            </FluentStack>
+                        }
+                    </div>
+                </FluentTab>
+
+                <!-- Tab 2: Projects in this Program -->
+                <FluentTab Id="tab-projects" Header="Projects in Program" IconStart="@(new Icons.Regular.Size16.BuildingMultiple())">
+                    <div style="padding-top: 16px;">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                            <FluentLabel Typo="Typography.H6">Member Projects (@_programProjects.Count)</FluentLabel>
+                            @if (_canManageSelectedProgramProjects)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              Size="ButtonSize.Small"
+                                              IconStart="@(new Icons.Regular.Size16.Add())"
+                                              OnClick="@OpenAddProjectModal">
+                                    Add Project to Program
+                                </FluentButton>
+                            }
+                        </FluentStack>
+
+                        @* Add Project Sub-Card *@
+                        @if (_showAddProjectModal)
+                        {
+                            <FluentCard Style="margin-bottom: 16px; background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
+                                <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">
+                                    Add Project to Program: @_selectedProgram.Name
+                                </FluentLabel>
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                        <FluentTextInput Label="Project Name" @bind-Value="_projName" Required="true" Style="flex: 2;" Placeholder="e.g. Identity Architecture Modernization" />
+                                        <FluentTextInput Label="Short Code" @bind-Value="_projShortCode" Required="true" Style="flex: 1;" Placeholder="e.g. IAM-01" />
+                                    </FluentStack>
+
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
+                                        <FluentTextInput Label="Location" @bind-Value="_projLocation" Style="flex: 2;" Placeholder="e.g. Headquarters / Remote" />
+                                        <div style="flex: 1;">
+                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                                            <FluentSelect TOption="string" TValue="string"
+                                                          Value="@_projStatus.ToString()"
+                                                          ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
+                                                          Style="width: 100%;">
+                                                <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
+                                            </FluentSelect>
+                                        </div>
+                                    </FluentStack>
+
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                                        <FluentDatePicker Label="Tentative Start Date" @bind-Value="_projStartDate" />
+                                        <FluentDatePicker Label="Tentative End Date" @bind-Value="_projEndDate" />
+                                    </FluentStack>
+
+                                    <div>
+                                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Summary of Scope of Project</FluentLabel>
+                                        <FluentTextArea @bind-Value="_projScopeSummary" Placeholder="Brief summary of project scope, deliverables, and goals..." Rows="3" Style="width: 100%;" />
+                                    </div>
+
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                        <FluentButton Appearance="ButtonAppearance.Primary"
+                                                      Disabled="@(!IsProjectFormValid)"
+                                                      OnClick="@CreateProgramProjectAsync">
+                                            Save Project
+                                        </FluentButton>
+                                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CloseProjectModal">
+                                            Cancel
+                                        </FluentButton>
+                                    </FluentStack>
+                                </FluentStack>
+                            </FluentCard>
+                        }
+
+                        @if (_isLoadingProjects)
+                        {
+                            <FluentSpinner Size="SpinnerSize.Small" />
+                        }
+                        else if (_programProjects.Count == 0)
+                        {
+                            <div style="color: var(--neutral-foreground-hint); font-size: 13px; padding: 20px 0;">
+                                No projects currently assigned to this program. Click &ldquo;Add Project to Program&rdquo; to create a project workspace.
+                            </div>
+                        }
+                        else
+                        {
+                            <FluentDataGrid Items="@_programProjects.AsQueryable()" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 180px">
+                                <PropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
+                                <PropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+                                <TemplateColumn Title="Status">
+                                    @switch (context.Status)
+                                    {
+                                        case ProjectStatus.Active:
+                                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
+                                            break;
+                                        case ProjectStatus.New:
+                                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
+                                            break;
+                                        case ProjectStatus.OnHold:
+                                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
+                                            break;
+                                        case ProjectStatus.Done:
+                                            <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
+                                            break;
+                                    }
+                                </TemplateColumn>
+                                <TemplateColumn Title="Timeline">
+                                    <span style="font-size: 12px;">
+                                        @TimeZoneService.FormatDate(context.TentativeStartDate) ~ @TimeZoneService.FormatDate(context.TentativeEndDate)
+                                    </span>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Actions">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
+                                        <FluentLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")" Style="font-size: 13px;">
+                                            Tasks
+                                        </FluentLink>
+                                        <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
+                                    </FluentStack>
+                                </TemplateColumn>
+                            </FluentDataGrid>
+                        }
+                    </div>
+                </FluentTab>
+            </FluentTabs>
+        </FluentCard>
+    }
+</FluentStack>
+
+@code {
+    public record TenantFilterOption(string Id, string Name);
+
+    private List<TenantFilterOption> _availableTenants = [];
+    private string? _selectedTenantId;
+    private string _selectedTenantName = string.Empty;
+
+    private List<ProgramEntity> _programs = [];
+    private HashSet<Guid> _accessibleProgramIds = [];
+    private HashSet<Guid> _programAdminIds = [];
+    private bool _isTenantAdmin = false;
+    private bool _isLoading = false;
+    private string? _statusMessage;
+    private bool _isError;
+    private string _programSearchText = string.Empty;
+
+    // Selected Program state
+    private ProgramEntity? _selectedProgram;
+    private string _activeProgramTab = "tab-health";
+    private bool _isLoadingHealth = false;
+    private ProgramHealthSummaryDto? _healthSummary;
+    private bool _isLoadingProjects = false;
+    private List<ProjectEntity> _programProjects = [];
+    private bool _canManageSelectedProgramProjects = false;
+
+    // Add / Edit Program Form
+    private bool _showProgramModal = false;
+    private Guid? _editingProgramId = null;
+    private string _programFormCode = string.Empty;
+    private string _programFormName = string.Empty;
+    private string _programFormDescription = string.Empty;
+    private DateTime? _programFormStartDate;
+    private DateTime? _programFormTargetEndDate;
+    private ProgramStatus _programFormStatus = ProgramStatus.Active;
+
+    // Add Project Modal under selected program
+    private bool _showAddProjectModal = false;
+    private string _projName = string.Empty;
+    private string _projShortCode = string.Empty;
+    private string _projLocation = string.Empty;
+    private ProjectStatus _projStatus = ProjectStatus.New;
+    private DateTime? _projStartDate;
+    private DateTime? _projEndDate;
+    private string _projScopeSummary = string.Empty;
+
+    private bool IsProgramFormValid =>
+        !string.IsNullOrWhiteSpace(_programFormCode) &&
+        !string.IsNullOrWhiteSpace(_programFormName);
+
+    private bool IsProjectFormValid =>
+        !string.IsNullOrWhiteSpace(_projName) &&
+        !string.IsNullOrWhiteSpace(_projShortCode);
+
+    private IQueryable<ProgramEntity> FilteredPrograms
+    {
+        get
+        {
+            var result = _programs.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_programSearchText))
+            {
+                result = result.Where(p =>
+                    p.Name.Contains(_programSearchText, StringComparison.OrdinalIgnoreCase) ||
+                    p.Code.Contains(_programSearchText, StringComparison.OrdinalIgnoreCase));
+            }
+            return result;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvailableTenantsAsync();
+    }
+
+    private async Task LoadAvailableTenantsAsync()
+    {
+        if (CurrentUser.IsRootAdmin)
+        {
+            try
+            {
+                var allTenants = await DbContext.Tenants
+                    .AsNoTracking()
+                    .Where(t => t.IsActive)
+                    .OrderBy(t => t.Name)
+                    .ToListAsync();
+
+                _availableTenants = allTenants.Select(t => new TenantFilterOption(t.Slug, t.Name)).ToList();
+            }
+            catch
+            {
+                _availableTenants = [];
+            }
+        }
+        else
+        {
+            _availableTenants = TenantContext.AllowedTenants
+                .Where(t => t.IsActive && t.Id != "default")
+                .OrderBy(t => t.Name)
+                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .ToList();
+
+            if (_availableTenants.Count == 0 && !string.IsNullOrWhiteSpace(TenantContext.TenantId))
+            {
+                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId, TenantContext.TenantName));
+            }
+        }
+
+        var defaultSlug = !string.IsNullOrWhiteSpace(TenantContext.TenantId) ? TenantContext.TenantId : _availableTenants.FirstOrDefault()?.Id;
+        if (!string.IsNullOrWhiteSpace(defaultSlug))
+        {
+            await OnTenantSelectedAsync(defaultSlug);
+        }
+    }
+
+    private async Task OnTenantSelectedAsync(string? tenantSlug)
+    {
+        _selectedTenantId = tenantSlug;
+        _selectedTenantName = _availableTenants.FirstOrDefault(t => t.Id == tenantSlug)?.Name ?? tenantSlug ?? string.Empty;
+        _selectedProgram = null;
+        _healthSummary = null;
+        _programProjects.Clear();
+
+        if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+        {
+            await LoadProgramsAsync();
+        }
+        else
+        {
+            _programs.Clear();
+        }
+    }
+
+    private async Task LoadProgramsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+
+        _isLoading = true;
+        try
+        {
+            var userId = CurrentUser.UserId ?? string.Empty;
+            _isTenantAdmin = await HierarchyAuth.IsTenantAdminAsync(_selectedTenantId, userId);
+            var accessible = await HierarchyAuth.GetAccessibleProgramIdsAsync(_selectedTenantId, userId);
+            _accessibleProgramIds = accessible.ToHashSet();
+
+            var allTenantPrograms = await ProgramService.GetProgramsAsync(_selectedTenantId);
+
+            // Zero Trust gate: Tenant Admin receives all programs; Program Admin receives strictly accessible programs
+            if (_isTenantAdmin || CurrentUser.IsRootAdmin)
+            {
+                _programs = allTenantPrograms.ToList();
+            }
+            else
+            {
+                _programs = allTenantPrograms.Where(p => _accessibleProgramIds.Contains(p.Id)).ToList();
+            }
+
+            // Identify which programs the current user is an admin of
+            _programAdminIds.Clear();
+            foreach (var prog in _programs)
+            {
+                if (await HierarchyAuth.IsProgramAdminAsync(prog.Id, userId))
+                {
+                    _programAdminIds.Add(prog.Id);
+                }
+            }
+
+            if (_selectedProgram != null)
+            {
+                _selectedProgram = _programs.FirstOrDefault(p => p.Id == _selectedProgram.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load programs: {ex.Message}";
+            _isError = true;
+            _programs.Clear();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SelectProgramAsync(ProgramEntity program)
+    {
+        _selectedProgram = program;
+        _activeProgramTab = "tab-health";
+        _canManageSelectedProgramProjects = _isTenantAdmin || CurrentUser.IsRootAdmin || _programAdminIds.Contains(program.Id);
+        await LoadProgramHealthAsync();
+        await LoadProgramProjectsAsync();
+    }
+
+    private async Task LoadProgramHealthAsync()
+    {
+        if (_selectedProgram == null) return;
+        _isLoadingHealth = true;
+        try
+        {
+            _healthSummary = await ProgramService.GetProgramHealthAsync(_selectedProgram.Id);
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to calculate program health: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoadingHealth = false;
+        }
+    }
+
+    private async Task LoadProgramProjectsAsync()
+    {
+        if (_selectedProgram == null) return;
+        _isLoadingProjects = true;
+        try
+        {
+            var projects = await ProgramService.GetProgramProjectsAsync(_selectedProgram.Id);
+            _programProjects = projects.ToList();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load program projects: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoadingProjects = false;
+        }
+    }
+
+    // --- Add / Edit Program ---
+    private void OpenCreateProgramModal()
+    {
+        _editingProgramId = null;
+        _programFormCode = string.Empty;
+        _programFormName = string.Empty;
+        _programFormDescription = string.Empty;
+        _programFormStartDate = DateTime.UtcNow.Date;
+        _programFormTargetEndDate = DateTime.UtcNow.Date.AddMonths(12);
+        _programFormStatus = ProgramStatus.Active;
+        _showProgramModal = true;
+        UnsavedChanges.RegisterChange("Settings > Programs", "Creating new program");
+    }
+
+    private void OpenEditProgramModal(ProgramEntity program)
+    {
+        _editingProgramId = program.Id;
+        _programFormCode = program.Code;
+        _programFormName = program.Name;
+        _programFormDescription = program.Description;
+        _programFormStartDate = program.StartDateUtc;
+        _programFormTargetEndDate = program.TargetEndDateUtc;
+        _programFormStatus = program.Status;
+        _showProgramModal = true;
+        UnsavedChanges.RegisterChange("Settings > Programs", $"Editing program '{program.Name}'");
+    }
+
+    private void CloseProgramModal()
+    {
+        _showProgramModal = false;
+        UnsavedChanges.ClearChange("Settings > Programs");
+    }
+
+    private async Task SaveProgramAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId) || !IsProgramFormValid) return;
+
+        if (_editingProgramId.HasValue)
+        {
+            var updateResult = await ProgramService.UpdateProgramAsync(
+                _editingProgramId.Value,
+                _programFormName,
+                _programFormCode,
+                _programFormDescription,
+                _programFormStartDate,
+                _programFormTargetEndDate,
+                _programFormStatus,
+                isActive: true);
+
+            if (updateResult.Succeeded && updateResult.Data is not null)
+            {
+                _statusMessage = $"Program '{updateResult.Data.Name}' updated successfully.";
+                _isError = false;
+                CloseProgramModal();
+                await LoadProgramsAsync();
+                if (_selectedProgram?.Id == _editingProgramId)
+                {
+                    await SelectProgramAsync(updateResult.Data);
+                }
+            }
+            else
+            {
+                _statusMessage = updateResult.Errors.FirstOrDefault() ?? "Failed to update program.";
+                _isError = true;
+            }
+        }
+        else
+        {
+            var createResult = await ProgramService.CreateProgramAsync(
+                _selectedTenantId,
+                _programFormName,
+                _programFormCode,
+                _programFormDescription,
+                _programFormStartDate,
+                _programFormTargetEndDate,
+                _programFormStatus);
+
+            if (createResult.Succeeded && createResult.Data is not null)
+            {
+                _statusMessage = $"Program '{createResult.Data.Name}' created successfully.";
+                _isError = false;
+                CloseProgramModal();
+                await LoadProgramsAsync();
+                await SelectProgramAsync(createResult.Data);
+            }
+            else
+            {
+                _statusMessage = createResult.Errors.FirstOrDefault() ?? "Failed to create program.";
+                _isError = true;
+            }
+        }
+    }
+
+    // --- Add Project to Program ---
+    private void OpenAddProjectModal()
+    {
+        _projName = string.Empty;
+        _projShortCode = string.Empty;
+        _projLocation = string.Empty;
+        _projStatus = ProjectStatus.New;
+        _projStartDate = DateTime.UtcNow.Date;
+        _projEndDate = DateTime.UtcNow.Date.AddMonths(6);
+        _projScopeSummary = string.Empty;
+        _showAddProjectModal = true;
+        UnsavedChanges.RegisterChange("Settings > Programs", "Adding project to program");
+    }
+
+    private void CloseProjectModal()
+    {
+        _showAddProjectModal = false;
+        UnsavedChanges.ClearChange("Settings > Programs");
+    }
+
+    private async Task CreateProgramProjectAsync()
+    {
+        if (_selectedProgram == null || string.IsNullOrWhiteSpace(_selectedTenantId) || !IsProjectFormValid) return;
+
+        var result = await TenantService.CreateTenantProjectAsync(
+            _selectedTenantId,
+            _projName,
+            _projShortCode,
+            _projLocation,
+            _projStartDate,
+            _projEndDate,
+            _projScopeSummary,
+            _projStatus,
+            programId: _selectedProgram.Id);
+
+        if (result.Succeeded && result.Data is not null)
+        {
+            _statusMessage = $"Project '{result.Data.Name}' added to program '{_selectedProgram.Name}'.";
+            _isError = false;
+            CloseProjectModal();
+            await LoadProgramProjectsAsync();
+            await LoadProgramHealthAsync();
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to add project.";
+            _isError = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        UnsavedChanges.ClearChange("Settings > Programs");
+    }
+}

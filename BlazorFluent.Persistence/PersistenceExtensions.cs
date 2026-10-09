@@ -149,6 +149,10 @@ public static class PersistenceExtensions
         // 21. Real-Time Project & Milestone Health Engine Service
         services.TryAddScoped<IProjectHealthService, ProjectHealthService>();
 
+        // 22. Hierarchical Authorization & Program Governance Services
+        services.TryAddScoped<IHierarchyAuthorizationService, HierarchyAuthorizationService>();
+        services.TryAddScoped<IProgramService, ProgramService>();
+
         return services;
     }
 }

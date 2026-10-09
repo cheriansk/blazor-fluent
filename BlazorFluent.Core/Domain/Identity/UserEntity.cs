@@ -67,6 +67,16 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     public ICollection<ProjectUserRoleEntity> ProjectRoles { get; set; } = new List<ProjectUserRoleEntity>();
 
     /// <summary>
+    /// Navigation to assigned program governance roles.
+    /// </summary>
+    public ICollection<ProgramUserRoleEntity> ProgramRoles { get; set; } = new List<ProgramUserRoleEntity>();
+
+    /// <summary>
+    /// Navigation to tenant memberships.
+    /// </summary>
+    public ICollection<TenantUserEntity> TenantMemberships { get; set; } = new List<TenantUserEntity>();
+
+    /// <summary>
     /// Computes the HMAC-SHA256 signature for this user's sensitive security properties.
     /// </summary>
     public string ComputeIntegritySignature(string secretKey)

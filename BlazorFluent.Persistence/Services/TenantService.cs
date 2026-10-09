@@ -497,6 +497,7 @@ public class TenantService : ITenantService
         DateTime? endDate,
         string? scopeSummary,
         ProjectStatus status,
+        Guid? programId = null,
         CancellationToken cancellationToken = default)
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
@@ -550,7 +551,8 @@ public class TenantService : ITenantService
             Status = status,
             IsActive = status == ProjectStatus.Active || status == ProjectStatus.New,
             TenantEntityId = tenant.Id,
-            TenantId = normalizedSlug
+            TenantId = normalizedSlug,
+            ProgramId = programId
         };
 
         _dbContext.Projects.Add(project);
@@ -560,7 +562,7 @@ public class TenantService : ITenantService
 
         await _auditService.LogUserActivityAsync(
             $"Created tenant project '{project.Name}' ({project.ShortCode})",
-            $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
+            $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}, ProgramId: {programId}",
             cancellationToken);
 
         if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
@@ -585,6 +587,7 @@ public class TenantService : ITenantService
         DateTime? endDate,
         string? scopeSummary,
         ProjectStatus status,
+        Guid? programId = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -618,6 +621,14 @@ public class TenantService : ITenantService
             return Result<ProjectEntity>.Failure($"Another project with name '{trimmedName}' or short code '{trimmedCode}' already exists for this tenant.");
 
         project.Name = trimmedName;
+        project.ShortCode = trimmedCode;
+        project.Location = location?.Trim();
+        project.TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null;
+        project.TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null;
+        project.ScopeSummary = scopeSummary?.Trim();
+        project.Status = status;
+        project.IsActive = status == ProjectStatus.Active || status == ProjectStatus.New;
+        if (programId.HasValue) project.ProgramId = programId;
         project.ShortCode = trimmedCode;
         project.Location = location?.Trim();
         project.TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null;

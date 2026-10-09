@@ -11,6 +11,7 @@
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject ITenantService TenantService
+@inject IProgramService ProgramService
 @inject ICurrentUser CurrentUser
 @inject IAuditService AuditService
 @inject IProjectAuthorizationService ProjectAuth
@@ -53,6 +54,29 @@
 
             @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
             {
+                @if (_availablePrograms.Count > 1)
+                {
+                    <FluentSelect TOption="ProgramFilterOption"
+                                  TValue="string"
+                                  Items="@_availablePrograms"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id)"
+                                  Value="@_selectedProgramId"
+                                  ValueChanged="@OnProgramSelected"
+                                  Label="Filter by Program"
+                                  Placeholder="-- All Programs --"
+                                  Style="min-width: 250px;" />
+
+                    @if (!string.IsNullOrWhiteSpace(_selectedProgramId))
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                      IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                      OnClick="@ClearProgramFilter">
+                            All Programs
+                        </FluentButton>
+                    }
+                }
+
                 @if (_availableTenants.Count > 1)
                 {
                     <FluentButton Appearance="ButtonAppearance.Subtle"
@@ -118,9 +142,19 @@
             }
             else
             {
-                <FluentDataGrid Items="@FilteredProjects" ResizableColumns="true" GridTemplateColumns="110px 1.5fr 110px 140px 180px 220px">
+                <FluentDataGrid Items="@FilteredProjects" ResizableColumns="true" GridTemplateColumns="110px 1.5fr 140px 110px 140px 180px 220px">
                     <PropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
                     <PropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+                    <TemplateColumn Title="Program" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Program != null ? p.Program.Name : string.Empty))">
+                        @if (context.Program is not null)
+                        {
+                            <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative">@context.Program.Name</FluentBadge>
+                        }
+                        else
+                        {
+                            <span style="color: var(--neutral-foreground-hint); font-size: 12px;">—</span>
+                        }
+                    </TemplateColumn>
                     <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
                         @switch (context.Status)
                         {
@@ -219,6 +253,10 @@
                                             <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Status</span>
                                             <span>@_selectedProject.Status</span>
                                         </div>
+                                        <div style="flex: 1; min-width: 160px;">
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Parent Program</span>
+                                            <span>@(_selectedProject.Program is not null ? _selectedProject.Program.Name : "—")</span>
+                                        </div>
                                         <div style="flex: 1; min-width: 180px;">
                                             <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Location</span>
                                             <span>@(!string.IsNullOrWhiteSpace(_selectedProject.Location) ? _selectedProject.Location : "—")</span>
@@ -276,6 +314,18 @@
                                                 </FluentSelect>
                                             </div>
                                         </FluentStack>
+
+                                        <div>
+                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Parent Program (Optional)</FluentLabel>
+                                            <FluentSelect TOption="ProgramFilterOption"
+                                                          TValue="string"
+                                                          Items="@_assignablePrograms"
+                                                          OptionText="@(p => p.Name)"
+                                                          OptionValue="@(p => p.Id)"
+                                                          Value="@_editProgramId"
+                                                          ValueChanged="@(val => _editProgramId = val)"
+                                                          Style="width: 100%;" />
+                                        </div>
 
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
                                             <FluentDatePicker Label="Tentative Start Date" @bind-Value="_editStartDate" />
@@ -549,9 +599,13 @@
 
 @code {
     public record TenantFilterOption(string Id, string Name);
+    public record ProgramFilterOption(string Id, string Name);
 
     private List<TenantFilterOption> _availableTenants = new();
+    private List<ProgramFilterOption> _availablePrograms = [];
+    private List<ProgramFilterOption> _assignablePrograms = [];
     private string? _selectedTenantId;
+    private string? _selectedProgramId;
     private string _selectedTenantName = string.Empty;
     private List<ProjectEntity> _projects = new();
     private string _projectSearchText = string.Empty;
@@ -569,6 +623,7 @@
     private string _editShortCode = string.Empty;
     private string? _editLocation;
     private ProjectStatus _editStatus = ProjectStatus.New;
+    private string? _editProgramId;
     private DateTime? _editStartDate;
     private DateTime? _editEndDate;
     private string? _editScopeSummary;
@@ -599,6 +654,10 @@
         get
         {
             var query = _projects.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(_selectedProgramId) && Guid.TryParse(_selectedProgramId, out var filterProgId))
+            {
+                query = query.Where(p => p.ProgramId == filterProgId);
+            }
             if (!string.IsNullOrWhiteSpace(_projectSearchText))
             {
                 var term = _projectSearchText.Trim();
@@ -670,11 +729,24 @@
         }
     }
 
+    private void OnProgramSelected(string? progId)
+    {
+        _selectedProgramId = string.IsNullOrWhiteSpace(progId) ? null : progId;
+    }
+
+    private void ClearProgramFilter()
+    {
+        _selectedProgramId = null;
+    }
+
     private async Task OnTenantSelected(string? tenantId)
     {
         _selectedTenantId = tenantId;
         _selectedTenantName = _availableTenants.FirstOrDefault(t => t.Id == tenantId)?.Name ?? tenantId ?? string.Empty;
         _selectedProject = null;
+        _selectedProgramId = null;
+        _availablePrograms.Clear();
+        _assignablePrograms.Clear();
         _members.Clear();
 
         if (!string.IsNullOrWhiteSpace(_selectedTenantId))
@@ -692,6 +764,9 @@
         _selectedTenantId = null;
         _selectedTenantName = string.Empty;
         _selectedProject = null;
+        _selectedProgramId = null;
+        _availablePrograms.Clear();
+        _assignablePrograms.Clear();
         _projects.Clear();
         _members.Clear();
     }
@@ -703,8 +778,23 @@
         _isLoading = true;
         try
         {
+            try
+            {
+                var progs = await ProgramService.GetProgramsAsync(_selectedTenantId);
+                _availablePrograms = [new ProgramFilterOption(string.Empty, "-- All Programs --")];
+                _availablePrograms.AddRange(progs.Select(p => new ProgramFilterOption(p.Id.ToString(), $"{p.Code} - {p.Name}")));
+                _assignablePrograms = [new ProgramFilterOption(string.Empty, "-- None (Unassigned) --")];
+                _assignablePrograms.AddRange(progs.Select(p => new ProgramFilterOption(p.Id.ToString(), $"{p.Code} - {p.Name}")));
+            }
+            catch
+            {
+                _availablePrograms = [];
+                _assignablePrograms = [];
+            }
+
             var query = DbContext.Projects
                 .AsNoTracking()
+                .Include(p => p.Program)
                 .Where(p => p.TenantId == _selectedTenantId && !p.IsDeleted)
                 .OrderBy(p => p.Name);
 
@@ -752,6 +842,7 @@
         _editShortCode = _selectedProject.ShortCode;
         _editLocation = _selectedProject.Location;
         _editStatus = _selectedProject.Status;
+        _editProgramId = _selectedProject.ProgramId?.ToString() ?? string.Empty;
         _editStartDate = _selectedProject.TentativeStartDate;
         _editEndDate = _selectedProject.TentativeEndDate;
         _editScopeSummary = !string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : _selectedProject.Description;
@@ -769,6 +860,8 @@
     {
         if (_selectedProject == null || string.IsNullOrWhiteSpace(_selectedTenantId) || !IsEditDetailsValid) return;
 
+        Guid? progId = Guid.TryParse(_editProgramId, out var parsedProg) ? parsedProg : null;
+
         var result = await TenantService.UpdateTenantProjectAsync(
             _selectedTenantId,
             _selectedProject.Id,
@@ -778,7 +871,8 @@
             _editStartDate,
             _editEndDate,
             _editScopeSummary,
-            _editStatus);
+            _editStatus,
+            programId: progId);
 
         if (result.Succeeded && result.Data is not null)
         {

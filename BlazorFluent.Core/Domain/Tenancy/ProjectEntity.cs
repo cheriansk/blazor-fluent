@@ -45,6 +45,12 @@ public class ProjectEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// <summary>Navigation to parent tenant.</summary>
     public TenantEntity? TenantEntity { get; set; }
 
+    /// <summary>FK to the governing <see cref="ProgramEntity"/>.</summary>
+    public Guid? ProgramId { get; set; }
+
+    /// <summary>Navigation to parent program.</summary>
+    public ProgramEntity? Program { get; set; }
+
     /// <summary>Navigation to project user role assignments.</summary>
     public ICollection<ProjectUserRoleEntity> UserRoles { get; set; } = new List<ProjectUserRoleEntity>();
 }

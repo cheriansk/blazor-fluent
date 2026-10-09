@@ -25,6 +25,18 @@ public class TaskDependencyEntity : TenantAuditableEntity, IProjectScopedEntity
     public Guid DependsOnTaskId { get; set; }
 
     /// <summary>
+    /// ID of the project owning the prerequisite task.
+    /// If null or equal to <see cref="ProjectId"/>, this is an intra-project dependency.
+    /// If different, this represents a cross-project dependency.
+    /// </summary>
+    public Guid? DependsOnProjectId { get; set; }
+
+    /// <summary>
+    /// Indicates whether this dependency spans across project boundaries.
+    /// </summary>
+    public bool IsCrossProject => DependsOnProjectId.HasValue && DependsOnProjectId.Value != ProjectId;
+
+    /// <summary>
     /// Classification of dependency (Blocks, BlockedBy, RelatesTo).
     /// </summary>
     public TaskDependencyType DependencyType { get; set; } = TaskDependencyType.Blocks;
