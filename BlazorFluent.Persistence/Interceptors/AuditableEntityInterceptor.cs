@@ -4,6 +4,7 @@ using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -186,6 +187,12 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
             // ─────────────────────────────────────────────────────────────────────────
+
+            // Tenant Slug is strictly immutable — can never be modified after creation
+            if (entry.Entity is TenantEntity && entry.State == EntityState.Modified)
+            {
+                entry.Property(nameof(TenantEntity.Slug)).IsModified = false;
+            }
 
             if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
             {

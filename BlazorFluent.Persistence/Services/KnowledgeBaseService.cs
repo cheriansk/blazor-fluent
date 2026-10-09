@@ -13,7 +13,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
     private readonly AppDbContext _context;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
-    private readonly INotificationService _notificationService;
+    private readonly INotifyService _notificationService;
     private readonly IInputSanitizer _inputSanitizer;
     private readonly ILogger<KnowledgeBaseService> _logger;
 
@@ -21,7 +21,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         AppDbContext context,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
-        INotificationService notificationService,
+        INotifyService notificationService,
         IInputSanitizer inputSanitizer,
         ILogger<KnowledgeBaseService> logger)
     {

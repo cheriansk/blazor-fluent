@@ -56,13 +56,13 @@
         @if (_isLoading)
         {
             <div style="display: flex; justify-content: center; padding: 48px;">
-                <FluentProgressRing Size="SpinnerSize.Large" />
+                <FluentSpinner Size="SpinnerSize.Large" />
             </div>
         }
         else if (_sessions.Count == 0)
         {
             <div style="text-align: center; padding: 48px; color: var(--neutral-foreground-3, #8a8886);">
-                <FluentIcon Value="@(new Icons.Regular.Size32.ShieldCheckmark())" Color="Color.Neutral" />
+                <FluentIcon Value="@(new Icons.Regular.Size32.ShieldCheckmark())" Color="Color.Default" />
                 <div style="margin-top: 12px; font-weight: 500;">No sessions found.</div>
             </div>
         }

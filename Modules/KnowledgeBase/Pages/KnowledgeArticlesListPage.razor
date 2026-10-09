@@ -34,12 +34,15 @@
 
     <!-- Search & Filter Controls Card -->
     <FluentCard Style="padding: 14px;">
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="width: 100%;">
-            <!--<FluentSearch @bind-Value="@_searchTerm"
-                          @bind-Value:after="@LoadArticlesAsync"
-                          Placeholder="Search articles by title, content, author, or label..."
-                          Style="width: 100%;"
-                          Immediate="true" />-->
+            <FluentTextInput @bind-Value="@_searchTerm"
+                             @bind-Value:after="@LoadArticlesAsync"
+                             Appearance="TextInputAppearance.Outline"
+                             Placeholder="Search articles by title, content, author, or label..."
+                             Style="width: 100%;">
+                <StartTemplate>
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                </StartTemplate>
+            </FluentTextInput>
 
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
                 <!-- Filter Pills -->
@@ -94,13 +97,13 @@
                     </div>
                 }
             </div>
-        </FluentStack>
+       
     </FluentCard>
 
     <!-- Articles List / Grid -->
     @if (_isLoading)
     {
-        <FluentProgressRing Style="margin: 60px auto;" />
+        <FluentSpinner Style="margin: 60px auto;" />
     }
     else if (_articles.Count == 0)
     {
@@ -181,7 +184,7 @@
                     <!-- Footer: Author & Approval Info -->
                     <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--neutral-foreground-hint); border-top: 1px solid var(--neutral-stroke-subtle); padding-top: 8px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <FluentIcon Value="@(new Icons.Filled.Size16.Person())" Color="Color.Accent" />
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Person())" Color="Color.Primary" />
                             <span>By <strong>@article.AuthorUserName</strong></span>
                         </div>
 

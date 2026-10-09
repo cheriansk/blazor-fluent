@@ -87,6 +87,15 @@
                 </div>
             }
         </FluentTab>
+
+        <FluentTab Id="notifications" Header="Notifications" IconStart="@(new Icons.Regular.Size20.Alert())">
+            @if (_visitedTabs.Contains("notifications"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsNotificationsTab />
+                </div>
+            }
+        </FluentTab>
     </FluentTabs>
 </div>
 

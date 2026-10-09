@@ -11,6 +11,8 @@
 	  <WarningsAsErrors>CS0108</WarningsAsErrors>
 	  <!-- Force unrecognized Blazor components to break the build -->
 	  <WarningsAsErrors>$(WarningsAsErrors);RZ10012</WarningsAsErrors>
+	  <!-- Force obsolete component and API usages to break the build (prevents V4 legacy creeping) -->
+	  <WarningsAsErrors>$(WarningsAsErrors);CS0618</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

@@ -60,7 +60,7 @@
         <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Style="opacity: 0.7;" />
         @if (_isLoadingProjects)
         {
-            <FluentProgressRing Size="SpinnerSize.Small" Style="width: 16px; height: 16px;" />
+            <FluentSpinner Size="SpinnerSize.Small" Style="width: 16px; height: 16px;" />
         }
         else if (_projects.Count == 0)
         {

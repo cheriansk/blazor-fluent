@@ -162,13 +162,13 @@
             @if (_isLoading)
             {
                 <div style="display: flex; justify-content: center; padding: 40px;">
-                    <FluentProgressRing Size="SpinnerSize.Medium" />
+                    <FluentSpinner Size="SpinnerSize.Medium" />
                 </div>
             }
             else if (_executions.Count == 0)
             {
                 <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
-                    <FluentIcon Value="@(new Icons.Regular.Size32.Clock())" Color="Color.Neutral" />
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Clock())" Color="Color.Default" />
                     <div style="margin-top: 10px; font-weight: 500;">No background job executions found for this tenant.</div>
                 </div>
             }

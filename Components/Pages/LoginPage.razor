@@ -29,112 +29,174 @@
 <PageTitle>Sign In - BlazorFluent</PageTitle>
 
 <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
-    <FluentCard Style="max-width: 480px; width: 100%; padding: 36px 32px; box-shadow: var(--elevation-shadow-card-rest, 0 8px 24px rgba(0,0,0,0.12)); border-radius: 12px;">
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-            @* Brand Header *@
-            <div style="text-align: center;">
-                <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px; background-color: var(--accent-fill-rest, #0078d4); color: #fff; margin-bottom: 12px;">
-                    <FluentIcon Value="@(new Icons.Regular.Size24.ShieldKeyhole())" Color="Color.Lightweight" />
-                </div>
-                <FluentLabel Typo="Typography.H3" Style="margin: 0; font-weight: 700;">BlazorFluent</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
-                    Enterprise Multi-Tenant Portal
-                </FluentLabel>
-            </div>
-
-            <FluentDivider Style="width: 100%;" />
-
-            @* Privacy Notice Card *@
-            <div style="background-color: var(--neutral-layer-2, #f5f5f5); border: 1px solid var(--neutral-stroke-subtle, #e0e0e0); border-radius: 8px; padding: 14px 16px;">
-                <div style="display: flex; align-items: flex-start; gap: 10px;">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Accent" Style="margin-top: 2px;" />
-                    <div style="font-size: 12px; color: var(--neutral-foreground-2, #424242); line-height: 1.5;">
-                        <strong>Corporate Monitoring & Privacy Notice</strong><br />
-                        Access to this portal is restricted to authorized personnel. All session activities,
-                        IP addresses, and data modifications are logged and audited in accordance with corporate security compliance policies.
+    @if (_isSelectingTenant && _pendingAuth != null)
+    {
+        @* Tenant Selection Step (Immediately after verified credentials) *@
+        <FluentCard Style="max-width: 480px; width: 100%; padding: 36px 32px; box-shadow: var(--elevation-shadow-card-rest, 0 8px 24px rgba(0,0,0,0.12)); border-radius: 12px;">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                <div style="text-align: center;">
+                    <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px; background-color: var(--accent-fill-rest, #0078d4); color: #fff; margin-bottom: 12px;">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Building())" Color="Color.Lightweight" />
+                    </div>
+                    <FluentLabel Typo="Typography.H4" Style="margin: 0; font-weight: 700;">Select Organization</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
+                        Welcome, <strong>@_pendingAuth.User.FullName</strong>
+                    </FluentLabel>
+                    <div style="font-size: 12px; color: var(--neutral-foreground-hint, #888); margin-top: 2px;">
+                        @_pendingAuth.User.Email
                     </div>
                 </div>
-            </div>
 
-            @* Mandatory Checkbox *@
-            <div style="margin: 4px 0;">
-                <FluentCheckbox @bind-Value="_isAcknowledged"
-                                Label="I acknowledge and agree to the Privacy Policy and Monitoring Notice." />
-            </div>
+                <FluentDivider Style="width: 100%;" />
 
-            @* Primary Sign In Button *@
-            <FluentButton Appearance="ButtonAppearance.Subtle"
-                          Style="width: 100%; height: 40px; font-weight: 600;"
-                          Disabled="@(!_isAcknowledged || _isLoading)"
-                          OnClick="HandleMicrosoftSignIn">
-                @if (_isLoading)
-                {
-                    <FluentProgressRing Size="SpinnerSize.Small" Style="margin-right: 8px;" />
-                    <span>Validating credentials...</span>
-                }
-                else
-                {
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Window())" Style="margin-right: 8px;" />
-                    <span>Sign in with Microsoft</span>
-                }
-            </FluentButton>
-
-            @if (!string.IsNullOrEmpty(_infoMessage))
-            {
-                <FluentMessageBar Intent="MessageBarIntent.Warning">
-                    @_infoMessage
-                </FluentMessageBar>
-            }
-
-            @if (!string.IsNullOrEmpty(_errorMessage))
-            {
-                <FluentMessageBar Intent="MessageBarIntent.Error">
-                    @_errorMessage
-                </FluentMessageBar>
-            }
-
-            @if (HostEnvironment.IsDevelopment())
-            {
-                @* Local Dev Sandbox Section *@
-                <FluentDivider Style="width: 100%; margin-top: 8px;" />
-                <div style="border-radius: 8px; border: 1px dashed var(--neutral-stroke-subtle, #ccc); padding: 12px 14px; background: var(--neutral-layer-1, #fafafa);">
-                    <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; color: var(--neutral-foreground-2, #616161); margin-bottom: 8px; display: block;">
-                        🛠️ Developer Authentication Sandbox (Local Testing)
-                    </FluentLabel>
-                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
-                            👑 Sign in as Root Admin 1 (admin@blazorfluent.local)
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("admin2@blazorfluent.local"))">
-                            👑 Sign in as Root Admin 2 (admin2@blazorfluent.local)
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("admin3@blazorfluent.local"))">
-                            👑 Sign in as Root Admin 3 (admin3@blazorfluent.local)
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
-                            👤 Sign in as Standard Developer (dev@blazorfluent.local)
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
-                            ❌ Test Expired User (Gate 1 Failure)
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
-                            ❌ Test Tampered HMAC (Gate 2 Failure)
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                      OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
-                            ❌ Test Unprovisioned User (Gate 3 Failure)
-                        </FluentButton>
-                    </FluentStack>
+                <div style="font-size: 13px; color: var(--neutral-foreground-2, #424242); line-height: 1.4;">
+                    Your account has access to multiple organizations. Please choose the workspace you wish to enter:
                 </div>
-            }
-        </FluentStack>
-    </FluentCard>
+
+                <div>
+                    <FluentSelect TOption="TenantInfo"
+                                  TValue="string"
+                                  Items="@_pendingAuth.AllowedTenants"
+                                  OptionText="@(t => $"{t.Name} ({t.Id})")"
+                                  OptionValue="@(t => t.Id)"
+                                  @bind-Value="_selectedTenantSlug"
+                                  Placeholder="-- Select an organization --"
+                                  Style="width: 100%;" />
+                </div>
+
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              Style="width: 100%; height: 40px; font-weight: 600;"
+                              Disabled="@(string.IsNullOrWhiteSpace(_selectedTenantSlug) || _isLoading)"
+                              OnClick="HandleConfirmTenantSelectionAsync">
+                    @if (_isLoading)
+                    {
+                        <FluentSpinner Size="SpinnerSize.Small" Style="margin-right: 8px;" />
+                        <span>Entering workspace...</span>
+                    }
+                    else
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size20.ArrowEnter())" Style="margin-right: 8px;" />
+                        <span>Enter Workspace</span>
+                    }
+                </FluentButton>
+
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              Style="width: 100%;"
+                              OnClick="CancelTenantSelection">
+                    Sign in with a different account
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
+    }
+    else
+    {
+        <FluentCard Style="max-width: 480px; width: 100%; padding: 36px 32px; box-shadow: var(--elevation-shadow-card-rest, 0 8px 24px rgba(0,0,0,0.12)); border-radius: 12px;">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                @* Brand Header *@
+                <div style="text-align: center;">
+                    <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px; background-color: var(--accent-fill-rest, #0078d4); color: #fff; margin-bottom: 12px;">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.ShieldKeyhole())" Color="Color.Lightweight" />
+                    </div>
+                    <FluentLabel Typo="Typography.H3" Style="margin: 0; font-weight: 700;">BlazorFluent</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
+                        Enterprise Multi-Tenant Portal
+                    </FluentLabel>
+                </div>
+
+                <FluentDivider Style="width: 100%;" />
+
+                @* Privacy Notice Card *@
+                <div style="background-color: var(--neutral-layer-2, #f5f5f5); border: 1px solid var(--neutral-stroke-subtle, #e0e0e0); border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Primary" Style="margin-top: 2px;" />
+                        <div style="font-size: 12px; color: var(--neutral-foreground-2, #424242); line-height: 1.5;">
+                            <strong>Corporate Monitoring & Privacy Notice</strong><br />
+                            Access to this portal is restricted to authorized personnel. All session activities,
+                            IP addresses, and data modifications are logged and audited in accordance with corporate security compliance policies.
+                        </div>
+                    </div>
+                </div>
+
+                @* Mandatory Checkbox *@
+                <div style="margin: 4px 0;">
+                    <FluentCheckbox @bind-Value="_isAcknowledged"
+                                    Label="I acknowledge and agree to the Privacy Policy and Monitoring Notice." />
+                </div>
+
+                @* Primary Sign In Button *@
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              Style="width: 100%; height: 40px; font-weight: 600;"
+                              Disabled="@(!_isAcknowledged || _isLoading)"
+                              OnClick="HandleMicrosoftSignIn">
+                    @if (_isLoading)
+                    {
+                        <FluentSpinner Size="SpinnerSize.Small" Style="margin-right: 8px;" />
+                        <span>Validating credentials...</span>
+                    }
+                    else
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size20.Window())" Style="margin-right: 8px;" />
+                        <span>Sign in with Microsoft</span>
+                    }
+                </FluentButton>
+
+                @if (!string.IsNullOrEmpty(_infoMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Warning">
+                        @_infoMessage
+                    </FluentMessageBar>
+                }
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error">
+                        @_errorMessage
+                    </FluentMessageBar>
+                }
+
+                @if (HostEnvironment.IsDevelopment())
+                {
+                    @* Local Dev Sandbox Section *@
+                    <FluentDivider Style="width: 100%; margin-top: 8px;" />
+                    <div style="border-radius: 8px; border: 1px dashed var(--neutral-stroke-subtle, #ccc); padding: 12px 14px; background: var(--neutral-layer-1, #fafafa);">
+                        <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; color: var(--neutral-foreground-2, #616161); margin-bottom: 8px; display: block;">
+                            🛠️ Developer Authentication Sandbox (Local Testing)
+                        </FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
+                                👑 Sign in as Root Admin 1 (admin@blazorfluent.local)
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("admin2@blazorfluent.local"))">
+                                👑 Sign in as Root Admin 2 (admin2@blazorfluent.local)
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("admin3@blazorfluent.local"))">
+                                👑 Sign in as Root Admin 3 (admin3@blazorfluent.local)
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
+                                👤 Sign in as Standard Developer (dev@blazorfluent.local)
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
+                                ❌ Test Expired User (Gate 1 Failure)
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
+                                ❌ Test Tampered HMAC (Gate 2 Failure)
+                            </FluentButton>
+                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                          OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
+                                ❌ Test Unprovisioned User (Gate 3 Failure)
+                            </FluentButton>
+                        </FluentStack>
+                    </div>
+                }
+            </FluentStack>
+        </FluentCard>
+    }
 </div>
 
 @code {
@@ -146,6 +208,10 @@
     private string? _errorMessage;
     private string? _infoMessage;
     private string _secretKey = string.Empty;
+
+    private bool _isSelectingTenant;
+    private AuthUserResult? _pendingAuth;
+    private string? _selectedTenantSlug;
 
     protected override async Task OnInitializedAsync()
     {
@@ -207,13 +273,72 @@
                 return;
             }
 
-            var verified = authResult.Value!;
+            await ProcessAuthSuccessAsync(authResult.Value!);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during test login for {Email}", email);
+            _errorMessage = "An unexpected error occurred during login.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ProcessAuthSuccessAsync(AuthUserResult verified)
+    {
+        if (verified.AllowedTenants.Count == 0)
+        {
+            _errorMessage = "Your account is not assigned to any active organization. Please contact an administrator.";
+            return;
+        }
+
+        if (verified.AllowedTenants.Count == 1)
+        {
+            // Single tenant: auto-select and proceed directly
+            var singleTenant = verified.AllowedTenants[0];
+            await CompleteLoginAsync(verified, singleTenant.Id, singleTenant.Name);
+            return;
+        }
+
+        // Multiple tenants: do NOT auto-select anything. Let user select it.
+        _pendingAuth = verified;
+        _selectedTenantSlug = null;
+        _isSelectingTenant = true;
+    }
+
+    private async Task HandleConfirmTenantSelectionAsync()
+    {
+        if (_pendingAuth is null || string.IsNullOrWhiteSpace(_selectedTenantSlug)) return;
+
+        var selected = _pendingAuth.AllowedTenants.FirstOrDefault(t => t.Id == _selectedTenantSlug);
+        var tenantName = selected?.Name ?? _selectedTenantSlug;
+
+        await CompleteLoginAsync(_pendingAuth, _selectedTenantSlug, tenantName);
+    }
+
+    private void CancelTenantSelection()
+    {
+        _isSelectingTenant = false;
+        _pendingAuth = null;
+        _selectedTenantSlug = null;
+        _errorMessage = null;
+    }
+
+    private async Task CompleteLoginAsync(AuthUserResult verified, string tenantId, string tenantName)
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
             var user = verified.User;
             var isHost = verified.IsRootAdmin;
 
             TenantContext.Initialize(
-                tenantId: verified.ResolvedTenantId,
-                tenantName: verified.ResolvedTenantName,
+                tenantId: tenantId,
+                tenantName: tenantName,
                 userType: user.UserType,
                 allowedTenants: verified.AllowedTenants,
                 isHost: isHost);
@@ -248,7 +373,7 @@
                     session.Id,
                     user.Id.ToString(),
                     user.Email,
-                    verified.ResolvedTenantId,
+                    tenantId,
                     TimeZoneId: user.TimeZoneId,
                     StartedAtUtc: session.StartedAtUtc));
             }
@@ -264,7 +389,7 @@
 
             await AuditService.LogUserActivityAsync(
                 "UserLoginSuccess",
-                $"User '{user.Email}' logged in successfully. SessionId: {session.Id}");
+                $"User '{user.Email}' logged in successfully into tenant '{tenantName}' ({tenantId}). SessionId: {session.Id}");
 
             AuthStateProvider.NotifyUserChanged();
 
@@ -273,8 +398,8 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Unexpected error during test login for {Email}", email);
-            _errorMessage = "An unexpected error occurred during login.";
+            Logger.LogError(ex, "Unexpected error completing login for {Email}", verified.User.Email);
+            _errorMessage = "An unexpected error occurred establishing your session.";
         }
         finally
         {
@@ -293,12 +418,11 @@
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             // 1. Ensure Root Default Tenant exists
-            if (!await db.Tenants.AnyAsync(t => t.Code == "OrgRoot"))
+            if (!await db.Tenants.AnyAsync(t => t.Slug == "default"))
             {
                 db.Tenants.Add(new TenantEntity
                 {
                     Slug = "default",
-                    Code = "OrgRoot",
                     Name = "Root System Organization",
                     InternalEmailDomains = "@blazorfluent.local",
                     ExternalEmailDomains = "@client.local",

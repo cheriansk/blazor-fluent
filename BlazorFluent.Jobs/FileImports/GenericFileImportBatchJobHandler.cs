@@ -25,7 +25,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
     private readonly AppDbContext _dbContext;
     private readonly ITenantEncryptionService _encryptionService;
     private readonly ITenantBlobStorageService _blobStorageService;
-    private readonly INotificationService _notificationService;
+    private readonly INotifyService _notificationService;
     private readonly IJobEventPublisher _eventPublisher;
     private readonly IEnumerable<IFileStager> _stagers;
     private readonly IEnumerable<IFileProcessor> _processors;
@@ -35,7 +35,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         AppDbContext dbContext,
         ITenantEncryptionService encryptionService,
         ITenantBlobStorageService blobStorageService,
-        INotificationService notificationService,
+        INotifyService notificationService,
         IJobEventPublisher eventPublisher,
         IEnumerable<IFileStager> stagers,
         IEnumerable<IFileProcessor> processors,

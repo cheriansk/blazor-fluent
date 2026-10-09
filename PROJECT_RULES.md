@@ -317,8 +317,34 @@ This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use 
 | Rule | Description |
 |------|-------------|
 | **V5 appearance enums** | Use `ButtonAppearance.Primary`, `BadgeColor.Brand`, `MessageBarIntent.Success`, etc. Never use V4 string-based parameters. |
-| **Dual-generic selects** | `FluentSelect<TOption, TValue>` requires both type parameters. Never omit the value type. |
+| **Dual-generic selects** | `FluentSelect<TOption, TValue>` requires both type parameters (`TOption="T" TValue="string"`). Never omit the value type. |
 | **Icons package** | Use `Microsoft.FluentUI.AspNetCore.Components.Icons` for all icon references. |
+| **Native Fluent components only** | Never substitute raw HTML input elements (`<select>`, raw checkboxes, raw buttons) when native Fluent UI components exist (`<FluentSelect>`, `<FluentCheckbox>`, `<FluentButton>`). |
+
+### 5.2.1 Fluent UI Blazor MCP Server Governance & V5 Exclusivity Standard
+All developers and AI assistants working on UI components **MUST ALWAYS** consult the `fluent-ui-blazor` MCP server before implementing, refactoring, or referencing components:
+1. **Tool Verification**: Use `search_components`, `get_component_details`, `get_component_enums`, `get_component_migration`, and `get_icon_usage` to verify exact parameter names, types, and supported appearance enums.
+2. **Strict V5 Exclusivity**: Legacy V4 components and patterns are strictly forbidden. The build enforces `<WarningsAsErrors>CS0618</WarningsAsErrors>` to reject obsolete components at compile time.
+3. **Repository Verification**: All PRs and UI changes must pass `./scripts/verify-fluent-v5.ps1`.
+4. **No Assumptions**: Never guess parameter signatures or event callbacks—verify them via MCP tool calls first.
+
+#### Mandatory V4 → V5 Component Migration Matrix
+
+| Legacy / V4 Component | Status | Mandatory V5 Replacement |
+| :--- | :--- | :--- |
+| `<FluentProgressRing ... />` | **Obsolete / Renamed** | `<FluentSpinner Size="@SpinnerSize.*" ... />` |
+| `<FluentSearch ... />` | **Removed** | `<FluentTextInput ...><StartTemplate><FluentIcon Value="@(new Icons.Regular.Size16.Search())" /></StartTemplate></FluentTextInput>` |
+| `<FluentTextField ... />` | **Removed** | `<FluentTextInput ... />` |
+| `<FluentNumberField ... />` | **Removed** | `<FluentNumberInput ... />` |
+| `<FluentAnchor ... />` | **Removed** | `<FluentLink ... />` |
+| `<FluentDialogProvider />` (isolated) | **Legacy** | `<FluentProviders />` (umbrella provider for dialogs, toasts, tooltips, message bars) |
+| `<FluentBreadcrumb>` / Item | **Removed** | Custom hierarchy using `FluentLink` |
+| `<FluentToolbar ... />` | **Removed** | `<FluentStack Orientation="Orientation.Horizontal">` |
+| `<FluentSplitter ... />` | **Removed** | `<FluentMultiSplitter ... />` |
+| `<FluentNavMenu>` / Group / Link | **Removed** | `<FluentNav>`, `<FluentNavItem>`, `<FluentNavCategory>` |
+| `<FluentValidationMessage ... />` | **Removed** | `<FluentField ... MessageState="..." />` |
+| `<FluentSelect TOption>` (single generic) | **Breaking Change** | `<FluentSelect TOption="..." TValue="...">` (dual generics strictly required) |
+| `FluentInputAppearance` | **Removed** | `TextInputAppearance` or `ListAppearance` |
 
 ### 5.3 Reusable Components
 

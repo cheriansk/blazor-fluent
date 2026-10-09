@@ -9,10 +9,8 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// </summary>
 public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity
 {
-    /// <summary>Short, URL-safe slug used to resolve tenants (e.g., from subdomain or header).</summary>
+    /// <summary>Short, URL-safe slug used to resolve tenants (e.g., from subdomain or header). Immutable after creation.</summary>
     public string Slug { get; set; } = string.Empty;
-
-    public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
 

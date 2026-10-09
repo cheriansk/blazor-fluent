@@ -115,7 +115,7 @@
     <!-- Audit Records Grid -->
     @if (_isLoading)
     {
-        <FluentProgressRing Style="margin: 30px auto;" />
+        <FluentSpinner Style="margin: 30px auto;" />
     }
     else if (_auditResult is null || _auditResult.Items.Count == 0)
     {
