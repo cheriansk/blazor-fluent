@@ -34,7 +34,7 @@ public class UserTaskService : IUserTaskService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<UserTaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProject", ct: ct);
 
@@ -48,7 +48,7 @@ public class UserTaskService : IUserTaskService
             .ToListAsync(ct);
     }
 
-    public async Task<UserTaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
+    public async Task<TaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskById", ct: ct);
 
@@ -61,7 +61,7 @@ public class UserTaskService : IUserTaskService
         return task;
     }
 
-    public async Task<Result<UserTaskEntity>> CreateTaskAsync(UserTaskEntity task, CancellationToken ct = default)
+    public async Task<Result<TaskEntity>> CreateTaskAsync(TaskEntity task, CancellationToken ct = default)
     {
         try
         {
@@ -77,7 +77,7 @@ public class UserTaskService : IUserTaskService
             {
                 if (string.IsNullOrWhiteSpace(_currentUser.Email))
                 {
-                    return Result<UserTaskEntity>.Failure("Authenticated user email is required to create a task.");
+                    return Result<TaskEntity>.Failure("Authenticated user email is required to create a task.");
                 }
                 task.ReporterEmail = _currentUser.Email;
             }
@@ -90,16 +90,16 @@ public class UserTaskService : IUserTaskService
             // Automated Notification: Alert all assignees
             await NotifyAssigneesAsync(task, isNew: true, ct);
 
-            return Result<UserTaskEntity>.Success(task);
+            return Result<TaskEntity>.Success(task);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create task '{Title}'", task.Title);
-            return Result<UserTaskEntity>.Failure($"Failed to create task: {ex.Message}");
+            return Result<TaskEntity>.Failure($"Failed to create task: {ex.Message}");
         }
     }
 
-    public async Task<Result<UserTaskEntity>> UpdateTaskAsync(UserTaskEntity updated, CancellationToken ct = default)
+    public async Task<Result<TaskEntity>> UpdateTaskAsync(TaskEntity updated, CancellationToken ct = default)
     {
         try
         {
@@ -112,7 +112,7 @@ public class UserTaskService : IUserTaskService
 
             if (task is null)
             {
-                return Result<UserTaskEntity>.Failure("Task not found in the specified project.");
+                return Result<TaskEntity>.Failure("Task not found in the specified project.");
             }
 
             // 2. Strict Project Immobility: Tasks can NEVER be reassigned or moved across projects
@@ -120,7 +120,7 @@ public class UserTaskService : IUserTaskService
             {
                 _logger.LogWarning("Security Violation: Attempt to move task {TaskId} from project {OldProject} to {NewProject}",
                     task.Id, task.ProjectId, updated.ProjectId);
-                return Result<UserTaskEntity>.Failure("Cross-project task reassignment is forbidden. Tasks cannot be moved between projects.");
+                return Result<TaskEntity>.Failure("Cross-project task reassignment is forbidden. Tasks cannot be moved between projects.");
             }
 
             // 3. Authorize caller against verified database project
@@ -136,12 +136,12 @@ public class UserTaskService : IUserTaskService
             task.MilestoneId = updated.MilestoneId;
 
             await _context.SaveChangesAsync(ct);
-            return Result<UserTaskEntity>.Success(task);
+            return Result<TaskEntity>.Success(task);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update task {Id}", updated.Id);
-            return Result<UserTaskEntity>.Failure($"Failed to update task: {ex.Message}");
+            return Result<TaskEntity>.Failure($"Failed to update task: {ex.Message}");
         }
     }
 
@@ -159,7 +159,32 @@ public class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = UserTaskStatus.Closed;
+            task.Status = TaskStatus.Closed;
+            task.EndDate = DateTime.UtcNow;
+
+            // Automated Lifecycle Integrity: auto-resolve any BlockerDependency contracts where this task was blocking other tasks
+            var blockers = await _context.BlockerDependencies
+                .AsTracking()
+                .Where(b => b.TenantId == tenantId && b.TargetTaskId == taskId && !b.IsDeleted && b.Status != TaskStatus.Closed)
+                .ToListAsync(ct);
+
+            foreach (var blocker in blockers)
+            {
+                blocker.Status = TaskStatus.Closed;
+                blocker.EndDate = DateTime.UtcNow;
+
+                var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.SourceTaskId, ct);
+                if (sourceTask != null)
+                {
+                    var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
+                    foreach (var recipient in recipients)
+                    {
+                        await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
+                            $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
+                            NotificationSeverity.Info, sourceTask.ProjectId, ct);
+                    }
+                }
+            }
 
             await _context.SaveChangesAsync(ct);
             return Result<bool>.Success(true);
@@ -185,7 +210,32 @@ public class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = UserTaskStatus.Open;
+            task.Status = TaskStatus.Open;
+            task.EndDate = null;
+
+            // Automated Lifecycle Integrity: auto-reopen any BlockerDependency contracts where this task was blocking other tasks
+            var blockers = await _context.BlockerDependencies
+                .AsTracking()
+                .Where(b => b.TenantId == tenantId && b.TargetTaskId == taskId && !b.IsDeleted && b.Status == TaskStatus.Closed)
+                .ToListAsync(ct);
+
+            foreach (var blocker in blockers)
+            {
+                blocker.Status = TaskStatus.Open;
+                blocker.EndDate = null;
+
+                var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.SourceTaskId, ct);
+                if (sourceTask != null)
+                {
+                    var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
+                    foreach (var recipient in recipients)
+                    {
+                        await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
+                            $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
+                            NotificationSeverity.Warning, sourceTask.ProjectId, ct);
+                    }
+                }
+            }
 
             await _context.SaveChangesAsync(ct);
             return Result<bool>.Success(true);
@@ -211,7 +261,7 @@ public class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = UserTaskStatus.Cancelled;
+            task.Status = TaskStatus.Cancelled;
 
             await _context.SaveChangesAsync(ct);
             _logger.LogInformation("Task '{Title}' ({Id}) marked Cancelled in project {ProjectId}", task.Title, task.Id, projectId);
@@ -315,7 +365,7 @@ public class UserTaskService : IUserTaskService
                 TaskId = dep.TaskId,
                 DependsOnTaskId = dep.DependsOnTaskId,
                 DependsOnTaskTitle = targetTask?.Title ?? "Unknown Task",
-                DependsOnTaskStatus = targetTask?.Status ?? UserTaskStatus.Open,
+                DependsOnTaskStatus = targetTask?.Status ?? TaskStatus.Open,
                 DependsOnAssigneeEmails = targetTask?.AssigneeEmails ?? string.Empty,
                 DependsOnDueDate = targetTask?.DueDate,
                 DependencyType = dep.DependencyType,
@@ -414,7 +464,7 @@ public class UserTaskService : IUserTaskService
         }
     }
 
-    private async Task NotifyAssigneesAsync(UserTaskEntity task, bool isNew, CancellationToken ct)
+    private async Task NotifyAssigneesAsync(TaskEntity task, bool isNew, CancellationToken ct)
     {
         var emails = task.GetParsedAssigneeEmails();
         if (emails.Count == 0) return;
@@ -441,7 +491,7 @@ public class UserTaskService : IUserTaskService
                 var request = new SendNotificationReqDto
                 {
                     Category = NotificationCategory.Personal,
-                    Severity = task.Priority == UserTaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,
+                    Severity = task.Priority == TaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,
                     Title = title,
                     Message = message,
                     ProjectId = task.ProjectId,
@@ -456,6 +506,272 @@ public class UserTaskService : IUserTaskService
             {
                 _logger.LogWarning(ex, "Failed to dispatch in-app notification to assignee {Email} for task {TaskId}", email, task.Id);
             }
+        }
+    }
+
+    // --- SubTasks Operations ---
+
+    public async Task<IReadOnlyList<SubTaskEntity>> GetSubTasksByTaskIdAsync(Guid taskId, CancellationToken ct = default)
+    {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        return await _context.SubTasks
+            .AsNoTracking()
+            .Where(s => s.TenantId == tenantId && s.ParentTaskId == taskId && !s.IsDeleted)
+            .OrderBy(s => s.OrderIndex)
+            .ThenBy(s => s.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Result<SubTaskEntity>> CreateSubTaskAsync(SubTaskEntity subTask, CancellationToken ct = default)
+    {
+        try
+        {
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var parentTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == subTask.ParentTaskId, ct);
+            if (parentTask == null) return Result<SubTaskEntity>.Failure("Parent task does not exist.");
+
+            if (parentTask.ProjectId != Guid.Empty)
+            {
+                await _projectAuth.EnsureCanEditAsync(parentTask.ProjectId, operation: "CreateSubTask", ct: ct);
+            }
+
+            subTask.TenantId = tenantId;
+            subTask.ProgramId = parentTask.ProgramId;
+            subTask.ProjectId = parentTask.ProjectId;
+            subTask.Level = parentTask.Level;
+            if (string.IsNullOrWhiteSpace(subTask.ReporterEmail))
+            {
+                subTask.ReporterEmail = _currentUser.Email ?? parentTask.ReporterEmail;
+            }
+
+            await _context.SubTasks.AddAsync(subTask, ct);
+            await _context.SaveChangesAsync(ct);
+            return Result<SubTaskEntity>.Success(subTask);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create subtask for Task {TaskId}", subTask.ParentTaskId);
+            return Result<SubTaskEntity>.Failure($"Failed to create subtask: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<SubTaskEntity>> UpdateSubTaskAsync(SubTaskEntity updated, CancellationToken ct = default)
+    {
+        try
+        {
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var subTask = await _context.SubTasks.AsTracking()
+                .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Id == updated.Id, ct);
+            if (subTask == null) return Result<SubTaskEntity>.Failure("Subtask not found.");
+
+            if (subTask.ProjectId.HasValue && subTask.ProjectId.Value != Guid.Empty)
+            {
+                await _projectAuth.EnsureCanEditAsync(subTask.ProjectId.Value, operation: "UpdateSubTask", ct: ct);
+            }
+
+            subTask.Title = updated.Title;
+            subTask.Description = updated.Description;
+            subTask.Priority = updated.Priority;
+            subTask.Status = updated.Status;
+            subTask.DueDate = updated.DueDate;
+            subTask.AssigneeEmails = updated.AssigneeEmails;
+            subTask.OrderIndex = updated.OrderIndex;
+            subTask.BlockedBySubTaskId = updated.BlockedBySubTaskId;
+
+            await _context.SaveChangesAsync(ct);
+            return Result<SubTaskEntity>.Success(subTask);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update subtask {Id}", updated.Id);
+            return Result<SubTaskEntity>.Failure($"Failed to update subtask: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<bool>> DeleteSubTaskAsync(Guid subTaskId, CancellationToken ct = default)
+    {
+        try
+        {
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var subTask = await _context.SubTasks.AsTracking()
+                .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Id == subTaskId, ct);
+            if (subTask == null) return Result<bool>.Failure("Subtask not found.");
+
+            if (subTask.ProjectId.HasValue && subTask.ProjectId.Value != Guid.Empty)
+            {
+                await _projectAuth.EnsureCanEditAsync(subTask.ProjectId.Value, operation: "DeleteSubTask", ct: ct);
+            }
+
+            subTask.IsDeleted = true;
+            subTask.DeletedAtUtc = DateTime.UtcNow;
+            subTask.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
+
+            await _context.SaveChangesAsync(ct);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete subtask {Id}", subTaskId);
+            return Result<bool>.Failure($"Failed to delete subtask: {ex.Message}");
+        }
+    }
+
+    // --- Blocker Dependency & Link Operations ---
+
+    public async Task<IReadOnlyList<TaskLinkEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default)
+    {
+        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        return await _context.TaskLinks
+            .AsNoTracking()
+            .Include(l => l.SourceTask)
+            .Include(l => l.TargetTask)
+            .Include(l => l.BlockerDependency)
+            .Where(l => l.TenantId == tenantId && (l.SourceTaskId == taskId || l.TargetTaskId == taskId) && !l.IsDeleted)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Result<TaskLinkEntity>> CreateBlockedByLinkAsync(
+        Guid sourceTaskId,
+        Guid targetTaskId,
+        DateTime resolveDueDate,
+        DependencyCriticality criticality,
+        string impactDetails,
+        string? watcherEmails = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (sourceTaskId == targetTaskId)
+            {
+                return Result<TaskLinkEntity>.Failure("A task cannot block itself.");
+            }
+
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+
+            var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == sourceTaskId, ct);
+            if (sourceTask == null) return Result<TaskLinkEntity>.Failure("Source task not found.");
+
+            var targetTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == targetTaskId, ct);
+            if (targetTask == null) return Result<TaskLinkEntity>.Failure("Target task (prerequisite) not found.");
+
+            var existingLink = await _context.TaskLinks.FirstOrDefaultAsync(l =>
+                l.TenantId == tenantId && l.SourceTaskId == sourceTaskId && l.TargetTaskId == targetTaskId && !l.IsDeleted, ct);
+
+            if (existingLink != null)
+            {
+                return Result<TaskLinkEntity>.Failure("A link between these two tasks already exists.");
+            }
+
+            var blocker = new BlockerDependencyEntity
+            {
+                TenantId = tenantId,
+                Level = sourceTask.Level,
+                SourceTaskId = sourceTaskId,
+                TargetTaskId = targetTaskId,
+                Title = $"Blocker: '{sourceTask.Title}' blocked by '{targetTask.Title}'",
+                Description = $"Dependency contract. Prerequisite: '{targetTask.Title}'. Dependent: '{sourceTask.Title}'.",
+                ImpactDetails = impactDetails,
+                Criticality = criticality,
+                Priority = criticality == DependencyCriticality.Critical ? TaskPriority.Urgent : TaskPriority.High,
+                Status = targetTask.IsClosed ? TaskStatus.Closed : TaskStatus.Open,
+                StartDate = DateTime.UtcNow,
+                DueDate = resolveDueDate,
+                EndDate = targetTask.IsClosed ? DateTime.UtcNow : null,
+                ReporterEmail = _currentUser.Email ?? sourceTask.ReporterEmail,
+                AssigneeEmails = targetTask.AssigneeEmails ?? targetTask.ReporterEmail,
+                WatcherEmails = watcherEmails ?? string.Empty,
+                ProgramId = sourceTask.ProgramId,
+                ProjectId = sourceTask.ProjectId
+            };
+
+            await _context.BlockerDependencies.AddAsync(blocker, ct);
+
+            var link = new TaskLinkEntity
+            {
+                TenantId = tenantId,
+                SourceTaskId = sourceTaskId,
+                TargetTaskId = targetTaskId,
+                LinkType = TaskDependencyType.BlockedBy,
+                BlockerDependency = blocker
+            };
+
+            await _context.TaskLinks.AddAsync(link, ct);
+            await _context.SaveChangesAsync(ct);
+
+            // Notify prerequisite assignee about the new blocker SLA
+            var notifyEmails = blocker.GetParsedAssigneeEmails();
+            foreach (var email in notifyEmails)
+            {
+                await SendBlockerAlertAsync(email, $"New Blocker Dependency Assigned: '{targetTask.Title}'",
+                    $"Your task '{targetTask.Title}' is blocking '{sourceTask.Title}'. Resolve SLA: {resolveDueDate:yyyy-MM-dd}. Criticality: {criticality}.",
+                    NotificationSeverity.Warning, targetTask.ProjectId, ct);
+            }
+
+            return Result<TaskLinkEntity>.Success(link);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create blocked-by link from {Source} to {Target}", sourceTaskId, targetTaskId);
+            return Result<TaskLinkEntity>.Failure($"Failed to create blocker link: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<bool>> RemoveTaskLinkAsync(Guid linkId, CancellationToken ct = default)
+    {
+        try
+        {
+            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var link = await _context.TaskLinks.AsTracking()
+                .Include(l => l.BlockerDependency)
+                .FirstOrDefaultAsync(l => l.TenantId == tenantId && l.Id == linkId, ct);
+
+            if (link == null) return Result<bool>.Failure("Link not found.");
+
+            link.IsDeleted = true;
+            link.DeletedAtUtc = DateTime.UtcNow;
+            link.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
+
+            if (link.BlockerDependency != null)
+            {
+                link.BlockerDependency.IsDeleted = true;
+                link.BlockerDependency.DeletedAtUtc = DateTime.UtcNow;
+                link.BlockerDependency.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
+            }
+
+            await _context.SaveChangesAsync(ct);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove link {LinkId}", linkId);
+            return Result<bool>.Failure($"Failed to remove link: {ex.Message}");
+        }
+    }
+
+    private async Task SendBlockerAlertAsync(string email, string title, string message, NotificationSeverity severity, Guid projectId, CancellationToken ct)
+    {
+        try
+        {
+            var norm = email.Trim().ToLowerInvariant();
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email.ToLower() == norm, ct);
+            var userId = user != null ? user.Id.ToString() : email;
+
+            var request = new SendNotificationReqDto
+            {
+                Category = NotificationCategory.Personal,
+                Severity = severity,
+                Title = title,
+                Message = message,
+                ProjectId = projectId,
+                UserId = userId,
+                Channels = NotificationChannels.InApp | NotificationChannels.Email
+            };
+
+            await _notificationService.SendAsync(request, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send blocker alert to {Email}", email);
         }
     }
 }

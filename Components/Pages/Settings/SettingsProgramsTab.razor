@@ -1,6 +1,8 @@
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Calendar
+@using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Persistence.Context
 @using Microsoft.EntityFrameworkCore
@@ -9,6 +11,7 @@
 @inject ITenantContext TenantContext
 @inject ITenantService TenantService
 @inject IProgramService ProgramService
+@inject ICalendarService CalendarService
 @inject IHierarchyAuthorizationService HierarchyAuth
 @inject ICurrentUser CurrentUser
 @inject IUserTimeZoneService TimeZoneService
@@ -432,6 +435,134 @@
                         }
                     </div>
                 </FluentTab>
+
+                <!-- Tab 3: Program Calendar & Deadlines -->
+                <FluentTab Id="tab-calendar" Header="Calendar & Deadlines" IconStart="@(new Icons.Regular.Size16.Calendar())">
+                    <div style="padding-top: 16px;">
+                        @if (_isLoadingCalendar)
+                        {
+                            <FluentSpinner Size="SpinnerSize.Small" />
+                        }
+                        else
+                        {
+                            <FluentCalendarScheduleComp Items="@_programCalendarItems"
+                                                        @bind-SelectedDate="_selectedCalendarDate"
+                                                        ReadOnly="@(!_canManageSelectedProgramProjects)"
+                                                        OnAddEntry="@OpenAddProgramCalendarModal" />
+                        }
+                    </div>
+                </FluentTab>
+
+                <!-- Tab 4: Program R.A.I.D. Log -->
+                <FluentTab Id="tab-raid" Header="Program R.A.I.D. Log" IconStart="@(new Icons.Regular.Size16.ShieldTask())">
+                    <div style="padding-top: 16px;">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+                            <FluentRadioGroup @bind-Value="_selectedRaidCategory">
+                                <FluentRadio Value="@("Risks")">Risks (R: @_programRisks.Count)</FluentRadio>
+                                <FluentRadio Value="@("Assumptions")">Assumptions (A: @_programAssumptions.Count)</FluentRadio>
+                                <FluentRadio Value="@("Issues")">Issues (I: @_programIssues.Count)</FluentRadio>
+                                <FluentRadio Value="@("Blockers")">Blocker Dependencies (D: @_programBlockers.Count)</FluentRadio>
+                            </FluentRadioGroup>
+
+                            @if (_selectedRaidCategory == "Risks")
+                            {
+                                @if (_programRisks.Count == 0)
+                                {
+                                    <div style="color: var(--neutral-foreground-hint); font-size: 13px;">No program risks logged.</div>
+                                }
+                                else
+                                {
+                                    <FluentDataGrid Items="@_programRisks.AsQueryable()" ResizableColumns="true">
+                                        <PropertyColumn Property="@(r => r.Title)" Title="Risk Title" />
+                                        <PropertyColumn Property="@(r => r.Impact)" Title="Impact" />
+                                        <PropertyColumn Property="@(r => r.Probability)" Title="Probability" />
+                                        <TemplateColumn Title="Exposure">
+                                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="@(context.ExposureScore >= 6 ? BadgeColor.Danger : BadgeColor.Warning)">
+                                                Score: @context.ExposureScore
+                                            </FluentBadge>
+                                        </TemplateColumn>
+                                        <PropertyColumn Property="@(r => r.RiskStatus)" Title="Status" />
+                                        <TemplateColumn Title="Target Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </TemplateColumn>
+                                    </FluentDataGrid>
+                                }
+                            }
+                            else if (_selectedRaidCategory == "Assumptions")
+                            {
+                                @if (_programAssumptions.Count == 0)
+                                {
+                                    <div style="color: var(--neutral-foreground-hint); font-size: 13px;">No program assumptions logged.</div>
+                                }
+                                else
+                                {
+                                    <FluentDataGrid Items="@_programAssumptions.AsQueryable()" ResizableColumns="true">
+                                        <PropertyColumn Property="@(a => a.Title)" Title="Assumption" />
+                                        <PropertyColumn Property="@(a => a.ValidationCriteria)" Title="Validation Criteria" />
+                                        <PropertyColumn Property="@(a => a.ValidationStatus)" Title="Status" />
+                                        <PropertyColumn Property="@(a => a.ImpactIfInvalid)" Title="Impact if Invalid" />
+                                        <TemplateColumn Title="Validation Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </TemplateColumn>
+                                    </FluentDataGrid>
+                                }
+                            }
+                            else if (_selectedRaidCategory == "Issues")
+                            {
+                                @if (_programIssues.Count == 0)
+                                {
+                                    <div style="color: var(--neutral-foreground-hint); font-size: 13px;">No active program impediments logged.</div>
+                                }
+                                else
+                                {
+                                    <FluentDataGrid Items="@_programIssues.AsQueryable()" ResizableColumns="true">
+                                        <PropertyColumn Property="@(i => i.Title)" Title="Issue Title" />
+                                        <PropertyColumn Property="@(i => i.Severity)" Title="Severity" />
+                                        <PropertyColumn Property="@(i => i.Status)" Title="Status" />
+                                        <PropertyColumn Property="@(i => i.Workaround)" Title="Workaround" />
+                                        <PropertyColumn Property="@(i => i.ResolutionStrategy)" Title="Resolution" />
+                                        <TemplateColumn Title="Resolution Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </TemplateColumn>
+                                    </FluentDataGrid>
+                                }
+                            }
+                            else if (_selectedRaidCategory == "Blockers")
+                            {
+                                @if (_programBlockers.Count == 0)
+                                {
+                                    <div style="color: var(--neutral-foreground-hint); font-size: 13px;">No blocker dependency contracts logged.</div>
+                                }
+                                else
+                                {
+                                    <FluentDataGrid Items="@_programBlockers.AsQueryable()" ResizableColumns="true">
+                                        <TemplateColumn Title="Dependent Task (Blocked)">
+                                            <strong>@context.SourceTask?.Title</strong>
+                                        </TemplateColumn>
+                                        <TemplateColumn Title="Prerequisite Task (Blocking)">
+                                            <strong>@context.TargetTask?.Title</strong>
+                                        </TemplateColumn>
+                                        <PropertyColumn Property="@(b => b.Criticality)" Title="Criticality" />
+                                        <TemplateColumn Title="Status">
+                                            @if (context.IsResolved)
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Resolved</FluentBadge>
+                                            }
+                                            else
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">Blocking</FluentBadge>
+                                            }
+                                        </TemplateColumn>
+                                        <PropertyColumn Property="@(b => b.ImpactDetails)" Title="Impact Details" />
+                                        <TemplateColumn Title="SLA Resolve Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </TemplateColumn>
+                                    </FluentDataGrid>
+                                }
+                            }
+                        </FluentStack>
+                    </div>
+                </FluentTab>
             </FluentTabs>
         </FluentCard>
     }
@@ -461,6 +592,16 @@
     private bool _isLoadingProjects = false;
     private List<ProjectEntity> _programProjects = [];
     private bool _canManageSelectedProgramProjects = false;
+
+    // Program Calendar & RAID State
+    private bool _isLoadingCalendar = false;
+    private DateTime _selectedCalendarDate = DateTime.UtcNow.Date;
+    private IReadOnlyList<CalendarItemDto> _programCalendarItems = [];
+    private string _selectedRaidCategory = "Risks";
+    private List<RiskEntity> _programRisks = [];
+    private List<AssumptionEntity> _programAssumptions = [];
+    private List<IssueEntity> _programIssues = [];
+    private List<BlockerDependencyEntity> _programBlockers = [];
 
     // Add / Edit Program Form
     private bool _showProgramModal = false;
@@ -626,6 +767,74 @@
         _canManageSelectedProgramProjects = _isTenantAdmin || CurrentUser.IsRootAdmin || _programAdminIds.Contains(program.Id);
         await LoadProgramHealthAsync();
         await LoadProgramProjectsAsync();
+        await LoadProgramCalendarAsync();
+        await LoadProgramRaidAsync();
+    }
+
+    private async Task LoadProgramCalendarAsync()
+    {
+        if (_selectedProgram == null || string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        _isLoadingCalendar = true;
+        try
+        {
+            var start = DateTime.UtcNow.Date.AddMonths(-2);
+            var end = DateTime.UtcNow.Date.AddMonths(10);
+            _programCalendarItems = await CalendarService.GetProgramCalendarAsync(_selectedTenantId, _selectedProgram.Id, start, end);
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load program calendar: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoadingCalendar = false;
+        }
+    }
+
+    private async Task LoadProgramRaidAsync()
+    {
+        if (_selectedProgram == null || string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        try
+        {
+            _programRisks = await DbContext.Risks
+                .AsNoTracking()
+                .Where(r => r.TenantId == _selectedTenantId && r.ProgramId == _selectedProgram.Id && !r.IsDeleted)
+                .OrderByDescending(r => r.Created)
+                .ToListAsync();
+
+            _programAssumptions = await DbContext.Assumptions
+                .AsNoTracking()
+                .Where(a => a.TenantId == _selectedTenantId && a.ProgramId == _selectedProgram.Id && !a.IsDeleted)
+                .OrderByDescending(a => a.Created)
+                .ToListAsync();
+
+            _programIssues = await DbContext.Issues
+                .AsNoTracking()
+                .Where(i => i.TenantId == _selectedTenantId && i.ProgramId == _selectedProgram.Id && !i.IsDeleted)
+                .OrderByDescending(i => i.Created)
+                .ToListAsync();
+
+            _programBlockers = await DbContext.BlockerDependencies
+                .AsNoTracking()
+                .Include(b => b.SourceTask)
+                .Include(b => b.TargetTask)
+                .Where(b => b.TenantId == _selectedTenantId && b.ProgramId == _selectedProgram.Id && !b.IsDeleted)
+                .OrderByDescending(b => b.Created)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load program RAID items: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    private void OpenAddProgramCalendarModal(DateTime date)
+    {
+        _selectedCalendarDate = date;
+        _statusMessage = $"Schedule event for {date:yyyy-MM-dd}.";
+        _isError = false;
     }
 
     private async Task LoadProgramHealthAsync()

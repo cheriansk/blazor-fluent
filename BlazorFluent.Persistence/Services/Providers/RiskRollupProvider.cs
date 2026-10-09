@@ -1,0 +1,69 @@
+using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
+
+namespace BlazorFluent.Persistence.Services.Providers;
+
+public class RiskRollupProvider : IWorkItemRollupProvider
+{
+    private readonly AppDbContext _context;
+
+    public RiskRollupProvider(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public TaskItemType ItemType => TaskItemType.Risk;
+
+    public async Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
+        string tenantId,
+        TaskLevel level,
+        Guid? scopeId,
+        string? userId,
+        DateTime startUtc,
+        DateTime endUtc,
+        CancellationToken ct = default)
+    {
+        var query = _context.Risks
+            .AsNoTracking()
+            .Where(r => r.TenantId == tenantId && !r.IsDeleted && r.DueDate >= startUtc && r.DueDate <= endUtc);
+
+        if (level == TaskLevel.Tenant)
+        {
+            query = query.Where(r => r.Level == TaskLevel.Tenant);
+        }
+        else if (level == TaskLevel.Program && scopeId.HasValue)
+        {
+            query = query.Where(r => r.ProgramId == scopeId.Value);
+        }
+        else if (level == TaskLevel.Project && scopeId.HasValue)
+        {
+            query = query.Where(r => r.ProjectId == scopeId.Value);
+        }
+        else if (level == TaskLevel.User && !string.IsNullOrWhiteSpace(userId))
+        {
+            query = query.Where(r => r.UserId == userId || r.AssigneeEmails.Contains(userId) || r.WatcherEmails.Contains(userId));
+        }
+
+        var items = await query.ToListAsync(ct);
+
+        return items.Select(r => new CalendarItemDto
+        {
+            Id = r.Id,
+            Title = $"[Risk] {r.Title}",
+            Description = r.Description ?? string.Empty,
+            StartUtc = r.StartDate,
+            EndUtc = r.DueDate,
+            IsAllDay = true,
+            ItemCategory = "Risk",
+            PriorityOrCriticality = $"Impact: {r.Impact}, Prob: {r.Probability}",
+            Status = r.RiskStatus.ToString(),
+            OwnerOrAssignee = r.AssigneeEmails ?? r.ReporterEmail,
+            ColorHex = "#d83b01",
+            BadgeIcon = "Warning",
+            ScopeId = r.ProjectId ?? r.ProgramId,
+            Level = r.Level
+        }).ToList();
+    }
+}

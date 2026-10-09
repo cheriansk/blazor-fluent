@@ -254,11 +254,10 @@ public class ProgramService : IProgramService
         var projectLookup = program.Projects.ToDictionary(pr => pr.Id, pr => pr.Name);
 
         var totalTasks = tasks.Count;
-        var completedTasks = tasks.Count(t => t.Status is UserTaskStatus.Closed or UserTaskStatus.Cancelled);
-        var openTasks = tasks.Count(t => t.Status is UserTaskStatus.Open or UserTaskStatus.InProgress);
-        var overdueTasks = tasks.Count(t => t.Status is not UserTaskStatus.Closed &&
-                                            t.Status is not UserTaskStatus.Cancelled &&
-                                            t.DueDate!=null &&
+        var completedTasks = tasks.Count(t => t.Status is TaskStatus.Closed or TaskStatus.Cancelled);
+        var openTasks = tasks.Count(t => t.Status is TaskStatus.Open or TaskStatus.InProgress);
+        var overdueTasks = tasks.Count(t => t.Status is not TaskStatus.Closed &&
+                                            t.Status is not TaskStatus.Cancelled &&
                                             t.DueDate.Date < DateTime.UtcNow.Date);
 
         // Identify Cross-Project Dependencies
@@ -273,7 +272,7 @@ public class ProgramService : IProgramService
             var sourceProjectName = sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName) ? sName : "External Project";
             var targetProjectName = dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName) ? tName : "External Project";
 
-            var isResolved = targetTask?.Status is UserTaskStatus.Closed or UserTaskStatus.Cancelled;
+            var isResolved = targetTask?.Status is TaskStatus.Closed or TaskStatus.Cancelled;
             var isOverdue = !isResolved && dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
 
             crossProjectDeps.Add(new CrossProjectDependencyDto

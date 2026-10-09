@@ -153,6 +153,17 @@ public static class PersistenceExtensions
         services.TryAddScoped<IHierarchyAuthorizationService, HierarchyAuthorizationService>();
         services.TryAddScoped<IProgramService, ProgramService>();
 
+        // 23. Enterprise Work Item Rollup Providers (Plugin Architecture)
+        services.AddScoped<IWorkItemRollupProvider, BlazorFluent.Persistence.Services.Providers.TaskRollupProvider>();
+        services.AddScoped<IWorkItemRollupProvider, BlazorFluent.Persistence.Services.Providers.SubTaskRollupProvider>();
+        services.AddScoped<IWorkItemRollupProvider, BlazorFluent.Persistence.Services.Providers.RiskRollupProvider>();
+        services.AddScoped<IWorkItemRollupProvider, BlazorFluent.Persistence.Services.Providers.AssumptionRollupProvider>();
+        services.AddScoped<IWorkItemRollupProvider, BlazorFluent.Persistence.Services.Providers.IssueRollupProvider>();
+        services.AddScoped<IWorkItemRollupProvider, BlazorFluent.Persistence.Services.Providers.BlockerRollupProvider>();
+
+        // 24. Unified Enterprise Calendar Service
+        services.TryAddScoped<ICalendarService, CalendarService>();
+
         return services;
     }
 }

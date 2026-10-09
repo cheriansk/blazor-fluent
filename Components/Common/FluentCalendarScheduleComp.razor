@@ -1,0 +1,545 @@
+@using BlazorFluent.Core.DataListTypes
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<div class="calendar-schedule-container">
+    <!-- Schedule Control Toolbar -->
+    <div class="schedule-toolbar">
+        <div class="toolbar-nav-group">
+            <FluentButton Appearance="ButtonAppearance.Subtle" 
+                          IconStart="@(new Icons.Regular.Size20.ChevronLeft())" 
+                          OnClick="NavigatePrevMonth" 
+                          Title="Previous Month" />
+            <span class="month-title">@_currentMonth.ToString("MMMM yyyy")</span>
+            <FluentButton Appearance="ButtonAppearance.Subtle" 
+                          IconStart="@(new Icons.Regular.Size20.ChevronRight())" 
+                          OnClick="NavigateNextMonth" 
+                          Title="Next Month" />
+            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" OnClick="NavigateToday">
+                Today
+            </FluentButton>
+        </div>
+
+        <div class="toolbar-filter-group">
+            <FluentRadioGroup @bind-Value="_currentView" AriaLabel="Calendar View Mode">
+                <FluentRadio Value="@("Month")">Month</FluentRadio>
+                <FluentRadio Value="@("Agenda")">Agenda</FluentRadio>
+                <FluentRadio Value="@("Overdue")">Overdue (@OverdueCount)</FluentRadio>
+            </FluentRadioGroup>
+
+            <FluentSelect TOption="string" TValue="string" @bind-Value="_categoryFilter" Style="min-width: 140px;">
+                <FluentOption Value="@("All")">All Categories</FluentOption>
+                <FluentOption Value="@("Task")">Tasks</FluentOption>
+                <FluentOption Value="@("SubTask")">SubTasks</FluentOption>
+                <FluentOption Value="@("Risk")">Risks</FluentOption>
+                <FluentOption Value="@("Assumption")">Assumptions</FluentOption>
+                <FluentOption Value="@("Issue")">Issues</FluentOption>
+                <FluentOption Value="@("Blocker")">Blockers</FluentOption>
+                <FluentOption Value="@("Event")">Events</FluentOption>
+            </FluentSelect>
+
+            @if (!ReadOnly)
+            {
+                <FluentButton Appearance="ButtonAppearance.Primary" 
+                              IconStart="@(new Icons.Regular.Size16.Add())" 
+                              OnClick="() => OnAddEntry.InvokeAsync(SelectedDate)">
+                    New Event
+                </FluentButton>
+            }
+        </div>
+    </div>
+
+    @if (_currentView == "Month")
+    {
+        <!-- Month View Grid -->
+        <div class="month-grid">
+            <div class="grid-header-row">
+                <div class="header-day">Sun</div>
+                <div class="header-day">Mon</div>
+                <div class="header-day">Tue</div>
+                <div class="header-day">Wed</div>
+                <div class="header-day">Thu</div>
+                <div class="header-day">Fri</div>
+                <div class="header-day">Sat</div>
+            </div>
+
+            <div class="grid-days">
+                @foreach (var day in GetCalendarDays())
+                {
+                    var isCurrentMonth = day.Month == _currentMonth.Month;
+                    var isToday = day.Date == DateTime.UtcNow.Date;
+                    var isSelected = day.Date == SelectedDate.Date;
+                    var dayItems = GetItemsForDate(day);
+                    var hasBlocker = dayItems.Any(i => i.ItemCategory == "Blocker");
+                    var hasOverdue = dayItems.Any(i => i.IsOverdue);
+
+                    <div class="calendar-day-cell @(isCurrentMonth ? "" : "other-month") @(isToday ? "today" : "") @(isSelected ? "selected" : "")"
+                         @onclick="() => SelectDate(day)">
+                        <div class="day-cell-header">
+                            <span class="day-number">@day.Day</span>
+                            @if (hasBlocker)
+                            {
+                                <span class="blocker-dot" title="Critical Blocker deadline">🛑</span>
+                            }
+                            else if (hasOverdue)
+                            {
+                                <span class="overdue-dot" title="Overdue item">⚠️</span>
+                            }
+                        </div>
+
+                        <div class="day-cell-items">
+                            @foreach (var item in dayItems.Take(3))
+                            {
+                                <div class="cell-item-chip" 
+                                     style="border-left: 3px solid @item.ColorHex; background: @(item.ColorHex)15;"
+                                     @onclick:stopPropagation="true"
+                                     @onclick="() => OnItemClick.InvokeAsync(item)"
+                                     title="@item.Title (@item.ItemCategory)">
+                                    <span class="chip-text">@item.Title</span>
+                                </div>
+                            }
+                            @if (dayItems.Count > 3)
+                            {
+                                <div class="cell-more-badge">+@(dayItems.Count - 3) more</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Selected Date Details Panel -->
+        <div class="selected-day-panel">
+            <div class="panel-header">
+                <h4>Schedule for @SelectedDate.ToString("dddd, MMMM d, yyyy")</h4>
+                <FluentBadge Appearance="BadgeAppearance.Outline">@GetItemsForDate(SelectedDate).Count items</FluentBadge>
+            </div>
+
+            <div class="panel-items-list">
+                @if (GetItemsForDate(SelectedDate).Count == 0)
+                {
+                    <p class="empty-hint">No work item deadlines or calendar events scheduled for this date.</p>
+                }
+                else
+                {
+                    @foreach (var item in GetItemsForDate(SelectedDate))
+                    {
+                        <div class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                            <div class="card-indicator" style="background-color: @item.ColorHex;"></div>
+                            <div class="card-content">
+                                <div class="card-title-row">
+                                    <span class="card-title">@item.Title</span>
+                                    <span class="category-badge" style="background-color: @item.ColorHex; color: #fff;">
+                                        @item.ItemCategory
+                                    </span>
+                                </div>
+                                <div class="card-meta-row">
+                                    <span>Status: <strong>@item.Status</strong></span>
+                                    <span>Priority: <strong>@item.PriorityOrCriticality</strong></span>
+                                    @if (!string.IsNullOrWhiteSpace(item.OwnerOrAssignee))
+                                    {
+                                        <span>Assignee: @item.OwnerOrAssignee</span>
+                                    }
+                                    @if (item.IsOverdue)
+                                    {
+                                        <span class="overdue-tag">⚠️ Overdue</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <div class="card-desc">@item.Description</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else if (_currentView == "Agenda")
+    {
+        <!-- Agenda List View -->
+        <div class="agenda-view">
+            @if (FilteredItems.Count == 0)
+            {
+                <div class="empty-state">No scheduled items found in the current window.</div>
+            }
+            else
+            {
+                @foreach (var group in FilteredItems.GroupBy(i => i.StartUtc.Date).OrderBy(g => g.Key))
+                {
+                    <div class="agenda-date-group">
+                        <div class="agenda-date-header">
+                            <span class="agenda-date-title">@group.Key.ToString("dddd, MMMM d, yyyy")</span>
+                            <span class="agenda-date-count">@group.Count() items</span>
+                        </div>
+                        <div class="agenda-items-list">
+                            @foreach (var item in group)
+                            {
+                                <div class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                                    <div class="card-indicator" style="background-color: @item.ColorHex;"></div>
+                                    <div class="card-content">
+                                        <div class="card-title-row">
+                                            <span class="card-title">@item.Title</span>
+                                            <span class="category-badge" style="background-color: @item.ColorHex; color: #fff;">
+                                                @item.ItemCategory
+                                            </span>
+                                        </div>
+                                        <div class="card-meta-row">
+                                            <span>Status: <strong>@item.Status</strong></span>
+                                            <span>Priority: <strong>@item.PriorityOrCriticality</strong></span>
+                                            @if (!string.IsNullOrWhiteSpace(item.OwnerOrAssignee))
+                                            {
+                                                <span>Assignee: @item.OwnerOrAssignee</span>
+                                            }
+                                            @if (item.IsOverdue)
+                                            {
+                                                <span class="overdue-tag">⚠️ Overdue</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+    else if (_currentView == "Overdue")
+    {
+        <!-- Overdue Critical Items View -->
+        <div class="overdue-view">
+            @if (OverdueItems.Count == 0)
+            {
+                <div class="empty-state">🎉 Great job! No work items or blocker contracts are currently overdue.</div>
+            }
+            else
+            {
+                <div class="overdue-warning-banner">
+                    ⚠️ The following items have passed their target SLA due dates and require immediate intervention:
+                </div>
+                <div class="agenda-items-list">
+                    @foreach (var item in OverdueItems.OrderBy(i => i.EndUtc))
+                    {
+                        <div class="schedule-item-card overdue-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                            <div class="card-indicator" style="background-color: #e81123;"></div>
+                            <div class="card-content">
+                                <div class="card-title-row">
+                                    <span class="card-title">@item.Title</span>
+                                    <span class="category-badge" style="background-color: #e81123; color: #fff;">
+                                        @item.ItemCategory (Due @item.EndUtc.ToString("yyyy-MM-dd"))
+                                    </span>
+                                </div>
+                                <div class="card-meta-row">
+                                    <span>Status: <strong>@item.Status</strong></span>
+                                    <span>Priority: <strong>@item.PriorityOrCriticality</strong></span>
+                                    @if (!string.IsNullOrWhiteSpace(item.OwnerOrAssignee))
+                                    {
+                                        <span>Assignee: @item.OwnerOrAssignee</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <div class="card-desc">@item.Description</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .calendar-schedule-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: var(--neutral-fill-layer-rest, #fff);
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .schedule-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--neutral-stroke-divider-rest, #e0e0e0);
+    }
+    .toolbar-nav-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .month-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        min-width: 150px;
+        text-align: center;
+    }
+    .toolbar-filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .month-grid {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--neutral-stroke-layer-rest, #d1d1d1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .grid-header-row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: var(--neutral-fill-subtle-rest, #f5f5f5);
+        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #d1d1d1);
+    }
+    .header-day {
+        padding: 0.5rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--neutral-foreground-rest, #333);
+    }
+    .grid-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+    }
+    .calendar-day-cell {
+        min-height: 90px;
+        border-right: 1px solid var(--neutral-stroke-layer-rest, #e8e8e8);
+        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e8e8e8);
+        padding: 0.35rem;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        transition: background-color 0.15s ease;
+    }
+    .calendar-day-cell:nth-child(7n) {
+        border-right: none;
+    }
+    .calendar-day-cell:hover {
+        background-color: var(--neutral-fill-hover, #f0f7ff);
+    }
+    .calendar-day-cell.other-month {
+        opacity: 0.4;
+        background-color: #fafafa;
+    }
+    .calendar-day-cell.today {
+        background-color: #f0f8ff;
+    }
+    .calendar-day-cell.today .day-number {
+        font-weight: 700;
+        color: var(--accent-fill-rest, #0078d4);
+    }
+    .calendar-day-cell.selected {
+        outline: 2px solid var(--accent-fill-rest, #0078d4);
+        outline-offset: -2px;
+        background-color: #eef6ff;
+    }
+    .day-cell-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    .day-number {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .day-cell-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        overflow: hidden;
+    }
+    .cell-item-chip {
+        font-size: 0.72rem;
+        padding: 1px 4px;
+        border-radius: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+    .cell-more-badge {
+        font-size: 0.7rem;
+        color: var(--neutral-foreground-rest, #666);
+        margin-top: 2px;
+    }
+    .selected-day-panel {
+        background: var(--neutral-fill-subtle-rest, #fafafa);
+        border-radius: 6px;
+        padding: 1rem;
+        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+    }
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    .panel-header h4 {
+        margin: 0;
+        font-size: 1rem;
+    }
+    .panel-items-list, .agenda-items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .schedule-item-card {
+        display: flex;
+        background: #fff;
+        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
+        border-radius: 6px;
+        cursor: pointer;
+        overflow: hidden;
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .schedule-item-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card-indicator {
+        width: 6px;
+        flex-shrink: 0;
+    }
+    .card-content {
+        padding: 0.5rem 0.75rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .card-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .card-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .category-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .card-meta-row {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: var(--neutral-foreground-rest, #555);
+        flex-wrap: wrap;
+    }
+    .overdue-tag {
+        color: #e81123;
+        font-weight: 600;
+    }
+    .card-desc {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 0.25rem;
+        white-space: pre-wrap;
+    }
+    .empty-hint, .empty-state {
+        color: #777;
+        font-style: italic;
+        padding: 1rem 0;
+        text-align: center;
+    }
+    .agenda-date-group {
+        margin-bottom: 1.25rem;
+    }
+    .agenda-date-header {
+        display: flex;
+        justify-content: space-between;
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 0.5rem;
+    }
+    .agenda-date-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .agenda-date-count {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    .overdue-warning-banner {
+        background-color: #fde7e9;
+        color: #a80000;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+</style>
+
+@code {
+    [Parameter] public IReadOnlyList<CalendarItemDto> Items { get; set; } = [];
+    [Parameter] public DateTime SelectedDate { get; set; } = DateTime.UtcNow.Date;
+    [Parameter] public EventCallback<DateTime> SelectedDateChanged { get; set; }
+    [Parameter] public EventCallback<CalendarItemDto> OnItemClick { get; set; }
+    [Parameter] public EventCallback<DateTime> OnAddEntry { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+
+    private DateTime _currentMonth = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+    private string _currentView = "Month";
+    private string _categoryFilter = "All";
+
+    private IReadOnlyList<CalendarItemDto> FilteredItems =>
+        _categoryFilter == "All"
+            ? Items
+            : Items.Where(i => string.Equals(i.ItemCategory, _categoryFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private IReadOnlyList<CalendarItemDto> OverdueItems =>
+        Items.Where(i => i.IsOverdue).ToList();
+
+    private int OverdueCount => OverdueItems.Count;
+
+    private void NavigatePrevMonth() => _currentMonth = _currentMonth.AddMonths(-1);
+    private void NavigateNextMonth() => _currentMonth = _currentMonth.AddMonths(1);
+    private async Task NavigateToday()
+    {
+        _currentMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        await SelectDate(DateTime.UtcNow.Date);
+    }
+
+    private async Task SelectDate(DateTime date)
+    {
+        SelectedDate = date;
+        await SelectedDateChanged.InvokeAsync(date);
+    }
+
+    private List<DateTime> GetCalendarDays()
+    {
+        var days = new List<DateTime>();
+        var firstDayOfMonth = _currentMonth;
+        var startOffset = (int)firstDayOfMonth.DayOfWeek;
+        var startDate = firstDayOfMonth.AddDays(-startOffset);
+
+        for (int i = 0; i < 42; i++)
+        {
+            days.Add(startDate.AddDays(i));
+        }
+
+        return days;
+    }
+
+    private IReadOnlyList<CalendarItemDto> GetItemsForDate(DateTime date)
+    {
+        return FilteredItems.Where(i => i.EndUtc.Date == date.Date || (i.StartUtc.Date <= date.Date && i.EndUtc.Date >= date.Date)).ToList();
+    }
+}

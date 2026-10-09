@@ -51,13 +51,13 @@ public class TaskProcess : IFileProcessor
                 return Result<int>.Failure(file.ErrorMessage);
             }
 
-            var liveTasks = new List<UserTaskEntity>(stagedTasks.Count);
+            var liveTasks = new List<TaskEntity>(stagedTasks.Count);
             foreach (var staged in stagedTasks)
             {
-                var priority = Enum.TryParse<UserTaskPriority>(staged.Priority, true, out var p) ? p : UserTaskPriority.Medium;
-                var status = Enum.TryParse<UserTaskStatus>(staged.Status, true, out var s) ? s : UserTaskStatus.Open;
+                var priority = Enum.TryParse<TaskPriority>(staged.Priority, true, out var p) ? p : TaskPriority.Medium;
+                var status = Enum.TryParse<TaskStatus>(staged.Status, true, out var s) ? s : TaskStatus.Open;
 
-                var liveTask = new UserTaskEntity
+                var liveTask = new TaskEntity
                 {
                     Id = Guid.CreateVersion7(),
                     TenantId = file.TenantId,

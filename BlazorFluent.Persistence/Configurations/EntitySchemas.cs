@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,5 +12,7 @@ namespace BlazorFluent.Persistence.Configurations
         identity, ///all tables related to a user identity and login details
         tenancy, //Tenanacy level tables only
         app,//App level tables
+        tasks, //Work item and task hierarchy tables
+        calendar //Calendar entries and scheduling tables
     }
 }

@@ -66,7 +66,7 @@ public class ProjectHealthService : IProjectHealthService
         {
             if (taskStatusLookup.TryGetValue(dep.DependsOnTaskId, out var depStatus))
             {
-                var isResolved = depStatus is UserTaskStatus.Closed or UserTaskStatus.Cancelled;
+                var isResolved = depStatus is TaskStatus.Closed or TaskStatus.Cancelled;
                 if (!isResolved)
                 {
                     activeBlockersCount++;
@@ -78,10 +78,10 @@ public class ProjectHealthService : IProjectHealthService
             }
         }
 
-        var totalTasks = tasks.Count(t => t.Status != UserTaskStatus.Cancelled);
-        var completedTasks = tasks.Count(t => t.Status == UserTaskStatus.Closed);
-        var inProgressTasks = tasks.Count(t => t.Status == UserTaskStatus.InProgress);
-        var openTasks = tasks.Count(t => t.Status == UserTaskStatus.Open);
+        var totalTasks = tasks.Count(t => t.Status != TaskStatus.Cancelled);
+        var completedTasks = tasks.Count(t => t.Status == TaskStatus.Closed);
+        var inProgressTasks = tasks.Count(t => t.Status == TaskStatus.InProgress);
+        var openTasks = tasks.Count(t => t.Status == TaskStatus.Open);
         var overdueTasks = tasks.Count(t => !t.IsClosed && t.DueDate.Date < today);
 
         var summary = new ProjectHealthSummaryDto
@@ -225,9 +225,9 @@ public class ProjectHealthService : IProjectHealthService
             }
         }
 
-        var totalTasks = tasks.Count(t => t.Status != UserTaskStatus.Cancelled);
-        var completedTasks = tasks.Count(t => t.Status == UserTaskStatus.Closed);
-        var inProgressTasks = tasks.Count(t => t.Status == UserTaskStatus.InProgress);
+        var totalTasks = tasks.Count(t => t.Status != TaskStatus.Cancelled);
+        var completedTasks = tasks.Count(t => t.Status == TaskStatus.Closed);
+        var inProgressTasks = tasks.Count(t => t.Status == TaskStatus.InProgress);
         var overdueTasks = tasks.Count(t => !t.IsClosed && t.DueDate.Date < today);
         var daysRemaining = (int)Math.Ceiling((milestone.EndDateUtc.Date - today).TotalDays);
 
