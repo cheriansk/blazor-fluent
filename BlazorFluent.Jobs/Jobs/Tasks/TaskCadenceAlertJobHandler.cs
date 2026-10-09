@@ -20,12 +20,12 @@ namespace BlazorFluent.Jobs.Jobs.Tasks;
 public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEvent>
 {
     private readonly AppDbContext _dbContext;
-    private readonly INotificationService _notificationService;
+    private readonly INotifyService _notificationService;
     private readonly ILogger<TaskCadenceAlertJobHandler> _logger;
 
     public TaskCadenceAlertJobHandler(
         AppDbContext dbContext,
-        INotificationService notificationService,
+        INotifyService notificationService,
         ILogger<TaskCadenceAlertJobHandler> logger)
     {
         _dbContext = dbContext;

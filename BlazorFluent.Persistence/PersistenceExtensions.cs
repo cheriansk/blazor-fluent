@@ -122,7 +122,7 @@ public static class PersistenceExtensions
         services.TryAddScoped<IProjectAuthorizationService, ProjectAuthorizationService>();
 
         // 13. Multi-Channel Notification Engine Data Service
-        services.TryAddScoped<INotificationService, NotificationService>();
+        services.TryAddScoped<INotifyService, NotificationService>();
 
         // 14. Enterprise Identity: Sessions & Impersonation
         services.TryAddScoped<IUserSessionService, UserSessionService>();

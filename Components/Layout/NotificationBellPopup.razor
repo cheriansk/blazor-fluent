@@ -5,7 +5,7 @@
 @using BlazorFluent.Core.Domain.Notifications
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject NavigationManager NavigationManager
-@inject BlazorFluent.Core.Contracts.INotificationService MyNotificationService
+@inject BlazorFluent.Core.Contracts.INotifyService MyNotificationService
 @inject ICurrentUser CurrentUser
 @inject IUserTimeZoneService TimeZoneService
 @inject ILogger<NotificationBellPopup> Logger
@@ -96,7 +96,7 @@
                 else if (_notifications.Count == 0)
                 {
                     <div style="text-align: center; padding: 32px 16px; color: var(--neutral-foreground-3, #8a8886);">
-                        <FluentIcon Value="@(new Icons.Regular.Size32.CheckmarkCircle())" Color="Color.Neutral" />
+                        <FluentIcon Value="@(new Icons.Regular.Size32.CheckmarkCircle())" Color="Color.Default" />
                         <div style="margin-top: 8px; font-weight: 500;">No notifications</div>
                         <div style="font-size: 12px; margin-top: 4px;">You're all caught up!</div>
                     </div>
@@ -123,7 +123,7 @@
                                                 <FluentIcon Value="@(new Icons.Regular.Size20.DismissCircle())" Color="Color.Error" />
                                                 break;
                                             default:
-                                                <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Accent" />
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Primary" />
                                                 break;
                                         }
                                     </div>
@@ -142,7 +142,10 @@
                                         </div>
 
                                         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--neutral-foreground-3, #8a8886);">
-                                            <span title="@TimeZoneService.FormatDateTime(notification.Created)">@GetRelativeTime(notification.Created)</span>
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <span title="@TimeZoneService.FormatDateTime(notification.Created)">@GetRelativeTime(notification.Created)</span>
+                                                <span style="font-size: 10px; background: var(--neutral-layer-3, #edebe9); color: var(--neutral-foreground-2, #616161); padding: 1px 5px; border-radius: 3px; font-weight: 600;">@notification.TenantId</span>
+                                            </div>
                                             <div style="display: flex; align-items: center; gap: 6px;">
                                                 @if (notification.SentToTeams)
                                                 {

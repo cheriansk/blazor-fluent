@@ -11,7 +11,7 @@
                   Title="@(UnsavedChanges.HasPendingChanges ? $"{UnsavedChanges.PendingChanges.Count} pending unsaved changes" : "No unsaved changes")"
                   Style="position: relative; padding: 6px;">
         <FluentIcon Value="@(new Icons.Regular.Size20.SaveEdit())"
-                    Color="@(UnsavedChanges.HasPendingChanges ? Color.Warning : Color.Neutral)" />
+                    Color="@(UnsavedChanges.HasPendingChanges ? Color.Warning : Color.Default)" />
         @if (UnsavedChanges.HasPendingChanges)
         {
             <span style="position: absolute; top: 0; right: 0; background-color: #d83b01; color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 5px; line-height: 1.2;">

@@ -4,7 +4,7 @@ using BlazorFluent.Core.Dtos;
 
 namespace BlazorFluent.Core.Contracts;
 
-public interface INotificationService
+public interface INotifyService
 {
     /// <summary>
     /// Persists a notification to the database and dispatches across requested channels (Teams/Email)
@@ -28,7 +28,7 @@ public interface INotificationService
     Task<bool> MarkAsReadAsync(Guid notificationId, CancellationToken ct = default);
 
     /// <summary>
-    /// Marks all notifications in the specified category as read for the active user.
+    /// Marks all notifications matching optional category and tenant as read for the active user.
     /// </summary>
-    Task<int> MarkAllAsReadAsync(NotificationCategory category, CancellationToken ct = default);
+    Task<int> MarkAllAsReadAsync(NotificationCategory? category = null, string? tenantId = null, CancellationToken ct = default);
 }

@@ -24,14 +24,9 @@
             }
         </FluentStack>
 
-        <!--<FluentSearch @bind-Value="@_searchTerm"
-                      Placeholder="Search changes by user, property, or value..."
-                      Style="width: 100%;"
-                      Immediate="true" />-->
-
         @if (_isLoading)
         {
-            <FluentProgressRing Style="margin: 40px auto;" />
+            <FluentSpinner Style="margin: 40px auto;" />
         }
         else if (GroupedHistory.Count == 0)
         {
@@ -63,13 +58,13 @@
                             <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                                 @if (group.IsExpanded)
                                 {
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronDown())" Color="Color.Accent" />
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronDown())" Color="Color.Primary" />
                                 }
                                 else
                                 {
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Color="Color.Neutral" />
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Color="Color.Default" />
                                 }
-                                <FluentIcon Value="@(new Icons.Filled.Size16.Person())" Color="Color.Accent" />
+                                    <FluentIcon Value="@(new Icons.Filled.Size16.Person())" Color="Color.Primary" />
                                 <span style="font-weight: 600; font-size: 13px; color: var(--neutral-foreground-rest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     @group.UserEmail
                                 </span>

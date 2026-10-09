@@ -28,7 +28,7 @@ public class ImportFileService : IImportFileService
     private readonly ITenantEncryptionService _encryptionService;
     private readonly ITenantBlobStorageService _blobStorageService;
     private readonly IJobEventPublisher _eventPublisher;
-    private readonly INotificationService _notificationService;
+    private readonly INotifyService _notificationService;
     private readonly ILogger<ImportFileService> _logger;
 
     public ImportFileService(
@@ -38,7 +38,7 @@ public class ImportFileService : IImportFileService
         ITenantEncryptionService encryptionService,
         ITenantBlobStorageService blobStorageService,
         IJobEventPublisher eventPublisher,
-        INotificationService notificationService,
+        INotifyService notificationService,
         ILogger<ImportFileService> logger)
     {
         _context = context;

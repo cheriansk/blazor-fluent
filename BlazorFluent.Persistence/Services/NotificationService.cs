@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
 
-public class NotificationService : INotificationService
+public class NotificationService : INotifyService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ICurrentUser _currentUser;
@@ -176,37 +176,97 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
-        var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        {
+            allowedTenants.Add(_tenantContext.TenantId);
+        }
+
+        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
 
         var query = db.Notifications
             .AsNoTracking()
-            .Where(n => n.TenantId == tenantId && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
+            .IgnoreQueryFilters()
+            .Where(n => !n.IsDeleted);
 
+        // 1. Tenant filtering (all allowed tenants by default, or specific if provided)
+        if (!string.IsNullOrWhiteSpace(filter.TenantId))
+        {
+            if (!isHost && !allowedTenants.Contains(filter.TenantId))
+            {
+                return [];
+            }
+            query = query.Where(n => n.TenantId == filter.TenantId);
+        }
+        else if (!isHost)
+        {
+            query = query.Where(n => allowedTenants.Contains(n.TenantId));
+        }
+
+        // 2. Project filtering
         if (filter.ProjectId.HasValue && filter.ProjectId.Value != Guid.Empty)
         {
             query = query.Where(n => n.ProjectId == filter.ProjectId.Value);
         }
 
+        // 3. Category & Personal Privacy filtering
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
+
         if (filter.Category == NotificationCategory.Personal)
         {
-            // Strict personal privacy: only see records specifically designated for current user
-            if (string.IsNullOrWhiteSpace(currentUserId))
-            {
-                return [];
-            }
+            if (string.IsNullOrWhiteSpace(currentUserId)) return [];
             query = query.Where(n => n.Category == NotificationCategory.Personal && n.UserId == currentUserId);
+        }
+        else if (filter.Category == NotificationCategory.Generic)
+        {
+            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null
+                && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
         }
         else
         {
-            // Generic notifications broadcast to all project/tenant members
-            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null);
+            query = query.Where(n =>
+                (n.Category == NotificationCategory.Personal && n.UserId == currentUserId) ||
+                (n.Category == NotificationCategory.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+            );
         }
 
-        if (filter.OnlyUnread)
+        // 4. Read status filter
+        if (filter.IsRead.HasValue)
+        {
+            query = query.Where(n => n.IsRead == filter.IsRead.Value);
+        }
+        else if (filter.OnlyUnread)
         {
             query = query.Where(n => !n.IsRead);
+        }
+
+        // 5. Severity filter
+        if (filter.Severity.HasValue)
+        {
+            query = query.Where(n => n.Severity == filter.Severity.Value);
+        }
+
+        // 6. Date range filter
+        if (filter.FromDateUtc.HasValue)
+        {
+            query = query.Where(n => n.Created >= filter.FromDateUtc.Value);
+        }
+        if (filter.ToDateUtc.HasValue)
+        {
+            query = query.Where(n => n.Created <= filter.ToDateUtc.Value);
+        }
+
+        // 7. Search text filter
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+        {
+            var term = filter.SearchTerm.Trim().ToLower();
+            query = query.Where(n => n.Title.ToLower().Contains(term) || n.Message.ToLower().Contains(term));
+        }
+
+        if (filter.Skip > 0)
+        {
+            query = query.Skip(filter.Skip);
         }
 
         return await query
@@ -220,15 +280,28 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
-        var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        {
+            allowedTenants.Add(_tenantContext.TenantId);
+        }
+        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
 
-        var genericCount = await db.Notifications
+        var baseQuery = db.Notifications
             .AsNoTracking()
-            .Where(n => n.TenantId == tenantId
-                && !n.IsRead
-                && n.Category == NotificationCategory.Generic
+            .IgnoreQueryFilters()
+            .Where(n => !n.IsDeleted && !n.IsRead);
+
+        if (!isHost)
+        {
+            baseQuery = baseQuery.Where(n => allowedTenants.Contains(n.TenantId));
+        }
+
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
+
+        var genericCount = await baseQuery
+            .Where(n => n.Category == NotificationCategory.Generic
                 && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             .CountAsync(ct);
@@ -236,11 +309,8 @@ public class NotificationService : INotificationService
         var personalCount = 0;
         if (!string.IsNullOrWhiteSpace(currentUserId))
         {
-            personalCount = await db.Notifications
-                .AsNoTracking()
-                .Where(n => n.TenantId == tenantId
-                    && !n.IsRead
-                    && n.Category == NotificationCategory.Personal
+            personalCount = await baseQuery
+                .Where(n => n.Category == NotificationCategory.Personal
                     && n.UserId == currentUserId
                     && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
                 .CountAsync(ct);
@@ -258,12 +328,27 @@ public class NotificationService : INotificationService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        {
+            allowedTenants.Add(_tenantContext.TenantId);
+        }
+        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
+
         var notification = await db.Notifications
+            .IgnoreQueryFilters()
             .AsTracking()
-            .FirstOrDefaultAsync(n => n.TenantId == tenantId && n.Id == notificationId, ct);
+            .FirstOrDefaultAsync(n => !n.IsDeleted && n.Id == notificationId, ct);
         if (notification is null) return false;
+
+        // Tenant authorization check
+        if (!isHost && !allowedTenants.Contains(notification.TenantId))
+        {
+            _logger.LogWarning("Security violation: User '{UserId}' attempted to mark notification '{NotificationId}' in unauthorized tenant '{TenantId}'.",
+                currentUserId, notificationId, notification.TenantId);
+            return false;
+        }
 
         // Privacy check: Personal notification can only be read by recipient
         if (notification.Category == NotificationCategory.Personal && notification.UserId != currentUserId)
@@ -276,7 +361,7 @@ public class NotificationService : INotificationService
         // Project check: Generic notification on a project requires read access
         if (notification.ProjectId != Guid.Empty)
         {
-            var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+            var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
             if (!authorizedProjectIds.Contains(notification.ProjectId))
             {
                 return false;
@@ -289,26 +374,51 @@ public class NotificationService : INotificationService
         return true;
     }
 
-    public async Task<int> MarkAllAsReadAsync(NotificationCategory category, CancellationToken ct = default)
+    public async Task<int> MarkAllAsReadAsync(NotificationCategory? category = null, string? tenantId = null, CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
         var currentUserId = _currentUser.UserId;
-        var authorizedProjectIds = await GetAuthorizedProjectIdsAsync(db, ProjectRole.ReadOnly, ct);
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        {
+            allowedTenants.Add(_tenantContext.TenantId);
+        }
+        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
 
         var query = db.Notifications
-            .Where(n => n.TenantId == tenantId && !n.IsRead && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
+            .IgnoreQueryFilters()
+            .Where(n => !n.IsDeleted && !n.IsRead);
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            if (!isHost && !allowedTenants.Contains(tenantId)) return 0;
+            query = query.Where(n => n.TenantId == tenantId);
+        }
+        else if (!isHost)
+        {
+            query = query.Where(n => allowedTenants.Contains(n.TenantId));
+        }
+
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
 
         if (category == NotificationCategory.Personal)
         {
             if (string.IsNullOrWhiteSpace(currentUserId)) return 0;
             query = query.Where(n => n.Category == NotificationCategory.Personal && n.UserId == currentUserId);
         }
+        else if (category == NotificationCategory.Generic)
+        {
+            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null
+                && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
+        }
         else
         {
-            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null);
+            query = query.Where(n =>
+                (n.Category == NotificationCategory.Personal && n.UserId == currentUserId) ||
+                (n.Category == NotificationCategory.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+            );
         }
 
         var unreadNotifications = await query.ToListAsync(ct);
@@ -325,27 +435,33 @@ public class NotificationService : INotificationService
         return unreadNotifications.Count;
     }
 
-    private async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(AppDbContext db, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    private async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAcrossTenantsAsync(
+        AppDbContext db,
+        bool isHost,
+        string? currentUserId,
+        IReadOnlyCollection<string> allowedTenants,
+        CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
-
-        if (_currentUser.IsRootAdmin)
+        if (isHost)
         {
             return await db.Projects
                 .AsNoTracking()
-                .Where(p => p.TenantId == tenantId && !p.IsDeleted)
+                .IgnoreQueryFilters()
+                .Where(p => !p.IsDeleted)
                 .Select(p => p.Id)
                 .ToListAsync(ct);
         }
 
-        var userId = _currentUser.UserId ?? "anonymous";
+        if (string.IsNullOrWhiteSpace(currentUserId)) return [];
+
         var userRoles = await db.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => r.TenantId == tenantId && r.UserId == userId && !r.IsDeleted)
+            .IgnoreQueryFilters()
+            .Where(r => allowedTenants.Contains(r.TenantId) && r.UserId == currentUserId && !r.IsDeleted)
             .ToListAsync(ct);
 
         return userRoles
-            .Where(r => r.Role.Satisfies(minRole))
+            .Where(r => r.Role.Satisfies(ProjectRole.ReadOnly))
             .Select(r => r.ProjectId)
             .Distinct()
             .ToList();

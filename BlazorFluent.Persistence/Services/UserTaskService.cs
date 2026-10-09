@@ -14,7 +14,7 @@ public class UserTaskService : IUserTaskService
     private readonly AppDbContext _context;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
-    private readonly INotificationService _notificationService;
+    private readonly INotifyService _notificationService;
     private readonly IProjectAuthorizationService _projectAuth;
     private readonly ILogger<UserTaskService> _logger;
 
@@ -22,7 +22,7 @@ public class UserTaskService : IUserTaskService
         AppDbContext context,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
-        INotificationService notificationService,
+        INotifyService notificationService,
         IProjectAuthorizationService projectAuth,
         ILogger<UserTaskService> logger)
     {

@@ -18,7 +18,6 @@ namespace BlazorFluent.Persistence.Initialization;
 public static class InitialDatabaseSeeder
 {
     public const string DefaultTenantSlug = "default";
-    public const string DefaultTenantCode = "DEFAULT";
     public const string DefaultTenantName = "System Root Anchor";
 
     public static async Task SeedAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
@@ -64,7 +63,6 @@ public static class InitialDatabaseSeeder
             {
                 Id = Guid.NewGuid(),
                 Slug = DefaultTenantSlug,
-                Code = DefaultTenantCode,
                 Name = DefaultTenantName,
                 InternalEmailDomains = string.Join(";", adminDomains),
                 ExternalEmailDomains = "@client.com",

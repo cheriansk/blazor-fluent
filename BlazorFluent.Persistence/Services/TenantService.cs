@@ -68,7 +68,6 @@ public class TenantService : ITenantService
 
     public async Task<Result<TenantEntity>> CreateTenantAsync(
         string slug,
-        string code,
         string displayName,
         IEnumerable<string> internalEmailDomains,
         IEnumerable<string> externalEmailDomains,
@@ -84,9 +83,6 @@ public class TenantService : ITenantService
 
         if (string.Equals(slug.Trim(), "default", StringComparison.OrdinalIgnoreCase))
             return Result<TenantEntity>.Failure("The 'default' slug is reserved for internal system administration.");
-
-        if (string.IsNullOrWhiteSpace(code))
-            return Result<TenantEntity>.Failure("Code is required.");
 
         if (string.IsNullOrWhiteSpace(displayName))
             return Result<TenantEntity>.Failure("DisplayName is required.");
@@ -136,7 +132,6 @@ public class TenantService : ITenantService
         var tenant = new TenantEntity
         {
             Id = Guid.NewGuid(),
-            Code = code.Trim(),
             Slug = normalizedSlug,
             Name = displayName.Trim(),
             InternalEmailDomains = internalJoined,
@@ -152,12 +147,12 @@ public class TenantService : ITenantService
         // Evict global tenant directory cache across all auto-scaled instances
         await _cacheService.RemoveGlobalAsync(TenantsCacheKey, cancellationToken);
 
-        _logger.LogInformation("Provisioned new tenant: Slug={Slug}, Name={Name}, Code={Code}, InternalDomains={InternalDomains}, ExternalDomains={ExternalDomains}, StartDate={StartDate}, EndDate={EndDate}",
-            tenant.Slug, tenant.Name, tenant.Code, tenant.InternalEmailDomains, tenant.ExternalEmailDomains, tenant.StartDate, tenant.EndDate);
+        _logger.LogInformation("Provisioned new tenant: Slug={Slug}, Name={Name}, InternalDomains={InternalDomains}, ExternalDomains={ExternalDomains}, StartDate={StartDate}, EndDate={EndDate}",
+            tenant.Slug, tenant.Name, tenant.InternalEmailDomains, tenant.ExternalEmailDomains, tenant.StartDate, tenant.EndDate);
 
         await _auditService.LogUserActivityAsync(
             $"Created tenant '{tenant.Name}' (Slug: {tenant.Slug})",
-            $"Code: {tenant.Code}, Internal: {tenant.InternalEmailDomains}, External: {tenant.ExternalEmailDomains}, StartDate: {tenant.StartDate:yyyy-MM-dd}, EndDate: {tenant.EndDate:yyyy-MM-dd}",
+            $"Slug: {tenant.Slug}, Internal: {tenant.InternalEmailDomains}, External: {tenant.ExternalEmailDomains}, StartDate: {tenant.StartDate:yyyy-MM-dd}, EndDate: {tenant.EndDate:yyyy-MM-dd}",
             cancellationToken);
 
         return Result<TenantEntity>.Success(tenant);
@@ -165,7 +160,6 @@ public class TenantService : ITenantService
 
     public Task<Result<TenantEntity>> CreateTenantAsync(
         string slug,
-        string code,
         string displayName,
         string internalEmailDomain,
         string externalEmailDomain,
@@ -173,7 +167,7 @@ public class TenantService : ITenantService
         DateTime endDate,
         CancellationToken cancellationToken = default)
     {
-        return CreateTenantAsync(slug, code, displayName, [internalEmailDomain], [externalEmailDomain], startDate, endDate, cancellationToken);
+        return CreateTenantAsync(slug, displayName, [internalEmailDomain], [externalEmailDomain], startDate, endDate, cancellationToken);
     }
 
     public async Task<IReadOnlyList<UserEntity>> GetTenantUsersAsync(string tenantSlug, CancellationToken cancellationToken = default)
@@ -536,6 +530,7 @@ public class TenantService : ITenantService
 
         var duplicate = await _dbContext.Projects
             .AnyAsync(p => p.TenantId == normalizedSlug &&
+                           !p.IsDeleted &&
                            (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
                       cancellationToken);
 
@@ -615,6 +610,7 @@ public class TenantService : ITenantService
 
         var duplicate = await _dbContext.Projects
             .AnyAsync(p => p.TenantId == normalizedSlug && p.Id != projectId &&
+                           !p.IsDeleted &&
                            (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
                       cancellationToken);
 

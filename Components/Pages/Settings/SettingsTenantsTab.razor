@@ -37,10 +37,7 @@
             <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
                 <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Provision New Tenant</FluentLabel>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                        <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Style="flex: 1;" />
-                        <FluentTextInput Label="Tenant Code (Max 15 chars)" @bind-Value="_newCode" Placeholder="e.g. ACME" Required="true" Style="flex: 1;" />
-                    </FluentStack>
+                    <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Style="width: 100%;" />
                     
                     <FluentTextInput Label="Display Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Style="width: 100%;" />
 
@@ -106,7 +103,7 @@
                     </FluentStack>
 
                     <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
-                        ⚠️ Note: Slug, Code, Name, Internal Domains, and External Domains cannot be changed after creation.
+                        ⚠️ Note: Slug, Name, Internal Domains, and External Domains cannot be changed after creation.
                     </div>
 
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
@@ -130,7 +127,6 @@
 
                 <ul style="line-height: 1.8; margin-left: 16px; margin-bottom: 16px;">
                     <li><strong>Slug:</strong> <code>@_newSlug.Trim().ToLowerInvariant()</code></li>
-                    <li><strong>Code:</strong> <code>@_newCode.Trim()</code></li>
                     <li><strong>Display Name:</strong> <code>@_newName.Trim()</code></li>
                     <li><strong>Internal Domains:</strong> <code>@string.Join(", ", _newInternalDomains)</code> (Internal Staff)</li>
                     <li><strong>External Domains:</strong> <code>@string.Join(", ", _newExternalDomains)</code> (Client Users)</li>
@@ -148,13 +144,13 @@
             </FluentCard>
         }
 
-        @* Edit Dates Modal (Slug, Code, Name, and Domains are strictly locked) *@
+        @* Edit Dates Modal (Slug, Name, and Domains are strictly locked) *@
         @if (_editingTenant is not null)
         {
             <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
-                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Code)</FluentLabel>
+                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Slug)</FluentLabel>
                 <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); margin-bottom: 12px;">
-                    Slug (<code>@_editingTenant.Slug</code>), Code (<code>@_editingTenant.Code</code>), Internal Domains (<code>@_editingTenant.InternalEmailDomains</code>), and External Domains (<code>@_editingTenant.ExternalEmailDomains</code>) are permanent and cannot be modified.
+                    Slug (<code>@_editingTenant.Slug</code>), Internal Domains (<code>@_editingTenant.InternalEmailDomains</code>), and External Domains (<code>@_editingTenant.ExternalEmailDomains</code>) are permanent and cannot be modified.
                 </div>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
@@ -175,7 +171,7 @@
             <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #107c41;">
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
                     <div>
-                        <FluentLabel Typo="Typography.H5">Users for @_managingUsersTenant.Name (@_managingUsersTenant.Code)</FluentLabel>
+                        <FluentLabel Typo="Typography.H5">Users for @_managingUsersTenant.Name (@_managingUsersTenant.Slug)</FluentLabel>
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 4px; font-size: 13px;" Wrap="true">
                             <span>Internal: @foreach(var d in _managingUsersTenant.GetInternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Filled" Style="margin-right: 4px;">@d</FluentBadge> }</span>
                             <span>External: @foreach(var d in _managingUsersTenant.GetExternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Tint" Style="margin-right: 4px;">@d</FluentBadge> }</span>
@@ -315,7 +311,7 @@
 
                 @if (_isLoadingUsers)
                 {
-                    <FluentProgressRing Style="margin: 20px auto;" />
+                    <FluentSpinner Style="margin: 20px auto;" />
                 }
                 else if (!_tenantUsers.Any())
                 {
@@ -373,7 +369,7 @@
             <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #0078d4;">
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
                     <div>
-                        <FluentLabel Typo="Typography.H5">Projects for @_managingProjectsTenant.Name (@_managingProjectsTenant.Code)</FluentLabel>
+                        <FluentLabel Typo="Typography.H5">Projects for @_managingProjectsTenant.Name (@_managingProjectsTenant.Slug)</FluentLabel>
                         <div style="font-size: 13px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
                             Manage project workspaces, timelines, and scopes scoped to tenant <code>@_managingProjectsTenant.Slug</code>.
                         </div>
@@ -458,7 +454,7 @@
 
                 @if (_isLoadingProjects)
                 {
-                    <FluentProgressRing Style="margin: 20px auto;" />
+                    <FluentSpinner Style="margin: 20px auto;" />
                 }
                 else if (!_tenantProjects.Any())
                 {
@@ -530,13 +526,12 @@
         @* Tenants Table *@
         @if (_isLoading)
         {
-            <FluentProgressRing Style="margin: 30px auto;" />
+            <FluentSpinner Style="margin: 30px auto;" />
         }
         else
         {
-            <FluentDataGrid Items="@FilteredTenants" ResizableColumns="true" GridTemplateColumns="120px 80px 1.5fr 150px 150px 100px 110px 110px 210px">
+            <FluentDataGrid Items="@FilteredTenants" ResizableColumns="true" GridTemplateColumns="140px 1.5fr 150px 150px 100px 110px 110px 210px">
                 <PropertyColumn Property="@(t => t.Slug)" Title="Slug" Sortable="true" />
-                <PropertyColumn Property="@(t => t.Code)" Title="Code" Sortable="true" />
                 <PropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true" />
                 <TemplateColumn Title="Internal Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.InternalEmailDomains))">
                     @foreach (var d in context.GetInternalDomains())
@@ -613,7 +608,6 @@
                 var term = _tenantSearchText.Trim();
                 query = query.Where(t =>
                     t.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    t.Code.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     t.Slug.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     t.InternalEmailDomains.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     t.ExternalEmailDomains.Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -642,7 +636,6 @@
     private bool _showAddModal;
     private bool _showConfirmCreate;
     private string _newSlug = string.Empty;
-    private string _newCode = string.Empty;
     private string _newName = string.Empty;
     private List<string> _newInternalDomains = [];
     private string _tempInternalDomain = string.Empty;
@@ -782,9 +775,9 @@
 
     private void PromptConfirmCreate()
     {
-        if (string.IsNullOrWhiteSpace(_newSlug) || string.IsNullOrWhiteSpace(_newCode) || string.IsNullOrWhiteSpace(_newName))
+        if (string.IsNullOrWhiteSpace(_newSlug) || string.IsNullOrWhiteSpace(_newName))
         {
-            _statusMessage = "Slug, Code and Display Name are required.";
+            _statusMessage = "Slug and Display Name are required.";
             _isError = true;
             return;
         }
@@ -836,7 +829,6 @@
 
         var result = await TenantService.CreateTenantAsync(
             _newSlug,
-            _newCode,
             _newName,
             _newInternalDomains,
             _newExternalDomains,
@@ -845,7 +837,7 @@
 
         if (result.Succeeded && result.Data is not null)
         {
-            _statusMessage = $"Tenant '{result.Data.Name} ({result.Data.Code})' created successfully.";
+            _statusMessage = $"Tenant '{result.Data.Name} ({result.Data.Slug})' created successfully.";
             _isError = false;
             CancelAdd();
             await LoadTenantsAsync();
@@ -870,7 +862,6 @@
         _showAddModal = false;
         _showConfirmCreate = false;
         _newSlug = string.Empty;
-        _newCode = string.Empty;
         _newName = string.Empty;
         _newInternalDomains.Clear();
         _tempInternalDomain = string.Empty;

@@ -23,9 +23,16 @@ public record SendNotificationReqDto
 /// </summary>
 public record NotificationFilterReqDto
 {
-    public NotificationCategory Category { get; init; } = NotificationCategory.Generic;
+    public NotificationCategory? Category { get; init; } = NotificationCategory.Generic;
     public bool OnlyUnread { get; init; }
+    public bool? IsRead { get; init; }
+    public NotificationSeverity? Severity { get; init; }
+    public string? TenantId { get; init; }
     public Guid? ProjectId { get; init; }
+    public DateTime? FromDateUtc { get; init; }
+    public DateTime? ToDateUtc { get; init; }
+    public string? SearchTerm { get; init; }
+    public int Skip { get; init; } = 0;
     public int Take { get; init; } = 30;
 }
 

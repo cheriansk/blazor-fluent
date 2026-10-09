@@ -1,0 +1,421 @@
+@rendermode InteractiveServer
+
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.DataListTypes
+@using BlazorFluent.Core.Domain.Notifications
+@using BlazorFluent.Core.Dtos
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject INotifyService NotificationService
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject IUserTimeZoneService TimeZoneService
+@inject NavigationManager NavigationManager
+@inject ILogger<SettingsNotificationsTab> Logger
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+    @* Tab Header and Summary *@
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Wrap="true" Style="align-items: flex-start; width: 100%;">
+        <div>
+            <FluentLabel Typo="Typography.H5" Style="font-weight: 600;">Notification History</FluentLabel>
+            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); margin-top: 2px;">
+                Review all system notices, project alerts, and personal tasks received across your authorized workspaces.
+            </FluentLabel>
+        </div>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+            <FluentButton Appearance="ButtonAppearance.Outline"
+                          IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+                          OnClick="LoadNotificationsAsync"
+                          Disabled="@_isLoading">
+                Refresh
+            </FluentButton>
+            <FluentButton Appearance="ButtonAppearance.Primary"
+                          IconStart="@(new Icons.Regular.Size16.CheckmarkCircle())"
+                          OnClick="MarkAllFilteredAsReadAsync"
+                          Disabled="@(_isLoading || _unreadCount == 0)">
+                Mark All Read (@_unreadCount)
+            </FluentButton>
+        </FluentStack>
+    </FluentStack>
+
+    @* Filters Toolbar Card *@
+    <FluentCard Style="padding: 16px; border-radius: 8px;">
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+            <FluentLabel Typo="Typography.H6">Filters &amp; Search</FluentLabel>
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true" Style="align-items: flex-end;">
+                @* 1. Organization Filter *@
+                <div>
+                    <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; margin-bottom: 4px;">Organization</FluentLabel>
+                    <FluentSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_tenantFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedTenantId"
+                                  Style="min-width: 180px;" />
+                </div>
+
+                @* 2. Category Filter *@
+                <div>
+                    <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; margin-bottom: 4px;">Category</FluentLabel>
+                    <FluentSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_categoryFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedCategory"
+                                  Style="min-width: 150px;" />
+                </div>
+
+                @* 3. Severity Filter *@
+                <div>
+                    <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; margin-bottom: 4px;">Severity</FluentLabel>
+                    <FluentSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_severityFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedSeverity"
+                                  Style="min-width: 150px;" />
+                </div>
+
+                @* 4. Read Status Filter *@
+                <div>
+                    <FluentLabel Typo="Typography.Caption" Style="font-weight: 600; margin-bottom: 4px;">Status</FluentLabel>
+                    <FluentSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_statusFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedStatus"
+                                  Style="min-width: 130px;" />
+                </div>
+
+                @* 5. Date Range Pickers *@
+                <div>
+                    <FluentDatePicker Label="From Date" @bind-Value="_fromDate" />
+                </div>
+                <div>
+                    <FluentDatePicker Label="To Date" @bind-Value="_toDate" />
+                </div>
+
+                @* 6. Search Text Input *@
+                <div style="flex: 1; min-width: 220px;">
+                    <FluentTextInput @bind-Value="_searchText"
+                                     Appearance="TextInputAppearance.Outline"
+                                     Placeholder="Search title or message..."
+                                     Style="width: 100%;">
+                        <StartTemplate>
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                        </StartTemplate>
+                    </FluentTextInput>
+                </div>
+
+                @* Action Buttons *@
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="LoadNotificationsAsync">
+                        Apply
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="ResetFiltersAsync">
+                        Clear
+                    </FluentButton>
+                </FluentStack>
+            </FluentStack>
+        </FluentStack>
+    </FluentCard>
+
+    @* Summary and Page Size Bar *@
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; padding: 0 4px; font-size: 12px; color: var(--neutral-foreground-hint);">
+        <div>
+            Showing <strong>@_notifications.Count</strong> notifications
+            @if (_unreadCount > 0)
+            {
+                <span> (<strong>@_unreadCount</strong> unread)</span>
+            }
+        </div>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6" Style="align-items: center;">
+            <span>Page size:</span>
+            <FluentSelect TOption="int"
+                          TValue="int"
+                          Items="@(new[] { 25, 50, 100 })"
+                          @bind-Value="_pageSize"
+                          @bind-Value:after="LoadNotificationsAsync"
+                          Style="width: 90px;" />
+        </FluentStack>
+    </FluentStack>
+
+    @* Notifications Data Grid *@
+    @if (_isLoading)
+    {
+        <div style="display: flex; justify-content: center; padding: 48px 0;">
+            <FluentSpinner Size="SpinnerSize.Medium" />
+        </div>
+    }
+    else if (_notifications.Count == 0)
+    {
+        <FluentCard Style="padding: 48px; text-align: center; border-radius: 8px;">
+            <FluentIcon Value="@(new Icons.Regular.Size28.AlertOff())" Color="Color.Default" Style="margin-bottom: 12px;" />
+            <FluentLabel Typo="Typography.H6" Style="margin-bottom: 4px;">No notifications found</FluentLabel>
+            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                No notifications match your current filter parameters. Try clearing your search or expanding the date range.
+            </FluentLabel>
+        </FluentCard>
+    }
+    else
+    {
+        <FluentDataGrid Items="@_notifications.AsQueryable()" ResizableColumns="true" GridTemplateColumns="60px 1.8fr 110px 100px 140px 90px 150px">
+            <TemplateColumn Title="Sev" Style="text-align: center;">
+                @switch (context.Severity)
+                {
+                    case NotificationSeverity.Success:
+                        <FluentIcon Value="@(new Icons.Regular.Size20.CheckmarkCircle())" Color="Color.Success" />
+                        break;
+                    case NotificationSeverity.Warning:
+                        <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" Color="Color.Warning" />
+                        break;
+                    case NotificationSeverity.Error:
+                        <FluentIcon Value="@(new Icons.Regular.Size20.DismissCircle())" Color="Color.Error" />
+                        break;
+                    default:
+                        <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Primary" />
+                        break;
+                }
+            </TemplateColumn>
+
+            <TemplateColumn Title="Notification">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <div style="font-weight: @(context.IsRead ? "500" : "700"); font-size: 13px; color: var(--neutral-foreground-1, #242424); display: flex; align-items: center; gap: 6px;">
+                        <span>@context.Title</span>
+                        @if (context.SentToTeams)
+                        {
+                            <span style="font-size: 10px; background: #e8ebfa; color: #444791; padding: 1px 4px; border-radius: 3px; font-weight: 600;">Teams</span>
+                        }
+                        @if (context.SentToMailbox)
+                        {
+                            <span style="font-size: 10px; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 3px; font-weight: 600;">Mail</span>
+                        }
+                    </div>
+                    <span style="font-size: 12px; color: var(--neutral-foreground-2, #616161); line-height: 1.4; word-break: break-word;">
+                        @context.Message
+                    </span>
+                </div>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Tenant" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.TenantId))">
+                <FluentBadge Appearance="BadgeAppearance.Filled" Size="BadgeSize.Small">
+                    🏢 @context.TenantId
+                </FluentBadge>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Category" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.Category))">
+                <FluentBadge Appearance="@(context.Category == NotificationCategory.Personal ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                             Color="@(context.Category == NotificationCategory.Personal ? BadgeColor.Informative : BadgeColor.Subtle)"
+                             Size="BadgeSize.Small">
+                    @(context.Category == NotificationCategory.Personal ? "Personal" : "General")
+                </FluentBadge>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Timestamp" SortBy="@(GridSort<NotificationEntity>.ByDescending(n => n.Created))">
+                <span style="font-size: 12px;" title="@TimeZoneService.FormatDateTime(context.Created)">
+                    @TimeZoneService.FormatDateTime(context.Created)
+                </span>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Status" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.IsRead))">
+                @if (context.IsRead)
+                {
+                    <span style="font-size: 11px; color: var(--neutral-foreground-hint);">Read</span>
+                }
+                else
+                {
+                    <FluentBadge Color="BadgeColor.Brand" Size="BadgeSize.Small">Unread</FluentBadge>
+                }
+            </TemplateColumn>
+
+            <TemplateColumn Title="Actions">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                    @if (!string.IsNullOrWhiteSpace(context.LinkUrl))
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                      Size="ButtonSize.Small"
+                                      IconStart="@(new Icons.Regular.Size16.Open())"
+                                      OnClick="@(() => OpenLink(context))"
+                                      Title="Open Resource" />
+                    }
+                    @if (!context.IsRead)
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                      Size="ButtonSize.Small"
+                                      IconStart="@(new Icons.Regular.Size16.Checkmark())"
+                                      OnClick="@(() => MarkAsReadAsync(context))"
+                                      Title="Mark as read" />
+                    }
+                </FluentStack>
+            </TemplateColumn>
+        </FluentDataGrid>
+    }
+</FluentStack>
+
+@code {
+    public record FilterOptionItem(string Value, string Label);
+
+    private bool _isLoading;
+    private List<NotificationEntity> _notifications = [];
+    private int _unreadCount;
+
+    // Filter items for dual-generic FluentSelect
+    private List<FilterOptionItem> _tenantFilterItems = [];
+    private static readonly List<FilterOptionItem> _categoryFilterItems =
+    [
+        new("", "All Categories"),
+        new("Generic", "General Broadcast"),
+        new("Personal", "Personal Alerts")
+    ];
+    private static readonly List<FilterOptionItem> _severityFilterItems =
+    [
+        new("", "All Severities"),
+        new("Info", "Information"),
+        new("Success", "Success"),
+        new("Warning", "Warning"),
+        new("Error", "Error")
+    ];
+    private static readonly List<FilterOptionItem> _statusFilterItems =
+    [
+        new("all", "All Statuses"),
+        new("unread", "Unread Only"),
+        new("read", "Read Only")
+    ];
+
+    // Filter states
+    private string _selectedTenantId = string.Empty;
+    private string _selectedCategory = string.Empty;
+    private string _selectedSeverity = string.Empty;
+    private string _selectedStatus = "all";
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+    private string _searchText = string.Empty;
+    private int _pageSize = 50;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tenantFilterItems =
+        [
+            new("", "All Organizations"),
+            .. TenantContext.AllowedTenants.Select(t => new FilterOptionItem(t.Id, $"{t.Name} ({t.Id})"))
+        ];
+
+        await LoadNotificationsAsync();
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        if (!CurrentUser.IsAuthenticated) return;
+
+        _isLoading = true;
+        try
+        {
+            NotificationCategory? category = _selectedCategory switch
+            {
+                "Generic" => NotificationCategory.Generic,
+                "Personal" => NotificationCategory.Personal,
+                _ => null
+            };
+
+            NotificationSeverity? severity = _selectedSeverity switch
+            {
+                "Info" => NotificationSeverity.Info,
+                "Success" => NotificationSeverity.Success,
+                "Warning" => NotificationSeverity.Warning,
+                "Error" => NotificationSeverity.Error,
+                _ => null
+            };
+
+            bool? isRead = _selectedStatus switch
+            {
+                "unread" => false,
+                "read" => true,
+                _ => null
+            };
+
+            var filter = new NotificationFilterReqDto
+            {
+                TenantId = string.IsNullOrWhiteSpace(_selectedTenantId) ? null : _selectedTenantId,
+                Category = category,
+                Severity = severity,
+                IsRead = isRead,
+                FromDateUtc = _fromDate.HasValue ? DateTime.SpecifyKind(_fromDate.Value.Date, DateTimeKind.Utc) : null,
+                ToDateUtc = _toDate.HasValue ? DateTime.SpecifyKind(_toDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc) : null,
+                SearchTerm = string.IsNullOrWhiteSpace(_searchText) ? null : _searchText,
+                Take = _pageSize
+            };
+
+            var items = await NotificationService.GetNotificationsAsync(filter);
+            _notifications = items.ToList();
+            _unreadCount = _notifications.Count(n => !n.IsRead);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading notification history in SettingsNotificationsTab.");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _selectedTenantId = string.Empty;
+        _selectedCategory = string.Empty;
+        _selectedSeverity = string.Empty;
+        _selectedStatus = "all";
+        _fromDate = null;
+        _toDate = null;
+        _searchText = string.Empty;
+        await LoadNotificationsAsync();
+    }
+
+    private async Task MarkAsReadAsync(NotificationEntity item)
+    {
+        var success = await NotificationService.MarkAsReadAsync(item.Id);
+        if (success)
+        {
+            item.IsRead = true;
+            item.ReadAtUtc = DateTime.UtcNow;
+            _unreadCount = _notifications.Count(n => !n.IsRead);
+        }
+    }
+
+    private async Task MarkAllFilteredAsReadAsync()
+    {
+        var tenantFilter = string.IsNullOrWhiteSpace(_selectedTenantId) ? null : _selectedTenantId;
+        NotificationCategory? category = _selectedCategory switch
+        {
+            "Generic" => NotificationCategory.Generic,
+            "Personal" => NotificationCategory.Personal,
+            _ => null
+        };
+
+        await NotificationService.MarkAllAsReadAsync(category, tenantFilter);
+
+        var now = DateTime.UtcNow;
+        foreach (var item in _notifications.Where(n => !n.IsRead))
+        {
+            item.IsRead = true;
+            item.ReadAtUtc = now;
+        }
+        _unreadCount = 0;
+    }
+
+    private async Task OpenLink(NotificationEntity item)
+    {
+        if (!item.IsRead)
+        {
+            await MarkAsReadAsync(item);
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.LinkUrl))
+        {
+            NavigationManager.NavigateTo(item.LinkUrl);
+        }
+    }
+}

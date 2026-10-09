@@ -64,5 +64,10 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
 
         builder.HasIndex(p => new { p.TenantId, p.Name })
             .HasDatabaseName("IX_Projects_TenantId_Name");
+
+        builder.HasIndex(p => new { p.TenantId, p.ShortCode })
+            .HasDatabaseName("IX_Projects_TenantId_ShortCode")
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false AND \"ShortCode\" IS NOT NULL AND \"ShortCode\" <> ''");
     }
 }
