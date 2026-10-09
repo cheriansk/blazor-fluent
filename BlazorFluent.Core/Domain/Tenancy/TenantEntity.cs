@@ -59,6 +59,12 @@ public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntit
     /// <summary>Contract or subscription end date. Optional.</summary>
     public DateTime? EndDate { get; set; }
 
+    /// <summary>Navigation: all programs belonging to this tenant.</summary>
+    public ICollection<ProgramEntity> Programs { get; set; } = new List<ProgramEntity>();
+
     /// <summary>Navigation: all projects belonging to this tenant.</summary>
     public ICollection<ProjectEntity> Projects { get; set; } = new List<ProjectEntity>();
+
+    /// <summary>Navigation: all user memberships in this tenant.</summary>
+    public ICollection<TenantUserEntity> TenantUsers { get; set; } = new List<TenantUserEntity>();
 }

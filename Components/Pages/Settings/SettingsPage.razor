@@ -8,6 +8,7 @@
 @inject ISettingsNavigationState SettingsNav
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
+@inject IHierarchyAuthorizationService HierarchyAuth
 
 <PageTitle>Settings — BlazorFluent</PageTitle>
 
@@ -16,13 +17,25 @@
 
 <div style="margin-top: 20px;">
     <FluentTabs @bind-ActiveTabId="_activeTabId" @bind-ActiveTabId:after="OnTabChanged" Orientation="Orientation.Horizontal">
-        @if (CurrentUser.IsRootAdmin)
+        @if (CanViewTenantTab)
         {
             <FluentTab Id="tenants" Header="Tenants" IconStart="@(new Icons.Regular.Size20.Building())">
                 @if (_visitedTabs.Contains("tenants"))
                 {
                     <div style="padding-top: 16px;">
                         <SettingsTenantsTab />
+                    </div>
+                }
+            </FluentTab>
+        }
+
+        @if (CanViewProgramTab)
+        {
+            <FluentTab Id="programs" Header="Programs" IconStart="@(new Icons.Regular.Size20.FolderDocument())">
+                @if (_visitedTabs.Contains("programs"))
+                {
+                    <div style="padding-top: 16px;">
+                        <SettingsProgramsTab />
                     </div>
                 }
             </FluentTab>
@@ -102,10 +115,32 @@
 @code {
     private string _activeTabId = "projects";
     private readonly HashSet<string> _visitedTabs = new(StringComparer.OrdinalIgnoreCase);
+    private bool _canViewTenantTab = false;
+    private bool _canViewProgramTab = false;
 
-    protected override void OnInitialized()
+    private bool CanViewTenantTab => CurrentUser.IsRootAdmin || _canViewTenantTab;
+    private bool CanViewProgramTab => CurrentUser.IsRootAdmin || _canViewProgramTab;
+
+    protected override async Task OnInitializedAsync()
     {
-        _activeTabId = CurrentUser.IsRootAdmin ? "tenants" : "projects";
+        if (CurrentUser.IsRootAdmin)
+        {
+            _canViewTenantTab = true;
+            _canViewProgramTab = true;
+        }
+        else
+        {
+            var tenantId = TenantContext.TenantId;
+            var userId = CurrentUser.UserId;
+            if (!string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(userId))
+            {
+                _canViewTenantTab = await HierarchyAuth.CanViewTenantSettingsAsync(tenantId, userId);
+                var accessiblePrograms = await HierarchyAuth.GetAccessibleProgramIdsAsync(tenantId, userId);
+                _canViewProgramTab = _canViewTenantTab || accessiblePrograms.Count > 0;
+            }
+        }
+
+        _activeTabId = CanViewTenantTab ? "tenants" : (CanViewProgramTab ? "programs" : "projects");
 
         if (!string.IsNullOrWhiteSpace(SettingsNav.InitialTab))
         {
@@ -113,19 +148,24 @@
             SettingsNav.InitialTab = null;
         }
 
-        if (_activeTabId.Equals("tenants", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
+        if (_activeTabId.Equals("tenants", StringComparison.OrdinalIgnoreCase) && !CanViewTenantTab)
+        {
+            _activeTabId = CanViewProgramTab ? "programs" : "projects";
+        }
+
+        if (_activeTabId.Equals("programs", StringComparison.OrdinalIgnoreCase) && !CanViewProgramTab)
         {
             _activeTabId = "projects";
         }
 
         if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
         {
-            _activeTabId = CurrentUser.IsRootAdmin ? "tenants" : "projects";
+            _activeTabId = "projects";
         }
 
         if (_activeTabId.Equals("auditing", StringComparison.OrdinalIgnoreCase) && !CanViewAuditTrail)
         {
-            _activeTabId = CurrentUser.IsRootAdmin ? "tenants" : "projects";
+            _activeTabId = "projects";
         }
 
         _visitedTabs.Add(_activeTabId);

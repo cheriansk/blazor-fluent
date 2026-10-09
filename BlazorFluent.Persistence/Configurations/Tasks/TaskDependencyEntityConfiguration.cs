@@ -47,6 +47,9 @@ public class TaskDependencyEntityConfiguration : IEntityTypeConfiguration<TaskDe
             .HasForeignKey(d => d.DependsOnTaskId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(d => d.DependsOnProjectId)
+            .IsRequired(false);
+
         // Unique index: prevent duplicate dependency pairs
         builder.HasIndex(d => new { d.TaskId, d.DependsOnTaskId })
             .IsUnique()
@@ -54,6 +57,9 @@ public class TaskDependencyEntityConfiguration : IEntityTypeConfiguration<TaskDe
 
         builder.HasIndex(d => new { d.TenantId, d.ProjectId })
             .HasDatabaseName("IX_TaskDependencies_Tenant_Project");
+
+        builder.HasIndex(d => d.DependsOnProjectId)
+            .HasDatabaseName("IX_TaskDependencies_DependsOnProject");
 
         builder.HasIndex(d => new { d.DependsOnTaskId, d.ResolveByUtc })
             .HasDatabaseName("IX_TaskDependencies_DependsOn_ResolveBy");

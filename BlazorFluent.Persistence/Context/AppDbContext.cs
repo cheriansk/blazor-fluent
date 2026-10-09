@@ -59,6 +59,9 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
+    public DbSet<ProgramEntity> Programs => Set<ProgramEntity>();
+    public DbSet<ProgramUserRoleEntity> ProgramUserRoles => Set<ProgramUserRoleEntity>();
+    public DbSet<TenantUserEntity> TenantUsers => Set<TenantUserEntity>();
     public DbSet<ProjectEntity> Projects => Set<ProjectEntity>();
     public DbSet<ProjectUserRoleEntity> ProjectUserRoles => Set<ProjectUserRoleEntity>();
     public DbSet<UserEntity> Users => Set<UserEntity>();

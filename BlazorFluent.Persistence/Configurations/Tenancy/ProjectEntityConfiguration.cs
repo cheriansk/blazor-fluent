@@ -69,5 +69,13 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
             .HasDatabaseName("IX_Projects_TenantId_ShortCode")
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false AND \"ShortCode\" IS NOT NULL AND \"ShortCode\" <> ''");
+
+        builder.HasIndex(p => p.ProgramId)
+            .HasDatabaseName("IX_Projects_ProgramId");
+
+        builder.HasOne(p => p.Program)
+            .WithMany(pr => pr.Projects)
+            .HasForeignKey(p => p.ProgramId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

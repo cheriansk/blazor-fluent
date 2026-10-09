@@ -269,12 +269,11 @@ else
 
                 <div class="modal-grid-row" style="margin-top: 12px;">
                     <FluentSelect TOption="DataListItem<UserTaskPriority>"
-                                  TValue="string"
+                                  TValue="UserTaskPriority"
                                   Items="@(DataListExtensions.GetDataListItems<UserTaskPriority>())"
                                   OptionText="@(i => i.DisplayName)"
-                                  OptionValue="@(i => i.Code)"
-                                  @bind-Value:get="_newTask.Priority.ToString()"
-                                  @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _newTask.Priority = p; }"
+                                  OptionValue="@(i => i != null ? i.Value : UserTaskPriority.Low)"
+                                  @bind-Value="_newTask.Priority"
                                   Label="Priority" Style="width: 100%;" />
 
                     <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Style="width: 100%;" Required="true" />
@@ -356,12 +355,11 @@ else
 
                         <div class="modal-grid-row" style="margin-top: 12px;">
                             <FluentSelect TOption="DataListItem<UserTaskPriority>"
-                                          TValue="string"
+                                          TValue="UserTaskPriority"
                                           Items="@(DataListExtensions.GetDataListItems<UserTaskPriority>())"
                                           OptionText="@(i => i.DisplayName)"
-                                          OptionValue="@(i => i.Code)"
-                                          @bind-Value:get="_selectedTask.Priority.ToString()"
-                                          @bind-Value:set="code => { if (Enum.TryParse<UserTaskPriority>(code, out var p)) _selectedTask.Priority = p; }"
+                                          OptionValue="@(i => i != null ? i.Value : UserTaskPriority.Low)"
+                                          @bind-Value="_selectedTask.Priority"
                                           Label="Priority" Style="width: 100%;" />
 
                             <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Style="width: 100%;" Required="true" />
@@ -369,12 +367,11 @@ else
 
                         <div class="modal-grid-row" style="margin-top: 12px;">
                             <FluentSelect TOption="DataListItem<UserTaskStatus>"
-                                          TValue="string"
+                                          TValue="UserTaskStatus"
                                           Items="@(DataListExtensions.GetDataListItems<UserTaskStatus>())"
                                           OptionText="@(i => i.DisplayName)"
-                                          OptionValue="@(i => i.Code)"
-                                          @bind-Value:get="_selectedTask.Status.ToString()"
-                                          @bind-Value:set="code => { if (Enum.TryParse<UserTaskStatus>(code, out var s)) _selectedTask.Status = s; }"
+                                          OptionValue="@(i => i != null ? i.Value : UserTaskStatus.Open)"
+                                          @bind-Value="_selectedTask.Status"
                                           Label="Status" Style="width: 100%;" />
 
                             <FluentSelect TOption="MilestoneOptionItem"
@@ -494,12 +491,11 @@ else
                                               Label="Prerequisite / Target Task" Style="width: 100%;" />
 
                                 <FluentSelect TOption="DataListItem<TaskDependencyType>"
-                                              TValue="string"
+                                              TValue="TaskDependencyType"
                                               Items="@(DataListExtensions.GetDataListItems<TaskDependencyType>())"
                                               OptionText="@(i => i.DisplayName)"
-                                              OptionValue="@(i => i.Code)"
-                                              @bind-Value:get="_newDepType.ToString()"
-                                              @bind-Value:set="code => { if (Enum.TryParse<TaskDependencyType>(code, out var dt)) _newDepType = dt; }"
+                                              OptionValue="@(i =>i.Value )"
+                                              @bind-Value="_newDepType"
                                               Label="Relationship" Style="width: 100%;" />
                             </div>
 
