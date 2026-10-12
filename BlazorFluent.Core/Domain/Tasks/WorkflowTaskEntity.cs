@@ -1,0 +1,47 @@
+using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Core.Domain.Base;
+
+namespace BlazorFluent.Core.Domain.Tasks;
+
+/// <summary>
+/// Enterprise workflow container entity orchestrating sequential, stage-gated step completion.
+/// Can exist at Tenant, Program, or Project organizational level.
+/// Governed by a constant Workflow Owner who maintains overarching delivery accountability.
+/// Governs an ordered collection of steps, where each step is a genuine <see cref="TaskEntity"/>
+/// and can have child <see cref="SubTaskEntity"/> items delegated to team members.
+/// Inherits from <see cref="BaseTaskEntity"/>.
+/// </summary>
+public class WorkflowTaskEntity : BaseTaskEntity
+{
+    public WorkflowTaskEntity()
+    {
+        Level = TaskLevel.Project;
+    }
+
+    /// <summary>
+    /// Email of the single, constant workflow owner who retains operational accountability
+    /// and follows up across all steps to avoid delays.
+    /// </summary>
+    public string WorkflowOwnerEmail { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Backwards-compatible accessor mirroring <see cref="WorkflowOwnerEmail"/>.
+    /// </summary>
+    public string CurrentOwnerEmail
+    {
+        get => WorkflowOwnerEmail;
+        set => WorkflowOwnerEmail = value;
+    }
+
+    /// <summary>
+    /// Unique identifier of the currently active step (TaskEntity).
+    /// Null if the workflow is completed, cancelled, or not yet started.
+    /// </summary>
+    public Guid? CurrentStepId { get; set; }
+
+    /// <summary>
+    /// Ordered collection of sequential steps governed by this workflow,
+    /// where each step is a genuine <see cref="TaskEntity"/>.
+    /// </summary>
+    public ICollection<TaskEntity> Steps { get; set; } = new List<TaskEntity>();
+}

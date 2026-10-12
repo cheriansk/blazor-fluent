@@ -17,7 +17,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.UI.Templates'">
     <Using Include="BlazorFluent.Core.DataListTypes.TaskStatus" Alias="TaskStatus" />
   </ItemGroup>
 </Project>

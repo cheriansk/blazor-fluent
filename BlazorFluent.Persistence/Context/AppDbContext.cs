@@ -88,6 +88,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<MilestoneDependencyEntity> MilestoneDependencies => Set<MilestoneDependencyEntity>();
     public DbSet<TaskDependencyEntity> TaskDependencies => Set<TaskDependencyEntity>();
     public DbSet<KnowledgeArticleEntity> KnowledgeArticles => Set<KnowledgeArticleEntity>();
+    public DbSet<WorkflowTaskEntity> WorkflowTasks => Set<WorkflowTaskEntity>();
+    public DbSet<WorkflowStepEntity> WorkflowSteps => Set<WorkflowStepEntity>();
     public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();
     public DbSet<EventPublishTrackerEntity> EventPublishTrackers => Set<EventPublishTrackerEntity>();
     public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();

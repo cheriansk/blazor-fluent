@@ -1,0 +1,53 @@
+@namespace BlazorFluent.UI.Templates.Wizards
+@implements IDisposable
+
+@if (IsCurrentStep)
+{
+    @ChildContent
+}
+
+@code {
+    [CascadingParameter]
+    private IWizardHost? Host { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Summary { get; set; }
+
+    [Parameter]
+    public Icon? Icon { get; set; }
+
+    [Parameter]
+    public Func<Task<bool>>? OnValidateAsync { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    internal bool IsCurrentStep => Host != null && Host.CurrentStepIndex == StepIndex;
+
+    internal int StepIndex { get; set; } = -1;
+
+    protected override void OnInitialized()
+    {
+        if (Host is not null)
+        {
+            Host.RegisterStep(this);
+        }
+    }
+
+    public async Task<bool> ValidateAsync()
+    {
+        if (OnValidateAsync is not null)
+        {
+            return await OnValidateAsync();
+        }
+        return true;
+    }
+
+    public void Dispose()
+    {
+        Host?.UnregisterStep(this);
+    }
+}

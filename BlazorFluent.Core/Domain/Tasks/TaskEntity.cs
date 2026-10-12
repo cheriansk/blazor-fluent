@@ -1,3 +1,4 @@
+using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -5,7 +6,8 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// <summary>
 /// Standard work item / task.
 /// Inherits from <see cref="BaseTaskEntity"/>.
-/// Can have one or more <see cref="SubTaskEntity"/> children.
+/// Can act as a standalone task or as a sequential step in a <see cref="WorkflowTaskEntity"/>.
+/// Can have one or more <see cref="SubTaskEntity"/> children delegated to team members.
 /// </summary>
 public class TaskEntity : BaseTaskEntity, IProjectScopedEntity
 {
@@ -42,4 +44,41 @@ public class TaskEntity : BaseTaskEntity, IProjectScopedEntity
     /// Discussion comments thread.
     /// </summary>
     public ICollection<UserTaskCommentEntity> Comments { get; set; } = new List<UserTaskCommentEntity>();
+
+    // --- Sequential Workflow Step Integration ---
+
+    /// <summary>
+    /// Optional foreign key to a governing <see cref="WorkflowTaskEntity"/> when this task acts as a sequential workflow step.
+    /// </summary>
+    public Guid? WorkflowTaskId { get; set; }
+
+    /// <summary>
+    /// 1-based execution order index within the parent workflow (Step 1, Step 2, Step 3...).
+    /// </summary>
+    public int? WorkflowStepOrder { get; set; }
+
+    /// <summary>
+    /// Discrete lifecycle status of this step within the sequential workflow.
+    /// </summary>
+    public WorkflowStepStatus? WorkflowStepStatus { get; set; }
+
+    /// <summary>
+    /// Audit notes or delivery sign-off comments recorded by the step owner upon completion.
+    /// </summary>
+    public string? WorkflowStepCompletionNotes { get; set; }
+
+    /// <summary>
+    /// Timestamp when this step transitioned to Active in the workflow.
+    /// </summary>
+    public DateTime? WorkflowStepActivatedAtUtc { get; set; }
+
+    /// <summary>
+    /// Timestamp when this step was marked Completed in the workflow.
+    /// </summary>
+    public DateTime? WorkflowStepCompletedAtUtc { get; set; }
+
+    /// <summary>
+    /// Navigation property to the parent workflow.
+    /// </summary>
+    public WorkflowTaskEntity? WorkflowTask { get; set; }
 }

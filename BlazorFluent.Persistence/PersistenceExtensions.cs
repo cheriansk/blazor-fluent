@@ -164,6 +164,9 @@ public static class PersistenceExtensions
         // 24. Unified Enterprise Calendar Service
         services.TryAddScoped<ICalendarService, CalendarService>();
 
+        // 25. ServiceNow-Style Sequential Workflow Engine
+        services.TryAddScoped<IWorkflowService, WorkflowService>();
+
         return services;
     }
 }

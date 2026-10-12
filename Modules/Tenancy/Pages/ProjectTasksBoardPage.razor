@@ -15,6 +15,7 @@
 @inject IUserTaskService TaskService
 @inject IProjectMilestoneService MilestoneService
 @inject IProjectHealthService HealthService
+@inject IWorkflowService WorkflowService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
 @inject IProjectContext ProjectContext
@@ -175,82 +176,138 @@ else
         }
     </div>
 
-    <!-- Reusable 6-Column Swimlane Board -->
-    <FluentSwimlaneBoardComp TItem="TaskEntity"
-                             Columns="@_columns"
-                             Items="@FilteredTasks"
-                             OnItemClick="OpenTaskDetailsModal">
-        <ItemTemplate>
-            <FluentCard Class="task-card">
-                <div class="task-card-header">
-                    <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-                        <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(context.Priority)">
-                            @context.Priority
-                        </FluentBadge>
+    <!-- Sub-tab switch between Delivery Board and Sequential Workflows -->
+    <div class="tasks-subtab-bar" style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 12px 0;">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+            <FluentButton Appearance="@(_activeSubTab == "tasks" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          IconStart="@(new Icons.Regular.Size16.Board())"
+                          OnClick="@(() => _activeSubTab = "tasks")">
+                Delivery Board (@FilteredTasks.Count())
+            </FluentButton>
+            <FluentButton Appearance="@(_activeSubTab == "workflows" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          IconStart="@(new Icons.Filled.Size16.Flowchart())"
+                          OnClick="@(() => _activeSubTab = "workflows")">
+                Sequential Workflows (@_projectWorkflows.Count)
+            </FluentButton>
+        </FluentStack>
 
-                        @if (_activeBlockedTaskIds.Contains(context.Id))
-                        {
-                            <span class="blocker-pill" title="This task is blocked by one or more unresolved prerequisite tasks.">
-                                ⛔ Blocked
-                            </span>
-                        }
+        @if (_activeSubTab == "workflows")
+        {
+            <FluentButton Appearance="ButtonAppearance.Primary"
+                          IconStart="@(new Icons.Regular.Size16.Add())"
+                          OnClick="@(() => _isCreateWorkflowModalOpen = true)">
+                New Workflow
+            </FluentButton>
+        }
+    </div>
 
-                        @if (context.MilestoneId.HasValue && _milestoneLookup.TryGetValue(context.MilestoneId.Value, out var mName))
-                        {
-                            <span class="milestone-pill" title="Assigned Milestone">
-                                🚩 @mName
-                            </span>
-                        }
-                    </div>
+    @if (_activeSubTab == "tasks")
+    {
+        <!-- Reusable 6-Column Swimlane Board -->
+        <FluentSwimlaneBoardComp TItem="TaskEntity"
+                                 Columns="@_columns"
+                                 Items="@FilteredTasks"
+                                 OnItemClick="OpenTaskDetailsModal">
+            <ItemTemplate>
+                <FluentCard Class="task-card">
+                    <div class="task-card-header">
+                        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                            <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(context.Priority)">
+                                @context.Priority
+                            </FluentBadge>
 
-                    <span class="task-card-due @(context.DueDate.Date < _today && !context.IsClosed ? "due-overdue" : "")">
-                        @TimeZoneService.FormatDate(context.DueDate, "MMM dd")
-                    </span>
-                </div>
-
-                <div class="task-card-title">@context.Title</div>
-
-                @if (!string.IsNullOrWhiteSpace(context.Labels))
-                {
-                    <div class="task-card-labels">
-                        @foreach (var label in context.GetParsedLabels())
-                        {
-                            <span class="jira-label-pill">@label</span>
-                        }
-                    </div>
-                }
-
-                <div class="task-card-footer">
-                    <div class="task-card-assignees" title="@context.AssigneeEmails">
-                        @if (!string.IsNullOrWhiteSpace(context.AssigneeEmails))
-                        {
-                            <span>👤 @(context.GetParsedAssigneeEmails().FirstOrDefault() ?? "")</span>
-                            @if (context.GetParsedAssigneeEmails().Count > 1)
+                            @if (_activeBlockedTaskIds.Contains(context.Id))
                             {
-                                <span class="badge-more">+@(context.GetParsedAssigneeEmails().Count - 1)</span>
+                                <span class="blocker-pill" title="This task is blocked by one or more unresolved prerequisite tasks.">
+                                    ⛔ Blocked
+                                </span>
                             }
-                        }
-                        else
-                        {
-                            <span class="unassigned-text">Unassigned</span>
-                        }
+
+                            @if (context.MilestoneId.HasValue && _milestoneLookup.TryGetValue(context.MilestoneId.Value, out var mName))
+                            {
+                                <span class="milestone-pill" title="Assigned Milestone">
+                                    🚩 @mName
+                                </span>
+                            }
+                        </div>
+
+                        <span class="task-card-due @(context.DueDate.Date < _today && !context.IsClosed ? "due-overdue" : "")">
+                            @TimeZoneService.FormatDate(context.DueDate, "MMM dd")
+                        </span>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        @if (!string.IsNullOrWhiteSpace(context.ReporterEmail))
-                        {
-                            <span class="reporter-pill" title="Reporter: @context.ReporterEmail">
-                                ✍️ @(context.ReporterEmail.Split('@').FirstOrDefault())
-                            </span>
-                        }
-                        <div class="task-card-comments-count">
-                            💬 @(context.Comments?.Count ?? 0)
+                    <div class="task-card-title">@context.Title</div>
+
+                    @if (!string.IsNullOrWhiteSpace(context.Labels))
+                    {
+                        <div class="task-card-labels">
+                            @foreach (var label in context.GetParsedLabels())
+                            {
+                                <span class="jira-label-pill">@label</span>
+                            }
+                        </div>
+                    }
+
+                    <div class="task-card-footer">
+                        <div class="task-card-assignees" title="@context.AssigneeEmails">
+                            @if (!string.IsNullOrWhiteSpace(context.AssigneeEmails))
+                            {
+                                <span>👤 @(context.GetParsedAssigneeEmails().FirstOrDefault() ?? "")</span>
+                                @if (context.GetParsedAssigneeEmails().Count > 1)
+                                {
+                                    <span class="badge-more">+@(context.GetParsedAssigneeEmails().Count - 1)</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="unassigned-text">Unassigned</span>
+                            }
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            @if (!string.IsNullOrWhiteSpace(context.ReporterEmail))
+                            {
+                                <span class="reporter-pill" title="Reporter: @context.ReporterEmail">
+                                    ✍️ @(context.ReporterEmail.Split('@').FirstOrDefault())
+                                </span>
+                            }
+                            <div class="task-card-comments-count">
+                                💬 @(context.Comments?.Count ?? 0)
+                            </div>
                         </div>
                     </div>
+                </FluentCard>
+            </ItemTemplate>
+        </FluentSwimlaneBoardComp>
+    }
+    else
+    {
+        <!-- Sequential Workflows View -->
+        <div class="workflows-container" style="margin-top: 8px;">
+            @if (_projectWorkflows.Count == 0)
+            {
+                <div style="text-align: center; padding: 48px 24px; background: var(--neutral-fill-subtle-rest, #f9f9f9); border: 1px dashed var(--neutral-stroke-subtle, #edebe9); border-radius: 8px;">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Flowchart())" Color="Color.Default" />
+                    <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">No Sequential Workflows Found</FluentLabel>
+                    <p style="color: var(--neutral-foreground-hint, #616161); max-width: 480px; margin: 8px auto 20px auto; font-size: 0.9rem;">
+                        Workflows orchestrate sequential stage-gated activities where exactly one owner is active at any time, with multi-party watcher notifications on every handoff.
+                    </p>
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  IconStart="@(new Icons.Regular.Size16.Add())"
+                                  OnClick="@(() => _isCreateWorkflowModalOpen = true)">
+                        Launch First Workflow
+                    </FluentButton>
                 </div>
-            </FluentCard>
-        </ItemTemplate>
-    </FluentSwimlaneBoardComp>
+            }
+            else
+            {
+                @foreach (var wf in _projectWorkflows)
+                {
+                    <!-- <WorkflowStepperComp @key="wf.Id" Workflow="@wf" OnWorkflowUpdated="HandleWorkflowUpdated" />-->
+                }
+            }
+        </div>
+    }
 }
 
 <!-- Create Task Modal -->
@@ -741,6 +798,15 @@ else
                              AvailableTargetTasks="@_otherProjectTasks" 
                              OnLinkCreated="@RefreshDependenciesAndLinksAsync" 
                              OnClose="@(() => _showBlockerLinkModal = false)" />
+}
+
+@if (_currentProject is not null)
+{
+@*     <CreateWorkflowWizardModal IsOpen="@_isCreateWorkflowModalOpen"
+                               IsOpenChanged="@(val => _isCreateWorkflowModalOpen = val)"
+                               ProjectId="@_currentProject.Id"
+                               DefaultLevel="TaskLevel.Project"
+                               OnWorkflowCreated="HandleWorkflowCreated" /> *@
 }
 
 <style>
@@ -1290,6 +1356,11 @@ else
     private List<MilestoneOptionItem> _milestoneSelectOptions = [];
     private string _selectedMilestoneFilter = "all";
 
+    // Workflow state
+    private string _activeSubTab = "tasks";
+    private List<WorkflowTaskEntity> _projectWorkflows = [];
+    private bool _isCreateWorkflowModalOpen = false;
+
     // Modal state
     private bool _showCreateModal = false;
     private bool _showMilestonesModal = false;
@@ -1415,6 +1486,9 @@ else
             _milestonesHealth = (await HealthService.GetProjectMilestonesHealthAsync(_currentProject.Id)).ToList();
             _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
 
+            // Load sequential workflows
+            _projectWorkflows = (await WorkflowService.GetProjectWorkflowsAsync(_currentProject.Id)).ToList();
+
             // Compute active blockers
             await RefreshActiveBlockersAsync();
 
@@ -1425,6 +1499,22 @@ else
         {
             _isLoading = false;
         }
+    }
+
+    private void HandleWorkflowCreated(WorkflowTaskEntity created)
+    {
+        _projectWorkflows.Insert(0, created);
+        StateHasChanged();
+    }
+
+    private void HandleWorkflowUpdated(WorkflowTaskEntity updated)
+    {
+        var idx = _projectWorkflows.FindIndex(w => w.Id == updated.Id);
+        if (idx >= 0)
+        {
+            _projectWorkflows[idx] = updated;
+        }
+        StateHasChanged();
     }
 
     private async Task RefreshActiveBlockersAsync()

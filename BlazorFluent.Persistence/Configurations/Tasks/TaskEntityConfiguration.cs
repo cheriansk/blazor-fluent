@@ -93,6 +93,26 @@ public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
             .HasMaxLength(256)
             .IsRequired(false);
 
+        builder.Property(t => t.WorkflowTaskId)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowStepOrder)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowStepStatus)
+            .IsRequired(false)
+            .HasConversion<int>();
+
+        builder.Property(t => t.WorkflowStepCompletionNotes)
+            .HasMaxLength(2000)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowStepActivatedAtUtc)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowStepCompletedAtUtc)
+            .IsRequired(false);
+
         // Relationships
         builder.HasOne<ProjectEntity>()
             .WithMany()
@@ -108,6 +128,11 @@ public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
             .WithMany()
             .HasForeignKey(t => t.MilestoneId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(t => t.WorkflowTask)
+            .WithMany(w => w.Steps)
+            .HasForeignKey(t => t.WorkflowTaskId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(t => t.SubTasks)
             .WithOne(s => s.ParentTask)
@@ -139,6 +164,9 @@ public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
 
         builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
             .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
+
+        builder.HasIndex(t => new { t.TenantId, t.WorkflowTaskId, t.WorkflowStepOrder })
+            .HasDatabaseName("IX_Tasks_TenantId_WorkflowTaskId_StepOrder");
 
         builder.HasIndex(t => t.MilestoneId)
             .HasDatabaseName("IX_Tasks_MilestoneId");

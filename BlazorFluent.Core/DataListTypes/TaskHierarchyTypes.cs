@@ -66,7 +66,26 @@ public enum TaskItemType
     Risk = 3,
     Assumption = 4,
     Issue = 5,
-    BlockerDependency = 6
+    BlockerDependency = 6,
+    Workflow = 7
+}
+
+/// <summary>
+/// Lifecycle status for an individual sequential step within a WorkflowTaskEntity.
+/// </summary>
+public enum WorkflowStepStatus
+{
+    [Display(Name = "Pending", Description = "Awaiting preceding step completion")]
+    Pending = 1,
+
+    [Display(Name = "Active", Description = "Currently actionable by designated step owner")]
+    Active = 2,
+
+    [Display(Name = "Completed", Description = "Successfully executed")]
+    Completed = 3,
+
+    [Display(Name = "Skipped", Description = "Bypassed by administrator")]
+    Skipped = 4
 }
 
 /// <summary>
