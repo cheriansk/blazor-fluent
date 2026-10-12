@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
@@ -6,6 +7,7 @@ using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BlazorFluent.Jobs.Queue;
 
@@ -76,9 +78,16 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                     }
                     else
                     {
+                        var jobsOptions = scope.ServiceProvider.GetService<IOptions<JobsOptions>>();
                         var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail)
                             ? jobEvent.SenderUserEmail
-                            : "cron-daemon@blazorfluent.local";
+                            : jobsOptions?.Value.CronServiceAccountEmail;
+
+                        if (string.IsNullOrWhiteSpace(cronEmail))
+                        {
+                            throw new InvalidOperationException($"Zero-Trust Security Violation: Channel job '{jobName}' has no sender email and Jobs:CronServiceAccountEmail is not configured.");
+                        }
+
                         currentUser.SetSystemDaemon($"ChannelJob:{jobName}", cronEmail);
                     }
                 }

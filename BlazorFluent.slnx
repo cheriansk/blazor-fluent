@@ -1,8 +1,15 @@
 <Solution>
-  <Project Path="src/BlazorFluent.Core/BlazorFluent.Core.csproj" />
-  <Project Path="src/BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj" />
-  <Project Path="src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj" />
-  <Project Path="src/BlazorFluent.Persistence/BlazorFluent.Persistence.csproj" />
-  <Project Path="src/BlazorFluent.UI.Templates/BlazorFluent.UI.Templates.csproj" />
-  <Project Path="src/BlazorFluent.Web/BlazorFluent.Web.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/BlazorFluent.Core/BlazorFluent.Core.csproj" />
+    <Project Path="src/BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj" />
+    <Project Path="src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj" />
+    <Project Path="src/BlazorFluent.Persistence/BlazorFluent.Persistence.csproj" />
+    <Project Path="src/BlazorFluent.UI.Templates/BlazorFluent.UI.Templates.csproj" />
+    <Project Path="src/BlazorFluent.Web/BlazorFluent.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BlazorFluent.Core.Tests/BlazorFluent.Core.Tests.csproj" />
+    <Project Path="tests/BlazorFluent.Persistence.Tests/BlazorFluent.Persistence.Tests.csproj" />
+    <Project Path="tests/BlazorFluent.Benchmarks/BlazorFluent.Benchmarks.csproj" />
+  </Folder>
 </Solution>

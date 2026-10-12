@@ -1,5 +1,6 @@
 @page "/imports"
 @attribute [Authorize]
+@attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("file-upload")]
 @rendermode InteractiveServer
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts

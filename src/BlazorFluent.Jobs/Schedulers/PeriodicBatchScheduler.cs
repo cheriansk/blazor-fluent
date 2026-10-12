@@ -1,3 +1,4 @@
+using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BlazorFluent.Jobs.Schedulers;
 
@@ -23,6 +25,7 @@ public class PeriodicBatchScheduler : BackgroundService
     private readonly IJobEventQueue _queue;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
+    private readonly IOptions<JobsOptions> _jobsOptions;
     private readonly ILogger<PeriodicBatchScheduler> _logger;
 
     private sealed record ScheduleEntry(
@@ -34,11 +37,13 @@ public class PeriodicBatchScheduler : BackgroundService
         IJobEventQueue queue,
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
+        IOptions<JobsOptions> jobsOptions,
         ILogger<PeriodicBatchScheduler> logger)
     {
         _queue = queue;
         _scopeFactory = scopeFactory;
         _configuration = configuration;
+        _jobsOptions = jobsOptions;
         _logger = logger;
     }
 
@@ -102,7 +107,17 @@ public class PeriodicBatchScheduler : BackgroundService
             var targetSchedule = schedules.FirstOrDefault(s => s.Name == nextJob.Key);
             if (targetSchedule != null)
             {
-                var cronServiceEmail = _configuration["Jobs:CronServiceAccountEmail"] ?? "cron-daemon@blazorfluent.local";
+                var cronServiceEmail = _jobsOptions.Value.CronServiceAccountEmail;
+                if (string.IsNullOrWhiteSpace(cronServiceEmail))
+                {
+                    cronServiceEmail = _configuration["Jobs:CronServiceAccountEmail"];
+                }
+
+                if (string.IsNullOrWhiteSpace(cronServiceEmail))
+                {
+                    throw new InvalidOperationException(
+                        "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be configured when the periodic batch scheduler is running. Fallback identities are prohibited.");
+                }
 
                 List<string> activeTenants = [];
                 try

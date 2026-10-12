@@ -261,7 +261,10 @@ internal class AuditService : IAuditService
         {
             using var scope = _scopeFactory.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            currentUser?.SetSystemDaemon("ForensicAuditLogger", "audit-logger@blazorfluent.local");
+            var auditEmail = !string.IsNullOrWhiteSpace(_currentUser.Email) 
+                ? _currentUser.Email 
+                : $"system+audit@{SystemIdentityUtility.SystemTenantSlug}.internal";
+            currentUser?.SetSystemDaemon("ForensicAuditLogger", auditEmail);
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             var record = new AuditRecordEntity

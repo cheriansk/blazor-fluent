@@ -1,3 +1,4 @@
+using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Events;
@@ -8,6 +9,7 @@ using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -27,6 +29,7 @@ public class EventTrackerService : IEventTrackerService
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IAuditService _auditService;
+    private readonly IOptions<JobsOptions> _jobsOptions;
     private readonly ILogger<EventTrackerService> _logger;
 
     public EventTrackerService(
@@ -34,12 +37,14 @@ public class EventTrackerService : IEventTrackerService
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IAuditService auditService,
+        IOptions<JobsOptions> jobsOptions,
         ILogger<EventTrackerService> logger)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
+        _jobsOptions = jobsOptions;
         _logger = logger;
     }
 
@@ -121,7 +126,7 @@ public class EventTrackerService : IEventTrackerService
                 resolvedUserId = daemonName;
                 if (string.IsNullOrWhiteSpace(resolvedUserEmail))
                 {
-                    resolvedUserEmail = "cron-daemon@blazorfluent.local";
+                    resolvedUserEmail = _jobsOptions.Value.CronServiceAccountEmail;
                 }
             }
             else if (string.IsNullOrWhiteSpace(resolvedUserId) && string.IsNullOrWhiteSpace(resolvedUserEmail))
@@ -130,9 +135,9 @@ public class EventTrackerService : IEventTrackerService
                 resolvedUserEmail = _currentUser.Email;
             }
 
-            if (string.IsNullOrWhiteSpace(resolvedUserId))
+            if (string.IsNullOrWhiteSpace(resolvedUserId) || string.IsNullOrWhiteSpace(resolvedUserEmail))
             {
-                throw new InvalidOperationException($"Zero-Trust Security Violation: Cannot track event publish for '{eventName}'. Sender identity is missing.");
+                throw new InvalidOperationException($"Zero-Trust Security Violation: Cannot track event publish for '{eventName}'. Sender identity is missing and no service account is configured.");
             }
 
             var record = new EventPublishTrackerEntity
