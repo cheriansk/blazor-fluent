@@ -1,4 +1,5 @@
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Utilities;
 
 namespace BlazorFluent.Infrastructure.Security;
 
@@ -100,12 +101,18 @@ public class AppCurrentUser : ICurrentUser
 
     public bool IsSystemDaemon { get; private set; }
 
-    public void SetSystemDaemon(string daemonName = "SystemDaemon", string serviceEmail = "daemon@system.local")
+    public void SetSystemDaemon(string daemonName, string? serviceEmail = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(daemonName);
+
+        var resolvedEmail = !string.IsNullOrWhiteSpace(serviceEmail)
+            ? serviceEmail
+            : SystemIdentityUtility.FormatInternalDaemonEmail(daemonName);
+
         IsSystemDaemon = true;
         UserId = $"daemon:{daemonName}";
         UserName = daemonName;
-        Email = serviceEmail;
+        Email = resolvedEmail;
         IsAuthenticated = true;
     }
 

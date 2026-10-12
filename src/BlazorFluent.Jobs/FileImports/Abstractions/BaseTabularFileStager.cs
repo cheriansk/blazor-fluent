@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Xml;
 using System.Xml.Linq;
 using BlazorFluent.Core.Abstractions.Imports;
 using BlazorFluent.Core.DataListTypes;
@@ -202,6 +203,25 @@ public abstract class BaseTabularFileStager<TModel> : IFileStager
     {
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
 
+        // ZIP Bomb Protection: Validate total uncompressed size before extraction
+        const long maxUncompressedBytes = 100 * 1024 * 1024; // 100 MB limit
+        long totalUncompressedSize = 0;
+        foreach (var entry in archive.Entries)
+        {
+            totalUncompressedSize += entry.Length;
+            if (totalUncompressedSize > maxUncompressedBytes)
+            {
+                Logger.LogWarning("ZIP bomb protection triggered: Total uncompressed size ({TotalSize:N0} bytes) exceeds limit ({Limit:N0} bytes).",
+                    totalUncompressedSize, maxUncompressedBytes);
+                errors.Add(new FileValidationError(
+                    expectedSheetName,
+                    0,
+                    "ZipBomb",
+                    $"Archive uncompressed size ({totalUncompressedSize:N0} bytes) exceeds maximum allowed ({maxUncompressedBytes:N0} bytes). Potential ZIP bomb attack detected."));
+                return TemplateValidationResult<TModel>.Failed(errors);
+            }
+        }
+
         // a. Check if expected sheet name exists in workbook.xml
         var workbookEntry = archive.GetEntry("xl/workbook.xml");
         if (workbookEntry == null)
@@ -211,7 +231,8 @@ public abstract class BaseTabularFileStager<TModel> : IFileStager
         }
 
         using var wbStream = workbookEntry.Open();
-        var wbDoc = await XDocument.LoadAsync(wbStream, LoadOptions.None, ct);
+        using var wbXmlReader = CreateSecureXmlReader(wbStream);
+        var wbDoc = await XDocument.LoadAsync(wbXmlReader, LoadOptions.None, ct);
 
         var sheetElements = wbDoc.Descendants(SpreadsheetNs + "sheet").ToList();
         var sheetElement = sheetElements.FirstOrDefault(s =>
@@ -239,7 +260,8 @@ public abstract class BaseTabularFileStager<TModel> : IFileStager
         if (relsEntry != null && !string.IsNullOrEmpty(rId))
         {
             using var relsStream = relsEntry.Open();
-            var relsDoc = await XDocument.LoadAsync(relsStream, LoadOptions.None, ct);
+            using var relsXmlReader = CreateSecureXmlReader(relsStream);
+            var relsDoc = await XDocument.LoadAsync(relsXmlReader, LoadOptions.None, ct);
             var targetRel = relsDoc.Descendants(PackageRelationshipsNs + "Relationship")
                 .FirstOrDefault(r => r.Attribute("Id")?.Value == rId);
 
@@ -263,7 +285,8 @@ public abstract class BaseTabularFileStager<TModel> : IFileStager
         if (ssEntry != null)
         {
             using var ssStream = ssEntry.Open();
-            var ssDoc = await XDocument.LoadAsync(ssStream, LoadOptions.None, ct);
+            using var ssXmlReader = CreateSecureXmlReader(ssStream);
+            var ssDoc = await XDocument.LoadAsync(ssXmlReader, LoadOptions.None, ct);
             foreach (var si in ssDoc.Descendants(SpreadsheetNs + "si"))
             {
                 sharedStrings.Add(si.Value);
@@ -271,7 +294,8 @@ public abstract class BaseTabularFileStager<TModel> : IFileStager
         }
 
         using var wsStream = worksheetEntry.Open();
-        var wsDoc = await XDocument.LoadAsync(wsStream, LoadOptions.None, ct);
+        using var wsXmlReader = CreateSecureXmlReader(wsStream);
+        var wsDoc = await XDocument.LoadAsync(wsXmlReader, LoadOptions.None, ct);
 
         var rowElements = wsDoc.Descendants(SpreadsheetNs + "row").ToList();
         if (rowElements.Count == 0)
@@ -400,6 +424,19 @@ public abstract class BaseTabularFileStager<TModel> : IFileStager
         }
 
         return values;
+    }
+
+    private static XmlReader CreateSecureXmlReader(Stream stream)
+    {
+        var xmlSettings = new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null,
+            MaxCharactersFromEntities = 1024,
+            MaxCharactersInDocument = 10_000_000,
+            Async = true
+        };
+        return XmlReader.Create(stream, xmlSettings);
     }
 
     #endregion

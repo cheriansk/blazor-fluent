@@ -48,15 +48,16 @@ public static class InitialDatabaseSeeder
         {
             logger.LogInformation("Provisioning internal root anchor default tenant ('{Slug}')...", DefaultTenantSlug);
 
-            // Derive internal domains from admin emails
+            // Derive internal domains strictly from configured admin emails
             var adminDomains = adminEmails
-                .Select(e => e.Contains('@') ? "@" + e.Split('@')[1] : "@blazorfluent.local")
+                .Where(e => e.Contains('@'))
+                .Select(e => "@" + e.Split('@')[1])
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             if (adminDomains.Count == 0)
             {
-                adminDomains.Add("@blazorfluent.local");
+                throw new InvalidOperationException("Zero-Trust Security Violation: RootAdmins configuration must contain at least one valid administrator email address with a domain to seed the default tenant.");
             }
 
             defaultTenant = new TenantEntity
@@ -129,7 +130,7 @@ public static class InitialDatabaseSeeder
         if (isDevelopment)
         {
             var devUsers = await dbContext.Users
-                .Where(u => !u.IsDeleted && u.Email != "tampered@blazorfluent.local")
+                .Where(u => !u.IsDeleted && !u.Email.StartsWith("tampered@"))
                 .ToListAsync(cancellationToken);
 
             foreach (var user in devUsers)

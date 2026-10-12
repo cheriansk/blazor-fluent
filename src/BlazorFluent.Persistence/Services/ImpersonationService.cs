@@ -77,10 +77,12 @@ public class ImpersonationService : IImpersonationService
         var grant = new ImpersonationGrantEntity
         {
             SourceAdminId = adminId,
-            SourceAdminEmail = _currentUser.Email ?? "admin@blazorfluent.local",
+            SourceAdminEmail = !string.IsNullOrWhiteSpace(_currentUser.Email) 
+                ? _currentUser.Email 
+                : throw new InvalidOperationException("Zero-Trust Security Violation: Impersonating administrator must have an authenticated email."),
             TargetUserId = targetUser.Id.ToString(),
             TargetUserEmail = targetUser.Email,
-            TargetTenantId = targetUser.DefaultTenantId ?? _tenantContext.TenantId ?? "default",
+            TargetTenantId = targetUser.DefaultTenantId ?? _tenantContext.TenantId ?? throw new InvalidOperationException("Zero-Trust Security Violation: Impersonation requires a valid target tenant context."),
             StartedAtUtc = DateTime.UtcNow,
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(cappedMinutes),
             Reason = reason,

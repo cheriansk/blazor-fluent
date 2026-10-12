@@ -27,8 +27,9 @@ public interface ICurrentUser
     /// <summary>
     /// Configures the current scoped context as an internal background system daemon.
     /// Strictly restricted to background workers and seeders.
+    /// When serviceEmail is omitted, dynamically resolves an internal service account scoped to the system tenant authority.
     /// </summary>
-    void SetSystemDaemon(string daemonName = "SystemDaemon", string serviceEmail = "daemon@system.local");
+    void SetSystemDaemon(string daemonName, string? serviceEmail = null);
 
     /// <summary>
     /// Restores an authenticated user identity into a background execution scope (e.g. queue listeners).
@@ -46,9 +47,9 @@ public class DefaultCurrentUser : ICurrentUser
     private string? _restoredUserName;
     private bool _restoredIsRootAdmin;
 
-    public string Email => _restoredEmail ?? (_isSystemDaemon ? (_daemonEmail ?? "daemon@system.local") : "UnAuthUser");
-    public string? UserId => _restoredUserId ?? (_isSystemDaemon ? $"daemon:{_daemonName ?? "SystemDaemon"}" : null);
-    public string? UserName => _restoredUserName ?? (_isSystemDaemon ? (_daemonName ?? "SystemDaemon") : "Anonymous");
+    public string Email => _restoredEmail ?? (_isSystemDaemon ? (_daemonEmail ?? string.Empty) : string.Empty);
+    public string? UserId => _restoredUserId ?? (_isSystemDaemon ? $"daemon:{_daemonName}" : null);
+    public string? UserName => _restoredUserName ?? (_isSystemDaemon ? _daemonName : null);
     public bool IsAuthenticated => _isSystemDaemon || _restoredUserId != null;
     public bool IsInRole(string role) => false;
 
@@ -58,11 +59,17 @@ public class DefaultCurrentUser : ICurrentUser
     public bool IsRootAdmin => _restoredIsRootAdmin;
     public bool IsSystemDaemon => _isSystemDaemon;
 
-    public void SetSystemDaemon(string daemonName = "SystemDaemon", string serviceEmail = "daemon@system.local")
+    public void SetSystemDaemon(string daemonName, string? serviceEmail = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(daemonName);
+
+        var resolvedEmail = !string.IsNullOrWhiteSpace(serviceEmail)
+            ? serviceEmail
+            : Utilities.SystemIdentityUtility.FormatInternalDaemonEmail(daemonName);
+
         _isSystemDaemon = true;
         _daemonName = daemonName;
-        _daemonEmail = serviceEmail;
+        _daemonEmail = resolvedEmail;
     }
 
     public void RestoreUserContext(string userId, string email, string userName, bool isRootAdmin = false)

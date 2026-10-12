@@ -268,8 +268,31 @@ try
         options.MinimumSameSitePolicy = SameSiteMode.Strict;
     });
 
+    // Strongly typed configuration options with zero-trust startup validation
+    builder.Services.AddOptions<BlazorFluent.Core.Configuration.JobsOptions>()
+        .BindConfiguration(BlazorFluent.Core.Configuration.JobsOptions.SectionName)
+        .Validate(o => !o.EnableScheduler || !string.IsNullOrWhiteSpace(o.CronServiceAccountEmail),
+            "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be explicitly configured when 'Jobs:EnableScheduler' is enabled.")
+        .ValidateOnStart();
+
+    builder.Services.AddOptions<BlazorFluent.Core.Configuration.SecurityOptions>()
+        .BindConfiguration(BlazorFluent.Core.Configuration.SecurityOptions.SectionName)
+        .Validate(o => !string.IsNullOrWhiteSpace(o.SystemBootstrapEmail),
+            "Zero-Trust Security Violation: 'Security:SystemBootstrapEmail' must be explicitly configured.")
+        .ValidateOnStart();
+
+    builder.Services.AddOptions<BlazorFluent.Core.Configuration.CachingOptions>()
+        .BindConfiguration(BlazorFluent.Core.Configuration.CachingOptions.SectionName)
+        .ValidateOnStart();
+
     // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready)
-    builder.Services.AddHealthChecks();
+    builder.Services.AddHealthChecks()
+        .AddCheck<BlazorFluent.Persistence.HealthChecks.TenantContextHealthCheck>(
+            "Tenant Context Resolution",
+            tags: ["ready", "business"])
+        .AddCheck<BlazorFluent.Jobs.HealthChecks.BackgroundJobQueueHealthCheck>(
+            "Background Job Queue",
+            tags: ["ready", "jobs"]);
 
     // 9. Observability: OpenTelemetry → Azure Monitor (Application Insights)
     var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
@@ -297,7 +320,11 @@ try
             Log.Information("Applying EF Core database migrations in Development...");
             using var scope = app.Services.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            var bootstrapEmail = app.Configuration["Security:SystemBootstrapEmail"] ?? "provisioner@blazorfluent.local";
+            var bootstrapEmail = app.Configuration["Security:SystemBootstrapEmail"];
+            if (string.IsNullOrWhiteSpace(bootstrapEmail))
+            {
+                throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:SystemBootstrapEmail' must be configured for startup migration and seeding.");
+            }
             currentUser?.SetSystemDaemon("StartupMigration", bootstrapEmail);
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 

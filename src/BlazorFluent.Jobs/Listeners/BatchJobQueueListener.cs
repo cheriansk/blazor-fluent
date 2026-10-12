@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Jobs;
@@ -8,6 +9,7 @@ using BlazorFluent.Persistence.Context;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BlazorFluent.Jobs.Listeners;
 
@@ -25,17 +27,20 @@ public class BatchJobQueueListener : BackgroundService
     private readonly IJobEventQueue _queue;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly IOptions<JobsOptions> _jobsOptions;
     private readonly ILogger<BatchJobQueueListener> _logger;
 
     public BatchJobQueueListener(
         IJobEventQueue queue,
         IServiceScopeFactory scopeFactory,
         IHostApplicationLifetime lifetime,
+        IOptions<JobsOptions> jobsOptions,
         ILogger<BatchJobQueueListener> logger)
     {
         _queue = queue;
         _scopeFactory = scopeFactory;
         _lifetime = lifetime;
+        _jobsOptions = jobsOptions;
         _logger = logger;
 
         // Graceful channel completion on host shutdown
@@ -106,18 +111,27 @@ public class BatchJobQueueListener : BackgroundService
                 {
                     var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
                         ? jobEvent.SenderUserEmail 
-                        : "cron-daemon@blazorfluent.local";
+                        : _jobsOptions.Value.CronServiceAccountEmail;
+
+                    if (string.IsNullOrWhiteSpace(cronEmail))
+                    {
+                        throw new InvalidOperationException($"Zero-Trust Security Violation: Job '{jobName}' has no sender email and Jobs:CronServiceAccountEmail is not configured.");
+                    }
+
                     currentUser.SetSystemDaemon($"BatchJob:{jobName}", cronEmail);
                 }
                 else
                 {
                     // User-triggered event: Restore initiating user context
+                    var userEmail = jobEvent.SenderUserEmail;
+                    if (string.IsNullOrWhiteSpace(userEmail))
+                    {
+                        throw new InvalidOperationException($"Zero-Trust Security Violation: Interactive job '{jobName}' must specify a valid sender identity.");
+                    }
+
                     var userId = !string.IsNullOrWhiteSpace(jobEvent.SenderUserId) 
                         ? jobEvent.SenderUserId 
                         : Guid.Empty.ToString();
-                    var userEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
-                        ? jobEvent.SenderUserEmail 
-                        : "user@company.local";
                     var userName = !string.IsNullOrWhiteSpace(jobEvent.SenderOrigin) 
                         ? jobEvent.SenderOrigin 
                         : userEmail;

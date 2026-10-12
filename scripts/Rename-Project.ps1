@@ -7,10 +7,11 @@
     Cross-platform PowerShell 7+ script that performs a complete project rename:
     - Replaces all file contents (namespaces, using directives, string literals, config values)
     - Renames all .csproj, .slnx files
-    - Renames all project directories
+    - Renames all project directories in src/ and root
     - Cleans stale bin/obj folders
     - Performs pre-flight git safety check
     - Performs post-rename verification scan
+    - Supports -DryRun preview mode to simulate changes without altering files
 
     Run this script immediately after cloning the template, before writing any custom code.
 
@@ -27,28 +28,29 @@
     Skips interactive confirmation prompts and git uncommitted changes warnings.
     Useful for automated CI/CD pipelines or scripted project scaffolding.
 
-.EXAMPLE
-    ./Rename-Project.ps1 -NewName "ContosoPortal"
+.PARAMETER DryRun
+    Simulates the rename operation without making any modifications on disk.
+    Displays what files would be modified, renamed, and cleaned.
 
 .EXAMPLE
-    ./Rename-Project.ps1 -NewName "commandcenter"
+    ./scripts/Rename-Project.ps1 -NewName "ContosoPortal"
 
 .EXAMPLE
-    ./Rename-Project.ps1 -NewName "command_center"
+    ./scripts/Rename-Project.ps1 -NewName "ContosoPortal" -DryRun
 
 .EXAMPLE
-    ./Rename-Project.ps1 -NewName "ContosoPortal" -Force
+    ./scripts/Rename-Project.ps1 -NewName "command_center" -Force
 
 .EXAMPLE
-    ./Rename-Project.ps1 -OldName "ContosoPortal" -NewName "AcmeApp" -Force
+    ./scripts/Rename-Project.ps1 -OldName "ContosoPortal" -NewName "AcmeApp" -Force
 
 .NOTES
     Requires PowerShell 7+ or Windows PowerShell 5.1.
-    This script performs irreversible in-place modifications.
 #>
 
+[CmdletBinding(SupportsShouldProcess)]
 param(
-    [Parameter(Mandatory = $false, HelpMessage = "New project name (e.g., 'MyApp', 'commandcenter', 'command_center')")]
+    [Parameter(Mandatory = $false, Position = 0, HelpMessage = "New project name (e.g., 'MyApp', 'commandcenter', 'command_center')")]
     [ValidateScript({
         if ($_ -eq "" -or $_ -match '^[a-zA-Z_][a-zA-Z0-9_]+$') { return $true }
         throw "Invalid project name '$_'.`n`nFormat Requirements:`n  - Allowed characters : Letters (A-Z, a-z), digits (0-9), and underscores (_)`n  - Starting character : Must start with a letter or underscore`n  - Allowed symbols    : '_' (underscore) is the ONLY allowed symbol`n  - Disallowed symbols : Hyphens (-), spaces, dots, or special symbols`n                         (C# namespaces cannot contain hyphens or spaces)`n  - Valid examples     : 'CommandCenter', 'commandcenter', 'command_center', 'MyPortal_v2'"
@@ -63,11 +65,43 @@ param(
     [string]$OldName = "BlazorFluent",
 
     [Parameter(Mandatory = $false, HelpMessage = "Skip interactive confirmation prompts and git uncommitted changes warnings")]
-    [switch]$Force
+    [switch]$Force,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Preview rename changes without altering files on disk")]
+    [switch]$DryRun
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# --- Determine Repository Root Dynamically -----------------------------------
+# If invoked from scripts/ or any subdirectory, locate repo root via .slnx or src/
+$CurrentLocation = (Get-Location).Path
+$CandidateRoots = @()
+
+if ($PSScriptRoot) {
+    $CandidateRoots += $PSScriptRoot
+    $CandidateRoots += (Split-Path -Parent $PSScriptRoot)
+}
+$CandidateRoots += $CurrentLocation
+if ($CurrentLocation) {
+    $CandidateRoots += (Split-Path -Parent $CurrentLocation)
+}
+
+$RepoRoot = $null
+foreach ($cand in $CandidateRoots) {
+    if (-not $cand) { continue }
+    if ((Test-Path (Join-Path $cand "$OldName.slnx")) -or 
+        (Test-Path (Join-Path $cand "src")) -or 
+        (Get-ChildItem -Path $cand -Filter "*.slnx" -File -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+        $RepoRoot = (Resolve-Path $cand).Path
+        break
+    }
+}
+
+if (-not $RepoRoot) {
+    $RepoRoot = if ($PSScriptRoot) { (Resolve-Path (Split-Path -Parent $PSScriptRoot)).Path } else { $CurrentLocation }
+}
 
 # --- Interactive Prompt for NewName if not provided --------------------------
 if ([string]::IsNullOrWhiteSpace($NewName)) {
@@ -104,8 +138,6 @@ if ([string]::IsNullOrWhiteSpace($NewName)) {
 # --- Constants ---------------------------------------------------------------
 $OldNameLower = $OldName.ToLower()
 $NewNameLower = $NewName.ToLower()
-$ScriptRoot   = $PSScriptRoot
-if (-not $ScriptRoot) { $ScriptRoot = (Get-Location).Path }
 
 # --- Counters -----------------------------------------------------------------
 $filesModified    = 0
@@ -134,7 +166,10 @@ Write-Host "+==============================================================+" -F
 Write-Host ""
 Write-Host "  Old Name : $OldName ($OldNameLower)" -ForegroundColor Yellow
 Write-Host "  New Name : $NewName ($NewNameLower)" -ForegroundColor Green
-Write-Host "  Root     : $ScriptRoot" -ForegroundColor DarkGray
+Write-Host "  Repo Root: $RepoRoot" -ForegroundColor DarkGray
+if ($DryRun) {
+    Write-Host "  Mode     : DRY RUN (preview only - no files will be changed)" -ForegroundColor Magenta
+}
 Write-Host ""
 
 if ($NewName -ceq $OldName) {
@@ -143,8 +178,8 @@ if ($NewName -ceq $OldName) {
 }
 
 # --- Pre-flight Git Safety Check ---------------------------------------------
-if (Get-Command git -ErrorAction SilentlyContinue) {
-    $gitStatus = git status --porcelain 2>$null
+if (-not $DryRun -and (Get-Command git -ErrorAction SilentlyContinue)) {
+    $gitStatus = git -C $RepoRoot status --porcelain 2>$null
     if ($gitStatus -and -not $Force) {
         Write-Host "  WARNING: Uncommitted git changes detected in this repository." -ForegroundColor Yellow
         Write-Host "  It is strongly recommended to commit or stash your changes before running the rename script." -ForegroundColor Yellow
@@ -159,7 +194,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 }
 
 # --- Confirmation Prompt ------------------------------------------------------
-if (-not $Force) {
+if (-not $Force -and -not $DryRun) {
     Write-Host "  This will perform IRREVERSIBLE in-place modifications." -ForegroundColor Red
     Write-Host ""
     $confirm = Read-Host "  Type 'yes' to proceed"
@@ -176,14 +211,18 @@ if (-not $Force) {
 Write-Host "=== Phase 1: Replacing file contents ===" -ForegroundColor Cyan
 
 $extensions = @("*.cs", "*.csproj", "*.slnx", "*.razor", "*.json", "*.props",
-                "*.yml", "*.yaml", "*.md", "*.js", "*.css", "*.html")
+                "*.yml", "*.yaml", "*.md", "*.js", "*.css", "*.html",
+                "*.user", "*.ps1", "*.sql", "Dockerfile*")
+
+# Exclude current script itself from self-modification during run
+$currentScriptName = if ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } else { "Rename-Project.ps1" }
 
 $targetFiles = @()
 foreach ($ext in $extensions) {
-    $found = Get-ChildItem -Path $ScriptRoot -Recurse -Filter $ext -File |
+    $found = Get-ChildItem -Path $RepoRoot -Recurse -Filter $ext -File |
         Where-Object {
-            $rel = $_.FullName.Substring($ScriptRoot.Length)
-            -not (Should-Exclude $rel)
+            $rel = $_.FullName.Substring($RepoRoot.Length)
+            -not (Should-Exclude $rel) -and ($_.Name -ne $currentScriptName)
         }
     $targetFiles += $found
 }
@@ -204,14 +243,18 @@ foreach ($file in $targetFiles) {
     $content = $content -creplace [regex]::Escape($OldNameLower), $NewNameLower
 
     if ($content -ne $original) {
-        Set-Content -Path $file.FullName -Value $content -NoNewline -Encoding utf8
         $filesModified++
-        $rel = $file.FullName.Substring($ScriptRoot.Length + 1)
-        Write-Host "  Modified: $rel" -ForegroundColor DarkGreen
+        $rel = $file.FullName.Substring($RepoRoot.Length + 1)
+        if ($DryRun) {
+            Write-Host "  [DRY RUN] Would modify: $rel" -ForegroundColor Magenta
+        } else {
+            Set-Content -Path $file.FullName -Value $content -NoNewline -Encoding utf8
+            Write-Host "  Modified: $rel" -ForegroundColor DarkGreen
+        }
     }
 }
 
-Write-Host "  Files modified: $filesModified" -ForegroundColor Green
+Write-Host "  Files modified: $filesModified $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 Write-Host ""
 
 # =============================================================================
@@ -219,25 +262,28 @@ Write-Host ""
 # =============================================================================
 Write-Host "=== Phase 2: Renaming files ===" -ForegroundColor Cyan
 
-$filesToRename = Get-ChildItem -Path $ScriptRoot -Recurse -File |
+$filesToRename = Get-ChildItem -Path $RepoRoot -Recurse -File |
     Where-Object {
-        $rel = $_.FullName.Substring($ScriptRoot.Length)
-        ($_.Name -like "*$OldName*") -and (-not (Should-Exclude $rel))
+        $rel = $_.FullName.Substring($RepoRoot.Length)
+        ($_.Name -like "*$OldName*") -and (-not (Should-Exclude $rel)) -and ($_.Name -ne $currentScriptName)
     } |
     Sort-Object { $_.FullName.Length } -Descending  # Deepest first
 
 foreach ($file in $filesToRename) {
     $newFileName = $file.Name -creplace [regex]::Escape($OldName), $NewName
     if ($newFileName -ne $file.Name) {
-        $newPath = Join-Path $file.DirectoryName $newFileName
-        Rename-Item -Path $file.FullName -NewName $newFileName
         $filesRenamed++
-        $rel = $file.FullName.Substring($ScriptRoot.Length + 1)
-        Write-Host "  Renamed: $rel -> $newFileName" -ForegroundColor DarkGreen
+        $rel = $file.FullName.Substring($RepoRoot.Length + 1)
+        if ($DryRun) {
+            Write-Host "  [DRY RUN] Would rename: $rel -> $newFileName" -ForegroundColor Magenta
+        } else {
+            Rename-Item -Path $file.FullName -NewName $newFileName
+            Write-Host "  Renamed: $rel -> $newFileName" -ForegroundColor DarkGreen
+        }
     }
 }
 
-Write-Host "  Files renamed: $filesRenamed" -ForegroundColor Green
+Write-Host "  Files renamed: $filesRenamed $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 Write-Host ""
 
 # =============================================================================
@@ -245,9 +291,9 @@ Write-Host ""
 # =============================================================================
 Write-Host "=== Phase 3: Renaming directories ===" -ForegroundColor Cyan
 
-$dirsToRename = Get-ChildItem -Path $ScriptRoot -Recurse -Directory |
+$dirsToRename = Get-ChildItem -Path $RepoRoot -Recurse -Directory |
     Where-Object {
-        $rel = $_.FullName.Substring($ScriptRoot.Length)
+        $rel = $_.FullName.Substring($RepoRoot.Length)
         ($_.Name -like "*$OldName*") -and (-not (Should-Exclude $rel))
     } |
     Sort-Object { $_.FullName.Length } -Descending  # Deepest first to avoid parent conflicts
@@ -255,15 +301,18 @@ $dirsToRename = Get-ChildItem -Path $ScriptRoot -Recurse -Directory |
 foreach ($dir in $dirsToRename) {
     $newDirName = $dir.Name -creplace [regex]::Escape($OldName), $NewName
     if ($newDirName -ne $dir.Name) {
-        $newPath = Join-Path $dir.Parent.FullName $newDirName
-        Rename-Item -Path $dir.FullName -NewName $newDirName
         $dirsRenamed++
-        $rel = $dir.FullName.Substring($ScriptRoot.Length + 1)
-        Write-Host "  Renamed: $rel -> $newDirName" -ForegroundColor DarkGreen
+        $rel = $dir.FullName.Substring($RepoRoot.Length + 1)
+        if ($DryRun) {
+            Write-Host "  [DRY RUN] Would rename dir: $rel -> $newDirName" -ForegroundColor Magenta
+        } else {
+            Rename-Item -Path $dir.FullName -NewName $newDirName
+            Write-Host "  Renamed dir: $rel -> $newDirName" -ForegroundColor DarkGreen
+        }
     }
 }
 
-Write-Host "  Directories renamed: $dirsRenamed" -ForegroundColor Green
+Write-Host "  Directories renamed: $dirsRenamed $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 Write-Host ""
 
 # =============================================================================
@@ -271,18 +320,22 @@ Write-Host ""
 # =============================================================================
 Write-Host "=== Phase 4: Cleaning stale bin/obj folders ===" -ForegroundColor Cyan
 
-$staleDirectories = Get-ChildItem -Path $ScriptRoot -Recurse -Directory |
+$staleDirectories = Get-ChildItem -Path $RepoRoot -Recurse -Directory |
     Where-Object { $_.Name -eq "bin" -or $_.Name -eq "obj" } |
     Where-Object { $_.FullName -notmatch "([\\/])\.git([\\/])" }
 
 foreach ($staleDir in $staleDirectories) {
-    Remove-Item -Path $staleDir.FullName -Recurse -Force -ErrorAction SilentlyContinue
     $binObjCleaned++
-    $rel = $staleDir.FullName.Substring($ScriptRoot.Length + 1)
-    Write-Host "  Cleaned: $rel" -ForegroundColor DarkYellow
+    $rel = $staleDir.FullName.Substring($RepoRoot.Length + 1)
+    if ($DryRun) {
+        Write-Host "  [DRY RUN] Would clean: $rel" -ForegroundColor Magenta
+    } else {
+        Remove-Item -Path $staleDir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "  Cleaned: $rel" -ForegroundColor DarkYellow
+    }
 }
 
-Write-Host "  Directories cleaned: $binObjCleaned" -ForegroundColor Green
+Write-Host "  Directories cleaned: $binObjCleaned $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 Write-Host ""
 
 # =============================================================================
@@ -290,28 +343,32 @@ Write-Host ""
 # =============================================================================
 Write-Host "=== Phase 5: Verification scan ===" -ForegroundColor Cyan
 
-$remainingHits = @()
-foreach ($ext in $extensions) {
-    $found = Get-ChildItem -Path $ScriptRoot -Recurse -Filter $ext -File |
-        Where-Object {
-            $rel = $_.FullName.Substring($ScriptRoot.Length)
-            -not (Should-Exclude $rel)
-        }
-    foreach ($f in $found) {
-        $c = Get-Content -Path $f.FullName -Raw -ErrorAction SilentlyContinue
-        if ($c -and ($c -cmatch [regex]::Escape($OldName))) {
-            $remainingHits += $f.FullName.Substring($ScriptRoot.Length + 1)
-        }
-    }
-}
-
-if ($remainingHits.Count -gt 0) {
-    Write-Host "  WARNING: Found $($remainingHits.Count) file(s) still containing '$OldName':" -ForegroundColor Yellow
-    foreach ($hit in $remainingHits) {
-        Write-Host "    - $hit" -ForegroundColor Yellow
-    }
+if ($DryRun) {
+    Write-Host "  [DRY RUN] Skipping post-rename verification scan (dry-run mode)." -ForegroundColor Magenta
 } else {
-    Write-Host "  All clear! No remaining '$OldName' references found." -ForegroundColor Green
+    $remainingHits = @()
+    foreach ($ext in $extensions) {
+        $found = Get-ChildItem -Path $RepoRoot -Recurse -Filter $ext -File |
+            Where-Object {
+                $rel = $_.FullName.Substring($RepoRoot.Length)
+                -not (Should-Exclude $rel) -and ($_.Name -ne $currentScriptName)
+            }
+        foreach ($f in $found) {
+            $c = Get-Content -Path $f.FullName -Raw -ErrorAction SilentlyContinue
+            if ($c -and ($c -cmatch [regex]::Escape($OldName))) {
+                $remainingHits += $f.FullName.Substring($RepoRoot.Length + 1)
+            }
+        }
+    }
+
+    if ($remainingHits.Count -gt 0) {
+        Write-Host "  WARNING: Found $($remainingHits.Count) file(s) still containing '$OldName':" -ForegroundColor Yellow
+        foreach ($hit in $remainingHits) {
+            Write-Host "    - $hit" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "  All clear! No remaining '$OldName' references found." -ForegroundColor Green
+    }
 }
 
 Write-Host ""
@@ -324,17 +381,20 @@ Write-Host "=== Phase 6: Git remote and branch configuration (optional) ===" -Fo
 $gitInstalled = (Get-Command git -ErrorAction SilentlyContinue) -ne $null
 $isGitRepo = $false
 if ($gitInstalled) {
-    $insideWorkTree = (git rev-parse --is-inside-work-tree 2>$null)
+    $insideWorkTree = (git -C $RepoRoot rev-parse --is-inside-work-tree 2>$null)
     if ($insideWorkTree -eq "true") {
         $isGitRepo = $true
     }
 }
 
-if (-not $gitInstalled -or -not $isGitRepo) {
+if ($DryRun) {
+    Write-Host "  [DRY RUN] Skipping git configuration (dry-run mode)." -ForegroundColor Magenta
+    Write-Host ""
+} elseif (-not $gitInstalled -or -not $isGitRepo) {
     Write-Host "  Skipping git configuration (not a git repository or git not installed)." -ForegroundColor DarkGray
     Write-Host ""
 } else {
-    $existingRemotes = git remote -v 2>$null
+    $existingRemotes = git -C $RepoRoot remote -v 2>$null
     if ($existingRemotes) {
         Write-Host "  Current Git remotes:" -ForegroundColor DarkGray
         foreach ($line in ($existingRemotes | Select-Object -Unique)) {
@@ -348,7 +408,7 @@ if (-not $gitInstalled -or -not $isGitRepo) {
         Write-Host ""
 
         # Step 1: Verify current branch is 'main'
-        $currentBranch = (git branch --show-current 2>$null)
+        $currentBranch = (git -C $RepoRoot branch --show-current 2>$null)
         if ($currentBranch) { $currentBranch = $currentBranch.Trim() }
         if ($currentBranch -ne "main") {
             Write-Host "  ERROR: Expected current branch to be 'main', but found '$currentBranch'." -ForegroundColor Red
@@ -359,7 +419,7 @@ if (-not $gitInstalled -or -not $isGitRepo) {
         }
 
         # Step 2: Handle existing template remote ('origin')
-        $remotesList = @(git remote 2>$null)
+        $remotesList = @(git -C $RepoRoot remote 2>$null)
         $hasOrigin = $remotesList -contains "origin"
 
         if ($hasOrigin) {
@@ -374,14 +434,14 @@ if (-not $gitInstalled -or -not $isGitRepo) {
             switch ($templateChoice) {
                 "1" {
                     if ($remotesList -contains "template") {
-                        git remote remove template 2>$null
+                        git -C $RepoRoot remote remove template 2>$null
                     }
-                    git remote rename origin template
-                    git remote set-url --push template "DISABLED_DO_NOT_PUSH"
+                    git -C $RepoRoot remote rename origin template
+                    git -C $RepoRoot remote set-url --push template "DISABLED_DO_NOT_PUSH"
                     Write-Host "  Renamed remote 'origin' -> 'template' (push disabled for safety)" -ForegroundColor Green
                 }
                 "2" {
-                    git remote remove origin
+                    git -C $RepoRoot remote remove origin
                     Write-Host "  Removed remote 'origin'" -ForegroundColor Yellow
                 }
                 default {
@@ -396,12 +456,12 @@ if (-not $gitInstalled -or -not $isGitRepo) {
         $newOriginUrl = Read-Host "  New 'origin' URL (leave blank to skip)"
         if (-not [string]::IsNullOrWhiteSpace($newOriginUrl)) {
             $newOriginUrl = $newOriginUrl.Trim()
-            $currentRemotes = @(git remote 2>$null)
+            $currentRemotes = @(git -C $RepoRoot remote 2>$null)
             if ($currentRemotes -contains "origin") {
-                git remote set-url origin $newOriginUrl
+                git -C $RepoRoot remote set-url origin $newOriginUrl
                 Write-Host "  Updated 'origin' remote -> $newOriginUrl" -ForegroundColor Green
             } else {
-                git remote add origin $newOriginUrl
+                git -C $RepoRoot remote add origin $newOriginUrl
                 Write-Host "  Added 'origin' remote -> $newOriginUrl" -ForegroundColor Green
             }
         } else {
@@ -411,15 +471,15 @@ if (-not $gitInstalled -or -not $isGitRepo) {
 
         # Step 4: Branch restructuring (main -> main_template, create clean develop)
         Write-Host "  Configuring branches:" -ForegroundColor White
-        git branch -m main main_template
-        $currentRemotes = @(git remote 2>$null)
+        git -C $RepoRoot branch -m main main_template
+        $currentRemotes = @(git -C $RepoRoot remote 2>$null)
         if ($currentRemotes -contains "template") {
-            git branch -u template/main main_template 2>$null
+            git -C $RepoRoot branch -u template/main main_template 2>$null
         }
         Write-Host "  Renamed branch 'main' -> 'main_template' (tracking template repository)" -ForegroundColor Green
 
-        git checkout -q --orphan develop 2>$null
-        git add -A
+        git -C $RepoRoot checkout -q --orphan develop 2>$null
+        git -C $RepoRoot add -A
         Write-Host "  Created clean orphan branch 'develop' with zero template commit history" -ForegroundColor Green
         Write-Host "  All renamed files are staged and ready for your initial commit." -ForegroundColor Green
         Write-Host ""
@@ -437,18 +497,18 @@ Write-Host "|                    Rename Complete!                          |" -F
 Write-Host "+==============================================================+" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Summary:" -ForegroundColor White
-Write-Host "    Files modified    : $filesModified" -ForegroundColor Green
-Write-Host "    Files renamed     : $filesRenamed" -ForegroundColor Green
-Write-Host "    Dirs renamed      : $dirsRenamed" -ForegroundColor Green
-Write-Host "    bin/obj cleaned   : $binObjCleaned" -ForegroundColor Green
+Write-Host "    Files modified    : $filesModified $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
+Write-Host "    Files renamed     : $filesRenamed $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
+Write-Host "    Dirs renamed      : $dirsRenamed $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
+Write-Host "    bin/obj cleaned   : $binObjCleaned $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 
-if ($gitInstalled -and $isGitRepo) {
-    $activeBranch = (git branch --show-current 2>$null)
+if ($gitInstalled -and $isGitRepo -and -not $DryRun) {
+    $activeBranch = (git -C $RepoRoot branch --show-current 2>$null)
     if ($activeBranch) {
         Write-Host ""
         Write-Host "  Current Branch: $($activeBranch.Trim())" -ForegroundColor Cyan
     }
-    $finalRemotes = (git remote -v 2>$null | Select-Object -Unique)
+    $finalRemotes = (git -C $RepoRoot remote -v 2>$null | Select-Object -Unique)
     if ($finalRemotes) {
         Write-Host "  Git Remotes:" -ForegroundColor White
         foreach ($r in $finalRemotes) {
@@ -463,13 +523,13 @@ Write-Host "    1. Open $NewName.slnx in Visual Studio / Rider" -ForegroundColor
 Write-Host "    2. Run: dotnet restore" -ForegroundColor DarkGray
 Write-Host "    3. Run: dotnet build" -ForegroundColor DarkGray
 Write-Host "    4. Generate initial database migration (creates DataProtectionKeys and entity tables):" -ForegroundColor DarkGray
-Write-Host "         dotnet ef migrations add InitialCreate --project $NewName.Persistence --startup-project ." -ForegroundColor Cyan
+Write-Host "         dotnet ef migrations add InitialCreate --project src/$NewName.Persistence --startup-project src/$NewName.Web" -ForegroundColor Cyan
 Write-Host "    5. Review staged changes and create your initial commit on 'develop':" -ForegroundColor DarkGray
 Write-Host "         git status" -ForegroundColor Cyan
 Write-Host "         git commit -m `"Initial commit: scaffold from BlazorFluent template`"" -ForegroundColor Cyan
 Write-Host "         git push -u origin develop" -ForegroundColor Cyan
-Write-Host "    5. Update Security:IntegritySecret in appsettings.json" -ForegroundColor DarkGray
-Write-Host "    6. Update ConnectionStrings:DefaultConnection for your database" -ForegroundColor DarkGray
+Write-Host "    6. Update Security:IntegritySecret in src/$NewName.Web/appsettings.json" -ForegroundColor DarkGray
+Write-Host "    7. Update ConnectionStrings:DefaultConnection for your database" -ForegroundColor DarkGray
 Write-Host "    (Optional) To pull future template updates:" -ForegroundColor DarkGray
 Write-Host "         git checkout main_template" -ForegroundColor Cyan
 Write-Host "         git pull template main" -ForegroundColor Cyan

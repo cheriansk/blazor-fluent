@@ -66,7 +66,7 @@ public static class SystemIdentityUtility
         ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(tenantContext);
 
-        var normalizedEmail = string.IsNullOrWhiteSpace(attemptedEmail) ? "anonymous@preauth.local" : attemptedEmail.Trim();
+        var normalizedEmail = string.IsNullOrWhiteSpace(attemptedEmail) ? $"preauth+{operation.ToLowerInvariant()}@system.internal" : attemptedEmail.Trim();
         currentUser.SetSystemDaemon($"PreAuth:{operation}", normalizedEmail);
         tenantContext.Initialize(
             SystemTenantSlug, 
@@ -75,4 +75,11 @@ public static class SystemIdentityUtility
             Array.Empty<TenantInfo>(), 
             isHost: true);
     }
+
+    /// <summary>
+    /// Dynamically constructs an internal service identifier for scoped system daemons and workers,
+    /// scoped to the system tenant authority without hardcoding individual user emails.
+    /// </summary>
+    public static string FormatInternalDaemonEmail(string daemonName) =>
+        $"system+{daemonName.ToLowerInvariant()}@{SystemTenantSlug}.internal";
 }

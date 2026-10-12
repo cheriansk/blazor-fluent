@@ -7,6 +7,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos;
+using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -61,7 +62,9 @@ public class WorkflowService : IWorkflowService
             throw new ArgumentException("A valid Project ID is required for Project-scoped workflows.", nameof(request));
         }
 
-        var callerEmail = _currentUser.Email ?? "system@company.local";
+        var callerEmail = !string.IsNullOrWhiteSpace(_currentUser.Email) 
+            ? _currentUser.Email 
+            : SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "CreateWorkflow");
 
         // Zero Trust Gate: Admin permissions required to create/design workflows per level
         var canManage = await CanUserManageWorkflowAsync(request.Level, request.ProgramId, request.ProjectId, ct);
@@ -759,6 +762,10 @@ public class WorkflowService : IWorkflowService
             }
         }
 
+        var callerEmail = !string.IsNullOrWhiteSpace(_currentUser.Email) 
+            ? _currentUser.Email 
+            : SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "AppendStepToWorkflow");
+
         TaskEntity stepTask;
         if (request.ExistingTaskId.HasValue && request.ExistingTaskId.Value != Guid.Empty)
         {
@@ -785,7 +792,6 @@ public class WorkflowService : IWorkflowService
         }
         else
         {
-            var callerEmail = _currentUser.Email ?? "system@company.local";
             stepTask = new TaskEntity
             {
                 Id = Guid.NewGuid(),
