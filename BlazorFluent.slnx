@@ -1,8 +1,8 @@
 <Solution>
-  <Project Path="BlazorFluent.Core/BlazorFluent.Core.csproj" />
-  <Project Path="BlazorFluent.csproj" />
-  <Project Path="BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj" />
-  <Project Path="BlazorFluent.Jobs/BlazorFluent.Jobs.csproj" />
-  <Project Path="BlazorFluent.Persistence/BlazorFluent.Persistence.csproj" />
+  <Project Path="src/BlazorFluent.Core/BlazorFluent.Core.csproj" />
+  <Project Path="src/BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj" />
+  <Project Path="src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj" />
+  <Project Path="src/BlazorFluent.Persistence/BlazorFluent.Persistence.csproj" />
   <Project Path="src/BlazorFluent.UI.Templates/BlazorFluent.UI.Templates.csproj" />
+  <Project Path="src/BlazorFluent.Web/BlazorFluent.Web.csproj" />
 </Solution>
