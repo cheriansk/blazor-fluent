@@ -53,7 +53,10 @@ public enum TaskStatus
     Closed = 3,
 
     [Display(Name = "Cancelled", Description = "Work item descoped or abandoned")]
-    Cancelled = 4
+    Cancelled = 4,
+
+    [Display(Name = "Paused", Description = "Pipeline paused, awaiting administrator decision")]
+    Paused = 5
 }
 
 /// <summary>
@@ -85,7 +88,10 @@ public enum WorkflowStepStatus
     Completed = 3,
 
     [Display(Name = "Skipped", Description = "Bypassed by administrator")]
-    Skipped = 4
+    Skipped = 4,
+
+    [Display(Name = "Cancelled", Description = "Cancelled by administrator")]
+    Cancelled = 5
 }
 
 /// <summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos;
 
@@ -65,4 +66,40 @@ public interface IWorkflowService
     /// Retrieves a single workflow by ID, including its ordered child steps and subtasks.
     /// </summary>
     Task<WorkflowTaskEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates workflow metadata (title, description, owner, due date, priority, watchers).
+    /// Zero Trust gate: Caller must be the designated Admin for the workflow scope (Tenant, Program, Project).
+    /// </summary>
+    Task<WorkflowTaskEntity> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cancels a step within a workflow with a mandatory reason. Soft cancellation (not deleted).
+    /// If the step was active, workflow transitions to Paused status for Admin review.
+    /// Zero Trust gate: Caller must be the designated Admin for the workflow scope.
+    /// </summary>
+    Task<WorkflowTaskEntity> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Resumes a paused workflow following step cancellation, activating the next sequential step or specified step.
+    /// Zero Trust gate: Caller must be the designated Admin for the workflow scope.
+    /// </summary>
+    Task<WorkflowTaskEntity> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Appends or inserts a task (existing or newly authored) into an in-flight workflow sequence.
+    /// Zero Trust gate: Caller must be the designated Admin for the workflow scope.
+    /// </summary>
+    Task<WorkflowTaskEntity> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves eligible existing tasks that match the specified scope and can be attached to a workflow.
+    /// By default excludes tasks already attached to active workflows.
+    /// </summary>
+    Task<IReadOnlyList<TaskEntity>> GetAvailableTasksForWorkflowAsync(TaskSearchFilterDto filter, CancellationToken ct = default);
+
+    /// <summary>
+    /// Evaluates whether the current caller is authorized to design, edit, or cancel workflows at the given scope.
+    /// </summary>
+    Task<bool> CanUserManageWorkflowAsync(TaskLevel level, Guid? programId, Guid? projectId, CancellationToken ct = default);
 }

@@ -1,6 +1,7 @@
 @namespace BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
+@using TaskStatus = BlazorFluent.Core.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Core.Dtos
@@ -12,345 +13,518 @@
 @inject ITenantContext TenantContext
 @inject AppDbContext DbContext
 
-@* <FluentWizardModal TState="CreateWorkflowReqDto"
+<FluentWizardModal @ref="_wizardModal"
+                   TState="CreateWorkflowReqDto"
                    IsOpen="@IsOpen"
                    IsOpenChanged="@IsOpenChanged"
-                   Title="Create Sequential Workflow"
-                   Subtitle="Design multi-level stage-gated workflows with dedicated step owners and delegated subtasks"
+                   Title="@(IsEditMode ? "Edit Sequential Workflow" : "Design Sequential Workflow")"
+                   Subtitle="@(IsEditMode ? "Update workflow governance, append/insert tasks, or cancel steps" : "Design multi-level stage-gated workflows with dedicated step owners and delegated subtasks")"
                    InitialState="@_initialState"
-                   OnFinishAsync="@HandleFinishAsync"
+                   OnFinish="@HandleFinishAsync"
                    OnCancel="@HandleCancel">
     <Steps>
-        <WizardStep TState="CreateWorkflowReqDto"
-                    Title="Scope & Governance"
+        <WizardStep Title="Scope & Governance"
                     Summary="Scoping level & constant workflow owner"
                     OnValidateAsync="@ValidateStep1Async">
-            <ChildContent Context="ctx">
-                <div class="wizard-form-grid">
-                    @* Scoping Level *@
-                    <div class="form-half-width">
-                        <FluentSelect TOption="TaskLevel"
-                                      TValue="TaskLevel"
-                                      @bind-Value="ctx.State.Level"
-                                      Label="Workflow Scoping Level *"
-                                      Style="width: 100%;">
-                            <FluentOption Value="TaskLevel.Tenant">🏢 Tenant Level (Executive Governance)</FluentOption>
-                            <FluentOption Value="TaskLevel.Program">📁 Program Level (Multi-Project Initiative)</FluentOption>
-                            <FluentOption Value="TaskLevel.Project">📋 Project Level (Team Delivery)</FluentOption>
-                        </FluentSelect>
-                    </div>
-
-                    @* Context Selector (Program or Project) *@
-                    <div class="form-half-width">
-                        @if (ctx.State.Level == TaskLevel.Program)
-                        {
-                            <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Program *</label>
-                            <FluentSelect TOption="ProgramEntity"
-                                          TValue="string"
-                                          Items="@_availablePrograms"
-                                          OptionText="@(p => p.Name)"
-                                          OptionValue="@(p => p.Id.ToString())"
-                                          SelectedOption="@_selectedProgram"
-                                          SelectedOptionChanged="@(p => { _selectedProgram = p; ctx.State.ProgramId = p?.Id; })"
-                                          Placeholder="Select strategic program..."
-                                          Style="width: 100%;" />
-                            @if (ctx.StepErrors.TryGetValue("ProgramId", out var progErr))
-                            {
-                                <span class="field-error-text">@progErr</span>
-                            }
-                        }
-                        else if (ctx.State.Level == TaskLevel.Project)
-                        {
-                            <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Project *</label>
-                            <FluentSelect TOption="ProjectEntity"
-                                          TValue="string"
-                                          Items="@_availableProjects"
-                                          OptionText="@(p => p.Name)"
-                                          OptionValue="@(p => p.Id.ToString())"
-                                          SelectedOption="@_selectedProject"
-                                          SelectedOptionChanged="@(p => { _selectedProject = p; ctx.State.ProjectId = p?.Id; })"
-                                          Placeholder="Select delivery project..."
-                                          Style="width: 100%;" />
-                            @if (ctx.StepErrors.TryGetValue("ProjectId", out var projErr))
-                            {
-                                <span class="field-error-text">@projErr</span>
-                            }
-                        }
-                        else
-                        {
-                            <div style="padding-top: 24px; color: var(--neutral-foreground-hint, #616161); font-size: 0.825rem;">
-                                🏢 Applies across the entire tenant organization.
-                            </div>
-                        }
-                    </div>
-
-                    @* Constant Workflow Owner *@
-                    <div class="form-half-width">
-                        <FluentTextInput Label="Constant Workflow Owner Email *"
-                                         @bind-Value="ctx.State.WorkflowOwnerEmail"
-                                         Style="width: 100%;"
-                                         Placeholder="orchestrator@company.local" />
-                        <span class="field-help-text">Accountable from start to finish; follows up across all steps without changing ownership.</span>
-                        @if (ctx.StepErrors.TryGetValue("WorkflowOwnerEmail", out var ownerErr))
-                        {
-                            <span class="field-error-text">@ownerErr</span>
-                        }
-                    </div>
-
-                    @* Priority *@
-                    <div class="form-half-width">
-                        <FluentSelect TOption="TaskPriority"
-                                      TValue="TaskPriority"
-                                      @bind-Value="ctx.State.Priority"
-                                      Label="Priority"
-                                      Style="width: 100%;">
-                            <FluentOption Value="TaskPriority.Low">Low</FluentOption>
-                            <FluentOption Value="TaskPriority.Medium">Medium</FluentOption>
-                            <FluentOption Value="TaskPriority.High">High</FluentOption>
-                            <FluentOption Value="TaskPriority.Urgent">Urgent</FluentOption>
-                        </FluentSelect>
-                    </div>
-
-                    @* Workflow Title *@
-                    <div class="form-full-width">
-                        <FluentTextInput Label="Workflow Title *"
-                                         @bind-Value="ctx.State.Title"
-                                         Style="width: 100%;"
-                                         Placeholder="E.g. SOC2 Type II Audit Compliance Rollout" />
-                        @if (ctx.StepErrors.TryGetValue("Title", out var titleErr))
-                        {
-                            <span class="field-error-text">@titleErr</span>
-                        }
-                    </div>
-
-                    @* Description *@
-                    <div class="form-full-width">
-                        <FluentTextArea Label="Description & Governance Objectives"
-                                        @bind-Value="ctx.State.Description"
-                                        Rows="2"
-                                        Style="width: 100%;"
-                                        Placeholder="Outline key business outcomes, prerequisites, and overarching governance rules..." />
-                    </div>
-
-                    @* Target Due Date *@
-                    <div class="form-half-width">
-                        <FluentDatePicker Label="Overall Target Due Date"
-                                          @bind-Value="ctx.State.DueDate"
-                                          Style="width: 100%;" />
-                    </div>
-
-                    @* Watchers *@
-                    <div class="form-half-width">
-                        <FluentTextInput Label="Watcher Emails (Comma-separated)"
-                                         @bind-Value="ctx.State.WatcherEmails"
-                                         Style="width: 100%;"
-                                         Placeholder="auditor@company.com, pmo@company.com" />
-                    </div>
+            <div class="wizard-form-grid">
+                @* Scoping Level *@
+                <div class="form-half-width">
+                    <FluentSelect TOption="TaskLevel"
+                                  TValue="TaskLevel"
+                                  @bind-Value="_initialState.Level"
+                                  Label="Workflow Scoping Level *"
+                                  Disabled="@IsEditMode"
+                                  Style="width: 100%;">
+                        <FluentOption Value="@TaskLevel.Tenant">🏢 Tenant Level (Executive Governance)</FluentOption>
+                        <FluentOption Value="@TaskLevel.Program">📁 Program Level (Multi-Project Initiative)</FluentOption>
+                        <FluentOption Value="@TaskLevel.Project">📋 Project Level (Team Delivery)</FluentOption>
+                    </FluentSelect>
+                    @if (IsEditMode)
+                    {
+                        <span class="field-help-text">Workflow scope level is locked after creation.</span>
+                    }
                 </div>
-            </ChildContent>
+
+                @* Context Selector (Program or Project) *@
+                <div class="form-half-width">
+                    @if (_initialState.Level == TaskLevel.Program)
+                    {
+                        <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Program *</label>
+                        <FluentSelect TOption="ProgramEntity"
+                                      TValue="string"
+                                      Items="@_availablePrograms"
+                                      OptionText="@(p => p.Name)"
+                                      OptionValue="@(p => p.Id.ToString())"
+                                      Value="@(_initialState.ProgramId?.ToString())"
+                                      ValueChanged="@OnProgramSelectedChanged"
+                                      Disabled="@IsEditMode"
+                                      Placeholder="Select strategic program..."
+                                      Style="width: 100%;" />
+                        @if (_stepErrors.TryGetValue("ProgramId", out var progErr))
+                        {
+                            <span class="field-error-text">@progErr</span>
+                        }
+                    }
+                    else if (_initialState.Level == TaskLevel.Project)
+                    {
+                        <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Project *</label>
+                        <FluentSelect TOption="ProjectEntity"
+                                      TValue="string"
+                                      Items="@_availableProjects"
+                                      OptionText="@(p => p.Name)"
+                                      OptionValue="@(p => p.Id.ToString())"
+                                      Value="@(_initialState.ProjectId?.ToString())"
+                                      ValueChanged="@OnProjectSelectedChanged"
+                                      Disabled="@IsEditMode"
+                                      Placeholder="Select delivery project..."
+                                      Style="width: 100%;" />
+                        @if (_stepErrors.TryGetValue("ProjectId", out var projErr))
+                        {
+                            <span class="field-error-text">@projErr</span>
+                        }
+                    }
+                    else
+                    {
+                        <div style="padding-top: 24px; color: var(--neutral-foreground-hint, #616161); font-size: 0.825rem;">
+                            🏢 Applies across the entire tenant organization.
+                        </div>
+                    }
+                </div>
+
+                @* Constant Workflow Owner *@
+                <div class="form-half-width">
+                    <FluentTextInput Label="Constant Workflow Owner Email *"
+                                     @bind-Value="_initialState.WorkflowOwnerEmail"
+                                     Style="width: 100%;"
+                                     Placeholder="orchestrator@company.local" />
+                    <span class="field-help-text">Accountable from start to finish; follows up across all steps without changing ownership.</span>
+                    @if (_stepErrors.TryGetValue("WorkflowOwnerEmail", out var ownerErr))
+                    {
+                        <span class="field-error-text">@ownerErr</span>
+                    }
+                </div>
+
+                @* Priority *@
+                <div class="form-half-width">
+                    <FluentSelect TOption="TaskPriority"
+                                  TValue="TaskPriority"
+                                  @bind-Value="_initialState.Priority"
+                                  Label="Priority"
+                                  Style="width: 100%;">
+                        <FluentOption Value="@TaskPriority.Low">Low</FluentOption>
+                        <FluentOption Value="@TaskPriority.Medium">Medium</FluentOption>
+                        <FluentOption Value="@TaskPriority.High">High</FluentOption>
+                        <FluentOption Value="@TaskPriority.Urgent">Urgent</FluentOption>
+                    </FluentSelect>
+                </div>
+
+                @* Workflow Title *@
+                <div class="form-full-width">
+                    <FluentTextInput Label="Workflow Title *"
+                                     @bind-Value="_initialState.Title"
+                                     Style="width: 100%;"
+                                     Placeholder="E.g. SOC2 Type II Audit Compliance Rollout" />
+                    @if (_stepErrors.TryGetValue("Title", out var titleErr))
+                    {
+                        <span class="field-error-text">@titleErr</span>
+                    }
+                </div>
+
+                @* Description *@
+                <div class="form-full-width">
+                    <FluentTextArea Label="Description & Governance Objectives"
+                                    @bind-Value="_initialState.Description"
+                                    Rows="2"
+                                    Style="width: 100%;"
+                                    Placeholder="Outline key business outcomes, prerequisites, and overarching governance rules..." />
+                </div>
+
+                @* Target Due Date *@
+                <div class="form-half-width">
+                    <FluentDatePicker Label="Overall Target Due Date"
+                                      @bind-Value="_initialState.DueDate"
+                                      Style="width: 100%;" />
+                </div>
+
+                @* Watchers *@
+                <div class="form-half-width">
+                    <FluentTextInput Label="Watcher Emails (Comma-separated)"
+                                     @bind-Value="_initialState.WatcherEmails"
+                                     Style="width: 100%;"
+                                     Placeholder="auditor@company.com, pmo@company.com" />
+                </div>
+            </div>
         </WizardStep>
 
-        <WizardStep TState="CreateWorkflowReqDto"
-                    Title="Steps & Subtasks"
+        <WizardStep Title="Steps & Subtasks"
                     Summary="Ordered tasks & delegated subtasks"
                     OnValidateAsync="@ValidateStep2Async">
-            <ChildContent Context="ctx">
-                <div class="step-builder-container">
-                    <div class="step-builder-header">
-                        <span class="step-builder-title">Execution Pipeline Steps (Tasks)</span>
+            <div class="step-builder-container">
+                <div class="step-builder-header">
+                    <span class="step-builder-title">Execution Pipeline Steps (Tasks)</span>
+                    <div style="display: flex; gap: 8px;">
                         <FluentButton Appearance="ButtonAppearance.Outline"
+                                      IconStart="@(new Icons.Regular.Size16.Search())"
+                                      OnClick="@ToggleTaskSearch">
+                            Attach Existing Task
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Primary"
                                       IconStart="@(new Icons.Regular.Size16.Add())"
-                                      OnClick="@(() => AddStep(ctx))">
+                                      OnClick="@AddNewStep">
                             Add Next Step (Task)
                         </FluentButton>
                     </div>
+                </div>
 
-                    @if (ctx.StepErrors.TryGetValue("Steps", out var stepsErr))
-                    {
-                        <div class="field-error-banner">@stepsErr</div>
-                    }
+                @* Search & Attach Existing Task Panel *@
+                @if (_showTaskSearch)
+                {
+                    <div class="task-search-picker-box">
+                        <div class="task-search-picker-header">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <FluentIcon Value="@(new Icons.Filled.Size16.Search())" Color="Color.Primary" />
+                                <strong>Search & Attach Existing Task to Workflow</strong>
+                            </div>
+                            <FluentButton Appearance="ButtonAppearance.Subtle"
+                                          IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                          OnClick="@(() => _showTaskSearch = false)"
+                                          Title="Close picker" />
+                        </div>
 
-                    <div class="step-cards-list">
-                        @for (int i = 0; i < ctx.State.Steps.Count; i++)
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <FluentTextInput @bind-Value="_taskSearchTerm"
+                                             Placeholder="Search existing task by title, number, or assignee..."
+                                             Style="flex: 1;" />
+                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                          OnClick="@SearchExistingTasksAsync">
+                                Search
+                            </FluentButton>
+                        </div>
+
+                        @if (_isSearchingTasks)
                         {
-                            var stepIndex = i;
-                            var step = ctx.State.Steps[stepIndex];
-
-                            <div class="step-builder-card">
-                                <div class="step-card-top-bar">
-                                    <div class="step-card-order-tag">
-                                        <span class="order-number">Step #@(stepIndex + 1) (Task)</span>
-                                        @if (stepIndex == 0)
-                                        {
-                                            <span class="first-step-tag">Kickoff Step</span>
-                                        }
+                            <div style="padding: 12px; text-align: center;">
+                                <FluentSpinner Size="@SpinnerSize.Small" />
+                                <span style="font-size: 0.85rem; margin-left: 8px;">Searching eligible tasks...</span>
+                            </div>
+                        }
+                        else if (_availableExistingTasks.Count == 0)
+                        {
+                            <div class="task-search-empty">
+                                No eligible unassigned tasks found for this scope. You can author a new step above.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="task-search-results-list">
+                                @foreach (var task in _availableExistingTasks)
+                                {
+                                    <div class="task-search-item-row">
+                                        <div class="task-search-item-info">
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <span class="task-number-pill">#@task.Id.ToString()[..8]</span>
+                                                <span class="task-item-title">@task.Title</span>
+                                            </div>
+                                            <div class="task-item-meta">
+                                                <span>Assignee: <strong>@(string.IsNullOrWhiteSpace(task.AssigneeEmails) ? "Unassigned" : task.AssigneeEmails)</strong></span>
+                                                @if (task.DueDate.Year > 2000)
+                                                {
+                                                    <span>Due: @task.DueDate.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                <span>Priority: @task.Priority</span>
+                                            </div>
+                                        </div>
+                                        <FluentButton Appearance="ButtonAppearance.Primary"
+                                                      OnClick="@(() => AttachExistingTask(task))"
+                                                      Style="font-size: 0.8rem; padding: 4px 10px;">
+                                            Attach as Step
+                                        </FluentButton>
                                     </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
 
-                                    @if (ctx.State.Steps.Count > 1)
+                @if (_stepErrors.TryGetValue("Steps", out var stepsErr))
+                {
+                    <div class="field-error-banner">@stepsErr</div>
+                }
+
+                <div class="step-cards-list">
+                    @for (int i = 0; i < _initialState.Steps.Count; i++)
+                    {
+                        var stepIndex = i;
+                        var step = _initialState.Steps[stepIndex];
+                        var isExistingAttached = step.ExistingTaskId.HasValue && step.ExistingTaskId.Value != Guid.Empty;
+
+                        <div class="step-builder-card @(isExistingAttached ? "card-attached" : "")">
+                            <div class="step-card-top-bar">
+                                <div class="step-card-order-tag">
+                                    <span class="order-number">Step #@(stepIndex + 1) (Task)</span>
+                                    @if (stepIndex == 0)
+                                    {
+                                        <span class="first-step-tag">Kickoff Step</span>
+                                    }
+                                    @if (isExistingAttached)
+                                    {
+                                        <span class="attached-tag">📎 Existing Task Attached</span>
+                                    }
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    @* Move Up / Down *@
+                                    @if (stepIndex > 0 && !IsEditMode)
+                                    {
+                                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                      IconStart="@(new Icons.Regular.Size16.ArrowUp())"
+                                                      OnClick="@(() => MoveStepUp(stepIndex))"
+                                                      Title="Move Step Up" />
+                                    }
+                                    @if (stepIndex < _initialState.Steps.Count - 1 && !IsEditMode)
+                                    {
+                                        <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                      IconStart="@(new Icons.Regular.Size16.ArrowDown())"
+                                                      OnClick="@(() => MoveStepDown(stepIndex))"
+                                                      Title="Move Step Down" />
+                                    }
+
+                                    @* In Edit Mode: Cancel Step instead of Delete *@
+                                    @if (IsEditMode && WorkflowToEdit != null)
+                                    {
+                                        var existingEntity = WorkflowToEdit.Steps.FirstOrDefault(s => s.Id == step.ExistingTaskId);
+                                        var isCancelled = existingEntity?.WorkflowStepStatus == WorkflowStepStatus.Cancelled;
+                                        var isCompleted = existingEntity?.WorkflowStepStatus == WorkflowStepStatus.Completed;
+
+                                        @if (isCancelled)
+                                        {
+                                            <span class="cancelled-tag">Cancelled</span>
+                                        }
+                                        else if (isCompleted)
+                                        {
+                                            <span class="completed-tag">Completed</span>
+                                        }
+                                        else
+                                        {
+                                            <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                          IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                                          OnClick="@(() => PromptCancelExistingStep(step))"
+                                                          Style="color: var(--error, #d13438);"
+                                                          Title="Cancel this step (cannot be deleted)" />
+                                        }
+                                    }
+                                    else if (_initialState.Steps.Count > 1)
                                     {
                                         <FluentButton Appearance="ButtonAppearance.Subtle"
                                                       IconStart="@(new Icons.Regular.Size16.Delete())"
-                                                      OnClick="@(() => RemoveStep(ctx, stepIndex))"
+                                                      OnClick="@(() => RemoveStep(stepIndex))"
                                                       Title="Remove this step" />
                                     }
                                 </div>
+                            </div>
 
-                                <div class="wizard-form-grid" style="margin-top: 10px;">
-                                    <div class="form-half-width">
-                                        <FluentTextInput Label="Step Title *"
-                                                         @bind-Value="step.Title"
-                                                         Style="width: 100%;"
-                                                         Placeholder="E.g. Security Vulnerability Scanning" />
-                                        @if (ctx.StepErrors.TryGetValue($"Step_{stepIndex}_Title", out var stepTitleErr))
-                                        {
-                                            <span class="field-error-text">@stepTitleErr</span>
-                                        }
-                                    </div>
-
-                                    <div class="form-half-width">
-                                        <FluentTextInput Label="Step Owner Email *"
-                                                         @bind-Value="step.StepOwnerEmail"
-                                                         Style="width: 100%;"
-                                                         Placeholder="lead-engineer@company.local" />
-                                        @if (ctx.StepErrors.TryGetValue($"Step_{stepIndex}_Owner", out var stepOwnerErr))
-                                        {
-                                            <span class="field-error-text">@stepOwnerErr</span>
-                                        }
-                                    </div>
-
-                                    <div class="form-half-width">
-                                        <FluentDatePicker Label="Step Deadline"
-                                                          @bind-Value="step.DueDate"
-                                                          Style="width: 100%;" />
-                                    </div>
-
-                                    <div class="form-half-width">
-                                        <FluentTextInput Label="Deliverable Criteria"
-                                                         @bind-Value="step.Description"
-                                                         Style="width: 100%;"
-                                                         Placeholder="Actionable criteria required for sign-off" />
-                                    </div>
+                            <div class="wizard-form-grid" style="margin-top: 10px;">
+                                <div class="form-half-width">
+                                    <FluentTextInput Label="Step Title *"
+                                                     @bind-Value="step.Title"
+                                                     Style="width: 100%;"
+                                                     Disabled="@(isExistingAttached && IsEditMode)"
+                                                     Placeholder="E.g. Security Vulnerability Scanning" />
+                                    @if (_stepErrors.TryGetValue($"Step_{stepIndex}_Title", out var stepTitleErr))
+                                    {
+                                        <span class="field-error-text">@stepTitleErr</span>
+                                    }
                                 </div>
 
-                                @* Subtasks Builder under this step *@
-                                <div class="subtask-builder-section">
-                                    <div class="subtask-builder-header">
-                                        <span class="subtask-builder-title">
-                                            <FluentIcon Value="@(new Icons.Regular.Size12.TaskListSquareAdd())" Color="Color.Neutral" />
-                                            Subtasks Delegated to Team (@step.SubTasks.Count)
-                                        </span>
-                                        <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                      IconStart="@(new Icons.Regular.Size12.Add())"
-                                                      OnClick="@(() => AddSubTaskToStep(ctx, step))"
-                                                      Style="font-size: 0.75rem; padding: 2px 6px;">
-                                            Add Subtask
-                                        </FluentButton>
-                                    </div>
-
-                                    @if (step.SubTasks.Count > 0)
+                                <div class="form-half-width">
+                                    <FluentTextInput Label="Step Owner Email *"
+                                                     @bind-Value="step.StepOwnerEmail"
+                                                     Style="width: 100%;"
+                                                     Placeholder="lead-engineer@company.local" />
+                                    @if (_stepErrors.TryGetValue($"Step_{stepIndex}_Owner", out var stepOwnerErr))
                                     {
-                                        <div class="subtask-inputs-list">
-                                            @for (int j = 0; j < step.SubTasks.Count; j++)
-                                            {
-                                                var subIndex = j;
-                                                var sub = step.SubTasks[subIndex];
-
-                                                <div class="subtask-input-row">
-                                                    <span class="sub-number">@(subIndex + 1).</span>
-                                                    <FluentTextInput @bind-Value="sub.Title"
-                                                                     Placeholder="Subtask title..."
-                                                                     Style="flex: 2;" />
-                                                    <FluentTextInput @bind-Value="sub.AssigneeEmail"
-                                                                     Placeholder="Assignee email..."
-                                                                     Style="flex: 1.5;" />
-                                                    <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                                  IconStart="@(new Icons.Regular.Size12.Dismiss())"
-                                                                  OnClick="@(() => RemoveSubTaskFromStep(ctx, step, subIndex))"
-                                                                  Title="Remove subtask" />
-                                                </div>
-                                            }
-                                        </div>
+                                        <span class="field-error-text">@stepOwnerErr</span>
                                     }
+                                </div>
+
+                                <div class="form-half-width">
+                                    <FluentDatePicker Label="Step Deadline"
+                                                      @bind-Value="step.DueDate"
+                                                      Style="width: 100%;" />
+                                </div>
+
+                                <div class="form-half-width">
+                                    <FluentTextInput Label="Deliverable Instructions / Acceptance"
+                                                     @bind-Value="step.Description"
+                                                     Style="width: 100%;"
+                                                     Placeholder="Actionable criteria required for sign-off" />
+                                </div>
+                            </div>
+
+                            @* Subtasks Builder under this step *@
+                            <div class="subtask-builder-section">
+                                <div class="subtask-builder-header">
+                                    <span class="subtask-builder-title">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.TaskListSquareLtr())" Color="Color.Default" />
+                                        Subtasks Delegated to Team (@step.SubTasks.Count)
+                                    </span>
+                                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                  IconStart="@(new Icons.Regular.Size12.Add())"
+                                                  OnClick="@(() => AddSubTaskToStep(step))"
+                                                  Style="font-size: 0.75rem; padding: 2px 6px;">
+                                        Add Subtask
+                                    </FluentButton>
+                                </div>
+
+                                @if (step.SubTasks.Count > 0)
+                                {
+                                    <div class="subtask-inputs-list">
+                                        @for (int j = 0; j < step.SubTasks.Count; j++)
+                                        {
+                                            var subIndex = j;
+                                            var sub = step.SubTasks[subIndex];
+
+                                            <div class="subtask-input-row">
+                                                <span class="sub-number">#@(subIndex + 1)</span>
+                                                <FluentTextInput Placeholder="Subtask title / work item"
+                                                                 @bind-Value="sub.Title"
+                                                                 Style="flex: 2;" />
+                                                <FluentTextInput Placeholder="Team member email"
+                                                                 @bind-Value="sub.AssigneeEmail"
+                                                                 Style="flex: 2;" />
+                                                <FluentDatePicker @bind-Value="sub.DueDate"
+                                                                  Style="flex: 1;" />
+                                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                              IconStart="@(new Icons.Regular.Size12.Dismiss())"
+                                                              OnClick="@(() => RemoveSubTaskFromStep(step, subIndex))"
+                                                              Title="Remove subtask" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </WizardStep>
+
+        <WizardStep Title="Review & Launch"
+                    Summary="Final review before orchestrating">
+            <div class="wizard-review-container">
+                <div class="review-section">
+                    <FluentLabel Typo="Typography.H6" Style="font-weight: 600;">@_initialState.Title</FluentLabel>
+                    <p class="review-desc">@(string.IsNullOrWhiteSpace(_initialState.Description) ? "No description provided." : _initialState.Description)</p>
+
+                    <div class="review-meta-pills">
+                        <span class="review-pill">
+                            <strong>Level:</strong>
+                            <span class="scope-pill scope-@_initialState.Level.ToString().ToLowerInvariant()">@_initialState.Level</span>
+                        </span>
+                        @if (_initialState.Level == TaskLevel.Program && _selectedProgram != null)
+                        {
+                            <span class="review-pill"><strong>Program:</strong> @_selectedProgram.Name</span>
+                        }
+                        @if (_initialState.Level == TaskLevel.Project && _selectedProject != null)
+                        {
+                            <span class="review-pill"><strong>Project:</strong> @_selectedProject.Name</span>
+                        }
+                        <span class="review-pill"><strong>Priority:</strong> @_initialState.Priority</span>
+                        <span class="review-pill"><strong>Constant Owner:</strong> @_initialState.WorkflowOwnerEmail</span>
+                        @if (_initialState.DueDate.HasValue)
+                        {
+                            <span class="review-pill"><strong>Deadline:</strong> @_initialState.DueDate.Value.ToString("yyyy-MM-dd")</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_initialState.WatcherEmails))
+                        {
+                            <span class="review-pill"><strong>Watchers:</strong> @_initialState.WatcherEmails</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 8px;">
+                        Sequential Execution Flow (@_initialState.Steps.Count Steps)
+                    </FluentLabel>
+                    <div class="review-steps-list">
+                        @for (int i = 0; i < _initialState.Steps.Count; i++)
+                        {
+                            var step = _initialState.Steps[i];
+                            var isFirst = i == 0;
+                            <div class="review-step-item">
+                                <div class="review-step-num">#@(i + 1)</div>
+                                <div class="review-step-body">
+                                    <div class="review-step-header">
+                                        <strong>@step.Title</strong>
+                                        @if (isFirst)
+                                        {
+                                            <span class="first-active-pill">Will activate immediately</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pending-pill">Pending Step #@(i) completion</span>
+                                        }
+                                    </div>
+                                    <div class="review-step-owner">
+                                        Step Owner: <em>@step.StepOwnerEmail</em>
+                                        @if (step.DueDate.HasValue)
+                                        {
+                                            <span> • Due: @step.DueDate.Value.ToString("yyyy-MM-dd")</span>
+                                        }
+                                        @if (step.SubTasks.Count > 0)
+                                        {
+                                            <span> • Delegated Subtasks: <strong>@step.SubTasks.Count</strong></span>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         }
                     </div>
                 </div>
-            </ChildContent>
-        </WizardStep>
 
-        <WizardStep TState="CreateWorkflowReqDto"
-                    Title="Review & Launch"
-                    Summary="Verify governance & delegation flow">
-            <ChildContent Context="ctx">
-                <div class="wizard-review-container">
-                    <div class="review-section">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                            <FluentLabel Typo="Typography.H6">@ctx.State.Title</FluentLabel>
-                            <span class="scope-pill scope-@ctx.State.Level.ToString().ToLowerInvariant()">
-                                @ctx.State.Level Level
-                            </span>
-                        </div>
-                        <p class="review-desc">@(string.IsNullOrWhiteSpace(ctx.State.Description) ? "No description provided." : ctx.State.Description)</p>
-
-                        <div class="review-meta-pills">
-                            <span class="review-pill">Constant Owner: <strong>@ctx.State.WorkflowOwnerEmail</strong></span>
-                            <span class="review-pill">Priority: <strong>@ctx.State.Priority</strong></span>
-                            @if (ctx.State.DueDate.HasValue)
-                            {
-                                <span class="review-pill">Workflow Due: <strong>@ctx.State.DueDate.Value.ToShortDateString()</strong></span>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(ctx.State.WatcherEmails))
-                            {
-                                <span class="review-pill">Watchers: <strong>@ctx.State.WatcherEmails</strong></span>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="review-steps-pipeline">
-                        <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 8px;">
-                            Sequential Execution Flow (@ctx.State.Steps.Count Step@(ctx.State.Steps.Count > 1 ? "s" : "")):
-                        </FluentLabel>
-
-                        <div class="review-steps-list">
-                            @for (int i = 0; i < ctx.State.Steps.Count; i++)
-                            {
-                                var s = ctx.State.Steps[i];
-                                <div class="review-step-item">
-                                    <div class="review-step-idx">@(i + 1)</div>
-                                    <div class="review-step-info">
-                                        <div class="review-step-title">@s.Title</div>
-                                        <div class="review-step-owner">Step Owner: <strong>@s.StepOwnerEmail</strong></div>
-                                        @if (s.SubTasks.Count > 0)
-                                        {
-                                            <div class="review-step-subtasks">
-                                                <span>Subtasks delegated (@s.SubTasks.Count): </span>
-                                                @string.Join(", ", s.SubTasks.Select(st => $"{st.Title} ({st.AssigneeEmail})"))
-                                            </div>
-                                        }
-                                    </div>
-                                    @if (i == 0)
-                                    {
-                                        <span class="first-active-pill">Starts Active</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="pending-pill">Pending</span>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="review-notice-box">
-                        <FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Accent" />
-                        <span>Upon launching, <strong>Step 1</strong> will be activated under Step Owner <strong>@(ctx.State.Steps.Count > 0 ? ctx.State.Steps[0].StepOwnerEmail : "")</strong>. The overarching Workflow Owner <strong>@ctx.State.WorkflowOwnerEmail</strong> remains constant and will track delivery through completion.</span>
-                    </div>
+                <div class="review-notice-box">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Primary" />
+                    <span>
+                        Workflow orchestration enforces single active step ownership. The constant workflow owner
+                        (@_initialState.WorkflowOwnerEmail) retains accountability and receives alerts throughout execution.
+                    </span>
                 </div>
-            </ChildContent>
+            </div>
         </WizardStep>
     </Steps>
 </FluentWizardModal>
+
+@* Step Cancellation Modal Dialog (Edit Mode) *@
+@if (_showCancelStepModal && _stepToCancel != null)
+{
+    <div class="cancel-step-dialog-backdrop">
+        <div class="cancel-step-dialog">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <FluentIcon Value="@(new Icons.Filled.Size20.Warning())" Color="Color.Warning" />
+                <FluentLabel Typo="Typography.H6" Style="font-weight: 600;">Cancel Step on Workflow</FluentLabel>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--neutral-foreground-hint, #616161); margin-bottom: 12px;">
+                Tasks once added to a workflow cannot be deleted to maintain compliance audit trails. Instead, this step will be marked as <strong>Cancelled</strong>. If the step is currently active, the workflow will be paused.
+            </p>
+            <FluentTextInput Label="Mandatory Cancellation Reason *"
+                             @bind-Value="_cancelStepReason"
+                             Placeholder="Reason for cancelling step..."
+                             Style="width: 100%; margin-bottom: 16px;" />
+            @if (!string.IsNullOrWhiteSpace(_cancelStepError))
+            {
+                <div class="field-error-text" style="margin-bottom: 12px;">@_cancelStepError</div>
+            }
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showCancelStepModal = false)">Dismiss</FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              Style="background: var(--error, #d13438);"
+                              OnClick="@ConfirmCancelExistingStepAsync">
+                    Confirm Cancellation
+                </FluentButton>
+            </div>
+        </div>
+    </div>
+}
 
 <style>
     .wizard-form-grid {
@@ -359,21 +533,19 @@
         gap: 16px;
     }
 
-    .form-full-width {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
+    .form-half-width {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 260px;
     }
 
-    .form-half-width {
-        width: calc(50% - 8px);
-        display: flex;
-        flex-direction: column;
+    .form-full-width {
+        flex: 1 1 100%;
     }
 
     .field-error-text {
         font-size: 0.75rem;
-        color: var(--error, #d13438);
+        color: #d13438;
+        display: block;
         margin-top: 4px;
     }
 
@@ -381,6 +553,7 @@
         font-size: 0.75rem;
         color: var(--neutral-foreground-hint, #616161);
         margin-top: 4px;
+        display: block;
     }
 
     .step-builder-container {
@@ -393,6 +566,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .step-builder-title {
@@ -412,6 +587,9 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 4px;
     }
 
     .step-builder-card {
@@ -419,6 +597,10 @@
         border: 1px solid var(--neutral-stroke-subtle, #edebe9);
         border-radius: 6px;
         padding: 12px 16px;
+    }
+
+    .step-builder-card.card-attached {
+        border-left: 4px solid var(--accent-fill-rest, #0078d4);
     }
 
     .step-card-top-bar {
@@ -435,17 +617,107 @@
 
     .order-number {
         font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--accent-fill-rest, #0078d4);
+        font-size: 0.85rem;
     }
 
     .first-step-tag {
-        background: #e8f0fe;
-        color: #1a73e8;
-        font-size: 0.75rem;
+        background: #e6f4ea;
+        color: #137333;
+        font-size: 0.7rem;
+        font-weight: 600;
         padding: 2px 6px;
         border-radius: 4px;
-        font-weight: 500;
+    }
+
+    .attached-tag {
+        background: #e1f5fe;
+        color: #0288d1;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .cancelled-tag {
+        background: #fde7e9;
+        color: #d13438;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .completed-tag {
+        background: #e6f4ea;
+        color: #137333;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    /* Task Search Picker */
+    .task-search-picker-box {
+        background: #f0f8ff;
+        border: 1px solid #c7e0f4;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .task-search-picker-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+    }
+
+    .task-search-empty {
+        font-size: 0.825rem;
+        color: var(--neutral-foreground-hint, #616161);
+        padding: 12px;
+        text-align: center;
+    }
+
+    .task-search-results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .task-search-item-row {
+        background: #ffffff;
+        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
+        border-radius: 4px;
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .task-number-pill {
+        background: #e8f0fe;
+        color: #1a73e8;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 3px;
+    }
+
+    .task-item-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .task-item-meta {
+        font-size: 0.75rem;
+        color: var(--neutral-foreground-hint, #616161);
+        display: flex;
+        gap: 12px;
+        margin-top: 3px;
     }
 
     /* Subtask Builder Inside Step */
@@ -531,42 +803,16 @@
 
     .review-step-item {
         display: flex;
-        align-items: center;
         gap: 12px;
         background: #ffffff;
+        padding: 8px 12px;
+        border-radius: 4px;
         border: 1px solid var(--neutral-stroke-subtle, #edebe9);
-        border-radius: 6px;
-        padding: 10px 14px;
     }
 
-    .review-step-idx {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--neutral-fill-secondary-rest, #edebe9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .review-step-info {
-        flex: 1;
-    }
-
-    .review-step-title {
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .review-step-owner {
-        font-size: 0.8rem;
-        color: var(--neutral-foreground-hint, #616161);
-    }
-
-    .review-step-subtasks {
-        font-size: 0.75rem;
+    .review-step-num {
+        font-weight: 700;
+        font-size: 0.85rem;
         color: var(--accent-fill-rest, #0078d4);
         margin-top: 2px;
     }
@@ -611,6 +857,26 @@
     .scope-tenant { background: #f3e8fd; color: #7b1fa2; }
     .scope-program { background: #e1f5fe; color: #0288d1; }
     .scope-project { background: #e8f5e9; color: #2e7d32; }
+
+    /* Cancellation Modal */
+    .cancel-step-dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+    }
+
+    .cancel-step-dialog {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        width: 480px;
+        max-width: 90vw;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
 </style>
 
 @code {
@@ -627,20 +893,46 @@
     public TaskLevel DefaultLevel { get; set; } = TaskLevel.Project;
 
     [Parameter]
+    public WorkflowTaskEntity? WorkflowToEdit { get; set; }
+
+    [Parameter]
     public EventCallback<WorkflowTaskEntity> OnWorkflowCreated { get; set; }
 
+    [Parameter]
+    public EventCallback<WorkflowTaskEntity> OnWorkflowUpdated { get; set; }
+
+    private bool IsEditMode => WorkflowToEdit != null;
+
     private CreateWorkflowReqDto _initialState = new();
+    private FluentWizardModal<CreateWorkflowReqDto>? _wizardModal;
+    private Dictionary<string, string> _stepErrors = new(StringComparer.OrdinalIgnoreCase);
     private List<ProgramEntity> _availablePrograms = [];
     private List<ProjectEntity> _availableProjects = [];
     private ProgramEntity? _selectedProgram;
     private ProjectEntity? _selectedProject;
+
+    // Task Search & Attach State
+    private bool _showTaskSearch;
+    private string _taskSearchTerm = string.Empty;
+    private bool _isSearchingTasks;
+    private List<TaskEntity> _availableExistingTasks = [];
+
+    // Step Cancellation Modal State
+    private bool _showCancelStepModal;
+    private CreateWorkflowStepDto? _stepToCancel;
+    private string _cancelStepReason = string.Empty;
+    private string? _cancelStepError;
 
     protected override async Task OnParametersSetAsync()
     {
         if (IsOpen)
         {
             await LoadScopingEntitiesAsync();
-            if (_initialState.ProjectId != ProjectId || _initialState.Steps.Count == 0)
+            if (WorkflowToEdit != null)
+            {
+                PopulateFromExistingWorkflow(WorkflowToEdit);
+            }
+            else if (_initialState.ProjectId != ProjectId || _initialState.Steps.Count == 0)
             {
                 ResetState();
             }
@@ -668,6 +960,79 @@
             {
                 _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectId.Value);
             }
+        }
+    }
+
+    private void OnProgramSelectedChanged(string? val)
+    {
+        if (Guid.TryParse(val, out var progId))
+        {
+            _initialState.ProgramId = progId;
+            _selectedProgram = _availablePrograms.FirstOrDefault(p => p.Id == progId);
+        }
+        else
+        {
+            _initialState.ProgramId = null;
+            _selectedProgram = null;
+        }
+        _wizardModal?.Context?.MarkDirty();
+    }
+
+    private void OnProjectSelectedChanged(string? val)
+    {
+        if (Guid.TryParse(val, out var projId))
+        {
+            _initialState.ProjectId = projId;
+            _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == projId);
+        }
+        else
+        {
+            _initialState.ProjectId = null;
+            _selectedProject = null;
+        }
+        _wizardModal?.Context?.MarkDirty();
+    }
+
+    private void PopulateFromExistingWorkflow(WorkflowTaskEntity wf)
+    {
+        _initialState = new CreateWorkflowReqDto
+        {
+            Level = wf.Level,
+            ProgramId = wf.ProgramId,
+            ProjectId = wf.ProjectId,
+            Title = wf.Title,
+            Description = wf.Description,
+            WorkflowOwnerEmail = wf.WorkflowOwnerEmail,
+            Priority = wf.Priority,
+            DueDate = wf.DueDate,
+            WatcherEmails = wf.WatcherEmails,
+            Steps = wf.Steps
+                .OrderBy(s => s.WorkflowStepOrder ?? 1)
+                .Select(s => new CreateWorkflowStepDto
+                {
+                    ExistingTaskId = s.Id,
+                    Title = s.Title,
+                    Description = s.Description,
+                    StepOwnerEmail = s.AssigneeEmails,
+                    DueDate = s.DueDate,
+                    SubTasks = s.SubTasks
+                        .OrderBy(st => st.OrderIndex)
+                        .Select(st => new CreateWorkflowSubTaskDto
+                        {
+                            Title = st.Title,
+                            AssigneeEmail = st.AssigneeEmails,
+                            DueDate = st.DueDate
+                        }).ToList()
+                }).ToList()
+        };
+
+        if (wf.ProjectId.HasValue)
+        {
+            _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == wf.ProjectId.Value);
+        }
+        if (wf.ProgramId.HasValue)
+        {
+            _selectedProgram = _availablePrograms.FirstOrDefault(p => p.Id == wf.ProgramId.Value);
         }
     }
 
@@ -719,84 +1084,166 @@
         }
     }
 
-    private Task<bool> ValidateStep1Async(WizardContext<CreateWorkflowReqDto> ctx)
+    private void ToggleTaskSearch()
     {
-        ctx.ClearErrors();
-        if (string.IsNullOrWhiteSpace(ctx.State.Title))
+        _showTaskSearch = !_showTaskSearch;
+        if (_showTaskSearch && _availableExistingTasks.Count == 0)
         {
-            ctx.SetError("Title", "Workflow title is required.");
+            _ = SearchExistingTasksAsync();
+        }
+    }
+
+    private async Task SearchExistingTasksAsync()
+    {
+        _isSearchingTasks = true;
+        try
+        {
+            var filter = new TaskSearchFilterDto(
+                Level: _initialState.Level,
+                ProgramId: _initialState.ProgramId,
+                ProjectId: _initialState.ProjectId,
+                SearchTerm: _taskSearchTerm,
+                ExcludeTasksWithWorkflows: true
+            );
+            var results = await WorkflowService.GetAvailableTasksForWorkflowAsync(filter);
+            // Exclude tasks already added in current state
+            var currentTaskIds = _initialState.Steps
+                .Where(s => s.ExistingTaskId.HasValue)
+                .Select(s => s.ExistingTaskId!.Value)
+                .ToHashSet();
+
+            _availableExistingTasks = results.Where(t => !currentTaskIds.Contains(t.Id)).ToList();
+        }
+        finally
+        {
+            _isSearchingTasks = false;
+        }
+    }
+
+    private void AttachExistingTask(TaskEntity task)
+    {
+        _initialState.Steps.Add(new CreateWorkflowStepDto
+        {
+            ExistingTaskId = task.Id,
+            Title = task.Title,
+            Description = task.Description,
+            StepOwnerEmail = !string.IsNullOrWhiteSpace(task.AssigneeEmails) ? task.AssigneeEmails : (CurrentUser.Email ?? string.Empty),
+            DueDate = task.DueDate.Year > 2000 ? task.DueDate : DateTime.UtcNow.AddDays(7),
+            SubTasks = task.SubTasks
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new CreateWorkflowSubTaskDto
+                {
+                    Title = s.Title,
+                    AssigneeEmail = s.AssigneeEmails,
+                    DueDate = s.DueDate
+                }).ToList()
+        });
+
+        _availableExistingTasks.RemoveAll(t => t.Id == task.Id);
+        _showTaskSearch = false;
+        _wizardModal?.Context?.MarkDirty();
+    }
+
+    private Task<bool> ValidateStep1Async()
+    {
+        _stepErrors.Clear();
+        if (string.IsNullOrWhiteSpace(_initialState.Title))
+        {
+            _stepErrors["Title"] = "Workflow title is required.";
             return Task.FromResult(false);
         }
 
-        if (string.IsNullOrWhiteSpace(ctx.State.WorkflowOwnerEmail) || !ctx.State.WorkflowOwnerEmail.Contains('@'))
+        if (string.IsNullOrWhiteSpace(_initialState.WorkflowOwnerEmail) || !_initialState.WorkflowOwnerEmail.Contains('@'))
         {
-            ctx.SetError("WorkflowOwnerEmail", "A valid constant Workflow Owner email is required.");
+            _stepErrors["WorkflowOwnerEmail"] = "A valid constant Workflow Owner email is required.";
             return Task.FromResult(false);
         }
 
-        if (ctx.State.Level == TaskLevel.Program && (!ctx.State.ProgramId.HasValue || ctx.State.ProgramId == Guid.Empty))
+        if (_initialState.Level == TaskLevel.Program && (!_initialState.ProgramId.HasValue || _initialState.ProgramId == Guid.Empty))
         {
-            ctx.SetError("ProgramId", "Please select a target Program.");
+            _stepErrors["ProgramId"] = "Please select a target Program.";
             return Task.FromResult(false);
         }
 
-        if (ctx.State.Level == TaskLevel.Project && (!ctx.State.ProjectId.HasValue || ctx.State.ProjectId == Guid.Empty))
+        if (_initialState.Level == TaskLevel.Project && (!_initialState.ProjectId.HasValue || _initialState.ProjectId == Guid.Empty))
         {
-            ctx.SetError("ProjectId", "Please select a target Project.");
+            _stepErrors["ProjectId"] = "Please select a target Project.";
             return Task.FromResult(false);
         }
 
         return Task.FromResult(true);
     }
 
-    private Task<bool> ValidateStep2Async(WizardContext<CreateWorkflowReqDto> ctx)
+    private Task<bool> ValidateStep2Async()
     {
-        ctx.ClearErrors();
-        if (ctx.State.Steps == null || ctx.State.Steps.Count == 0)
+        _stepErrors.Clear();
+        if (_initialState.Steps == null || _initialState.Steps.Count == 0)
         {
-            ctx.SetError("Steps", "At least one sequential step (task) is required.");
+            _stepErrors["Steps"] = "At least one sequential step (task) is required.";
             return Task.FromResult(false);
         }
 
-        for (int i = 0; i < ctx.State.Steps.Count; i++)
+        for (int i = 0; i < _initialState.Steps.Count; i++)
         {
-            var s = ctx.State.Steps[i];
+            var s = _initialState.Steps[i];
             if (string.IsNullOrWhiteSpace(s.Title))
             {
-                ctx.SetError($"Step_{i}_Title", $"Step #{i + 1} requires a title.");
+                _stepErrors[$"Step_{i}_Title"] = $"Step #{i + 1} requires a title.";
                 return Task.FromResult(false);
             }
             if (string.IsNullOrWhiteSpace(s.StepOwnerEmail) || !s.StepOwnerEmail.Contains('@'))
             {
-                ctx.SetError($"Step_{i}_Owner", $"Step #{i + 1} requires a valid Step Owner email.");
+                _stepErrors[$"Step_{i}_Owner"] = $"Step #{i + 1} requires a valid Step Owner email.";
                 return Task.FromResult(false);
             }
         }
         return Task.FromResult(true);
     }
 
-    private void AddStep(WizardContext<CreateWorkflowReqDto> ctx)
+    private void AddNewStep()
     {
-        ctx.State.Steps.Add(new CreateWorkflowStepDto
+        _initialState.Steps.Add(new CreateWorkflowStepDto
         {
-            Title = $"Step #{ctx.State.Steps.Count + 1}",
+            Title = $"Step #{_initialState.Steps.Count + 1}",
             StepOwnerEmail = string.Empty,
             DueDate = DateTime.UtcNow.AddDays(7),
             Description = string.Empty
         });
-        ctx.MarkDirty();
+        _wizardModal?.Context?.MarkDirty();
     }
 
-    private void RemoveStep(WizardContext<CreateWorkflowReqDto> ctx, int index)
+    private void MoveStepUp(int index)
     {
-        if (ctx.State.Steps.Count > 1 && index >= 0 && index < ctx.State.Steps.Count)
+        if (index > 0 && index < _initialState.Steps.Count)
         {
-            ctx.State.Steps.RemoveAt(index);
-            ctx.MarkDirty();
+            var item = _initialState.Steps[index];
+            _initialState.Steps.RemoveAt(index);
+            _initialState.Steps.Insert(index - 1, item);
+            _wizardModal?.Context?.MarkDirty();
         }
     }
 
-    private void AddSubTaskToStep(WizardContext<CreateWorkflowReqDto> ctx, CreateWorkflowStepDto step)
+    private void MoveStepDown(int index)
+    {
+        if (index >= 0 && index < _initialState.Steps.Count - 1)
+        {
+            var item = _initialState.Steps[index];
+            _initialState.Steps.RemoveAt(index);
+            _initialState.Steps.Insert(index + 1, item);
+            _wizardModal?.Context?.MarkDirty();
+        }
+    }
+
+    private void RemoveStep(int index)
+    {
+        if (_initialState.Steps.Count > 1 && index >= 0 && index < _initialState.Steps.Count)
+        {
+            _initialState.Steps.RemoveAt(index);
+            _wizardModal?.Context?.MarkDirty();
+        }
+    }
+
+    private void AddSubTaskToStep(CreateWorkflowStepDto step)
     {
         step.SubTasks.Add(new CreateWorkflowSubTaskDto
         {
@@ -804,22 +1251,96 @@
             AssigneeEmail = string.Empty,
             DueDate = step.DueDate
         });
-        ctx.MarkDirty();
+        _wizardModal?.Context?.MarkDirty();
     }
 
-    private void RemoveSubTaskFromStep(WizardContext<CreateWorkflowReqDto> ctx, CreateWorkflowStepDto step, int subIndex)
+    private void RemoveSubTaskFromStep(CreateWorkflowStepDto step, int subIndex)
     {
         if (subIndex >= 0 && subIndex < step.SubTasks.Count)
         {
             step.SubTasks.RemoveAt(subIndex);
-            ctx.MarkDirty();
+            _wizardModal?.Context?.MarkDirty();
+        }
+    }
+
+    private void PromptCancelExistingStep(CreateWorkflowStepDto step)
+    {
+        _stepToCancel = step;
+        _cancelStepReason = string.Empty;
+        _cancelStepError = null;
+        _showCancelStepModal = true;
+    }
+
+    private async Task ConfirmCancelExistingStepAsync()
+    {
+        if (_stepToCancel == null || WorkflowToEdit == null || !_stepToCancel.ExistingTaskId.HasValue) return;
+
+        if (string.IsNullOrWhiteSpace(_cancelStepReason))
+        {
+            _cancelStepError = "Cancellation reason is mandatory.";
+            return;
+        }
+
+        try
+        {
+            var updated = await WorkflowService.CancelStepAsync(new CancelWorkflowStepReqDto(
+                WorkflowToEdit.Id,
+                _stepToCancel.ExistingTaskId.Value,
+                _cancelStepReason.Trim()
+            ));
+
+            _showCancelStepModal = false;
+            _stepToCancel = null;
+            await OnWorkflowUpdated.InvokeAsync(updated);
+            PopulateFromExistingWorkflow(updated);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _cancelStepError = ex.Message;
         }
     }
 
     private async Task HandleFinishAsync(CreateWorkflowReqDto state)
     {
-        var created = await WorkflowService.CreateWorkflowAsync(state);
-        await OnWorkflowCreated.InvokeAsync(created);
+        if (IsEditMode && WorkflowToEdit != null)
+        {
+            var editReq = new EditWorkflowReqDto
+            {
+                WorkflowId = WorkflowToEdit.Id,
+                Title = state.Title,
+                Description = state.Description,
+                WorkflowOwnerEmail = state.WorkflowOwnerEmail,
+                Priority = state.Priority,
+                DueDate = state.DueDate,
+                WatcherEmails = state.WatcherEmails
+            };
+            var updated = await WorkflowService.EditWorkflowAsync(editReq);
+
+            // Handle any newly added steps in Edit Mode
+            var existingStepIds = WorkflowToEdit.Steps.Select(s => s.Id).ToHashSet();
+            var newSteps = state.Steps.Where(s => !s.ExistingTaskId.HasValue || !existingStepIds.Contains(s.ExistingTaskId.Value)).ToList();
+
+            foreach (var newStep in newSteps)
+            {
+                await WorkflowService.AppendStepAsync(new AppendStepToWorkflowReqDto(
+                    WorkflowId: WorkflowToEdit.Id,
+                    ExistingTaskId: newStep.ExistingTaskId,
+                    NewTaskTitle: newStep.Title,
+                    NewTaskOwnerEmail: newStep.StepOwnerEmail,
+                    DeliverableNotes: newStep.Description
+                ));
+            }
+
+            var reloaded = await WorkflowService.GetWorkflowByIdAsync(WorkflowToEdit.Id) ?? updated;
+            await OnWorkflowUpdated.InvokeAsync(reloaded);
+        }
+        else
+        {
+            var created = await WorkflowService.CreateWorkflowAsync(state);
+            await OnWorkflowCreated.InvokeAsync(created);
+        }
+
         await IsOpenChanged.InvokeAsync(false);
         ResetState();
     }
@@ -830,4 +1351,3 @@
         ResetState();
     }
 }
- *@

@@ -34,7 +34,9 @@ $forbiddenPatterns = @(
     @{ Pattern = "<FluentCollapsibleRegion\b"; Description = "Removed 'FluentCollapsibleRegion' (use Blazor conditional rendering)" },
     @{ Pattern = "<FluentProfileMenu\b"; Description = "Removed 'FluentProfileMenu' (use FluentPopover + FluentAvatar + FluentButton)" },
     @{ Pattern = "<FluentEditForm\b"; Description = "Removed 'FluentEditForm' (use standard Blazor '<EditForm>' with FluentField)" },
-    @{ Pattern = "FluentInputAppearance"; Description = "Removed enum 'FluentInputAppearance' (use 'TextInputAppearance' or 'ListAppearance')" }
+    @{ Pattern = "FluentInputAppearance"; Description = "Removed enum 'FluentInputAppearance' (use 'TextInputAppearance' or 'ListAppearance')" },
+    @{ Pattern = "\bSelectedOption\b"; Description = "Removed property 'SelectedOption' in Fluent UI V5 (use 'Value' / '@bind-Value' instead)" },
+    @{ Pattern = "\bSelectedOptionChanged\b"; Description = "Removed property 'SelectedOptionChanged' in Fluent UI V5 (use 'ValueChanged' instead)" }
 )
 
 $targetFiles = Get-ChildItem -Path . -Recurse -Include *.razor, *.cs | Where-Object {
