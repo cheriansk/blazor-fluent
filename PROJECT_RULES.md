@@ -31,6 +31,7 @@ BlazorFluent.Core          → Domain entities, contracts, enums, value objects,
 BlazorFluent.Persistence   → EF Core DbContext, configurations, interceptors, migrations, data services
 BlazorFluent.Infrastructure→ Outbound senders (email/Teams), security middleware, observability, UI services
 BlazorFluent.Jobs          → Background job handlers, schedulers, event queues
+BlazorFluent.UI.Templates  → Reusable enterprise UI templates (Generic Fluent UI V5 Wizard RCL)
 BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs composition root
 ```
 
@@ -39,8 +40,8 @@ BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs comp
 | **Dependency direction** | Dependencies flow inward only. `Core` has zero internal project references. |
 | **Persistence isolation** | `BlazorFluent.Persistence` contains 100% database persistence code. No HTTP clients, no SMTP, no file I/O. |
 | **Infrastructure isolation** | `BlazorFluent.Infrastructure` handles outbound integrations, security middleware, and browser interop services. Never references `Persistence`. |
-| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All ← `Web`. |
-| **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorFluent.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, or `Jobs`. |
+| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `UI.Templates` ← `Web`. |
+| **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorFluent.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, `Jobs`, or `UI.Templates`. |
 
 ### 1.2 Service Scope Lifetime & Captive Dependency Governance
 
@@ -607,6 +608,21 @@ BlazorFluent/
 | **Multi-Party Notification Broadcast** | On step transitions, the next step owner receives an urgent "Action Required" notification, while the constant workflow owner and watchers receive progress milestone alerts via `INotifyService`. |
 | **Dedicated Workflows Hub** | Centralized dashboard at `/workflows` (`WorkflowsDashboardPage`) allowing cross-scope filtering (Tenant / Program / Project), KPI metrics, launch wizards, and step management. |
 | **100% Fluent UI Blazor V5 Compliance** | All workflow UI components (`WorkflowStepperComp`, `CreateWorkflowWizardModal`, `WorkflowsDashboardPage`) strictly utilize V5 components (`FluentTextInput`, `FluentTextArea`, `FluentDatePicker`, `FluentBadge`, `FluentIcon`, `FluentStack`, `FluentNav`). |
+
+---
+
+## 15. Complete Documentation Suite Index
+
+For deep-dive architectural specifications, security walkthroughs, and code recipes, refer to the following guides:
+
+- [**`docs/00-Overview-and-Glossary.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/00-Overview-and-Glossary.md) — Domain mental model, personas, feature map, and glossary.
+- [**`docs/01-Getting-Started.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/01-Getting-Started.md) — Setup, `Rename-Project.ps1`, configuration dictionary, and migrations.
+- [**`docs/02-Architecture.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture.md) — Clean Architecture 6-project topology, DI rules, interceptors, and background channels.
+- [**`docs/03-Security-Model.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model.md) — Defense-in-depth, HMAC seals, tenant isolation, and session management.
+- [**`docs/04-Task-Hierarchy-and-Workflows.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/04-Task-Hierarchy-and-Workflows.md) — Task scoping, sequential workflows, step owners, and `<FluentWizardModal>`.
+- [**`docs/05-UI-Conventions-Fluent-V5.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/05-UI-Conventions-Fluent-V5.md) — Component taxonomy (`*Page/*Comp/*Modal`), catalog, and V5 pitfall patterns.
+- [**`docs/06-How-To-Extend.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/06-How-To-Extend.md) — Step-by-step copy-paste recipes for extending features.
+- [**`docs/07-AI-Agent-Rules.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/07-AI-Agent-Rules.md) — Operational guardrails and instructions for AI coding assistants.
 
 ---
 

@@ -48,8 +48,8 @@
                                   Items="@_availableProjects"
                                   OptionText="@(p => p.Name)"
                                   OptionValue="@(p => p.Id.ToString())"
-                                  SelectedOption="@_currentProject"
-                                  SelectedOptionChanged="@OnProjectChanged"
+                                  Value="@(_currentProject?.Id.ToString())"
+                                  ValueChanged="@OnProjectChanged"
                                   Label="Target Project Workspace"
                                   Style="width: 100%;" />
                 }
@@ -305,9 +305,11 @@
         }
     }
 
-    private async Task OnProjectChanged(ProjectEntity? newProject)
+    private async Task OnProjectChanged(string? newProjectIdStr)
     {
-        _currentProject = newProject;
+        _currentProject = Guid.TryParse(newProjectIdStr, out var projId)
+            ? _availableProjects.FirstOrDefault(p => p.Id == projId)
+            : null;
         await RefreshHistoryAsync();
     }
 

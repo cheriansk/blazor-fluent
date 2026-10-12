@@ -13,10 +13,12 @@ public record CreateWorkflowSubTaskDto
 }
 
 /// <summary>
-/// Definition of a single step (Task) to be created within an enterprise sequential workflow.
+/// Definition of a single step (Task) to be created or attached within an enterprise sequential workflow.
+/// If ExistingTaskId is set, attaches the existing task; otherwise creates a new TaskEntity.
 /// </summary>
 public record CreateWorkflowStepDto
 {
+    public Guid? ExistingTaskId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string StepOwnerEmail { get; set; } = string.Empty;
@@ -88,4 +90,59 @@ public record WorkflowFilterDto(
     Guid? ProjectId = null,
     string? SearchTerm = null,
     bool? IsCompleted = null
+);
+
+/// <summary>
+/// Payload to update workflow metadata (title, description, owner, due date, priority, watchers).
+/// </summary>
+public record EditWorkflowReqDto
+{
+    public Guid WorkflowId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string WorkflowOwnerEmail { get; set; } = string.Empty;
+    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public DateTime? DueDate { get; set; }
+    public string WatcherEmails { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Payload to cancel an existing workflow step. Cancellation can only be performed by the respective Admin.
+/// If the step was active, workflow enters Paused status.
+/// </summary>
+public record CancelWorkflowStepReqDto(
+    Guid WorkflowId,
+    Guid StepTaskId,
+    string CancellationReason
+);
+
+/// <summary>
+/// Payload for Admin to resume a paused workflow after step cancellation, optionally specifying which step to activate.
+/// </summary>
+public record ResumePausedWorkflowReqDto(
+    Guid WorkflowId,
+    Guid? NextStepTaskId = null
+);
+
+/// <summary>
+/// Payload to append or insert a task (existing or new) into an in-flight workflow sequence.
+/// </summary>
+public record AppendStepToWorkflowReqDto(
+    Guid WorkflowId,
+    Guid? ExistingTaskId,
+    string? NewTaskTitle,
+    string? NewTaskOwnerEmail,
+    string? DeliverableNotes,
+    int? InsertAfterStepOrder = null
+);
+
+/// <summary>
+/// Filter criteria for finding eligible existing tasks to attach to a workflow.
+/// </summary>
+public record TaskSearchFilterDto(
+    TaskLevel Level,
+    Guid? ProgramId = null,
+    Guid? ProjectId = null,
+    string? SearchTerm = null,
+    bool ExcludeTasksWithWorkflows = true
 );
