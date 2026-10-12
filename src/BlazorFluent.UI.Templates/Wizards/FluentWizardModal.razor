@@ -1,0 +1,498 @@
+@namespace BlazorFluent.UI.Templates.Wizards
+@typeparam TState
+@implements IWizardHost
+@implements IDisposable
+
+@if (IsOpen)
+{
+    @* Modal Backdrop (Dismissal Locked to Prevent Accidental Data Loss) *@
+    <div class="fluent-wizard-backdrop" @onclick="@HandleBackdropClick">
+        <div class="fluent-wizard-dialog" @onclick:stopPropagation="true" style="@DialogStyle">
+            
+            @* Wizard Header *@
+            <div class="fluent-wizard-header">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                    <div>
+                        <FluentLabel Typo="Typography.H5" Style="font-weight: 600;">@Title</FluentLabel>
+                        @if (!string.IsNullOrWhiteSpace(Subtitle))
+                        {
+                            <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">@Subtitle</FluentLabel>
+                        }
+                    </div>
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                  OnClick="@RequestCloseAsync"
+                                  Disabled="@_isBusy"
+                                  Title="Close Wizard" />
+                </FluentStack>
+
+                @* Visual Stepper Pipeline *@
+                <div class="fluent-wizard-stepper">
+                    @for (int i = 0; i < _steps.Count; i++)
+                    {
+                        var index = i;
+                        var step = _steps[index];
+                        var isCompleted = index < _currentStepIndex;
+                        var isCurrent = index == _currentStepIndex;
+
+                        <div class="fluent-wizard-step-node @(isCurrent ? "active" : isCompleted ? "completed" : "pending")">
+                            <div class="step-badge">
+                                @if (isCompleted)
+                                {
+                                    <FluentIcon Value="@(new Icons.Filled.Size16.Checkmark())" Color="Color.Success" />
+                                }
+                                else if (isCurrent)
+                                {
+                                    <span>@(index + 1)</span>
+                                }
+                                else
+                                {
+                                    <span>@(index + 1)</span>
+                                }
+                            </div>
+                            <div class="step-label">
+                                <div class="step-title">@step.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(step.Summary))
+                                {
+                                    <div class="step-summary">@step.Summary</div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (index < _steps.Count - 1)
+                        {
+                            <div class="step-connector @(index < _currentStepIndex ? "completed" : "")"></div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @* Step Content Body *@
+            <div class="fluent-wizard-body">
+                @if (!string.IsNullOrEmpty(_activeErrorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 16px;">
+                        @_activeErrorMessage
+                    </FluentMessageBar>
+                }
+
+                <CascadingValue Value="@this" IsFixed="true">
+                    <CascadingValue Value="@Context">
+                        @Steps
+                    </CascadingValue>
+                </CascadingValue>
+            </div>
+
+            @* Wizard Footer Navigation *@
+            <div class="fluent-wizard-footer">
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              OnClick="@RequestCloseAsync"
+                              Disabled="@_isBusy">
+                    Cancel
+                </FluentButton>
+
+                <FluentSpacer />
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    @if (_currentStepIndex > 0)
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Outline"
+                                      IconStart="@(new Icons.Regular.Size16.ArrowLeft())"
+                                      OnClick="@GoPreviousAsync"
+                                      Disabled="@_isBusy">
+                            Back
+                        </FluentButton>
+                    }
+
+                    @if (_currentStepIndex < _steps.Count - 1)
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Primary"
+                                      IconEnd="@(new Icons.Regular.Size16.ArrowRight())"
+                                      OnClick="@GoNextAsync"
+                                      Disabled="@_isBusy">
+                            @if (_isBusy)
+                            {
+                                <FluentSpinner Size="SpinnerSize.Small" Style="margin-right: 6px;" />
+                                <span>Validating...</span>
+                            }
+                            else
+                            {
+                                <span>Next</span>
+                            }
+                        </FluentButton>
+                    }
+                    else
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Default"
+                                      IconStart="@(new Icons.Regular.Size16.CheckmarkCircle())"
+                                      OnClick="@HandleFinishAsync"
+                                      Disabled="@_isBusy">
+                            @if (_isBusy)
+                            {
+                                <FluentSpinner Size="SpinnerSize.Small" Style="margin-right: 6px;" />
+                                <span>Finishing...</span>
+                            }
+                            else
+                            {
+                                <span>@(FinishButtonText ?? "Complete")</span>
+                            }
+                        </FluentButton>
+                    }
+                </FluentStack>
+            </div>
+        </div>
+    </div>
+
+    @* Unsaved Changes / Discard Confirmation Dialog *@
+    @if (_showDiscardConfirm)
+    {
+        <div class="fluent-wizard-backdrop confirm-overlay" @onclick:stopPropagation="true">
+            <FluentCard Style="max-width: 420px; width: 90%; padding: 24px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Warning())" Color="Color.Warning" />
+                        <FluentLabel Typo="Typography.H6" Style="font-weight: 600;">Discard Unsaved Changes?</FluentLabel>
+                    </FluentStack>
+
+                    <FluentLabel Typo="Typography.Body">
+                        You have entered data that has not been saved. If you exit this wizard now, your progress will be discarded.
+                    </FluentLabel>
+
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.End" HorizontalGap="8" Style="margin-top: 8px;">
+                        <FluentButton Appearance="ButtonAppearance.Outline" OnClick="@(() => _showDiscardConfirm = false)">
+                            Keep Editing
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="@ConfirmDiscardAsync">
+                            Discard &amp; Exit
+                        </FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        </div>
+    }
+}
+
+<style>
+    .fluent-wizard-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fw-fade-in 0.15s ease-out;
+    }
+
+    .fluent-wizard-backdrop.confirm-overlay {
+        z-index: 1100;
+        background: rgba(0, 0, 0, 0.55);
+    }
+
+    .fluent-wizard-dialog {
+        background: var(--neutral-layer-1, #ffffff);
+        border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+        border-radius: 12px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        max-width: 900px;
+        width: 92%;
+        overflow: hidden;
+        animation: fw-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .fluent-wizard-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid var(--neutral-stroke-subtle, #f0f0f0);
+        background: var(--neutral-layer-2, #fafafa);
+    }
+
+    .fluent-wizard-stepper {
+        display: flex;
+        align-items: center;
+        margin-top: 16px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .fluent-wizard-step-node {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .step-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        background: var(--neutral-layer-3, #eee);
+        color: var(--neutral-foreground-hint, #888);
+        border: 2px solid transparent;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .fluent-wizard-step-node.active .step-badge {
+        background: var(--accent-fill-rest, #0078d4);
+        color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.25);
+    }
+
+    .fluent-wizard-step-node.completed .step-badge {
+        background: var(--neutral-layer-1, #fff);
+        border-color: var(--palette-green-primary, #107c41);
+    }
+
+    .step-label {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .step-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--neutral-foreground-rest, #333);
+    }
+
+    .fluent-wizard-step-node.active .step-title {
+        color: var(--accent-fill-rest, #0078d4);
+    }
+
+    .step-summary {
+        font-size: 11px;
+        color: var(--neutral-foreground-hint, #777);
+    }
+
+    .step-connector {
+        flex: 1;
+        min-width: 24px;
+        height: 2px;
+        background: var(--neutral-stroke-subtle, #e0e0e0);
+        margin: 0 10px;
+        transition: background 0.3s ease;
+    }
+
+    .step-connector.completed {
+        background: var(--palette-green-primary, #107c41);
+    }
+
+    .fluent-wizard-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 280px;
+    }
+
+    .fluent-wizard-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--neutral-stroke-subtle, #f0f0f0);
+        background: var(--neutral-layer-2, #fafafa);
+        display: flex;
+        align-items: center;
+    }
+
+    @@keyframes fw-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes fw-scale-in {
+        from { transform: scale(0.96); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Wizard";
+
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    [Parameter]
+    public string? DialogStyle { get; set; }
+
+    [Parameter]
+    public string? FinishButtonText { get; set; }
+
+    [Parameter]
+    public TState InitialState { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<TState> OnFinish { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public RenderFragment? Steps { get; set; }
+
+    public WizardContext<TState> Context { get; private set; } = default!;
+
+    private readonly List<WizardStep> _steps = new();
+    private int _currentStepIndex = 0;
+    private bool _isBusy = false;
+    private bool _showDiscardConfirm = false;
+    private string? _activeErrorMessage;
+
+    public int CurrentStepIndex => _currentStepIndex;
+
+    protected override void OnInitialized()
+    {
+        Context = new WizardContext<TState>(InitialState);
+        Context.OnStateChanged += HandleContextStateChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Context != null && !EqualityComparer<TState>.Default.Equals(InitialState, default) && !Context.IsDirty)
+        {
+            Context.State = InitialState;
+        }
+    }
+
+    public void RegisterStep(WizardStep step)
+    {
+        if (!_steps.Contains(step))
+        {
+            step.StepIndex = _steps.Count;
+            _steps.Add(step);
+            Context.TotalSteps = _steps.Count;
+            StateHasChanged();
+        }
+    }
+
+    public void UnregisterStep(WizardStep step)
+    {
+        _steps.Remove(step);
+        Context.TotalSteps = _steps.Count;
+        StateHasChanged();
+    }
+
+    private void HandleContextStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GoNextAsync()
+    {
+        _activeErrorMessage = null;
+        if (_currentStepIndex >= _steps.Count - 1) return;
+
+        var currentStep = _steps[_currentStepIndex];
+        _isBusy = true;
+        try
+        {
+            var isValid = await currentStep.ValidateAsync();
+            if (isValid)
+            {
+                _currentStepIndex++;
+                Context.CurrentStepIndex = _currentStepIndex;
+            }
+        }
+        catch (Exception ex)
+        {
+            _activeErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private Task GoPreviousAsync()
+    {
+        _activeErrorMessage = null;
+        if (_currentStepIndex > 0)
+        {
+            _currentStepIndex--;
+            Context.CurrentStepIndex = _currentStepIndex;
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleFinishAsync()
+    {
+        _activeErrorMessage = null;
+        var currentStep = _steps[_currentStepIndex];
+        _isBusy = true;
+        try
+        {
+            var isValid = await currentStep.ValidateAsync();
+            if (isValid)
+            {
+                await OnFinish.InvokeAsync(Context.State);
+                await CloseAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _activeErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private Task HandleBackdropClick()
+    {
+        // Dismissal locked: Clicking outside will NOT discard progress.
+        // Directs user to explicit cancel button.
+        return Task.CompletedTask;
+    }
+
+    private Task RequestCloseAsync()
+    {
+        if (Context.IsDirty)
+        {
+            _showDiscardConfirm = true;
+        }
+        else
+        {
+            return CloseAsync();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmDiscardAsync()
+    {
+        _showDiscardConfirm = false;
+        await OnCancel.InvokeAsync();
+        await CloseAsync();
+    }
+
+    private async Task CloseAsync()
+    {
+        IsOpen = false;
+        _currentStepIndex = 0;
+        _activeErrorMessage = null;
+        _showDiscardConfirm = false;
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    public void Dispose()
+    {
+        if (Context != null)
+        {
+            Context.OnStateChanged -= HandleContextStateChanged;
+        }
+    }
+}

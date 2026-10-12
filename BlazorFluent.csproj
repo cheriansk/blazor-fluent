@@ -16,6 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="src\BlazorFluent.UI.Templates\**" />
+    <Content Remove="src\BlazorFluent.UI.Templates\**" />
+    <EmbeddedResource Remove="src\BlazorFluent.UI.Templates\**" />
+    <None Remove="src\BlazorFluent.UI.Templates\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -44,6 +51,11 @@
     <ProjectReference Include="BlazorFluent.Persistence\BlazorFluent.Persistence.csproj" />
     <ProjectReference Include="BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />
     <ProjectReference Include="BlazorFluent.Jobs\BlazorFluent.Jobs.csproj" />
+    <ProjectReference Include="src\BlazorFluent.UI.Templates\BlazorFluent.UI.Templates.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="src\" />
   </ItemGroup>
 	
 </Project>

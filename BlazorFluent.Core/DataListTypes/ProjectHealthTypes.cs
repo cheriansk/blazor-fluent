@@ -43,14 +43,30 @@ public enum MilestoneStatus
 /// </summary>
 public enum TaskDependencyType
 {
-    [Display(Name = "Blocks", Description = "This task blocks another task from starting or finishing.")]
+    /// <summary>
+    /// Computed / screen display view only. Not available for selection in create dropdown.
+    /// When Task B is BlockedBy Task A, Task A displays that it Blocks Task B.
+    /// </summary>
+    [Display(Name = "Blocks", Description = "This item blocks a dependent task")]
     Blocks = 1,
 
-    [Display(Name = "Blocked By", Description = "This task is waiting on another task to complete.")]
+    /// <summary>
+    /// Primary selectable link type prompting for resolve SLA, criticality, and impact details.
+    /// </summary>
+    [Display(Name = "Blocked By", Description = "This item is waiting on a prerequisite deliverable")]
     BlockedBy = 2,
 
-    [Display(Name = "Relates To", Description = "Informational association without strict blocking constraint.")]
-    RelatesTo = 3
+    /// <summary>
+    /// Informational association between items.
+    /// </summary>
+    [Display(Name = "Relates To", Description = "General cross-reference")]
+    RelatesTo = 3,
+
+    /// <summary>
+    /// Parent-child association assigned automatically when a subtask is added to a task.
+    /// </summary>
+    [Display(Name = "Parent", Description = "Parent task governing a subtask")]
+    Parent = 4
 }
 
 /// <summary>
@@ -105,12 +121,12 @@ public class TaskDependencyItemDto
     public Guid TaskId { get; set; }
     public Guid DependsOnTaskId { get; set; }
     public string DependsOnTaskTitle { get; set; } = string.Empty;
-    public UserTaskStatus DependsOnTaskStatus { get; set; }
+    public TaskStatus DependsOnTaskStatus { get; set; }
     public string DependsOnAssigneeEmails { get; set; } = string.Empty;
     public DateTime? DependsOnDueDate { get; set; }
     public TaskDependencyType DependencyType { get; set; }
     public DateTime? ResolveByUtc { get; set; }
-    public bool IsResolved => DependsOnTaskStatus is UserTaskStatus.Closed or UserTaskStatus.Cancelled;
+    public bool IsResolved => DependsOnTaskStatus is TaskStatus.Closed or TaskStatus.Cancelled;
     public bool IsOverdue => !IsResolved && ResolveByUtc.HasValue && ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
 }
 

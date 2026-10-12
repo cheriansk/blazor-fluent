@@ -1,7 +1,11 @@
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
+@using TaskStatus = BlazorFluent.Core.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Identity
+@using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
+@using BlazorFluent.Persistence.Context
+@using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject ITenantService TenantService
 @inject IProgramService ProgramService
@@ -10,6 +14,7 @@
 @inject ICurrentUser CurrentUser
 @inject IUnsavedChangesStateService UnsavedChanges
 @inject IUserTimeZoneService TimeZoneService
+@inject AppDbContext DbContext
 @implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
@@ -522,6 +527,170 @@
             </FluentCard>
         }
 
+        @* Manage Tenant Tasks & Risks Card *@
+        @if (_managingTasksTenant is not null)
+        {
+            <FluentCard Style="margin-bottom: 24px; padding: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <FluentLabel Typo="Typography.H5">
+                            Executive Governance: Tasks & Risks for @_managingTasksTenant.Name
+                        </FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint, #666);">
+                            Strategic-level execution tasks and corporate risk management for tenant '@_managingTasksTenant.Slug'.
+                        </FluentLabel>
+                    </div>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@CloseTenantTasksManagement">
+                        Close
+                    </FluentButton>
+                </FluentStack>
+
+                <FluentTabs @bind-ActiveTabId="_activeTenantWorkItemTab">
+                    <FluentTab Id="tasks" Label="@($"Tenant Tasks ({_tenantTasks.Count})")">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="margin-top: 12px;">
+                            @* Quick Add Task *@
+                            <FluentCard Style="padding: 12px; background-color: var(--neutral-layer-2, #fafafa);">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: flex-end; width: 100%;">
+                                    <FluentTextInput Label="Task Title" @bind-Value="_newTenantTaskTitle" Placeholder="e.g. Annual Compliance Certification" Style="flex: 2;" />
+                                    <FluentTextInput Label="Description" @bind-Value="_newTenantTaskDesc" Placeholder="Deliverable details..." Style="flex: 2;" />
+                                    <div style="flex: 1;">
+                                        <FluentLabel Typo="Typography.Caption">Priority</FluentLabel>
+                                        <FluentSelect TOption="string" TValue="string"
+                                                      Value="@_newTenantTaskPriority.ToString()"
+                                                      ValueChanged="@(v => _newTenantTaskPriority = Enum.TryParse<TaskPriority>(v, out var p) ? p : TaskPriority.Medium)"
+                                                      Style="width: 100%;">
+                                            <FluentOption Value="@nameof(TaskPriority.Low)">Low</FluentOption>
+                                            <FluentOption Value="@nameof(TaskPriority.Medium)">Medium</FluentOption>
+                                            <FluentOption Value="@nameof(TaskPriority.High)">High</FluentOption>
+                                            <FluentOption Value="@nameof(TaskPriority.Urgent)">Urgent</FluentOption>
+                                        </FluentSelect>
+                                    </div>
+                                    <FluentDatePicker Label="Due Date" @bind-Value="_newTenantTaskDueDate" Style="flex: 1;" />
+                                    <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantTaskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantTaskTitle)">
+                                        Add Task
+                                    </FluentButton>
+                                </FluentStack>
+                            </FluentCard>
+
+                            @if (_loadingTenantWorkItems)
+                            {
+                                <FluentSpinner Style="margin: 20px auto;" />
+                            }
+                            else if (_tenantTasks.Count == 0)
+                            {
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint, #666); font-style: italic;">
+                                    No tenant-level tasks registered yet.
+                                </FluentLabel>
+                            }
+                            else
+                            {
+                                <FluentDataGrid Items="@_tenantTasks.AsQueryable()" ResizableColumns="true">
+                                    <PropertyColumn Property="@(t => t.Title)" Title="Task Title" Sortable="true" />
+                                    <TemplateColumn Title="Priority" SortBy="@(GridSort<TaskEntity>.ByAscending(t => t.Priority))">
+                                        <FluentBadge Appearance="BadgeAppearance.Filled"
+                                                     Color="@(context.Priority == TaskPriority.Urgent ? BadgeColor.Danger : context.Priority == TaskPriority.High ? BadgeColor.Warning : BadgeColor.Subtle)">
+                                            @context.Priority
+                                        </FluentBadge>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Status" SortBy="@(GridSort<TaskEntity>.ByAscending(t => t.Status))">
+                                        <FluentBadge Appearance="BadgeAppearance.Tint"
+                                                     Color="@(context.Status == TaskStatus.Closed ? BadgeColor.Success : BadgeColor.Informative)">
+                                            @context.Status
+                                        </FluentBadge>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Due Date" SortBy="@(GridSort<TaskEntity>.ByAscending(t => t.DueDate))">
+                                        @context.DueDate.ToString("yyyy-MM-dd")
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="@(t => t.CreatedBy)" Title="Owner" />
+                                    <TemplateColumn Title="Actions">
+                                        <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small"
+                                                      IconStart="@(context.Status == TaskStatus.Closed ? new Icons.Regular.Size16.ArrowUndo() : new Icons.Regular.Size16.Checkmark())"
+                                                      OnClick="@(() => ToggleTenantTaskStatusAsync(context))">
+                                            @(context.Status == TaskStatus.Closed ? "Reopen" : "Close")
+                                        </FluentButton>
+                                    </TemplateColumn>
+                                </FluentDataGrid>
+                            }
+                        </FluentStack>
+                    </FluentTab>
+
+                    <FluentTab Id="risks" Label="@($"Tenant Risks ({_tenantRisks.Count})")">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="margin-top: 12px;">
+                            @* Quick Add Risk *@
+                            <FluentCard Style="padding: 12px; background-color: var(--neutral-layer-2, #fafafa);">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: flex-end; width: 100%;">
+                                    <FluentTextInput Label="Risk Title" @bind-Value="_newTenantRiskTitle" Placeholder="e.g. Regulatory Data Residency Non-Compliance" Style="flex: 2;" />
+                                    <FluentTextInput Label="Description" @bind-Value="_newTenantRiskDesc" Placeholder="Impact assessment..." Style="flex: 2;" />
+                                    <div style="flex: 1;">
+                                        <FluentLabel Typo="Typography.Caption">Probability</FluentLabel>
+                                        <FluentSelect TOption="string" TValue="string"
+                                                      Value="@_newTenantRiskProb.ToString()"
+                                                      ValueChanged="@(v => _newTenantRiskProb = Enum.TryParse<RiskProbability>(v, out var p) ? p : RiskProbability.Medium)"
+                                                      Style="width: 100%;">
+                                            <FluentOption Value="@nameof(RiskProbability.Low)">Low</FluentOption>
+                                            <FluentOption Value="@nameof(RiskProbability.Medium)">Medium</FluentOption>
+                                            <FluentOption Value="@nameof(RiskProbability.High)">High</FluentOption>
+                                        </FluentSelect>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <FluentLabel Typo="Typography.Caption">Impact</FluentLabel>
+                                        <FluentSelect TOption="string" TValue="string"
+                                                      Value="@_newTenantRiskImpact.ToString()"
+                                                      ValueChanged="@(v => _newTenantRiskImpact = Enum.TryParse<RiskImpact>(v, out var p) ? p : RiskImpact.Medium)"
+                                                      Style="width: 100%;">
+                                            <FluentOption Value="@nameof(RiskImpact.Low)">Low</FluentOption>
+                                            <FluentOption Value="@nameof(RiskImpact.Medium)">Medium</FluentOption>
+                                            <FluentOption Value="@nameof(RiskImpact.High)">High</FluentOption>
+                                            <FluentOption Value="@nameof(RiskImpact.Critical)">Critical</FluentOption>
+                                        </FluentSelect>
+                                    </div>
+                                    <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantRiskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantRiskTitle)">
+                                        Add Risk
+                                    </FluentButton>
+                                </FluentStack>
+                            </FluentCard>
+
+                            @if (_loadingTenantWorkItems)
+                            {
+                                <FluentSpinner Style="margin: 20px auto;" />
+                            }
+                            else if (_tenantRisks.Count == 0)
+                            {
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint, #666); font-style: italic;">
+                                    No tenant-level risks registered yet.
+                                </FluentLabel>
+                            }
+                            else
+                            {
+                                <FluentDataGrid Items="@_tenantRisks.AsQueryable()" ResizableColumns="true">
+                                    <PropertyColumn Property="@(r => r.Title)" Title="Risk Title" Sortable="true" />
+                                    <TemplateColumn Title="Probability" SortBy="@(GridSort<RiskEntity>.ByAscending(r => r.Probability))">
+                                        @context.Probability
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Impact" SortBy="@(GridSort<RiskEntity>.ByAscending(r => r.Impact))">
+                                        @context.Impact
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Exposure Score" SortBy="@(GridSort<RiskEntity>.ByAscending(r => r.ExposureScore))">
+                                        <FluentBadge Appearance="BadgeAppearance.Filled"
+                                                     Color="@(context.ExposureScore >= 8 ? BadgeColor.Danger : context.ExposureScore >= 4 ? BadgeColor.Warning : BadgeColor.Subtle)">
+                                            @context.ExposureScore pts
+                                        </FluentBadge>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Status" SortBy="@(GridSort<RiskEntity>.ByAscending(r => r.RiskStatus))">
+                                        <FluentBadge Appearance="BadgeAppearance.Tint"
+                                                     Color="@(context.RiskStatus == RiskStatus.Closed ? BadgeColor.Success : context.RiskStatus == RiskStatus.Realized ? BadgeColor.Danger : BadgeColor.Informative)">
+                                            @context.RiskStatus
+                                        </FluentBadge>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="@(r => r.CreatedBy)" Title="Reported By" />
+                                </FluentDataGrid>
+                            }
+                        </FluentStack>
+                    </FluentTab>
+                </FluentTabs>
+            </FluentCard>
+        }
+
         @* Search & Filter Toolbar for Tenants *@
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
             <FluentTextInput Placeholder="Filter tenants by name, code, slug, or domain..."
@@ -590,6 +759,9 @@
                         </FluentButton>
                         @if (IsRootAdmin || _canEditTenants)
                         {
+                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Checkmark())" Title="Tenant Tasks & Risks" OnClick="@(() => OpenTenantTasksManagement(context))">
+                                Tasks & Risks
+                            </FluentButton>
                             <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" Title="Edit Dates" OnClick="@(() => StartEdit(context))">
                                 Dates
                             </FluentButton>
@@ -1334,6 +1506,149 @@
                 _isError = true;
             }
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // Tenant-Level Tasks & Risks Management
+    // ------------------------------------------------------------------------
+    private TenantEntity? _managingTasksTenant;
+    private string _activeTenantWorkItemTab = "tasks";
+    private List<TaskEntity> _tenantTasks = new();
+    private List<RiskEntity> _tenantRisks = new();
+    private bool _loadingTenantWorkItems;
+
+    // Quick Add Task Form
+    private string _newTenantTaskTitle = string.Empty;
+    private string _newTenantTaskDesc = string.Empty;
+    private TaskPriority _newTenantTaskPriority = TaskPriority.Medium;
+    private DateTime? _newTenantTaskDueDate;
+
+    // Quick Add Risk Form
+    private string _newTenantRiskTitle = string.Empty;
+    private string _newTenantRiskDesc = string.Empty;
+    private RiskProbability _newTenantRiskProb = RiskProbability.Medium;
+    private RiskImpact _newTenantRiskImpact = RiskImpact.Medium;
+
+    private async Task OpenTenantTasksManagement(TenantEntity tenant)
+    {
+        _managingTasksTenant = tenant;
+        _managingProgramsTenant = null;
+        _managingUsersTenant = null;
+        await LoadTenantWorkItemsAsync();
+    }
+
+    private void CloseTenantTasksManagement()
+    {
+        _managingTasksTenant = null;
+        _tenantTasks.Clear();
+        _tenantRisks.Clear();
+    }
+
+    private async Task LoadTenantWorkItemsAsync()
+    {
+        if (_managingTasksTenant == null) return;
+        _loadingTenantWorkItems = true;
+        try
+        {
+            var tenantIdStr = _managingTasksTenant.Id.ToString();
+            _tenantTasks = await DbContext.Tasks
+                .Where(t => t.TenantId == tenantIdStr && t.Level == TaskLevel.Tenant && !t.IsDeleted)
+                .OrderByDescending(t => t.Created)
+                .ToListAsync();
+
+            _tenantRisks = await DbContext.Risks
+                .Where(r => r.TenantId == tenantIdStr && r.Level == TaskLevel.Tenant && !r.IsDeleted)
+                .OrderByDescending(r => r.Created)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to load tenant work items: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _loadingTenantWorkItems = false;
+        }
+    }
+
+    private async Task CreateTenantTaskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newTenantTaskTitle) || _managingTasksTenant == null) return;
+        try
+        {
+            var task = new TaskEntity
+            {
+                TenantId = _managingTasksTenant.Id.ToString(),
+                Level = TaskLevel.Tenant,
+                Title = _newTenantTaskTitle.Trim(),
+                Description = _newTenantTaskDesc?.Trim() ?? string.Empty,
+                Priority = _newTenantTaskPriority,
+                Status = TaskStatus.Open,
+                DueDate = _newTenantTaskDueDate ?? DateTime.UtcNow.AddDays(7),
+                StartDate = DateTime.UtcNow,
+                CreatedBy = CurrentUser.Email ?? "system"
+            };
+            DbContext.Tasks.Add(task);
+            await DbContext.SaveChangesAsync();
+            _newTenantTaskTitle = string.Empty;
+            _newTenantTaskDesc = string.Empty;
+            _newTenantTaskDueDate = null;
+            _statusMessage = "Tenant task created successfully.";
+            _isError = false;
+            await LoadTenantWorkItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error creating tenant task: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    private async Task CreateTenantRiskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newTenantRiskTitle) || _managingTasksTenant == null) return;
+        try
+        {
+            var risk = new RiskEntity
+            {
+                TenantId = _managingTasksTenant.Id.ToString(),
+                Level = TaskLevel.Tenant,
+                Title = _newTenantRiskTitle.Trim(),
+                Description = _newTenantRiskDesc?.Trim() ?? string.Empty,
+                Probability = _newTenantRiskProb,
+                Impact = _newTenantRiskImpact,
+                RiskStatus = RiskStatus.Identified,
+                Priority = TaskPriority.High,
+                StartDate = DateTime.UtcNow,
+                DueDate = DateTime.UtcNow.AddDays(14),
+                CreatedBy = CurrentUser.Email ?? "system"
+            };
+            DbContext.Risks.Add(risk);
+            await DbContext.SaveChangesAsync();
+            _newTenantRiskTitle = string.Empty;
+            _newTenantRiskDesc = string.Empty;
+            _statusMessage = "Tenant risk created successfully.";
+            _isError = false;
+            await LoadTenantWorkItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error creating tenant risk: {ex.Message}";
+            _isError = true;
+        }
+    }
+
+    private async Task ToggleTenantTaskStatusAsync(TaskEntity task)
+    {
+        task.Status = task.Status == TaskStatus.Closed ? TaskStatus.Open : TaskStatus.Closed;
+        if (task.Status == TaskStatus.Closed) task.EndDate = DateTime.UtcNow;
+        else task.EndDate = null;
+        task.UpdatedBy = CurrentUser.Email ?? "system";
+        task.Updated = DateTime.UtcNow;
+        await DbContext.SaveChangesAsync();
+        _statusMessage = $"Task status updated to {task.Status}.";
+        _isError = false;
     }
 
     public void Dispose()

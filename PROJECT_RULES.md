@@ -582,4 +582,33 @@ BlazorFluent/
 
 ---
 
+## 14. Enterprise UI Wizards & Sequential Workflows Governance
+
+### 14.1 Enterprise Wizards Framework (`BlazorFluent.UI.Templates`)
+
+| Architectural Requirement | Implementation Rule |
+|---------------------------|---------------------|
+| **Decoupled RCL Package** | Reusable wizard templates reside in `BlazorFluent.UI.Templates` (NuGet-ready Razor Class Library), keeping presentation patterns decoupled from specific business domain logic. |
+| **Declarative Composition** | Developers compose multi-step wizards declaratively using `<FluentWizardModal TState="...">` and child `<WizardStep TState="...">` tags. |
+| **In-Memory State Preservation** | State is held in-memory via reference in generic `WizardContext<TState>` across all step transitions. Form inputs bind directly to state properties without intermediate database round-trips. |
+| **Accidental Dismissal Lock** | Backdrop clicks are locked from dismissing the modal. The cancel/close action evaluates `Context.IsDirty`; if dirty, a confirmation modal prompts before discarding user input. |
+| **Per-Step Async Validation** | Step advancement triggers `OnValidateAsync(Context)`. Advancing is blocked and errors are mapped into `Context.StepErrors` if validation fails. |
+
+### 14.2 ServiceNow-Style Hierarchical Sequential Workflows (`IWorkflowService`)
+
+| Architectural Requirement | Implementation Rule |
+|---------------------------|---------------------|
+| **Constant Workflow Owner** | The workflow container (`WorkflowTaskEntity`) is assigned to a single, constant `WorkflowOwnerEmail` who retains overarching accountability from kickoff to sign-off, monitoring progress and preventing pipeline stalls. |
+| **Steps as Genuine `TaskEntity`** | Each workflow step is a genuine `TaskEntity` record (`ICollection<TaskEntity> Steps`), inheriting formal task tracking, task numbers, descriptions, deadlines, comments, and status. |
+| **1-to-Many Delegated Subtasks** | Step owners can decompose any workflow step into discrete child `SubTaskEntity` items, assigning individual team members (`AssigneeEmails`) to perform specific work. |
+| **Multi-Level Tenancy Scoping** | Workflows can be declared at `Tenant` (cross-cutting governance), `Program` (strategic portfolio), or `Project` (delivery track) level with strict tenant isolation and compound indexes (`IX_WorkflowTasks_TenantId_Level_ProgramId_ProjectId`). |
+| **Zero Trust Server-Side Authorization** | Step completion (`CompleteStepAsync`), step reassignment (`ReassignStepAsync`), and subtask addition (`AddSubTaskToStepAsync`) strictly verify that the caller is the assigned Step Owner, the constant Workflow Owner, or a Tenant/Root Admin. |
+| **Forward-Only Sequential Gates** | Steps transition sequentially (Step 1 -> Step 2 -> ... -> Completed). Completing Step K activates Step K+1 while preserving the constant `WorkflowOwnerEmail`. |
+| **Multi-Party Notification Broadcast** | On step transitions, the next step owner receives an urgent "Action Required" notification, while the constant workflow owner and watchers receive progress milestone alerts via `INotifyService`. |
+| **Dedicated Workflows Hub** | Centralized dashboard at `/workflows` (`WorkflowsDashboardPage`) allowing cross-scope filtering (Tenant / Program / Project), KPI metrics, launch wizards, and step management. |
+| **100% Fluent UI Blazor V5 Compliance** | All workflow UI components (`WorkflowStepperComp`, `CreateWorkflowWizardModal`, `WorkflowsDashboardPage`) strictly utilize V5 components (`FluentTextInput`, `FluentTextArea`, `FluentDatePicker`, `FluentBadge`, `FluentIcon`, `FluentStack`, `FluentNav`). |
+
+---
+
 > **Last Updated**: October 2026 | **Target Framework**: .NET 10 | **UI**: Microsoft Fluent UI Blazor V5
+

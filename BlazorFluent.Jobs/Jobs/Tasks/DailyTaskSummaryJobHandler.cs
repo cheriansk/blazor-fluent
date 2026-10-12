@@ -55,8 +55,8 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
         var projectIds = projects.Select(p => p.Id).ToList();
         var allTasks = await _dbContext.Tasks
             .Where(t => projectIds.Contains(t.ProjectId) &&
-                        t.Status != UserTaskStatus.Closed &&
-                        t.Status != UserTaskStatus.Cancelled)
+                        t.Status != TaskStatus.Closed &&
+                        t.Status != TaskStatus.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
 

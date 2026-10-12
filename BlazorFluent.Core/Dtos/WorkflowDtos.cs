@@ -1,0 +1,91 @@
+using BlazorFluent.Core.DataListTypes;
+
+namespace BlazorFluent.Core.Dtos;
+
+/// <summary>
+/// Definition of an initial child subtask under a workflow step, delegated to a team member.
+/// </summary>
+public record CreateWorkflowSubTaskDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string AssigneeEmail { get; set; } = string.Empty;
+    public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(3);
+}
+
+/// <summary>
+/// Definition of a single step (Task) to be created within an enterprise sequential workflow.
+/// </summary>
+public record CreateWorkflowStepDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string StepOwnerEmail { get; set; } = string.Empty;
+    public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(3);
+    public List<CreateWorkflowSubTaskDto> SubTasks { get; set; } = new();
+}
+
+/// <summary>
+/// Payload to create and launch a new sequential workflow at Tenant, Program, or Project level.
+/// </summary>
+public record CreateWorkflowReqDto
+{
+    public TaskLevel Level { get; set; } = TaskLevel.Project;
+    public Guid? ProgramId { get; set; }
+    public Guid? ProjectId { get; set; }
+    public string WorkflowOwnerEmail { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(14);
+    public string WatcherEmails { get; set; } = string.Empty;
+    public List<CreateWorkflowStepDto> Steps { get; set; } = new();
+}
+
+/// <summary>
+/// Payload submitted by the verified active step owner or workflow owner to advance the pipeline.
+/// </summary>
+public record CompleteWorkflowStepReqDto(
+    Guid WorkflowId,
+    Guid StepId,
+    string CompletionNotes
+);
+
+/// <summary>
+/// Payload submitted by the step owner, workflow owner, or an admin to reassign an active step.
+/// </summary>
+public record ReassignWorkflowStepReqDto(
+    Guid WorkflowId,
+    Guid StepId,
+    string NewOwnerEmail,
+    string Reason
+);
+
+/// <summary>
+/// Payload to add a subtask to an existing workflow step and delegate it to a team member.
+/// </summary>
+public record AddSubTaskToStepReqDto(
+    Guid WorkflowId,
+    Guid StepTaskId,
+    string Title,
+    string AssigneeEmail,
+    DateTime? DueDate
+);
+
+/// <summary>
+/// Payload to toggle the completion status of a subtask under a workflow step.
+/// </summary>
+public record ToggleSubTaskStatusReqDto(
+    Guid SubTaskId,
+    bool IsClosed
+);
+
+/// <summary>
+/// Filter criteria for querying workflows across Tenant, Program, and Project levels.
+/// </summary>
+public record WorkflowFilterDto(
+    TaskLevel? Level = null,
+    Guid? ProgramId = null,
+    Guid? ProjectId = null,
+    string? SearchTerm = null,
+    bool? IsCompleted = null
+);

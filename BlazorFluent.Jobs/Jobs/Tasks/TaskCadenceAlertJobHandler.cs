@@ -41,7 +41,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
         // 1. Fetch active tasks for the scoped tenant
         var activeTasks = await _dbContext.Tasks
-            .Where(t => t.Status != UserTaskStatus.Closed && t.Status != UserTaskStatus.Cancelled)
+            .Where(t => t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
 
@@ -70,10 +70,10 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
             .ToDictionaryAsync(u => u.Email.ToLower(), u => u.Id.ToString(), cancellationToken);
 
         // Data structures for grouping alerts per assignee
-        var overdueByAssignee = new Dictionary<string, List<UserTaskEntity>>();
-        var dueTodayByAssignee = new Dictionary<string, List<UserTaskEntity>>();
-        var digestUpcomingByAssignee = new Dictionary<string, List<(UserTaskEntity Task, int DaysRemaining)>>();
-        var blockerAlertsByAssignee = new Dictionary<string, List<(UserTaskEntity BlockerTask, UserTaskEntity BlockedTask, DateTime? ResolveBy)>>();
+        var overdueByAssignee = new Dictionary<string, List<TaskEntity>>();
+        var dueTodayByAssignee = new Dictionary<string, List<TaskEntity>>();
+        var digestUpcomingByAssignee = new Dictionary<string, List<(TaskEntity Task, int DaysRemaining)>>();
+        var blockerAlertsByAssignee = new Dictionary<string, List<(TaskEntity BlockerTask, TaskEntity BlockedTask, DateTime? ResolveBy)>>();
 
         // 4. Evaluate task deadlines
         foreach (var task in activeTasks)

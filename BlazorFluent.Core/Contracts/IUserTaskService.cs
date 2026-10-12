@@ -11,22 +11,22 @@ public interface IUserTaskService
     /// <summary>
     /// Retrieves all active (non-deleted) tasks for a project, ordered by DueDate ascending.
     /// </summary>
-    Task<IReadOnlyList<UserTaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a single task by ID within a specific project including its discussion comments.
     /// </summary>
-    Task<UserTaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+    Task<TaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
     /// Creates a new project task, stamps audit context, and dispatches automated in-app notifications to all assignees.
     /// </summary>
-    Task<Result<UserTaskEntity>> CreateTaskAsync(UserTaskEntity task, CancellationToken ct = default);
+    Task<Result<TaskEntity>> CreateTaskAsync(TaskEntity task, CancellationToken ct = default);
 
     /// <summary>
     /// Updates details, priority, due date, assignees, or labels of an existing task.
     /// </summary>
-    Task<Result<UserTaskEntity>> UpdateTaskAsync(UserTaskEntity task, CancellationToken ct = default);
+    Task<Result<TaskEntity>> UpdateTaskAsync(TaskEntity task, CancellationToken ct = default);
 
     /// <summary>
     /// Marks a task as Closed with completion timestamp and user identifier within a specific project.
@@ -74,4 +74,22 @@ public interface IUserTaskService
     /// Removes a task dependency link.
     /// </summary>
     Task<Result<bool>> RemoveTaskDependencyAsync(Guid projectId, Guid dependencyId, CancellationToken ct = default);
+
+    // --- SubTasks Management (Strict Depth-1) ---
+    Task<IReadOnlyList<SubTaskEntity>> GetSubTasksByTaskIdAsync(Guid taskId, CancellationToken ct = default);
+    Task<Result<SubTaskEntity>> CreateSubTaskAsync(SubTaskEntity subTask, CancellationToken ct = default);
+    Task<Result<SubTaskEntity>> UpdateSubTaskAsync(SubTaskEntity subTask, CancellationToken ct = default);
+    Task<Result<bool>> DeleteSubTaskAsync(Guid subTaskId, CancellationToken ct = default);
+
+    // --- Enterprise Blocker Dependencies (D of RAID) & Links ---
+    Task<IReadOnlyList<TaskLinkEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default);
+    Task<Result<TaskLinkEntity>> CreateBlockedByLinkAsync(
+        Guid sourceTaskId,
+        Guid targetTaskId,
+        DateTime resolveDueDate,
+        BlazorFluent.Core.DataListTypes.DependencyCriticality criticality,
+        string impactDetails,
+        string? watcherEmails = null,
+        CancellationToken ct = default);
+    Task<Result<bool>> RemoveTaskLinkAsync(Guid linkId, CancellationToken ct = default);
 }

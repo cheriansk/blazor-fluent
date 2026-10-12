@@ -101,6 +101,15 @@
             }
         </FluentTab>
 
+        <FluentTab Id="calendar" Header="My Calendar" IconStart="@(new Icons.Regular.Size20.Calendar())">
+            @if (_visitedTabs.Contains("calendar"))
+            {
+                <div style="padding-top: 16px;">
+                    <SettingsUserCalendarTab />
+                </div>
+            }
+        </FluentTab>
+
         <FluentTab Id="notifications" Header="Notifications" IconStart="@(new Icons.Regular.Size20.Alert())">
             @if (_visitedTabs.Contains("notifications"))
             {
