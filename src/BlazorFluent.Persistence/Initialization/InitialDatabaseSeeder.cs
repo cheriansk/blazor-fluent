@@ -130,7 +130,7 @@ public static class InitialDatabaseSeeder
         if (isDevelopment)
         {
             var devUsers = await dbContext.Users
-                .Where(u => !u.IsDeleted && !u.Email.StartsWith("tampered@"))
+                .Where(u => !u.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             foreach (var user in devUsers)

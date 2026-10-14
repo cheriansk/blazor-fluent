@@ -5,6 +5,8 @@ using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using BlazorFluent.Persistence.Extensions;
+
 namespace BlazorFluent.Jobs.Jobs.Audit;
 
 /// <summary>
@@ -36,16 +38,12 @@ public class AuditPurgeJobHandler : IBatchJobHandler<AuditPurgeJobEvent>
             "AuditPurgeJob starting. Purging audit records older than {Cutoff} (RetentionDays={Days})",
             cutoff, jobEvent.RetentionDays);
 
-        await _auditService.LogSecurityEventAsync(
-            "QueryFilterBypass",
-            AuditSeverity.Warning,
-            $"Cross-tenant AuditPurgeJob batch execution: purging records older than {cutoff:yyyy-MM-dd} (RetentionDays={jobEvent.RetentionDays}).",
-            cancellationToken);
-
         var deleted = await _dbContext.AuditRecords
-            .IgnoreQueryFilters()
             .Where(r => r.Created < cutoff)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteDeleteWithAuditedBypassAsync(
+                _auditService,
+                $"Cross-tenant AuditPurgeJob batch execution: purging records older than {cutoff:yyyy-MM-dd} (RetentionDays={jobEvent.RetentionDays}).",
+                cancellationToken);
 
         _logger.LogInformation(
             "AuditPurgeJob completed. Deleted {Count} audit records older than {Cutoff}.",

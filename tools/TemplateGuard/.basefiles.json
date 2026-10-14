@@ -297,6 +297,115 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Configuration/DevelopmentSeedOptions.cs": {
+      "RelativePath": "Core/Configuration/DevelopmentSeedOptions.cs",
+      "KnownMembers": [
+        "SectionName",
+        "DevelopmentSeedOptions.SectionName",
+        "\u003CEnabled\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CEnabled\u003Ek__BackingField",
+        "Enabled",
+        "DevelopmentSeedOptions.Enabled",
+        "get_Enabled",
+        "DevelopmentSeedOptions.Enabled.get",
+        "set_Enabled",
+        "DevelopmentSeedOptions.Enabled.set",
+        "\u003CTenantSlug\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CTenantSlug\u003Ek__BackingField",
+        "TenantSlug",
+        "DevelopmentSeedOptions.TenantSlug",
+        "get_TenantSlug",
+        "DevelopmentSeedOptions.TenantSlug.get",
+        "set_TenantSlug",
+        "DevelopmentSeedOptions.TenantSlug.set",
+        "\u003CTenantName\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CTenantName\u003Ek__BackingField",
+        "TenantName",
+        "DevelopmentSeedOptions.TenantName",
+        "get_TenantName",
+        "DevelopmentSeedOptions.TenantName.get",
+        "set_TenantName",
+        "DevelopmentSeedOptions.TenantName.set",
+        "\u003CInternalEmailDomains\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CInternalEmailDomains\u003Ek__BackingField",
+        "InternalEmailDomains",
+        "DevelopmentSeedOptions.InternalEmailDomains",
+        "get_InternalEmailDomains",
+        "DevelopmentSeedOptions.InternalEmailDomains.get",
+        "set_InternalEmailDomains",
+        "DevelopmentSeedOptions.InternalEmailDomains.set",
+        "\u003CExternalEmailDomains\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CExternalEmailDomains\u003Ek__BackingField",
+        "ExternalEmailDomains",
+        "DevelopmentSeedOptions.ExternalEmailDomains",
+        "get_ExternalEmailDomains",
+        "DevelopmentSeedOptions.ExternalEmailDomains.get",
+        "set_ExternalEmailDomains",
+        "DevelopmentSeedOptions.ExternalEmailDomains.set",
+        "\u003CAdminEmail\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CAdminEmail\u003Ek__BackingField",
+        "AdminEmail",
+        "DevelopmentSeedOptions.AdminEmail",
+        "get_AdminEmail",
+        "DevelopmentSeedOptions.AdminEmail.get",
+        "set_AdminEmail",
+        "DevelopmentSeedOptions.AdminEmail.set",
+        "\u003CAdminFullName\u003Ek__BackingField",
+        "DevelopmentSeedOptions.\u003CAdminFullName\u003Ek__BackingField",
+        "AdminFullName",
+        "DevelopmentSeedOptions.AdminFullName",
+        "get_AdminFullName",
+        "DevelopmentSeedOptions.AdminFullName.get",
+        "set_AdminFullName",
+        "DevelopmentSeedOptions.AdminFullName.set",
+        ".ctor",
+        "DevelopmentSeedOptions.DevelopmentSeedOptions()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Configuration/DevLoginOptions.cs": {
+      "RelativePath": "Core/Configuration/DevLoginOptions.cs",
+      "KnownMembers": [
+        "SectionName",
+        "DevLoginOptions.SectionName",
+        "\u003CEnabled\u003Ek__BackingField",
+        "DevLoginOptions.\u003CEnabled\u003Ek__BackingField",
+        "Enabled",
+        "DevLoginOptions.Enabled",
+        "get_Enabled",
+        "DevLoginOptions.Enabled.get",
+        "set_Enabled",
+        "DevLoginOptions.Enabled.set",
+        "\u003CUsers\u003Ek__BackingField",
+        "DevLoginOptions.\u003CUsers\u003Ek__BackingField",
+        "Users",
+        "DevLoginOptions.Users",
+        "get_Users",
+        "DevLoginOptions.Users.get",
+        "set_Users",
+        "DevLoginOptions.Users.set",
+        ".ctor",
+        "DevLoginOptions.DevLoginOptions()",
+        "\u003CEmail\u003Ek__BackingField",
+        "DevLoginUserEntry.\u003CEmail\u003Ek__BackingField",
+        "Email",
+        "DevLoginUserEntry.Email",
+        "get_Email",
+        "DevLoginUserEntry.Email.get",
+        "set_Email",
+        "DevLoginUserEntry.Email.set",
+        "\u003CLabel\u003Ek__BackingField",
+        "DevLoginUserEntry.\u003CLabel\u003Ek__BackingField",
+        "Label",
+        "DevLoginUserEntry.Label",
+        "get_Label",
+        "DevLoginUserEntry.Label.get",
+        "set_Label",
+        "DevLoginUserEntry.Label.set",
+        "DevLoginUserEntry.DevLoginUserEntry()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Configuration/JobsOptions.cs": {
       "RelativePath": "Core/Configuration/JobsOptions.cs",
       "KnownMembers": [
@@ -9900,7 +10009,7 @@
         "EmailNotificationSender.SendEmailNotificationAsync(NotificationEntity, string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "EmailNotificationSender.SendEmailNotificationAsync(NotificationEntity, string, CancellationToken)": "a5fc9dc35030b5fff045f40885eef61687b3e0f5c6c96507982ab46ff0807902"
+        "EmailNotificationSender.SendEmailNotificationAsync(NotificationEntity, string, CancellationToken)": "985dbcc00ae7ddfece2610292c4cfe7f280d326bd11f8aa81880f992089d75fe"
       }
     },
     "Infrastructure/Notifications/NotificationChannelQueue.cs": {
@@ -10721,7 +10830,7 @@
         "AuditPurgeJobHandler.HandleAsync(AuditPurgeJobEvent, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "AuditPurgeJobHandler.HandleAsync(AuditPurgeJobEvent, CancellationToken)": "b5001bcecc905cda767a7d7d33284e8c419503e3b098f12fa208e295106ccd5e"
+        "AuditPurgeJobHandler.HandleAsync(AuditPurgeJobEvent, CancellationToken)": "c16f823fffd66f9696e1eaa21248c769de01be67196bc387fb4d95d8b8ad2c72"
       }
     },
     "Jobs/Jobs/Catalog/CatalogSyncBatchJobHandler.cs": {
@@ -11898,18 +12007,28 @@
       "KnownMembers": [
         "ToListWithAuditedBypassAsync",
         "AuditedQueryableExtensions.ToListWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)",
+        "AuditedQueryableExtensions.ToListWithAuditedBypassAsync\u003CT, TResult\u003E(IQueryable\u003CT\u003E, IAuditService, string, Expression\u003CFunc\u003CT, TResult\u003E\u003E, CancellationToken)",
         "FirstOrDefaultWithAuditedBypassAsync",
         "AuditedQueryableExtensions.FirstOrDefaultWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)",
+        "AuditedQueryableExtensions.FirstOrDefaultWithAuditedBypassAsync\u003CT, TResult\u003E(IQueryable\u003CT\u003E, IAuditService, string, Expression\u003CFunc\u003CT, TResult\u003E\u003E, CancellationToken)",
         "AnyWithAuditedBypassAsync",
         "AuditedQueryableExtensions.AnyWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)",
         "CountWithAuditedBypassAsync",
-        "AuditedQueryableExtensions.CountWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)"
+        "AuditedQueryableExtensions.CountWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)",
+        "ExecuteUpdateWithAuditedBypassAsync",
+        "AuditedQueryableExtensions.ExecuteUpdateWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, Action\u003CUpdateSettersBuilder\u003CT\u003E\u003E, CancellationToken)",
+        "ExecuteDeleteWithAuditedBypassAsync",
+        "AuditedQueryableExtensions.ExecuteDeleteWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "AuditedQueryableExtensions.ToListWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)": "2deac2691215f2168559d5d76533209f6337d50416f9645b361e2eec281e0c73",
+        "AuditedQueryableExtensions.ToListWithAuditedBypassAsync\u003CT, TResult\u003E(IQueryable\u003CT\u003E, IAuditService, string, Expression\u003CFunc\u003CT, TResult\u003E\u003E, CancellationToken)": "2b2f5e135ebaaf9920c411cf17eed9deb3021b3d91bd071430f4838caa2523e5",
         "AuditedQueryableExtensions.FirstOrDefaultWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)": "8248203bc3e56e89a2209fc3cdbe18a603b059afda0a6886faa5a5f55ee9de11",
+        "AuditedQueryableExtensions.FirstOrDefaultWithAuditedBypassAsync\u003CT, TResult\u003E(IQueryable\u003CT\u003E, IAuditService, string, Expression\u003CFunc\u003CT, TResult\u003E\u003E, CancellationToken)": "e224c0b487d74edb909978272afe71d46919091ba5bf4c7aaee83ef7b35381fd",
         "AuditedQueryableExtensions.AnyWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)": "7fd8082673fbae164e350f8be733e23b25a992940c859bc57241163e6033f6e9",
-        "AuditedQueryableExtensions.CountWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)": "a19196c8a5011878c9f64746aca842fa7ec75adffb966f90a7b31a23e74dbe39"
+        "AuditedQueryableExtensions.CountWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)": "a19196c8a5011878c9f64746aca842fa7ec75adffb966f90a7b31a23e74dbe39",
+        "AuditedQueryableExtensions.ExecuteUpdateWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, Action\u003CUpdateSettersBuilder\u003CT\u003E\u003E, CancellationToken)": "3adc1ab0744afa3685c696f4ad7e12174e9e59d9d88a67d391c6ec3da2947470",
+        "AuditedQueryableExtensions.ExecuteDeleteWithAuditedBypassAsync\u003CT\u003E(IQueryable\u003CT\u003E, IAuditService, string, CancellationToken)": "e0b633a0b3d1dcfe96fcac6867f32008b1c2ebbc1ad7dba53beb1b8db94b9ad5"
       }
     },
     "Persistence/Extensions/MigrationBuilderRlsExtensions.cs": {
@@ -11958,6 +12077,16 @@
         "TenantContextHealthCheck.CheckHealthAsync(HealthCheckContext, CancellationToken)": "727a72fbd86b60e5212cbef30f5076161bb39e52bcc6cf6fbe1e2bd22d784f9d"
       }
     },
+    "Persistence/Initialization/DevelopmentSeeder.cs": {
+      "RelativePath": "Persistence/Initialization/DevelopmentSeeder.cs",
+      "KnownMembers": [
+        "SeedAsync",
+        "DevelopmentSeeder.SeedAsync(IServiceProvider, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "DevelopmentSeeder.SeedAsync(IServiceProvider, CancellationToken)": "46abaee9622b6a0cb21f7d17d04f80b2ac945e29029817feeca4df349134a983"
+      }
+    },
     "Persistence/Initialization/InitialDatabaseSeeder.cs": {
       "RelativePath": "Persistence/Initialization/InitialDatabaseSeeder.cs",
       "KnownMembers": [
@@ -11969,7 +12098,7 @@
         "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)": "4419eb6e6460736c0664f72c7d0db763e8149e556d3558d052c7d0a7afdb7215"
+        "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)": "554477b08f0b58457260da3d9322070ae879ff02bac46875a9ae8e2b4de9a008"
       }
     },
     "Persistence/Interceptors/AuditableEntityInterceptor.cs": {
@@ -12789,7 +12918,7 @@
       ],
       "MemberSyntaxHashes": {
         "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "b1bf615f0366126eabeb6b9e92c61ff19098c877a0d0865fd921dc648c097019",
-        "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "ca304f71d0ae9f2fe035e166589a252a5eefc5099b773039882511946f59c405",
+        "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "f11f1c8efe35aa544cf5ab71cf0d47e873b7c78fcb7647343242ee5c789c8ae1",
         "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E)": "deb574d56f221bd70d79b0c864a0cd6f38bc9f2946b92a4359161d147869b49f"
       }
     },
@@ -12870,7 +12999,7 @@
         "MarkAllAsReadAsync",
         "NotificationService.MarkAllAsReadAsync(NotificationCategory?, string?, CancellationToken)",
         "GetAuthorizedProjectIdsAcrossTenantsAsync",
-        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, bool, string?, IReadOnlyCollection\u003Cstring\u003E, CancellationToken)",
+        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, IAuditService, bool, string?, IReadOnlyCollection\u003Cstring\u003E, CancellationToken)",
         "ResolveTeamsWebhook",
         "NotificationService.ResolveTeamsWebhook(Guid)",
         "ResolveProjectMailbox",
@@ -12879,11 +13008,11 @@
       "MemberSyntaxHashes": {
         "NotificationService.CreateScopedContext()": "980736b6243afeef7edd4d462a042bc6e6c2ce855e0e9c9ea6d6b8655f8b80b5",
         "NotificationService.SendAsync(SendNotificationReqDto, CancellationToken)": "b669be69443852c03d458f86864de27c023f45ced898fd74a44ed0b21751602d",
-        "NotificationService.GetNotificationsAsync(NotificationFilterReqDto, CancellationToken)": "30ae69b0c8732cebd1e54035b6bc7dcd05ed888cfb9ecc4116207b0620666654",
-        "NotificationService.GetUnreadCountsAsync(CancellationToken)": "d1a81694a969291777b35de70ff45098d3dd31e16b1e75262e5be87d68e06d04",
-        "NotificationService.MarkAsReadAsync(Guid, CancellationToken)": "26eba797b7363e0e8944f81503eaa4b8b55e4d247bcef95414cedc2725510288",
-        "NotificationService.MarkAllAsReadAsync(NotificationCategory?, string?, CancellationToken)": "a7edb87d6b64d2d6a73595867f1d6a971e43e152efb0ad630650a5e73763d6a5",
-        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, bool, string?, IReadOnlyCollection\u003Cstring\u003E, CancellationToken)": "17c9203ebd8d4c2a693cf6ee5dde2f45b7cf7ae9b97ce74239a69b35c8a18117",
+        "NotificationService.GetNotificationsAsync(NotificationFilterReqDto, CancellationToken)": "3f3df6b2699e7a125140a7e4dbf4e5b8751375aa75a1f2b73e254b3145c20fc7",
+        "NotificationService.GetUnreadCountsAsync(CancellationToken)": "ce1b7a3888a6ed020493f1ed09823193e7effc96404f364c1e98895395e894a9",
+        "NotificationService.MarkAsReadAsync(Guid, CancellationToken)": "f311ffbfad503221dd09b70e524bc68075ecdf68224acb78ac4ff29ebb5d09cb",
+        "NotificationService.MarkAllAsReadAsync(NotificationCategory?, string?, CancellationToken)": "9ac8a3bb166fd77626e9e240be71213b91fa90029e5e8215a1b031bb68e6d831",
+        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, IAuditService, bool, string?, IReadOnlyCollection\u003Cstring\u003E, CancellationToken)": "95a960d76c492c8b467212a9d2caaaece889dca207059764c6616c180c93423e",
         "NotificationService.ResolveTeamsWebhook(Guid)": "8fcf3eeef4263ece6811cd4df4fe46c8c6401659b83a5ba8bc01fc09fbe8e8e5",
         "NotificationService.ResolveProjectMailbox(Guid)": "6749b721d340a8c66c90815f7e352a0c48e060e8191365f7de011555d5ee3ed8"
       }
@@ -13365,14 +13494,14 @@
         "UserSessionService._tenantContext",
         "_currentUser",
         "UserSessionService._currentUser",
+        "_auditService",
+        "UserSessionService._auditService",
         "_logger",
         "UserSessionService._logger",
         ".ctor",
-        "UserSessionService.UserSessionService(IDbContextFactory\u003CAppDbContext\u003E, ITenantContext, ICurrentUser, ILogger\u003CUserSessionService\u003E)",
+        "UserSessionService.UserSessionService(IDbContextFactory\u003CAppDbContext\u003E, ITenantContext, ICurrentUser, IAuditService, ILogger\u003CUserSessionService\u003E)",
         "CreateSessionAsync",
         "UserSessionService.CreateSessionAsync(string, string, string, string, CancellationToken)",
-        "IsSessionRevokedCompiledQuery",
-        "UserSessionService.IsSessionRevokedCompiledQuery",
         "RevokePreviousSessionsAsync",
         "UserSessionService.RevokePreviousSessionsAsync(string, Guid?, CancellationToken)",
         "RevokeStaleSessionsAsync",
@@ -13384,17 +13513,15 @@
         "RevokeSessionAsync",
         "UserSessionService.RevokeSessionAsync(Guid, string, CancellationToken)",
         "GetActiveSessionsAsync",
-        "UserSessionService.GetActiveSessionsAsync(bool, CancellationToken)",
-        ".cctor",
-        "UserSessionService.UserSessionService()"
+        "UserSessionService.GetActiveSessionsAsync(bool, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "UserSessionService.CreateSessionAsync(string, string, string, string, CancellationToken)": "9fe07d39f4bd3c3b9f278e73002b6531daf7646d179413bb2e38d25f78ff43d5",
-        "UserSessionService.RevokePreviousSessionsAsync(string, Guid?, CancellationToken)": "5ccf00c567230313fc8d28232006a99b1832b9838d357921eccea23c66a1cca2",
-        "UserSessionService.RevokeStaleSessionsAsync(TimeSpan, string, CancellationToken)": "e5292f5f5446e323575aa6d9cb96538a4c7a043d0b3b50fa9b285f4460e9211e",
-        "UserSessionService.UpdateHeartbeatAsync(Guid, CancellationToken)": "c1f6ad682a5244b5f46e190a1ddb38de1d487090bd8a387ccf7a7f30fcb20f06",
-        "UserSessionService.IsSessionRevokedAsync(Guid, CancellationToken)": "fb46f90ceb2a4bf301764567582e3c61e6ce93c17bcfb65e3996cd326be1f04f",
-        "UserSessionService.RevokeSessionAsync(Guid, string, CancellationToken)": "620edd97cd478df382793c41dbc113782a360ad5acd73ce215add8e568fe53c6",
+        "UserSessionService.RevokePreviousSessionsAsync(string, Guid?, CancellationToken)": "7ee26538a5fa3b38cf872896c24a219de5571a0a151585413a8c1b1e245bd184",
+        "UserSessionService.RevokeStaleSessionsAsync(TimeSpan, string, CancellationToken)": "d5feeb5ffd77bd7efe352e0a95159a75cc4dd1c1550073537fe2159d98b7580f",
+        "UserSessionService.UpdateHeartbeatAsync(Guid, CancellationToken)": "3250a7925c93b36b4b519e09de38e2f44199d576fa458d795c9ec48c08c95291",
+        "UserSessionService.IsSessionRevokedAsync(Guid, CancellationToken)": "3a4d98c7346bbaca277371ff7bff300fa2253eb91ac9117b8c3a7ee645d45915",
+        "UserSessionService.RevokeSessionAsync(Guid, string, CancellationToken)": "51dfa5f031fb5a552b5cb72439902c3af98e438411969c0018c6425169792ac4",
         "UserSessionService.GetActiveSessionsAsync(bool, CancellationToken)": "f1ae05c16e2019cbfc39b3067721ce1f197daa2b4586ed254884162695bb02bf"
       }
     },
@@ -14356,7 +14483,7 @@
       "RelativePath": "Web/Components/Layout/NavMenuComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b2ee37c3eae01946d485048cf85b8924451cc6411c134421d9fdb57bbf3f4935"
+        "$Markup": "34d6a411a9416198a9629fdfaa2f3e0ec883db944f8fae7b3dc74b61fa2a7809"
       }
     },
     "Web/Components/Layout/NotificationBellPopup.razor": {
@@ -14401,13 +14528,6 @@
         "$Markup": "6ea3c63535dfe16a1168ee0daf10b43a22e81a8a8c4e4c480c93893e0480bf0a"
       }
     },
-    "Web/Components/Pages/CounterPage.razor": {
-      "RelativePath": "Web/Components/Pages/CounterPage.razor",
-      "KnownMembers": [],
-      "MemberSyntaxHashes": {
-        "$Markup": "92ad095e85db1261cb13a272b995d809de52c713187062c377333b7b58f35456"
-      }
-    },
     "Web/Components/Pages/ErrorPage.razor": {
       "RelativePath": "Web/Components/Pages/ErrorPage.razor",
       "KnownMembers": [],
@@ -14419,14 +14539,14 @@
       "RelativePath": "Web/Components/Pages/HomePage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "2ce2f3b8e5e19e98b3dd84ba45588cfa1cf7465d8e073604addb7fb4157dc1dd"
+        "$Markup": "09649b61741eac70eabeee715bf25f496cc8bfd080d3578b55d7e1bed51c0ff3"
       }
     },
     "Web/Components/Pages/LoginPage.razor": {
       "RelativePath": "Web/Components/Pages/LoginPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "8d5919b34cacb2cc16b3108900aacae0a01ae780d63adfea805584b4f0510a34"
+        "$Markup": "01527494dc20e2b00e8886ecb73a8d3f58458543c81b705343823053e25aab47"
       }
     },
     "Web/Components/Pages/NotFoundPage.razor": {
@@ -14511,13 +14631,6 @@
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Markup": "f0a9914c02b4651723baa302a008966d7aa18cc011fd0e737759c698ee24842b"
-      }
-    },
-    "Web/Components/Pages/WeatherPage.razor": {
-      "RelativePath": "Web/Components/Pages/WeatherPage.razor",
-      "KnownMembers": [],
-      "MemberSyntaxHashes": {
-        "$Markup": "500614ca61ced4ac485136db29ba31d0c68025edc4f2f94ff77fc10ce81b515d"
       }
     },
     "Web/Components/Routes.razor": {

@@ -3,6 +3,7 @@ using BlazorFluent.Core.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Core.Dtos;
 using BlazorFluent.Persistence.Context;
+using BlazorFluent.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -175,6 +176,7 @@ public class NotificationService : INotifyService
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
         var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -187,7 +189,6 @@ public class NotificationService : INotifyService
 
         var query = db.Notifications
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Where(n => !n.IsDeleted);
 
         // 1. Tenant filtering (all allowed tenants by default, or specific if provided)
@@ -211,7 +212,7 @@ public class NotificationService : INotifyService
         }
 
         // 3. Category & Personal Privacy filtering
-        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
         if (filter.Category == NotificationCategory.Personal)
         {
@@ -272,13 +273,14 @@ public class NotificationService : INotifyService
         return await query
             .OrderByDescending(n => n.Created)
             .Take(filter.Take > 0 ? filter.Take : 50)
-            .ToListAsync(ct);
+            .ToListWithAuditedBypassAsync(auditService, "Cross-tenant notification querying for user's authorized tenants.", ct);
     }
 
     public async Task<UnreadNotificationCountsRespDto> GetUnreadCountsAsync(CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
         var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -290,7 +292,6 @@ public class NotificationService : INotifyService
 
         var baseQuery = db.Notifications
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Where(n => !n.IsDeleted && !n.IsRead);
 
         if (!isHost)
@@ -298,13 +299,13 @@ public class NotificationService : INotifyService
             baseQuery = baseQuery.Where(n => allowedTenants.Contains(n.TenantId));
         }
 
-        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
         var genericCount = await baseQuery
             .Where(n => n.Category == NotificationCategory.Generic
                 && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
-            .CountAsync(ct);
+            .CountWithAuditedBypassAsync(auditService, "Counting unread generic notifications across authorized tenants.", ct);
 
         var personalCount = 0;
         if (!string.IsNullOrWhiteSpace(currentUserId))
@@ -313,7 +314,7 @@ public class NotificationService : INotifyService
                 .Where(n => n.Category == NotificationCategory.Personal
                     && n.UserId == currentUserId
                     && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
-                .CountAsync(ct);
+                .CountWithAuditedBypassAsync(auditService, "Counting unread personal notifications across authorized tenants.", ct);
         }
 
         return new UnreadNotificationCountsRespDto
@@ -327,6 +328,7 @@ public class NotificationService : INotifyService
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
         var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -337,9 +339,9 @@ public class NotificationService : INotifyService
         var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
 
         var notification = await db.Notifications
-            .IgnoreQueryFilters()
             .AsTracking()
-            .FirstOrDefaultAsync(n => !n.IsDeleted && n.Id == notificationId, ct);
+            .Where(n => !n.IsDeleted && n.Id == notificationId)
+            .FirstOrDefaultWithAuditedBypassAsync(auditService, "Cross-tenant notification lookup by ID for mark-as-read check.", ct);
         if (notification is null) return false;
 
         // Tenant authorization check
@@ -361,7 +363,7 @@ public class NotificationService : INotifyService
         // Project check: Generic notification on a project requires read access
         if (notification.ProjectId != Guid.Empty)
         {
-            var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
+            var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
             if (!authorizedProjectIds.Contains(notification.ProjectId))
             {
                 return false;
@@ -378,6 +380,7 @@ public class NotificationService : INotifyService
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
         var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -388,7 +391,6 @@ public class NotificationService : INotifyService
         var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
 
         var query = db.Notifications
-            .IgnoreQueryFilters()
             .Where(n => !n.IsDeleted && !n.IsRead);
 
         if (!string.IsNullOrWhiteSpace(tenantId))
@@ -401,7 +403,7 @@ public class NotificationService : INotifyService
             query = query.Where(n => allowedTenants.Contains(n.TenantId));
         }
 
-        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, isHost, currentUserId, allowedTenants, ct);
+        var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
         if (category == NotificationCategory.Personal)
         {
@@ -421,7 +423,7 @@ public class NotificationService : INotifyService
             );
         }
 
-        var unreadNotifications = await query.ToListAsync(ct);
+        var unreadNotifications = await query.ToListWithAuditedBypassAsync(auditService, "Bulk marking unread notifications as read across authorized tenants.", ct);
         if (unreadNotifications.Count == 0) return 0;
 
         var now = DateTime.UtcNow;
@@ -437,6 +439,7 @@ public class NotificationService : INotifyService
 
     private async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAcrossTenantsAsync(
         AppDbContext db,
+        IAuditService auditService,
         bool isHost,
         string? currentUserId,
         IReadOnlyCollection<string> allowedTenants,
@@ -446,19 +449,23 @@ public class NotificationService : INotifyService
         {
             return await db.Projects
                 .AsNoTracking()
-                .IgnoreQueryFilters()
                 .Where(p => !p.IsDeleted)
-                .Select(p => p.Id)
-                .ToListAsync(ct);
+                .ToListWithAuditedBypassAsync(
+                    auditService,
+                    "Host-level project ID resolution for notification targeting.",
+                    p => p.Id,
+                    ct);
         }
 
         if (string.IsNullOrWhiteSpace(currentUserId)) return [];
 
         var userRoles = await db.ProjectUserRoles
             .AsNoTracking()
-            .IgnoreQueryFilters()
             .Where(r => allowedTenants.Contains(r.TenantId) && r.UserId == currentUserId && !r.IsDeleted)
-            .ToListAsync(ct);
+            .ToListWithAuditedBypassAsync(
+                auditService,
+                "Resolving user project memberships across permitted tenant partition.",
+                ct);
 
         return userRoles
             .Where(r => r.Role.Satisfies(ProjectRole.ReadOnly))
