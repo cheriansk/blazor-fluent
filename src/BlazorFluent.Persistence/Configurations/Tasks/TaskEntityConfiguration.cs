@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BlazorFluent.Persistence.Configurations.Tasks;
 
-public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
+public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
 {
     public void Configure(EntityTypeBuilder<TaskEntity> builder)
     {
@@ -170,5 +170,10 @@ public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
 
         builder.HasIndex(t => t.MilestoneId)
             .HasDatabaseName("IX_Tasks_MilestoneId");
+
+        // Hook for downstream entity mapping customizations
+        OnConfigureCustom(builder);
     }
+
+    partial void OnConfigureCustom(EntityTypeBuilder<TaskEntity> builder);
 }

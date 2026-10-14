@@ -9,8 +9,11 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Services;
 
-public class UserTaskService : IUserTaskService
+public partial class UserTaskService : IUserTaskService
 {
+    partial void OnBeforeCreateTask(TaskEntity task);
+    partial void OnAfterCreateTask(TaskEntity task);
+
     private readonly AppDbContext _context;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;

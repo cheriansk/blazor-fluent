@@ -1,0 +1,8 @@
+# Rebuild both HTML portal and Markdown reference
+pwsh scripts/Generate-DataModelDocs.ps1 -Format All
+
+# Rebuild only the HTML portal
+pwsh scripts/Generate-DataModelDocs.ps1 -Format Html
+
+# Rebuild only docs/DATA_MODEL.md
+pwsh scripts/Generate-DataModelDocs.ps1 -Format Markdown

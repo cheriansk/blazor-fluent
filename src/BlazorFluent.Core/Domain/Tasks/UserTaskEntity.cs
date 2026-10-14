@@ -6,6 +6,6 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Backward-compatible inheritance subclass for UserTaskEntity mapping to TaskEntity.
 /// </summary>
 [NotMapped]
-public class UserTaskEntity : TaskEntity
+public partial class UserTaskEntity : TaskEntity
 {
 }

@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Directory.Build.targets: Runs at the end of every project evaluation.
+    Provides automated MSBuild governance checks for TemplateGuard.
+  -->
+
+  <!-- Auto-update base manifest on build in TemplateAuthoring mode when building the startup Web project -->
+  <Target Name="AutoUpdateBaseManifestOnBuild" 
+          AfterTargets="Build" 
+          Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true'">
+    <Message Text="==&gt; [TemplateGuard] Auto-updating locked base manifest (.basefiles.json) for template authoring..." Importance="high" />
+    <Exec Command="&quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe&quot; &quot;$(MSBuildThisFileDirectory).&quot;" 
+          Condition="Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe')" />
+    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj&quot; -- &quot;$(MSBuildThisFileDirectory).&quot;" 
+          Condition="!Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe')" />
+  </Target>
+</Project>
