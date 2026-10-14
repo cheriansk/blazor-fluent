@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [AllowAnonymous]
 @attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")]
+@using BlazorFluent.Core.Configuration
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.DataListTypes
 @using BlazorFluent.Core.Domain.Identity
@@ -9,12 +10,13 @@
 @using BlazorFluent.Infrastructure.Security
 @using BlazorFluent.Persistence.Context
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.Options
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject IInternalAuthenticationService AuthVerificationService
-@inject IServiceScopeFactory ScopeFactory
 @inject IConfiguration Configuration
 @inject IWebHostEnvironment HostEnvironment
+@inject IOptions<DevLoginOptions> DevLoginOptions
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject IRootAdminService RootAdminService
@@ -154,7 +156,7 @@
                     </FluentMessageBar>
                 }
 
-                @if (HostEnvironment.IsDevelopment())
+                @if (HostEnvironment.IsDevelopment() && DevLoginOptions.Value.Enabled && DevLoginOptions.Value.Users.Count > 0)
                 {
                     @* Local Dev Sandbox Section *@
                     <FluentDivider Style="width: 100%; margin-top: 8px;" />
@@ -163,34 +165,13 @@
                             🛠️ Developer Authentication Sandbox (Local Testing)
                         </FluentLabel>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("admin@blazorfluent.local"))">
-                                👑 Sign in as Root Admin 1 (admin@blazorfluent.local)
-                            </FluentButton>
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("admin2@blazorfluent.local"))">
-                                👑 Sign in as Root Admin 2 (admin2@blazorfluent.local)
-                            </FluentButton>
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("admin3@blazorfluent.local"))">
-                                👑 Sign in as Root Admin 3 (admin3@blazorfluent.local)
-                            </FluentButton>
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("dev@blazorfluent.local"))">
-                                👤 Sign in as Standard Developer (dev@blazorfluent.local)
-                            </FluentButton>
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("expired@blazorfluent.local"))">
-                                ❌ Test Expired User (Gate 1 Failure)
-                            </FluentButton>
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("tampered@blazorfluent.local"))">
-                                ❌ Test Tampered HMAC (Gate 2 Failure)
-                            </FluentButton>
-                            <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
-                                          OnClick="@(() => TestSignInAsync("unprovisioned@company.com"))">
-                                ❌ Test Unprovisioned User (Gate 3 Failure)
-                            </FluentButton>
+                            @foreach (var user in DevLoginOptions.Value.Users)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" Style="width: 100%; text-align: left;"
+                                              OnClick="@(() => TestSignInAsync(user.Email))">
+                                    @(string.IsNullOrWhiteSpace(user.Label) ? $"👤 Sign in ({user.Email})" : $"{user.Label} ({user.Email})")
+                                </FluentButton>
+                            }
                         </FluentStack>
                     </div>
                 }
@@ -213,7 +194,7 @@
     private AuthUserResult? _pendingAuth;
     private string? _selectedTenantSlug;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         if (!string.IsNullOrWhiteSpace(Reason))
         {
@@ -230,28 +211,16 @@
         {
             Logger.LogError("CRITICAL SECURITY ERROR: 'Security:IntegritySecret' is missing or unconfigured.");
         }
-
-        if (HostEnvironment.IsDevelopment())
-        {
-            await EnsureSeedUsersAsync();
-        }
     }
 
-    private async Task HandleMicrosoftSignIn()
+    private void HandleMicrosoftSignIn()
     {
         if (!_isAcknowledged) return;
 
         var clientId = Configuration["AzureAd:ClientId"];
-        if (string.IsNullOrWhiteSpace(clientId) || clientId.Equals("mock", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(clientId))
         {
-            if (HostEnvironment.IsDevelopment())
-            {
-                // Local dev mode without live Azure subscription: default to admin
-                await TestSignInAsync("admin@blazorfluent.local");
-                return;
-            }
-
-            _errorMessage = "Azure AD is not configured for this environment. Please contact your system administrator.";
+            _errorMessage = "Entra ID (Azure AD) is not configured for this environment. Please configure 'AzureAd:ClientId'.";
             return;
         }
 
@@ -404,92 +373,6 @@
         finally
         {
             _isLoading = false;
-        }
-    }
-
-    private async Task EnsureSeedUsersAsync()
-    {
-        try
-        {
-            using var scope = ScopeFactory.CreateScope();
-            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            var bootstrapEmail = Configuration["Security:SystemBootstrapEmail"] ?? "provisioner@blazorfluent.local";
-            currentUser?.SetSystemDaemon("LoginDevSeeder", bootstrapEmail);
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            // 1. Ensure Root Default Tenant exists
-            if (!await db.Tenants.AnyAsync(t => t.Slug == "default"))
-            {
-                db.Tenants.Add(new TenantEntity
-                {
-                    Slug = "default",
-                    Name = "Root System Organization",
-                    InternalEmailDomains = "@blazorfluent.local",
-                    ExternalEmailDomains = "@client.local",
-                    IsActive = true,
-                    StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.AddYears(10)
-                });
-                await db.SaveChangesAsync();
-            }
-
-            var count = await db.Users.CountAsync();
-            if (count > 0) return;
-
-            var admin = new UserEntity
-            {
-                Email = "admin@blazorfluent.local",
-                FullName = "System Administrator",
-                UserType = UserType.CompanyUser,
-                IsActive = true,
-                DefaultTenantId = "default",
-                StartDateUtc = DateTime.UtcNow.AddDays(-30),
-                EndDateUtc = DateTime.UtcNow.AddYears(1)
-            };
-            admin.RowSignature = admin.ComputeIntegritySignature(_secretKey);
-
-            var dev = new UserEntity
-            {
-                Email = "dev@blazorfluent.local",
-                FullName = "Jane Developer",
-                UserType = UserType.CompanyUser,
-                IsActive = true,
-                DefaultTenantId = "default",
-                StartDateUtc = DateTime.UtcNow.AddDays(-30),
-                EndDateUtc = DateTime.UtcNow.AddYears(1)
-            };
-            dev.RowSignature = dev.ComputeIntegritySignature(_secretKey);
-
-            var expired = new UserEntity
-            {
-                Email = "expired@blazorfluent.local",
-                FullName = "Expired Contractor",
-                UserType = UserType.ClientUser,
-                IsActive = true,
-                DefaultTenantId = "default",
-                StartDateUtc = DateTime.UtcNow.AddDays(-90),
-                EndDateUtc = DateTime.UtcNow.AddDays(-5)
-            };
-            expired.RowSignature = expired.ComputeIntegritySignature(_secretKey);
-
-            var tampered = new UserEntity
-            {
-                Email = "tampered@blazorfluent.local",
-                FullName = "Tampered Account",
-                UserType = UserType.ClientUser,
-                IsActive = true,
-                DefaultTenantId = "default",
-                StartDateUtc = DateTime.UtcNow.AddDays(-10),
-                EndDateUtc = DateTime.UtcNow.AddYears(1),
-                RowSignature = "FORGED_TAMPERED_SIGNATURE_INVALID"
-            };
-
-            db.Users.AddRange(admin, dev, expired, tampered);
-            await db.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Could not seed test users.");
         }
     }
 }

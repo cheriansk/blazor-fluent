@@ -285,6 +285,20 @@ try
         .BindConfiguration(BlazorFluent.Core.Configuration.CachingOptions.SectionName)
         .ValidateOnStart();
 
+    builder.Services.AddOptions<BlazorFluent.Core.Configuration.DevLoginOptions>()
+        .BindConfiguration(BlazorFluent.Core.Configuration.DevLoginOptions.SectionName)
+        .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
+            "Zero-Trust Security Violation: 'Auth:DevLogin' cannot be enabled outside Development environment.")
+        .Validate(o => !o.Enabled || o.Users.Count > 0,
+            "Configuration Violation: 'Auth:DevLogin' is enabled but no user personas are configured in 'Auth:DevLogin:Users'.")
+        .ValidateOnStart();
+
+    builder.Services.AddOptions<BlazorFluent.Core.Configuration.DevelopmentSeedOptions>()
+        .BindConfiguration(BlazorFluent.Core.Configuration.DevelopmentSeedOptions.SectionName)
+        .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
+            "Zero-Trust Security Violation: 'Seed' cannot be enabled outside Development environment.")
+        .ValidateOnStart();
+
     // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready)
     builder.Services.AddHealthChecks()
         .AddCheck<BlazorFluent.Persistence.HealthChecks.TenantContextHealthCheck>(
@@ -346,6 +360,11 @@ try
 
             Log.Information("Seeding default root tenant anchor and designated super-administrators...");
             await BlazorFluent.Persistence.Initialization.InitialDatabaseSeeder.SeedAsync(app.Services);
+
+            if (app.Environment.IsDevelopment())
+            {
+                await BlazorFluent.Persistence.Initialization.DevelopmentSeeder.SeedAsync(app.Services);
+            }
         }
         catch (Exception ex)
         {
@@ -437,7 +456,7 @@ try
         .AllowAnonymous();
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode()
-        .AllowAnonymous();
+        .RequireAuthorization();
 
     // Health Check endpoints (unauthenticated probes)
     app.MapHealthChecks("/healthz", new HealthCheckOptions

@@ -41,7 +41,12 @@ public class EmailNotificationSender : IEmailNotificationSender
         {
             var smtpPort = _configuration.GetValue<int>("Notifications:Email:SmtpPort", 587);
             var useSsl = _configuration.GetValue<bool>("Notifications:Email:UseSsl", true);
-            var senderEmail = _configuration["Notifications:Email:SenderEmail"] ?? "notifications@blazorfluent.local";
+            var senderEmail = _configuration["Notifications:Email:SenderEmail"];
+            if (string.IsNullOrWhiteSpace(senderEmail))
+            {
+                _logger.LogError("Zero-Trust Security Violation: 'Notifications:Email:SenderEmail' is unconfigured. Aborting email dispatch to {Mailbox}.", recipientMailbox);
+                return false;
+            }
             var senderName = _configuration["Notifications:Email:SenderName"] ?? "BlazorFluent Notifications";
             var username = _configuration["Notifications:Email:Username"];
             var password = _configuration["Notifications:Email:Password"];

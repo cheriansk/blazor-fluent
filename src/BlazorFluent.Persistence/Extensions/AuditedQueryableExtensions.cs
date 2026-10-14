@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.DataListTypes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace BlazorFluent.Persistence.Extensions;
 
@@ -33,6 +35,26 @@ public static class AuditedQueryableExtensions
         return await query.IgnoreQueryFilters().ToListAsync(cancellationToken);
     }
 
+    public static async Task<List<TResult>> ToListWithAuditedBypassAsync<T, TResult>(
+        this IQueryable<T> query,
+        IAuditService auditService,
+        string justification,
+        Expression<Func<T, TResult>> selector,
+        CancellationToken cancellationToken = default) where T : class
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(justification);
+        ArgumentNullException.ThrowIfNull(auditService);
+        ArgumentNullException.ThrowIfNull(selector);
+
+        await auditService.LogSecurityEventAsync(
+            "QueryFilterBypass",
+            AuditSeverity.Warning,
+            $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
+            cancellationToken);
+
+        return await query.IgnoreQueryFilters().Select(selector).ToListAsync(cancellationToken);
+    }
+
     public static async Task<T?> FirstOrDefaultWithAuditedBypassAsync<T>(
         this IQueryable<T> query,
         IAuditService auditService,
@@ -49,6 +71,26 @@ public static class AuditedQueryableExtensions
             cancellationToken);
 
         return await query.IgnoreQueryFilters().FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public static async Task<TResult?> FirstOrDefaultWithAuditedBypassAsync<T, TResult>(
+        this IQueryable<T> query,
+        IAuditService auditService,
+        string justification,
+        Expression<Func<T, TResult>> selector,
+        CancellationToken cancellationToken = default) where T : class
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(justification);
+        ArgumentNullException.ThrowIfNull(auditService);
+        ArgumentNullException.ThrowIfNull(selector);
+
+        await auditService.LogSecurityEventAsync(
+            "QueryFilterBypass",
+            AuditSeverity.Warning,
+            $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
+            cancellationToken);
+
+        return await query.IgnoreQueryFilters().Select(selector).FirstOrDefaultAsync(cancellationToken);
     }
 
     public static async Task<bool> AnyWithAuditedBypassAsync<T>(
@@ -85,5 +127,43 @@ public static class AuditedQueryableExtensions
             cancellationToken);
 
         return await query.IgnoreQueryFilters().CountAsync(cancellationToken);
+    }
+
+    public static async Task<int> ExecuteUpdateWithAuditedBypassAsync<T>(
+        this IQueryable<T> query,
+        IAuditService auditService,
+        string justification,
+        Action<UpdateSettersBuilder<T>> setPropertyCalls,
+        CancellationToken cancellationToken = default) where T : class
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(justification);
+        ArgumentNullException.ThrowIfNull(auditService);
+        ArgumentNullException.ThrowIfNull(setPropertyCalls);
+
+        await auditService.LogSecurityEventAsync(
+            "QueryFilterBypass",
+            AuditSeverity.Warning,
+            $"Query filters bypassed for bulk update on '{typeof(T).Name}'. Justification: {justification}",
+            cancellationToken);
+
+        return await query.IgnoreQueryFilters().ExecuteUpdateAsync(setPropertyCalls, cancellationToken);
+    }
+
+    public static async Task<int> ExecuteDeleteWithAuditedBypassAsync<T>(
+        this IQueryable<T> query,
+        IAuditService auditService,
+        string justification,
+        CancellationToken cancellationToken = default) where T : class
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(justification);
+        ArgumentNullException.ThrowIfNull(auditService);
+
+        await auditService.LogSecurityEventAsync(
+            "QueryFilterBypass",
+            AuditSeverity.Warning,
+            $"Query filters bypassed for bulk delete on '{typeof(T).Name}'. Justification: {justification}",
+            cancellationToken);
+
+        return await query.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
     }
 }

@@ -14,7 +14,8 @@
       Treat vulnerable package warnings as build errors in CI.
       Set to false locally if you need to unblock temporarily.
     -->
-    <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+    <WarningsAsErrors Condition="'$(CI)' == 'true'">$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+    <NoWarn Condition="'$(CI)' != 'true'">$(NoWarn);NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

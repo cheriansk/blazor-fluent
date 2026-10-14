@@ -2,6 +2,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
+using BlazorFluent.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,17 +13,20 @@ public class UserSessionService : IUserSessionService
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
     private readonly ILogger<UserSessionService> _logger;
 
     public UserSessionService(
         IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
         ICurrentUser currentUser,
+        IAuditService auditService,
         ILogger<UserSessionService> logger)
     {
         _dbFactory = dbFactory;
         _tenantContext = tenantContext;
         _currentUser = currentUser;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -77,26 +81,12 @@ public class UserSessionService : IUserSessionService
         return session;
     }
 
-    // ARCHITECTURAL ZERO-TRUST EXEMPTION:
-    // Session token validation queries operate on unique cryptographic GUID primary keys across tenants.
-    // Bypassing tenant filters here is strictly permitted and required prior to circuit tenant context rehydration,
-    // avoiding infinite recursive audit logging on high-frequency session verification polling.
-    private static readonly Func<AppDbContext, Guid, Task<bool?>> IsSessionRevokedCompiledQuery =
-        EF.CompileAsyncQuery((AppDbContext db, Guid id) =>
-            db.UserSessions
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .Where(s => s.Id == id)
-                .Select(s => (bool?)s.IsRevoked)
-                .FirstOrDefault());
-
     public async Task RevokePreviousSessionsAsync(string userId, Guid? exceptSessionId = null, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var now = DateTime.UtcNow;
 
         var query = dbContext.UserSessions
-            .IgnoreQueryFilters()
             .Where(s => s.UserId == userId && !s.IsRevoked);
 
         if (exceptSessionId.HasValue)
@@ -108,10 +98,14 @@ public class UserSessionService : IUserSessionService
             ? (_currentUser.Email ?? _currentUser.UserId ?? $"Login:{userId}") 
             : $"Login:{userId}";
 
-        var count = await query.ExecuteUpdateAsync(setters => setters
-            .SetProperty(s => s.IsRevoked, true)
-            .SetProperty(s => s.RevokedAtUtc, now)
-            .SetProperty(s => s.RevokedBy, revokedBy), ct);
+        var count = await query.ExecuteUpdateWithAuditedBypassAsync(
+            _auditService,
+            $"Revoking prior active sessions for user '{userId}' across tenants upon new sign-in.",
+            setters => setters
+                .SetProperty(s => s.IsRevoked, true)
+                .SetProperty(s => s.RevokedAtUtc, now)
+                .SetProperty(s => s.RevokedBy, revokedBy),
+            ct);
 
         _logger.LogInformation("Revoked {Count} prior active session(s) for user {UserId} upon new login.", count, userId);
     }
@@ -123,12 +117,15 @@ public class UserSessionService : IUserSessionService
         var now = DateTime.UtcNow;
 
         var count = await dbContext.UserSessions
-            .IgnoreQueryFilters()
             .Where(s => !s.IsRevoked && s.LastActivityAtUtc < cutoff)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(s => s.IsRevoked, true)
-                .SetProperty(s => s.RevokedAtUtc, now)
-                .SetProperty(s => s.RevokedBy, revokedBy), ct);
+            .ExecuteUpdateWithAuditedBypassAsync(
+                _auditService,
+                $"Bulk administrative purge of stale user sessions older than '{timeout}'.",
+                setters => setters
+                    .SetProperty(s => s.IsRevoked, true)
+                    .SetProperty(s => s.RevokedAtUtc, now)
+                    .SetProperty(s => s.RevokedBy, revokedBy),
+                ct);
 
         _logger.LogWarning("Admin '{RevokedBy}' revoked {Count} stale sessions older than {Timeout}.",
             revokedBy, count, timeout);
@@ -140,9 +137,12 @@ public class UserSessionService : IUserSessionService
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var session = await dbContext.UserSessions
-            .IgnoreQueryFilters()
             .AsTracking()
-            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
+            .Where(s => s.Id == sessionId)
+            .FirstOrDefaultWithAuditedBypassAsync(
+                _auditService,
+                "Updating circuit heartbeat and lifetime evaluation for active user session.",
+                ct);
         if (session != null && !session.IsRevoked)
         {
             var now = DateTime.UtcNow;
@@ -164,7 +164,14 @@ public class UserSessionService : IUserSessionService
     public async Task<bool> IsSessionRevokedAsync(Guid sessionId, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
-        var isRevoked = await IsSessionRevokedCompiledQuery(dbContext, sessionId);
+        var isRevoked = await dbContext.UserSessions
+            .AsNoTracking()
+            .Where(s => s.Id == sessionId)
+            .FirstOrDefaultWithAuditedBypassAsync(
+                _auditService,
+                "Session active status verification across tenants during circuit heartbeat validation.",
+                s => (bool?)s.IsRevoked,
+                ct);
         return isRevoked is null or true;
     }
 
@@ -172,9 +179,12 @@ public class UserSessionService : IUserSessionService
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var session = await dbContext.UserSessions
-            .IgnoreQueryFilters()
             .AsTracking()
-            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
+            .Where(s => s.Id == sessionId)
+            .FirstOrDefaultWithAuditedBypassAsync(
+                _auditService,
+                $"Administrative session revocation initiated by '{revokedBy}'.",
+                ct);
         if (session == null) return false;
 
         session.IsRevoked = true;

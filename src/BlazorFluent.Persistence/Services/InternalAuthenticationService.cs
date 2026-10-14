@@ -5,6 +5,7 @@ using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
+using BlazorFluent.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -131,14 +132,18 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, userId, "RehydrateSession");
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         // ARCHITECTURAL ZERO-TRUST EXEMPTION:
         // Primary-key GUID session lookup executes during initial pre-auth handshake before tenant identity is resolved.
-        // Bypassing tenant filters here is strictly scoped to the exact unique session GUID primary key.
+        // Bypassing tenant filters here is strictly audited and scoped to the exact unique session GUID primary key.
         var session = await dbContext.UserSessions
             .AsNoTracking()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(s => s.Id == sessionId, ct);
+            .Where(s => s.Id == sessionId)
+            .FirstOrDefaultWithAuditedBypassAsync(
+                auditService,
+                "Primary-key GUID session lookup during pre-auth handshake before tenant identity is resolved.",
+                ct);
 
         if (session is null || session.IsRevoked)
         {
@@ -152,12 +157,15 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         if (session.StartedAtUtc.AddHours(8) < now)
         {
             await dbContext.UserSessions
-                .IgnoreQueryFilters()
                 .Where(s => s.Id == sessionId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(x => x.IsRevoked, true)
-                    .SetProperty(x => x.RevokedAtUtc, now)
-                    .SetProperty(x => x.RevokedBy, "System:MaxSessionLifetimeExceeded"), ct);
+                .ExecuteUpdateWithAuditedBypassAsync(
+                    auditService,
+                    "Pre-auth revocation: session exceeded absolute 8-hour maximum lifetime.",
+                    s => s
+                        .SetProperty(x => x.IsRevoked, true)
+                        .SetProperty(x => x.RevokedAtUtc, now)
+                        .SetProperty(x => x.RevokedBy, "System:MaxSessionLifetimeExceeded"),
+                    ct);
 
             _logger.LogWarning("Session rehydration rejected: session {SessionId} exceeded absolute 8-hour maximum lifetime.", sessionId);
             return Result<AuthUserResult>.Failure("Your session has reached the maximum 8-hour limit. Please sign in again.");
@@ -167,12 +175,15 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         if (session.LastActivityAtUtc.AddMinutes(30) < now)
         {
             await dbContext.UserSessions
-                .IgnoreQueryFilters()
                 .Where(s => s.Id == sessionId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(x => x.IsRevoked, true)
-                    .SetProperty(x => x.RevokedAtUtc, now)
-                    .SetProperty(x => x.RevokedBy, "System:IdleTimeoutExceeded"), ct);
+                .ExecuteUpdateWithAuditedBypassAsync(
+                    auditService,
+                    "Pre-auth revocation: session exceeded 30-minute idle threshold.",
+                    s => s
+                        .SetProperty(x => x.IsRevoked, true)
+                        .SetProperty(x => x.RevokedAtUtc, now)
+                        .SetProperty(x => x.RevokedBy, "System:IdleTimeoutExceeded"),
+                    ct);
 
             _logger.LogWarning("Session rehydration rejected: session {SessionId} exceeded 30-minute idle threshold.", sessionId);
             return Result<AuthUserResult>.Failure("Your session has expired due to 30 minutes of inactivity. Please sign in again.");
