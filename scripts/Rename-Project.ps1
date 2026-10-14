@@ -257,6 +257,22 @@ foreach ($file in $targetFiles) {
 Write-Host "  Files modified: $filesModified $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 Write-Host ""
 
+# Flip TemplateGuard to DownstreamEnforce mode
+$buildProps = Join-Path $RepoRoot "Directory.Build.props"
+if (Test-Path $buildProps) {
+    $propsContent = Get-Content $buildProps -Raw
+    if ($propsContent -match "<TemplateGuardMode>TemplateAuthoring</TemplateGuardMode>") {
+        $propsContent = $propsContent.Replace("<TemplateGuardMode>TemplateAuthoring</TemplateGuardMode>", "<TemplateGuardMode>DownstreamEnforce</TemplateGuardMode>")
+        if (-not $DryRun) {
+            Set-Content -Path $buildProps -Value $propsContent -NoNewline -Encoding utf8
+            Write-Host "  TemplateGuard switched to DownstreamEnforce mode." -ForegroundColor Green
+        } else {
+            Write-Host "  [DRY RUN] Would switch TemplateGuard to DownstreamEnforce mode." -ForegroundColor Magenta
+        }
+    }
+}
+Write-Host ""
+
 # =============================================================================
 # PHASE 2: Rename files
 # =============================================================================

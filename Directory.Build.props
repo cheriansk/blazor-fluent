@@ -17,7 +17,35 @@
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.UI.Templates'">
+  <PropertyGroup>
+    <!--
+      TemplateGuard Governance Mode:
+      - 'TemplateAuthoring': Used while developing this base product template.
+                             Validation errors (TG001-TG004) are bypassed so the author can build freely.
+                             Base manifest is automatically updated on build.
+      - 'DownstreamEnforce': Used when downstream client teams consume this project.
+                             Strictly enforces TG001, TG002, TG003, and TG004 as fatal build errors.
+    -->
+    <TemplateGuardMode Condition="'$(TemplateGuardMode)' == ''">TemplateAuthoring</TemplateGuardMode>
+    <NoWarn Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring'">$(NoWarn);TG001;TG002;TG003;TG004</NoWarn>
+  </PropertyGroup>
+
+  <!-- Solution Explorer file nesting for downstream .Custom.cs files -->
+  <ItemGroup>
+    <Compile Update="**\*.Custom.cs">
+      <DependentUpon>$([System.String]::Copy('%(Filename)').Replace('.Custom', '.cs'))</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <!-- TemplateGuard Roslyn Analyzer & Base Manifest Wiring -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll') And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
+    <Analyzer Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" 
+                     Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')" />
+    <AdditionalFiles Include="**\*.razor" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.UI.Templates' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
     <Using Include="BlazorFluent.Core.DataListTypes.TaskStatus" Alias="TaskStatus" />
   </ItemGroup>
 </Project>
