@@ -37,11 +37,6 @@ public class AuthGatewayService : IAuthGatewayService
     private readonly ILogger<AuthGatewayService> _logger;
     private static readonly ConcurrentDictionary<string, AuthCodeRecord> PendingCodes = new();
 
-    // In production, loaded from Azure Key Vault RSA key pair
-    private static readonly SymmetricSecurityKey SigningKey = new(
-        SHA256.HashData(Encoding.UTF8.GetBytes("BlazorFluent-Cloud-AuthGateway-MasterKey-2026-Secure!"))
-    );
-
     public AuthGatewayService(
         IEntitlementsRepository entitlementsRepo,
         IConfiguration configuration,
@@ -50,6 +45,17 @@ public class AuthGatewayService : IAuthGatewayService
         _entitlementsRepo = entitlementsRepo;
         _configuration = configuration;
         _logger = logger;
+    }
+
+    private SymmetricSecurityKey GetSigningKey()
+    {
+        var secret = _configuration["Auth:SigningKey"];
+        if (string.IsNullOrWhiteSpace(secret) || secret.Length < 32)
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:SigningKey' must be configured with at least 32 characters.");
+        }
+
+        return new SymmetricSecurityKey(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
     }
 
     public async Task<Result<EntitlementUser>> ValidateEntitlementAsync(string email)
@@ -116,13 +122,18 @@ public class AuthGatewayService : IAuthGatewayService
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
+        var issuer = _configuration["Auth:Issuer"]
+            ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Issuer' must be explicitly configured.");
+        var audience = _configuration["Auth:Audience"]
+            ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Audience' must be explicitly configured.");
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddHours(8),
-            Issuer = _configuration["Auth:Issuer"] ?? "https://auth.company.com",
-            Audience = _configuration["Auth:Audience"] ?? "https://api.company.com",
-            SigningCredentials = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256Signature)
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = new SigningCredentials(GetSigningKey(), SecurityAlgorithms.HmacSha256Signature)
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);

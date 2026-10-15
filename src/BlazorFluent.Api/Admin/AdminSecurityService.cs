@@ -21,12 +21,16 @@ public class AdminSecurityService : IAdminSecurityService
     }
 
     public string GetAllowedDomain() =>
-        _configuration["Admin:AllowedDomain"] ?? "company.com";
+        _configuration["Admin:AllowedDomain"]
+        ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Admin:AllowedDomain' must be explicitly configured.");
 
     public IReadOnlyList<string> GetConfiguredAdmins()
     {
         // Loaded from Azure Key Vault in production or appsettings in development
-        var rawAdmins = _configuration["Admin:KeyVaultUsers"] ?? _configuration["Admin:AuthorizedEmails"] ?? "admin1@company.com,admin2@company.com,admin3@company.com";
+        var rawAdmins = _configuration["Admin:KeyVaultUsers"]
+            ?? _configuration["Admin:AuthorizedEmails"]
+            ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Admin:KeyVaultUsers' must be explicitly configured.");
+
         return rawAdmins
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Take(3) // Hard ceiling of at most 3 admin users
