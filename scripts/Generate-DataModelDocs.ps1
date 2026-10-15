@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
     Generates an enterprise-grade HTML Data Dictionary portal and Markdown specification
-    for BlazorFluent, modeled after Guidewire PolicyCenter's Data Dictionary standard.
+    for BlazorFluent, modeled after modern enterprise architecture data dictionary standards.
 
 .DESCRIPTION
     Scans the C# domain entity layer (src/BlazorFluent.Core/Domain) and AppDbContext.cs.
@@ -62,7 +62,7 @@ if (-not (Test-Path $resolvedDomain)) {
 }
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host " [DATA DICTIONARY GENERATOR] Guidewire PolicyCenter Model Builder" -ForegroundColor Cyan
+Write-Host " [DATA DICTIONARY GENERATOR] Enterprise Data Model Builder" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host "Domain path:    $resolvedDomain"
 Write-Host "HTML Output:    $resolvedOutputDir"
@@ -292,7 +292,7 @@ foreach ($source in $typeDict.Values) {
 
 Write-Host "Resolved $($typeDict.Count) total types across domain." -ForegroundColor Green
 
-# ─── 4.5 SCAN RAZOR PAGES & UI FIELD USAGES (GUIDEWIRE PCF PARITY) ──────────
+# ─── 4.5 SCAN RAZOR PAGES & UI FIELD USAGES (PRESENTATION LAYER USAGE) ──────────
 Write-Host "Scanning Razor screens and field usages across UI layer..." -ForegroundColor Cyan
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -643,7 +643,7 @@ function setActive(el) {
     $ovHtml = [System.Text.StringBuilder]::new()
     [void]$ovHtml.AppendLine('<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="styles.css"></head><body>')
     [void]$ovHtml.AppendLine('<div class="page-container">')
-    [void]$ovHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Guidewire PolicyCenter-Style Data Dictionary &bull; BlazorFluent Monolith</div></div></div>')
+    [void]$ovHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorFluent Monolith</div></div></div>')
 
     # Stat Cards
     $screensWithEntitiesCount = ($screens | Where-Object { $_.EntityUsages.Count -gt 0 }).Count
@@ -674,7 +674,7 @@ function setActive(el) {
 
     # UI Screen Integration Card
     [void]$ovHtml.AppendLine('<div class="card">')
-    [void]$ovHtml.AppendLine('<div class="card-title">🖥️ UI Screen & Field Binding Integration (Guidewire PCF Parity)</div>')
+    [void]$ovHtml.AppendLine('<div class="card-title">🖥️ UI Screen & Field Binding Integration (Presentation Layer Parity)</div>')
     [void]$ovHtml.AppendLine('<div class="desc-box">')
     [void]$ovHtml.AppendLine("<p>BlazorFluent indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>")
     [void]$ovHtml.AppendLine('<ul style="margin: 8px 0 12px 20px;">')
@@ -702,14 +702,14 @@ function setActive(el) {
     [void]$ovHtml.AppendLine('</div></body></html>')
     Set-Content -Path (Join-Path $resolvedOutputDir "overview.html") -Value $ovHtml.ToString() -Encoding UTF8
 
-    # 5.4 RAZOR-PAGES.HTML (GUIDEWIRE PCF DICTIONARY)
+    # 5.4 RAZOR-PAGES.HTML (RAZOR SCREENS DICTIONARY)
     $rpTotalPages = ($screens | Where-Object { $_.Route }).Count
     $rpTotalModals = ($screens | Where-Object { $_.ComponentType -in @('Modal', 'Settings Tab', 'Drawer') }).Count
 
     $rpHtml = [System.Text.StringBuilder]::new()
     [void]$rpHtml.AppendLine('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Razor Screens Dictionary</title><link rel="stylesheet" href="styles.css"></head><body>')
     [void]$rpHtml.AppendLine('<div class="page-container">')
-    [void]$rpHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Razor Screens & Component Catalog</h1><div class="breadcrumb">Guidewire PolicyCenter PCF Parity &bull; Presentation Layer Usage Matrix</div></div></div>')
+    [void]$rpHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Razor Screens & Component Catalog</h1><div class="breadcrumb">Presentation Layer Usage Matrix &bull; BlazorFluent</div></div></div>')
     
     # KPI Grid
     [void]$rpHtml.AppendLine('<div class="stat-grid">')
@@ -784,7 +784,7 @@ function filterScreens() {
     <div class="card">
         <div class="card-title">⚙️ Classes & Service Dependencies (Phase 3 Roadmap)</div>
         <div class="desc-box">
-            <p>Similar to Guidewire PolicyCenter's Gosu/Java Class Usage dictionary, Phase 3 will scan domain services and repositories to map:</p>
+            <p>Similar to enterprise metadata dictionaries, Phase 3 will scan domain services and repositories to map:</p>
             <ul style="margin: 12px 0 12px 20px;">
                 <li>Which service classes inject <code>AppDbContext</code> and query each entity</li>
                 <li>Background jobs and schedulers executing batch operations per entity</li>
@@ -883,7 +883,7 @@ function filterScreens() {
         }
         [void]$eHtml.AppendLine('</div>')
 
-        # Screen / Razor Page Usages (Guidewire PCF Parity)
+        # Screen / Razor Page Usages (Presentation Layer Parity)
         [void]$eHtml.AppendLine('<div class="card">')
         [void]$eHtml.AppendLine("<div class=`"card-title`">🖥️ Screen / Razor Page Usages ($($e.ScreenUsages.Count))</div>")
         if ($e.ScreenUsages.Count -gt 0) {
@@ -930,7 +930,7 @@ function filterScreens() {
 <body style="overflow: hidden;">
     <header class="top-header">
         <div class="brand">
-            <span class="brand-badge">Guidewire Style</span>
+            <span class="brand-badge">Enterprise Edition</span>
             <span>BlazorFluent Data Dictionary</span>
         </div>
         <nav class="nav-tabs">
