@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Abstractions.Imports;
+﻿using BlazorFluent.Shared.Models;
 
 namespace BlazorFluent.Jobs.FileImports.Tasks;
 

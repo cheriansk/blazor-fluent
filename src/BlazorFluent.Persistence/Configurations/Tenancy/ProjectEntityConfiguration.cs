@@ -44,7 +44,7 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
 
         builder.Property(p => p.Status)
             .IsRequired()
-            .HasDefaultValue(BlazorFluent.Core.DataListTypes.ProjectStatus.New);
+            .HasDefaultValue(ProjectStatus.New);
 
         builder.Property(p => p.IsActive)
             .IsRequired()

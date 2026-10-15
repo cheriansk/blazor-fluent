@@ -1,6 +1,5 @@
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Dtos;
-using BlazorFluent.Core.Dtos.Requests;
 using FluentValidation;
 
 namespace BlazorFluent.Core.Validation;

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Shared.Common;
 using FluentAssertions;
 using Xunit;
 

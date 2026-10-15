@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
@@ -6,8 +6,8 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 using System.Xml.Linq;
-using BlazorFluent.Core.Abstractions.Imports;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.Models;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Persistence.Context;

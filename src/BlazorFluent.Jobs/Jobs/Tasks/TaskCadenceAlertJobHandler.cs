@@ -1,7 +1,7 @@
-using System.Text;
+﻿using System.Text;
 
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos;
 using BlazorFluent.Jobs.Abstractions;

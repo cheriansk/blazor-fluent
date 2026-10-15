@@ -1,6 +1,7 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Security;
 using BlazorFluent.Core.Storage;
+using BlazorFluent.Infrastructure.EngineGateway;
 using BlazorFluent.Infrastructure.Notifications;
 using BlazorFluent.Infrastructure.Observability;
 using BlazorFluent.Infrastructure.Security;
@@ -61,6 +62,9 @@ public static class InfrastructureExtensions
 
         // 13. Root Administrator Security Service (Max 3 super-administrators from configuration)
         services.TryAddSingleton<IRootAdminService, RootAdminService>();
+
+        // 14. Outbound ProcessAPI Engine Gateway & Mandatory Correlation Context
+        services.AddEngineClient(configuration);
 
         return services;
     }

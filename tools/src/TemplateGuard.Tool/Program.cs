@@ -120,8 +120,16 @@ public static class Program
         }
 
         var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(outputFile, json);
-        Console.WriteLine($"==> Successfully indexed {manifest.Files.Count} files ({csFiles.Count()} C#, {razorFiles.Count()} Razor) in {outputFile}");
+        
+        if (File.Exists(outputFile) && File.ReadAllText(outputFile) == json)
+        {
+            Console.WriteLine($"==> Base manifest is up to date ({manifest.Files.Count} files). Timestamp preserved for fast builds.");
+        }
+        else
+        {
+            File.WriteAllText(outputFile, json);
+            Console.WriteLine($"==> Successfully indexed {manifest.Files.Count} files ({csFiles.Count()} C#, {razorFiles.Count()} Razor) in {outputFile}");
+        }
     }
 
     public static string? GetLayerRelativePath(string fullPath, string[] layers)

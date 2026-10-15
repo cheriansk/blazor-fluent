@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

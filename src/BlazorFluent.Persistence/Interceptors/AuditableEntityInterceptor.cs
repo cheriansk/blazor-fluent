@@ -1,6 +1,6 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Tasks;

@@ -1,8 +1,7 @@
 using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Events;
-using BlazorFluent.Core.Dtos.Requests;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Core.Utilities;

@@ -1,30 +1,58 @@
-# BlazorFluent Documentation Portal
+# 🏛️ BlazorFluent Enterprise Documentation Portal
 
-Welcome to the **BlazorFluent .NET 10 Starter Kit** documentation suite.
+Welcome to the **BlazorFluent .NET 10 Enterprise Starter Kit** master documentation suite.
 
-BlazorFluent is a production-grade, enterprise-ready multi-tenant SaaS starter kit built on **.NET 10**, **Blazor Server**, **Microsoft Fluent UI Blazor V5**, **EF Core 10**, and **PostgreSQL**.
+BlazorFluent is a production-grade, security-hardened SaaS foundation built on **.NET 10**, **Interactive Server Blazor**, **Microsoft Fluent UI Blazor V5**, **EF Core 10**, **PostgreSQL**, and **.NET Aspire Orchestration**.
 
-> [!NOTE]
-> All detailed architectural plans, guides, recipes, and security models are organized into dedicated chapters below.
-> Historical early planning artifacts have been archived in [`docs/archive/Design-History.md`](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/archive/Design-History.md).
+```mermaid
+flowchart TD
+    Portal["📚 BlazorFluent Documentation Portal"]
+    
+    Portal --> Found["1. Foundation & Architecture"]
+    Found --> D00["00. Overview & Executive Summary"]
+    Found --> D01["01. Getting Started & Setup"]
+    Found --> D02["02. Architecture & 11-Project Topology"]
+    
+    Portal --> Sec["2. Security & Compliance"]
+    Sec --> D03["03. Security Model & Defense-in-Depth"]
+    
+    Portal --> Feat["3. Enterprise Subsystems"]
+    Feat --> D04["04. Enterprise Features & Subsystems"]
+    Feat --> D05["05. Observability & Reliability"]
+    Feat --> D06["06. UI Conventions (Fluent UI V5)"]
+    
+    Portal --> Dev["4. Engineering & Operations"]
+    Dev --> D07["07. How-To-Extend & Developer Recipes"]
+    Dev --> D08["08. Operational Scripts & Tooling"]
+    Dev --> D09["09. Coding Standards & Project Rules"]
+    Dev --> D10["10. AI Agent Governance & Rules"]
+    
+    Portal --> Arch["5. Historical Archive"]
+    Arch --> DHist["archive/ (Design History & Historical RFCs)"]
+```
 
 ---
 
-## 📚 Documentation Index
+## 📚 Master Documentation Index
 
-| Guide | Description | Target Audience |
-| :--- | :--- | :--- |
-| [**00 — Overview & Domain Glossary**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/00-Overview-and-Glossary.md) | High-level mental model, personas, feature routing map, domain glossary, and tenancy architecture. | Architects, New Developers, Tech Leads |
-| [**01 — Getting Started**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/01-Getting-Started.md) | Prerequisites, renaming script (`Rename-Project.ps1`), `appsettings` key dictionary, EF Core migrations, dev login, and troubleshooting. | Everyone starting a new project |
-| [**02 — Architecture**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture.md) | Clean Architecture 6-project topology, DI lifetime rules, request pipeline, EF interceptors, caching, and background jobs. | Software Engineers, Architects |
-| [**03 — Security Model**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model.md) | Defense-in-depth model, HMAC user seals, fail-closed tenant isolation, RBAC/PBAC, active session control, impersonation, and AES-GCM file encryption. | Security Engineers, Lead Developers |
-| [**04 — Task Hierarchy & Workflows**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/04-Task-Hierarchy-and-Workflows.md) | Multi-level work management (Tenant > Program > Project), depth-1 tasks, ServiceNow-style sequential workflows, RBAC rules, and `<FluentWizardModal>`. | Full-stack Engineers, Product Owners |
-| [**05 — UI Conventions (Fluent UI Blazor V5)**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/05-UI-Conventions-Fluent-V5.md) | 4-tier naming taxonomy (`*Page`, `*Comp`, `*Modal`, `*Popup`), reusable catalog, V5 compliance scanner, and component pitfall table. | Frontend & Blazor Developers |
-| [**06 — How to Extend**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/06-How-To-Extend.md) | Copy-pasteable step-by-step recipes: add entity, service, page, background job, file importer, or wizard. | Developers building new features |
-| [**07 — AI Agent Rules**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/07-AI-Agent-Rules.md) | Operational rules for AI assistants (never build/run, never git stage, V5 compliance, authority hierarchy). | AI Agents, Prompt Engineers |
+| Chapter | Document | Core Focus | Target Audience |
+| :--- | :--- | :--- | :--- |
+| **00** | [**Overview & Executive Summary**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/00-Overview-and-Executive-Summary.md) | Value proposition, enterprise capability matrix, personas, and domain mental model. | Enterprise Architects, CTOs, Tech Leads |
+| **01** | [**Getting Started & Setup**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/01-Getting-Started-and-Environment-Setup.md) | Prerequisites, Aspire orchestration, dual-mode PostgreSQL (Native vs Docker), and config dictionary. | All Developers, DevOps Engineers |
+| **02** | [**Architecture & Project Structure**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture-and-Project-Structure.md) | Complete 11-project solution topology, Clean Architecture boundaries, and hybrid cloud model. | Solutions Architects, Senior Engineers |
+| **03** | [**Security Model & Defense-in-Depth**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model-and-Defense-in-Depth.md) | 5-layer defense, PostgreSQL Native RLS, AES-256-GCM envelope encryption, and Auth Gateway. | Security Engineers, Compliance Officers |
+| **04** | [**Enterprise Features & Subsystems**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/04-Enterprise-Features-and-Subsystems.md) | Bounded Channel batch queue, 4-stage ingestion, in-memory Rules Engine, and Wizard RCL. | Full-Stack Engineers, Product Owners |
+| **05** | [**Observability & Reliability**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/05-Observability-and-Reliability.md) | Aspire OpenTelemetry, distributed tracing, health checks, HybridCache, and forensic audit diffs. | SREs, Platform Engineers, Architects |
+| **06** | [**UI Conventions (Fluent UI V5)**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/06-UI-Conventions-and-Fluent-V5.md) | 4-tier component naming taxonomy, Microsoft Fluent 2 design language, and AST compliance scanner. | Frontend Engineers, UI/UX Specialists |
+| **07** | [**How-To-Extend & Developer Recipes**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/07-How-To-Extend-and-Developer-Recipes.md) | Copy-pasteable recipes: entities, services, pages, batch importers, wizards, rules, and `.Custom.cs`. | Developers building new features |
+| **08** | [**Operational Scripts & Tooling**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/08-Operational-Scripts-and-Tooling.md) | Comprehensive catalog of all repository PowerShell scripts, parameters, and automation workflows. | DevOps, Release Engineers, Developers |
+| **09** | [**Coding Standards & Project Rules**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/09-Coding-Standards-and-Project-Rules.md) | Human engineering team standards, Clean Architecture laws, captive dependency governance, and C# 13 idioms. | All Software Engineers, Reviewers |
+| **10** | [**AI Agent Governance & Operational Rules**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/10-AI-Agent-Governance-and-Operational-Rules.md) | Strict operational constraints, safety checks, execution permissions, and plan-first rules for AI assistants. | AI Coding Agents, Prompt Engineers |
 
 ---
 
-## 🗄️ Historical Documentation
+## 🗄️ Historical Documentation Archive
 
-- [`docs/archive/Design-History.md`](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/archive/Design-History.md) — Preserved records of historical RFCs, early security design reviews, and framework comparison studies.
+Historical planning documents and early architecture specifications are preserved for traceability:
+- [`docs/archive/Design-History.md`](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/archive/Design-History.md) — Comprehensive archive of early security RFCs, database schema evolution, and component benchmarks.
+- [`docs/archive/Phase2-Hybrid-Cloud-Split-Plan.md`](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/archive/Phase2-Hybrid-Cloud-Split-Plan.md) — Architectural roadmap for the on-premise vs Azure cloud split.

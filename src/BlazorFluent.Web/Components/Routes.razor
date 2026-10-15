@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Components.Authorization
+﻿@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Routing
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
@@ -19,7 +19,7 @@
                     }
                     else
                     {
-                        <ProjectAccessDeniedCardComp RequiredRole="BlazorFluent.Core.DataListTypes.ProjectRole.ReadOnly"
+                        <ProjectAccessDeniedCardComp RequiredRole="BlazorFluent.Shared.DataListTypes.ProjectRole.ReadOnly"
                                                  CustomMessage="You do not have permission to access this section." />
                     }
                 </NotAuthorized>

@@ -1,7 +1,7 @@
-using System.Text.Json;
-using BlazorFluent.Core.Abstractions.Imports;
+﻿using System.Text.Json;
+using BlazorFluent.Shared.Models;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Dtos;
 using BlazorFluent.Core.Dtos.Imports;

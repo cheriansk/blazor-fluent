@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlazorFluent.Core\BlazorFluent.Core.csproj" />
+    <ProjectReference Include="..\BlazorFluent.Shared\BlazorFluent.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

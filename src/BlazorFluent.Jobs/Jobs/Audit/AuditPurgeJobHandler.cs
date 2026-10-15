@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;

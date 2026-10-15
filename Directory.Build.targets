@@ -4,10 +4,19 @@
     Provides automated MSBuild governance checks for TemplateGuard.
   -->
 
-  <!-- Auto-update base manifest on build in TemplateAuthoring mode when building the startup Web project -->
+  <!-- Visual Studio FastUpToDateCheck tracking for base manifest -->
+  <ItemGroup Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true'">
+    <UpToDateCheckInput Include="$(MSBuildThisFileDirectory)src\**\*.cs" Exclude="$(MSBuildThisFileDirectory)src\**\bin\**;$(MSBuildThisFileDirectory)src\**\obj\**" />
+    <UpToDateCheckInput Include="$(MSBuildThisFileDirectory)src\**\*.razor" Exclude="$(MSBuildThisFileDirectory)src\**\bin\**;$(MSBuildThisFileDirectory)src\**\obj\**" />
+    <UpToDateCheckBuilt Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" />
+  </ItemGroup>
+
+  <!-- Auto-update base manifest on build/rebuild in TemplateAuthoring mode when building the startup Web project -->
   <Target Name="AutoUpdateBaseManifestOnBuild" 
           AfterTargets="Build" 
-          Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true'">
+          Inputs="$(MSBuildThisFileDirectory)src\**\*.cs;$(MSBuildThisFileDirectory)src\**\*.razor"
+          Outputs="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json"
+          Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true' And '$(SkipBaseManifestUpdate)' != 'true'">
     <Message Text="==&gt; [TemplateGuard] Auto-updating locked base manifest (.basefiles.json) for template authoring..." Importance="high" />
     <Exec Command="&quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe&quot; &quot;$(MSBuildThisFileDirectory).&quot;" 
           Condition="Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe')" />

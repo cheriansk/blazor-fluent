@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.DataListTypes;
 using Microsoft.AspNetCore.Components;
 
 namespace BlazorFluent.Components.Common;

@@ -68,7 +68,11 @@ param(
     [switch]$Force,
 
     [Parameter(Mandatory = $false, HelpMessage = "Preview rename changes without altering files on disk")]
-    [switch]$DryRun
+    [switch]$DryRun,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Distribution Mode: 'Full' (all projects + Aspire) or 'ClientDistribution' (strips proprietary RulesEngine and Api)")]
+    [ValidateSet("Full", "ClientDistribution")]
+    [string]$Mode = "Full"
 )
 
 Set-StrictMode -Version Latest
@@ -353,6 +357,43 @@ foreach ($staleDir in $staleDirectories) {
 
 Write-Host "  Directories cleaned: $binObjCleaned $(if ($DryRun) { '(simulated)' })" -ForegroundColor Green
 Write-Host ""
+
+# =============================================================================
+# PHASE 4.5: Strip Proprietary Cloud Projects (ClientDistribution Mode)
+# =============================================================================
+if ($Mode -eq "ClientDistribution") {
+    Write-Host "=== Phase 4.5: Stripping Proprietary Cloud Projects (ClientDistribution Mode) ===" -ForegroundColor Yellow
+    $proprietaryFolders = @(
+        "src/$OldName.RulesEngine",
+        "src/$OldName.Api",
+        "src/$NewName.RulesEngine",
+        "src/$NewName.Api"
+    )
+    foreach ($pf in $proprietaryFolders) {
+        $fullPath = Join-Path $RepoRoot $pf
+        if (Test-Path $fullPath) {
+            if ($DryRun) {
+                Write-Host "  [DRY RUN] Would remove proprietary project: $pf" -ForegroundColor Magenta
+            } else {
+                Remove-Item -Path $fullPath -Recurse -Force -ErrorAction SilentlyContinue
+                Write-Host "  Stripped proprietary project: $pf" -ForegroundColor Green
+            }
+        }
+    }
+
+    # Also strip RulesEngine and Api project entries from solution file
+    $slnxFiles = Get-ChildItem -Path $RepoRoot -Filter "*.slnx" -File
+    foreach ($slnx in $slnxFiles) {
+        $slnxContent = Get-Content -Path $slnx.FullName -Raw
+        $newSlnx = $slnxContent -replace '(?m)^\s*<Project Path="[^"]*RulesEngine[^"]*"\s*/>\r?\n', ''
+        $newSlnx = $newSlnx -replace '(?m)^\s*<Project Path="[^"]*Api\.csproj[^"]*"\s*/>\r?\n', ''
+        if (-not $DryRun) {
+            Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline
+            Write-Host "  Updated solution file: $($slnx.Name) (removed proprietary projects)" -ForegroundColor Green
+        }
+    }
+    Write-Host ""
+}
 
 # =============================================================================
 # PHASE 5: Post-rename verification

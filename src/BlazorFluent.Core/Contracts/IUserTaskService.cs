@@ -56,7 +56,7 @@ public interface IUserTaskService
     /// <summary>
     /// Retrieves all dependency links (blockers and blocked-by) for a specific task.
     /// </summary>
-    Task<IReadOnlyList<BlazorFluent.Core.DataListTypes.TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
+    Task<IReadOnlyList<TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
     /// Registers a blocking or prerequisite dependency between two tasks.
@@ -65,7 +65,7 @@ public interface IUserTaskService
         Guid projectId,
         Guid taskId,
         Guid dependsOnTaskId,
-        BlazorFluent.Core.DataListTypes.TaskDependencyType dependencyType = BlazorFluent.Core.DataListTypes.TaskDependencyType.Blocks,
+        TaskDependencyType dependencyType = TaskDependencyType.Blocks,
         DateTime? resolveByUtc = null,
         string? notes = null,
         CancellationToken ct = default);
@@ -87,7 +87,7 @@ public interface IUserTaskService
         Guid sourceTaskId,
         Guid targetTaskId,
         DateTime resolveDueDate,
-        BlazorFluent.Core.DataListTypes.DependencyCriticality criticality,
+        DependencyCriticality criticality,
         string impactDetails,
         string? watcherEmails = null,
         CancellationToken ct = default);

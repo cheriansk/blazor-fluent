@@ -3,6 +3,8 @@
   <ItemGroup>
     <ProjectReference Include="..\BlazorFluent.Core\BlazorFluent.Core.csproj" />
     <ProjectReference Include="..\BlazorFluent.Persistence\BlazorFluent.Persistence.csproj" />
+    <ProjectReference Include="..\BlazorFluent.Shared\BlazorFluent.Shared.csproj" />
+    <ProjectReference Include="..\BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />
   </ItemGroup>
 	<ItemGroup>
     <PackageReference Include="Cronos" Version="0.8.4" />

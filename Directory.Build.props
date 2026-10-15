@@ -28,6 +28,7 @@
                              Strictly enforces TG001, TG002, TG003, and TG004 as fatal build errors.
     -->
     <TemplateGuardMode Condition="'$(TemplateGuardMode)' == ''">TemplateAuthoring</TemplateGuardMode>
+    <SkipBaseManifestUpdate Condition="'$(SkipBaseManifestUpdate)' == ''">false</SkipBaseManifestUpdate>
     <NoWarn Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring'">$(NoWarn);TG001;TG002;TG003;TG004</NoWarn>
   </PropertyGroup>
 
@@ -46,7 +47,18 @@
     <AdditionalFiles Include="**\*.razor" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.UI.Templates' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
-    <Using Include="BlazorFluent.Core.DataListTypes.TaskStatus" Alias="TaskStatus" />
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.AppHost' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
+    <Using Include="BlazorFluent.Shared.Common" />
+    <Using Include="BlazorFluent.Shared.Attributes" />
+    <Using Include="BlazorFluent.Shared.DataListTypes" />
+    <Using Include="BlazorFluent.Shared.Models" />
+    <Using Include="BlazorFluent.Shared.Contracts.Common" />
+    <Using Include="BlazorFluent.Shared.Contracts.Engine.Client" />
+    <Using Include="BlazorFluent.Shared.Security" />
+    <Using Include="BlazorFluent.Shared.Extensions" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.UI.Templates' And '$(MSBuildProjectName)' != 'BlazorFluent.Api' And '$(MSBuildProjectName)' != 'BlazorFluent.AppHost' And '$(MSBuildProjectName)' != 'BlazorFluent.ServiceDefaults' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
+    <Using Include="BlazorFluent.Shared.DataListTypes.TaskStatus" Alias="TaskStatus" />
   </ItemGroup>
 </Project>

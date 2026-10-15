@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BlazorFluent.Api</RootNamespace>
+    <AssemblyName>BlazorFluent.Api</AssemblyName>
+    <WarningsAsErrors>CS0108</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.5.0" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="5.0.0" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorFluent.RulesEngine\BlazorFluent.RulesEngine.csproj" />
+    <ProjectReference Include="..\BlazorFluent.Shared\BlazorFluent.Shared.csproj" />
+    <ProjectReference Include="..\BlazorFluent.UI.Templates\BlazorFluent.UI.Templates.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="BlazorFluent.Shared.DataListTypes.TaskStatus" />
+  </ItemGroup>
+
+</Project>

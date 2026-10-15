@@ -56,7 +56,7 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                     tenantContext.Initialize(
                         tenantId: targetTenantId,
                         tenantName: targetTenantId,
-                        userType: Core.DataListTypes.UserType.CompanyUser,
+                        userType: UserType.CompanyUser,
                         allowedTenants: [],
                         isHost: false);
                 }

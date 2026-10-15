@@ -1,6 +1,5 @@
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
-using BlazorFluent.Core.Dtos.Requests;
 using BlazorFluent.Core.Dtos.Response;
 
 namespace BlazorFluent.Core.Contracts;

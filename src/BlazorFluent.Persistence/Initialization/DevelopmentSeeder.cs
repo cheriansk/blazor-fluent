@@ -1,6 +1,6 @@
-using BlazorFluent.Core.Configuration;
+﻿using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Persistence.Context;
