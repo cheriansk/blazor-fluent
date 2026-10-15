@@ -27,21 +27,36 @@ builder.Services.AddSingleton<IEntitlementsRepository, InMemoryEntitlementsRepos
 builder.Services.AddScoped<IAuthGatewayService, AuthGatewayService>();
 builder.Services.AddScoped<IAdminSecurityService, AdminSecurityService>();
 
-// 5. JWT Bearer Authentication
+// 5. JWT Bearer Authentication (Zero-Trust Fail-Fast Configuration Validation)
+var authIssuer = builder.Configuration["Auth:Issuer"];
+if (string.IsNullOrWhiteSpace(authIssuer))
+{
+    throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Issuer' must be explicitly configured.");
+}
+
+var authAudience = builder.Configuration["Auth:Audience"];
+if (string.IsNullOrWhiteSpace(authAudience))
+{
+    throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Audience' must be explicitly configured.");
+}
+
+var authSigningKey = builder.Configuration["Auth:SigningKey"];
+if (string.IsNullOrWhiteSpace(authSigningKey) || authSigningKey.Length < 32)
+{
+    throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:SigningKey' must be explicitly configured with at least 32 characters.");
+}
+
+var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(authSigningKey));
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var issuer = builder.Configuration["Auth:Issuer"] ?? "https://auth.company.com";
-        var audience = builder.Configuration["Auth:Audience"] ?? "https://api.company.com";
-        var secret = builder.Configuration["Auth:SigningKey"] ?? "BlazorFluent-Cloud-AuthGateway-MasterKey-2026-Secure!";
-        var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(secret));
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = issuer,
+            ValidIssuer = authIssuer,
             ValidateAudience = true,
-            ValidAudience = audience,
+            ValidAudience = authAudience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
@@ -61,15 +76,20 @@ builder.Services.AddAuthorization(options =>
               .RequireClaim("tenant_id"));
 });
 
-// 7. Restrictive CORS Policy
+// 7. Restrictive CORS Policy (Zero Fallback - AllowAnyOrigin is Strictly Prohibited)
+var allowedOrigins = builder.Configuration
+    .GetSection("AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+if (allowedOrigins.Length == 0 && builder.Environment.IsProduction())
+{
+    throw new InvalidOperationException("Zero-Trust Security Violation: 'AllowedOrigins' must contain at least one explicit origin in production. Open CORS is strictly prohibited.");
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var allowedOrigins = builder.Configuration
-            .GetSection("AllowedOrigins")
-            .Get<string[]>() ?? [];
-
         if (allowedOrigins.Length > 0)
         {
             policy.WithOrigins(allowedOrigins)
@@ -78,12 +98,7 @@ builder.Services.AddCors(options =>
                 .AllowCredentials()
                 .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
         }
-        else
-        {
-            policy.AllowAnyOrigin()
-                .WithMethods("POST", "GET", "PUT", "DELETE", "OPTIONS")
-                .WithHeaders("Authorization", "Content-Type", "X-Correlation-Id", "X-Tenant-Id", "X-License-Key");
-        }
+        // Zero fallback: If no origins are configured, the policy admits no cross-origin traffic (fails closed).
     });
 });
 
@@ -146,3 +161,6 @@ app.MapGet("/", (ICorrelationContext context) => new
 }).AllowAnonymous();
 
 app.Run();
+
+// Expose Program class for WebApplicationFactory in integration tests
+public partial class Program { }

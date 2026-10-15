@@ -91,6 +91,11 @@ public static class ProcessEndpoints
                 logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         })
         .WithName("ConvertFile")
         .WithSummary("Convert Excel or CSV file into validated tabular entity model")
@@ -138,6 +143,11 @@ public static class ProcessEndpoints
                 logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         })
         .WithName("StreamChunk")
         .WithSummary("Acknowledge streamed ingestion chunk");
@@ -176,6 +186,11 @@ public static class ProcessEndpoints
             {
                 logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
         .WithName("RollupProgram")
@@ -216,6 +231,11 @@ public static class ProcessEndpoints
             {
                 logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
         .WithName("AnalyzeDag")
@@ -258,6 +278,11 @@ public static class ProcessEndpoints
                 logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         })
         .WithName("EvaluateWorkflowTransition")
         .WithSummary("Evaluate state transition validity against state machine rules");
@@ -298,6 +323,11 @@ public static class ProcessEndpoints
                 logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         })
         .WithName("CalculateCalendarSchedule")
         .WithSummary("Calculate working days, holiday exclusions, and forward/backward target schedules");
@@ -326,12 +356,12 @@ public static class ProcessEndpoints
             throw new UnauthorizedAccessException("Missing tenant_id claim in JWT token");
         }
 
-        // Retrieve tenant-specific license key from secure config
-        var licenseKey = configuration[$"Tenants:{tenantIdClaim}:LicenseKey"]
-            ?? configuration["Engine:LicenseKey"];
+        // Retrieve tenant-specific license key strictly — fallback to shared key is strictly prohibited
+        var licenseKey = configuration[$"Tenants:{tenantIdClaim}:LicenseKey"];
         if (string.IsNullOrWhiteSpace(licenseKey))
         {
-            throw new InvalidOperationException($"No license key configured for tenant {tenantIdClaim}");
+            logger.LogError("Zero-Trust Security Violation: No tenant-specific license key configured for tenant '{TenantId}'. Shared fallback is prohibited.", tenantIdClaim);
+            throw new InvalidOperationException($"Zero-Trust Security Violation: No tenant-specific license key configured for tenant '{tenantIdClaim}'. Fallback to shared license key is strictly prohibited.");
         }
 
         logger.LogInformation("Processing API request for tenant {TenantId} by user {UserId}",

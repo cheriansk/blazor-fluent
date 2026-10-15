@@ -35,9 +35,19 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
     public async Task<Result<TResp>> CallApiAsync<TReq, TResp>(string route, TReq request, CancellationToken ct = default)
     {
         try
-        {
-            var licenseKey = _configuration["Engine:LicenseKey"] ?? "BlazorFluent.Default.License";
-            var tenantId = _configuration["Tenant:TenantId"] ?? "GlobalTenant";
+            var tenantId = _configuration["Tenant:TenantId"];
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                throw new InvalidOperationException("Zero-Trust Security Violation: 'Tenant:TenantId' must be explicitly configured.");
+            }
+
+            var licenseKey = _configuration[$"Tenants:{tenantId}:LicenseKey"]
+                ?? _configuration["Engine:LicenseKey"];
+            if (string.IsNullOrWhiteSpace(licenseKey))
+            {
+                throw new InvalidOperationException($"Zero-Trust Security Violation: No license key configured for tenant '{tenantId}'.");
+            }
+
             var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(licenseKey, tenantId);
 
             // 1. Encrypt outbound request payload with AES-256-GCM AEAD
