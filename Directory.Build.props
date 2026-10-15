@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <!-- TemplateGuard Roslyn Analyzer & Base Manifest Wiring -->
-  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll') And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll') And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool' And '$(IsTestProject)' != 'true' And '$(MSBuildProjectName)' != 'BlazorFluent.Benchmarks'">
     <Analyzer Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" 
                      Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')" />
