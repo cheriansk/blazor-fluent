@@ -109,7 +109,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
     public async Task ProtectedEndpoint_WithoutToken_Returns401Unauthorized()
     {
         using var request = CreateRequest(HttpMethod.Post, "/api/v1/transforms/convert");
-        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("test", "test", "test", "test", "test"));
+        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("bm9uY2U=", "dGFn", "Y2lwaGVydGV4dA=="));
 
         var response = await _client.SendAsync(request);
 
@@ -123,7 +123,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
         var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(ApiTestWebApplicationFactory.ValidLicenseKey, ApiTestWebApplicationFactory.ValidTenantId);
 
         var reqDto = new FileConvertReqDto(
-            SessionId: "session-1",
+            SessionId: Guid.NewGuid(),
             FileName: "test.csv",
             FileType: ImportFileType.TaskCsv,
             FileBytes: Encoding.UTF8.GetBytes("Title,Status\nTask 1,Open\n")
@@ -148,7 +148,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
 
         using var request = CreateRequest(HttpMethod.Post, "/api/v1/transforms/convert");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("a", "b", "c", "d", "e"));
+        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("bm9uY2U=", "dGFn", "Y2lwaGVydGV4dA=="));
 
         var response = await _client.SendAsync(request);
 
@@ -163,7 +163,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
 
         using var request = CreateRequest(HttpMethod.Post, "/api/v1/transforms/convert");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("a", "b", "c", "d", "e"));
+        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("bm9uY2U=", "dGFn", "Y2lwaGVydGV4dA=="));
 
         var response = await _client.SendAsync(request);
 

@@ -34,7 +34,7 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
 
     public async Task<Result<TResp>> CallApiAsync<TReq, TResp>(string route, TReq request, CancellationToken ct = default)
     {
-        try
+        try { 
             var tenantId = _configuration["Tenant:TenantId"];
             if (string.IsNullOrWhiteSpace(tenantId))
             {

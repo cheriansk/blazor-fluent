@@ -10,18 +10,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.5.0" />
-    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="5.0.0" />
-    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.Identity.Web" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BlazorFluent.RulesEngine\BlazorFluent.RulesEngine.csproj" />
     <ProjectReference Include="..\BlazorFluent.Shared\BlazorFluent.Shared.csproj" />
-    <ProjectReference Include="..\BlazorFluent.UI.Templates\BlazorFluent.UI.Templates.csproj" />
   </ItemGroup>
 
   <ItemGroup>
