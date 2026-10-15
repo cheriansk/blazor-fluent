@@ -1,5 +1,5 @@
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
 
 using BlazorFluent.Core.Events.Imports;
@@ -101,7 +101,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 file.ErrorMessage = errorMsg;
                 file.ValidationErrorsJson = System.Text.Json.JsonSerializer.Serialize(new[]
                 {
-                    new BlazorFluent.Core.Abstractions.Imports.FileValidationError("System", 0, "FileType", errorMsg, file.FileType.ToString())
+                    new FileValidationError("System", 0, "FileType", errorMsg, file.FileType.ToString())
                 });
                 file.ProcessedAtUtc = DateTime.UtcNow;
                 await _dbContext.SaveChangesAsync(ct);

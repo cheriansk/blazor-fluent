@@ -1,5 +1,5 @@
-using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos;
 using BlazorFluent.Core.Dtos.Response;

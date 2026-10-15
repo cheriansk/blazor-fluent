@@ -39,6 +39,7 @@
 
 	<!-- Clean peer project references under src/ -->
 	<ItemGroup>
+		<ProjectReference Include="..\BlazorFluent.Shared\BlazorFluent.Shared.csproj" />
 		<ProjectReference Include="..\BlazorFluent.Core\BlazorFluent.Core.csproj" />
 		<ProjectReference Include="..\BlazorFluent.Persistence\BlazorFluent.Persistence.csproj" />
 		<ProjectReference Include="..\BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />

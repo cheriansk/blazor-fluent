@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
-using BlazorFluent.Core.DataListTypes;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tasks;

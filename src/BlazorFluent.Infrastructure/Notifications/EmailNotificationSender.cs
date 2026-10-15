@@ -1,7 +1,7 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Mail;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

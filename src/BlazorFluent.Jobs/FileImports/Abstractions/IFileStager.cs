@@ -1,4 +1,4 @@
-using BlazorFluent.Core.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Dtos.Response;
 

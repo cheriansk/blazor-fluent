@@ -1,4 +1,4 @@
-using BlazorFluent.Core.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Contracts;
 

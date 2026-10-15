@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Utilities;
 

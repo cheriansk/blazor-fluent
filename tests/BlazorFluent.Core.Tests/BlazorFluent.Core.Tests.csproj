@@ -20,7 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\BlazorFluent.Shared\BlazorFluent.Shared.csproj" />
     <ProjectReference Include="..\..\src\BlazorFluent.Core\BlazorFluent.Core.csproj" />
+    <ProjectReference Include="..\..\src\BlazorFluent.RulesEngine\BlazorFluent.RulesEngine.csproj" />
+    <ProjectReference Include="..\..\src\BlazorFluent.Api\BlazorFluent.Api.csproj" />
   </ItemGroup>
 
 </Project>

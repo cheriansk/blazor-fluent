@@ -1,5 +1,4 @@
 using BlazorFluent.Core.Domain.Events;
-using BlazorFluent.Core.Dtos.Requests;
 using BlazorFluent.Core.Dtos.Response;
 using System.Runtime.CompilerServices;
 

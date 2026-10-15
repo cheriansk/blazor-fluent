@@ -1,6 +1,6 @@
-namespace BlazorFluent.Core.Dtos.Response;
+﻿namespace BlazorFluent.Core.Dtos.Response;
 
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Immutable DTO record representing a property-level diff for entity/field history.

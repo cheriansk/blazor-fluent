@@ -1,13 +1,12 @@
 using System.Text.Json;
 using BlazorFluent.Core.Contracts;
-using BlazorFluent.Core.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Utilities;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using BlazorFluent.Core.Dtos.Requests;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Persistence.Extensions;
 
