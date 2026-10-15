@@ -128,7 +128,7 @@ namespace TemplateGuard.Analyzers
                 context.ReportDiagnostic(Diagnostic.Create(RuleTg003, location, symbol.Name, fileName));
             }
 
-            var layerRelPath = NormalizeToLayerRelativePath(fullPath);
+            var layerRelPath = NormalizeToLayerRelativePath(fullPath!);
             BaseFileEntry? matchedEntry = null;
             if (layerRelPath != null)
             {
