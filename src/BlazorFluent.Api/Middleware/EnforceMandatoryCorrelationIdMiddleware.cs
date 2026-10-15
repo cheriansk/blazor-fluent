@@ -26,8 +26,10 @@ public class EnforceMandatoryCorrelationIdMiddleware
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
-        // Exempt health checks, static assets, and favicon
-        if (path.StartsWith("/health") || path.StartsWith("/alive") || path.EndsWith(".ico") || path.EndsWith(".css") || path.EndsWith(".js"))
+        // Exempt CORS preflight, health checks, static assets, and favicon
+        if (HttpMethods.IsOptions(context.Request.Method) ||
+            path.StartsWith("/health") || path.StartsWith("/alive") ||
+            path.EndsWith(".ico") || path.EndsWith(".css") || path.EndsWith(".js"))
         {
             await _next(context);
             return;
