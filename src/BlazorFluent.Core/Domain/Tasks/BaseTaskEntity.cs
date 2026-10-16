@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
@@ -10,7 +10,7 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Implements <see cref="IEffectiveDatedEntity"/> for temporal contract validity.
 /// Implements <see cref="ISoftDeletableEntity"/> for forensic auditability.
 /// </summary>
-public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity
+public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IProprietaryEncryptedEntity
 {
     /// <summary>
     /// Organizational level at which this work item exists (Tenant, Program, Project, User).
@@ -80,6 +80,11 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     public Guid? ProgramId { get; set; }
     public Guid? ProjectId { get; set; }
     public string? UserId { get; set; }
+
+    // --- IProprietaryEncryptedEntity ---
+    public Guid? SourceRowId { get; set; }
+    public bool IsEncryptedAtRest { get; set; }
+    public byte[]? EncryptedPayloadBytes { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }

@@ -97,6 +97,12 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
     public Task<Result<FileConvertRespDto>> ConvertFileAsync(FileConvertReqDto request, CancellationToken ct = default) =>
         CallApiAsync<FileConvertReqDto, FileConvertRespDto>(EngineRoutes.TransformsConvert, request, ct);
 
+    public Task<Result<ProcessBatchRespDto>> ProcessStagedBatchAsync(ProcessBatchReqDto request, CancellationToken ct = default) =>
+        CallApiAsync<ProcessBatchReqDto, ProcessBatchRespDto>(EngineRoutes.TransformsProcessBatch, request, ct);
+
+    public Task<Result<DecryptProprietaryRespDto>> DecryptProprietaryBatchAsync(DecryptProprietaryReqDto request, CancellationToken ct = default) =>
+        CallApiAsync<DecryptProprietaryReqDto, DecryptProprietaryRespDto>(EngineRoutes.TransformsDecryptProprietary, request, ct);
+
     public Task<Result<ProgramRollupRespDto>> RollupProgramAsync(ProgramRollupReqDto request, CancellationToken ct = default) =>
         CallApiAsync<ProgramRollupReqDto, ProgramRollupRespDto>(EngineRoutes.AnalyticsRollup, request, ct);
 

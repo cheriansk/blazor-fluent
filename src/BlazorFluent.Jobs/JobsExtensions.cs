@@ -2,6 +2,8 @@ using System.Reflection;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.FileImports.Abstractions;
+using BlazorFluent.Jobs.FileImports.Configuration;
+using BlazorFluent.Jobs.FileImports.Staging;
 using BlazorFluent.Jobs.Listeners;
 using BlazorFluent.Jobs.Queue;
 using BlazorFluent.Jobs.Schedulers;
@@ -34,9 +36,14 @@ public static class JobsExtensions
         // 5. Register JobManagerService for dashboard queries and manual triggers
         services.TryAddScoped<IJobManagerService, Services.JobManagerService>();
 
-        // 6. Auto-discover and register all IFileStager and IFileProcessor implementations
+        // 6. Auto-discover and register all IFileStager, IFileProcessor, and ICanonicalBatchStager implementations
         RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(IFileStager));
         RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(IFileProcessor));
+        RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(ICanonicalBatchStager));
+
+        // 7. Register Hybrid Batch Template Configuration Repository & Pre-Ingestion Strategy Resolver
+        services.TryAddSingleton<IFileTemplateConfigRepository, JsonFileTemplateConfigRepository>();
+        services.TryAddScoped<ILocalBatchStagerResolver, LocalBatchStagerResolver>();
 
         return services;
     }

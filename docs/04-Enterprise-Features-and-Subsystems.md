@@ -5,55 +5,109 @@
 
 ---
 
-## ⚡ 1. Asynchronous File Ingestion & Batch Subsystem
+## ⚡ 1. Hybrid Batch Processing & Universal Staging Subsystem
 
-Traditional web uploads block HTTP request threads, parse directly into live transactional tables, and risk cross-tenant pollution. BlazorFluent introduces an asynchronous **4-stage decoupled batch ingestion pipeline**:
+Traditional web uploads block HTTP request threads, parse directly into live transactional tables, risk cross-tenant pollution, and overwhelm databases with massive unstructured payloads. BlazorFluent introduces an enterprise-grade **Hybrid Batch Processing Framework** decoupling local streaming ingestion from stateless cloud processing:
 
 ```mermaid
-flowchart LR
-    A["1. Ingestion & Encryption\n(Web UI / Blazor)"] -->|Event Message| B["2. Channel Job Queue\n(Thread-Isolated)"]
-    B --> C["3. Validation & Staging\n(Fail-Closed Staging Tables)"]
-    C --> D["4. Domain Promotion\n(Live Business Entities)"]
+flowchart TD
+    subgraph Client["Client-Side (BlazorFluent.Jobs + Local DB)"]
+        A["1. Encrypted Upload\n(Azure Blob / Disk)"] --> B["2. Manifest Ordering\n(Topological DependsOn Sort)"]
+        B --> C["3. Forward-Only SAX Parsing\n(GenericTabularJsonBatchStager)"]
+        C --> D["4. Universal Staging Table\n(staging.StagedImports: jsonb, headerMap, IsProcessed)"]
+        D --> E["5. Gzip Compression\n(PayloadEncryptionUtility.CompressGzip)"]
+    end
+    
+    subgraph Cloud["Cloud API (BlazorFluent.Api + RulesEngine)"]
+        E -->|POST /api/v1/transforms/process-batch| F["6. Stateless Cloud Dispatcher\n(TaskCloudProcessor)"]
+        F --> G{"All-or-Nothing\nValidation"}
+        G -->|Any Row Fails| H["Reject Entire Batch\n(0 Rows Committed)"]
+        G -->|All Pass| I["Transform & Optional Vault Encryption\n(byte[] EncryptedPayloadBytes)"]
+    end
+    
+    subgraph Commit["Domain Persistence & On-Demand UI"]
+        I -->|ProcessBatchRespDto| J["7. Atomic Database Commit\n(TaskEntity + IsProcessed = true)"]
+        J --> K["8. On-Demand Screen Decryption\n(POST /api/v1/transforms/decrypt-proprietary)"]
+    end
 ```
+
+### Architectural Principles
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 1. Zero-Knowledge Cryptographic Storage                                                │
-│    • Hardware-accelerated AES-256-GCM authenticated stream encryption.                 │
-│    • Per-tenant dynamic keys derived via HKDF-SHA256 (Tenant A cannot decrypt Tenant B)│
-│    • Stored in tenant-partitioned blob directories (Local disk or Azure Blob Storage). │
+│ 1. Local Schema Validation & Universal JSON Staging                                    │
+│    • 100% of schema validation and SAX parsing executes locally in BlazorFluent.Jobs.  │
+│    • Normalized JSON chunks are persisted to staging.StagedImports with jsonb payload. │
+│    • Universal table replaces ad-hoc staging tables across all file formats.           │
+│    • Explicit IsProcessed (bool), Status, and ProcessedAtUtc columns for auditability. │
 └────────────────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 2. Asynchronous Queue & Scope Isolation                                                │
-│    • System.Threading.Channels in-memory bounded queue (ChannelJobEventQueue).         │
-│    • Batch worker executes in an isolated IServiceScope per job.                       │
-│    • Zero DbContext contention with active Blazor Server circuits.                     │
+│ 2. Zero-Maintenance Dynamic Aliasing (HeaderMap)                                       │
+│    • Every staged chunk embeds a self-describing headerMap (e.g. "c1": "Title").       │
+│    • Payload size reduced by 40-70% via short keys and OmitNullValues = true.          │
+│    • Deterministic UUID v7 RowId and 1-based RowIndex (Idx) for row-level tracing.     │
+│    • Fixed 1,000-row chunking prevents RAM spikes during multi-megabyte uploads.       │
 └────────────────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 3. Abstract Tabular Validation Engine (Excel & CSV)                                    │
-│    • Declarative models: [ImportSheet("Tasks")], [ImportColumn("Title", IsRequired)]   │
-│    • Auto-validates: (a) Sheet existence, (b) Header row presence, (c) Required cells. │
-│    • Fail-Closed: Any missing header or required cell aborts staging (0 records saved).│
+│ 3. Pre-Ingestion Strategy Dispatcher & Declarative Templates                           │
+│    • File templates defined in config/file-templates/*.json (e.g., TaskCsv, TaskExcel).│
+│    • "generic-json" uses GenericTabularJsonBatchStager for standard tabular files.     │
+│    • "custom:{ClassName}" resolves custom ICanonicalBatchStager implementations.       │
+│    • Manifest-level DependsOn enforces topological execution order across files.       │
 └────────────────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 4. Two-Class Feature Packaging & Zero-Plumbing DI                                      │
-│    • Each business import target needs strictly 2 classes: Stager & Processor.         │
-│    • Assembly reflection scanning auto-registers handlers with zero manual DI changes. │
+│ 4. Stateless Cloud API & Strict All-or-Nothing Atomicity                               │
+│    • POST /api/v1/transforms/process-batch receives Gzip-compressed chunk payloads.    │
+│    • Evaluates domain rules strictly in-memory (RulesEngine) with zero database.       │
+│    • All-or-Nothing: If any single row fails, the chunk fails with 0 rows committed.   │
+│    • .NET 10 HybridCache (L1 RAM + optional L2 Redis) tracks transient batch metrics.  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 5. Proprietary Vault At-Rest Byte Encryption & On-Demand Screen Decryption             │
+│    • Controlled by ProprietaryStorage:EncryptProcessedDataAtRest (default false).      │
+│    • When true, processed domain fields are encrypted into byte[] EncryptedPayloadBytes│
+│      [12-byte Nonce | 16-byte Tag | Ciphertext] using an API-exclusive master vault key│
+│    • Plaintext values redacted to "[ENCRYPTED]" in local PostgreSQL storage.           │
+│    • On-demand UI screen decryption via POST /api/v1/transforms/decrypt-proprietary.   │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Two-Class Feature Packaging Example
-To add a new bulk import target (e.g. Products, Employees, Tasks), a developer writes strictly **two classes**:
-1. **The Stager Class**: Inherits `AbstractTabularStager<TStagingEntity>` and declares required sheet and columns via attributes.
-2. **The Processor Class**: Inherits `AbstractImportProcessor<TStagingEntity>` and promotes validated staging rows into production domain entities inside a database transaction.
+### Declarative File Template Schema (`config/file-templates/*.json`)
 
-Reflection scanners in `BlazorFluent.Jobs` auto-discover and register both classes at startup.
+Standard tabular files are configured declaratively with zero stager C# code:
+
+```json
+{
+  "fileType": "TaskCsv",
+  "displayName": "Project Tasks CSV Template",
+  "format": {
+    "formatType": "Csv",
+    "delimiter": ",",
+    "hasHeader": true,
+    "headerRowIndex": 1,
+    "dataStartRowIndex": 2
+  },
+  "stagingBatchStrategy": "generic-json",
+  "maxRowsPerChunk": 1000,
+  "omitNullValues": true,
+  "dependsOn": [],
+  "columns": [
+    { "name": "Title", "targetProperty": "Title", "isRequired": true, "dataType": "String" },
+    { "name": "Description", "targetProperty": "Description", "isRequired": false, "dataType": "String" },
+    { "name": "Status", "targetProperty": "Status", "isRequired": false, "dataType": "Enum" },
+    { "name": "Priority", "targetProperty": "Priority", "isRequired": false, "dataType": "Enum" },
+    { "name": "DueDate", "targetProperty": "DueDate", "isRequired": false, "dataType": "DateTime" }
+  ]
+}
+```
 
 ---
 

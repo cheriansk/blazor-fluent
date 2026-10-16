@@ -34,7 +34,7 @@ Modern enterprise web initiatives routinely stall due to the massive overhead of
 | **Authentication & IAM** | Centralized Auth Gateway (`BlazorFluent.Api`) supporting Multi-IdP federation (Microsoft Entra ID, Azure AD B2C, Okta, Local Dev) with HMAC cryptographic tokens. | OpenID Connect, OAuth 2.0, Zero Trust. |
 | **Governance & Anti-Tamper**| `TemplateGuard` Roslyn Analyzer + locked AST base manifest (`.basefiles.json`) enforcing non-breaking downstream `.Custom.cs` partial classes. | Enterprise Release Management, Supply Chain Security. |
 | **Business Calculation Engine**| `BlazorFluent.RulesEngine` delivering 100% in-memory calculation routines with zero database latency. | Sub-millisecond Financial & Regulatory calculations. |
-| **Asynchronous Ingestion** | `System.Threading.Channels` bounded queues with 4-stage batch pipelines (Ingest -> Queue -> Validation/Staging -> Domain Promotion). | Resilient High-Throughput Bulk Processing. |
+| **Hybrid Batch Ingestion** | Local streaming SAX parsing, universal `staging.StagedImports` table with `jsonb` payloads and `IsProcessed` tracking, Gzip-compressed chunk transmission, and stateless Cloud API processing with all-or-nothing atomicity and optional proprietary vault at-rest encryption. | Resilient High-Throughput Bulk Processing, Zero-Trust Storage. |
 | **UI Design System** | Microsoft Fluent UI Blazor V5 adhering strictly to Microsoft Fluent 2 design language with zero legacy V4 tokens. | WCAG 2.1 AA Accessibility, Microsoft 365 Look-and-Feel. |
 | **Observability & Diagnostics**| .NET Aspire OpenTelemetry metrics, distributed traces, structured Serilog logging, and forensic audit diffs (`audit.AuditRecords`). | DORA, SRE Observability Standards. |
 
