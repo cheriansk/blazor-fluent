@@ -59,6 +59,11 @@ In `Program.cs`, container validation is enabled across all environments (`Valid
    - **Zero Shared Key Fallback**: If a tenant's license key is missing or unconfigured, the operation must immediately fail-closed with an `InvalidOperationException`.
    - **Cross-Tenant Quarantine Guards**: All background job handlers (`GenericFileImportBatchJobHandler`, `BatchJobQueueListener`) must compound-query by `(JobId, TenantId)` and immediately quarantine records if payload tenant IDs do not match the execution context.
 
+4. **Enterprise Strict Content Security Policy (CSP)**:
+   - **Zero `'unsafe-inline'` / `'unsafe-eval'` in `script-src`**: Never weaken `script-src` with inline script execution or eval.
+   - **Mandatory Nonce Tagging**: All newly authored `<script>`, `<link rel="stylesheet">`, and `<ImportMap>` tags must carry the per-request cryptographic nonce (`nonce="@nonce"`).
+   - **Shadow DOM Style Compliance**: Avoid dynamic runtime injection of un-nonced `<style>` elements into `<head>`. Rely on Microsoft Fluent UI Blazor V5 Web Components and encapsulated shadow root stylesheets (`adoptedStyleSheets`).
+
 ---
 
 ## 💻 4. Modern C# 13 & .NET 10 Idioms

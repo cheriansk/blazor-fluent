@@ -1,3 +1,10 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var nonce = HttpContextAccessor.HttpContext?.Items["CspNonce"]?.ToString() ?? string.Empty;
+}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,9 +13,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <ResourcePreloader />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["BlazorFluent.styles.css"]" />
-    <ImportMap />
+    <link rel="stylesheet" href="@Assets["app.css"]" nonce="@nonce" />
+    <link rel="stylesheet" href="@Assets["BlazorFluent.styles.css"]" nonce="@nonce" />
+    <ImportMap nonce="@nonce" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
@@ -16,9 +23,9 @@
 <body>
     <Routes @rendermode="InteractiveServer" />
     <ReconnectModal />
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
-    <script src="js/responsive-interop.js"></script>
-    <script src="js/session-tracker.js"></script>
+    <script src="@Assets["_framework/blazor.web.js"]" nonce="@nonce"></script>
+    <script src="js/responsive-interop.js" nonce="@nonce"></script>
+    <script src="js/session-tracker.js" nonce="@nonce"></script>
 </body>
 
 </html>

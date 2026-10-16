@@ -236,7 +236,7 @@ The File Ingestion & Batch Processing subsystem implements enterprise-grade, asy
 
 The following headers are injected by `SecurityHeadersExtensions` middleware and must not be weakened:
 
-- `Content-Security-Policy` (Blazor Server-safe: allows `wss:`/`ws:` WebSockets, `data:` for SVG icons)
+- `Content-Security-Policy`: Enterprise-grade strict policy with **complete eradication of `'unsafe-inline'` and `'unsafe-eval'` in scripts**. Employs per-request 128-bit cryptographic nonces (`'nonce-{random}'`) and `'strict-dynamic'`. Configurable via `Security:Csp` (`PureStrict` vs. `Level3Isolated`).
 - `X-Frame-Options: SAMEORIGIN`
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
