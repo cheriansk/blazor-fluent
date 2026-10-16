@@ -159,7 +159,10 @@ try
     // 6. Modular Monolith Registrations (Persistence, Infrastructure, Jobs)
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
-    builder.Services.AddBackgroundJobs(enableScheduler: true);
+
+    var enableHostedJobsListener = builder.Configuration.GetValue<bool>("Jobs:EnableHostedListener", true);
+    var enableScheduler = builder.Configuration.GetValue<bool>("Jobs:EnableScheduler", true);
+    builder.Services.AddBackgroundJobs(enableListener: enableHostedJobsListener, enableScheduler: enableScheduler);
 
     // 7. Security Hardening: Request Body Limits (Anti-Pattern 5), Rate Limiting (Anti-Pattern 7) & Secure Cookie Policy
     builder.WebHost.ConfigureKestrel(serverOptions =>

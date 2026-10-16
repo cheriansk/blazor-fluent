@@ -80,13 +80,39 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidIssuer = authIssuer,
-            ValidateAudience = true,
-            ValidAudience = authAudience,
+            ValidateIssuer = false,
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+            IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+            {
+                var keys = new List<SecurityKey>();
+                try
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    if (handler.CanReadToken(token))
+                    {
+                        var jwt = handler.ReadJwtToken(token);
+                        var tenantId = jwt.Claims.FirstOrDefault(c => c.Type == "tenant_id" || c.Type == "tid")?.Value;
+                        if (!string.IsNullOrWhiteSpace(tenantId))
+                        {
+                            var tenantKey = builder.Configuration[$"Tenants:{tenantId}:LicenseKey"];
+                            if (!string.IsNullOrWhiteSpace(tenantKey))
+                            {
+                                keys.Add(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tenantKey)));
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore parsing error and fallback to master key
+                }
+
+                // Also allow the central Cloud Master Signing Key for user login tokens
+                keys.Add(new SymmetricSecurityKey(keyBytes));
+                return keys;
+            },
             ClockSkew = TimeSpan.FromMinutes(1)
         };
     });

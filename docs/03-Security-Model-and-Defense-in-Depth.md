@@ -192,3 +192,82 @@ flowchart TD
 Blazor Server circuits maintain persistent WebSocket connections. In enterprise threat scenarios (compromised employee credentials, urgent offboarding), traditional cookie expiration is too slow:
 1. `CircuitHeartbeatHandler` periodically audits active circuits against the database user revocation status.
 2. If an administrator terminates a session at `/admin/sessions`, the remote user's circuit is instantly frozen via `<SessionRevokedModal />`, severing their connection in real time.
+
+---
+
+## 🛡️ 7. Zero-Trust Multi-Tenancy Isolation & S2S Token Security
+
+In multi-tenant SaaS and distributed hybrid deployments, boundary isolation must prevent cross-tenant enumeration, privilege escalation, and credential exfiltration. BlazorFluent enforces a comprehensive **Zero-Trust Multi-Tenancy Isolation Model**:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Worker as BlazorFluent.Worker / Web (Client Node)
+    participant S2S as ITenantTokenService (TenantTokenService)
+    participant Handler as TenantAuthDelegatingHandler
+    participant API as BlazorFluent.Api (Cloud ProcessAPI)
+    participant Resolver as IssuerSigningKeyResolver
+    participant Engine as ProcessEndpoints / RulesEngine
+
+    Worker->>S2S: GenerateS2SToken(tenantId, actorType)
+    Note over S2S: Read Tenants:{tenantId}:LicenseKey<br/>Mint 5-minute ephemeral JWT<br/>Opaque claims: tid, cid, act<br/>Zero PII / zero raw emails
+    S2S-->>Worker: Ephemeral S2S Token
+    Worker->>Handler: Outbound Request (ProcessBatchReqDto)
+    Handler->>Handler: Inject Authorization: Bearer <token><br/>Inject X-Tenant-Id, X-Correlation-Id
+    Handler->>API: POST /api/v1/transforms/process-batch
+    API->>Resolver: Resolve Signing Key for Token
+    Resolver->>Resolver: Extract tid claim -> Lookup Tenants:{tenantId}:LicenseKey
+    Resolver-->>API: Tenant Symmetric Security Key
+    API->>API: Validate Token Signature & Expiry (ClockSkew: 1m)
+    API->>Engine: Decrypt Payload with Tenant Key & Execute
+    Engine-->>Handler: Encrypted Response Envelope
+    Handler-->>Worker: Processed Domain Batch Outcome
+```
+
+### Core Zero-Trust Architectural Principles:
+
+#### 1. Dual-Token Model
+- **Interactive User Tokens**: Minted by enterprise IdPs (Entra ID, OIDC) or the Centralized Auth Gateway for human interactive sessions. Signed using the Cloud Master Key.
+- **Ephemeral S2S Tokens**: Minted by WebApp or Worker nodes for asynchronous batch operations, streaming ingestion, and scheduled jobs. Signed **strictly** using `Tenants:{tenantId}:LicenseKey` (5-minute lifespan).
+
+#### 2. Dynamic Key Resolution (`IssuerSigningKeyResolver`)
+In `BlazorFluent.Api/Program.cs`, `JwtBearerOptions` registers a dynamic `IssuerSigningKeyResolver`:
+- Extracts the incoming token's `tenant_id` or `tid` claim.
+- Resolves the private tenant key from `Tenants:{tenantId}:LicenseKey`.
+- Admits the Cloud Master Key for user tokens.
+- **Strict Fail-Closed**: If a tenant has no configured license key, fallback to a shared key is strictly prohibited, terminating the request with `401 Unauthorized` / `403 Forbidden`.
+
+#### 3. GDPR Data Minimization & OWASP ASVS Indirect Reference Masking
+In compliance with GDPR Article 5(1)(c) and OWASP ASVS 4.3:
+- S2S tokens transmitted across network boundaries contain **zero plain user emails, display names, or raw database primary keys**.
+- Tokens carry only masked, opaque claims:
+  - `tid`: Non-descriptive tenant reference slug (e.g., `tnt_8f3a1b2c4d5e`).
+  - `tenant_id`: Scoped tenant identifier.
+  - `cid`: Distributed correlation identifier linking logs across WebApp, Worker, and API.
+  - `act`: Actor role (`BatchWorker` or `SystemDaemon`).
+- Cryptographic utility [`OpaqueIdUtility`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/Security/OpaqueIdUtility.cs):
+  - `GenerateSecureLicenseKey()`: Cryptographically secure 256-bit (32-byte) random Base64 key generator.
+  - `GenerateTenantRefId()`: Non-correlatable tenant reference slugs.
+  - `MaskGuid(id, salt)`: Salted HMAC-SHA256 indirect reference handles.
+
+#### 4. Strict Key Separation & Cloud Vault Isolation
+- Client WebApp and Worker nodes installed on client infrastructure **never possess Azure Key Vault credentials or master signing keys**.
+- Client software possesses only its own `TenantLicenseKey`.
+- Azure Key Vault is strictly accessible by Azure-hosted services (`BlazorFluent.Api`).
+
+#### 5. Compound Query Scoping & Cross-Tenant Quarantine Guards
+- Even with EF Core global query filters active, all background batch handlers enforce explicit compound LINQ queries:
+  ```csharp
+  var files = await _dbContext.ImportFiles
+      .Where(f => f.TenantId == jobEvent.TenantId && f.ImportId == jobEvent.ImportId && !f.IsDeleted)
+      .ToListAsync(ct);
+  ```
+- Cross-tenant quarantine guard in [`GenericFileImportBatchJobHandler`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/FileImports/GenericFileImportBatchJobHandler.cs):
+  ```csharp
+  if (file.TenantId != jobEvent.TenantId)
+  {
+      _logger.LogCritical("Zero-Trust Security Violation: ImportFile {FileId} belongs to tenant '{FileTenantId}' but batch was triggered for '{JobTenantId}'. Aborting.", file.Id, file.TenantId, jobEvent.TenantId);
+      throw new InvalidOperationException("Cross-tenant data access detected. Execution halted.");
+  }
+  ```
+- Strict fail-closed background listener: [`BatchJobQueueListener`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/Listeners/BatchJobQueueListener.cs) aborts processing immediately if `jobEvent.TenantId` is missing, preventing silent fallback to default tenant slugs.

@@ -77,23 +77,30 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             jobEvent.ImportId, jobEvent.CorrelationId);
 
         var files = await _dbContext.ImportFiles
-            .Where(f => f.ImportId == jobEvent.ImportId && !f.IsDeleted)
+            .Where(f => f.TenantId == jobEvent.TenantId && f.ImportId == jobEvent.ImportId && !f.IsDeleted)
             .OrderBy(f => f.Created)
             .ToListAsync(cancellationToken);
 
         if (files.Count == 0)
         {
-            _logger.LogWarning("No ImportFileEntity records found for batch {ImportId}. Aborting.", jobEvent.ImportId);
+            _logger.LogWarning("No ImportFileEntity records found for batch {ImportId} and tenant {TenantId}. Aborting.", jobEvent.ImportId, jobEvent.TenantId);
             return;
         }
 
         // Sort files topologically by DependsOn manifest order if template configs are available
         var orderedFiles = OrderFilesByDependencies(files);
 
-        _logger.LogInformation("Batch {ImportId} contains {Count} file(s) to process.", jobEvent.ImportId, orderedFiles.Count);
+        _logger.LogInformation("Batch {ImportId} contains {Count} file(s) to process for tenant {TenantId}.", jobEvent.ImportId, orderedFiles.Count, jobEvent.TenantId);
 
         foreach (var file in orderedFiles)
         {
+            if (file.TenantId != jobEvent.TenantId)
+            {
+                _logger.LogCritical("Zero-Trust Security Violation: ImportFile {FileId} belongs to tenant '{FileTenantId}' but batch job was triggered for tenant '{JobTenantId}'. Aborting batch execution immediately.",
+                    file.Id, file.TenantId, jobEvent.TenantId);
+                throw new InvalidOperationException($"Zero-Trust Security Violation: Cross-tenant data access detected for file {file.Id}. Execution halted.");
+            }
+
             using var scope = _logger.BeginScope(new Dictionary<string, object>
             {
                 ["FileType"] = file.FileType.ToString(),
@@ -377,7 +384,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         // 3. Dispatch Unprocessed Staged Chunks to Stateless Cloud API (All-or-Nothing Atomicity)
         var stagedChunks = await _dbContext.StagedImports
-            .Where(s => s.ImportFileId == file.Id && !s.IsProcessed)
+            .Where(s => s.TenantId == file.TenantId && s.ImportFileId == file.Id && !s.IsProcessed)
             .OrderBy(s => s.ChunkIndex)
             .ToListAsync(ct);
 

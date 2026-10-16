@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.Common;
 using BlazorFluent.Shared.Contracts.Engine.Analytics;
 using BlazorFluent.Shared.Contracts.Engine.Calendar;
@@ -19,15 +20,18 @@ namespace BlazorFluent.Infrastructure.EngineGateway;
 public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ITenantContext _tenantContext;
     private readonly IConfiguration _configuration;
     private readonly ILogger<RemoteEngineGateway> _logger;
 
     public RemoteEngineGateway(
         HttpClient httpClient,
+        ITenantContext tenantContext,
         IConfiguration configuration,
         ILogger<RemoteEngineGateway> logger)
     {
         _httpClient = httpClient;
+        _tenantContext = tenantContext;
         _configuration = configuration;
         _logger = logger;
     }
@@ -35,17 +39,17 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
     public async Task<Result<TResp>> CallApiAsync<TReq, TResp>(string route, TReq request, CancellationToken ct = default)
     {
         try { 
-            var tenantId = _configuration["Tenant:TenantId"];
+            var tenantId = _tenantContext.TenantId ?? _configuration["Tenant:TenantId"];
             if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new InvalidOperationException("Zero-Trust Security Violation: 'Tenant:TenantId' must be explicitly configured.");
+                throw new InvalidOperationException("Zero-Trust Security Violation: Cannot invoke Cloud ProcessAPI without an active TenantId context.");
             }
 
-            var licenseKey = _configuration[$"Tenants:{tenantId}:LicenseKey"]
-                ?? _configuration["Engine:LicenseKey"];
+            var licenseKey = _configuration[$"Tenants:{tenantId}:LicenseKey"];
             if (string.IsNullOrWhiteSpace(licenseKey))
             {
-                throw new InvalidOperationException($"Zero-Trust Security Violation: No license key configured for tenant '{tenantId}'.");
+                _logger.LogError("Zero-Trust Security Violation: No dedicated license key configured for tenant '{TenantId}'. Shared fallback is strictly prohibited.", tenantId);
+                throw new InvalidOperationException($"Zero-Trust Security Violation: No dedicated license key configured for tenant '{tenantId}'.");
             }
 
             var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(licenseKey, tenantId);

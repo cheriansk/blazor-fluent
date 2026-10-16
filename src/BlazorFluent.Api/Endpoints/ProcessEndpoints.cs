@@ -385,8 +385,9 @@ public static class ProcessEndpoints
                     "Processing staged batch chunk {ChunkIndex}/{TotalChunks} for ImportFile {ImportFileId} ({FileType}, {RowCount} rows)",
                     req.ChunkIndex, req.TotalChunks, req.ImportFileId, req.FileType, chunkPayload.Rows.Count);
 
-                // Cache transient session metadata in HybridCache (L1 RAM + optional L2 Redis)
-                var cacheKey = $"batch:import:{req.ImportFileId}:chunk:{req.ChunkIndex}";
+                // Cache transient session metadata in HybridCache (L1 RAM + optional L2 Redis) with tenant namespace
+                var activeTenant = user.Claims.FirstOrDefault(c => c.Type == "tenant_id" || c.Type == "tid")?.Value ?? "default";
+                var cacheKey = $"t:{activeTenant.ToLowerInvariant()}:batch:import:{req.ImportFileId}:chunk:{req.ChunkIndex}";
                 await hybridCache.SetAsync(
                     cacheKey,
                     new { req.ImportId, req.ImportFileId, req.FileType, req.ChunkIndex, ProcessedAtUtc = DateTime.UtcNow },
@@ -531,10 +532,10 @@ public static class ProcessEndpoints
     private static byte[] ResolveEncryptionKey(ClaimsPrincipal user, IConfiguration configuration, ILogger logger)
     {
         // Get tenant from authenticated JWT claim (not headers!)
-        var tenantIdClaim = user.Claims.FirstOrDefault(c => c.Type == "tenant_id")?.Value;
+        var tenantIdClaim = user.Claims.FirstOrDefault(c => c.Type == "tenant_id" || c.Type == "tid")?.Value;
         if (string.IsNullOrWhiteSpace(tenantIdClaim))
         {
-            throw new UnauthorizedAccessException("Missing tenant_id claim in JWT token");
+            throw new UnauthorizedAccessException("Missing tenant identifier ('tenant_id' or 'tid') claim in JWT token");
         }
 
         // Retrieve tenant-specific license key strictly — fallback to shared key is strictly prohibited
@@ -553,10 +554,10 @@ public static class ProcessEndpoints
 
     private static byte[] ResolveVaultAtRestKey(ClaimsPrincipal user, IConfiguration configuration)
     {
-        var tenantIdClaim = user.Claims.FirstOrDefault(c => c.Type == "tenant_id")?.Value;
+        var tenantIdClaim = user.Claims.FirstOrDefault(c => c.Type == "tenant_id" || c.Type == "tid")?.Value;
         if (string.IsNullOrWhiteSpace(tenantIdClaim))
         {
-            throw new UnauthorizedAccessException("Missing tenant_id claim in JWT token");
+            throw new UnauthorizedAccessException("Missing tenant identifier ('tenant_id' or 'tid') claim in JWT token");
         }
 
         var vaultMasterKey = configuration["ProprietaryStorage:VaultMasterKey"];

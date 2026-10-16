@@ -27,10 +27,11 @@ When cloning this template for a new Blazor WebApp, complete these steps before 
 ### 1.1 Clean Architecture Layer Boundaries
 
 ```
-BlazorFluent.Core          → Domain entities, contracts, enums, value objects, validation
+BlazorFluent.Core          → Domain entities, contracts, enums, value objects, validation, OpaqueIdUtility
 BlazorFluent.Persistence   → EF Core DbContext, configurations, interceptors, migrations, data services
-BlazorFluent.Infrastructure→ Outbound senders (email/Teams), security middleware, observability, UI services
-BlazorFluent.Jobs          → Background job handlers, schedulers, event queues
+BlazorFluent.Infrastructure→ S2S token services, outbound senders (email/Teams), security middleware, observability
+BlazorFluent.Jobs          → Background job handlers, schedulers, event queues (all batch logic resides here)
+BlazorFluent.Worker        → Thin background console host shell (executes queue listeners & schedulers; 0 batch logic)
 BlazorFluent.UI.Templates  → Reusable enterprise UI templates (Generic Fluent UI V5 Wizard RCL)
 BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs composition root
 ```
@@ -39,8 +40,9 @@ BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs comp
 |------|-------------|
 | **Dependency direction** | Dependencies flow inward only. `Core` has zero internal project references. |
 | **Persistence isolation** | `BlazorFluent.Persistence` contains 100% database persistence code. No HTTP clients, no SMTP, no file I/O. |
-| **Infrastructure isolation** | `BlazorFluent.Infrastructure` handles outbound integrations, security middleware, and browser interop services. Never references `Persistence`. |
-| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `UI.Templates` ← `Web`. |
+| **Infrastructure isolation** | `BlazorFluent.Infrastructure` handles outbound integrations, S2S auth delegation, and browser interop services. Never references `Persistence`. |
+| **Worker shell isolation** | `BlazorFluent.Worker` is strictly an executable console host shell (~60 lines). Never author batch handlers or business logic directly in `BlazorFluent.Worker`. All batch logic must live in `BlazorFluent.Jobs`. |
+| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `UI.Templates` ← `Web`, All except `Web`/`UI.Templates` ← `Worker`. |
 | **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorFluent.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, `Jobs`, or `UI.Templates`. |
 
 ### 1.2 Service Scope Lifetime & Captive Dependency Governance
@@ -254,6 +256,17 @@ The following headers are injected by `SecurityHeadersExtensions` middleware and
 - NuGet CVE warnings (`NU1901`–`NU1904`) are promoted to build errors.
 - `.github/dependabot.yml` runs weekly NuGet dependency updates.
 - `.github/workflows/owasp-zap-scan.yml` runs weekly OWASP ZAP baseline vulnerability scans.
+
+### 3.7 Zero-Trust Multi-Tenancy Isolation & S2S Security
+
+| Rule | Description |
+|------|-------------|
+| **Zero Shared Keys in Client Nodes** | Client WebApp and Worker nodes never possess or store Azure Key Vault master keys. WebApp and Worker nodes sign S2S tokens exclusively using `Tenants:{tenantId}:LicenseKey`. |
+| **Masked Opaque Claims (GDPR / ASVS)** | Ephemeral S2S tokens must **never** transmit raw user emails, display names, or database primary keys across network boundaries. Tokens use opaque masked claims: `tid` (`tnt_...`), `tenant_id`, `cid` (correlation ID), and `act` (`BatchWorker` or `SystemDaemon`). |
+| **Dynamic Key Resolution** | `BlazorFluent.Api` resolves JWT signing keys dynamically via `IssuerSigningKeyResolver`, authenticating tenant-signed S2S tokens against `Tenants:{tenantId}:LicenseKey` while admitting the Cloud Master Key for user tokens. Missing tenant keys fail closed. |
+| **Ephemeral Token Expiry** | S2S tokens minted by `ITenantTokenService` have a strict 5-minute lifespan (`DateTime.UtcNow.AddMinutes(5)`), preventing replay attacks. |
+| **Compound Query Tenant Scoping** | Even with EF Core global query filters active, all batch job handlers and background listeners must enforce explicit compound LINQ query scoping: `f.TenantId == jobEvent.TenantId && ...`. |
+| **Cross-Tenant Quarantine Guard** | Background handlers processing multi-file manifests must verify that every file entity's `TenantId` matches `jobEvent.TenantId`. Any mismatch immediately throws a security violation and halts execution. |
 
 ---
 

@@ -19,8 +19,10 @@
 Rather than providing simple CRUD templates, BlazorFluent delivers production-grade enterprise subsystems:
 
 - 🐘 **Layer 5 Defense-in-Depth (PostgreSQL Native RLS)**: Tenant isolation is physically guaranteed at the database engine level via `TenantDbConnectionInterceptor` and native PostgreSQL Row-Level Security policies.
-- 📐 **Clean Architecture (11-Project Topology)**: Strictly enforced inward dependency direction, separating domain core, persistence, infrastructure, API gateway, and orchestration.
+- 📐 **Clean Architecture (12-Project Topology)**: Strictly enforced inward dependency direction, separating domain core, persistence, infrastructure, API gateway, standalone worker host, and orchestration.
 - ☁️ **.NET Aspire Orchestration**: Turnkey local orchestration with distributed OpenTelemetry tracing, live metrics, and dual-mode database routing (Native Local PostgreSQL vs Docker containerized PostgreSQL/pgAdmin).
+- ⚙️ **Dual-Mode Asynchronous Worker Host (`BlazorFluent.Worker`)**: Thin standalone console host shell (`net10.0` Worker SDK) for distributed, horizontally scalable background queues with zero code duplication from `BlazorFluent.Jobs`.
+- 🔐 **Zero-Trust Multi-Tenancy Isolation**: Ephemeral 5-minute S2S JWTs signed via private `TenantLicenseKey`, dynamic API key resolver, masked claims (`tid: tnt_...`, zero PII), and cross-tenant quarantine barriers.
 - ⚡ **100% In-Memory Rules Engine (`BlazorFluent.RulesEngine`)**: Sub-millisecond calculation pipeline for regulatory, financial, and business rule evaluations with zero database contention.
 - 🔐 **Zero-Knowledge Envelope Encryption**: Hardware-accelerated AES-256-GCM authenticated stream encryption with dynamic per-tenant keys derived via HKDF-SHA256.
 - ⏱️ **Thread-Isolated Asynchronous Ingestion**: Bounded `System.Threading.Channels` queues with a 4-stage batch pipeline (Ingestion -> Queue -> Validation/Staging -> Domain Promotion).
@@ -29,7 +31,7 @@ Rather than providing simple CRUD templates, BlazorFluent delivers production-gr
 
 ---
 
-## 🏗️ 11-Project Solution Architecture
+## 🏗️ 12-Project Solution Architecture
 
 BlazorFluent strictly follows Clean Architecture dependency boundaries where all dependencies flow inward toward the domain core:
 
@@ -45,14 +47,15 @@ flowchart TD
         Templates["BlazorFluent.UI.Templates\n(Enterprise Wizard RCL)"]
     end
 
-    subgraph BusinessAndApi ["Business Services & API Gateway"]
+    subgraph BusinessAndApi ["Business Services, API Gateway & Background Processing"]
         Api["BlazorFluent.Api\n(ProcessAPI, Multi-IdP Auth Gateway)"]
         Rules["BlazorFluent.RulesEngine\n(In-Memory Calculation Engine)"]
         Jobs["BlazorFluent.Jobs\n(Channel Batch Queue, File Ingestion)"]
+        Worker["BlazorFluent.Worker\n(Standalone Background Host Shell)"]
     end
 
     subgraph DataAndInfra ["Persistence & Infrastructure"]
-        Infra["BlazorFluent.Infrastructure\n(Notifications, Circuit Security)"]
+        Infra["BlazorFluent.Infrastructure\n(Notifications, S2S Auth Handlers)"]
         Persist["BlazorFluent.Persistence\n(PostgreSQL AppDbContext, Interceptors)"]
     end
 
@@ -65,12 +68,18 @@ flowchart TD
     AppHost --> Api
     Web --> Defaults
     Api --> Defaults
+    Worker --> Defaults
     Web --> Templates
     Web --> Jobs
     Web --> Infra
     Web --> Persist
     Web --> Core
     Web --> Shared
+    Worker --> Jobs
+    Worker --> Persist
+    Worker --> Infra
+    Worker --> Core
+    Worker --> Shared
     Api --> Core
     Api --> Shared
     Rules --> Shared
@@ -89,14 +98,15 @@ flowchart TD
 | Project | Target Framework | Purpose |
 | :--- | :--- | :--- |
 | [`BlazorFluent.Shared`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Shared/BlazorFluent.Shared.csproj) | `net10.0` | Cross-cutting domain enums, security DTOs, encryption contracts, and common models. |
-| [`BlazorFluent.Core`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/BlazorFluent.Core.csproj) | `net10.0` | Pure domain entities, business service interfaces, and FluentValidation rules. |
+| [`BlazorFluent.Core`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/BlazorFluent.Core.csproj) | `net10.0` | Pure domain entities, business service interfaces, `OpaqueIdUtility`, and FluentValidation rules. |
 | [`BlazorFluent.Persistence`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Persistence/BlazorFluent.Persistence.csproj) | `net10.0` | PostgreSQL AppDbContext, EF Core RLS interceptors, and HybridCache (L1/L2). |
-| [`BlazorFluent.Infrastructure`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj) | `net10.0` | Notifications (SMTP/Teams), SignalR circuit security, and browser interop. |
-| [`BlazorFluent.Jobs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj) | `net10.0` | Bounded Channel batch queue, Cronos periodic schedulers, and 4-stage file ingestion. |
+| [`BlazorFluent.Infrastructure`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj) | `net10.0` | S2S `TenantTokenService`, `TenantAuthDelegatingHandler`, notifications (SMTP/Teams), and circuit security. |
+| [`BlazorFluent.Jobs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj) | `net10.0` | Bounded Channel batch queue, Cronos periodic schedulers, and 4-stage file ingestion library. |
+| [`BlazorFluent.Worker`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Worker/BlazorFluent.Worker.csproj) | `net10.0` | Thin standalone console host shell executing background queues with horizontal scalability. |
 | [`BlazorFluent.Web`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/BlazorFluent.Web.csproj) | `net10.0` | Web application host, 65+ Fluent UI V5 components, and role authorization contracts. |
 | [`BlazorFluent.UI.Templates`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.UI.Templates/BlazorFluent.UI.Templates.csproj) | `net10.0` | Decoupled Razor Class Library (RCL) housing the Enterprise Wizard framework. |
 | [`BlazorFluent.RulesEngine`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.RulesEngine/BlazorFluent.RulesEngine.csproj) | `net10.0` | Company Azure 100% in-memory CPU calculation routines with sub-millisecond execution. |
-| [`BlazorFluent.Api`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Api/BlazorFluent.Api.csproj) | `net10.0` | ProcessAPI, Multi-IdP Auth Gateway (Entra ID, OIDC), and Key Vault management. |
+| [`BlazorFluent.Api`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Api/BlazorFluent.Api.csproj) | `net10.0` | ProcessAPI with dynamic `IssuerSigningKeyResolver`, Multi-IdP Auth Gateway, and Key Vault management. |
 | [`BlazorFluent.ServiceDefaults`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.ServiceDefaults/BlazorFluent.ServiceDefaults.csproj) | `net10.0` | Shared Aspire OpenTelemetry metrics, distributed tracing, and health checks. |
 | [`BlazorFluent.AppHost`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.AppHost/BlazorFluent.AppHost.csproj) | `net10.0` | Aspire 13.4 Orchestrator host managing multi-project lifecycles and database routing. |
 

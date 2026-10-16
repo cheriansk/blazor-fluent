@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
@@ -70,7 +70,13 @@ public class BatchJobQueueListener : BackgroundService
 
     private async Task ProcessJobEventAsync(IJobEvent jobEvent, CancellationToken stoppingToken)
     {
-        var tenantId = jobEvent.TenantId ?? "host";
+        if (string.IsNullOrWhiteSpace(jobEvent.TenantId))
+        {
+            _logger.LogError("Zero-Trust Security Violation: Batch job event {EventId} missing required TenantId. Aborting job execution (Fail-Closed).", jobEvent.EventId);
+            return;
+        }
+
+        var tenantId = jobEvent.TenantId;
         using (_logger.BeginScope(new Dictionary<string, object>
         {
             ["TenantId"] = tenantId,
@@ -92,13 +98,10 @@ public class BatchJobQueueListener : BackgroundService
 
             // ─── 1. RESTORE TENANT CONTEXT (LEAST PRIVILEGE) ─────────────────────────────
             var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-            var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) 
-                ? jobEvent.TenantId 
-                : IRootAdminService.DefaultTenantSlug;
 
             tenantContext.Initialize(
-                tenantId: targetTenantId,
-                tenantName: targetTenantId,
+                tenantId: tenantId,
+                tenantName: tenantId,
                 userType: UserType.CompanyUser,
                 allowedTenants: [],
                 isHost: false);
