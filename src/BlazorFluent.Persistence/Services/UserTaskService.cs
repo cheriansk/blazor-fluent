@@ -1,4 +1,6 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.Contracts.Engine.Client;
+using BlazorFluent.Shared.Contracts.Engine.Transforms;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos;
@@ -20,6 +22,7 @@ public partial class UserTaskService : IUserTaskService
     private readonly INotifyService _notificationService;
     private readonly IProjectAuthorizationService _projectAuth;
     private readonly ILogger<UserTaskService> _logger;
+    private readonly IEngineClient? _engineClient;
 
     public UserTaskService(
         AppDbContext context,
@@ -27,7 +30,8 @@ public partial class UserTaskService : IUserTaskService
         ITenantContext tenantContext,
         INotifyService notificationService,
         IProjectAuthorizationService projectAuth,
-        ILogger<UserTaskService> logger)
+        ILogger<UserTaskService> logger,
+        IEngineClient? engineClient = null)
     {
         _context = context;
         _currentUser = currentUser;
@@ -35,6 +39,7 @@ public partial class UserTaskService : IUserTaskService
         _notificationService = notificationService;
         _projectAuth = projectAuth;
         _logger = logger;
+        _engineClient = engineClient;
     }
 
     public async Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
@@ -43,12 +48,15 @@ public partial class UserTaskService : IUserTaskService
 
         var tenantId = _tenantContext.TenantId ?? string.Empty;
 
-        return await _context.Tasks
+        var tasks = await _context.Tasks
             .AsNoTracking()
             .Where(t => t.TenantId == tenantId && t.ProjectId == projectId)
             .Include(t => t.Comments.Where(c => !c.IsDeleted && c.TenantId == tenantId && c.ProjectId == projectId))
             .OrderBy(t => t.DueDate)
             .ToListAsync(ct);
+
+        await HydrateEncryptedTasksInMemoryAsync(tasks, ct);
+        return tasks;
     }
 
     public async Task<TaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
@@ -58,10 +66,69 @@ public partial class UserTaskService : IUserTaskService
         var tenantId = _tenantContext.TenantId ?? string.Empty;
 
         var task = await _context.Tasks
+            .AsNoTracking()
             .Include(t => t.Comments.Where(c => !c.IsDeleted && c.TenantId == tenantId && c.ProjectId == projectId).OrderBy(c => c.CreatedAtUtc))
             .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == taskId, ct);
 
+        if (task is not null)
+        {
+            await HydrateEncryptedTasksInMemoryAsync([task], ct);
+        }
+
         return task;
+    }
+
+    private async Task HydrateEncryptedTasksInMemoryAsync(IReadOnlyList<TaskEntity> tasks, CancellationToken ct)
+    {
+        if (_engineClient is null || tasks.Count == 0)
+        {
+            return;
+        }
+
+        var encryptedTasks = tasks
+            .Where(t => t.IsEncryptedAtRest && t.EncryptedPayloadBytes is { Length: > 0 })
+            .ToList();
+
+        if (encryptedTasks.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var req = new DecryptProprietaryReqDto(
+                encryptedTasks
+                    .Select(t => new DecryptProprietaryItemDto(t.Id, t.EncryptedPayloadBytes!))
+                    .ToList());
+
+            var resp = await _engineClient.DecryptProprietaryBatchAsync(req, ct);
+            if (!resp.IsSuccess || resp.Data is null || !resp.Data.IsSuccess)
+            {
+                _logger.LogWarning("On-demand proprietary decryption returned unsuccessful result: {Error}", resp.Error ?? resp.Data?.ErrorMessage);
+                return;
+            }
+
+            var decryptedById = resp.Data.Items.ToDictionary(i => i.RecordId, i => i.Properties);
+            foreach (var task in encryptedTasks)
+            {
+                if (decryptedById.TryGetValue(task.Id, out var props))
+                {
+                    if (props.TryGetValue("Title", out var decryptedTitle) && !string.IsNullOrWhiteSpace(decryptedTitle))
+                    {
+                        task.Title = decryptedTitle;
+                    }
+
+                    if (props.TryGetValue("Description", out var decryptedDesc) && decryptedDesc is not null)
+                    {
+                        task.Description = decryptedDesc;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to hydrate proprietary encrypted tasks in-memory via Engine API.");
+        }
     }
 
     public async Task<Result<TaskEntity>> CreateTaskAsync(TaskEntity task, CancellationToken ct = default)

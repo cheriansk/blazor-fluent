@@ -81,4 +81,95 @@ public static class PayloadEncryptionUtility
 
         return HKDF.DeriveKey(HashAlgorithmName.SHA256, ikm, KeyByteLength, salt, info);
     }
+
+    /// <summary>
+    /// Derives a tenant-isolated 256-bit AES key from the Cloud API's exclusive Vault Master Key for at-rest byte[] encryption.
+    /// </summary>
+    public static byte[] DeriveVaultAtRestKey(string vaultMasterKey, string tenantId)
+    {
+        var ikm = Encoding.UTF8.GetBytes(vaultMasterKey);
+        var salt = Encoding.UTF8.GetBytes(tenantId);
+        var info = Encoding.UTF8.GetBytes("BlazorFluent.ProprietaryAtRestVault.v1");
+
+        return HKDF.DeriveKey(HashAlgorithmName.SHA256, ikm, KeyByteLength, salt, info);
+    }
+
+    /// <summary>
+    /// Encrypts an object into a single packed byte[] array: [12-byte Nonce | 16-byte Tag | Ciphertext].
+    /// Designed for storing proprietary encrypted payloads directly in PostgreSQL bytea columns.
+    /// </summary>
+    public static byte[] EncryptToPackedBytes<T>(T payload, byte[] vaultKey)
+    {
+        if (vaultKey == null || vaultKey.Length != KeyByteLength)
+            throw new ArgumentException($"Vault key must be {KeyByteLength} bytes.", nameof(vaultKey));
+
+        var plaintext = JsonDefaults.ToUtf8Bytes(payload);
+        var nonce = new byte[NonceByteLength];
+        RandomNumberGenerator.Fill(nonce);
+
+        var tag = new byte[TagByteLength];
+        var ciphertext = new byte[plaintext.Length];
+
+        using var aesGcm = new AesGcm(vaultKey, TagByteLength);
+        aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+
+        var packed = new byte[NonceByteLength + TagByteLength + ciphertext.Length];
+        Buffer.BlockCopy(nonce, 0, packed, 0, NonceByteLength);
+        Buffer.BlockCopy(tag, 0, packed, NonceByteLength, TagByteLength);
+        Buffer.BlockCopy(ciphertext, 0, packed, NonceByteLength + TagByteLength, ciphertext.Length);
+
+        return packed;
+    }
+
+    /// <summary>
+    /// Decrypts a packed byte[] array ([12-byte Nonce | 16-byte Tag | Ciphertext]) back into the original object.
+    /// </summary>
+    public static T? DecryptFromPackedBytes<T>(byte[] packedBytes, byte[] vaultKey)
+    {
+        if (vaultKey == null || vaultKey.Length != KeyByteLength)
+            throw new ArgumentException($"Vault key must be {KeyByteLength} bytes.", nameof(vaultKey));
+
+        if (packedBytes == null || packedBytes.Length < NonceByteLength + TagByteLength)
+            throw new CryptographicException("Packed encrypted payload is truncated or malformed.");
+
+        var nonce = new byte[NonceByteLength];
+        var tag = new byte[TagByteLength];
+        var ciphertextLength = packedBytes.Length - NonceByteLength - TagByteLength;
+        var ciphertext = new byte[ciphertextLength];
+        var plaintext = new byte[ciphertextLength];
+
+        Buffer.BlockCopy(packedBytes, 0, nonce, 0, NonceByteLength);
+        Buffer.BlockCopy(packedBytes, NonceByteLength, tag, 0, TagByteLength);
+        Buffer.BlockCopy(packedBytes, NonceByteLength + TagByteLength, ciphertext, 0, ciphertextLength);
+
+        using var aesGcm = new AesGcm(vaultKey, TagByteLength);
+        aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
+
+        return JsonDefaults.FromUtf8Bytes<T>(plaintext);
+    }
+
+    /// <summary>
+    /// Compresses a UTF-8 JSON string using GZip for compact network transmission.
+    /// </summary>
+    public static byte[] CompressGzip(string json)
+    {
+        var inputBytes = Encoding.UTF8.GetBytes(json);
+        using var output = new MemoryStream();
+        using (var gzip = new System.IO.Compression.GZipStream(output, System.IO.Compression.CompressionLevel.Optimal, leaveOpen: true))
+        {
+            gzip.Write(inputBytes, 0, inputBytes.Length);
+        }
+        return output.ToArray();
+    }
+
+    /// <summary>
+    /// Decompresses a GZip byte array back into a UTF-8 JSON string.
+    /// </summary>
+    public static string DecompressGzip(byte[] compressedBytes)
+    {
+        using var input = new MemoryStream(compressedBytes);
+        using var gzip = new System.IO.Compression.GZipStream(input, System.IO.Compression.CompressionMode.Decompress);
+        using var reader = new StreamReader(gzip, Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
 }

@@ -155,44 +155,113 @@ else
 
 ---
 
-## Recipe 4: Create an Asynchronous Batch Importer
+## Recipe 4: Add a Batch File Import Target (Hybrid Batch Framework)
 
-Create two classes in `BlazorFluent.Jobs`:
+Under the Hybrid Batch Processing Framework, adding a new batch import target requires three declarative/stateless steps:
 
-### 1. The Stager Class:
+### 1. Register the File Type
+Add the discriminator to `ImportFileType` in `BlazorFluent.Shared.DataListTypes.ImportTypes.cs`:
 ```csharp
-[ImportSheet("Customers")]
-public class CustomerStager : AbstractTabularStager<CustomerStagingEntity>
+public enum ImportFileType
 {
-    [ImportColumn("Company Name", IsRequired = true)]
-    public string CompanyName { get; set; } = string.Empty;
-
-    [ImportColumn("Email", IsRequired = true)]
-    public string ContactEmail { get; set; } = string.Empty;
+    // ...
+    CustomerCsv = 7
 }
 ```
 
-### 2. The Processor Class:
-```csharp
-public class CustomerImportProcessor(AppDbContext db, ILogger<CustomerImportProcessor> logger) 
-    : AbstractImportProcessor<CustomerStagingEntity>
+### 2. Create the Declarative JSON Template
+Add `config/file-templates/CustomerCsv.json`. For standard tabular formats, set `"stagingBatchStrategy": "generic-json"`. Local schema validation, streaming SAX parsing, dynamic `headerMap` aliasing (`c1`, `c2`, ...), null value omission, and 1,000-row chunking into `staging.StagedImports` occur automatically:
+
+```json
 {
-    public override async Task PromoteBatchAsync(List<CustomerStagingEntity> stagingRows, Guid tenantId, CancellationToken ct)
+  "fileType": "CustomerCsv",
+  "displayName": "Customer Ingestion CSV",
+  "format": {
+    "formatType": "Csv",
+    "delimiter": ",",
+    "hasHeader": true,
+    "headerRowIndex": 1,
+    "dataStartRowIndex": 2
+  },
+  "stagingBatchStrategy": "generic-json",
+  "maxRowsPerChunk": 1000,
+  "omitNullValues": true,
+  "dependsOn": [],
+  "columns": [
+    { "name": "Company Name", "targetProperty": "CompanyName", "isRequired": true, "dataType": "String" },
+    { "name": "Email", "targetProperty": "ContactEmail", "isRequired": true, "dataType": "String" }
+  ]
+}
+```
+
+> **For Complex Non-Tabular Imports**: Implement `ICanonicalBatchStager` in `BlazorFluent.Jobs` and set `"stagingBatchStrategy": "custom:CustomerCustomBatchStager"`.
+
+### 3. Implement the Stateless C# Cloud Processor
+Create a strictly typed processor inheriting `BaseCloudProcessor` in `BlazorFluent.RulesEngine/BatchProcessing/Processors/`:
+
+```csharp
+using BlazorFluent.Shared.Contracts.Engine.Transforms;
+
+namespace BlazorFluent.RulesEngine.BatchProcessing.Processors;
+
+public sealed class CustomerCloudProcessor : BaseCloudProcessor
+{
+    public override IReadOnlyCollection<string> SupportedFileTypes => ["CustomerCsv"];
+
+    public override ProcessBatchRespDto ProcessChunk(
+        Guid sessionId,
+        Guid stagedImportId,
+        int chunkIndex,
+        string fileType,
+        CanonicalStagedChunkPayload payload,
+        IReadOnlyDictionary<string, string>? contextParameters)
     {
-        using var tx = await db.Database.BeginTransactionAsync(ct);
-        foreach (var row in stagingRows)
+        var reverseMap = BuildReverseHeaderMap(payload.HeaderMap);
+        var errors = new List<RowValidationErrorDto>();
+        var processedRows = new List<ProcessedDomainRowDto>();
+
+        foreach (var row in payload.Rows)
         {
-            db.Customers.Add(new CustomerEntity
+            var company = GetCellValue(row, reverseMap, "CompanyName")?.Trim();
+            var email = GetCellValue(row, reverseMap, "ContactEmail")?.Trim();
+
+            if (string.IsNullOrWhiteSpace(company))
             {
-                TenantId = tenantId,
-                CompanyName = row.CompanyName,
-                ContactEmail = row.ContactEmail
-            });
+                errors.Add(new RowValidationErrorDto(row.Idx, "CompanyName", "REQUIRED", "Company Name is required."));
+            }
+
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+            {
+                errors.Add(new RowValidationErrorDto(row.Idx, "ContactEmail", "INVALID_EMAIL", "Valid email is required."));
+            }
+
+            processedRows.Add(new ProcessedDomainRowDto(
+                SourceRowId: row.Id,
+                RowIndex: row.Idx,
+                TargetEntityType: "CustomerEntity",
+                DomainProperties: new Dictionary<string, string?>
+                {
+                    ["CompanyName"] = company,
+                    ["ContactEmail"] = email
+                },
+                IsEncryptedAtRest: false,
+                EncryptedPayloadBytes: null));
         }
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+
+        // Enforce strict all-or-nothing atomicity:
+        if (errors.Count > 0)
+        {
+            return new ProcessBatchRespDto(sessionId, stagedImportId, chunkIndex, false, payload.Rows.Count, [], errors);
+        }
+
+        return new ProcessBatchRespDto(sessionId, stagedImportId, chunkIndex, true, payload.Rows.Count, processedRows, []);
     }
 }
+```
+
+Register the processor in `BlazorFluent.Api/Program.cs`:
+```csharp
+builder.Services.AddSingleton<BaseCloudProcessor, CustomerCloudProcessor>();
 ```
 
 ---

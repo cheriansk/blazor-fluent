@@ -12,6 +12,8 @@ namespace BlazorFluent.Shared.Contracts.Engine.Client;
 public interface IEngineClient
 {
     Task<Result<FileConvertRespDto>> ConvertFileAsync(FileConvertReqDto request, CancellationToken ct = default);
+    Task<Result<ProcessBatchRespDto>> ProcessStagedBatchAsync(ProcessBatchReqDto request, CancellationToken ct = default);
+    Task<Result<DecryptProprietaryRespDto>> DecryptProprietaryBatchAsync(DecryptProprietaryReqDto request, CancellationToken ct = default);
     Task<Result<ProgramRollupRespDto>> RollupProgramAsync(ProgramRollupReqDto request, CancellationToken ct = default);
     Task<Result<DependencyDagRespDto>> AnalyzeDagAsync(DependencyDagReqDto request, CancellationToken ct = default);
     Task<Result<WorkflowTransitionRespDto>> EvaluateWorkflowTransitionAsync(WorkflowTransitionReqDto request, CancellationToken ct = default);

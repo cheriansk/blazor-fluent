@@ -1,0 +1,28 @@
+{
+  "fileType": "TaskExcel",
+  "stagingBatchStrategy": "generic-json",
+  "targetEntity": "TaskEntity",
+  "chunkSize": 1000,
+  "maxErrorThreshold": 500,
+  "omitNullValues": true,
+  "dependsOn": [],
+  "format": {
+    "type": "excel",
+    "hasHeader": true
+  },
+  "sheets": [
+    {
+      "name": "Tasks",
+      "required": true
+    }
+  ],
+  "columns": [
+    { "name": "Title", "alias": "c1", "dataType": "string", "required": true, "maxLength": 200 },
+    { "name": "Description", "alias": "c2", "dataType": "string", "required": false, "maxLength": 10000 },
+    { "name": "Priority", "alias": "c3", "dataType": "string", "required": false, "allowedValues": ["Low", "Medium", "High", "Critical", "Urgent"] },
+    { "name": "Status", "alias": "c4", "dataType": "string", "required": false, "allowedValues": ["Open", "InProgress", "InReview", "Blocked", "Closed"] },
+    { "name": "DueDate", "alias": "c5", "dataType": "date", "required": false },
+    { "name": "AssigneeEmails", "alias": "c6", "dataType": "string", "required": false, "maxLength": 2000 },
+    { "name": "Labels", "alias": "c7", "dataType": "string", "required": false, "maxLength": 500 }
+  ]
+}

@@ -5,10 +5,13 @@ using BlazorFluent.Api.Admin;
 using BlazorFluent.Api.Auth;
 using BlazorFluent.Api.Endpoints;
 using BlazorFluent.Api.Middleware;
+using BlazorFluent.RulesEngine.BatchProcessing;
+using BlazorFluent.RulesEngine.BatchProcessing.Processors;
 using BlazorFluent.Shared.Contracts.Engine.Client;
 using BlazorFluent.Shared.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +29,30 @@ builder.Services.AddScoped<ICorrelationContext, CorrelationContext>();
 builder.Services.AddSingleton<IEntitlementsRepository, InMemoryEntitlementsRepository>();
 builder.Services.AddScoped<IAuthGatewayService, AuthGatewayService>();
 builder.Services.AddScoped<IAdminSecurityService, AdminSecurityService>();
+
+// 4b. Register .NET 10 HybridCache (L1 RAM + optional L2 Redis) & Stateless Cloud Batch Processors
+var redisConn = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConn))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConn;
+        options.InstanceName = "BlazorFluentApi:";
+    });
+}
+
+builder.Services.AddHybridCache(options =>
+{
+    options.MaximumPayloadBytes = 10 * 1024 * 1024; // 10 MB per cached batch entry
+    options.DefaultEntryOptions = new HybridCacheEntryOptions
+    {
+        Expiration = TimeSpan.FromMinutes(15),
+        LocalCacheExpiration = TimeSpan.FromMinutes(5)
+    };
+});
+
+builder.Services.AddSingleton<BaseCloudProcessor, TaskCloudProcessor>();
+builder.Services.AddSingleton<CloudProcessorDispatcher>();
 
 // 5. JWT Bearer Authentication (Zero-Trust Fail-Fast Configuration Validation)
 var authIssuer = builder.Configuration["Auth:Issuer"];

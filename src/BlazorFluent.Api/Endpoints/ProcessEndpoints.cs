@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using BlazorFluent.RulesEngine.Analytics;
+using BlazorFluent.RulesEngine.BatchProcessing;
 using BlazorFluent.RulesEngine.Calendar;
 using BlazorFluent.RulesEngine.Parsers;
 using BlazorFluent.RulesEngine.Workflows;
@@ -13,6 +14,7 @@ using BlazorFluent.Shared.Contracts.Engine.Workflows;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Shared.Security;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BlazorFluent.Api.Endpoints;
 
@@ -332,6 +334,185 @@ public static class ProcessEndpoints
         .WithName("CalculateCalendarSchedule")
         .WithSummary("Calculate working days, holiday exclusions, and forward/backward target schedules");
 
+        // 7. Stateless Canonical Batch Processing Endpoint (All-or-Nothing + Proprietary At-Rest Vault Encryption)
+        group.MapPost("/transforms/process-batch", async (
+            [FromBody] EncryptedEnvelopeDto envelope,
+            ClaimsPrincipal user,
+            IConfiguration configuration,
+            HybridCache hybridCache,
+            CloudProcessorDispatcher dispatcher,
+            ILoggerFactory loggerFactory,
+            CancellationToken ct) =>
+        {
+            var logger = loggerFactory.CreateLogger("BlazorFluent.Api.Endpoints.Process.Batch");
+
+            if (ValidateEnvelope(envelope) is { } validationError)
+                return validationError;
+
+            try
+            {
+                var key = ResolveEncryptionKey(user, configuration, logger);
+                var req = PayloadEncryptionUtility.DecryptPayload<ProcessBatchReqDto>(envelope, key);
+
+                if (req == null)
+                    return Results.BadRequest(new { error = "MalformedPayload", message = "Decryption succeeded but batch request structure is invalid" });
+
+                CanonicalStagedChunkPayload? chunkPayload = null;
+                if (req.CompressedChunkBytes is { Length: > 0 })
+                {
+                    var decompressedJson = PayloadEncryptionUtility.DecompressGzip(req.CompressedChunkBytes);
+                    chunkPayload = JsonDefaults.FromJson<CanonicalStagedChunkPayload>(decompressedJson);
+                }
+                else if (req.Rows != null && req.HeaderMap != null)
+                {
+                    chunkPayload = new CanonicalStagedChunkPayload(
+                        ImportId: req.ImportId,
+                        ImportFileId: req.ImportFileId,
+                        FileType: req.FileType,
+                        SheetName: "Default",
+                        ChunkIndex: req.ChunkIndex,
+                        TotalChunks: req.TotalChunks,
+                        RowCount: req.Rows.Count,
+                        IsLastChunk: req.IsLastChunk,
+                        HeaderMap: req.HeaderMap,
+                        Rows: req.Rows);
+                }
+
+                if (chunkPayload == null)
+                    return Results.BadRequest(new { error = "EmptyChunkPayload", message = "Neither Rows/HeaderMap nor CompressedChunkBytes produced a valid staged chunk." });
+
+                logger.LogInformation(
+                    "Processing staged batch chunk {ChunkIndex}/{TotalChunks} for ImportFile {ImportFileId} ({FileType}, {RowCount} rows)",
+                    req.ChunkIndex, req.TotalChunks, req.ImportFileId, req.FileType, chunkPayload.Rows.Count);
+
+                // Cache transient session metadata in HybridCache (L1 RAM + optional L2 Redis)
+                var cacheKey = $"batch:import:{req.ImportFileId}:chunk:{req.ChunkIndex}";
+                await hybridCache.SetAsync(
+                    cacheKey,
+                    new { req.ImportId, req.ImportFileId, req.FileType, req.ChunkIndex, ProcessedAtUtc = DateTime.UtcNow },
+                    cancellationToken: ct);
+
+                var resp = dispatcher.Dispatch(
+                    req.ImportId,
+                    req.ImportFileId,
+                    req.ChunkIndex,
+                    req.FileType,
+                    chunkPayload,
+                    null);
+
+                // Check Proprietary At-Rest Byte Encryption Flag
+                var encryptAtRest = req.ForceEncryptAtRest ?? configuration.GetValue<bool>("ProprietaryStorage:EncryptProcessedDataAtRest");
+                if (resp.IsSuccess && encryptAtRest && resp.ProcessedRows.Count > 0)
+                {
+                    var vaultKey = ResolveVaultAtRestKey(user, configuration);
+                    var encryptedRows = new List<ProcessedDomainRowDto>(resp.ProcessedRows.Count);
+
+                    foreach (var row in resp.ProcessedRows)
+                    {
+                        var encryptedBytes = PayloadEncryptionUtility.EncryptToPackedBytes(row.DomainProperties, vaultKey);
+                        var redactedProps = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var kvp in row.DomainProperties)
+                        {
+                            if (string.Equals(kvp.Key, "Title", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(kvp.Key, "Description", StringComparison.OrdinalIgnoreCase))
+                            {
+                                redactedProps[kvp.Key] = "[ENCRYPTED]";
+                            }
+                            else
+                            {
+                                redactedProps[kvp.Key] = kvp.Value;
+                            }
+                        }
+
+                        encryptedRows.Add(row with
+                        {
+                            DomainProperties = redactedProps,
+                            IsEncryptedAtRest = true,
+                            EncryptedPayloadBytes = encryptedBytes
+                        });
+                    }
+
+                    resp = resp with { ProcessedRows = encryptedRows, IsEncryptedAtRest = true };
+                }
+
+                return Results.Ok(PayloadEncryptionUtility.EncryptPayload(resp, key));
+            }
+            catch (CryptographicException ex)
+            {
+                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        })
+        .WithName("ProcessStagedBatch")
+        .WithSummary("Process a staged canonical JSON batch chunk with all-or-nothing atomicity and optional proprietary at-rest encryption")
+        .RequireRateLimiting("api-expensive");
+
+        // 8. On-Demand Proprietary Payload Decryption Endpoint (For authorized UI screen display)
+        group.MapPost("/transforms/decrypt-proprietary", (
+            [FromBody] EncryptedEnvelopeDto envelope,
+            ClaimsPrincipal user,
+            IConfiguration configuration,
+            ILoggerFactory loggerFactory) =>
+        {
+            var logger = loggerFactory.CreateLogger("BlazorFluent.Api.Endpoints.Process.DecryptProprietary");
+
+            if (ValidateEnvelope(envelope) is { } validationError)
+                return validationError;
+
+            try
+            {
+                var key = ResolveEncryptionKey(user, configuration, logger);
+                var req = PayloadEncryptionUtility.DecryptPayload<DecryptProprietaryReqDto>(envelope, key);
+
+                if (req == null)
+                    return Results.BadRequest(new { error = "MalformedPayload", message = "Decryption succeeded but proprietary decryption request is invalid" });
+
+                var vaultKey = ResolveVaultAtRestKey(user, configuration);
+                var decryptedItems = new List<DecryptedProprietaryItemDto>(req.Items.Count);
+
+                foreach (var item in req.Items)
+                {
+                    var props = PayloadEncryptionUtility.DecryptFromPackedBytes<Dictionary<string, string?>>(
+                        item.EncryptedPayloadBytes,
+                        vaultKey) ?? new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+                    decryptedItems.Add(new DecryptedProprietaryItemDto(
+                        RecordId: item.RecordId,
+                        Properties: props));
+                }
+
+                var resp = new DecryptProprietaryRespDto(IsSuccess: true, Items: decryptedItems, ErrorMessage: null);
+                return Results.Ok(PayloadEncryptionUtility.EncryptPayload(resp, key));
+            }
+            catch (CryptographicException ex)
+            {
+                logger.LogWarning(ex, "Proprietary decryption failed for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted proprietary payload" }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogWarning(ex, "Tenant license or vault key violation for user {User}", user.Identity?.Name);
+                return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        })
+        .WithName("DecryptProprietaryBatch")
+        .WithSummary("Decrypt proprietary at-rest byte[] payloads in-memory for authorized UI display");
+
         return group;
     }
 
@@ -368,5 +549,22 @@ public static class ProcessEndpoints
             tenantIdClaim, user.Identity?.Name);
 
         return PayloadEncryptionUtility.DeriveTenantKey(licenseKey, tenantIdClaim);
+    }
+
+    private static byte[] ResolveVaultAtRestKey(ClaimsPrincipal user, IConfiguration configuration)
+    {
+        var tenantIdClaim = user.Claims.FirstOrDefault(c => c.Type == "tenant_id")?.Value;
+        if (string.IsNullOrWhiteSpace(tenantIdClaim))
+        {
+            throw new UnauthorizedAccessException("Missing tenant_id claim in JWT token");
+        }
+
+        var vaultMasterKey = configuration["ProprietaryStorage:VaultMasterKey"];
+        if (string.IsNullOrWhiteSpace(vaultMasterKey))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'ProprietaryStorage:VaultMasterKey' must be configured when proprietary at-rest encryption is active.");
+        }
+
+        return PayloadEncryptionUtility.DeriveVaultAtRestKey(vaultMasterKey, tenantIdClaim);
     }
 }
