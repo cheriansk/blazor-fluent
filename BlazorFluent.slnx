@@ -7,7 +7,6 @@
   <Folder Name="/src/BackEnd/">
     <Project Path="src/BlazorFluent.Api/BlazorFluent.Api.csproj" />
     <Project Path="src/BlazorFluent.RulesEngine/BlazorFluent.RulesEngine.csproj" />
-    <Project Path="src/BlazorFluent.Worker/BlazorFluent.Worker.csproj" />
   </Folder>
   <Folder Name="/src/FrontEnd/">
     <Project Path="src/BlazorFluent.Core/BlazorFluent.Core.csproj" />
@@ -15,6 +14,7 @@
     <Project Path="src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj" />
     <Project Path="src/BlazorFluent.Persistence/BlazorFluent.Persistence.csproj" />
     <Project Path="src/BlazorFluent.Web/BlazorFluent.Web.csproj" />
+    <Project Path="src/BlazorFluent.Worker/BlazorFluent.Worker.csproj" />
   </Folder>
   <Folder Name="/src/Orchestrator/">
     <Project Path="src/BlazorFluent.AppHost/BlazorFluent.AppHost.csproj" />
@@ -22,6 +22,7 @@
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/BlazorFluent.Shared/BlazorFluent.Shared.csproj" />
+    <Project Path="src/BlazorFluent.UI.Material/BlazorFluent.UI.Material.csproj" />
     <Project Path="src/BlazorFluent.UI.Templates/BlazorFluent.UI.Templates.csproj" />
   </Folder>
   <Folder Name="/tests/">
