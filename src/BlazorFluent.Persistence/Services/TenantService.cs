@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -7,6 +7,7 @@ using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using BlazorFluent.Core.Security;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -660,5 +661,38 @@ public class TenantService : ITenantService
         }
 
         return Result<ProjectEntity>.Success(project);
+    }
+
+    public async Task<Result<string>> RegenerateTenantLicenseKeyAsync(string tenantSlug, CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+
+        // Zero Trust: Only RootAdmin or TenantAdmin can regenerate license keys
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to regenerate license key for tenant '{TenantSlug}' outside their active tenant.",
+                _currentUser.UserId, tenantSlug);
+            return Result<string>.Failure("Access Denied: You do not have permission to manage license keys for this tenant.");
+        }
+
+        var tenant = await _dbContext.Tenants.FirstOrDefaultAsync(t => t.Slug == normalizedSlug, cancellationToken);
+        if (tenant == null)
+        {
+            return Result<string>.Failure($"Tenant '{tenantSlug}' was not found.");
+        }
+
+        // Generate 256-bit cryptographically secure license key for one-time display
+        var newLicenseKey = OpaqueIdUtility.GenerateSecureLicenseKey();
+
+        _logger.LogInformation("Regenerated 256-bit license key for tenant '{TenantSlug}' by user '{UserId}'",
+            normalizedSlug, _currentUser.UserId);
+
+        await _auditService.LogSecurityEventAsync(
+            "TenantLicenseKeyRotated",
+            AuditSeverity.Warning,
+            $"License key for tenant '{normalizedSlug}' was rotated by user '{_currentUser.UserId}' ({_currentUser.Email}).",
+            cancellationToken);
+
+        return Result<string>.Success(newLicenseKey);
     }
 }

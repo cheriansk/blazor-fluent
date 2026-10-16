@@ -14,8 +14,12 @@ public static class EngineGatewayExtensions
         // Register ambient CorrelationContext if not already registered
         services.AddScoped<ICorrelationContext, CorrelationContext>();
 
-        // Register delegating handler
+        // Register delegating handlers
         services.AddTransient<CorrelationIdDelegatingHandler>();
+        services.AddTransient<TenantAuthDelegatingHandler>();
+
+        // Register S2S Tenant Token Service
+        services.AddScoped<BlazorFluent.Infrastructure.Security.ITenantTokenService, BlazorFluent.Infrastructure.Security.TenantTokenService>();
 
         // Register HttpClient for ProcessAPI
         var apiBaseUrl = configuration["Engine:ApiBaseUrl"] ?? "https://localhost:7150";
@@ -25,7 +29,8 @@ public static class EngineGatewayExtensions
             client.BaseAddress = new Uri(apiBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(60);
         })
-        .AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
+        .AddHttpMessageHandler<CorrelationIdDelegatingHandler>()
+        .AddHttpMessageHandler<TenantAuthDelegatingHandler>();
 
         // Expose as both IRemoteEngineGateway and IEngineClient
         services.AddScoped<IRemoteEngineGateway>(sp => sp.GetRequiredService<RemoteEngineGateway>());

@@ -14,6 +14,8 @@
 5. [Recipe 5: Author a Multi-Step Wizard with `<FluentWizardModal>`](#recipe-5-author-a-multi-step-wizard-with-fluentwizardmodal)
 6. [Recipe 6: Add a Calculation Rule to `BlazorFluent.RulesEngine`](#recipe-6-add-a-calculation-rule-to-blazorfluentrulesengine)
 7. [Recipe 7: Downstream Extension with TemplateGuard (`.Custom.cs`)](#recipe-7-downstream-extension-with-templateguard-customcs)
+8. [Recipe 8: Onboard a New Tenant & Rotate License Keys](#recipe-8-onboard-a-new-tenant--rotate-license-keys)
+9. [Recipe 9: Author a Dedicated Background Job for `BlazorFluent.Worker`](#recipe-9-author-a-dedicated-background-job-for-blazorfluentworker)
 
 ---
 
@@ -337,17 +339,92 @@ flowchart LR
     Custom["Downstream Extension (UserService.Custom.cs)\n• Nested in Solution Explorer\n• Contains custom enterprise methods\n• 100% safe during upstream template pulls"]
 ```
 
-### Example: Extending a Service
-In `src/BlazorFluent.Persistence/Services/UserService.Custom.cs`:
-```csharp
-namespace BlazorFluent.Persistence.Services;
+```
 
-public partial class UserService
+---
+
+## Recipe 8: Onboard a New Tenant & Rotate License Keys
+
+### Step 1: Generate License Key on Tenant Onboarding
+During tenant onboarding or key rotation, invoke `ITenantService.RegenerateTenantLicenseKeyAsync`:
+
+```csharp
+// In an Admin service or Onboarding Wizard step:
+var newLicenseKey = await tenantService.RegenerateTenantLicenseKeyAsync(tenantId, ct);
+
+// Reveal to the tenant administrator ONCE (never logged in plain text):
+// "Your new 256-bit Tenant License Key is: " + newLicenseKey
+```
+
+### Step 2: Configure Keys in Host Configurations
+Store the key in the tenant's WebApp / Worker configuration and in the Cloud ProcessAPI configuration:
+
+```json
 {
-    // Custom downstream method; never overwritten by base template updates
-    public async Task SendCustomSmsAlertAsync(Guid userId, string message)
+  "Tenants": {
+    "tnt_alpha": {
+      "LicenseKey": "<256-bit-base64-key-from-onboarding>"
+    }
+  }
+}
+```
+
+---
+
+## Recipe 9: Author a Dedicated Background Job for `BlazorFluent.Worker`
+
+### Step 1: Define Job Event in `BlazorFluent.Core/Events/`
+All background events must implement `IJobEvent` and carry an explicit `TenantId` and `CorrelationId`:
+
+```csharp
+namespace BlazorFluent.Core.Events.Invoicing;
+
+public record InvoiceBatchJobEvent(
+    string TriggerSource,
+    string TenantId,
+    string CorrelationId,
+    string SenderOrigin,
+    string SenderUserId,
+    string SenderUserEmail,
+    Guid InvoiceBatchId,
+    Guid? ParentExecutionId = null) : IJobEvent
+{
+    public Guid EventId { get; init; } = Guid.CreateVersion7();
+    public DateTime TimestampUtc { get; init; } = DateTime.UtcNow;
+}
+```
+
+### Step 2: Implement Handler in `BlazorFluent.Jobs/Jobs/`
+Batch handlers implement `IBatchJobHandler<TEvent>` and reside exclusively in `BlazorFluent.Jobs`:
+
+```csharp
+namespace BlazorFluent.Jobs.Jobs.Invoicing;
+
+public class InvoiceBatchJobHandler : IBatchJobHandler<InvoiceBatchJobEvent>
+{
+    private readonly AppDbContext _dbContext;
+    private readonly ILogger<InvoiceBatchJobHandler> _logger;
+
+    public InvoiceBatchJobHandler(AppDbContext dbContext, ILogger<InvoiceBatchJobHandler> logger)
     {
-        // Custom implementation
+        _dbContext = dbContext;
+        _logger = logger;
+    }
+
+    public async Task HandleAsync(InvoiceBatchJobEvent jobEvent, CancellationToken cancellationToken)
+    {
+        // Enforce compound tenant scoping:
+        var batch = await _dbContext.Invoices
+            .Where(i => i.TenantId == jobEvent.TenantId && i.BatchId == jobEvent.InvoiceBatchId)
+            .ToListAsync(cancellationToken);
+
+        _logger.LogInformation("Processing {Count} invoices for tenant {TenantId}", batch.Count, jobEvent.TenantId);
+        // Execute business logic...
     }
 }
 ```
+
+### Step 3: Deployment
+- The job handler is **automatically discovered and registered** by `JobsExtensions.AddBackgroundJobs()`.
+- Runs seamlessly inside `BlazorFluent.Web` (when `Jobs:EnableHostedListener = true`) or inside `BlazorFluent.Worker` (in distributed mode) with **zero code duplication**.
+

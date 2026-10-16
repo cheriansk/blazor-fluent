@@ -30,11 +30,13 @@ Modern enterprise web initiatives routinely stall due to the massive overhead of
 | Architectural Dimension | BlazorFluent Implementation | Enterprise Standards Met |
 | :--- | :--- | :--- |
 | **Data Multi-Tenancy** | PostgreSQL Native Row-Level Security (RLS) + EF Core Global Query Filters + Connection Interceptors (`TenantDbConnectionInterceptor`). | SOC 2 Type II, ISO 27001 (Multi-tenant partition isolation). |
+| **Zero-Trust Tenancy Isolation** | Dual-Token Model: Interactive user tokens (Cloud Master Key) vs Ephemeral S2S tokens (`TenantLicenseKey`), dynamic `IssuerSigningKeyResolver`, GDPR / OWASP ASVS masked claims (`tid`, `cid`, `act`, zero PII), and cross-tenant quarantine guards. | Zero Trust Architecture, OWASP ASVS 4.3 Indirect Reference, GDPR Data Minimization. |
 | **Cryptographic Storage** | AES-256-GCM authenticated stream encryption with per-tenant HKDF-SHA256 derived keys. | HIPAA, GDPR Article 32 (Security of processing). |
-| **Authentication & IAM** | Centralized Auth Gateway (`BlazorFluent.Api`) supporting Multi-IdP federation (Microsoft Entra ID, Azure AD B2C, Okta, Local Dev) with HMAC cryptographic tokens. | OpenID Connect, OAuth 2.0, Zero Trust. |
+| **Authentication & IAM** | Centralized Auth Gateway (`BlazorFluent.Api`) supporting Multi-IdP federation (Microsoft Entra ID, Azure AD B2C, Okta, Local Dev) with HMAC cryptographic tokens and dynamic key resolution. | OpenID Connect, OAuth 2.0, Zero Trust. |
 | **Governance & Anti-Tamper**| `TemplateGuard` Roslyn Analyzer + locked AST base manifest (`.basefiles.json`) enforcing non-breaking downstream `.Custom.cs` partial classes. | Enterprise Release Management, Supply Chain Security. |
 | **Business Calculation Engine**| `BlazorFluent.RulesEngine` delivering 100% in-memory calculation routines with zero database latency. | Sub-millisecond Financial & Regulatory calculations. |
 | **Hybrid Batch Ingestion** | Local streaming SAX parsing, universal `staging.StagedImports` table with `jsonb` payloads and `IsProcessed` tracking, Gzip-compressed chunk transmission, and stateless Cloud API processing with all-or-nothing atomicity and optional proprietary vault at-rest encryption. | Resilient High-Throughput Bulk Processing, Zero-Trust Storage. |
+| **Background Processing** | Dual-Mode architecture: Single-node web-hosted queue listener (`BlazorFluent.Web`) vs. horizontally scalable standalone worker console host (`BlazorFluent.Worker`), sharing 100% batch logic in `BlazorFluent.Jobs`. | Enterprise Job Scheduling, Decoupled Worker Scalability. |
 | **UI Design System** | Microsoft Fluent UI Blazor V5 adhering strictly to Microsoft Fluent 2 design language with zero legacy V4 tokens. | WCAG 2.1 AA Accessibility, Microsoft 365 Look-and-Feel. |
 | **Observability & Diagnostics**| .NET Aspire OpenTelemetry metrics, distributed traces, structured Serilog logging, and forensic audit diffs (`audit.AuditRecords`). | DORA, SRE Observability Standards. |
 

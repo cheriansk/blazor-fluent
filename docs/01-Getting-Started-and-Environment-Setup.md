@@ -71,6 +71,10 @@ The central settings file (`src/BlazorFluent.Web/appsettings.json` and `src/Blaz
 | **`Aspire`** | `UseDockerPostgres` | `false` | When `false`, uses local native PostgreSQL. When `true`, provisions Docker containers. |
 | **`Security`** | `IntegritySecret` | `(32+ byte string)` | Cryptographic secret used for HMAC-SHA256 user row integrity seals. |
 | **`Security`** | `StorageEncryptionKey` | `(32+ byte string)` | Master key for HKDF-SHA256 tenant envelope stream encryption. |
+| **`Jobs`** | `EnableHostedListener` | `true` | When `true`, `BlazorFluent.Web` starts the in-process batch queue listener (single-node). Set to `false` when running `BlazorFluent.Worker`. |
+| **`Jobs`** | `EnableScheduler` | `true` | Enables Cronos periodic background schedulers. |
+| **`Jobs`** | `CronServiceAccountEmail` | `daemon-worker@local.system` | Service account identity for cron-triggered background jobs. |
+| **`Tenants:{tenantId}`** | `LicenseKey` | `(256-bit base64)` | Per-tenant private license key used for ephemeral S2S token signing and AES payload encryption. |
 | **`TemplateGuard`** | `TemplateGuardMode` | `TemplateAuthoring` | `TemplateAuthoring` allows free editing and auto-generates manifests. `DownstreamEnforce` strictly blocks unauthorized changes. |
 | **`Notifications:Email`**| `SmtpHost` | `localhost` | Outbound SMTP relay for workflow and security notifications. |
 | **`Notifications:Teams`**| `DefaultWebhookUrl` | `""` | Microsoft Teams incoming webhook for system alerts. |
@@ -90,6 +94,14 @@ Launching through `BlazorFluent.AppHost` runs the web application, API gateway, 
 If launching only the UI:
 1. Set [`src/BlazorFluent.Web`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/BlazorFluent.Web.csproj) as Startup Project.
 2. Press **F5** / **Ctrl+F5**. The app launches at `https://localhost:7001`.
+
+### Approach 3: Standalone Background Worker
+When deploying in distributed mode (with `Jobs:EnableHostedListener = false` in `BlazorFluent.Web`):
+1. In a terminal, launch the dedicated console worker:
+   ```powershell
+   dotnet run --project src/BlazorFluent.Worker
+   ```
+2. The worker boots with Aspire ServiceDefaults, connects to PostgreSQL, and begins processing channel job events and periodic cron schedules.
 
 ---
 

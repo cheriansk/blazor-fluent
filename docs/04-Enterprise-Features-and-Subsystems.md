@@ -63,6 +63,8 @@ flowchart TD
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ 4. Stateless Cloud API & Strict All-or-Nothing Atomicity                               │
+│    • Outbound requests signed with ephemeral S2S tokens via TenantAuthDelegatingHandler│
+│      carrying masked claims (tid, tenant_id, cid, act) and zero PII.                   │
 │    • POST /api/v1/transforms/process-batch receives Gzip-compressed chunk payloads.    │
 │    • Evaluates domain rules strictly in-memory (RulesEngine) with zero database.       │
 │    • All-or-Nothing: If any single row fails, the chunk fails with 0 rows committed.   │
@@ -77,6 +79,15 @@ flowchart TD
 │      [12-byte Nonce | 16-byte Tag | Ciphertext] using an API-exclusive master vault key│
 │    • Plaintext values redacted to "[ENCRYPTED]" in local PostgreSQL storage.           │
 │    • On-demand UI screen decryption via POST /api/v1/transforms/decrypt-proprietary.   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 6. Dual-Mode Host Execution & Strict Cross-Tenant Quarantine Guard                     │
+│    • Runs in single-node mode inside BlazorFluent.Web (Jobs:EnableHostedListener=true) │
+│      or in distributed scale mode via standalone BlazorFluent.Worker console host.     │
+│    • Handlers enforce compound LINQ query scoping (f.TenantId == jobEvent.TenantId).   │
+│    • Quarantine Guard: Aborts immediately if any staged file's TenantId mismatches.    │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 

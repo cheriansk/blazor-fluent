@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\BlazorFluent.Core\BlazorFluent.Core.csproj" />
     <ProjectReference Include="..\..\src\BlazorFluent.RulesEngine\BlazorFluent.RulesEngine.csproj" />
     <ProjectReference Include="..\..\src\BlazorFluent.Api\BlazorFluent.Api.csproj" />
+    <ProjectReference Include="..\..\src\BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

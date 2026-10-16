@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using BlazorFluent.Infrastructure.Security;
 using BlazorFluent.Shared.Common;
 using BlazorFluent.Shared.Contracts.Engine.Client;
 using BlazorFluent.Shared.Contracts.Engine.Transforms;
@@ -14,6 +15,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -27,6 +29,8 @@ public class ApiTestWebApplicationFactory : WebApplicationFactory<Program>
     public const string TrustedOrigin = "https://trusted.company.com";
     public const string ValidTenantId = "TENANT-001";
     public const string ValidLicenseKey = "DEV-COMMUNITY-KEY-0000";
+    public const string TenantBId = "TENANT-002";
+    public const string TenantBLicenseKey = "DEV-COMMUNITY-KEY-0002";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -39,6 +43,7 @@ public class ApiTestWebApplicationFactory : WebApplicationFactory<Program>
                 ["Auth:SigningKey"] = TestSigningKey,
                 ["AllowedOrigins:0"] = TrustedOrigin,
                 [$"Tenants:{ValidTenantId}:LicenseKey"] = ValidLicenseKey,
+                [$"Tenants:{TenantBId}:LicenseKey"] = TenantBLicenseKey,
                 ["Admin:AllowedDomain"] = "company.com",
                 ["Admin:KeyVaultUsers"] = "admin@company.com"
             });
@@ -240,5 +245,99 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ProcessApi_WithWorkerS2SToken_SignedWithTenantLicenseKey_Returns200Ok()
+    {
+        var config = _factory.Services.GetRequiredService<IConfiguration>();
+        var correlationContext = new CorrelationContext { CorrelationId = "CORR-WORKER-001" };
+        var tokenService = new TenantTokenService(config, correlationContext);
+
+        var s2sToken = tokenService.GenerateS2SToken(ApiTestWebApplicationFactory.ValidTenantId, "BatchWorker");
+        var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(ApiTestWebApplicationFactory.ValidLicenseKey, ApiTestWebApplicationFactory.ValidTenantId);
+
+        var reqDto = new FileConvertReqDto(
+            SessionId: Guid.NewGuid(),
+            FileName: "worker_batch.csv",
+            FileType: ImportFileType.TaskCsv,
+            FileBytes: Encoding.UTF8.GetBytes("Title,Status\nWorker Task 1,Open\n")
+        );
+
+        var envelope = PayloadEncryptionUtility.EncryptPayload(reqDto, encryptionKey);
+
+        using var request = CreateRequest(HttpMethod.Post, "/api/v1/transforms/convert", correlationId: "CORR-WORKER-001");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", s2sToken);
+        request.Content = JsonContent.Create(envelope, options: JsonDefaults.StandardOptions);
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task ProcessApi_WithWorkerS2SToken_SignedWithMismatchedTenantLicenseKey_Returns401Unauthorized()
+    {
+        // Forged S2S token: Claims tid = ValidTenantId (Tenant A), but signed with Tenant B's license key
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var keyBytes = Encoding.UTF8.GetBytes(ApiTestWebApplicationFactory.TenantBLicenseKey);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Issuer = "blazorfluent-worker",
+            Audience = "https://api.blazorfluent.com",
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("tid", ApiTestWebApplicationFactory.ValidTenantId),
+                new Claim("tenant_id", ApiTestWebApplicationFactory.ValidTenantId),
+                new Claim("cid", "CORR-FORGED-001"),
+                new Claim("act", "BatchWorker")
+            }),
+            Expires = DateTime.UtcNow.AddMinutes(5),
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(keyBytes),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+        var forgedToken = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+
+        using var request = CreateRequest(HttpMethod.Post, "/api/v1/transforms/convert", correlationId: "CORR-FORGED-001");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", forgedToken);
+        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("bm9uY2U=", "dGFn", "Y2lwaGVydGV4dA=="));
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task ProcessApi_WithWorkerS2SToken_Expired_Returns401Unauthorized()
+    {
+        // Expired S2S token (past 5-minute validity window)
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var keyBytes = Encoding.UTF8.GetBytes(ApiTestWebApplicationFactory.ValidLicenseKey);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Issuer = "blazorfluent-worker",
+            Audience = "https://api.blazorfluent.com",
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("tid", ApiTestWebApplicationFactory.ValidTenantId),
+                new Claim("tenant_id", ApiTestWebApplicationFactory.ValidTenantId),
+                new Claim("cid", "CORR-EXPIRED-001"),
+                new Claim("act", "BatchWorker")
+            }),
+            Expires = DateTime.UtcNow.AddMinutes(-10), // Expired 10 minutes ago
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(keyBytes),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+        var expiredToken = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+
+        using var request = CreateRequest(HttpMethod.Post, "/api/v1/transforms/convert", correlationId: "CORR-EXPIRED-001");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", expiredToken);
+        request.Content = JsonContent.Create(new EncryptedEnvelopeDto("bm9uY2U=", "dGFn", "Y2lwaGVydGV4dA=="));
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

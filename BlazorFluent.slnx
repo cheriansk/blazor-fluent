@@ -7,6 +7,7 @@
   <Folder Name="/src/BackEnd/">
     <Project Path="src/BlazorFluent.Api/BlazorFluent.Api.csproj" />
     <Project Path="src/BlazorFluent.RulesEngine/BlazorFluent.RulesEngine.csproj" />
+    <Project Path="src/BlazorFluent.Worker/BlazorFluent.Worker.csproj" />
   </Folder>
   <Folder Name="/src/FrontEnd/">
     <Project Path="src/BlazorFluent.Core/BlazorFluent.Core.csproj" />

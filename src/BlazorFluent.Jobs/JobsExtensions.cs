@@ -14,15 +14,18 @@ namespace BlazorFluent.Jobs;
 
 public static class JobsExtensions
 {
-    public static IServiceCollection AddBackgroundJobs(this IServiceCollection services, bool enableScheduler = true)
+    public static IServiceCollection AddBackgroundJobs(this IServiceCollection services, bool enableListener = true, bool enableScheduler = true)
     {
         // 1. Register the in-memory high performance Channel Job Queue & Event Publisher
         services.TryAddSingleton<ChannelJobEventQueue>();
         services.TryAddSingleton<IJobEventQueue>(sp => sp.GetRequiredService<ChannelJobEventQueue>());
         services.TryAddSingleton<IJobEventPublisher>(sp => sp.GetRequiredService<ChannelJobEventQueue>());
 
-        // 2. Register the Queue Listener background worker
-        services.AddHostedService<BatchJobQueueListener>();
+        // 2. Register the Queue Listener background worker if enabled
+        if (enableListener)
+        {
+            services.AddHostedService<BatchJobQueueListener>();
+        }
 
         // 3. Register the Periodic Scheduler if enabled
         if (enableScheduler)

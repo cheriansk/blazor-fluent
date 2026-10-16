@@ -388,10 +388,10 @@
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "92f4b001d5ce4ee0bf5a77727e7d48213449f9586d823db7b244377672cd7800",
+        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "978d8f351e1bd0bcdfb2a845a29ca5ef4d25e45a315f8dbdb012333274594d51",
         "ProcessEndpoints.ValidateEnvelope(EncryptedEnvelopeDto?)": "221b3c8805f29db28e4968ec063b19b7682d2847843cbc174889bac9e31ea58e",
-        "ProcessEndpoints.ResolveEncryptionKey(ClaimsPrincipal, IConfiguration, ILogger)": "d36dfcee3dc0694890963532e7e249d12d22849809cc996c9b154605091eb75d",
-        "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)": "44bbe57d8b9613e5e78977dfb478fb98ecd7821f0abbc7e346aa196443f84ba9"
+        "ProcessEndpoints.ResolveEncryptionKey(ClaimsPrincipal, IConfiguration, ILogger)": "0b059e6881573514a81efb11cd000565e24fbd986b4151b254eaa28090abc193",
+        "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)": "a9b51ed79515f7fa746e94e77a95661829dd21600480cc9ff13812d0d140bcc1"
       }
     },
     "Api/Middleware/EnforceMandatoryCorrelationIdMiddleware.cs": {
@@ -570,6 +570,14 @@
       "KnownMembers": [
         "SectionName",
         "JobsOptions.SectionName",
+        "\u003CEnableHostedListener\u003Ek__BackingField",
+        "JobsOptions.EnableHostedListener.field",
+        "EnableHostedListener",
+        "JobsOptions.EnableHostedListener",
+        "get_EnableHostedListener",
+        "JobsOptions.EnableHostedListener.get",
+        "set_EnableHostedListener",
+        "JobsOptions.EnableHostedListener.set",
         "\u003CEnableScheduler\u003Ek__BackingField",
         "JobsOptions.EnableScheduler.field",
         "EnableScheduler",
@@ -1614,7 +1622,9 @@
         "CreateTenantProjectAsync",
         "ITenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)",
         "UpdateTenantProjectAsync",
-        "ITenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)"
+        "ITenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)",
+        "RegenerateTenantLicenseKeyAsync",
+        "ITenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "ITenantService.GetAllTenantsAsync(CancellationToken)": "993c1547f63c7565eb1657abd1ffc0fda75ae64618618a92a48677617ff89e99",
@@ -1627,7 +1637,8 @@
         "ITenantService.UpdateTenantUserAsync(string, Guid, string, string, DateTime, DateTime, bool, CancellationToken)": "781ce2a5705d5c432afd2faedeee56925f63b641ef55c01ca486ba21c5fd4424",
         "ITenantService.GetTenantProjectsAsync(string, CancellationToken)": "4cade7573429b478944c7b7801d1b0f84e999ace218725ba58fb0430192de327",
         "ITenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)": "56d48174a2d0dfdc20295143bfff9ca6b7a1ae6b3a8dbf32dbe60b737c299124",
-        "ITenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)": "a7eb74d43121a7ebda99dc64d95ef063312be0e4fd6c9de305a9c172b575af78"
+        "ITenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)": "a7eb74d43121a7ebda99dc64d95ef063312be0e4fd6c9de305a9c172b575af78",
+        "ITenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "2e980b63d91d0047bb7cc51ec0e9a0bd8a9e23b182be9dc92ca697158ff6437a"
       }
     },
     "Core/Contracts/IUnitOfWork.cs": {
@@ -8463,6 +8474,22 @@
         "ITenantEncryptionService.ComputeSha256ChecksumAsync(Stream, CancellationToken)": "685c15c98d4764139e2380634c007ba056008360c4d77b0d9970de8d8d74c6ac"
       }
     },
+    "Core/Security/OpaqueIdUtility.cs": {
+      "RelativePath": "Core/Security/OpaqueIdUtility.cs",
+      "KnownMembers": [
+        "GenerateSecureLicenseKey",
+        "OpaqueIdUtility.GenerateSecureLicenseKey()",
+        "GenerateTenantRefId",
+        "OpaqueIdUtility.GenerateTenantRefId()",
+        "MaskGuid",
+        "OpaqueIdUtility.MaskGuid(Guid, string)"
+      ],
+      "MemberSyntaxHashes": {
+        "OpaqueIdUtility.GenerateSecureLicenseKey()": "5be1cb47eb4c5676c9721f8408b52c1a8e949b87e1ebc1e09746acfb77bb645f",
+        "OpaqueIdUtility.GenerateTenantRefId()": "08c5a0f207bdbb98540fc232d83ecf8d68f2106f906f9305976b8278fe1cd63b",
+        "OpaqueIdUtility.MaskGuid(Guid, string)": "b5da58ec6891f1e11aa125edd79257fbc2a51a3cdb07a936e247211de8ab491a"
+      }
+    },
     "Core/Storage/ITenantBlobStorageService.cs": {
       "RelativePath": "Core/Storage/ITenantBlobStorageService.cs",
       "KnownMembers": [
@@ -8566,7 +8593,7 @@
         "EngineGatewayExtensions.AddEngineClient(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "EngineGatewayExtensions.AddEngineClient(IServiceCollection, IConfiguration)": "a4e4374dba556441a89f5e752f9dbf307f5c7bb2bca176df0c0f1e7257507263"
+        "EngineGatewayExtensions.AddEngineClient(IServiceCollection, IConfiguration)": "6602443b12f89eedfd337f70daa46d26e0b61483a1c8384bf1ab5639b4144bf5"
       }
     },
     "Infrastructure/EngineGateway/IRemoteEngineGateway.cs": {
@@ -8584,12 +8611,14 @@
       "KnownMembers": [
         "_httpClient",
         "RemoteEngineGateway._httpClient",
+        "_tenantContext",
+        "RemoteEngineGateway._tenantContext",
         "_configuration",
         "RemoteEngineGateway._configuration",
         "_logger",
         "RemoteEngineGateway._logger",
         ".ctor",
-        "RemoteEngineGateway.RemoteEngineGateway(HttpClient, IConfiguration, ILogger\u003CRemoteEngineGateway\u003E)",
+        "RemoteEngineGateway.RemoteEngineGateway(HttpClient, ITenantContext, IConfiguration, ILogger\u003CRemoteEngineGateway\u003E)",
         "CallApiAsync",
         "RemoteEngineGateway.CallApiAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)",
         "ConvertFileAsync",
@@ -8610,7 +8639,7 @@
         "RemoteEngineGateway.SendAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "RemoteEngineGateway.CallApiAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)": "0d34ecfba3509ae0aff6a9578e6939daf1ce6fe164a307c45bbbbee4b0b4fb19",
+        "RemoteEngineGateway.CallApiAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)": "4a83a87bbb5708f9b054c091a4e7483505a3ebfe46f8ca8107a780b2b3074442",
         "RemoteEngineGateway.ConvertFileAsync(FileConvertReqDto, CancellationToken)": "cea96d8ed31effe7eee0abada3475368303208e64ccaac08b490f6337f35b18b",
         "RemoteEngineGateway.ProcessStagedBatchAsync(ProcessBatchReqDto, CancellationToken)": "f8a2128a6a9f6e7594f7769581a7daf6ed47770dc51873a32dbeaed312b29a56",
         "RemoteEngineGateway.DecryptProprietaryBatchAsync(DecryptProprietaryReqDto, CancellationToken)": "16170fb6206c020e0593d9a88a37d4e68ddf493245237e273c6055f6b7d64bd1",
@@ -8619,6 +8648,24 @@
         "RemoteEngineGateway.EvaluateWorkflowTransitionAsync(WorkflowTransitionReqDto, CancellationToken)": "a31fe0f6d42caf8851255cd520876d74764e0268633458896ac455010540b20d",
         "RemoteEngineGateway.CalculateScheduleAsync(CalendarScheduleReqDto, CancellationToken)": "4dfcf338310f4531a0d13a1840dbf9801319f562c2d23b967563b9039e1bf246",
         "RemoteEngineGateway.SendAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)": "1b49964e87e65b43fc568b094f4bf90ef0f6503315e7b68625621f427b3b5d4d"
+      }
+    },
+    "Infrastructure/EngineGateway/TenantAuthDelegatingHandler.cs": {
+      "RelativePath": "Infrastructure/EngineGateway/TenantAuthDelegatingHandler.cs",
+      "KnownMembers": [
+        "_tenantContext",
+        "TenantAuthDelegatingHandler._tenantContext",
+        "_tokenService",
+        "TenantAuthDelegatingHandler._tokenService",
+        "_correlationContext",
+        "TenantAuthDelegatingHandler._correlationContext",
+        ".ctor",
+        "TenantAuthDelegatingHandler.TenantAuthDelegatingHandler(ITenantContext, ITenantTokenService, ICorrelationContext)",
+        "SendAsync",
+        "TenantAuthDelegatingHandler.SendAsync(HttpRequestMessage, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "TenantAuthDelegatingHandler.SendAsync(HttpRequestMessage, CancellationToken)": "854a1be3f6d3073a56aeaa1c012da08970a2fbe2ccd910e580c646b1aa408b10"
       }
     },
     "Infrastructure/InfrastructureExtensions.cs": {
@@ -8790,6 +8837,16 @@
         "HtmlInputSanitizer.SanitizePlainText(string)": "57ce1588bfc96f8386c06e3415a78ce852311388692c8904451e34f1764b5587"
       }
     },
+    "Infrastructure/Security/ITenantTokenService.cs": {
+      "RelativePath": "Infrastructure/Security/ITenantTokenService.cs",
+      "KnownMembers": [
+        "GenerateS2SToken",
+        "ITenantTokenService.GenerateS2SToken(string, string)"
+      ],
+      "MemberSyntaxHashes": {
+        "ITenantTokenService.GenerateS2SToken(string, string)": "fe1d529a0e42955ccf5a659af8c751a2448a015498d23d4f684a9ebf5fdc0df9"
+      }
+    },
     "Infrastructure/Security/PathAwareAuthorizationHandler.cs": {
       "RelativePath": "Infrastructure/Security/PathAwareAuthorizationHandler.cs",
       "KnownMembers": [
@@ -8910,6 +8967,22 @@
         "TenantAesGcmEncryptionService.DecryptStreamAsync(Stream, string, CancellationToken)": "d4102a9561b1426ab5fd899f33e8f782341a81fbdd29decf24f27782822cfa77",
         "TenantAesGcmEncryptionService.ComputeSha256ChecksumAsync(Stream, CancellationToken)": "925f7347b29597290dd9d053cb244935eb75b8df4093dc9d3f5a6be8e6d20c74",
         "TenantAesGcmEncryptionService.DeriveTenantKey(string)": "38921b0e2351fd45b28e69750da083cea2042079921cade17a8fe73cc3a39c99"
+      }
+    },
+    "Infrastructure/Security/TenantTokenService.cs": {
+      "RelativePath": "Infrastructure/Security/TenantTokenService.cs",
+      "KnownMembers": [
+        "_configuration",
+        "TenantTokenService._configuration",
+        "_correlationContext",
+        "TenantTokenService._correlationContext",
+        ".ctor",
+        "TenantTokenService.TenantTokenService(IConfiguration, ICorrelationContext)",
+        "GenerateS2SToken",
+        "TenantTokenService.GenerateS2SToken(string, string)"
+      ],
+      "MemberSyntaxHashes": {
+        "TenantTokenService.GenerateS2SToken(string, string)": "ae0acd581da2842740248b151665a7ca1fed4e5c1c73f94e740f351685276fce"
       }
     },
     "Infrastructure/Security/UserSessionCircuitHandler.cs": {
@@ -9407,10 +9480,10 @@
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverity, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "ad142ac593296b01c886bb3cf00c71440fa086d0df487e134b846b254c446a2d",
+        "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "ed61701bb41436fa9f1b058f676723b07b19485ee996707db3f7101c966e15fa",
         "GenericFileImportBatchJobHandler.OrderFilesByDependencies(List\u003CImportFileEntity\u003E)": "61ecb69b96d10ee39fe5fc2aa41c18db8ea97af3a635dc36188c4d819e45e647",
         "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "7f3d036c2c09b791f9e2ec3e3b1e2740bd4f8885b67ee42bd053da8b5c1890b6",
-        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "ae1de549f643157805cc7c968235bb8b94b9558ccbfb829d52a4c07a0d9708ac",
+        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "d2bf3117be51f9911f7fa06ea4f403f14343224e822e6279c7de8d64dcc7d422",
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverity, CancellationToken)": "98f4f40ac99531862c4f1505c95dea62b77d323f312a8140083245ca1161088a"
       }
     },
@@ -10081,14 +10154,14 @@
       "RelativePath": "Jobs/JobsExtensions.cs",
       "KnownMembers": [
         "AddBackgroundJobs",
-        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool)",
+        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool, bool)",
         "RegisterBatchJobHandlers",
         "JobsExtensions.RegisterBatchJobHandlers(IServiceCollection, Assembly)",
         "RegisterImplementationsOf",
         "JobsExtensions.RegisterImplementationsOf(IServiceCollection, Assembly, Type)"
       ],
       "MemberSyntaxHashes": {
-        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool)": "cb127dab767820b66a364c635aab1b3b31cea16421bb7eb3d6ff34d1c5c6b7de",
+        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool, bool)": "2a3988d5400e971d93d1457bd6efb11454834a0df396828e9e15ccb603ccc712",
         "JobsExtensions.RegisterBatchJobHandlers(IServiceCollection, Assembly)": "98a3cd912b137751957d5a5b828e51fe4257f98805c7fe459a2efba4bdc18694",
         "JobsExtensions.RegisterImplementationsOf(IServiceCollection, Assembly, Type)": "5ed1cc104291512deba0890ece276c02b130b318644706b1e6fd35ae981bd19a"
       }
@@ -10117,7 +10190,7 @@
       ],
       "MemberSyntaxHashes": {
         "BatchJobQueueListener.ExecuteAsync(CancellationToken)": "4f9034f1d015a2a06b078e391c5b9b3084d6481df95e53dab7f2d03edefc0ef1",
-        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "94c6338c2973f6a915638815f5dd0acff8d1cfaaf1f5318dedd76589282be46d"
+        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "60726e49b26a5523c3dbd11a34e6115402bcd829bc4fd94c274198a06a288b0f"
       }
     },
     "Jobs/Queue/ChannelJobEventQueue.cs": {
@@ -12333,7 +12406,9 @@
         "CreateTenantProjectAsync",
         "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)",
         "UpdateTenantProjectAsync",
-        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)"
+        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)",
+        "RegenerateTenantLicenseKeyAsync",
+        "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "TenantService.GetAllTenantsAsync(CancellationToken)": "106e57f2f617357c28851524a94f968f423f50e33047a9ac0ce2dad2a161211f",
@@ -12346,7 +12421,8 @@
         "TenantService.UpdateTenantDatesAsync(Guid, DateTime, DateTime, CancellationToken)": "60e2ff2caac2e649ad17c2d902bb167a39157482382a87663d02df883916c4c7",
         "TenantService.GetTenantProjectsAsync(string, CancellationToken)": "adb46b453b07b3cad30316f607c1ca060992b914d3f39bfcdcac2a113bef0526",
         "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)": "ae92e0d15a1ded1b0dff643a0fa6f0eca141522a74367e39e987417c15d13648",
-        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)": "4579e4d5c04b588f69fb478ecda37143b5a93b76305e44a40f96b85a5e8aeafc"
+        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatus, Guid?, CancellationToken)": "4579e4d5c04b588f69fb478ecda37143b5a93b76305e44a40f96b85a5e8aeafc",
+        "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "0f3a90563c22c8796b8a93193d3cb93b9825b0260cd46ffa1834c23f9011d1ac"
       }
     },
     "Persistence/Services/UnitOfWork.cs": {

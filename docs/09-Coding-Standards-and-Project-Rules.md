@@ -12,8 +12,11 @@
 1. **Strict Inward Dependency Flow**:
    - `BlazorFluent.Core` has **zero** internal project references. It contains only pure business contracts, entities, and enums.
    - `BlazorFluent.Persistence` references `Core` and `Shared`. It must never reference `Infrastructure` or UI projects.
-   - `BlazorFluent.Infrastructure` handles external protocols (SMTP, Teams, SignalR) and must never reference `Persistence`.
-   - `BlazorFluent.Web` is the composition root and presentation layer.
+   - `BlazorFluent.Infrastructure` handles external protocols (SMTP, Teams, SignalR, HTTP Engine Client) and must never reference `Persistence`.
+   - `BlazorFluent.Jobs` contains all background queue listeners, batch handlers, and file import pipelines.
+   - `BlazorFluent.Web` is the interactive Blazor UI composition root.
+   - `BlazorFluent.Api` is the headless REST/minimal API processing engine.
+   - `BlazorFluent.Worker` is a thin headless console host shell (.NET 10 Worker SDK). **Exactly zero batch handlers or business logic belong in `BlazorFluent.Worker`**; all job processing code resides in `BlazorFluent.Jobs`.
 
 2. **Persistence Isolation**:
    - 100% of database access belongs in `BlazorFluent.Persistence`.
@@ -26,8 +29,8 @@
 | Lifetime | Permitted Registrations | Critical Rules |
 | :--- | :--- | :--- |
 | **`Scoped`** | `AppDbContext`, domain services (`ITenantService`), EF interceptors, `ICurrentUser`. | Created once per Blazor circuit or HTTP request. **Never inject a Scoped service into a Singleton!** |
-| **`Singleton`** | In-memory queues (`ChannelJobEventQueue`), time providers, stateless sanitizers. | Must be strictly thread-safe. If a background Singleton needs `AppDbContext`, it **MUST** inject `IServiceScopeFactory` and create an explicit scope: `using var scope = _scopeFactory.CreateScope();`. |
-| **`Transient`** | FluentValidation validators, formatting utilities. | Stateless and lightweight. |
+| **`Singleton`** | In-memory queues (`ChannelJobEventQueue`), time providers, stateless sanitizers, `ITenantTokenService`. | Must be strictly thread-safe. If a background Singleton needs `AppDbContext`, it **MUST** inject `IServiceScopeFactory` and create an explicit scope: `using var scope = _scopeFactory.CreateScope();`. |
+| **`Transient`** | FluentValidation validators, formatting utilities, delegating handlers (`TenantAuthDelegatingHandler`). | Stateless and lightweight. |
 
 ### Fail-Fast Container Enforcement
 In `Program.cs`, container validation is enabled across all environments (`ValidateScopes = true`, `ValidateOnBuild = true`). Any captive dependency causes an immediate build/startup exception.
@@ -44,6 +47,17 @@ In `Program.cs`, container validation is enabled across all environments (`Valid
 2. **Dual-Gate Action Authorization**:
    - UI pages enforce visit/edit permissions via `AuthorizedPageComponentBase`.
    - In addition, domain services must call `EnsureCanEditAsync(projectId)` before executing mutations.
+
+3. **Zero-Trust Multi-Tenancy Isolation & S2S Token Security**:
+   - **Dual-Token Architecture**:
+     - *Interactive Users*: Standard JWT bearer tokens authenticated via the centralized Cloud Master Key.
+     - *Background/S2S Daemons*: Ephemeral JWT tokens (5-minute lifetime) authenticated via tenant-specific license keys (`Tenants:{tenantId}:LicenseKey`).
+   - **Dynamic Key Resolution**: `BlazorFluent.Api` relies on `IssuerSigningKeyResolver` to dynamically fetch the tenant's symmetric key. Falling back to a shared system key on tenant mismatch is strictly prohibited.
+   - **Opaque Reference Slugs & Data Privacy**:
+     - Token claims MUST NOT expose raw database tenant IDs or user PII.
+     - Use `OpaqueIdUtility.GenerateTenantSlug(tenantId)` for public `tid` claims (`tnt_...`) and `OpaqueIdUtility.MaskGuid` with per-tenant salt for sub/actor masks.
+   - **Zero Shared Key Fallback**: If a tenant's license key is missing or unconfigured, the operation must immediately fail-closed with an `InvalidOperationException`.
+   - **Cross-Tenant Quarantine Guards**: All background job handlers (`GenericFileImportBatchJobHandler`, `BatchJobQueueListener`) must compound-query by `(JobId, TenantId)` and immediately quarantine records if payload tenant IDs do not match the execution context.
 
 ---
 
