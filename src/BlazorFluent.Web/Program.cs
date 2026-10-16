@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.FluentUI.AspNetCore.Components;
+using BlazorFluent.UI.Material.Extensions;
 using Serilog;
 using Serilog.Enrichers.Span;
 using Serilog.Events;
@@ -133,6 +134,7 @@ try
     });
 
     builder.Services.AddFluentUIComponents();
+    builder.Services.AddMaterialUI();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
     builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();

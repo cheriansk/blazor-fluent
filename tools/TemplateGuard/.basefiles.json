@@ -456,6 +456,53 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Configuration/CspOptions.cs": {
+      "RelativePath": "Core/Configuration/CspOptions.cs",
+      "KnownMembers": [
+        "PureStrict",
+        "CspProfile.PureStrict",
+        "Level3Isolated",
+        "CspProfile.Level3Isolated",
+        ".ctor",
+        "CspProfile.CspProfile()",
+        "SectionName",
+        "CspOptions.SectionName",
+        "\u003CEnforce\u003Ek__BackingField",
+        "CspOptions.Enforce.field",
+        "Enforce",
+        "CspOptions.Enforce",
+        "get_Enforce",
+        "CspOptions.Enforce.get",
+        "set_Enforce",
+        "CspOptions.Enforce.set",
+        "\u003CReportOnly\u003Ek__BackingField",
+        "CspOptions.ReportOnly.field",
+        "ReportOnly",
+        "CspOptions.ReportOnly",
+        "get_ReportOnly",
+        "CspOptions.ReportOnly.get",
+        "set_ReportOnly",
+        "CspOptions.ReportOnly.set",
+        "\u003CReportUri\u003Ek__BackingField",
+        "CspOptions.ReportUri.field",
+        "ReportUri",
+        "CspOptions.ReportUri",
+        "get_ReportUri",
+        "CspOptions.ReportUri.get",
+        "set_ReportUri",
+        "CspOptions.ReportUri.set",
+        "\u003CProfile\u003Ek__BackingField",
+        "CspOptions.Profile.field",
+        "Profile",
+        "CspOptions.Profile",
+        "get_Profile",
+        "CspOptions.Profile.get",
+        "set_Profile",
+        "CspOptions.Profile.set",
+        "CspOptions.CspOptions()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Configuration/DevelopmentSeedOptions.cs": {
       "RelativePath": "Core/Configuration/DevelopmentSeedOptions.cs",
       "KnownMembers": [
@@ -8910,10 +8957,10 @@
       "RelativePath": "Infrastructure/Security/SecurityHeadersExtensions.cs",
       "KnownMembers": [
         "UseSecurityHeaders",
-        "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder)"
+        "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder, Action\u003CCspOptions\u003E?)"
       ],
       "MemberSyntaxHashes": {
-        "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder)": "27cded42d4acc9b36f8dfaae539dd37418e7a8397b87d524e03165b28500aeb2"
+        "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder, Action\u003CCspOptions\u003E?)": "30525ff1b5ea1126d469b77029a5d8ee07277f4a2c971cb0629a55593d6c0e0e"
       }
     },
     "Infrastructure/Security/SettingsNavigationState.cs": {
@@ -17268,14 +17315,14 @@
       "RelativePath": "Web/_Imports.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "574f6395f52b357e1b6163a12de4573332fe8d983b727c9a3c1c68961b56c547"
+        "$Markup": "10a59ec697e20b215d19b309da36c5da4ff3e64d36296cbd20b9f20c84004dad"
       }
     },
     "Web/Components/App.razor": {
       "RelativePath": "Web/Components/App.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "26cb3902ae74c662b6a0e4c4aee5740f560ca52ee50492447126fa4faa580c0a"
+        "$Markup": "cf2ab2308e4651e615e317247ca600df6af5031204b45e106ab4dbbf398e471e"
       }
     },
     "Web/Components/Common/AppErrorBoundaryComp.razor": {
@@ -17464,7 +17511,7 @@
       "RelativePath": "Web/Components/Layout/ReconnectModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e4a8e3f2e4dfe5623ed74c664640231ec987d27d28a35fc075917d7c1fdb97fb"
+        "$Markup": "fbe57204d910d03bd35e309dd4960a9421945e055ae51d0703254cc0960a14bd"
       }
     },
     "Web/Components/Layout/TenantAndProjectSwitcherComp.razor": {
@@ -17499,7 +17546,7 @@
       "RelativePath": "Web/Components/Pages/HomePage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "09649b61741eac70eabeee715bf25f496cc8bfd080d3578b55d7e1bed51c0ff3"
+        "$Markup": "897a9261bef070660b79b5f8f27f0cddc35bce4b074b0281c31589f70e3122b4"
       }
     },
     "Web/Components/Pages/LoginPage.razor": {

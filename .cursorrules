@@ -1,0 +1,30 @@
+# Cursor Rules - BlazorFluent Enterprise Starter Kit (.NET 10, C# 13, Fluent UI V5)
+
+## 🏛️ 1. Clean Architecture & Solution Topology (12 Projects)
+Always adhere to the authoritative rules in `PROJECT_RULES.md` and `docs/09-Coding-Standards-and-Project-Rules.md`:
+- **Inward Dependency Flow**:
+  * `BlazorFluent.Core`: Pure domain entities, value objects, and service contracts. Zero internal project references.
+  * `BlazorFluent.Persistence`: 100% of EF Core database queries, migrations, interceptors, and scoped service implementations.
+  * `BlazorFluent.Infrastructure`: External integrations (SMTP, Teams, S2S Token Service, HTTP Engine client).
+  * `BlazorFluent.Jobs`: All background queue listeners, batch handlers, and file import pipelines.
+  * `BlazorFluent.Worker`: Thin headless console host shell (.NET 10 Worker SDK). Exactly zero batch job implementations belong in Worker; all jobs reside in `BlazorFluent.Jobs`.
+  * `BlazorFluent.Web`: Interactive Blazor Server composition root. Direct DbContext queries in Razor pages are strictly prohibited.
+- **Fail-Closed Multi-Tenancy**: All tenant-scoped entities must implement `ITenantScopedEntity`. Global query filters must never be bypassed without audited justification.
+- **Strict Content Security Policy (CSP)**: Zero `'unsafe-inline'` or `'unsafe-eval'` in scripts. All script/style elements must use per-request cryptographic nonces (`nonce="@nonce"`).
+
+## 📖 2. Developer Recipes (Single Source of Truth)
+When creating new components, services, entities, or background jobs, consult the step-by-step code skeletons in `docs/07-How-To-Extend-and-Developer-Recipes.md`:
+- **Recipe 1**: Add a New Domain Entity & EF Core Mapping (`Core` -> `Persistence`)
+- **Recipe 2**: Add an Authorized Domain Service (`Core` -> `Persistence`)
+- **Recipe 3**: Author a Fluent UI V5 Role-Gated Page (`AuthorizedPageComponentBase`)
+- **Recipe 4**: Add a Batch File Import Target (`BlazorFluent.Jobs`)
+- **Recipe 5**: Author a Multi-Step Wizard with `<FluentWizardModal>`
+- **Recipe 6**: Add a Calculation Rule to `BlazorFluent.RulesEngine`
+- **Recipe 7**: Downstream Extension with TemplateGuard (`.Custom.cs`)
+- **Recipe 8**: Onboard a New Tenant & Rotate License Keys
+- **Recipe 9**: Author a Dedicated Background Job for `BlazorFluent.Worker`
+
+## 🛡️ 3. Operational Guardrails
+- **Git Safety**: Never execute `git add`, `git commit`, `git reset`, or `git restore`. Leave all changes unstaged in the working tree for the developer.
+- **Build Discipline**: Do NOT run `dotnet build`, `dotnet run`, or `msbuild` proactively unless the user explicitly requests compilation.
+- **Fluent UI V5 Syntax**: Use Fluent UI Blazor V5 idioms (e.g. `FluentSelect` with `TOption` and `TValue`, `Value`/`ValueChanged`, `FluentTextInput` instead of `FluentTextField`).

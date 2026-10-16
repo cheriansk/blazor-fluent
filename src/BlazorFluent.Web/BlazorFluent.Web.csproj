@@ -34,6 +34,7 @@
 		<ProjectReference Include="..\BlazorFluent.Persistence\BlazorFluent.Persistence.csproj" />
 		<ProjectReference Include="..\BlazorFluent.Infrastructure\BlazorFluent.Infrastructure.csproj" />
 		<ProjectReference Include="..\BlazorFluent.Jobs\BlazorFluent.Jobs.csproj" />
+		<ProjectReference Include="..\BlazorFluent.UI.Material\BlazorFluent.UI.Material.csproj" />
 		<ProjectReference Include="..\BlazorFluent.UI.Templates\BlazorFluent.UI.Templates.csproj" />
 	</ItemGroup>
 
