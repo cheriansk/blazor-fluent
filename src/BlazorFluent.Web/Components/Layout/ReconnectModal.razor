@@ -1,4 +1,11 @@
-﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var nonce = HttpContextAccessor.HttpContext?.Items["CspNonce"]?.ToString() ?? string.Empty;
+}
+
+<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]" nonce="@nonce"></script>
 
 <dialog id="components-reconnect-modal" data-nosnippet>
     <div class="components-reconnect-container">

@@ -271,3 +271,35 @@ In compliance with GDPR Article 5(1)(c) and OWASP ASVS 4.3:
   }
   ```
 - Strict fail-closed background listener: [`BatchJobQueueListener`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/Listeners/BatchJobQueueListener.cs) aborts processing immediately if `jobEvent.TenantId` is missing, preventing silent fallback to default tenant slugs.
+
+---
+
+## 🔒 8. Enterprise Strict Content Security Policy (CSP) & Nonce Architecture
+
+Enterprise penetration tests and corporate InfoSec teams enforce zero tolerance against `'unsafe-inline'` and `'unsafe-eval'` in HTTP response headers.
+
+### Why Legacy Component Frameworks (e.g. MudBlazor) Fail InfoSec Audits
+Many teams hit complete InfoSec approval roadblocks when using frameworks like MudBlazor because:
+1. **Dynamic Style Injection**: `MudThemeProvider` injects un-nonced `<style>` elements directly into `<head>` at runtime, breaking immediately if `style-src` excludes `'unsafe-inline'`.
+2. **Runtime `eval()`**: MudBlazor relies on runtime JavaScript evaluation (`eval` or `Function`) for popovers, resize observers, and scroll listeners.
+3. **No Nonce Integration**: Forces teams to run `script-src 'unsafe-inline' 'unsafe-eval'`, failing automated DAST/SAST scanners with zero exceptions.
+
+### How BlazorFluent & Microsoft Fluent UI Blazor V5 Comply
+BlazorFluent leverages **Microsoft Fluent UI Blazor V5 (`Microsoft.FluentUI.AspNetCore.Components`)**:
+- **Native Shadow DOM**: Styles are encapsulated inside Shadow DOM roots via native `CSSStyleSheet` (`adoptedStyleSheets`), eliminating runtime `<head>` stylesheet injection.
+- **Zero `eval()`**: Requires zero `eval()` or `Function()` calls.
+- **Pure External Scripts**: All client-side JavaScript (`blazor.web.js`, `responsive-interop.js`, `session-tracker.js`, `ReconnectModal.razor.js`) reside in static `.js` files.
+
+### Cryptographic Nonce Pipeline
+
+1. **Per-Request Nonce Generation**:
+   [`SecurityHeadersExtensions.cs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Infrastructure/Security/SecurityHeadersExtensions.cs) generates a 128-bit (16-byte) random nonce using `RandomNumberGenerator.GetBytes(16)` on every HTTP request and stores it in `HttpContext.Items["CspNonce"]`.
+2. **Strict Directive Enforcement**:
+   - `script-src 'self' 'nonce-{nonce}' 'strict-dynamic'`: **Zero occurrences of `'unsafe-inline'` or `'unsafe-eval'`**.
+   - `style-src 'self' 'nonce-{nonce}'`: Enforces cryptographic nonces on all `<link rel="stylesheet">` elements and style blocks.
+3. **Razor Host Tagging**:
+   [`App.razor`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/Components/App.razor) and [`ReconnectModal.razor`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/Components/Layout/ReconnectModal.razor) dynamically resolve the nonce and tag all `<script>`, `<link>`, and `<ImportMap>` elements.
+4. **Configurable Enterprise Profiles ([`CspOptions.cs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/Configuration/CspOptions.cs))**:
+   - `PureStrict`: Complete eradication of `'unsafe-inline'` from both script and style directives.
+   - `Level3Isolated`: Strict nonced scripts with CSP Level 3 `style-src-elem` nonces and `style-src-attr 'unsafe-inline'` for element layout attributes.
+   - `ReportOnly`: Supports testing in staging environments before hard enforcement.

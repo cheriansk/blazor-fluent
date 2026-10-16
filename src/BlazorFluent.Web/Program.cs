@@ -133,6 +133,7 @@ try
     });
 
     builder.Services.AddFluentUIComponents();
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
     builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();
 
@@ -282,6 +283,10 @@ try
         .BindConfiguration(BlazorFluent.Core.Configuration.SecurityOptions.SectionName)
         .Validate(o => !string.IsNullOrWhiteSpace(o.SystemBootstrapEmail),
             "Zero-Trust Security Violation: 'Security:SystemBootstrapEmail' must be explicitly configured.")
+        .ValidateOnStart();
+
+    builder.Services.AddOptions<BlazorFluent.Core.Configuration.CspOptions>()
+        .BindConfiguration(BlazorFluent.Core.Configuration.CspOptions.SectionName)
         .ValidateOnStart();
 
     builder.Services.AddOptions<BlazorFluent.Core.Configuration.CachingOptions>()
