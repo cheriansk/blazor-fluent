@@ -57,7 +57,7 @@ public class TenantEntityValidator : AbstractValidator<TenantEntity>
             .WithMessage("Internal and External email domains must not overlap. No domain can exist in both lists.");
 
         RuleFor(x => x)
-            .Must(x => !x.EndDate.HasValue || x.EndDate.Value >= x.StartDate)
+            .Must(x => !x.EndDate.HasValue || x.EndDate.Value.Date >= x.StartDate.Date)
             .WithMessage("Tenant subscription EndDate cannot precede StartDate.");
     }
 }

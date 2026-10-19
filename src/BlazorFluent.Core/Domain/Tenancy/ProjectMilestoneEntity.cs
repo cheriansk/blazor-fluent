@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Project milestone entity partitioning deliverables and delivery deadlines.
 /// Enforces tenant and project isolation.
 /// </summary>
-public class ProjectMilestoneEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class ProjectMilestoneEntity : TenantAuditableEntity, IProjectScopedEntity, IEffectiveDatedEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// ID of the project to which this milestone belongs.
@@ -25,14 +25,14 @@ public class ProjectMilestoneEntity : TenantAuditableEntity, IProjectScopedEntit
     public string? Description { get; set; }
 
     /// <summary>
-    /// Planned kickoff date (UTC).
+    /// Planned kickoff date (UTC). Part of <see cref="IEffectiveDatedEntity"/>.
     /// </summary>
-    public required DateTime StartDateUtc { get; set; }
+    public required DateTime StartDate { get; set; }
 
     /// <summary>
-    /// Target completion deadline (UTC).
+    /// Target completion deadline (UTC). Part of <see cref="IEffectiveDatedEntity"/>.
     /// </summary>
-    public required DateTime EndDateUtc { get; set; }
+    public DateTime? EndDate { get; set; }
 
     /// <summary>
     /// Current lifecycle status (Planned, Active, Completed, AtRisk, Cancelled).

@@ -122,8 +122,8 @@ public class HierarchicalTeamAuthorizationTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = false,
-            StartDateUtc = now.AddDays(-10),
-            EndDateUtc = now.AddDays(10)
+            StartDate = now.AddDays(-10),
+            EndDate = now.AddDays(10)
         };
 
         var isValid = user.IsValidForLogin(now, TestIntegritySecret, out var reason);
@@ -143,8 +143,8 @@ public class HierarchicalTeamAuthorizationTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = now.AddYears(-2),
-            EndDateUtc = now.AddDays(-1) // Expired yesterday
+            StartDate = now.AddYears(-2),
+            EndDate = now.AddDays(-1) // Expired yesterday
         };
 
         var isValid = user.IsValidForLogin(now, TestIntegritySecret, out var reason);
@@ -164,8 +164,8 @@ public class HierarchicalTeamAuthorizationTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = now.AddDays(5), // Starts in 5 days
-            EndDateUtc = now.AddYears(1)
+            StartDate = now.AddDays(5), // Starts in 5 days
+            EndDate = now.AddYears(1)
         };
 
         var isValid = user.IsValidForLogin(now, TestIntegritySecret, out var reason);
@@ -185,8 +185,8 @@ public class HierarchicalTeamAuthorizationTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = now.AddDays(-10),
-            EndDateUtc = now.AddDays(100)
+            StartDate = now.AddDays(-10),
+            EndDate = now.AddDays(100)
         };
         user.RowSignature = user.ComputeIntegritySignature(TestIntegritySecret);
 

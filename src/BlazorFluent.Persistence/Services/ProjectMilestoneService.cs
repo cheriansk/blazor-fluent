@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Dtos.Response;
@@ -40,7 +40,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && m.ProjectId == projectId)
             .OrderBy(m => m.OrderIndex)
-            .ThenBy(m => m.StartDateUtc)
+            .ThenBy(m => m.StartDate)
             .ToListAsync(ct);
     }
 
@@ -71,7 +71,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 milestone.TenantId = _tenantContext.TenantId ?? string.Empty;
             }
 
-            if (milestone.EndDateUtc < milestone.StartDateUtc)
+            if (milestone.EndDate.HasValue && milestone.EndDate.Value.Date < milestone.StartDate.Date)
             {
                 return Result<ProjectMilestoneEntity>.Failure("Milestone End Date cannot precede Start Date.");
             }
@@ -106,15 +106,15 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRole.Dev, operation: "UpdateMilestone", ct: ct);
 
-            if (updated.EndDateUtc < updated.StartDateUtc)
+            if (updated.EndDate.HasValue && updated.EndDate.Value.Date < updated.StartDate.Date)
             {
                 return Result<ProjectMilestoneEntity>.Failure("Milestone End Date cannot precede Start Date.");
             }
 
             milestone.Name = updated.Name;
             milestone.Description = updated.Description;
-            milestone.StartDateUtc = updated.StartDateUtc;
-            milestone.EndDateUtc = updated.EndDateUtc;
+            milestone.StartDate = updated.StartDate;
+            milestone.EndDate = updated.EndDate;
             milestone.Status = updated.Status;
             milestone.OrderIndex = updated.OrderIndex;
 
@@ -241,7 +241,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 DependsOnMilestoneId = link.DependsOnMilestoneId,
                 DependsOnMilestoneName = pred?.Name ?? "Unknown Milestone",
                 DependsOnStatus = pred?.Status ?? MilestoneStatus.Planned,
-                DependsOnEndDateUtc = pred?.EndDateUtc ?? DateTime.MinValue
+                DependsOnEndDate = pred?.EndDate
             });
         }
 

@@ -318,11 +318,11 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             // ─── EFFECTIVE DATING VALIDATION ──────────────────────────────────────────
             if (entry.Entity is IEffectiveDatedEntity effectiveDated)
             {
-                if (effectiveDated.EndDate.HasValue && effectiveDated.EndDate.Value < effectiveDated.StartDate)
+                if (effectiveDated.EndDate.HasValue && effectiveDated.EndDate.Value.Date < effectiveDated.StartDate.Date)
                 {
                     throw new InvalidOperationException(
                         $"Entity '{entry.Entity.GetType().Name}' has an invalid effective date range: " +
-                        $"EndDate ({effectiveDated.EndDate.Value:u}) cannot precede StartDate ({effectiveDated.StartDate:u}).");
+                        $"EndDate ({effectiveDated.EndDate.Value:yyyy-MM-dd}) cannot precede StartDate ({effectiveDated.StartDate:yyyy-MM-dd}).");
                 }
             }
         }

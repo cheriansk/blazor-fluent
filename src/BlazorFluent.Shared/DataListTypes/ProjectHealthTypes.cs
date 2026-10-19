@@ -96,8 +96,8 @@ public class MilestoneHealthSummaryDto
 {
     public Guid MilestoneId { get; set; }
     public string MilestoneName { get; set; } = string.Empty;
-    public DateTime StartDateUtc { get; set; }
-    public DateTime EndDateUtc { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
     public MilestoneStatus Status { get; set; }
     public ProjectHealthRating Health { get; set; } = ProjectHealthRating.OnTrack;
     public int TotalTasks { get; set; }
@@ -140,6 +140,6 @@ public class MilestoneDependencyItemDto
     public Guid DependsOnMilestoneId { get; set; }
     public string DependsOnMilestoneName { get; set; } = string.Empty;
     public MilestoneStatus DependsOnStatus { get; set; }
-    public DateTime DependsOnEndDateUtc { get; set; }
+    public DateTime? DependsOnEndDate { get; set; }
     public bool IsCompleted => DependsOnStatus == MilestoneStatus.Completed;
 }

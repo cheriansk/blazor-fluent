@@ -1,4 +1,5 @@
 using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Extensions;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -392,7 +393,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         if (user == null || !user.IsActive) return false;
 
         var now = DateTime.UtcNow;
-        if (now < user.StartDateUtc || now > user.EndDateUtc) return false;
+        if (!user.IsActiveAt(now)) return false;
 
         var userIdStr = user.Id.ToString();
 

@@ -88,8 +88,8 @@ public static class DevelopmentSeeder
                         UserType = UserType.CompanyUser,
                         DefaultTenantId = tenantSlug,
                         IsActive = true,
-                        StartDateUtc = DateTime.UtcNow.AddDays(-30),
-                        EndDateUtc = DateTime.UtcNow.AddYears(1),
+                        StartDate = DateTime.UtcNow.AddDays(-30),
+                        EndDate = DateTime.UtcNow.AddYears(1),
                         TimeZoneId = "UTC"
                     };
                     adminUser.RowSignature = adminUser.ComputeIntegritySignature(integrityKey);
@@ -123,8 +123,8 @@ public static class DevelopmentSeeder
                         UserType = UserType.CompanyUser,
                         DefaultTenantId = defaultTenantSlug,
                         IsActive = true,
-                        StartDateUtc = DateTime.UtcNow.AddDays(-30),
-                        EndDateUtc = DateTime.UtcNow.AddYears(1),
+                        StartDate = DateTime.UtcNow.AddDays(-30),
+                        EndDate = DateTime.UtcNow.AddYears(1),
                         TimeZoneId = "UTC"
                     };
                     user.RowSignature = user.ComputeIntegritySignature(integrityKey);

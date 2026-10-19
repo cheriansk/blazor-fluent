@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Identity
@@ -348,11 +348,11 @@
                                 <FluentBadge Appearance="BadgeAppearance.Tint">External</FluentBadge>
                             }
                         </TemplateColumn>
-                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.StartDateUtc))">
-                            @TimeZoneService.FormatDate(context.StartDateUtc)
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.StartDate))">
+                            @TimeZoneService.FormatDate(context.StartDate)
                         </TemplateColumn>
-                        <TemplateColumn Title="End Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.EndDateUtc))">
-                            @TimeZoneService.FormatDate(context.EndDateUtc)
+                        <TemplateColumn Title="End Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.EndDate))">
+                            @TimeZoneService.FormatDate(context.EndDate)
                         </TemplateColumn>
                         <TemplateColumn Title="Status" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.IsActive))">
                             <FluentBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
@@ -1270,8 +1270,8 @@
         _editUserEmail = user.Email;
         _editDetectedUserType = user.UserType;
         _editUserDomainError = null;
-        _editUserStartDate = user.StartDateUtc.ToLocalTime().Date;
-        _editUserEndDate = user.EndDateUtc.ToLocalTime().Date;
+        _editUserStartDate = user.StartDate.ToLocalTime().Date;
+        _editUserEndDate = user.EndDate?.ToLocalTime().Date;
         _editUserIsActive = user.IsActive;
     }
 

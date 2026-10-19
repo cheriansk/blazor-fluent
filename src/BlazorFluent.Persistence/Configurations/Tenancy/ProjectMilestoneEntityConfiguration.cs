@@ -27,11 +27,13 @@ public class ProjectMilestoneEntityConfiguration : IEntityTypeConfiguration<Proj
             .HasMaxLength(4000)
             .IsRequired(false);
 
-        builder.Property(m => m.StartDateUtc)
-            .IsRequired();
+        builder.Property(m => m.StartDate)
+            .IsRequired()
+            .HasColumnName("StartDateUtc");
 
-        builder.Property(m => m.EndDateUtc)
-            .IsRequired();
+        builder.Property(m => m.EndDate)
+            .IsRequired()
+            .HasColumnName("EndDateUtc");
 
         builder.Property(m => m.Status)
             .IsRequired()
@@ -54,7 +56,7 @@ public class ProjectMilestoneEntityConfiguration : IEntityTypeConfiguration<Proj
         builder.HasIndex(m => new { m.TenantId, m.ProjectId })
             .HasDatabaseName("IX_ProjectMilestones_TenantId_ProjectId");
 
-        builder.HasIndex(m => new { m.ProjectId, m.Status, m.EndDateUtc })
+        builder.HasIndex(m => new { m.ProjectId, m.Status, m.EndDate })
             .HasDatabaseName("IX_ProjectMilestones_Project_Status_EndDate");
     }
 }

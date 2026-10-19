@@ -21,12 +21,12 @@ public class ProjectMilestoneEntityValidator : AbstractValidator<ProjectMileston
         RuleFor(x => x.Description)
             .MaximumLength(2000).WithMessage("Milestone description cannot exceed 2,000 characters.");
 
-        RuleFor(x => x.StartDateUtc)
+        RuleFor(x => x.StartDate)
             .NotEmpty().WithMessage("Start date is mandatory.");
 
-        RuleFor(x => x.EndDateUtc)
-            .NotEmpty().WithMessage("End date is mandatory.")
-            .Must((milestone, endDate) => endDate >= milestone.StartDateUtc)
+        RuleFor(x => x.EndDate)
+            .NotNull().WithMessage("End date is mandatory.")
+            .Must((milestone, endDate) => !endDate.HasValue || endDate.Value.Date >= milestone.StartDate.Date)
             .WithMessage("Milestone target End Date cannot precede Start Date.");
 
         RuleFor(x => x.Status)

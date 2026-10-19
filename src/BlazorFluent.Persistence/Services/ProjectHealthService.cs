@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -114,14 +114,14 @@ public class ProjectHealthService : IProjectHealthService
         }
 
         var breachedMilestones = milestones
-            .Where(m => m.Status is MilestoneStatus.Active or MilestoneStatus.Planned && m.EndDateUtc.Date < today)
+            .Where(m => m.Status is MilestoneStatus.Active or MilestoneStatus.Planned && m.EndDate.HasValue && m.EndDate.Value.Date < today)
             .ToList();
 
         if (breachedMilestones.Count > 0)
         {
             foreach (var bm in breachedMilestones)
             {
-                summary.RiskReasons.Add($"Milestone '{bm.Name}' target end date ({bm.EndDateUtc:yyyy-MM-dd}) has passed without completion sign-off.");
+                summary.RiskReasons.Add($"Milestone '{bm.Name}' target end date ({bm.EndDate:yyyy-MM-dd}) has passed without completion sign-off.");
             }
         }
 
@@ -218,10 +218,10 @@ public class ProjectHealthService : IProjectHealthService
         foreach (var pred in predecessors)
         {
             predecessorNames.Add(pred.Name);
-            if (pred.Status != MilestoneStatus.Completed && pred.EndDateUtc.Date < today)
+            if (pred.Status != MilestoneStatus.Completed && pred.EndDate.HasValue && pred.EndDate.Value.Date < today)
             {
                 hasOverduePredecessors = true;
-                riskReasons.Add($"Predecessor milestone '{pred.Name}' end date expired ({pred.EndDateUtc:yyyy-MM-dd}) and is not completed.");
+                riskReasons.Add($"Predecessor milestone '{pred.Name}' end date expired ({pred.EndDate:yyyy-MM-dd}) and is not completed.");
             }
         }
 
@@ -229,7 +229,7 @@ public class ProjectHealthService : IProjectHealthService
         var completedTasks = tasks.Count(t => t.Status == TaskStatus.Closed);
         var inProgressTasks = tasks.Count(t => t.Status == TaskStatus.InProgress);
         var overdueTasks = tasks.Count(t => !t.IsClosed && t.DueDate.Date < today);
-        var daysRemaining = (int)Math.Ceiling((milestone.EndDateUtc.Date - today).TotalDays);
+        var daysRemaining = milestone.EndDate.HasValue ? (int)Math.Ceiling((milestone.EndDate.Value.Date - today).TotalDays) : 0;
 
         if (overdueBlockersCount > 0)
         {
@@ -273,8 +273,8 @@ public class ProjectHealthService : IProjectHealthService
         {
             MilestoneId = milestone.Id,
             MilestoneName = milestone.Name,
-            StartDateUtc = milestone.StartDateUtc,
-            EndDateUtc = milestone.EndDateUtc,
+            StartDate = milestone.StartDate,
+            EndDate = milestone.EndDate,
             Status = milestone.Status,
             Health = health,
             TotalTasks = totalTasks,
@@ -299,7 +299,7 @@ public class ProjectHealthService : IProjectHealthService
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && m.ProjectId == projectId)
             .OrderBy(m => m.OrderIndex)
-            .ThenBy(m => m.StartDateUtc)
+            .ThenBy(m => m.StartDate)
             .Select(m => m.Id)
             .ToListAsync(ct);
 

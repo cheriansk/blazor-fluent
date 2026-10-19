@@ -279,8 +279,8 @@ public class TenantService : ITenantService
             UserType = userType,
             DefaultTenantId = normalizedSlug,
             IsActive = isActive,
-            StartDateUtc = startDate.ToUniversalTime(),
-            EndDateUtc = endDate.ToUniversalTime(),
+            StartDate = startDate.ToUniversalTime(),
+            EndDate = endDate.ToUniversalTime(),
             TimeZoneId = "UTC"
         };
 
@@ -377,8 +377,8 @@ public class TenantService : ITenantService
         user.FullName = fullName.Trim();
         user.Email = normalizedEmail;
         user.UserType = userType;
-        user.StartDateUtc = startDate.ToUniversalTime();
-        user.EndDateUtc = endDate.ToUniversalTime();
+        user.StartDate = startDate.ToUniversalTime();
+        user.EndDate = endDate.ToUniversalTime();
         user.IsActive = isActive;
 
         var secretKey = _configuration["Security:IntegritySecret"];
@@ -394,7 +394,7 @@ public class TenantService : ITenantService
 
         await _auditService.LogUserActivityAsync(
             $"Updated tenant user '{user.FullName}' ({user.Email})",
-            $"Tenant: {tenantSlug}, Type: {user.UserType}, Active: {user.IsActive}, StartDate: {user.StartDateUtc:yyyy-MM-dd}, EndDate: {user.EndDateUtc:yyyy-MM-dd}",
+            $"Tenant: {tenantSlug}, Type: {user.UserType}, Active: {user.IsActive}, StartDate: {user.StartDate:yyyy-MM-dd}, EndDate: {user.EndDate:yyyy-MM-dd}",
             cancellationToken);
 
         return Result<UserEntity>.Success(user);

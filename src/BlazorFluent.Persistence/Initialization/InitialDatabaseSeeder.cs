@@ -111,8 +111,8 @@ public static class InitialDatabaseSeeder
                     UserType = UserType.CompanyUser,
                     DefaultTenantId = DefaultTenantSlug,
                     IsActive = true,
-                    StartDateUtc = DateTime.UtcNow.AddYears(-1),
-                    EndDateUtc = DateTime.UtcNow.AddYears(20),
+                    StartDate = DateTime.UtcNow.AddYears(-1),
+                    EndDate = DateTime.UtcNow.AddYears(20),
                     TimeZoneId = "UTC"
                 };
 

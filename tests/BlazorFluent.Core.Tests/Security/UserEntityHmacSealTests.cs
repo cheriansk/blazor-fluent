@@ -22,8 +22,8 @@ public class UserEntityHmacSealTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
 
         // Act
@@ -48,8 +48,8 @@ public class UserEntityHmacSealTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
         user.RowSignature = user.ComputeIntegritySignature(SecretKey);
 
@@ -76,8 +76,8 @@ public class UserEntityHmacSealTests
             UserType = UserType.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
         user.RowSignature = user.ComputeIntegritySignature(SecretKey);
 

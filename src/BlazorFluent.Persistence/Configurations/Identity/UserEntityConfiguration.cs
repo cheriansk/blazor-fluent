@@ -31,11 +31,12 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasMaxLength(256)
             .IsRequired(false);
 
-        builder.Property(u => u.StartDateUtc)
-            .IsRequired();
+        builder.Property(u => u.StartDate)
+            .IsRequired()
+            .HasColumnName("StartDateUtc");
 
-        builder.Property(u => u.EndDateUtc)
-            .IsRequired();
+        builder.Property(u => u.EndDate)
+            .HasColumnName("EndDateUtc");
 
         builder.Property(u => u.RowSignature)
             .HasMaxLength(500)

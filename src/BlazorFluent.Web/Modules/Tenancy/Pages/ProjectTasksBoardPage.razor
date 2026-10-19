@@ -714,7 +714,7 @@ else
                                         </div>
 
                                         <div class="milestone-meta-dates">
-                                            <span>📅 @m.StartDateUtc.ToString("yyyy-MM-dd") → @m.EndDateUtc.ToString("yyyy-MM-dd")</span>
+                                            <span>📅 @m.StartDate.ToString("yyyy-MM-dd") → @(m.EndDate?.ToString("yyyy-MM-dd") ?? "Ongoing")</span>
                                             <span>(@(m.DaysRemaining >= 0 ? $"{m.DaysRemaining} days remaining" : $"{Math.Abs(m.DaysRemaining)} days overdue"))</span>
                                         </div>
 
@@ -775,7 +775,7 @@ else
                                 <FluentSelect TOption="ProjectMilestoneEntity"
                                               TValue="string"
                                               Items="@_milestones"
-                                              OptionText="@(m => $"{m.Name} (Ends {m.EndDateUtc:yyyy-MM-dd})")"
+                                              OptionText="@(m => $"{m.Name} (Ends {m.EndDate:yyyy-MM-dd})")"
                                               OptionValue="@(m => m.Id.ToString())"
                                               @bind-Value="_newMilestonePredecessorId"
                                               Label="Predecessor Milestone (Optional Dependency)" Style="width: 100%;" />
@@ -1900,8 +1900,8 @@ else
         try
         {
             _newMilestone.ProjectId = _currentProject!.Id;
-            _newMilestone.StartDateUtc = _newMilestoneStartDate.Value;
-            _newMilestone.EndDateUtc = _newMilestoneEndDate.Value;
+            _newMilestone.StartDate = _newMilestoneStartDate.Value;
+            _newMilestone.EndDate = _newMilestoneEndDate.Value;
             _newMilestone.Status = MilestoneStatus.Active;
 
             var res = await MilestoneService.CreateMilestoneAsync(_newMilestone);
