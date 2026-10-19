@@ -1,0 +1,75 @@
+@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Shared.DataListTypes
+@inject IHierarchyAuthorizationService HierarchyAuth
+@inject IProjectContext ProjectContext
+@inject ICurrentUser CurrentUser
+
+@if (_isEvaluating)
+{
+    @* Gated during permission resolution to prevent UI flashing *@
+}
+else if (_hasAccess)
+{
+    @ChildContent
+}
+else if (FallbackContent != null)
+{
+    @FallbackContent
+}
+
+@code {
+    /// <summary>
+    /// Minimum clearance tier required to render the child content.
+    /// Razor compiler fails with an error if this parameter is omitted.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public ProjectRole MinTier { get; set; }
+
+    /// <summary>
+    /// ID of the project scope. If omitted or Guid.Empty, uses active ProjectContext.ProjectId.
+    /// </summary>
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    /// <summary>
+    /// Content rendered when the user holds sufficient clearance.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Optional fallback content rendered when clearance is denied.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FallbackContent { get; set; }
+
+    private bool _hasAccess;
+    private bool _isEvaluating = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isEvaluating = true;
+
+        if (CurrentUser.IsRootAdmin)
+        {
+            _hasAccess = true;
+            _isEvaluating = false;
+            return;
+        }
+
+        var resolvedProjectId = ProjectId != Guid.Empty
+            ? ProjectId
+            : (ProjectContext.ProjectId ?? Guid.Empty);
+
+        if (resolvedProjectId == Guid.Empty)
+        {
+            _hasAccess = false;
+        }
+        else
+        {
+            _hasAccess = await HierarchyAuth.HasProjectClearanceAsync(resolvedProjectId, MinTier);
+        }
+
+        _isEvaluating = false;
+    }
+}

@@ -1,7 +1,8 @@
-﻿@page "/projects/{ProjectId:guid}/tasks"
+@page "/projects/{ProjectId:guid}/tasks"
 @page "/tasks"
-@attribute [Authorize]
+@attribute [RequiredClearance(ProjectRole.ReadOnly)]
 @rendermode InteractiveServer
+@using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes

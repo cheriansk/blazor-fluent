@@ -149,6 +149,7 @@ try
 
         options.DefaultPolicy = defaultPolicy;
         options.FallbackPolicy = defaultPolicy;
+        options.AddPolicy(BlazorFluent.Core.Security.AuthorizationPolicies.HostAdminOnly, policy => policy.RequireRole("RootAdmin"));
     });
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<AppCurrentUser>();

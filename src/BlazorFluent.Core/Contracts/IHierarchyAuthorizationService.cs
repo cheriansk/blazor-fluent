@@ -56,4 +56,26 @@ public interface IHierarchyAuthorizationService
     /// Tenant Admins receive all programs in the tenant; Program Admins receive only assigned programs.
     /// </summary>
     Task<IReadOnlyList<Guid>> GetAccessibleProgramIdsAsync(string tenantId, string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Computes the effective project role for a user on a given project.
+    /// Resolves explicit ProjectUserRole first. If none, resolves parent Program membership to the ReadOnly baseline (10).
+    /// </summary>
+    Task<BlazorFluent.Shared.DataListTypes.ProjectRole?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Evaluates if the user satisfies the required project clearance tier (numeric hierarchy check).
+    /// </summary>
+    Task<bool> HasProjectClearanceAsync(Guid projectId, BlazorFluent.Shared.DataListTypes.ProjectRole minimumTier, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enforces the required project clearance tier. Throws SecurityException if user lacks clearance,
+    /// and logs a Warning security audit event with Zero-PII forensic context.
+    /// </summary>
+    Task EnsureHasProjectClearanceAsync(Guid projectId, BlazorFluent.Shared.DataListTypes.ProjectRole minimumTier, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Verifies that a user account is active, within its valid date range, and holds at least 1 project or program role.
+    /// </summary>
+    Task<bool> IsUserActiveAndProvisionedAsync(string userId, CancellationToken ct = default);
 }

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -15,15 +15,18 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 {
     private readonly AppDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
     private readonly ILogger<HierarchyAuthorizationService> _logger;
 
     public HierarchyAuthorizationService(
         AppDbContext context,
         ICurrentUser currentUser,
+        IAuditService auditService,
         ILogger<HierarchyAuthorizationService> logger)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -285,5 +288,121 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .Concat(programsFromProjects)
             .Distinct()
             .ToList();
+    }
+
+    public async Task<ProjectRole?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default)
+    {
+        if (projectId == Guid.Empty) return null;
+
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : _currentUser.Email);
+
+        if (string.IsNullOrWhiteSpace(targetUserId)) return null;
+
+        if (_currentUser.IsRootAdmin)
+        {
+            return ProjectRole.Admin;
+        }
+
+        var normalizedUser = targetUserId.Trim().ToLowerInvariant();
+
+        // 1. Check explicit ProjectUserRole assignment
+        var explicitProjectRole = await _context.ProjectUserRoles
+            .AsNoTracking()
+            .Where(r => r.ProjectId == projectId &&
+                        (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                        !r.IsDeleted)
+            .Select(r => (ProjectRole?)r.Role)
+            .FirstOrDefaultAsync(ct);
+
+        if (explicitProjectRole.HasValue)
+        {
+            return explicitProjectRole.Value;
+        }
+
+        // 2. Check parent Program membership (The "ReadOnly Floor" rule)
+        var project = await _context.Projects
+            .AsNoTracking()
+            .Where(p => p.Id == projectId && !p.IsDeleted)
+            .Select(p => new { p.ProgramId })
+            .FirstOrDefaultAsync(ct);
+
+        if (project?.ProgramId != null)
+        {
+            var hasProgramRole = await _context.ProgramUserRoles
+                .AsNoTracking()
+                .AnyAsync(r => r.ProgramId == project.ProgramId.Value &&
+                               (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                               !r.IsDeleted, ct);
+
+            if (hasProgramRole)
+            {
+                return ProjectRole.ReadOnly;
+            }
+        }
+
+        return null;
+    }
+
+    public async Task<bool> HasProjectClearanceAsync(Guid projectId, ProjectRole minimumTier, string? userId = null, CancellationToken ct = default)
+    {
+        var effectiveRole = await GetEffectiveProjectRoleAsync(projectId, userId, ct);
+        return effectiveRole.HasValue && (int)effectiveRole.Value >= (int)minimumTier;
+    }
+
+    public async Task EnsureHasProjectClearanceAsync(Guid projectId, ProjectRole minimumTier, string? userId = null, CancellationToken ct = default)
+    {
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : "anonymous");
+
+        var effectiveRole = await GetEffectiveProjectRoleAsync(projectId, targetUserId, ct);
+
+        if (!effectiveRole.HasValue || (int)effectiveRole.Value < (int)minimumTier)
+        {
+            // Zero-PII Warning logging (strictly GUIDs, zero emails)
+            _logger.LogWarning(
+                "AUDIT [Security]: Project clearance denied. UserId='{UserId}', ProjectId='{ProjectId}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
+                targetUserId, projectId, minimumTier, effectiveRole?.ToString() ?? "None");
+
+            await _auditService.LogSecurityEventAsync(
+                "ClearanceDenied",
+                AuditSeverity.Warning,
+                $"UserId: {targetUserId}, ProjectId: {projectId}, RequiredTier: {minimumTier}, ActualTier: {effectiveRole?.ToString() ?? "None"}",
+                ct);
+
+            throw new System.Security.SecurityException(
+                $"Access Denied: User lacks required clearance tier '{minimumTier}' on project '{projectId}'. (Ref: ERR-SEC-AUTH-003)");
+        }
+    }
+
+    public async Task<bool> IsUserActiveAndProvisionedAsync(string userId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) return false;
+
+        if (_currentUser.IsRootAdmin) return true;
+
+        var normalizedUser = userId.Trim().ToLowerInvariant();
+
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => (u.Id.ToString() == normalizedUser || u.Email.ToLower() == normalizedUser) && !u.IsDeleted, ct);
+
+        if (user == null || !user.IsActive) return false;
+
+        var now = DateTime.UtcNow;
+        if (now < user.StartDateUtc || now > user.EndDateUtc) return false;
+
+        var userIdStr = user.Id.ToString();
+
+        var hasAssignedRole = await _context.ProjectUserRoles
+            .AsNoTracking()
+            .AnyAsync(r => (r.UserId == userIdStr || r.UserEmail.ToLower() == normalizedUser) && !r.IsDeleted, ct)
+            || await _context.ProgramUserRoles
+            .AsNoTracking()
+            .AnyAsync(r => (r.UserId == userIdStr || r.UserEmail.ToLower() == normalizedUser) && !r.IsDeleted, ct);
+
+        return hasAssignedRole;
     }
 }

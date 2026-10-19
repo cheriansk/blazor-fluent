@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -101,6 +101,26 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var isRootAdmin = _rootAdminService.IsRootAdmin(user.Email);
         var isHost = isRootAdmin;
+
+        if (!isRootAdmin)
+        {
+            var userIdStr = user.Id.ToString();
+            var hasAssignedRole = await dbContext.ProjectUserRoles
+                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct)
+                || await dbContext.ProgramUserRoles
+                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct);
+
+            if (!hasAssignedRole)
+            {
+                await auditService.LogSecurityEventAsync(
+                    "LoginFailedNoAssignedRoles",
+                    AuditSeverity.Warning,
+                    $"UserId '{user.Id}' denied access: account is active but has zero assigned project or program roles.",
+                    ct);
+
+                return Result<AuthUserResult>.Failure("Your account is active but has not been assigned to any project or program. Please contact an administrator.");
+            }
+        }
 
         var dbTenants = await dbContext.Tenants
             .AsNoTracking()
@@ -212,6 +232,21 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var isRootAdmin = _rootAdminService.IsRootAdmin(user.Email);
         var isHost = isRootAdmin;
+
+        if (!isRootAdmin)
+        {
+            var userIdStr = user.Id.ToString();
+            var hasAssignedRole = await dbContext.ProjectUserRoles
+                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct)
+                || await dbContext.ProgramUserRoles
+                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct);
+
+            if (!hasAssignedRole)
+            {
+                _logger.LogWarning("Session rehydration rejected: user {UserId} has zero assigned project or program roles.", userId);
+                return Result<AuthUserResult>.Failure("Your account has not been assigned to any project or program.");
+            }
+        }
 
         var dbTenants = await dbContext.Tenants
             .AsNoTracking()

@@ -1,5 +1,6 @@
 @page "/tenants"
-@attribute [Authorize]
+@using BlazorFluent.Core.Security
+@attribute [Authorize(Policy = AuthorizationPolicies.HostAdminOnly)]
 @rendermode InteractiveServer
 @using BlazorFluent.Core.Contracts
 @using Microsoft.AspNetCore.Authorization
