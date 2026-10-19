@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tenancy;
@@ -10,19 +10,19 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// </summary>
 public class ProgramEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
-    public string Code { get; set; } = string.Empty;
+    public required string Code { get; set; }
 
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     public DateTime? StartDateUtc { get; set; }
 
     public DateTime? TargetEndDateUtc { get; set; }
 
-    public ProgramStatus Status { get; set; } = ProgramStatus.Active;
+    public required ProgramStatus Status { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }

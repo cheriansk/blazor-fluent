@@ -41,7 +41,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.Empty, // Invalid
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddHours(2)
+            EndDate = DateTime.UtcNow.AddHours(2),
+            EntryType = CalendarEntryType.WorkingSession,
+            Status = CalendarEntryStatus.Scheduled
         };
 
         var result = _validator.Validate(entry);
@@ -60,7 +62,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.CreateVersion7(),
             Title = "", // Invalid
             StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddHours(2)
+            EndDate = DateTime.UtcNow.AddHours(2),
+            EntryType = CalendarEntryType.WorkingSession,
+            Status = CalendarEntryStatus.Scheduled
         };
 
         var result = _validator.Validate(entry);
@@ -79,7 +83,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.CreateVersion7(),
             Title = "Sprint Review",
             StartDate = DateTime.UtcNow.AddHours(2),
-            EndDate = DateTime.UtcNow // Invalid: earlier than StartDate
+            EndDate = DateTime.UtcNow, // Invalid: earlier than StartDate
+            EntryType = CalendarEntryType.WorkingSession,
+            Status = CalendarEntryStatus.Scheduled
         };
 
         var result = _validator.Validate(entry);

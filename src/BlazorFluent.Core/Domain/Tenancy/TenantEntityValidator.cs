@@ -28,6 +28,9 @@ public class TenantEntityValidator : AbstractValidator<TenantEntity>
             .NotEmpty().WithMessage("At least one External email domain is required.")
             .MaximumLength(500).WithMessage("External email domains cannot exceed 500 characters.");
 
+        RuleFor(x => x.StartDate)
+            .NotEmpty().WithMessage("Tenant subscription StartDate is required.");
+
         RuleFor(x => x)
             .Must(x =>
             {

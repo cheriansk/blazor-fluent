@@ -280,7 +280,8 @@ public class TenantService : ITenantService
             DefaultTenantId = normalizedSlug,
             IsActive = isActive,
             StartDateUtc = startDate.ToUniversalTime(),
-            EndDateUtc = endDate.ToUniversalTime()
+            EndDateUtc = endDate.ToUniversalTime(),
+            TimeZoneId = "UTC"
         };
 
         user.RowSignature = user.ComputeIntegritySignature(secretKey);
@@ -548,7 +549,7 @@ public class TenantService : ITenantService
             TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null,
             TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null,
             ScopeSummary = scopeSummary?.Trim(),
-            Description = scopeSummary?.Trim() ?? string.Empty,
+            Description = scopeSummary?.Trim(),
             Status = status,
             IsActive = status == ProjectStatus.Active || status == ProjectStatus.New,
             TenantEntityId = tenant.Id,

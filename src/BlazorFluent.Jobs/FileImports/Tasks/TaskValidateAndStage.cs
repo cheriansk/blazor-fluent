@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Models;
+using BlazorFluent.Shared.Models;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Dtos.Response;
@@ -133,7 +133,7 @@ public class TaskValidateAndStage : BaseTabularFileStager<TaskImportModel>
                 SheetName = "Tasks",
                 RowIndex = task.RowIndex,
                 Title = task.Title.Trim(),
-                Description = task.Description?.Trim() ?? string.Empty,
+                Description = task.Description?.Trim(),
                 Priority = string.IsNullOrWhiteSpace(task.Priority) ? "Medium" : task.Priority.Trim(),
                 Status = string.IsNullOrWhiteSpace(task.Status) ? "Open" : task.Status.Trim(),
                 DueDate = task.DueDate,

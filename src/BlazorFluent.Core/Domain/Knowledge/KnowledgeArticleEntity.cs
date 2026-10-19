@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Tenancy;
 
@@ -14,17 +14,17 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     /// <summary>
     /// Concise headline title of the article. Required. Max 100 characters.
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     /// Rich text HTML content and embedded base64/URL images. Required. Max 20,000 characters.
     /// </summary>
-    public string Content { get; set; } = string.Empty;
+    public required string Content { get; set; }
 
     /// <summary>
     /// Semicolon-delimited list of 1 to 10 labels/tags (e.g. 'Architecture;Frontend;API').
     /// </summary>
-    public string Labels { get; set; } = string.Empty;
+    public string? Labels { get; set; }
 
     /// <summary>
     /// Helper to access parsed labels.
@@ -42,7 +42,7 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     /// <summary>
     /// Current approval lifecycle status.
     /// </summary>
-    public KnowledgeArticleStatus Status { get; set; } = KnowledgeArticleStatus.PendingReview;
+    public required KnowledgeArticleStatus Status { get; set; }
 
     /// <summary>
     /// Optional project to which the article belongs.
@@ -55,9 +55,9 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     public ProjectEntity? Project { get; set; }
 
     // --- Author Details ---
-    public string AuthorUserId { get; set; } = string.Empty;
-    public string AuthorUserEmail { get; set; } = string.Empty;
-    public string AuthorUserName { get; set; } = string.Empty;
+    public required string AuthorUserId { get; set; }
+    public required string AuthorUserEmail { get; set; }
+    public required string AuthorUserName { get; set; }
 
     // --- Approval Details ---
     public string? ApprovedByUserId { get; set; }

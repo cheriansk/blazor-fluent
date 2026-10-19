@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
@@ -16,23 +16,23 @@ namespace BlazorFluent.Core.Domain.Identity;
 /// </summary>
 public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
 {
-    public string Email { get; set; } = string.Empty;
+    public required string Email { get; set; }
 
-    public string FullName { get; set; } = string.Empty;
+    public required string FullName { get; set; }
 
-    public UserType UserType { get; set; } = UserType.CompanyUser;
+    public required UserType UserType { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 
     /// <summary>
     /// Effective start date for user access window.
     /// </summary>
-    public DateTime StartDateUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime StartDateUtc { get; set; }
 
     /// <summary>
     /// Expiration date for user access window.
     /// </summary>
-    public DateTime EndDateUtc { get; set; } = DateTime.UtcNow.AddYears(1);
+    public required DateTime EndDateUtc { get; set; }
 
     /// <summary>
     /// Cryptographic HMAC-SHA256 signature sealing user state against direct database tampering.
@@ -48,7 +48,7 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     /// User's preferred timezone identifier (e.g., 'Eastern Standard Time', 'UTC').
     /// Used for presentation-layer date/time formatting.
     /// </summary>
-    public string TimeZoneId { get; set; } = "UTC";
+    public required string TimeZoneId { get; set; }
 
     /// <summary>
     /// Embedded EF Core 10 ComplexType value object for user physical address.

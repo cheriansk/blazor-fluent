@@ -11,7 +11,7 @@ public class SubTaskEntity : BaseTaskEntity
     /// Foreign key to the governing parent <see cref="TaskEntity"/>.
     /// Required.
     /// </summary>
-    public Guid ParentTaskId { get; set; }
+    public required Guid ParentTaskId { get; set; }
 
     /// <summary>
     /// Relative display and execution order index within the parent task.

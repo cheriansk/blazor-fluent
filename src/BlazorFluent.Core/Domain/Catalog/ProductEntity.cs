@@ -11,13 +11,13 @@ namespace BlazorFluent.Core.Domain.Catalog;
 /// </summary>
 public class ProductEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
-    public string Sku { get; set; } = string.Empty;
+    public required string Sku { get; set; }
 
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
-    public decimal Price { get; set; }
+    public required decimal Price { get; set; }
 
     public int StockQuantity { get; set; }
 

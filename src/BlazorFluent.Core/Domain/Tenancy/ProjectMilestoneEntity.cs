@@ -12,32 +12,32 @@ public class ProjectMilestoneEntity : TenantAuditableEntity, IProjectScopedEntit
     /// <summary>
     /// ID of the project to which this milestone belongs.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// Milestone headline (e.g. 'Sprint 1', 'UAT', 'Go-Live Release').
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     /// <summary>
     /// Detailed scope summary or acceptance criteria for this milestone.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Planned kickoff date (UTC).
     /// </summary>
-    public DateTime StartDateUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime StartDateUtc { get; set; }
 
     /// <summary>
     /// Target completion deadline (UTC).
     /// </summary>
-    public DateTime EndDateUtc { get; set; } = DateTime.UtcNow.AddDays(14);
+    public required DateTime EndDateUtc { get; set; }
 
     /// <summary>
     /// Current lifecycle status (Planned, Active, Completed, AtRisk, Cancelled).
     /// </summary>
-    public MilestoneStatus Status { get; set; } = MilestoneStatus.Planned;
+    public required MilestoneStatus Status { get; set; }
 
     /// <summary>
     /// Sequential presentation order within the project roadmap.

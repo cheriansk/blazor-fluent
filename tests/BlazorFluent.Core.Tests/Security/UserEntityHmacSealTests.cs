@@ -18,6 +18,9 @@ public class UserEntityHmacSealTests
             Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             DefaultTenantId = "tenant_alpha",
             Email = "alice@example.com",
+            FullName = "Alice Admin",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = true,
             StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
@@ -41,6 +44,9 @@ public class UserEntityHmacSealTests
             Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             DefaultTenantId = "tenant_beta",
             Email = "bob@example.com",
+            FullName = "Bob Developer",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = true,
             StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
@@ -66,6 +72,9 @@ public class UserEntityHmacSealTests
             Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
             DefaultTenantId = "tenant_beta",
             Email = "bob@example.com",
+            FullName = "Bob Developer",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = true,
             StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)

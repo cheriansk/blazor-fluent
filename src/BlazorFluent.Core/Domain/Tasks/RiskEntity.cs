@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
@@ -12,12 +12,12 @@ public class RiskEntity : BaseTaskEntity
     /// <summary>
     /// Financial, schedule, or operational impact rating (Low, Medium, High, Critical).
     /// </summary>
-    public RiskImpact Impact { get; set; } = RiskImpact.Medium;
+    public required RiskImpact Impact { get; set; }
 
     /// <summary>
     /// Likelihood of risk realization (Low, Medium, High).
     /// </summary>
-    public RiskProbability Probability { get; set; } = RiskProbability.Medium;
+    public required RiskProbability Probability { get; set; }
 
     /// <summary>
     /// Calculated risk exposure score (1 to 12).
@@ -27,15 +27,15 @@ public class RiskEntity : BaseTaskEntity
     /// <summary>
     /// Planned proactive mitigation actions to reduce probability or impact.
     /// </summary>
-    public string MitigationStrategy { get; set; } = string.Empty;
+    public string? MitigationStrategy { get; set; }
 
     /// <summary>
     /// Contingency actions to execute if the risk materializes into an active Issue.
     /// </summary>
-    public string ContingencyPlan { get; set; } = string.Empty;
+    public string? ContingencyPlan { get; set; }
 
     /// <summary>
     /// Governance lifecycle status of the risk.
     /// </summary>
-    public RiskStatus RiskStatus { get; set; } = RiskStatus.Identified;
+    public required RiskStatus RiskStatus { get; set; }
 }

@@ -15,39 +15,39 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     /// <summary>
     /// Organizational level at which this work item exists (Tenant, Program, Project, User).
     /// </summary>
-    public TaskLevel Level { get; set; }
+    public required TaskLevel Level { get; set; }
 
     /// <summary>
     /// Concise headline title of the work item. Required.
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     /// Detailed description, reproduction steps, or context.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Urgency and priority rating (Low, Medium, High, Urgent).
     /// </summary>
-    public TaskPriority Priority { get; set; } 
+    public required TaskPriority Priority { get; set; } 
 
     /// <summary>
     /// Lifecycle status of the work item.
     /// </summary>
-    public TaskStatus Status { get; set; } 
+    public required TaskStatus Status { get; set; } 
 
     /// <summary>
     /// Earliest planned kickoff date for this work item.
     /// Part of <see cref="IEffectiveDatedEntity"/>.
     /// </summary>
-    public DateTime StartDate { get; set; } = DateTime.UtcNow;
+    public required DateTime StartDate { get; set; }
 
     /// <summary>
     /// Target completion deadline (UTC). Mandatory for every work item.
     /// Drives cadence notifications and calendar deadline plotting.
     /// </summary>
-    public DateTime DueDate { get; set; } = DateTime.UtcNow.AddDays(7);
+    public required DateTime DueDate { get; set; }
 
     /// <summary>
     /// Actual completion or close timestamp.
@@ -58,23 +58,23 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     /// <summary>
     /// Email of the user who originated or reported this work item.
     /// </summary>
-    public string ReporterEmail { get; set; } = string.Empty;
+    public string? ReporterEmail { get; set; }
 
     /// <summary>
     /// Semicolon-delimited list of assignee email addresses.
     /// </summary>
-    public string AssigneeEmails { get; set; } = string.Empty;
+    public string? AssigneeEmails { get; set; }
 
     /// <summary>
     /// Semicolon-delimited list of stakeholder emails who monitor this work item.
     /// Watchers receive automated status change alerts and see the item on their calendars.
     /// </summary>
-    public string WatcherEmails { get; set; } = string.Empty;
+    public string? WatcherEmails { get; set; }
 
     /// <summary>
     /// Comma-delimited list of classification labels/tags.
     /// </summary>
-    public string Labels { get; set; } = string.Empty;
+    public string? Labels { get; set; }
 
     // --- Hierarchy Scoping ---
     public Guid? ProgramId { get; set; }

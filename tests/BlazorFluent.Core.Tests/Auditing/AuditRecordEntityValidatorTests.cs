@@ -167,6 +167,7 @@ public class AuditRecordEntityValidatorTests
             Id = Guid.CreateVersion7(),
             TenantId = "", // Invalid
             EventType = AuditEventType.TenantSwitch,
+            Severity = AuditSeverity.Information,
             Description = "Switched tenant context"
         };
 
@@ -187,6 +188,7 @@ public class AuditRecordEntityValidatorTests
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
             EventType = AuditEventType.UserActivity,
+            Severity = AuditSeverity.Information,
             Description = "Profile updated",
             UserType = UserType.ClientUser,
             UserId = null, // Invalid when UserType is set
@@ -215,6 +217,7 @@ public class AuditRecordEntityValidatorTests
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
             EventType = AuditEventType.UserActivity,
+            Severity = AuditSeverity.Information,
             Description = "User session heartbeat",
             UserEmail = email
         };

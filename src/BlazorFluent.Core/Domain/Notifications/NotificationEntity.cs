@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Notifications;
@@ -14,7 +14,7 @@ public class NotificationEntity : TenantAuditableEntity, ISoftDeletableEntity, I
     /// <summary>
     /// Associated project ID, or Guid.Empty for system/tenant-wide generic notifications.
     /// </summary>
-    public Guid ProjectId { get; set; } = Guid.Empty;
+    public Guid ProjectId { get; set; }
 
     /// <summary>
     /// Target user ID. If null, this is a generic notification broadcast to authorized project/tenant members.
@@ -25,22 +25,22 @@ public class NotificationEntity : TenantAuditableEntity, ISoftDeletableEntity, I
     /// <summary>
     /// Category determining generic vs personal segmentation.
     /// </summary>
-    public NotificationCategory Category { get; set; } = NotificationCategory.Generic;
+    public required NotificationCategory Category { get; set; }
 
     /// <summary>
     /// Visual severity level.
     /// </summary>
-    public NotificationSeverity Severity { get; set; } = NotificationSeverity.Info;
+    public required NotificationSeverity Severity { get; set; }
 
     /// <summary>
     /// Headline title of the notification.
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     /// Detailed message text or summary.
     /// </summary>
-    public string Message { get; set; } = string.Empty;
+    public required string Message { get; set; }
 
     /// <summary>
     /// Optional in-app navigation URL (e.g. "/jobs", "/tenancy/project-roles").

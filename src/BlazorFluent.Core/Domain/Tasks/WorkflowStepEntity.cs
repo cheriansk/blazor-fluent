@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
@@ -9,30 +9,25 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// </summary>
 public class WorkflowStepEntity : BaseTaskEntity
 {
-    public WorkflowStepEntity()
-    {
-        Level = TaskLevel.Project;
-    }
-
     /// <summary>
     /// Foreign key referencing the parent <see cref="WorkflowTaskEntity"/>.
     /// </summary>
-    public Guid WorkflowTaskId { get; set; }
+    public required Guid WorkflowTaskId { get; set; }
 
     /// <summary>
     /// 1-based sequential execution index (Step 1, Step 2, Step 3...).
     /// </summary>
-    public int StepOrder { get; set; } = 1;
+    public required int StepOrder { get; set; }
 
     /// <summary>
     /// Discrete lifecycle status of this step.
     /// </summary>
-    public WorkflowStepStatus StepStatus { get; set; } = WorkflowStepStatus.Pending;
+    public required WorkflowStepStatus StepStatus { get; set; }
 
     /// <summary>
     /// Email of the verified individual responsible for executing this specific step.
     /// </summary>
-    public string StepOwnerEmail { get; set; } = string.Empty;
+    public required string StepOwnerEmail { get; set; }
 
     /// <summary>
     /// Timestamp when this step transitioned to Active.

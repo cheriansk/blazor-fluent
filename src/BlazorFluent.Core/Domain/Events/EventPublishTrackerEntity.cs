@@ -12,25 +12,25 @@ namespace BlazorFluent.Core.Domain.Events;
 public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
 {
     /// <summary>Tenant scope for row-level isolation. Multi-tenant queries filter by this value.</summary>
-    public string TenantId { get; set; } = string.Empty;
+    public required string TenantId { get; set; }
 
     /// <summary>Unique identifier of the published event (UUIDv7).</summary>
     public Guid EventId { get; set; } = Guid.CreateVersion7();
 
     /// <summary>Correlation identifier linking all downstream consumer steps and workflow chains.</summary>
-    public string CorrelationId { get; set; } = string.Empty;
+    public required string CorrelationId { get; set; }
 
     /// <summary>Short name of the event type (e.g. 'CatalogSyncJobEvent', 'ArticleApprovedEvent').</summary>
-    public string EventName { get; set; } = string.Empty;
+    public required string EventName { get; set; }
 
     /// <summary>Full assembly-qualified or CLR type name of the event.</summary>
     public string? EventTypeFullName { get; set; }
 
     /// <summary>Class name that published or dispatched the event.</summary>
-    public string SourceClass { get; set; } = string.Empty;
+    public required string SourceClass { get; set; }
 
     /// <summary>Method name that published or dispatched the event.</summary>
-    public string SourceMethod { get; set; } = string.Empty;
+    public required string SourceMethod { get; set; }
 
     /// <summary>Source file path where the dispatch call originated (optional).</summary>
     public string? SourceFilePath { get; set; }
@@ -42,16 +42,16 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
     public string? UserEmail { get; set; }
 
     /// <summary>Trigger source classification: 'Manual', 'Cron', 'API', 'System', 'Event'.</summary>
-    public string TriggerSource { get; set; } = "System";
+    public required string TriggerSource { get; set; }
 
     /// <summary>Full JSON payload of the event at publication time.</summary>
-    public string PayloadJson { get; set; } = "{}";
+    public required string PayloadJson { get; set; }
 
     /// <summary>Timestamp (UTC) when the event was emitted.</summary>
-    public DateTime PublishedAtUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime PublishedAtUtc { get; set; }
 
     /// <summary>Overall lifecycle status of the published event.</summary>
-    public EventTrackerStatus Status { get; set; } = EventTrackerStatus.Published;
+    public required EventTrackerStatus Status { get; set; }
 
     /// <summary>Count of consumers that have picked up or executed this event.</summary>
     public int ConsumerCount { get; set; }

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
@@ -12,20 +12,20 @@ public class IssueEntity : BaseTaskEntity
     /// <summary>
     /// Severity rating of this active impediment (Low, Medium, High, Critical).
     /// </summary>
-    public IssueSeverity Severity { get; set; } = IssueSeverity.Medium;
+    public required IssueSeverity Severity { get; set; }
 
     /// <summary>
     /// Investigation notes and identified root cause of this issue.
     /// </summary>
-    public string RootCause { get; set; } = string.Empty;
+    public string? RootCause { get; set; }
 
     /// <summary>
     /// Temporary tactical workaround allowing partial progress while the permanent fix is developed.
     /// </summary>
-    public string Workaround { get; set; } = string.Empty;
+    public string? Workaround { get; set; }
 
     /// <summary>
     /// Permanent resolution strategy and action plan.
     /// </summary>
-    public string ResolutionStrategy { get; set; } = string.Empty;
+    public string? ResolutionStrategy { get; set; }
 }

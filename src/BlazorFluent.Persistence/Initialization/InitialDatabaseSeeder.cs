@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -112,7 +112,8 @@ public static class InitialDatabaseSeeder
                     DefaultTenantId = DefaultTenantSlug,
                     IsActive = true,
                     StartDateUtc = DateTime.UtcNow.AddYears(-1),
-                    EndDateUtc = DateTime.UtcNow.AddYears(20)
+                    EndDateUtc = DateTime.UtcNow.AddYears(20),
+                    TimeZoneId = "UTC"
                 };
 
                 user.RowSignature = user.ComputeIntegritySignature(integrityKey);

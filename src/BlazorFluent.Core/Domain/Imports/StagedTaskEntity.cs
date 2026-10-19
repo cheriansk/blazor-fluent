@@ -12,22 +12,22 @@ public class StagedTaskEntity : TenantAuditableEntity, IProjectScopedEntity, IHa
     /// <summary>
     /// Foreign key link to the parent ImportFileEntity.
     /// </summary>
-    public Guid ImportFileId { get; set; }
+    public required Guid ImportFileId { get; set; }
 
     /// <summary>
     /// Foreign batch identifier grouping all files uploaded together in the same session.
     /// </summary>
-    public Guid ImportId { get; set; }
+    public required Guid ImportId { get; set; }
 
     /// <summary>
     /// ID of the project workspace.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// Originating sheet or section name (e.g., 'Tasks' for Excel).
     /// </summary>
-    public string SheetName { get; set; } = "Default";
+    public required string SheetName { get; set; }
 
     /// <summary>
     /// 1-indexed row number within the source file.
@@ -37,22 +37,22 @@ public class StagedTaskEntity : TenantAuditableEntity, IProjectScopedEntity, IHa
     /// <summary>
     /// Parsed title of the task.
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     /// Parsed task description.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Parsed priority (Low, Medium, High, Urgent).
     /// </summary>
-    public string Priority { get; set; } = "Medium";
+    public required string Priority { get; set; }
 
     /// <summary>
     /// Parsed status (Open, InProgress, Closed).
     /// </summary>
-    public string Status { get; set; } = "Open";
+    public required string Status { get; set; }
 
     /// <summary>
     /// Parsed due date deadline.
@@ -72,7 +72,7 @@ public class StagedTaskEntity : TenantAuditableEntity, IProjectScopedEntity, IHa
     /// <summary>
     /// Validation result for this specific row ("Valid", "Invalid").
     /// </summary>
-    public string ValidationStatus { get; set; } = "Valid";
+    public required string ValidationStatus { get; set; }
 
     /// <summary>
     /// Specific cell or row error description if row failed validation.

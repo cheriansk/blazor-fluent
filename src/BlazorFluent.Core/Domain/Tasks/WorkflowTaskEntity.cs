@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -13,25 +13,11 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// </summary>
 public class WorkflowTaskEntity : BaseTaskEntity
 {
-    public WorkflowTaskEntity()
-    {
-        Level = TaskLevel.Project;
-    }
-
     /// <summary>
     /// Email of the single, constant workflow owner who retains operational accountability
     /// and follows up across all steps to avoid delays.
     /// </summary>
-    public string WorkflowOwnerEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Backwards-compatible accessor mirroring <see cref="WorkflowOwnerEmail"/>.
-    /// </summary>
-    public string CurrentOwnerEmail
-    {
-        get => WorkflowOwnerEmail;
-        set => WorkflowOwnerEmail = value;
-    }
+    public required string WorkflowOwnerEmail { get; set; }
 
     /// <summary>
     /// Unique identifier of the currently active step (TaskEntity).

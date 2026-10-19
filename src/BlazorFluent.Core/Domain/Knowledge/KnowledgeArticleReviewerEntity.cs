@@ -9,15 +9,15 @@ namespace BlazorFluent.Core.Domain.Knowledge;
 /// </summary>
 public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity, IHardDeletableEntity
 {
-    public Guid ArticleId { get; set; }
+    public required Guid ArticleId { get; set; }
 
     public KnowledgeArticleEntity? Article { get; set; }
 
-    public string UserId { get; set; } = string.Empty;
+    public required string UserId { get; set; }
 
-    public string UserEmail { get; set; } = string.Empty;
+    public required string UserEmail { get; set; }
 
-    public string UserName { get; set; } = string.Empty;
+    public required string UserName { get; set; }
 
     public bool HasApproved { get; set; }
 

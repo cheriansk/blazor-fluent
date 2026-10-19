@@ -11,17 +11,17 @@ public class MilestoneDependencyEntity : TenantAuditableEntity, IProjectScopedEn
     /// <summary>
     /// ID of the project owning both milestones.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// The dependent milestone (successor) waiting for predecessor to complete.
     /// </summary>
-    public Guid MilestoneId { get; set; }
+    public required Guid MilestoneId { get; set; }
 
     /// <summary>
     /// The prerequisite milestone (predecessor) that must be finished first.
     /// </summary>
-    public Guid DependsOnMilestoneId { get; set; }
+    public required Guid DependsOnMilestoneId { get; set; }
 
     /// <summary>
     /// Optional context or constraint notes.

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Configuration;
+using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
@@ -89,7 +89,8 @@ public static class DevelopmentSeeder
                         DefaultTenantId = tenantSlug,
                         IsActive = true,
                         StartDateUtc = DateTime.UtcNow.AddDays(-30),
-                        EndDateUtc = DateTime.UtcNow.AddYears(1)
+                        EndDateUtc = DateTime.UtcNow.AddYears(1),
+                        TimeZoneId = "UTC"
                     };
                     adminUser.RowSignature = adminUser.ComputeIntegritySignature(integrityKey);
                     dbContext.Users.Add(adminUser);
@@ -123,7 +124,8 @@ public static class DevelopmentSeeder
                         DefaultTenantId = defaultTenantSlug,
                         IsActive = true,
                         StartDateUtc = DateTime.UtcNow.AddDays(-30),
-                        EndDateUtc = DateTime.UtcNow.AddYears(1)
+                        EndDateUtc = DateTime.UtcNow.AddYears(1),
+                        TimeZoneId = "UTC"
                     };
                     user.RowSignature = user.ComputeIntegritySignature(integrityKey);
                     dbContext.Users.Add(user);

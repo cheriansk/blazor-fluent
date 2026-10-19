@@ -12,17 +12,17 @@ public class TaskDependencyEntity : TenantAuditableEntity, IProjectScopedEntity,
     /// <summary>
     /// ID of the project owning both tasks.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// The dependent task that is blocked or related.
     /// </summary>
-    public Guid TaskId { get; set; }
+    public required Guid TaskId { get; set; }
 
     /// <summary>
     /// The prerequisite task that is blocking or prerequisite.
     /// </summary>
-    public Guid DependsOnTaskId { get; set; }
+    public required Guid DependsOnTaskId { get; set; }
 
     /// <summary>
     /// ID of the project owning the prerequisite task.
@@ -39,7 +39,7 @@ public class TaskDependencyEntity : TenantAuditableEntity, IProjectScopedEntity,
     /// <summary>
     /// Classification of dependency (Blocks, BlockedBy, RelatesTo).
     /// </summary>
-    public TaskDependencyType DependencyType { get; set; } = TaskDependencyType.Blocks;
+    public required TaskDependencyType DependencyType { get; set; }
 
     /// <summary>
     /// Target deadline by which this blocking dependency must be resolved (UTC).

@@ -66,6 +66,8 @@ public class JobExecutionEntityValidatorTests
             CorrelationId = "", // Invalid
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatus.Running,
+            AttemptCount = 1,
+            MaxRetries = 3,
             StartedAt = DateTime.UtcNow
         };
 
@@ -86,6 +88,8 @@ public class JobExecutionEntityValidatorTests
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatus.Running,
+            AttemptCount = 1,
+            MaxRetries = 3,
             StartedAt = DateTime.UtcNow
         };
 
@@ -106,6 +110,8 @@ public class JobExecutionEntityValidatorTests
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatus.Running,
+            AttemptCount = 1,
+            MaxRetries = 3,
             StartedAt = DateTime.UtcNow
         };
 
@@ -126,6 +132,8 @@ public class JobExecutionEntityValidatorTests
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatus.Succeeded,
+            AttemptCount = 1,
+            MaxRetries = 3,
             StartedAt = DateTime.UtcNow,
             CompletedAt = null // Invalid for Succeeded
         };

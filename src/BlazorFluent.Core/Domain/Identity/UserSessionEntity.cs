@@ -7,13 +7,13 @@ namespace BlazorFluent.Core.Domain.Identity;
 /// </summary>
 public class UserSessionEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
-    public string UserId { get; set; } = string.Empty;
-    public string UserEmail { get; set; } = string.Empty;
-    public string IpAddress { get; set; } = "127.0.0.1";
-    public string UserAgent { get; set; } = string.Empty;
+    public required string UserId { get; set; }
+    public required string UserEmail { get; set; }
+    public required string IpAddress { get; set; }
+    public required string UserAgent { get; set; }
 
-    public DateTime StartedAtUtc { get; set; } = DateTime.UtcNow;
-    public DateTime LastActivityAtUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime StartedAtUtc { get; set; }
+    public required DateTime LastActivityAtUtc { get; set; }
 
     public bool IsRevoked { get; set; }
     public DateTime? RevokedAtUtc { get; set; }

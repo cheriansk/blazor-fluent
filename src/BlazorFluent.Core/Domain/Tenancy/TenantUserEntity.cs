@@ -14,15 +14,15 @@ public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity
 
     public Guid UserEntityId { get; set; }
 
-    public string UserId { get; set; } = string.Empty;
+    public required string UserId { get; set; }
 
-    public string UserEmail { get; set; } = string.Empty;
+    public required string UserEmail { get; set; }
 
-    public string UserName { get; set; } = string.Empty;
+    public required string UserName { get; set; }
 
-    public TenantRole Role { get; set; } = TenantRole.TenantMember;
+    public required TenantRole Role { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }

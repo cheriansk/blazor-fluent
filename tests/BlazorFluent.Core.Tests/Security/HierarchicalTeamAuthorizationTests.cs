@@ -118,6 +118,9 @@ public class HierarchicalTeamAuthorizationTests
         {
             Id = Guid.NewGuid(),
             Email = "inactive@company.com",
+            FullName = "Inactive User",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = false,
             StartDateUtc = now.AddDays(-10),
             EndDateUtc = now.AddDays(10)
@@ -136,6 +139,9 @@ public class HierarchicalTeamAuthorizationTests
         {
             Id = Guid.NewGuid(),
             Email = "expired@company.com",
+            FullName = "Expired User",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = true,
             StartDateUtc = now.AddYears(-2),
             EndDateUtc = now.AddDays(-1) // Expired yesterday
@@ -154,6 +160,9 @@ public class HierarchicalTeamAuthorizationTests
         {
             Id = Guid.NewGuid(),
             Email = "future@company.com",
+            FullName = "Future User",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = true,
             StartDateUtc = now.AddDays(5), // Starts in 5 days
             EndDateUtc = now.AddYears(1)
@@ -172,6 +181,9 @@ public class HierarchicalTeamAuthorizationTests
         {
             Id = Guid.NewGuid(),
             Email = "active@company.com",
+            FullName = "Active User",
+            UserType = UserType.CompanyUser,
+            TimeZoneId = "UTC",
             IsActive = true,
             StartDateUtc = now.AddDays(-10),
             EndDateUtc = now.AddDays(100)

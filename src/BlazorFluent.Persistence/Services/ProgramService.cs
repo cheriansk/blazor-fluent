@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -136,7 +136,7 @@ public class ProgramService : IProgramService
             TenantEntityId = tenant.Id,
             Name = name.Trim(),
             Code = code.Trim().ToUpperInvariant(),
-            Description = description?.Trim() ?? string.Empty,
+            Description = description?.Trim(),
             StartDateUtc = startDateUtc,
             TargetEndDateUtc = targetEndDateUtc,
             Status = status,

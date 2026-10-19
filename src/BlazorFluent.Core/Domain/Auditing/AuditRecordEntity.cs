@@ -13,7 +13,7 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     /// <summary>
     /// The tenant scope for this audit record. Multi-tenant queries automatically row-filter by this value.
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public required string TenantId { get; set; }
 
     /// <summary>ID of the user who performed the operation, or 'system' for background workers.</summary>
     public string? UserId { get; set; }
@@ -25,10 +25,10 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     public UserType? UserType { get; set; }
 
     /// <summary>High-level classification of the audit event.</summary>
-    public AuditEventType EventType { get; set; }
+    public required AuditEventType EventType { get; set; }
 
     /// <summary>Severity classification.</summary>
-    public AuditSeverity Severity { get; set; } = AuditSeverity.Information;
+    public required AuditSeverity Severity { get; set; }
 
     /// <summary>Name of the entity modified (e.g. 'ProductEntity', 'ProjectEntity'), if applicable.</summary>
     public string? EntityName { get; set; }

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -15,22 +15,22 @@ public class BlockerDependencyEntity : BaseTaskEntity
     /// <summary>
     /// ID of the dependent task waiting / blocked (e.g. Task A).
     /// </summary>
-    public Guid SourceTaskId { get; set; }
+    public required Guid SourceTaskId { get; set; }
 
     /// <summary>
     /// ID of the prerequisite task that is blocking (e.g. Task B).
     /// </summary>
-    public Guid TargetTaskId { get; set; }
+    public required Guid TargetTaskId { get; set; }
 
     /// <summary>
     /// Multi-paragraph or bulleted explanation of impacts, blast radius, and consequences if the blocker is not resolved on time.
     /// </summary>
-    public string ImpactDetails { get; set; } = string.Empty;
+    public string? ImpactDetails { get; set; }
 
     /// <summary>
     /// Criticality / urgency rating of this dependency contract.
     /// </summary>
-    public DependencyCriticality Criticality { get; set; } = DependencyCriticality.High;
+    public required DependencyCriticality Criticality { get; set; }
 
     /// <summary>
     /// Explicit target deadline by which this dependency must be resolved.

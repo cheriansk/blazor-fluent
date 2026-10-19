@@ -14,29 +14,29 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
     public const string HostTenantId = "HOST";
 
     /// <summary>Mandatory correlation identifier linking all chained batch steps in the same pipeline.</summary>
-    public string CorrelationId { get; set; } = string.Empty;
+    public required string CorrelationId { get; set; }
 
     /// <summary>Identifier of the predecessor job execution that triggered this step (if chained).</summary>
     public Guid? ParentExecutionId { get; set; }
 
     /// <summary>Name or type of the background batch job.</summary>
-    public string JobName { get; set; } = string.Empty;
+    public required string JobName { get; set; }
 
     /// <summary>Originating tenant identifier, or 'HOST' for platform-wide system jobs.</summary>
-    public string TenantId { get; set; } = HostTenantId;
+    public required string TenantId { get; set; }
 
     /// <summary>Strongly-typed trigger mechanism that initiated the execution.</summary>
-    public JobTriggerSourceEnum TriggerSource { get; set; } = JobTriggerSourceEnum.Cron;
+    public required JobTriggerSourceEnum TriggerSource { get; set; }
 
 
     /// <summary>Current lifecycle status.</summary>
-    public JobStatus Status { get; set; } = JobStatus.Queued;
+    public required JobStatus Status { get; set; }
 
     /// <summary>Current attempt number (1 to MaxRetries).</summary>
-    public int AttemptCount { get; set; } = 1;
+    public required int AttemptCount { get; set; }
 
     /// <summary>Maximum number of attempts before permanent failure.</summary>
-    public int MaxRetries { get; set; } = 3;
+    public required int MaxRetries { get; set; }
 
     /// <summary>Optional serialized payload or parameters passed to the job.</summary>
     public string? PayloadJson { get; set; }
@@ -45,7 +45,7 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
     public string? ErrorMessage { get; set; }
 
     /// <summary>Timestamp when the job execution began.</summary>
-    public DateTime StartedAt { get; set; }
+    public required DateTime StartedAt { get; set; }
 
     /// <summary>Timestamp when the job execution finished (succeeded or fatally failed).</summary>
     public DateTime? CompletedAt { get; set; }

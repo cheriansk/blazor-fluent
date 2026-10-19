@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -12,17 +12,17 @@ public class TaskLinkEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// <summary>
     /// ID of the source task originating the link.
     /// </summary>
-    public Guid SourceTaskId { get; set; }
+    public required Guid SourceTaskId { get; set; }
 
     /// <summary>
     /// ID of the target task being referenced.
     /// </summary>
-    public Guid TargetTaskId { get; set; }
+    public required Guid TargetTaskId { get; set; }
 
     /// <summary>
     /// Classification of the relationship (BlockedBy, RelatesTo, Parent).
     /// </summary>
-    public TaskDependencyType LinkType { get; set; } = TaskDependencyType.BlockedBy;
+    public required TaskDependencyType LinkType { get; set; }
 
     /// <summary>
     /// Foreign key to the auto-generated BlockerDependencyEntity when LinkType is BlockedBy.

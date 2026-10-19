@@ -14,32 +14,32 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// <summary>
     /// ID of the project to which this role assignment belongs.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// Primary identifier of the user (corresponds to <see cref="BlazorFluent.Core.Contracts.ICurrentUser.UserId"/>).
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
+    public required string UserId { get; set; }
 
     /// <summary>
     /// User's email address at the time of assignment for display and audit.
     /// </summary>
-    public string UserEmail { get; set; } = string.Empty;
+    public required string UserEmail { get; set; }
 
     /// <summary>
     /// User's full name at the time of assignment.
     /// </summary>
-    public string UserName { get; set; } = string.Empty;
+    public required string UserName { get; set; }
 
     /// <summary>
     /// User type classification (CompanyUser or ClientUser).
     /// </summary>
-    public UserType UserType { get; set; } = UserType.CompanyUser;
+    public required UserType UserType { get; set; }
 
     /// <summary>
     /// The assigned project role (ReadOnly, QA, Dev, Admin).
     /// </summary>
-    public ProjectRole Role { get; set; } = ProjectRole.ReadOnly;
+    public required ProjectRole Role { get; set; }
 
     /// <summary>
     /// Optional foreign key to <see cref="UserEntity"/> if tracked locally in the database.

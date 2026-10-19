@@ -14,17 +14,17 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// <summary>
     /// Title for the Event
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     /// Event description, scope summary, or release notes.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Effective start date in UTC (Date-level precision).
     /// </summary>
-    public DateTime StartDate { get; set; }
+    public required DateTime StartDate { get; set; }
 
     /// <summary>
     /// Effective end date in UTC (Date-level precision).
@@ -35,12 +35,12 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// <summary>
     /// Classification category of this calendar entry (Milestone, Sprint, Release, Deadline, etc.).
     /// </summary>
-    public CalendarEntryType EntryType { get; set; } 
+    public required CalendarEntryType EntryType { get; set; } 
 
     /// <summary>
     /// Current scheduling status (Scheduled, Confirmed, InProgress, Completed, Cancelled).
     /// </summary>
-    public CalendarEntryStatus Status { get; set; }
+    public required CalendarEntryStatus Status { get; set; }
 
     /// <summary>
     /// Optional foreign key to an associated work item (Task, Subtask, Risk, etc.).

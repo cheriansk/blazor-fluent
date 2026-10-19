@@ -9,21 +9,21 @@ namespace BlazorFluent.Core.Domain.Identity;
 /// </summary>
 public class ImpersonationGrantEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
 {
-    public string SourceAdminId { get; set; } = string.Empty;
-    public string SourceAdminEmail { get; set; } = string.Empty;
+    public required string SourceAdminId { get; set; }
+    public required string SourceAdminEmail { get; set; }
 
-    public string TargetUserId { get; set; } = string.Empty;
-    public string TargetUserEmail { get; set; } = string.Empty;
-    public string TargetTenantId { get; set; } = string.Empty;
+    public required string TargetUserId { get; set; }
+    public required string TargetUserEmail { get; set; }
+    public required string TargetTenantId { get; set; }
 
-    public DateTime StartedAtUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime StartedAtUtc { get; set; }
 
     /// <summary>
     /// Strict expiration timestamp (maximum 60 minutes from start).
     /// </summary>
-    public DateTime ExpiresAtUtc { get; set; } = DateTime.UtcNow.AddMinutes(60);
+    public required DateTime ExpiresAtUtc { get; set; }
 
-    public string Reason { get; set; } = string.Empty;
+    public required string Reason { get; set; }
 
     public bool IsRevoked { get; set; }
     public DateTime? RevokedAtUtc { get; set; }

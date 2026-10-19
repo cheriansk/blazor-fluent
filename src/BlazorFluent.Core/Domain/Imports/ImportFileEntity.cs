@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Imports;
@@ -19,39 +19,39 @@ public class ImportFileEntity : TenantAuditableEntity, IProjectScopedEntity, ISo
     /// Shared batch identifier grouping all files uploaded together in the same session.
     /// Indexed to allow querying all files in a batch by ImportId.
     /// </summary>
-    public Guid ImportId { get; set; }
+    public required Guid ImportId { get; set; }
 
     /// <summary>
     /// Relative or absolute storage folder path containing all encrypted payloads for this batch.
     /// Format: tenants/{tenantId}/projects/{projectId}/imports/{year}/{month}/batch-{importId}/
     /// </summary>
-    public string StorageFolder { get; set; } = string.Empty;
+    public required string StorageFolder { get; set; }
 
     /// <summary>
     /// Current execution step in the 3-stage pipeline: 'Validate', 'Stage', 'Process', or 'Completed'.
     /// </summary>
-    public string StepStage { get; set; } = "None";
+    public required string StepStage { get; set; }
 
     /// <summary>
     /// Sanitized unique file name stored in the system.
     /// </summary>
-    public string FileName { get; set; } = string.Empty;
+    public required string FileName { get; set; }
 
     /// <summary>
     /// Original file name provided by the user during upload.
     /// </summary>
-    public string OriginalFileName { get; set; } = string.Empty;
+    public required string OriginalFileName { get; set; }
 
     /// <summary>
     /// Canonical URI / virtual path to the encrypted payload in Azure Blob Storage.
     /// Format: tenants/{tenantId}/projects/{projectId}/imports/{year}/{month}/{importFileId}.bin
     /// </summary>
-    public string BlobUri { get; set; } = string.Empty;
+    public required string BlobUri { get; set; }
 
     /// <summary>
     /// MIME content type of the uploaded file.
     /// </summary>
-    public string ContentType { get; set; } = "application/octet-stream";
+    public required string ContentType { get; set; }
 
     /// <summary>
     /// Size of the raw file in bytes.
@@ -61,17 +61,17 @@ public class ImportFileEntity : TenantAuditableEntity, IProjectScopedEntity, ISo
     /// <summary>
     /// Cryptographic SHA-256 hash of the unencrypted file content for tamper-detection and integrity verification.
     /// </summary>
-    public string Sha256Checksum { get; set; } = string.Empty;
+    public required string Sha256Checksum { get; set; }
 
     /// <summary>
     /// Format type of the imported file (Excel, Json, Xml, DelimitedText).
     /// </summary>
-    public ImportFileType FileType { get; set; }
+    public required ImportFileType FileType { get; set; }
 
     /// <summary>
     /// Current lifecycle processing state (Uploaded, Validating, ValidationSuccess, ValidationFailed, StagingSuccess, etc.).
     /// </summary>
-    public ImportStatus Status { get; set; } = ImportStatus.Uploaded;
+    public required ImportStatus Status { get; set; }
 
     /// <summary>
     /// Total number of data records/rows parsed from the file.

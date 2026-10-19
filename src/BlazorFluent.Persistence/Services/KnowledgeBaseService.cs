@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Knowledge;
 using BlazorFluent.Core.Dtos;
@@ -207,6 +207,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             {
                 article.Reviewers.Add(new KnowledgeArticleReviewerEntity
                 {
+                    ArticleId = article.Id,
                     UserId = user.Id.ToString(),
                     UserEmail = user.Email,
                     UserName = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Email,

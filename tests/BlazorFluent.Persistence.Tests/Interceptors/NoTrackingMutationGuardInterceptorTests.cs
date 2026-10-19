@@ -53,8 +53,12 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
             {
                 Id = taskId,
                 TenantId = "tenant_x",
+                Level = TaskLevel.Project,
                 Title = "Original Title",
-                //TaskNumber = "TSK-001"
+                Priority = TaskPriority.Medium,
+                Status = TaskStatus.Open,
+                StartDate = DateTime.UtcNow,
+                DueDate = DateTime.UtcNow.AddDays(7)
             });
             await setup.SaveChangesAsync();
         }

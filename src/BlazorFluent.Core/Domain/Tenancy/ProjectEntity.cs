@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tenancy;
@@ -10,11 +10,11 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// </summary>
 public class ProjectEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
-    public string ShortCode { get; set; } = string.Empty;
+    public required string ShortCode { get; set; }
 
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     public string? Location { get; set; }
 
@@ -24,9 +24,9 @@ public class ProjectEntity : TenantAuditableEntity, ISoftDeletableEntity
 
     public string? ScopeSummary { get; set; }
 
-    public ProjectStatus Status { get; set; } = ProjectStatus.New;
+    public required ProjectStatus Status { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 
     /// <summary>
     /// Dedicated Microsoft Teams incoming webhook URL for project-specific notifications and daily task digests.

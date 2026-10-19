@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos.Response;
@@ -62,14 +62,16 @@ public class TaskProcess : IFileProcessor
                     Id = Guid.CreateVersion7(),
                     TenantId = file.TenantId,
                     ProjectId = file.ProjectId,
+                    Level = TaskLevel.Project,
                     Title = staged.Title,
                     Description = staged.Description,
                     Priority = priority,
                     Status = status,
+                    StartDate = DateTime.UtcNow,
                     DueDate = staged.DueDate ?? DateTime.UtcNow.AddDays(7),
                     ReporterEmail = !string.IsNullOrWhiteSpace(file.CreatedBy) ? file.CreatedBy : "import-batch",
-                    AssigneeEmails = staged.AssigneeEmails ?? string.Empty,
-                    Labels = staged.Labels ?? string.Empty
+                    AssigneeEmails = staged.AssigneeEmails,
+                    Labels = staged.Labels
                 };
 
                 liveTasks.Add(liveTask);

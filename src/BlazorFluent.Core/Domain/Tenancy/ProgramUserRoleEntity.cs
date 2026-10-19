@@ -14,21 +14,21 @@ public class ProgramUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// <summary>
     /// ID of the program to which this role assignment belongs.
     /// </summary>
-    public Guid ProgramId { get; set; }
+    public required Guid ProgramId { get; set; }
 
     /// <summary>
     /// User identifier string (e.g. email or username).
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
+    public required string UserId { get; set; }
 
-    public string UserEmail { get; set; } = string.Empty;
+    public required string UserEmail { get; set; }
 
-    public string UserName { get; set; } = string.Empty;
+    public required string UserName { get; set; }
 
     /// <summary>
     /// Governance role: ProgramAdmin or ProgramMember.
     /// </summary>
-    public ProgramRole Role { get; set; } = ProgramRole.ProgramMember;
+    public required ProgramRole Role { get; set; }
 
     /// <summary>
     /// Optional foreign key to UserEntity.

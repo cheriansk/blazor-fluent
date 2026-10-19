@@ -54,8 +54,8 @@ public class TenantQueryFilterTests : IDisposable
         using (var seedContext = CreateContext("tenant_alpha", isHost: true))
         {
             seedContext.Projects.AddRange(
-                new ProjectEntity { Id = Guid.NewGuid(), TenantId = "tenant_alpha", Name = "Alpha 1", ShortCode = "A1" },
-                new ProjectEntity { Id = Guid.NewGuid(), TenantId = "tenant_beta", Name = "Beta 1", ShortCode = "B1" }
+                new ProjectEntity { Id = Guid.NewGuid(), TenantId = "tenant_alpha", Name = "Alpha 1", ShortCode = "A1", Status = ProjectStatus.Active },
+                new ProjectEntity { Id = Guid.NewGuid(), TenantId = "tenant_beta", Name = "Beta 1", ShortCode = "B1", Status = ProjectStatus.Active }
             );
             await seedContext.SaveChangesAsync();
         }

@@ -12,38 +12,38 @@ public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity
     /// <summary>
     /// Foreign key to the parent <see cref="UserTaskEntity"/>.
     /// </summary>
-    public Guid TaskId { get; set; }
+    public required Guid TaskId { get; set; }
 
     /// <summary>
     /// ID of the project to which this task comment belongs.
     /// Guarded by ProjectSecurityInterceptor and compound query scoping.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// User identifier of the comment author.
     /// </summary>
-    public string AuthorUserId { get; set; } = string.Empty;
+    public required string AuthorUserId { get; set; }
 
     /// <summary>
     /// Display name of the author at the time of posting.
     /// </summary>
-    public string AuthorName { get; set; } = string.Empty;
+    public required string AuthorName { get; set; }
 
     /// <summary>
     /// Email of the author for display and avatar resolution.
     /// </summary>
-    public string AuthorEmail { get; set; } = string.Empty;
+    public required string AuthorEmail { get; set; }
 
     /// <summary>
     /// Body text of the comment (Markdown or plain text).
     /// </summary>
-    public string CommentText { get; set; } = string.Empty;
+    public required string CommentText { get; set; }
 
     /// <summary>
     /// Exact UTC timestamp when the comment was posted.
     /// </summary>
-    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime CreatedAtUtc { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
