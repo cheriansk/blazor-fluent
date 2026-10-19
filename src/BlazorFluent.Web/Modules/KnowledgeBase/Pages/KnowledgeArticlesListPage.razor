@@ -1,7 +1,8 @@
-﻿@page "/knowledge"
+@page "/knowledge"
 @rendermode InteractiveServer
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+@using BlazorFluent.Shared.Attributes
+@using BlazorFluent.Shared.DataListTypes
+@attribute [RequiredClearance(ProjectRole.ReadOnly)]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Dtos

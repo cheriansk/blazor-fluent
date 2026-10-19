@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
@@ -245,6 +245,11 @@
                         Logger.LogWarning("Session restoration rejected: {Error}", rehydrateResult.Error);
                         // Session revoked or invalid: clear storage
                         await SessionStorage.DeleteAsync("app_session");
+                        if (!IsAnonymousPage)
+                        {
+                            NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(rehydrateResult.Error ?? "Account access denied.")}", replace: true);
+                            return;
+                        }
                     }
                 }
             }

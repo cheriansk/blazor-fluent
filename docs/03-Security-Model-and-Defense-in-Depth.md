@@ -145,45 +145,120 @@ sequenceDiagram
     Web-->>User: Initialize Blazor Circuit with Authenticated Claims
 ```
 
+### User Account Validity & Mandatory Role Provisioning Gate
+```mermaid
+flowchart TD
+    UserArrival["User Requests Any Authenticated Page (Home, Settings, Projects)"] --> CheckAuth["Is Authenticated?"]
+    CheckAuth -->|No| RedirLogin["Redirect to /login"]
+    CheckAuth -->|Yes| CheckActive{"IsActive == true?"}
+    
+    CheckActive -->|No| Lockout["Evict Circuit -> Redirect to /auth-error?reason=deactivated"]
+    CheckActive -->|Yes| CheckDates{"now between StartDateUtc & EndDateUtc?"}
+    
+    CheckDates -->|Expired / Not Started| LockoutDate["Evict Circuit -> Redirect to /auth-error?reason=expired"]
+    CheckDates -->|Valid Window| CheckHMAC{"HMAC Signature Valid?"}
+    
+    CheckHMAC -->|Tampered| LockoutTamper["Evict Circuit -> Log Critical Tamper Security Alert"]
+    CheckHMAC -->|Valid| CheckRootAdmin{"Is Root Admin?"}
+    
+    CheckRootAdmin -->|Yes| FullAccess["Grant Access (Governs Entire Host)"]
+    CheckRootAdmin -->|No| CheckMinRoles{"Has >= 1 Project Role OR >= 1 Program Role?"}
+    
+    CheckMinRoles -->|No Roles Assigned| Unprovisioned["Lockout -> Redirect to /auth-error?reason=no_assigned_roles"]
+    CheckMinRoles -->|Yes (>= 1 Role)| AllowEntry["Allow Entry to Base App (Home / Personal Settings)"]
+    
+    AllowEntry --> RouteGate["Route Clearance Gate (Checks RequiredClearance Tier)"]
+```
+
 ---
 
-## 🚦 5. Project-Level 3-Tier Role Authorization & Write Guards
+## 🚦 5. Hierarchical Team Clearance & Zero-Trust Governance
 
-BlazorFluent enforces authorization through a 3-tier model combining compile-time page contracts with service and database write guards:
+BlazorFluent enforces authorization through a pure **Zero-Trust Hierarchical Team Clearance Model** with compile-time route verification, ambient component gating, and service mutation guards:
 
 ```mermaid
 flowchart TD
-    User([User Request / Navigation]) --> BasePage[AuthorizedPageComponentBase]
-    
-    subgraph UI ["Tier 1: Page Level Contract"]
-        BasePage --> Eval[Base evaluates CanVisit & CanEdit]
-        Eval -->|CanVisit = false| DeniedCard[Fluent UI V5 Access Denied Card]
-        Eval -->|CanVisit = true, CanEdit = false| ReadOnlyUI[Render Page in Read-Only Mode\nInputs Disabled, Save Buttons Hidden]
-        Eval -->|CanVisit = true, CanEdit = true| FullUI[Render Page in Full Read/Write Mode]
+    subgraph Layer1["1. Compile-Time Governance"]
+        TG["Roslyn Analyzer TG005"] -->|Enforces @attribute on @page| RazorBuild["dotnet build Verification"]
     end
 
-    subgraph Actions ["Tier 2: Dual-Gate Action Protection (Writes)"]
-        FullUI -->|Click Save/Delete| SvcCall[Service: UpdateProjectDataAsync]
-        SvcCall --> Gate1[Gate 1: EnsureCanEditAsync]
-        Gate1 -->|Unauthorized| SecAudit1[audit.AuditRecords: Security Alert & Throw]
-        Gate1 -->|Authorized| EfWrite[EF Core: SaveChangesAsync]
-        EfWrite --> Gate2[Gate 2: ProjectSecurityInterceptor]
-        Gate2 -->|Fail-Closed Check| PostgreSql[(PostgreSQL)]
+    subgraph Layer2["2. Presentation Layer (Blazor Circuit)"]
+        Routes["Routes.razor / AuthorizeRouteView"] -->|If Not Authenticated| RedirLogin["Redirect to /login"]
+        Routes -->|If Authenticated| PageBase["AuthorizedPageComponentBase"]
+        PageBase -->|Check (int)role >= (int)viewTier| ViewAccess{"Has View Clearance?"}
+        ViewAccess -->|No| AccessDenied["403 Access Denied Card"]
+        ViewAccess -->|Yes| RenderPage["Render Page"]
+        RenderPage --> SubGates["<ClearanceGate MinTier=...>"]
     end
 
-    subgraph Queries ["Tier 3: Query Level Filtration (Reads)"]
-        ReadOnlyUI & FullUI --> FetchData[Fetch Project Entities]
-        FetchData --> CheckVisit[Service: EnsureCanVisitAsync]
-        CheckVisit --> FilterQuery[Query: .WhereAuthorizedProject]
-        FilterQuery --> PostgreSql
+    subgraph Layer3["3. API Transport Layer"]
+        ApiReq["HTTP API Request"] --> ApiFilter[".RequireClearance(minTier)"]
+        ApiFilter -->|Role < minTier| Res403["403 Forbidden Response"]
+        ApiFilter -->|Role >= minTier| Endpoints["Minimal API Route Handler"]
+    end
+
+    subgraph Layer4["4. Domain Service Layer"]
+        Endpoints --> SvcCall["Service Method Mutation"]
+        RenderPage --> SvcCall
+        SvcCall --> EnsureClearance["EnsureHasProjectClearanceAsync(projectId, requiredTier)"]
+        EnsureClearance -->|Unauthorized| ThrowsSecurity["Throw SecurityException"]
+        EnsureClearance -->|Authorized| DbExecute["Execute EF Core Mutation"]
+    end
+
+    subgraph Layer5["5. Persistence & Multi-Tenancy"]
+        DbExecute --> GQF["EF Core Global Query Filters (TenantId)"]
+        GQF --> Interceptor["AuditableEntityInterceptor (Tenant Immutability & Seals)"]
+        Interceptor --> Postgres[("PostgreSQL Database")]
     end
 ```
 
-### Discrete Project Roles (`ProjectRole`):
-- `ReadOnly = 1`: View-only access to project boards and deliverables.
-- `QA = 2`: Read/write access for test and validation scenarios.
-- `Dev = 3`: Full read/write access for feature development.
-- `Admin = 4`: Full project control and team role management.
+### Symmetrical Cumulative Tiers (Program & Project)
+Both scopes share identical spaced numeric rankings:
+
+| Numeric Tier | Project Role (`ProjectRole`) | Program Role (`ProgramRole`) | UI Display Label | Cumulative Capability |
+| :---: | :--- | :--- | :--- | :--- |
+| **10** | `ReadOnly` | `ReadOnly` | ReadOnly Team | View-only inspection of dashboards, tasks, milestones |
+| **20** | `Contribute` | `Contribute` | Contribute Team | Standard read/write to tasks, deliverables, documentation |
+| **30** | `Lead` | `Lead` | Lead Team | Sprint design, approvals, release coordination, workflows |
+| **40** | `ElevatedLead` | `ElevatedLead` | ElevatedLead Team | Cross-functional architecture, security review, and risk |
+| **50** | `PMO` | `PMO` | PMO Team | Financials, contract milestones, batch jobs, executive review |
+| **100**| `Admin` | `Admin` | Admin Team | Full administrative, membership, and security management |
+
+### The "ReadOnly Floor" Program Resolution Rule
+```mermaid
+flowchart TD
+    Req["User Requests Project Resource (ProjectId)"] --> CheckExplicit["Check Explicit ProjectUserRole"]
+    CheckExplicit -->|Found Explicit Role e.g. Contribute=20| HasExplicit["EffectiveRole = Explicit Role (Contribute)"]
+    CheckExplicit -->|No Explicit Role| CheckProgram["Check Program Membership for Parent Program"]
+    
+    CheckProgram -->|User has any Program Role| GrantBaseline["EffectiveRole = ReadOnly (10)"]
+    CheckProgram -->|User NOT in Program| Deny["EffectiveRole = null (Access Denied)"]
+    
+    HasExplicit --> Eval["Evaluate Clearance: (int)EffectiveRole >= (int)RequiredTier"]
+    GrantBaseline --> Eval
+    
+    Eval -->|True| Allow["Access Granted (View or Edit per Tier)"]
+    Eval -->|False| LogDenial["Log Zero-PII Security Warning & Deny Access"]
+```
+
+### Strict Zero-PII Security Audit Logging
+Whenever a user with insufficient privileges attempts to access a restricted resource, the system logs a **Warning-level Security Audit Record** without personal names or email addresses:
+
+```json
+{
+  "timestampUtc": "2026-10-18T20:30:00Z",
+  "eventType": "Security",
+  "severity": "Warning",
+  "action": "ClearanceDenied",
+  "userId": "d3b07384-d113-4e8a-bf94-d4b68e7c102a",
+  "tenantId": "c4a08193-e221-4f9b-a012-e5c79f8b213b",
+  "projectId": "e2f1a923-b184-4672-9112-a1b2c3d4e5f6",
+  "resource": "/workflows",
+  "requiredTier": "Lead (30)",
+  "actualTier": "Contribute (20)",
+  "details": "Insufficient clearance tier for requested resource."
+}
+```
 
 ---
 

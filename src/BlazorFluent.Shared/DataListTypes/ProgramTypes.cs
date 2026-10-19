@@ -40,11 +40,39 @@ public enum TenantRole
 /// </summary>
 public enum ProgramRole
 {
-    [Display(Name = "Program Admin", Description = "Full control over the assigned program and all member projects under it")]
-    ProgramAdmin = 1,
+    [Display(Name = "ReadOnly Team", Description = "View-only visibility into program delivery scorecard and member projects")]
+    ReadOnly = 10,
 
-    [Display(Name = "Program Member", Description = "Read-only visibility into program delivery scorecard and member projects")]
-    ProgramMember = 2
+    [Display(Name = "Contribute Team", Description = "Contribute to program-level deliverables and cross-project documentation")]
+    Contribute = 20,
+
+    [Display(Name = "Lead Team", Description = "Program delivery design, sprint alignment, and release planning")]
+    Lead = 30,
+
+    [Display(Name = "ElevatedLead Team", Description = "Cross-project architecture, security review, and risk governance")]
+    ElevatedLead = 40,
+
+    [Display(Name = "PMO Team", Description = "Program Management Office: program financials, contracts, and cross-project dependencies")]
+    PMO = 50,
+
+    [Display(Name = "Admin Team", Description = "Full governance and administrative control over the program")]
+    Admin = 100,
+
+    // Backward-compatibility aliases
+    ProgramAdmin = Admin,
+    ProgramMember = ReadOnly
+}
+
+public static class ProgramRoleExtensions
+{
+    public static bool CanWrite(this ProgramRole role) =>
+        (int)role >= (int)ProgramRole.Contribute;
+
+    public static bool CanManageAccess(this ProgramRole role) =>
+        (int)role >= (int)ProgramRole.Admin;
+
+    public static bool Satisfies(this ProgramRole role, ProgramRole requiredRole) =>
+        (int)role >= (int)requiredRole;
 }
 
 /// <summary>

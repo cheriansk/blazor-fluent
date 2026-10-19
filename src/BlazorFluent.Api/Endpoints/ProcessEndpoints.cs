@@ -15,6 +15,7 @@ using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Shared.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Hybrid;
+using BlazorFluent.Api.Security;
 
 namespace BlazorFluent.Api.Endpoints;
 
@@ -287,7 +288,8 @@ public static class ProcessEndpoints
             }
         })
         .WithName("EvaluateWorkflowTransition")
-        .WithSummary("Evaluate state transition validity against state machine rules");
+        .WithSummary("Evaluate state transition validity against state machine rules")
+        .RequireClearance(ProjectRole.Lead);
 
         // 6. Enterprise Calendar Schedule Endpoint
         group.MapPost("/calendar/schedule", (

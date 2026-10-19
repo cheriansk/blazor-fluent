@@ -1,6 +1,7 @@
-﻿@page "/workflows"
-@attribute [Authorize]
+@page "/workflows"
+@attribute [RequiredClearance(ProjectRole.Lead)]
 @rendermode InteractiveServer
+@using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes

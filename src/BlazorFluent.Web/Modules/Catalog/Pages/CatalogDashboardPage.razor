@@ -1,6 +1,8 @@
 @page "/catalog"
-@attribute [Authorize]
+@attribute [RequiredClearance(ProjectRole.ReadOnly)]
 @rendermode InteractiveServer
+@using BlazorFluent.Shared.Attributes
+@using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.Domain.Catalog
 @using BlazorFluent.Jobs.Abstractions

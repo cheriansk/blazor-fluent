@@ -388,7 +388,7 @@
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "978d8f351e1bd0bcdfb2a845a29ca5ef4d25e45a315f8dbdb012333274594d51",
+        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "4cb02fdfe06d6b99a9bdc49851d075861146cbdfb961158bc718a66a2f75118b",
         "ProcessEndpoints.ValidateEnvelope(EncryptedEnvelopeDto?)": "221b3c8805f29db28e4968ec063b19b7682d2847843cbc174889bac9e31ea58e",
         "ProcessEndpoints.ResolveEncryptionKey(ClaimsPrincipal, IConfiguration, ILogger)": "0b059e6881573514a81efb11cd000565e24fbd986b4151b254eaa28090abc193",
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)": "a9b51ed79515f7fa746e94e77a95661829dd21600480cc9ff13812d0d140bcc1"
@@ -419,6 +419,16 @@
         "Program.Program()"
       ],
       "MemberSyntaxHashes": {}
+    },
+    "Api/Security/EndpointClearanceExtensions.cs": {
+      "RelativePath": "Api/Security/EndpointClearanceExtensions.cs",
+      "KnownMembers": [
+        "RequireClearance",
+        "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRole)"
+      ],
+      "MemberSyntaxHashes": {
+        "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRole)": "64787072c8fe3b31a7d9a407a2e7a461a0adf9104380fbdf07c8ae41101c0623"
+      }
     },
     "AppHost/Program.cs": {
       "RelativePath": "AppHost/Program.cs",
@@ -962,7 +972,15 @@
         "CanAccessProjectAsync",
         "IHierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)",
         "GetAccessibleProgramIdsAsync",
-        "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)"
+        "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)",
+        "GetEffectiveProjectRoleAsync",
+        "IHierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)",
+        "HasProjectClearanceAsync",
+        "IHierarchyAuthorizationService.HasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRole, string?, CancellationToken)",
+        "EnsureHasProjectClearanceAsync",
+        "IHierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRole, string?, CancellationToken)",
+        "IsUserActiveAndProvisionedAsync",
+        "IHierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "IHierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)": "9190b5a3df94bbd2c16ee63a38b5dcccb25a34c052896c2c24c1e2ee4eff14ad",
@@ -973,7 +991,11 @@
         "IHierarchyAuthorizationService.CanAccessTenantAsync(string, string, CancellationToken)": "886e9cd4aa764e7883be3ab7f2f7f3bbe1bf46365b3153ae8ce46a7bf890b3e1",
         "IHierarchyAuthorizationService.CanAccessProgramAsync(Guid, string, CancellationToken)": "00b4564ac3d2dc498ebff90d8fd5fb5f34bfe1628a43f697b7663643fab8e559",
         "IHierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)": "2822db47e20a999d1b9c9f6eb9e8ad0d3fa2eb8a9438aafc5efaeb1c0f9c483b",
-        "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "1e05470a9b115e8be609be31382fa7d6845a2b4b55e4709757acec341a3bbb5f"
+        "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "1e05470a9b115e8be609be31382fa7d6845a2b4b55e4709757acec341a3bbb5f",
+        "IHierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)": "cfb8871297722736e5575aef83d971597cdce2c1a659ff7259f7f1a526aa7257",
+        "IHierarchyAuthorizationService.HasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRole, string?, CancellationToken)": "757df2f9d5adeae026f63a35aec22ad1fc6f4e5d6d44ce42b61ee254dc54d268",
+        "IHierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRole, string?, CancellationToken)": "352b84d23d549c6cb92b90570889f906ecc0bc3f38f2c47af390be21b2735676",
+        "IHierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)": "1c49f0820512e909045903af58f2c584d4c920c1ef5004a5f390eb102859ac91"
       }
     },
     "Core/Contracts/IImpersonationService.cs": {
@@ -8505,6 +8527,14 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Security/AuthorizationPolicies.cs": {
+      "RelativePath": "Core/Security/AuthorizationPolicies.cs",
+      "KnownMembers": [
+        "HostAdminOnly",
+        "AuthorizationPolicies.HostAdminOnly"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Security/ITenantEncryptionService.cs": {
       "RelativePath": "Core/Security/ITenantEncryptionService.cs",
       "KnownMembers": [
@@ -10791,7 +10821,7 @@
         "ProjectUserRoleEntityConfiguration.ProjectUserRoleEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProjectUserRoleEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectUserRoleEntity\u003E)": "2cfef8e8c400a0cc06b75a12080bc0439e0c01a7891a0e64291a2f4365368695"
+        "ProjectUserRoleEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectUserRoleEntity\u003E)": "a18e8bf5c4ec2909fdfed664b17be958e9ef67af8d2bba64e7d932e4226f8018"
       }
     },
     "Persistence/Configurations/Tenancy/TenantEntityConfiguration.cs": {
@@ -11825,10 +11855,12 @@
         "HierarchyAuthorizationService._context",
         "_currentUser",
         "HierarchyAuthorizationService._currentUser",
+        "_auditService",
+        "HierarchyAuthorizationService._auditService",
         "_logger",
         "HierarchyAuthorizationService._logger",
         ".ctor",
-        "HierarchyAuthorizationService.HierarchyAuthorizationService(AppDbContext, ICurrentUser, ILogger\u003CHierarchyAuthorizationService\u003E)",
+        "HierarchyAuthorizationService.HierarchyAuthorizationService(AppDbContext, ICurrentUser, IAuditService, ILogger\u003CHierarchyAuthorizationService\u003E)",
         "IsTenantAdminAsync",
         "HierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)",
         "IsProgramAdminAsync",
@@ -11846,7 +11878,15 @@
         "CanAccessProjectAsync",
         "HierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)",
         "GetAccessibleProgramIdsAsync",
-        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)"
+        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)",
+        "GetEffectiveProjectRoleAsync",
+        "HierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)",
+        "HasProjectClearanceAsync",
+        "HierarchyAuthorizationService.HasProjectClearanceAsync(Guid, ProjectRole, string?, CancellationToken)",
+        "EnsureHasProjectClearanceAsync",
+        "HierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, ProjectRole, string?, CancellationToken)",
+        "IsUserActiveAndProvisionedAsync",
+        "HierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "HierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)": "b8f97b6d3bc1df0941a87ad283476b3622b9e40359a825d63fe148e682bad798",
@@ -11857,7 +11897,11 @@
         "HierarchyAuthorizationService.CanAccessTenantAsync(string, string, CancellationToken)": "fea447f434571884582a258b4449fc9d9e71c22629d556323e33e697a695547b",
         "HierarchyAuthorizationService.CanAccessProgramAsync(Guid, string, CancellationToken)": "617b16bf2c9456d4eae4e8d57f757bc5bf42e4c3414920f8a077902c1cff37de",
         "HierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)": "2c11bcd8ebae08ad279a611dc958104643cd48ae06a4c890b33f3be2e348f7f7",
-        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "fb07d5a277c0e25bd788326bd530968ce9061c4000c9bfff7f7ed4fb64a613d3"
+        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "fb07d5a277c0e25bd788326bd530968ce9061c4000c9bfff7f7ed4fb64a613d3",
+        "HierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)": "c347929d0e26673e6f968fabdaa978cd42cd60e7cc686bf4171ae04dcc96b22e",
+        "HierarchyAuthorizationService.HasProjectClearanceAsync(Guid, ProjectRole, string?, CancellationToken)": "a46b53458dae3843e63e8a60b33b543a59b96f415739fbf3310b6e5ceab2b60d",
+        "HierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, ProjectRole, string?, CancellationToken)": "b868b9728bad4bfd7565edcd181c6972d292090c2187b1eb20117c3f214b8736",
+        "HierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)": "326ccceef9cc31954055dbfc2e26374257b0d140a616db730eb88c955b6244c2"
       }
     },
     "Persistence/Services/ImpersonationService.cs": {
@@ -11955,8 +11999,8 @@
         "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "b1bf615f0366126eabeb6b9e92c61ff19098c877a0d0865fd921dc648c097019",
-        "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "f11f1c8efe35aa544cf5ab71cf0d47e873b7c78fcb7647343242ee5c789c8ae1",
+        "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "c1be462b0b07d204cc8a96b59254cc7a1fce328d21ab6841089c3a3406e11b23",
+        "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "247af0506506c7ecf1dc05edc36e7de2a718cb5a89a2bfbf10adcdf57e06fa67",
         "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E)": "deb574d56f221bd70d79b0c864a0cd6f38bc9f2946b92a4359161d147869b49f"
       }
     },
@@ -12991,6 +13035,27 @@
         "set_ErrorMessage",
         "ImportColumnAttribute.ErrorMessage.set",
         "ImportColumnAttribute.ImportColumnAttribute(string, bool, string?)"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Shared/Attributes/RequiredClearanceAttribute.cs": {
+      "RelativePath": "Shared/Attributes/RequiredClearanceAttribute.cs",
+      "KnownMembers": [
+        "\u003CViewTier\u003Ek__BackingField",
+        "RequiredClearanceAttribute.ViewTier.field",
+        "ViewTier",
+        "RequiredClearanceAttribute.ViewTier",
+        "get_ViewTier",
+        "RequiredClearanceAttribute.ViewTier.get",
+        "\u003CEditTier\u003Ek__BackingField",
+        "RequiredClearanceAttribute.EditTier.field",
+        "EditTier",
+        "RequiredClearanceAttribute.EditTier",
+        "get_EditTier",
+        "RequiredClearanceAttribute.EditTier.get",
+        ".ctor",
+        "RequiredClearanceAttribute.RequiredClearanceAttribute(ProjectRole)",
+        "RequiredClearanceAttribute.RequiredClearanceAttribute(ProjectRole, ProjectRole)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -15116,11 +15181,29 @@
         "TenantMember",
         "TenantRole.TenantMember",
         "TenantRole.TenantRole()",
+        "ReadOnly",
+        "ProgramRole.ReadOnly",
+        "Contribute",
+        "ProgramRole.Contribute",
+        "Lead",
+        "ProgramRole.Lead",
+        "ElevatedLead",
+        "ProgramRole.ElevatedLead",
+        "PMO",
+        "ProgramRole.PMO",
+        "Admin",
+        "ProgramRole.Admin",
         "ProgramAdmin",
         "ProgramRole.ProgramAdmin",
         "ProgramMember",
         "ProgramRole.ProgramMember",
         "ProgramRole.ProgramRole()",
+        "CanWrite",
+        "ProgramRoleExtensions.CanWrite(ProgramRole)",
+        "CanManageAccess",
+        "ProgramRoleExtensions.CanManageAccess(ProgramRole)",
+        "Satisfies",
+        "ProgramRoleExtensions.Satisfies(ProgramRole, ProgramRole)",
         "OnTrack",
         "ProgramHealthRating.OnTrack",
         "ProgramHealthRating.AtRisk",
@@ -15362,7 +15445,11 @@
         "CrossProjectDependencyDto.IsOverdue.get",
         "CrossProjectDependencyDto.CrossProjectDependencyDto()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "ProgramRoleExtensions.CanWrite(ProgramRole)": "4cb8cfca1b1ced14a4ab6ae07b35501f2001b03c8d3280793a4a88676e4eefd1",
+        "ProgramRoleExtensions.CanManageAccess(ProgramRole)": "e5ba1cea82aae82b40d02d898bf02d6dc996110284d587f94a2ad17747c82ab4",
+        "ProgramRoleExtensions.Satisfies(ProgramRole, ProgramRole)": "f905f93e527080dbd148e9cb327f5eeb823b9e4bc79757df0db1a631f715aa60"
+      }
     },
     "Shared/DataListTypes/ProjectHealthTypes.cs": {
       "RelativePath": "Shared/DataListTypes/ProjectHealthTypes.cs",
@@ -15728,12 +15815,20 @@
       "KnownMembers": [
         "ReadOnly",
         "ProjectRole.ReadOnly",
-        "QA",
-        "ProjectRole.QA",
-        "Dev",
-        "ProjectRole.Dev",
+        "Contribute",
+        "ProjectRole.Contribute",
+        "Lead",
+        "ProjectRole.Lead",
+        "ElevatedLead",
+        "ProjectRole.ElevatedLead",
+        "PMO",
+        "ProjectRole.PMO",
         "Admin",
         "ProjectRole.Admin",
+        "Dev",
+        "ProjectRole.Dev",
+        "QA",
+        "ProjectRole.QA",
         ".ctor",
         "ProjectRole.ProjectRole()",
         "Categories",
@@ -15758,8 +15853,8 @@
         "ProjectRoleExtensions.Satisfies(ProjectRole, ProjectRole)"
       ],
       "MemberSyntaxHashes": {
-        "ProjectRoleExtensions.CanWrite(ProjectRole)": "19099d6607a55d8ef4b053ef893f4c5c8f7ef09f3a54c42ffebfc756398a6c7e",
-        "ProjectRoleExtensions.CanManageAccess(ProjectRole)": "cc9257fd6facf0c326ad63614bdd067402a9531981b4533fa70fc96d7d015d23",
+        "ProjectRoleExtensions.CanWrite(ProjectRole)": "0d2b489ba5d9e1bc275b376b8626ac118af39a49cda300fee5c9995c3029f990",
+        "ProjectRoleExtensions.CanManageAccess(ProjectRole)": "1c1804bd3a08d28f7a6e2d7a351a7580c770a16bff5360e3f79e0e9657781fa5",
         "ProjectRoleExtensions.Satisfies(ProjectRole, ProjectRole)": "5d46ddd712b3967b7092bb8399ca29d113a6922f550af777672e0a42e90138a1"
       }
     },
@@ -16792,6 +16887,14 @@
         "AuthorizedPageComponentBase.ProjectAuth.get",
         "set_ProjectAuth",
         "AuthorizedPageComponentBase.ProjectAuth.set",
+        "\u003CHierarchyAuth\u003Ek__BackingField",
+        "AuthorizedPageComponentBase.HierarchyAuth.field",
+        "HierarchyAuth",
+        "AuthorizedPageComponentBase.HierarchyAuth",
+        "get_HierarchyAuth",
+        "AuthorizedPageComponentBase.HierarchyAuth.get",
+        "set_HierarchyAuth",
+        "AuthorizedPageComponentBase.HierarchyAuth.set",
         "\u003CTenantContext\u003Ek__BackingField",
         "AuthorizedPageComponentBase.TenantContext.field",
         "TenantContext",
@@ -16816,6 +16919,22 @@
         "AuthorizedPageComponentBase.NavigationManager.get",
         "set_NavigationManager",
         "AuthorizedPageComponentBase.NavigationManager.set",
+        "\u003CLogger\u003Ek__BackingField",
+        "AuthorizedPageComponentBase.Logger.field",
+        "Logger",
+        "AuthorizedPageComponentBase.Logger",
+        "get_Logger",
+        "AuthorizedPageComponentBase.Logger.get",
+        "set_Logger",
+        "AuthorizedPageComponentBase.Logger.set",
+        "\u003CAuditService\u003Ek__BackingField",
+        "AuthorizedPageComponentBase.AuditService.field",
+        "AuditService",
+        "AuthorizedPageComponentBase.AuditService",
+        "get_AuditService",
+        "AuthorizedPageComponentBase.AuditService.get",
+        "set_AuditService",
+        "AuthorizedPageComponentBase.AuditService.set",
         "\u003CProjectId\u003Ek__BackingField",
         "AuthorizedPageComponentBase.ProjectId.field",
         "ProjectId",
@@ -16875,7 +16994,7 @@
       ],
       "MemberSyntaxHashes": {
         "AuthorizedPageComponentBase.OnParametersSetAsync()": "95bb073a8344bb6a164bb13966eaf3aeb7c3a7782d4e8bbd66f93e4fafa77dd9",
-        "AuthorizedPageComponentBase.EvaluatePermissionsAsync()": "dd1b3eb9acd10c2ab7e5227e5346eca5bd4e453667cd2ed48a1dafa290a12f81",
+        "AuthorizedPageComponentBase.EvaluatePermissionsAsync()": "bdcaadec9af871e4b61fc8740c4c510ba3c9150c758fe6099955810ce0c140d2",
         "AuthorizedPageComponentBase.OnPermissionsEvaluatedAsync()": "ef49d2334a54f100ef0f12fff669542a7a45c09f673d2b2580961f021d360545"
       }
     },
@@ -17332,6 +17451,13 @@
         "$Markup": "a8ce771f0dbd458fe867c21f43cd2f7b6f3a5d653653eb1c2e87f2721d269bb6"
       }
     },
+    "Web/Components/Common/ClearanceGate.razor": {
+      "RelativePath": "Web/Components/Common/ClearanceGate.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "93c482cd6e90e4c02cbc3340d60ecf1162d9de1d3a90c6a0d59e444b1c6c3b80"
+      }
+    },
     "Web/Components/Common/ConfirmDialogModal.razor": {
       "RelativePath": "Web/Components/Common/ConfirmDialogModal.razor",
       "KnownMembers": [],
@@ -17483,7 +17609,7 @@
       "RelativePath": "Web/Components/Layout/MainLayout.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "003f505419ea8581029e10086526640bcc3e58c25e0005b917ee98c63555285b"
+        "$Markup": "a8c2d46156c73ceb55c3e78ae5a872827fce03b25b1232c20d04af3176e81104"
       }
     },
     "Web/Components/Layout/NavMenuComp.razor": {
@@ -17609,7 +17735,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsProjectsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "8aaf95b240b4c3d1735f3e07ea3bb85a71ec6b8f5b8a675f14c7326b02380b54"
+        "$Markup": "c779eb2626621495c6fd9926be4b63877b21606f296f51b3b987931ebc2afa0f"
       }
     },
     "Web/Components/Pages/Settings/SettingsSessionsTab.razor": {
@@ -17651,14 +17777,14 @@
       "RelativePath": "Web/Modules/Catalog/Pages/CatalogDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "06de3c9213ff29c46c31e3ce45bbbebbc83878bd949d052f4184ddb51ac9237e"
+        "$Markup": "56c4ead856c4237a43171c8d6045135c554886639c8b19b25777b68047cf4d7f"
       }
     },
     "Web/Modules/Events/Pages/EventTrackerDashboardPage.razor": {
       "RelativePath": "Web/Modules/Events/Pages/EventTrackerDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "5f6d6da010fd36477fe2e72596a723609a91c4241d282000d20dba81b0ce9b7c"
+        "$Markup": "d5e10166eb0ed3fed3303e491d24d312207eccb9c7ace21e5b40aed882626d12"
       }
     },
     "Web/Modules/Imports/Components/ImportErrorsModal.razor": {
@@ -17672,77 +17798,77 @@
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "508b873d9785270ac4b4dd1faa56b4d95f0d04b0f5a2cd431985a3165f15a898"
+        "$Markup": "dc7ff34fbc71921f270c84d50eb9aff25c75d139e9a691327ab7f6bf7fe264d5"
       }
     },
     "Jobs/Pages/JobsDashboardPage.razor": {
       "RelativePath": "Jobs/Pages/JobsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b2546526165329bcf9b5b311db80e71abbc7c7f0a0a9f4d833ca4bbc68d9f977"
+        "$Markup": "ae1a6406a1c756620ee2df5decfa5aeeb6df0e393f51ec0441e7035546e204aa"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor": {
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "908b5a83756284cdcd917d1ffe684eecf7f1380f240ba2297b3e9b4f1c6fa84f"
+        "$Markup": "3ba4217a5cb6b0f97f90ee15322f8a744088aec428ba5f406d54c54e9e4ffb0a"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor": {
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b0ee4e3e1f06ef2456cab2fdfb75aa76ef3a26a5f50fb05c33b37745a4ef83a0"
+        "$Markup": "666576fc03d716f57f927b13a05aab03861de556c7bdeace2f05e72ab0096dd3"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleViewPage.razor": {
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleViewPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "108cc8cbe0063d23c65308ca417572067aef40d31e2a94504978aab2c67b2845"
+        "$Markup": "ac28ae3a705384ed2e9c33832df60a8ea7a8134ffce4fa10aaf7a567774e3659"
       }
     },
     "Web/Modules/Tenancy/Pages/ActiveSessionsDashboardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ActiveSessionsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "5109f018d433ad983b66c510eaa36ae19a8624f1d5480e51c67d248c2eb697b9"
+        "$Markup": "a843be2f02f0bd684c66a976f0b4f0dd2cad96bf74d543daf9868663b8855677"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "19485c4f58cc070356903d303963faf5da7c3c98b064d1b92d237d7cb57dc523"
+        "$Markup": "3fd0a968703ac7aaa0838ca0c4d07e754f0f068393077959298be509bdfcce6f"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectsDashboardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "836f304e805599c83ef26187756553160c7acfcb9f8db231e9f4b71c38ef5dbf"
+        "$Markup": "13d663d1c3766669e4ea350e280cc15e2ab139154fb1229666f256a72e1752be"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectTasksBoardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectTasksBoardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "7e94046f89bf2614dbebfa4f972ead651163a55fb61dd198496e796446280c5a"
+        "$Markup": "8c7c7d9aaaa27d8b22ddab37aa000963b42ad476497811735eeeefebb1dadc65"
       }
     },
     "Web/Modules/Tenancy/Pages/TenantManagementPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/TenantManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d80c267b2b28569eeac02a83b2b7f2a47b547c100d861bbe9154d128d1ebff66"
+        "$Markup": "13b3be125ea0da3d94966bc337160148643f95fc4c22db0d6385c8d110329bad"
       }
     },
     "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "c445f614aba5c27312289a448d95f60e01a2b13dab83c129b21d1e1073235fcc"
+        "$Markup": "e4cbc828fd96882ec0c94777e9ea67f9ee7d35d0a3554e96ceec10017ab0099c"
       }
     }
   }

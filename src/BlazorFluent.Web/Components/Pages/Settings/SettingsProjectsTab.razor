@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Components.Common
+@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Identity
@@ -438,8 +438,10 @@
                                                               ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
                                                               Style="width: 100%;">
                                                     <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.QA)">🧪 QA</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.Dev)">💻 Dev</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.Contribute)">💻 Contribute</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.Lead)">⭐ Lead</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.ElevatedLead)">🛡️ ElevatedLead</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRole.PMO)">📊 PMO</FluentOption>
                                                     <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
                                                 </FluentSelect>
                                             </div>
@@ -551,14 +553,23 @@
                                             case ProjectRole.Admin:
                                                 <FluentBadge Appearance="BadgeAppearance.Filled">👑 Admin</FluentBadge>
                                                 break;
-                                            case ProjectRole.Dev:
-                                                <FluentBadge Appearance="BadgeAppearance.Tint">💻 Dev</FluentBadge>
+                                            case ProjectRole.PMO:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">📊 PMO</FluentBadge>
                                                 break;
-                                            case ProjectRole.QA:
-                                                <FluentBadge Appearance="BadgeAppearance.Tint">🧪 QA</FluentBadge>
+                                            case ProjectRole.ElevatedLead:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">🛡️ ElevatedLead</FluentBadge>
+                                                break;
+                                            case ProjectRole.Lead:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">⭐ Lead</FluentBadge>
+                                                break;
+                                            case ProjectRole.Contribute:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">💻 Contribute</FluentBadge>
                                                 break;
                                             case ProjectRole.ReadOnly:
                                                 <FluentBadge Appearance="BadgeAppearance.Tint">👁️ ReadOnly</FluentBadge>
+                                                break;
+                                            default:
+                                                <FluentBadge Appearance="BadgeAppearance.Tint">@context.Role.ToString()</FluentBadge>
                                                 break;
                                         }
                                     </TemplateColumn>
@@ -640,7 +651,7 @@
     private string _formUserName = string.Empty;
     private string _formEmail = string.Empty;
     private UserType _formUserType = UserType.CompanyUser;
-    private ProjectRole _formRole = ProjectRole.Dev;
+    private ProjectRole _formRole = ProjectRole.Contribute;
 
     // Impersonation state
     private bool _showImpersonateModal;
@@ -945,7 +956,7 @@
             _formEmail = string.Empty;
             _formUserType = UserType.CompanyUser;
         }
-        _formRole = ProjectRole.Dev;
+        _formRole = ProjectRole.Contribute;
         _showAssignRoleModal = true;
     }
 

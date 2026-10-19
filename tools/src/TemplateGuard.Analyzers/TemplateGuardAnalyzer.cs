@@ -59,13 +59,25 @@ namespace TemplateGuard.Analyzers
             description: "Direct modifications to locked template Razor files must be audited via [BaseModification].",
             helpLinkUri: HelpBaseUrl + "#tg004");
 
+        public static readonly DiagnosticDescriptor RuleTg005 = new(
+            id: "TG005",
+            title: "Razor page route missing explicit clearance or authorization attribute",
+            messageFormat: "Page component '{0}' with route '{1}' must declare an explicit security attribute ([RequiredClearance], [Authorize], or whitelisted [AllowAnonymous]). Route '{1}' is prohibited from using [AllowAnonymous].",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "All @page routes must explicitly declare their required clearance or authorization tier. Anonymous access is strictly limited to whitelisted utility pages.",
+            helpLinkUri: HelpBaseUrl + "#tg005");
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(RuleTg001, RuleTg002, RuleTg003, RuleTg004);
+            ImmutableArray.Create(RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005);
 
         public override void Initialize(AnalysisContext context)
         {
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
             context.EnableConcurrentExecution();
+
+            context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
@@ -242,6 +254,63 @@ namespace TemplateGuard.Analyzers
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(normalized));
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+        }
+
+        private static readonly System.Collections.Generic.HashSet<string> WhitelistedAnonymousRoutes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "/login",
+            "/error",
+            "/auth-error",
+            "/not-found"
+        };
+
+        private void AnalyzeNamedType(SymbolAnalysisContext context)
+        {
+            if (context.Symbol is not INamedTypeSymbol namedType || namedType.TypeKind != TypeKind.Class) return;
+
+            var routeAttributes = namedType.GetAttributes()
+                .Where(a => a.AttributeClass?.Name == "RouteAttribute" || a.AttributeClass?.ToDisplayString() == "Microsoft.AspNetCore.Components.RouteAttribute")
+                .ToList();
+
+            if (routeAttributes.Count == 0) return;
+
+            foreach (var routeAttr in routeAttributes)
+            {
+                var routeTemplate = routeAttr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? string.Empty;
+                var normalizedRoute = routeTemplate.Trim().ToLowerInvariant();
+
+                var hasAllowAnonymous = namedType.GetAttributes().Any(a => a.AttributeClass?.Name is "AllowAnonymousAttribute" or "AllowAnonymous");
+                var hasAuthorize = namedType.GetAttributes().Any(a => a.AttributeClass?.Name is "AuthorizeAttribute" or "Authorize");
+                var hasClearance = namedType.GetAttributes().Any(a => a.AttributeClass?.Name is "RequiredClearanceAttribute" or "RequiredClearance");
+
+                if (hasAllowAnonymous)
+                {
+                    if (!WhitelistedAnonymousRoutes.Contains(normalizedRoute))
+                    {
+                        var location = routeAttr.ApplicationSyntaxReference?.GetSyntax().GetLocation() 
+                                       ?? namedType.Locations.FirstOrDefault() 
+                                       ?? Location.None;
+
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            RuleTg005,
+                            location,
+                            namedType.Name,
+                            routeTemplate));
+                    }
+                }
+                else if (!hasAuthorize && !hasClearance)
+                {
+                    var location = routeAttr.ApplicationSyntaxReference?.GetSyntax().GetLocation() 
+                                   ?? namedType.Locations.FirstOrDefault() 
+                                   ?? Location.None;
+
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        RuleTg005,
+                        location,
+                        namedType.Name,
+                        routeTemplate));
+                }
+            }
         }
     }
 }

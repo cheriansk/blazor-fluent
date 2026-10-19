@@ -1,8 +1,9 @@
-﻿@page "/knowledge/new"
+@page "/knowledge/new"
 @page "/knowledge/{Id:guid}/edit"
 @rendermode InteractiveServer
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+@using BlazorFluent.Shared.Attributes
+@using BlazorFluent.Shared.DataListTypes
+@attribute [RequiredClearance(ProjectRole.Contribute)]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Dtos

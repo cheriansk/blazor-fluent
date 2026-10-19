@@ -9,22 +9,34 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// </summary>
 public enum ProjectRole
 {
-    [Display(Name = "Read Only", Description = "View-only access to project resources")]
+    [Display(Name = "ReadOnly Team", Description = "View-only access to project resources")]
     [DataListCategory(ProjectRoleDefinitions.Categories.Standard)]
-    ReadOnly = 1,
+    ReadOnly = 10,
 
-    [Display(Name = "Quality Assurance", Description = "Quality assurance and testing access")]
+    [Display(Name = "Contribute Team", Description = "Standard read and write access to tasks and deliverables")]
     [DataListCategory(ProjectRoleDefinitions.Categories.Technical)]
-    QA = 2,
+    Contribute = 20,
 
-    [Display(Name = "Developer", Description = "Development and engineering write access")]
+    [Display(Name = "Lead Team", Description = "Team lead access: approvals, sprint design, and workflows")]
     [DataListCategory(ProjectRoleDefinitions.Categories.Technical)]
-    Dev = 3,
+    Lead = 30,
 
-    [Display(Name = "Project Administrator", Description = "Full administrative and membership control")]
+    [Display(Name = "ElevatedLead Team", Description = "Senior technical lead access: architecture, security, and risk")]
+    [DataListCategory(ProjectRoleDefinitions.Categories.Technical)]
+    ElevatedLead = 40,
+
+    [Display(Name = "PMO Team", Description = "Project Management Office: governance, financials, and contracts")]
+    [DataListCategory(ProjectRoleDefinitions.Categories.Administrative)]
+    PMO = 50,
+
+    [Display(Name = "Admin Team", Description = "Full administrative and membership control")]
     [DataListCategory(ProjectRoleDefinitions.Categories.Administrative)]
     [DataListFilterCriterias(ProjectRoleDefinitions.Filters.ProjectAdmin, ProjectRoleDefinitions.Filters.SuperAdmin)]
-    Admin = 4
+    Admin = 100,
+
+    // Backward-compatibility aliases
+    Dev = Contribute,
+    QA = Contribute
 }
 
 public static class ProjectRoleDefinitions
@@ -54,20 +66,20 @@ public static class ProjectRoleDefinitions
 public static class ProjectRoleExtensions
 {
     /// <summary>
-    /// Returns true if the role has permission to write/mutate project data (Dev, QA, Admin).
+    /// Returns true if the role has permission to write/mutate project data (Contribute and above).
     /// </summary>
     public static bool CanWrite(this ProjectRole role) =>
-        role is ProjectRole.Dev or ProjectRole.QA or ProjectRole.Admin;
+        (int)role >= (int)ProjectRole.Contribute;
 
     /// <summary>
     /// Returns true if the role has permission to manage project team membership and roles (Admin).
     /// </summary>
     public static bool CanManageAccess(this ProjectRole role) =>
-        role is ProjectRole.Admin;
+        (int)role >= (int)ProjectRole.Admin;
 
     /// <summary>
     /// Returns true if the assigned role has equal or higher hierarchy than the required role.
-    /// Hierarchy order: ReadOnly (1) &lt; QA (2) &lt; Dev (3) &lt; Admin (4).
+    /// Numeric hierarchy: ReadOnly (10) &lt; Contribute (20) &lt; Lead (30) &lt; ElevatedLead (40) &lt; PMO (50) &lt; Admin (100).
     /// </summary>
     public static bool Satisfies(this ProjectRole role, ProjectRole requiredRole) =>
         (int)role >= (int)requiredRole;

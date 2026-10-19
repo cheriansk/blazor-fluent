@@ -1,20 +1,28 @@
-﻿using BlazorFluent.Core.Contracts;
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
+using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.Attributes;
 using BlazorFluent.Shared.DataListTypes;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Components.Common;
 
 /// <summary>
 /// Mandatory base class for all feature components and pages that require project authorization.
-/// Forces every inheriting page to declare its MinimumVisitRole and MinimumEditRole at compile-time.
-/// Automatically evaluates CanVisit and CanEdit at runtime using cached project roles.
+/// Automatically resolves [RequiredClearance] attribute at runtime to evaluate CanVisit and CanEdit.
+/// Enforces Zero-Trust active provisioning and emits Zero-PII security audit logs on denial.
 /// </summary>
 public abstract class AuthorizedPageComponentBase : ComponentBase
 {
     [Inject] protected IProjectAuthorizationService ProjectAuth { get; set; } = default!;
+    [Inject] protected IHierarchyAuthorizationService HierarchyAuth { get; set; } = default!;
     [Inject] protected ITenantContext TenantContext { get; set; } = default!;
     [Inject] protected ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] protected NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] protected ILogger<AuthorizedPageComponentBase> Logger { get; set; } = default!;
+    [Inject] protected IAuditService AuditService { get; set; } = default!;
 
     /// <summary>
     /// ID of the project being viewed or modified.
@@ -23,14 +31,18 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
     [Parameter] public Guid ProjectId { get; set; }
 
     /// <summary>
-    /// Minimum role required to view/visit this page (Compile-time contract).
+    /// Minimum role required to view/visit this page.
+    /// Defaults dynamically from [RequiredClearance] attribute on derived page class.
     /// </summary>
-    protected abstract ProjectRole MinimumVisitRole { get; }
+    protected virtual ProjectRole MinimumVisitRole =>
+        GetType().GetCustomAttribute<RequiredClearanceAttribute>()?.ViewTier ?? ProjectRole.ReadOnly;
 
     /// <summary>
-    /// Minimum role required to edit or perform actions on this page (Compile-time contract).
+    /// Minimum role required to edit or perform actions on this page.
+    /// Defaults dynamically from [RequiredClearance] attribute on derived page class.
     /// </summary>
-    protected abstract ProjectRole MinimumEditRole { get; }
+    protected virtual ProjectRole MinimumEditRole =>
+        GetType().GetCustomAttribute<RequiredClearanceAttribute>()?.EditTier ?? ProjectRole.Contribute;
 
     /// <summary>
     /// True if the current user has permission to view this page.
@@ -60,16 +72,30 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
     }
 
     /// <summary>
-    /// Evaluates CanVisit and CanEdit permissions against the active project context.
+    /// Evaluates CanVisit and CanEdit permissions against the active project context and account validity.
     /// </summary>
     protected virtual async Task EvaluatePermissionsAsync()
     {
         IsEvaluating = true;
 
+        // Zero-Trust Perimeter Check: User must be active, unexpired, and hold >= 1 role
+        if (!CurrentUser.IsRootAdmin && !string.IsNullOrWhiteSpace(CurrentUser.UserId))
+        {
+            var isProvisioned = await HierarchyAuth.IsUserActiveAndProvisionedAsync(CurrentUser.UserId);
+            if (!isProvisioned)
+            {
+                Logger.LogWarning(
+                    "AUDIT [Security]: Active circuit eviction. UserId='{UserId}' is inactive, expired, or unassigned.",
+                    CurrentUser.UserId);
+
+                NavigationManager.NavigateTo("/auth-error?reason=Account+is+inactive%2C+expired%2C+or+unassigned.", forceLoad: true);
+                return;
+            }
+        }
+
         if (ProjectId == Guid.Empty)
         {
-            // If page is not tied to a specific project (e.g. multi-project overview),
-            // check if user has access to at least one project or is host/admin.
+            // Multi-project overview or list page
             if (CurrentUser.IsRootAdmin)
             {
                 CanVisit = true;
@@ -85,9 +111,27 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
         }
         else
         {
-            CurrentRole = await ProjectAuth.GetCurrentUserProjectRoleAsync(ProjectId);
+            CurrentRole = await HierarchyAuth.GetEffectiveProjectRoleAsync(ProjectId);
             CanVisit = CurrentRole.HasValue && CurrentRole.Value.Satisfies(MinimumVisitRole);
             CanEdit = CurrentRole.HasValue && CurrentRole.Value.Satisfies(MinimumEditRole) && CurrentRole.Value.CanWrite();
+        }
+
+        if (!CanVisit && !CurrentUser.IsRootAdmin)
+        {
+            // Zero-PII warning logging (strictly GUIDs, zero personal email/name)
+            Logger.LogWarning(
+                "AUDIT [Security]: Page Access Denied. UserId='{UserId}', TenantId='{TenantId}', ProjectId='{ProjectId}', Page='{PageName}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
+                CurrentUser.UserId ?? "anonymous",
+                TenantContext.TenantId ?? "none",
+                ProjectId,
+                GetType().Name,
+                MinimumVisitRole,
+                CurrentRole?.ToString() ?? "None");
+
+            await AuditService.LogSecurityEventAsync(
+                "PageAccessDenied",
+                AuditSeverity.Warning,
+                $"UserId: {CurrentUser.UserId ?? "anonymous"}, ProjectId: {ProjectId}, Page: {GetType().Name}, RequiredTier: {MinimumVisitRole}, ActualTier: {CurrentRole?.ToString() ?? "None"}");
         }
 
         IsEvaluating = false;

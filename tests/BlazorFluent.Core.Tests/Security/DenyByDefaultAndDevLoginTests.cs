@@ -99,7 +99,8 @@ public class DenyByDefaultAndDevLoginTests
             if (!isPage) continue;
 
             var fileName = Path.GetFileName(file);
-            var hasAuthorize = content.Contains("[Authorize]") || content.Contains("@attribute [Authorize]");
+            var hasAuthorize = content.Contains("[Authorize") || content.Contains("@attribute [Authorize") ||
+                               content.Contains("[RequiredClearance") || content.Contains("@attribute [RequiredClearance");
             var hasAllowAnonymous = content.Contains("[AllowAnonymous]") || content.Contains("@attribute [AllowAnonymous]");
 
             if (allowedAnonymousPages.Contains(fileName))
