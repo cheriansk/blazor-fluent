@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BlazorFluent.Persistence.Configurations.Tasks;
 
-public class WorkflowTaskEntityConfiguration : IEntityTypeConfiguration<WorkflowTaskEntity>
+public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEntity>
 {
-    public void Configure(EntityTypeBuilder<WorkflowTaskEntity> builder)
+    public void Configure(EntityTypeBuilder<WorkflowEntity> builder)
     {
-        builder.ToTable("WorkflowTasks", EntitySchemas.tasks.ToString());
+        builder.ToTable("Workflows", EntitySchemas.tasks.ToString());
 
         builder.HasKey(w => w.Id);
 
@@ -101,8 +101,8 @@ public class WorkflowTaskEntityConfiguration : IEntityTypeConfiguration<Workflow
 
         // Navigation to Tasks as Steps
         builder.HasMany(w => w.Steps)
-            .WithOne(t => t.WorkflowTask)
-            .HasForeignKey(t => t.WorkflowTaskId)
+            .WithOne(t => t.Workflow)
+            .HasForeignKey(t => t.WorkflowId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

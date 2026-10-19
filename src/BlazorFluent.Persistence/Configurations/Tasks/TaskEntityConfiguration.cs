@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +10,12 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 {
     public void Configure(EntityTypeBuilder<TaskEntity> builder)
     {
-        builder.ToTable("Tasks", EntitySchemas.tasks.ToString());
+        builder.ToTable("Tasks", EntitySchemas.tasks.ToString(), t =>
+        {
+            t.HasCheckConstraint(
+                "CK_Tasks_WorkflowId_WorkflowStepOrder",
+                "(\"WorkflowId\" IS NULL AND \"WorkflowStepOrder\" IS NULL) OR (\"WorkflowId\" IS NOT NULL AND \"WorkflowStepOrder\" IS NOT NULL AND \"WorkflowStepOrder\" > 0)");
+        });
 
         builder.HasKey(t => t.Id);
 
@@ -81,6 +86,12 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
         builder.Property(t => t.MilestoneId)
             .IsRequired(false);
 
+        builder.Property(t => t.WorkflowId)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowStepOrder)
+            .IsRequired(false);
+
         // Soft delete properties
         builder.Property(t => t.IsDeleted)
             .IsRequired()
@@ -91,26 +102,6 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 
         builder.Property(t => t.DeletedBy)
             .HasMaxLength(256)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowTaskId)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepOrder)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepStatus)
-            .IsRequired(false)
-            .HasConversion<int>();
-
-        builder.Property(t => t.WorkflowStepCompletionNotes)
-            .HasMaxLength(2000)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepActivatedAtUtc)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepCompletedAtUtc)
             .IsRequired(false);
 
         // Relationships
@@ -129,10 +120,10 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasForeignKey(t => t.MilestoneId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(t => t.WorkflowTask)
+        builder.HasOne(t => t.Workflow)
             .WithMany(w => w.Steps)
-            .HasForeignKey(t => t.WorkflowTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(t => t.WorkflowId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(t => t.SubTasks)
             .WithOne(s => s.ParentTask)
@@ -165,11 +156,11 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
         builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
             .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
 
-        builder.HasIndex(t => new { t.TenantId, t.WorkflowTaskId, t.WorkflowStepOrder })
-            .HasDatabaseName("IX_Tasks_TenantId_WorkflowTaskId_StepOrder");
-
         builder.HasIndex(t => t.MilestoneId)
             .HasDatabaseName("IX_Tasks_MilestoneId");
+
+        builder.HasIndex(t => new { t.TenantId, t.WorkflowId, t.WorkflowStepOrder })
+            .HasDatabaseName("IX_Tasks_TenantId_WorkflowId_StepOrder");
 
         // Hook for downstream entity mapping customizations
         OnConfigureCustom(builder);

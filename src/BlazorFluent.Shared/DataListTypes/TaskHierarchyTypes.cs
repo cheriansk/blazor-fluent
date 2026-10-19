@@ -56,7 +56,10 @@ public enum TaskStatus
     Cancelled = 4,
 
     [Display(Name = "Paused", Description = "Pipeline paused, awaiting administrator decision")]
-    Paused = 5
+    Paused = 5,
+
+    [Display(Name = "Pending", Description = "Awaiting preceding workflow step completion")]
+    Pending = 6
 }
 
 /// <summary>
@@ -71,27 +74,6 @@ public enum TaskItemType
     Issue = 5,
     BlockerDependency = 6,
     Workflow = 7
-}
-
-/// <summary>
-/// Lifecycle status for an individual sequential step within a WorkflowTaskEntity.
-/// </summary>
-public enum WorkflowStepStatus
-{
-    [Display(Name = "Pending", Description = "Awaiting preceding step completion")]
-    Pending = 1,
-
-    [Display(Name = "Active", Description = "Currently actionable by designated step owner")]
-    Active = 2,
-
-    [Display(Name = "Completed", Description = "Successfully executed")]
-    Completed = 3,
-
-    [Display(Name = "Skipped", Description = "Bypassed by administrator")]
-    Skipped = 4,
-
-    [Display(Name = "Cancelled", Description = "Cancelled by administrator")]
-    Cancelled = 5
 }
 
 /// <summary>

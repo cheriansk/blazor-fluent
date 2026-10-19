@@ -1,4 +1,4 @@
-﻿@namespace BlazorFluent.Components.Common
+@namespace BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
@@ -146,9 +146,9 @@
         {
             var step = orderedSteps[i];
             var stepIndex = i;
-            var isCurrentActive = step.WorkflowStepStatus == WorkflowStepStatus.Active;
-            var isCompleted = step.WorkflowStepStatus == WorkflowStepStatus.Completed;
-            var isPending = step.WorkflowStepStatus == WorkflowStepStatus.Pending;
+            var isCurrentActive = step.Status == TaskStatus.InProgress;
+            var isCompleted = step.Status == TaskStatus.Closed;
+            var isPending = step.Status == TaskStatus.Pending;
 
             <div class="pipeline-step-node @(isCurrentActive ? "step-active" : isCompleted ? "step-completed" : "step-pending")">
                 <div class="step-indicator">
@@ -158,7 +158,7 @@
                             <FluentIcon Value="@(new Icons.Filled.Size16.Checkmark())" Color="Color.Default" />
                         </div>
                     }
-                    else if (step.WorkflowStepStatus == WorkflowStepStatus.Cancelled)
+                    else if (step.Status == TaskStatus.Cancelled)
                     {
                         <div class="step-circle step-circle-cancelled" style="background: #fde7e9; border-color: #d13438; color: #d13438;" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) cancelled">
                             <FluentIcon Value="@(new Icons.Filled.Size16.Dismiss())" Color="Color.Error" />
@@ -186,11 +186,11 @@
                 <div class="step-content">
                     <div class="step-header">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="step-name" style="@(step.WorkflowStepStatus == WorkflowStepStatus.Cancelled ? "text-decoration: line-through; opacity: 0.7;" : "")">@step.Title</span>
+                            <span class="step-name" style="@(step.Status == TaskStatus.Cancelled ? "text-decoration: line-through; opacity: 0.7;" : "")">@step.Title</span>
                             <span class="step-order-badge">Step #@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
                         </div>
-                        <span class="step-status-tag status-@(step.WorkflowStepStatus?.ToString().ToLowerInvariant() ?? "pending")">
-                            @(step.WorkflowStepStatus?.ToString() ?? "Pending")
+                        <span class="step-status-tag status-@(step.Status.ToString().ToLowerInvariant())">
+                            @step.Status.ToString()
                         </span>
                     </div>
 
@@ -254,25 +254,22 @@
                         }
                     </div>
 
-                    @if (isCompleted && !string.IsNullOrWhiteSpace(step.WorkflowStepCompletionNotes))
+                    @if (isCompleted && step.EndDate.HasValue)
                     {
                         <div class="step-completion-note">
                             <FluentIcon Value="@(new Icons.Regular.Size12.Comment())" Color="Color.Success" />
-                            <em>"@step.WorkflowStepCompletionNotes"</em>
-                            @if (step.WorkflowStepCompletedAtUtc.HasValue)
-                            {
-                                <span class="step-completed-time">
-                                    (<UserDateTime Value="@step.WorkflowStepCompletedAtUtc" Format="yyyy-MM-dd HH:mm" />)
-                                </span>
-                            }
+                            <em>Completed on</em>
+                            <span class="step-completed-time">
+                                (<UserDateTime Value="@step.EndDate" Format="yyyy-MM-dd HH:mm" />)
+                            </span>
                         </div>
                     }
 
-                    @if (step.WorkflowStepStatus == WorkflowStepStatus.Cancelled)
+                    @if (step.Status == TaskStatus.Cancelled)
                     {
                         <div class="step-completion-note" style="background: #fde7e9; border-left: 3px solid #d13438; color: #a80000; margin-top: 8px;">
                             <FluentIcon Value="@(new Icons.Filled.Size12.Dismiss())" Color="Color.Error" />
-                            <em>@(string.IsNullOrWhiteSpace(step.WorkflowStepCompletionNotes) ? "Step was cancelled by administrator." : step.WorkflowStepCompletionNotes)</em>
+                            <em>Step was cancelled by administrator.</em>
                         </div>
                     }
 
@@ -542,7 +539,7 @@
 
                 <p class="modal-instruction" style="color: #a80000;">
                     Tasks added to a workflow cannot be permanently deleted. Instead, this step will be marked as Cancelled.
-                    @if (_targetStep.WorkflowStepStatus == WorkflowStepStatus.Active)
+                    @if (_targetStep.Status == TaskStatus.InProgress)
                     {
                         <strong> Since this is the active step, the workflow will be paused until an administrator activates the next step.</strong>
                     }
@@ -957,13 +954,13 @@
 
 @code {
     [Parameter, EditorRequired]
-    public WorkflowTaskEntity Workflow { get; set; } = default!;
+    public WorkflowEntity Workflow { get; set; } = default!;
 
     [Parameter]
-    public EventCallback<WorkflowTaskEntity> OnWorkflowUpdated { get; set; }
+    public EventCallback<WorkflowEntity> OnWorkflowUpdated { get; set; }
 
     [Parameter]
-    public EventCallback<WorkflowTaskEntity> OnEditWorkflow { get; set; }
+    public EventCallback<WorkflowEntity> OnEditWorkflow { get; set; }
 
     private bool _isCompleteModalOpen;
     private bool _isReassignModalOpen;

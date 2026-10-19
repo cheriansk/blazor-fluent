@@ -1,4 +1,4 @@
-﻿@namespace BlazorFluent.Components.Common
+@namespace BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
@@ -293,8 +293,8 @@
                                     @if (IsEditMode && WorkflowToEdit != null)
                                     {
                                         var existingEntity = WorkflowToEdit.Steps.FirstOrDefault(s => s.Id == step.ExistingTaskId);
-                                        var isCancelled = existingEntity?.WorkflowStepStatus == WorkflowStepStatus.Cancelled;
-                                        var isCompleted = existingEntity?.WorkflowStepStatus == WorkflowStepStatus.Completed;
+                                        var isCancelled = existingEntity?.Status == TaskStatus.Cancelled;
+                                        var isCompleted = existingEntity?.Status == TaskStatus.Closed;
 
                                         @if (isCancelled)
                                         {
@@ -893,13 +893,13 @@
     public TaskLevel DefaultLevel { get; set; } = TaskLevel.Project;
 
     [Parameter]
-    public WorkflowTaskEntity? WorkflowToEdit { get; set; }
+    public WorkflowEntity? WorkflowToEdit { get; set; }
 
     [Parameter]
-    public EventCallback<WorkflowTaskEntity> OnWorkflowCreated { get; set; }
+    public EventCallback<WorkflowEntity> OnWorkflowCreated { get; set; }
 
     [Parameter]
-    public EventCallback<WorkflowTaskEntity> OnWorkflowUpdated { get; set; }
+    public EventCallback<WorkflowEntity> OnWorkflowUpdated { get; set; }
 
     private bool IsEditMode => WorkflowToEdit != null;
 
@@ -993,7 +993,7 @@
         _wizardModal?.Context?.MarkDirty();
     }
 
-    private void PopulateFromExistingWorkflow(WorkflowTaskEntity wf)
+    private void PopulateFromExistingWorkflow(WorkflowEntity wf)
     {
         _initialState = new CreateWorkflowReqDto
         {

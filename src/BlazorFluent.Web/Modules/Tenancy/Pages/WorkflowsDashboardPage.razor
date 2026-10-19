@@ -348,8 +348,8 @@
     private bool _isLoading = true;
     private bool _isCreateModalOpen = false;
 
-    private List<WorkflowTaskEntity> _allWorkflows = [];
-    private List<WorkflowTaskEntity> _filteredWorkflows = [];
+    private List<WorkflowEntity> _allWorkflows = [];
+    private List<WorkflowEntity> _filteredWorkflows = [];
 
     private List<ProgramEntity> _availablePrograms = [];
     private List<ProjectEntity> _availableProjects = [];
@@ -369,7 +369,7 @@
 
     // RBAC and Editing
     private bool _canCreateWorkflow;
-    private WorkflowTaskEntity? _workflowToEdit;
+    private WorkflowEntity? _workflowToEdit;
 
     protected override async Task OnInitializedAsync()
     {
@@ -420,7 +420,7 @@
     {
         _activeWorkflowsCount = _allWorkflows.Count(w => w.Status != TaskStatus.Closed);
         _completedWorkflowsCount = _allWorkflows.Count(w => w.Status == TaskStatus.Closed);
-        _activeStepsCount = _allWorkflows.Sum(w => w.Steps.Count(s => s.WorkflowStepStatus == WorkflowStepStatus.Active));
+        _activeStepsCount = _allWorkflows.Sum(w => w.Steps.Count(s => s.Status == TaskStatus.InProgress));
         _totalDelegatedSubtasksCount = _allWorkflows.Sum(w => w.Steps.Sum(s => s.SubTasks.Count));
     }
 
@@ -507,20 +507,20 @@
         _isCreateModalOpen = true;
     }
 
-    private void HandleEditWorkflow(WorkflowTaskEntity wf)
+    private void HandleEditWorkflow(WorkflowEntity wf)
     {
         _workflowToEdit = wf;
         _isCreateModalOpen = true;
     }
 
-    private void HandleWorkflowCreated(WorkflowTaskEntity created)
+    private void HandleWorkflowCreated(WorkflowEntity created)
     {
         _allWorkflows.Insert(0, created);
         ComputeKpis();
         ApplyFilters();
     }
 
-    private void HandleWorkflowUpdated(WorkflowTaskEntity updated)
+    private void HandleWorkflowUpdated(WorkflowEntity updated)
     {
         var idx = _allWorkflows.FindIndex(w => w.Id == updated.Id);
         if (idx >= 0)

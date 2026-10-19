@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace BlazorFluent.Core.Domain.Tasks.Validators;
 
-public class WorkflowTaskEntityValidator : AbstractValidator<WorkflowTaskEntity>
+public class WorkflowEntityValidator : AbstractValidator<WorkflowEntity>
 {
-    public WorkflowTaskEntityValidator()
+    public WorkflowEntityValidator()
     {
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Workflow title is required.")

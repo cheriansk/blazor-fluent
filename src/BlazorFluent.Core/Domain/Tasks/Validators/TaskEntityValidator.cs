@@ -24,5 +24,18 @@ public class TaskEntityValidator : AbstractValidator<TaskEntity>
 
         RuleFor(x => x.Labels)
             .MaximumLength(500).WithMessage("Labels string cannot exceed 500 characters.");
+
+        When(x => x.WorkflowId.HasValue && x.WorkflowId.Value != Guid.Empty, () =>
+        {
+            RuleFor(x => x.WorkflowStepOrder)
+                .NotNull().WithMessage("WorkflowStepOrder is mandatory when the task belongs to a workflow.")
+                .GreaterThan(0).WithMessage("WorkflowStepOrder must be a positive integer greater than zero.");
+        });
+
+        When(x => !x.WorkflowId.HasValue || x.WorkflowId.Value == Guid.Empty, () =>
+        {
+            RuleFor(x => x.WorkflowStepOrder)
+                .Null().WithMessage("WorkflowStepOrder must be null when the task does not belong to a workflow.");
+        });
     }
 }

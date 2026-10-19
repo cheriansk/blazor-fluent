@@ -1369,9 +1369,9 @@ else
 
     // Workflow state
     private string _activeSubTab = "tasks";
-    private List<WorkflowTaskEntity> _projectWorkflows = [];
+    private List<WorkflowEntity> _projectWorkflows = [];
     private bool _isCreateWorkflowModalOpen = false;
-    private WorkflowTaskEntity? _workflowToEdit;
+    private WorkflowEntity? _workflowToEdit;
     private bool _canManageWorkflows = false;
 
     // Modal state
@@ -1515,13 +1515,13 @@ else
         }
     }
 
-    private void HandleWorkflowCreated(WorkflowTaskEntity created)
+    private void HandleWorkflowCreated(WorkflowEntity created)
     {
         _projectWorkflows.Insert(0, created);
         StateHasChanged();
     }
 
-    private void HandleWorkflowUpdated(WorkflowTaskEntity updated)
+    private void HandleWorkflowUpdated(WorkflowEntity updated)
     {
         var idx = _projectWorkflows.FindIndex(w => w.Id == updated.Id);
         if (idx >= 0)
@@ -1531,7 +1531,7 @@ else
         StateHasChanged();
     }
 
-    private void HandleEditWorkflow(WorkflowTaskEntity wf)
+    private void HandleEditWorkflow(WorkflowEntity wf)
     {
         _workflowToEdit = wf;
         _isCreateWorkflowModalOpen = true;

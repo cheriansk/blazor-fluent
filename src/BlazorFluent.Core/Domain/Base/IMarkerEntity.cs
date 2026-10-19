@@ -25,8 +25,6 @@ public interface IAuditableEntity : IMarkerEntity
 /// </summary>
 public interface IAuditExemptEntity : IMarkerEntity { }
 
-
-
 /// <summary>
 /// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
 /// AppDbContext enforces at startup that every entity implements either ITenantEntity or IGlobalEntity (fail-closed guard).
