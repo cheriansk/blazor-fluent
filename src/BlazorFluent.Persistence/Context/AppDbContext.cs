@@ -16,6 +16,7 @@ using BlazorFluent.Persistence.Interceptors;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using BlazorFluent.Core.Filters;
 
 namespace BlazorFluent.Persistence.Context;
@@ -262,6 +263,23 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                         .HasMaxLength(256)
                         .IsRequired(false);
                 });
+            }
+
+            // 4. Hard Immutability Barrier: Level, TenantId, ProgramId, ProjectId cannot be mutated once created
+            if (isTenant)
+            {
+                entityType.FindProperty(nameof(ITenantEntity.TenantId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+            }
+
+            if (typeof(BaseTaskEntity).IsAssignableFrom(clrType))
+            {
+                entityType.FindProperty(nameof(BaseTaskEntity.Level))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(BaseTaskEntity.ProgramId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(BaseTaskEntity.ProjectId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
             }
         }
     }

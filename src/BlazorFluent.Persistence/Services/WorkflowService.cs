@@ -556,7 +556,7 @@ public class WorkflowService : IWorkflowService
         {
             var term = filter.SearchTerm.Trim().ToLowerInvariant();
             query = query.Where(w => w.Title.ToLower().Contains(term) ||
-                                     w.WorkflowOwnerEmail.ToLower().Contains(term) ||
+                                     (w.AssigneeEmails != null && w.AssigneeEmails.ToLower().Contains(term)) ||
                                      w.Description.ToLower().Contains(term));
         }
 

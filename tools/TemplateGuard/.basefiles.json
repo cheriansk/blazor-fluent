@@ -2093,6 +2093,14 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Domain/Auditing/AuditRecordEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Auditing/AuditRecordEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "AuditRecordEntityValidator.AuditRecordEntityValidator()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Domain/Base/AuditableEntity.cs": {
       "RelativePath": "Core/Domain/Base/AuditableEntity.cs",
       "KnownMembers": [
@@ -2150,6 +2158,24 @@
         "BaseEntity.IsModifiedSinceCreation.get",
         ".ctor",
         "BaseEntity.BaseEntity()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Domain/Base/IEncryptedPayloadEntity.cs": {
+      "RelativePath": "Core/Domain/Base/IEncryptedPayloadEntity.cs",
+      "KnownMembers": [
+        "IsEncryptedAtRest",
+        "IEncryptedPayloadEntity.IsEncryptedAtRest",
+        "get_IsEncryptedAtRest",
+        "IEncryptedPayloadEntity.IsEncryptedAtRest.get",
+        "set_IsEncryptedAtRest",
+        "IEncryptedPayloadEntity.IsEncryptedAtRest.set",
+        "EncryptedPayloadBytes",
+        "IEncryptedPayloadEntity.EncryptedPayloadBytes",
+        "get_EncryptedPayloadBytes",
+        "IEncryptedPayloadEntity.EncryptedPayloadBytes.get",
+        "set_EncryptedPayloadBytes",
+        "IEncryptedPayloadEntity.EncryptedPayloadBytes.set"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -2235,27 +2261,15 @@
         "IVersionedEntity.SetVersionNumber(int)": "955fdbd0e62e1b86452fe472b711685803564e8f0899a4c337942c74e6b65301"
       }
     },
-    "Core/Domain/Base/IProprietaryEncryptedEntity.cs": {
-      "RelativePath": "Core/Domain/Base/IProprietaryEncryptedEntity.cs",
+    "Core/Domain/Base/ISourceTrackedEntity.cs": {
+      "RelativePath": "Core/Domain/Base/ISourceTrackedEntity.cs",
       "KnownMembers": [
         "SourceRowId",
-        "IProprietaryEncryptedEntity.SourceRowId",
+        "ISourceTrackedEntity.SourceRowId",
         "get_SourceRowId",
-        "IProprietaryEncryptedEntity.SourceRowId.get",
+        "ISourceTrackedEntity.SourceRowId.get",
         "set_SourceRowId",
-        "IProprietaryEncryptedEntity.SourceRowId.set",
-        "IsEncryptedAtRest",
-        "IProprietaryEncryptedEntity.IsEncryptedAtRest",
-        "get_IsEncryptedAtRest",
-        "IProprietaryEncryptedEntity.IsEncryptedAtRest.get",
-        "set_IsEncryptedAtRest",
-        "IProprietaryEncryptedEntity.IsEncryptedAtRest.set",
-        "EncryptedPayloadBytes",
-        "IProprietaryEncryptedEntity.EncryptedPayloadBytes",
-        "get_EncryptedPayloadBytes",
-        "IProprietaryEncryptedEntity.EncryptedPayloadBytes.get",
-        "set_EncryptedPayloadBytes",
-        "IProprietaryEncryptedEntity.EncryptedPayloadBytes.set"
+        "ISourceTrackedEntity.SourceRowId.set"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -2294,42 +2308,22 @@
         "BaseCalendarEntity.Description.get",
         "set_Description",
         "BaseCalendarEntity.Description.set",
-        "\u003CStartUtc\u003Ek__BackingField",
-        "BaseCalendarEntity.StartUtc.field",
-        "StartUtc",
-        "BaseCalendarEntity.StartUtc",
-        "get_StartUtc",
-        "BaseCalendarEntity.StartUtc.get",
-        "set_StartUtc",
-        "BaseCalendarEntity.StartUtc.set",
-        "\u003CEndUtc\u003Ek__BackingField",
-        "BaseCalendarEntity.EndUtc.field",
-        "EndUtc",
-        "BaseCalendarEntity.EndUtc",
-        "get_EndUtc",
-        "BaseCalendarEntity.EndUtc.get",
-        "set_EndUtc",
-        "BaseCalendarEntity.EndUtc.set",
+        "\u003CStartDate\u003Ek__BackingField",
+        "BaseCalendarEntity.StartDate.field",
         "StartDate",
         "BaseCalendarEntity.StartDate",
         "get_StartDate",
         "BaseCalendarEntity.StartDate.get",
         "set_StartDate",
         "BaseCalendarEntity.StartDate.set",
+        "\u003CEndDate\u003Ek__BackingField",
+        "BaseCalendarEntity.EndDate.field",
         "EndDate",
         "BaseCalendarEntity.EndDate",
         "get_EndDate",
         "BaseCalendarEntity.EndDate.get",
         "set_EndDate",
         "BaseCalendarEntity.EndDate.set",
-        "\u003CIsAllDay\u003Ek__BackingField",
-        "BaseCalendarEntity.IsAllDay.field",
-        "IsAllDay",
-        "BaseCalendarEntity.IsAllDay",
-        "get_IsAllDay",
-        "BaseCalendarEntity.IsAllDay.get",
-        "set_IsAllDay",
-        "BaseCalendarEntity.IsAllDay.set",
         "\u003CEntryType\u003Ek__BackingField",
         "BaseCalendarEntity.EntryType.field",
         "EntryType",
@@ -2346,30 +2340,6 @@
         "BaseCalendarEntity.Status.get",
         "set_Status",
         "BaseCalendarEntity.Status.set",
-        "\u003COrganizerEmail\u003Ek__BackingField",
-        "BaseCalendarEntity.OrganizerEmail.field",
-        "OrganizerEmail",
-        "BaseCalendarEntity.OrganizerEmail",
-        "get_OrganizerEmail",
-        "BaseCalendarEntity.OrganizerEmail.get",
-        "set_OrganizerEmail",
-        "BaseCalendarEntity.OrganizerEmail.set",
-        "\u003CParticipantEmails\u003Ek__BackingField",
-        "BaseCalendarEntity.ParticipantEmails.field",
-        "ParticipantEmails",
-        "BaseCalendarEntity.ParticipantEmails",
-        "get_ParticipantEmails",
-        "BaseCalendarEntity.ParticipantEmails.get",
-        "set_ParticipantEmails",
-        "BaseCalendarEntity.ParticipantEmails.set",
-        "\u003CLocationOrMeetingUrl\u003Ek__BackingField",
-        "BaseCalendarEntity.LocationOrMeetingUrl.field",
-        "LocationOrMeetingUrl",
-        "BaseCalendarEntity.LocationOrMeetingUrl",
-        "get_LocationOrMeetingUrl",
-        "BaseCalendarEntity.LocationOrMeetingUrl.get",
-        "set_LocationOrMeetingUrl",
-        "BaseCalendarEntity.LocationOrMeetingUrl.set",
         "\u003CAssociatedTaskId\u003Ek__BackingField",
         "BaseCalendarEntity.AssociatedTaskId.field",
         "AssociatedTaskId",
@@ -2402,14 +2372,10 @@
         "BaseCalendarEntity.DeletedBy.get",
         "set_DeletedBy",
         "BaseCalendarEntity.DeletedBy.set",
-        "GetParsedParticipantEmails",
-        "BaseCalendarEntity.GetParsedParticipantEmails()",
         ".ctor",
         "BaseCalendarEntity.BaseCalendarEntity()"
       ],
-      "MemberSyntaxHashes": {
-        "BaseCalendarEntity.GetParsedParticipantEmails()": "aa8f55844d5de54adc5a295a27a9016d3752ca689b446db828e373c40bb5edaa"
-      }
+      "MemberSyntaxHashes": {}
     },
     "Core/Domain/Calendar/ProgramCalendarEntity.cs": {
       "RelativePath": "Core/Domain/Calendar/ProgramCalendarEntity.cs",
@@ -2486,14 +2452,6 @@
         "UserCalendarEntity.UserId.get",
         "set_UserId",
         "UserCalendarEntity.UserId.set",
-        "\u003CUserEntityId\u003Ek__BackingField",
-        "UserCalendarEntity.UserEntityId.field",
-        "UserEntityId",
-        "UserCalendarEntity.UserEntityId",
-        "get_UserEntityId",
-        "UserCalendarEntity.UserEntityId.get",
-        "set_UserEntityId",
-        "UserCalendarEntity.UserEntityId.set",
         "\u003CUser\u003Ek__BackingField",
         "UserCalendarEntity.User.field",
         "User",
@@ -2866,6 +2824,22 @@
         "EventPublishTrackerEntity.GetEffectiveSenderOrigin()": "7b9a350f3d38e89c1fea1f41ab280e2c4b9c0908290ae322970815660a636269"
       }
     },
+    "Core/Domain/Events/Validators/EventConsumptionTrackerEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Events/Validators/EventConsumptionTrackerEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "EventConsumptionTrackerEntityValidator.EventConsumptionTrackerEntityValidator()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Domain/Events/Validators/EventPublishTrackerEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Events/Validators/EventPublishTrackerEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "EventPublishTrackerEntityValidator.EventPublishTrackerEntityValidator()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Domain/Identity/ImpersonationGrantEntity.cs": {
       "RelativePath": "Core/Domain/Identity/ImpersonationGrantEntity.cs",
       "KnownMembers": [
@@ -2981,6 +2955,14 @@
       "MemberSyntaxHashes": {
         "ImpersonationGrantEntity.IsActive(DateTime)": "79a7601f71c50a1d15576b09cf4e66ead12a7adab6e79f128163910374c5ef9f"
       }
+    },
+    "Core/Domain/Identity/ImpersonationGrantEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Identity/ImpersonationGrantEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "ImpersonationGrantEntityValidator.ImpersonationGrantEntityValidator()"
+      ],
+      "MemberSyntaxHashes": {}
     },
     "Core/Domain/Identity/UserEntity.cs": {
       "RelativePath": "Core/Domain/Identity/UserEntity.cs",
@@ -3237,6 +3219,14 @@
         "UserSessionEntity.DeletedBy.set",
         ".ctor",
         "UserSessionEntity.UserSessionEntity()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Domain/Identity/UserSessionEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Identity/UserSessionEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "UserSessionEntityValidator.UserSessionEntityValidator()"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -3683,6 +3673,8 @@
     "Core/Domain/Jobs/JobExecutionEntity.cs": {
       "RelativePath": "Core/Domain/Jobs/JobExecutionEntity.cs",
       "KnownMembers": [
+        "HostTenantId",
+        "JobExecutionEntity.HostTenantId",
         "\u003CCorrelationId\u003Ek__BackingField",
         "JobExecutionEntity.CorrelationId.field",
         "CorrelationId",
@@ -3789,6 +3781,14 @@
         "JobExecutionEntity.DurationMs.set",
         ".ctor",
         "JobExecutionEntity.JobExecutionEntity()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Domain/Jobs/JobExecutionEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Jobs/JobExecutionEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "JobExecutionEntityValidator.JobExecutionEntityValidator()"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -4017,6 +4017,14 @@
         "KnowledgeArticleReviewerEntity.ApprovedAtUtc.set",
         ".ctor",
         "KnowledgeArticleReviewerEntity.KnowledgeArticleReviewerEntity()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Domain/Knowledge/KnowledgeArticleReviewerEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Knowledge/KnowledgeArticleReviewerEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "KnowledgeArticleReviewerEntityValidator.KnowledgeArticleReviewerEntityValidator()"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -5552,6 +5560,14 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Domain/Tenancy/ProgramUserRoleEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Tenancy/ProgramUserRoleEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "ProgramUserRoleEntityValidator.ProgramUserRoleEntityValidator()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Domain/Tenancy/ProjectEntity.cs": {
       "RelativePath": "Core/Domain/Tenancy/ProjectEntity.cs",
       "KnownMembers": [
@@ -5771,6 +5787,30 @@
         "ProjectMilestoneEntity.OrderIndex.get",
         "set_OrderIndex",
         "ProjectMilestoneEntity.OrderIndex.set",
+        "\u003CIsDeleted\u003Ek__BackingField",
+        "ProjectMilestoneEntity.IsDeleted.field",
+        "IsDeleted",
+        "ProjectMilestoneEntity.IsDeleted",
+        "get_IsDeleted",
+        "ProjectMilestoneEntity.IsDeleted.get",
+        "set_IsDeleted",
+        "ProjectMilestoneEntity.IsDeleted.set",
+        "\u003CDeletedAtUtc\u003Ek__BackingField",
+        "ProjectMilestoneEntity.DeletedAtUtc.field",
+        "DeletedAtUtc",
+        "ProjectMilestoneEntity.DeletedAtUtc",
+        "get_DeletedAtUtc",
+        "ProjectMilestoneEntity.DeletedAtUtc.get",
+        "set_DeletedAtUtc",
+        "ProjectMilestoneEntity.DeletedAtUtc.set",
+        "\u003CDeletedBy\u003Ek__BackingField",
+        "ProjectMilestoneEntity.DeletedBy.field",
+        "DeletedBy",
+        "ProjectMilestoneEntity.DeletedBy",
+        "get_DeletedBy",
+        "ProjectMilestoneEntity.DeletedBy.get",
+        "set_DeletedBy",
+        "ProjectMilestoneEntity.DeletedBy.set",
         ".ctor",
         "ProjectMilestoneEntity.ProjectMilestoneEntity()"
       ],
@@ -5888,6 +5928,14 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Domain/Tenancy/ProjectUserRoleEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Tenancy/ProjectUserRoleEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "ProjectUserRoleEntityValidator.ProjectUserRoleEntityValidator()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Domain/Tenancy/TenantEntity.cs": {
       "RelativePath": "Core/Domain/Tenancy/TenantEntity.cs",
       "KnownMembers": [
@@ -5985,6 +6033,30 @@
         "TenantEntity.TenantUsers.get",
         "set_TenantUsers",
         "TenantEntity.TenantUsers.set",
+        "\u003CIsDeleted\u003Ek__BackingField",
+        "TenantEntity.IsDeleted.field",
+        "IsDeleted",
+        "TenantEntity.IsDeleted",
+        "get_IsDeleted",
+        "TenantEntity.IsDeleted.get",
+        "set_IsDeleted",
+        "TenantEntity.IsDeleted.set",
+        "\u003CDeletedAtUtc\u003Ek__BackingField",
+        "TenantEntity.DeletedAtUtc.field",
+        "DeletedAtUtc",
+        "TenantEntity.DeletedAtUtc",
+        "get_DeletedAtUtc",
+        "TenantEntity.DeletedAtUtc.get",
+        "set_DeletedAtUtc",
+        "TenantEntity.DeletedAtUtc.set",
+        "\u003CDeletedBy\u003Ek__BackingField",
+        "TenantEntity.DeletedBy.field",
+        "DeletedBy",
+        "TenantEntity.DeletedBy",
+        "get_DeletedBy",
+        "TenantEntity.DeletedBy.get",
+        "set_DeletedBy",
+        "TenantEntity.DeletedBy.set",
         ".ctor",
         "TenantEntity.TenantEntity()"
       ],
@@ -6103,6 +6175,14 @@
         "TenantUserEntity.User.set",
         ".ctor",
         "TenantUserEntity.TenantUserEntity()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Core/Domain/Tenancy/TenantUserEntityValidator.cs": {
+      "RelativePath": "Core/Domain/Tenancy/TenantUserEntityValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "TenantUserEntityValidator.TenantUserEntityValidator()"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -10267,7 +10347,7 @@
       ],
       "MemberSyntaxHashes": {
         "BatchJobQueueListener.ExecuteAsync(CancellationToken)": "4f9034f1d015a2a06b078e391c5b9b3084d6481df95e53dab7f2d03edefc0ef1",
-        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "60726e49b26a5523c3dbd11a34e6115402bcd829bc4fd94c274198a06a288b0f"
+        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "f0567b6ae6b4a52b06b2a5585518a441309bcc56c36d41133c67dfab46fabd2a"
       }
     },
     "Jobs/Queue/ChannelJobEventQueue.cs": {
@@ -10400,7 +10480,7 @@
       ],
       "MemberSyntaxHashes": {
         "JobManagerService.GetRecentExecutionsAsync(int, CancellationToken)": "a9dc94d9637a4e5e0d30d70c2bdd654ca32788ac768daed7fec89a98bac52d4b",
-        "JobManagerService.TriggerJobAsync(string, string?, CancellationToken)": "92eb7fc6174beae573958f0840939b522946138665530f8f4aa1a3d453df453c",
+        "JobManagerService.TriggerJobAsync(string, string?, CancellationToken)": "3af778a1126cc48fdb172096f1f4f7f87b9a8abd4db9787f65f0a4bfcfb15078",
         "JobManagerService.RetryJobAsync(Guid, CancellationToken)": "d43274d403436c13673e62e25e169ede519c5b254829db8e14ae603ca7b13187"
       }
     },
@@ -10425,7 +10505,7 @@
         "ProgramCalendarEntityConfiguration.ProgramCalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProgramCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProgramCalendarEntity\u003E)": "777776134efef8cd98f7ce649f89fef04c2b312d4a667f1c83434693f91832a9"
+        "ProgramCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProgramCalendarEntity\u003E)": "8f38e3d276e77ee8929a9ec7bd64cbfd025756fabd5de5a5da5e9b3070fcc30d"
       }
     },
     "Persistence/Configurations/Calendar/ProjectCalendarEntityConfiguration.cs": {
@@ -10437,7 +10517,7 @@
         "ProjectCalendarEntityConfiguration.ProjectCalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProjectCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectCalendarEntity\u003E)": "4f6b0ecf7b512e1b142197e53150af3153ff64b12172ff3349833132ecea8321"
+        "ProjectCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectCalendarEntity\u003E)": "bfdfcabeb314dafbda3823b55f03503149bd310971be93565b1d9e15d1b28d68"
       }
     },
     "Persistence/Configurations/Calendar/UserCalendarEntityConfiguration.cs": {
@@ -10449,7 +10529,7 @@
         "UserCalendarEntityConfiguration.UserCalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "UserCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CUserCalendarEntity\u003E)": "b86c4b6ebca2d16119563aeefc6037c308e020a15fc64551accc51edc5af8517"
+        "UserCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CUserCalendarEntity\u003E)": "7026af2eba055c3559728e1405349e5fdc1b22700ba7f8584f8441ea5bbace59"
       }
     },
     "Persistence/Configurations/Catalog/ProductEntityConfiguration.cs": {
@@ -11044,7 +11124,7 @@
       ],
       "MemberSyntaxHashes": {
         "AppDbContext.ConfigureConventions(ModelConfigurationBuilder)": "d170868feb0ed1ade3dfe2770c32c3302d39003aa4a47e7277aa0f30728ff7c7",
-        "AppDbContext.OnModelCreating(ModelBuilder)": "5cf1b9c090deb3ce26aee2f827dc9f8fcdf4c932b5d5460c1f77c05490d82cda",
+        "AppDbContext.OnModelCreating(ModelBuilder)": "4fa85f68a1083b4fff7a137548ba41badc414618d92b02d3d5a10cb23ed7b728",
         "AppDbContext.ConfigureNamedTenantFilter\u003CTEntity\u003E(ModelBuilder)": "ef6dc227fb8bc2df8e4c29d6b3d55940d5493b32f646d2afe7e9acffb8a774cd",
         "AppDbContext.ConfigureNamedSoftDeleteFilter\u003CTEntity\u003E(ModelBuilder)": "efef6259e83850f776fd1d7069f48697407f75b2b2b417d447f9aedced4d8183"
       }
@@ -11207,7 +11287,7 @@
         "AuditableEntityInterceptor.SavingChanges(DbContextEventData, InterceptionResult\u003Cint\u003E)": "896fff71f21d1e16e99ea462436bdd46b4c264050da4bd20154b5fd23b2b54f9",
         "AuditableEntityInterceptor.SavingChangesAsync(DbContextEventData, InterceptionResult\u003Cint\u003E, CancellationToken)": "1c678c99648d767c9e33d57c8fe6304f2b2a723bb241be317afd636fa45cae99",
         "AuditableEntityInterceptor.UpdateAuditFieldsAndCaptureDiffs(DbContext?)": "e9f5ae33b6882a2a8f16226dafaba2170ae5e4e8581b664145faf437bb27a9b0",
-        "AuditableEntityInterceptor.UpdateAuditFields(DbContext, DateTime, string, ITenantContext)": "9d62906e7e05b358111b33ae13d6e34842d946767441dc09a834542f18fe4611",
+        "AuditableEntityInterceptor.UpdateAuditFields(DbContext, DateTime, string, ITenantContext)": "7e1c4493c7c7ada7246a7457dacf0c2676eda6243f15f73ffc8e72a9753110d6",
         "AuditableEntityInterceptor.CaptureEntityDiffs(DbContext, DateTime, string, ICurrentUser, ITenantContext)": "cecceef763a6a632e43db64b8876ad3318772435f8354ca7e0447e3b2b239071",
         "AuditableEntityInterceptor.IsSensitiveProperty(string)": "c902f381281d345de7519f28c1eaa74c20dac26bdf141c947b46ec47223a9d08"
       }
@@ -11230,16 +11310,13 @@
         "EntityValidationInterceptor.ValidateEntitiesAsync(DbContext, CancellationToken)",
         "ValidateEntitiesSync",
         "EntityValidationInterceptor.ValidateEntitiesSync(DbContext)",
-        "IsExemptEntity",
-        "EntityValidationInterceptor.IsExemptEntity(object)",
         ".cctor"
       ],
       "MemberSyntaxHashes": {
         "EntityValidationInterceptor.SavingChanges(DbContextEventData, InterceptionResult\u003Cint\u003E)": "8a102a571560cd9b33992372608868796ee368950f7ffaa26b8c98e6d210679d",
         "EntityValidationInterceptor.SavingChangesAsync(DbContextEventData, InterceptionResult\u003Cint\u003E, CancellationToken)": "87d4397f02f2cb697466397210bb903b5e463910d3536efc7eae7fccaf3f17e5",
-        "EntityValidationInterceptor.ValidateEntitiesAsync(DbContext, CancellationToken)": "84353637803ab83ffb535afd3819b7bf6cab482427470ed7873293f49c37e892",
-        "EntityValidationInterceptor.ValidateEntitiesSync(DbContext)": "bfa01d98ec18faef24fa5e58d2447f1feccf17325ed5dee46b01dba2ba372286",
-        "EntityValidationInterceptor.IsExemptEntity(object)": "ee33b75481b1829c63ee3dc4a7f4c1939d0a7f2af2b95538fd523d4274f73c25"
+        "EntityValidationInterceptor.ValidateEntitiesAsync(DbContext, CancellationToken)": "b7549d74f4f910d08a33b2e5615dae40a4275602ae0c92e7cf282bf23624c3d6",
+        "EntityValidationInterceptor.ValidateEntitiesSync(DbContext)": "3ebf71a4d4f2caf0ccd7ffabe6c2717619dbd12d7da6bfccbd2caec7bba14aa3"
       }
     },
     "Persistence/Interceptors/NoTrackingMutationGuardInterceptor.cs": {
@@ -11722,7 +11799,7 @@
         "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "ab2c77359cd4a88fc250dce2c4bc22defafaea78e7248a046d8b001120075479"
+        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "40340b7ce7547d206c9de8e04775e62ad0238044fab61b801f942d7608fae606"
       }
     },
     "Persistence/Services/AuditService.cs": {
@@ -11796,9 +11873,9 @@
         "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevel, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "CalendarService.GetProgramCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "12f84c1737444728a319d7b17b58f1a9bef89c350d29edb112fe18aed7d7b4b8",
-        "CalendarService.GetProjectCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "3990008585a50ad9a807020023762ef28be8df053e4804dc320d54f7f259c178",
-        "CalendarService.GetUserCalendarAsync(string, string, DateTime, DateTime, CancellationToken)": "4035c3a846828eec7fd6ac735c89b3fd69d0232ae4fce83091239bf454a63a3d",
+        "CalendarService.GetProgramCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "26296488898bf18e7c8d0d4f64924dd5805b6f02f06ecfadb4421835dad461e8",
+        "CalendarService.GetProjectCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "7641773e2e0da81d88c1f101bb08083326c65d94953632b0742e18be82ecfa04",
+        "CalendarService.GetUserCalendarAsync(string, string, DateTime, DateTime, CancellationToken)": "bc93d7123d840a649b3c1d6a23c92edfde644a2da2fc28af5256c6b92d89fcc9",
         "CalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)": "82139f3c5559c17a95cdbc6ca4539e4e0204942f58a7456f0d667b0c030c39ed",
         "CalendarService.CreateProjectCalendarEntryAsync(ProjectCalendarEntity, CancellationToken)": "747f80ba54b979a8d022ea4b7bb17b3461865d50f691597c194dadb1355e7e6f",
         "CalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "bcfe6a869998a07003a62709d6ec3134617d4e6e426e0947d6bd6853eadcd5f6",
@@ -12773,6 +12850,14 @@
         "WorkflowService.DispatchNotificationSilentlyAsync(string, string, string, NotificationSeverity, NotificationCategory, Guid?, CancellationToken)": "07de23d608e8b65c6d61230f5bb43a8e0a4d6bf0630bb985922f463bd801a27e",
         "WorkflowService.ParseEmails(string?)": "5d72cec686c30ffe6877394ab6154aea19498cb716aaf679c80c024fb1158077"
       }
+    },
+    "Persistence/Validation/DataProtectionKeyValidator.cs": {
+      "RelativePath": "Persistence/Validation/DataProtectionKeyValidator.cs",
+      "KnownMembers": [
+        ".ctor",
+        "DataProtectionKeyValidator.DataProtectionKeyValidator()"
+      ],
+      "MemberSyntaxHashes": {}
     },
     "RulesEngine/Analytics/DependencyDagEngine.cs": {
       "RelativePath": "RulesEngine/Analytics/DependencyDagEngine.cs",
@@ -15100,6 +15185,38 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Shared/DataListTypes/JobTriggerSourceEnum.cs": {
+      "RelativePath": "Shared/DataListTypes/JobTriggerSourceEnum.cs",
+      "KnownMembers": [
+        "Cron",
+        "JobTriggerSourceEnum.Cron",
+        "Manual",
+        "JobTriggerSourceEnum.Manual",
+        "Event",
+        "JobTriggerSourceEnum.Event",
+        "FileImport",
+        "JobTriggerSourceEnum.FileImport",
+        "Retry",
+        "JobTriggerSourceEnum.Retry",
+        "Webhook",
+        "JobTriggerSourceEnum.Webhook",
+        ".ctor",
+        "JobTriggerSourceEnum.JobTriggerSourceEnum()",
+        "Categories",
+        "JobTriggerSourceDefinitions.Categories",
+        "Scheduled",
+        "JobTriggerSourceDefinitions.Categories.Scheduled",
+        "Interactive",
+        "JobTriggerSourceDefinitions.Categories.Interactive",
+        "Automated",
+        "JobTriggerSourceDefinitions.Categories.Automated",
+        "ParseTriggerSource",
+        "JobTriggerSourceExtensions.ParseTriggerSource(string?)"
+      ],
+      "MemberSyntaxHashes": {
+        "JobTriggerSourceExtensions.ParseTriggerSource(string?)": "e646556f048541d4e4edf4fdadffbdf7e70680782329be71d732d8e28f154305"
+      }
+    },
     "Shared/DataListTypes/KnowledgeArticleStatus.cs": {
       "RelativePath": "Shared/DataListTypes/KnowledgeArticleStatus.cs",
       "KnownMembers": [
@@ -15985,6 +16102,10 @@
         "CalendarEntryType.TimeOff",
         "General",
         "CalendarEntryType.General",
+        "Sprint",
+        "CalendarEntryType.Sprint",
+        "Deadline",
+        "CalendarEntryType.Deadline",
         "CalendarEntryType.CalendarEntryType()",
         "Scheduled",
         "CalendarEntryStatus.Scheduled",
@@ -17707,7 +17828,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsJobsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ce7b6212ee565808fef9fa8593000486748dd8198316ba620ebbe6c1a0bbf569"
+        "$Markup": "3282fc0ceac9e01a67c97dd0e4333b8aff453c56f026c6130b1be29c59c0f672"
       }
     },
     "Web/Components/Pages/Settings/SettingsNotificationsTab.razor": {
@@ -17756,7 +17877,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "04674f3a4111fdb0a93244404bf207650296464df5f71b53fa9cffea39b2e835"
+        "$Markup": "2fea4cfda4fb24c3da9f24634a5de67dce65321894a8f3c109dfd19cacd9e07e"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserTab.razor": {

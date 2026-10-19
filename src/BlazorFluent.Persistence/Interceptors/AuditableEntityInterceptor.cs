@@ -167,13 +167,50 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
                 else if (entry.State == EntityState.Modified)
                 {
-                    // TenantId is immutable — it can never be changed after creation.
-                    entry.Property(TenantIdProperty).IsModified = false;
-
-                    // Cross-project task immobility: Tasks can NEVER be moved between projects
-                    if (entry.Entity is TaskEntity)
+                    // ─── HARD IMMUTABILITY SECURITY BARRIER ──────────────────────────────────
+                    // 1. TenantId is immutable across all tenant entities
+                    if (entry.Property(TenantIdProperty).IsModified)
                     {
-                        entry.Property(nameof(TaskEntity.ProjectId)).IsModified = false;
+                        _logger.LogWarning(
+                            "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable TenantId on '{Entity}' from '{Original}' to '{Current}'",
+                            currentUserId, entry.Entity.GetType().Name, entry.Property(TenantIdProperty).OriginalValue, entry.Property(TenantIdProperty).CurrentValue);
+
+                        throw new InvalidOperationException(
+                            $"Security Violation: 'TenantId' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
+                    }
+
+                    // 2. BaseTaskEntity Scoping Immutability: Level, ProgramId, and ProjectId can NEVER be moved once created
+                    if (entry.Entity is BaseTaskEntity baseTask)
+                    {
+                        if (entry.Property(nameof(BaseTaskEntity.Level)).IsModified)
+                        {
+                            _logger.LogWarning(
+                                "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable Level on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
+                                currentUserId, entry.Entity.GetType().Name, baseTask.Id, entry.Property(nameof(BaseTaskEntity.Level)).OriginalValue, baseTask.Level);
+
+                            throw new InvalidOperationException(
+                                $"Security Violation: 'Level' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
+                        }
+
+                        if (entry.Property(nameof(BaseTaskEntity.ProgramId)).IsModified)
+                        {
+                            _logger.LogWarning(
+                                "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable ProgramId on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
+                                currentUserId, entry.Entity.GetType().Name, baseTask.Id, entry.Property(nameof(BaseTaskEntity.ProgramId)).OriginalValue, baseTask.ProgramId);
+
+                            throw new InvalidOperationException(
+                                $"Security Violation: 'ProgramId' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
+                        }
+
+                        if (entry.Property(nameof(BaseTaskEntity.ProjectId)).IsModified)
+                        {
+                            _logger.LogWarning(
+                                "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable ProjectId on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
+                                currentUserId, entry.Entity.GetType().Name, baseTask.Id, entry.Property(nameof(BaseTaskEntity.ProjectId)).OriginalValue, baseTask.ProjectId);
+
+                            throw new InvalidOperationException(
+                                $"Security Violation: 'ProjectId' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
+                        }
                     }
 
                     // Cross-tenant write guard for non-host users (check both original and current values)

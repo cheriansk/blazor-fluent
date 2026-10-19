@@ -54,8 +54,8 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
             .HasDefaultValue(string.Empty);
 
         builder.Property(w => w.AssigneeEmails)
-            .HasMaxLength(2000)
-            .IsRequired(false)
+            .HasMaxLength(256)
+            .IsRequired()
             .HasDefaultValue(string.Empty);
 
         builder.Property(w => w.WatcherEmails)
@@ -68,10 +68,7 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(w => w.WorkflowOwnerEmail)
-            .HasMaxLength(256)
-            .IsRequired()
-            .HasDefaultValue(string.Empty);
+        builder.Ignore(w => w.WorkflowOwnerEmail);
 
         builder.Property(w => w.CurrentStepId)
             .IsRequired(false);
@@ -97,7 +94,7 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
         builder.HasIndex(w => new { w.TenantId, w.Level });
         builder.HasIndex(w => new { w.TenantId, w.ProgramId });
         builder.HasIndex(w => new { w.TenantId, w.ProjectId, w.Status });
-        builder.HasIndex(w => new { w.TenantId, w.WorkflowOwnerEmail });
+        builder.HasIndex(w => new { w.TenantId, w.AssigneeEmails });
 
         // Navigation to Tasks as Steps
         builder.HasMany(w => w.Steps)

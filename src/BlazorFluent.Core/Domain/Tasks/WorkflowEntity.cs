@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
@@ -15,8 +16,14 @@ public class WorkflowEntity : BaseTaskEntity
     /// <summary>
     /// Email of the single, constant workflow owner who retains operational accountability
     /// and follows up across all steps to avoid delays.
+    /// Unmapped convenience alias backed by inherited <see cref="BaseTaskEntity.AssigneeEmails"/>.
     /// </summary>
-    public required string WorkflowOwnerEmail { get; set; }
+    [NotMapped]
+    public required string WorkflowOwnerEmail
+    {
+        get => AssigneeEmails ?? string.Empty;
+        set => AssigneeEmails = value;
+    }
 
     /// <summary>
     /// Unique identifier of the currently active step (TaskEntity.Id).

@@ -16,6 +16,7 @@ public class TaskEntityValidatorTests
         Id = Guid.CreateVersion7(),
         TenantId = "tenant_test",
         Level = TaskLevel.Project,
+        ProjectId = Guid.CreateVersion7(),
         Title = "Implement Security Gate",
         Description = "Enforce clearance policy on API endpoints",
         Priority = TaskPriority.High,
@@ -109,5 +110,160 @@ public class TaskEntityValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.WorkflowStepOrder) &&
                                             e.ErrorMessage.Contains("must be null when the task does not belong to a workflow"));
+    }
+
+    // ─── BASE TASK ENTITY LEVEL SCOPING INVARIANTS ──────────────────────────
+
+    [Fact]
+    public void Validate_TenantLevel_ValidScoping_Passes()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Tenant;
+        task.ProgramId = null;
+        task.ProjectId = null;
+        task.UserId = null;
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_TenantLevel_WithProgramOrProject_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Tenant;
+        task.ProgramId = Guid.CreateVersion7();
+        task.ProjectId = Guid.CreateVersion7();
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProgramId) &&
+                                            e.ErrorMessage.Contains("Tenant-level items cannot belong to a specific Program"));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProjectId) &&
+                                            e.ErrorMessage.Contains("Tenant-level items cannot belong to a specific Project"));
+    }
+
+    [Fact]
+    public void Validate_ProgramLevel_ValidScoping_Passes()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Program;
+        task.ProgramId = Guid.CreateVersion7();
+        task.ProjectId = null;
+        task.UserId = null;
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_ProgramLevel_WithoutProgramId_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Program;
+        task.ProgramId = null;
+        task.ProjectId = null;
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProgramId) &&
+                                            e.ErrorMessage.Contains("ProgramId is mandatory"));
+    }
+
+    [Fact]
+    public void Validate_ProgramLevel_WithProjectId_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Program;
+        task.ProgramId = Guid.CreateVersion7();
+        task.ProjectId = Guid.CreateVersion7();
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProjectId) &&
+                                            e.ErrorMessage.Contains("Program-level items cannot belong to a specific Project"));
+    }
+
+    [Fact]
+    public void Validate_ProjectLevel_WithoutProjectId_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Project;
+        task.ProjectId = null;
+        task.ProgramId = null;
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProjectId) &&
+                                            e.ErrorMessage.Contains("ProjectId is mandatory"));
+    }
+
+    [Fact]
+    public void Validate_ProjectLevel_WithProgramId_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.Project;
+        task.ProjectId = Guid.CreateVersion7();
+        task.ProgramId = Guid.CreateVersion7();
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProgramId) &&
+                                            e.ErrorMessage.Contains("Project-level items cannot specify a direct ProgramId"));
+    }
+
+    [Fact]
+    public void Validate_UserLevel_ValidScoping_Passes()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.User;
+        task.UserId = "user-12345";
+        task.ProgramId = null;
+        task.ProjectId = null;
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_UserLevel_WithoutUserId_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.User;
+        task.UserId = null;
+        task.ProgramId = null;
+        task.ProjectId = null;
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.UserId) &&
+                                            e.ErrorMessage.Contains("UserId is mandatory"));
+    }
+
+    [Fact]
+    public void Validate_UserLevel_WithProgramOrProject_Fails()
+    {
+        var task = CreateBaseTask();
+        task.Level = TaskLevel.User;
+        task.UserId = "user-12345";
+        task.ProgramId = Guid.CreateVersion7();
+        task.ProjectId = Guid.CreateVersion7();
+
+        var result = _validator.Validate(task);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProgramId) &&
+                                            e.ErrorMessage.Contains("User-level items cannot belong to a Program"));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TaskEntity.ProjectId) &&
+                                            e.ErrorMessage.Contains("User-level items cannot belong to a Project"));
     }
 }
