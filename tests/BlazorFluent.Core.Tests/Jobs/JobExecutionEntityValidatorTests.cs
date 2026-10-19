@@ -38,7 +38,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "DatabaseVacuumJob",
-            TenantId = JobExecutionEntity.HostTenantId,
+            TenantId = "HOST",
             CorrelationId = "corr_system_999",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatus.Succeeded,

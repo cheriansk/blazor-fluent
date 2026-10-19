@@ -4,6 +4,7 @@ using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Catalog;
 using BlazorFluent.Persistence.Context;
+using BlazorFluent.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -60,14 +61,34 @@ public class JobManagerService : IJobManagerService
         if (string.IsNullOrWhiteSpace(jobName))
             return Result.Failure("JobName is required.");
 
-        // Least Privilege: Non-host users can only trigger jobs for their own active tenant
-        var targetTenantId = _tenantContext.IsHost
-            ? (tenantId ?? JobExecutionEntity.HostTenantId)
-            : (_tenantContext.TenantId ?? JobExecutionEntity.HostTenantId);
-
-        if (!_tenantContext.IsHost && string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        // Zero Trust / Least Privilege: Enforce strict tenant isolation
+        string targetTenantId;
+        if (_tenantContext.IsHost)
         {
-            return Result.Failure("Cannot trigger job: active tenant context is missing.");
+            // Host admin: use explicit tenantId if provided; otherwise fallback to active session;
+            // if neither is available, fallback to the seeded root anchor SystemTenantSlug
+            targetTenantId = !string.IsNullOrWhiteSpace(tenantId)
+                ? tenantId
+                : (!string.IsNullOrWhiteSpace(_tenantContext.TenantId)
+                    ? _tenantContext.TenantId
+                    : SystemIdentityUtility.SystemTenantSlug);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+            {
+                return Result.Failure("Cannot trigger job: active tenant context is missing.");
+            }
+
+            // Fail-closed: non-host users can NEVER trigger jobs for a foreign tenant
+            if (!string.IsNullOrWhiteSpace(tenantId) && !string.Equals(tenantId, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Security Violation: User '{UserId}' in tenant '{ActiveTenant}' attempted to trigger job for foreign tenant '{TargetTenant}'",
+                    _currentUser.UserId, _tenantContext.TenantId, tenantId);
+                return Result.Failure("Access Denied: Non-host users cannot trigger background jobs for another tenant.");
+            }
+
+            targetTenantId = _tenantContext.TenantId;
         }
 
         if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
@@ -75,7 +96,7 @@ public class JobManagerService : IJobManagerService
             return Result.Failure("Authentication and active user email are required to manually trigger background jobs.");
         }
 
-        _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
+        _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId);
 
         var senderOrigin = $"Button:Run{jobName}";
         var senderUserId = _currentUser.UserId ?? _currentUser.Email;
@@ -112,7 +133,7 @@ public class JobManagerService : IJobManagerService
 
         await _auditService.LogUserActivityAsync(
             $"Triggered background job '{jobName}' manually",
-            $"TenantId: {tenantId ?? "Host"}",
+            $"TenantId: {targetTenantId}",
             cancellationToken);
 
         return Result.Success();

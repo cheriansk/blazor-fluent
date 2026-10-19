@@ -6,13 +6,18 @@ namespace BlazorFluent.Core.Domain.Jobs;
 /// <summary>
 /// Persistent record of a background batch job execution.
 /// Stored in PostgreSQL with execution duration, attempt count, and error diagnostics.
-/// Implements <see cref="IGlobalEntity"/> (host-wide visibility) and <see cref="IAuditExemptEntity"/> (prevents recursive auditing).
+/// <para>
+/// <b>Architectural Tenancy Rationale:</b> Implements <see cref="IGlobalEntity"/> (opting out of EF Core's automatic
+/// <c>QueryFilters.Tenant</c>) to allow platform-wide telemetry, cross-tenant operational oversight, and execution by
+/// unauthenticated system daemons (e.g. maintenance jobs with <c>TenantId = "HOST"</c> or <c>"default"</c>).
+/// Multi-tenant isolation for tenant users is strictly enforced at the application boundary via <c>IJobManagerService</c>.
+/// </para>
+/// <para>
+/// Implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing loops, and <see cref="IImmutableEntity"/> to enforce ledger integrity.
+/// </para>
 /// </summary>
 public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity, IImmutableEntity
 {
-    /// <summary>Standard sentinel tenant identifier for platform-wide, cross-tenant maintenance jobs.</summary>
-    public const string HostTenantId = "HOST";
-
     /// <summary>Mandatory correlation identifier linking all chained batch steps in the same pipeline.</summary>
     public required string CorrelationId { get; set; }
 

@@ -72,7 +72,7 @@ public class BatchJobQueueListener : BackgroundService
     {
         if (string.IsNullOrWhiteSpace(jobEvent.TenantId))
         {
-            _logger.LogError("Zero-Trust Security Violation: Batch job event {EventId} missing required TenantId. Aborting job execution (Fail-Closed).", jobEvent.EventId);
+            _logger.LogCritical("Zero-Trust Security Violation: Batch job event {EventId} missing required TenantId. Aborting job execution (Fail-Closed).", jobEvent.EventId);
             return;
         }
 
@@ -147,7 +147,7 @@ public class BatchJobQueueListener : BackgroundService
             {
                 Id = Guid.CreateVersion7(),
                 JobName = jobName,
-                TenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) ? jobEvent.TenantId : JobExecutionEntity.HostTenantId,
+                TenantId = jobEvent.TenantId ,
                 TriggerSource = JobTriggerSourceExtensions.ParseTriggerSource(jobEvent.TriggerSource),
                 CorrelationId = !string.IsNullOrWhiteSpace(jobEvent.CorrelationId) ? jobEvent.CorrelationId : Guid.CreateVersion7().ToString("N")[..12],
                 ParentExecutionId = jobEvent.ParentExecutionId,
