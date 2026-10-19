@@ -1,7 +1,7 @@
 using BlazorFluent.Shared.DataListTypes;
 using FluentValidation;
 
-namespace BlazorFluent.Core.Domain.Events;
+namespace BlazorFluent.Core.Domain.Events.Validators;
 
 /// <summary>
 /// Tier 2 Entity Validator for <see cref="EventConsumptionTrackerEntity"/>.

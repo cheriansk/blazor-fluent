@@ -147,9 +147,9 @@ public class BatchJobQueueListener : BackgroundService
             {
                 Id = Guid.CreateVersion7(),
                 JobName = jobName,
-                TenantId = jobEvent.TenantId,
-                TriggerSource = jobEvent.TriggerSource,
-                CorrelationId = jobEvent.CorrelationId,
+                TenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId) ? jobEvent.TenantId : JobExecutionEntity.HostTenantId,
+                TriggerSource = JobTriggerSourceExtensions.ParseTriggerSource(jobEvent.TriggerSource),
+                CorrelationId = !string.IsNullOrWhiteSpace(jobEvent.CorrelationId) ? jobEvent.CorrelationId : Guid.CreateVersion7().ToString("N")[..12],
                 ParentExecutionId = jobEvent.ParentExecutionId,
                 Status = JobStatus.Running,
                 AttemptCount = 1,

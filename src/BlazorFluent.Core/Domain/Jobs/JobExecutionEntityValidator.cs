@@ -12,13 +12,20 @@ public class JobExecutionEntityValidator : AbstractValidator<JobExecutionEntity>
 {
     public JobExecutionEntityValidator()
     {
+        RuleFor(x => x.CorrelationId)
+            .NotEmpty().WithMessage("CorrelationId is required for distributed traceability.")
+            .MaximumLength(100).WithMessage("CorrelationId cannot exceed 100 characters.");
+
+        RuleFor(x => x.TenantId)
+            .NotEmpty().WithMessage("TenantId is required; use 'HOST' for system-wide jobs.")
+            .MaximumLength(100).WithMessage("TenantId cannot exceed 100 characters.");
+
         RuleFor(x => x.JobName)
             .NotEmpty().WithMessage("JobName is required.")
             .MaximumLength(200).WithMessage("JobName cannot exceed 200 characters.");
 
         RuleFor(x => x.TriggerSource)
-            .NotEmpty().WithMessage("TriggerSource is required.")
-            .MaximumLength(50).WithMessage("TriggerSource cannot exceed 50 characters.");
+            .IsInEnum().WithMessage("A valid JobTriggerSourceEnum is required.");
 
         RuleFor(x => x.Status)
             .IsInEnum().WithMessage("A valid JobStatus is required.");

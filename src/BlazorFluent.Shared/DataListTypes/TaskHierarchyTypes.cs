@@ -227,7 +227,13 @@ public enum CalendarEntryType
     TimeOff = 7,
 
     [Display(Name = "General", Description = "General scheduled event")]
-    General = 8
+    General = 8,
+
+    [Display(Name = "Sprint", Description = "Sprint start and end date cadence")]
+    Sprint = 9,
+
+    [Display(Name = "Deadline", Description = "Target completion deadline or code freeze")]
+    Deadline = 10
 }
 
 /// <summary>

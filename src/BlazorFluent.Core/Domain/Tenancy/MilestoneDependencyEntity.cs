@@ -6,7 +6,7 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Predecessor relationship between project milestones.
 /// Example: 'UAT' depends on 'Build' and 'QA' completing.
 /// </summary>
-public class MilestoneDependencyEntity : TenantAuditableEntity, IProjectScopedEntity
+public class MilestoneDependencyEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity
 {
     /// <summary>
     /// ID of the project owning both milestones.

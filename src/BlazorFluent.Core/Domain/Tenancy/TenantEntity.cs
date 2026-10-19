@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Not tenant-scoped itself — lives in host/admin context.
 /// Implements IEffectiveDatedEntity for subscription/contract validity.
 /// </summary>
-public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity
+public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity
 {
     /// <summary>Short, URL-safe slug used to resolve tenants (e.g., from subdomain or header). Immutable after creation.</summary>
     public string Slug { get; set; } = string.Empty;
@@ -67,4 +67,9 @@ public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntit
 
     /// <summary>Navigation: all user memberships in this tenant.</summary>
     public ICollection<TenantUserEntity> TenantUsers { get; set; } = new List<TenantUserEntity>();
+
+    // --- ISoftDeletableEntity ---
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+    public string? DeletedBy { get; set; }
 }

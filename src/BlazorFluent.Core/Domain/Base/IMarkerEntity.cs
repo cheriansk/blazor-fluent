@@ -66,6 +66,26 @@ public interface ISoftDeletableEntity : IMarkerEntity
     string? DeletedBy { get; set; }
 }
 
+/// <summary>
+/// Marks an entity as hard-deletable. When DbContext.Remove() is invoked,
+/// a physical SQL DELETE is generated and executed in the database.
+/// Used for ephemeral staging tables and graph link/edge records.
+/// Mutually exclusive with <see cref="ISoftDeletableEntity"/> and <see cref="IImmutableEntity"/>.
+/// </summary>
+public interface IHardDeletableEntity : IMarkerEntity
+{
+}
+
+/// <summary>
+/// Marks an entity as strictly immutable and append-only (WORM: Write-Once, Read-Many).
+/// Calling DbContext.Remove() or mutating this entity triggers an immediate exception.
+/// Used for forensic audit records, event ledgers, and background job receipts.
+/// Mutually exclusive with <see cref="ISoftDeletableEntity"/> and <see cref="IHardDeletableEntity"/>.
+/// </summary>
+public interface IImmutableEntity : IMarkerEntity
+{
+}
+
 
 
 

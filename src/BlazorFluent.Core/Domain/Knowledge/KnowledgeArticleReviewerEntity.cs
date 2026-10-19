@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Knowledge;
 /// Extends <see cref="BaseEntity"/>, implements <see cref="IGlobalEntity"/> as a dependent child record governed
 /// by the parent article's query filter.
 /// </summary>
-public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity
+public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity, IHardDeletableEntity
 {
     public Guid ArticleId { get; set; }
 

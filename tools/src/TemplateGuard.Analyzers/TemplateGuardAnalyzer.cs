@@ -69,8 +69,18 @@ namespace TemplateGuard.Analyzers
             description: "All @page routes must explicitly declare their required clearance or authorization tier. Anonymous access is strictly limited to whitelisted utility pages.",
             helpLinkUri: HelpBaseUrl + "#tg005");
 
+        public static readonly DiagnosticDescriptor RuleTg006 = new(
+            id: "TG006",
+            title: "DataList enum type name must end with 'Enum' suffix",
+            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all new enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            category: "Naming",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "All newly created enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            helpLinkUri: HelpBaseUrl + "#tg006");
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005);
+            ImmutableArray.Create(RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -264,9 +274,59 @@ namespace TemplateGuard.Analyzers
             "/not-found"
         };
 
+        private static readonly System.Collections.Generic.HashSet<string> WhitelistedLegacyEnums = new(StringComparer.Ordinal)
+        {
+            "AssumptionValidationStatus",
+            "AuditEventType",
+            "AuditSeverity",
+            "CalendarEntryStatus",
+            "CalendarEntryType",
+            "DependencyCriticality",
+            "EntityOperation",
+            "EventConsumptionStatus",
+            "EventTrackerStatus",
+            "ImportFileType",
+            "ImportStatus",
+            "IssueSeverity",
+            "JobStatus",
+            "KnowledgeArticleScope",
+            "KnowledgeArticleStatus",
+            "MilestoneStatus",
+            "NotificationCategory",
+            "NotificationChannels",
+            "NotificationSeverity",
+            "ProgramHealthRating",
+            "ProgramRole",
+            "ProgramStatus",
+            "ProjectHealthRating",
+            "ProjectRole",
+            "ProjectStatus",
+            "RiskImpact",
+            "RiskProbability",
+            "RiskStatus",
+            "TaskDependencyType",
+            "TaskItemType",
+            "TaskLevel",
+            "TaskPriority",
+            "TaskStatus",
+            "TenantRole",
+            "UserTaskPriority",
+            "UserTaskStatus",
+            "UserType",
+            "WorkflowStepStatus"
+        };
+
         private void AnalyzeNamedType(SymbolAnalysisContext context)
         {
-            if (context.Symbol is not INamedTypeSymbol namedType || namedType.TypeKind != TypeKind.Class) return;
+            if (context.Symbol is not INamedTypeSymbol namedType) return;
+
+            if (namedType.TypeKind == TypeKind.Enum)
+            {
+                AnalyzeEnum(context, namedType);
+                return;
+            }
+
+            if (namedType.TypeKind != TypeKind.Class) return;
 
             var routeAttributes = namedType.GetAttributes()
                 .Where(a => a.AttributeClass?.Name == "RouteAttribute" || a.AttributeClass?.ToDisplayString() == "Microsoft.AspNetCore.Components.RouteAttribute")
@@ -310,6 +370,24 @@ namespace TemplateGuard.Analyzers
                         namedType.Name,
                         routeTemplate));
                 }
+            }
+        }
+
+        private void AnalyzeEnum(SymbolAnalysisContext context, INamedTypeSymbol enumSymbol)
+        {
+            var ns = enumSymbol.ContainingNamespace?.ToDisplayString();
+            if (ns != "BlazorFluent.Shared.DataListTypes") return;
+
+            if (WhitelistedLegacyEnums.Contains(enumSymbol.Name)) return;
+
+            if (!enumSymbol.Name.EndsWith("Enum", StringComparison.Ordinal))
+            {
+                var location = enumSymbol.Locations.FirstOrDefault() ?? Location.None;
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg006,
+                    location,
+                    enumSymbol.Name,
+                    ns));
             }
         }
     }

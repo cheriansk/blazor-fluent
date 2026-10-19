@@ -131,7 +131,26 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
             var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
             var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
             var isSoftDeletable = typeof(ISoftDeletableEntity).IsAssignableFrom(clrType);
+            var isHardDeletable = typeof(IHardDeletableEntity).IsAssignableFrom(clrType);
+            var isImmutable = typeof(IImmutableEntity).IsAssignableFrom(clrType);
             var isProjectScoped = typeof(IProjectScopedEntity).IsAssignableFrom(clrType);
+
+            // Fail-closed Deletion Lifecycle Rule: every entity must implement exactly ONE deletion marker
+            var markerCount = (isSoftDeletable ? 1 : 0) + (isHardDeletable ? 1 : 0) + (isImmutable ? 1 : 0);
+            if (markerCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates the deletion lifecycle architecture! " +
+                    $"It must implement exactly one deletion marker interface: " +
+                    $"'{nameof(ISoftDeletableEntity)}', '{nameof(IHardDeletableEntity)}', or '{nameof(IImmutableEntity)}'.");
+            }
+            if (markerCount > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates the deletion lifecycle architecture! " +
+                    $"It implements multiple conflicting deletion markers. " +
+                    $"An entity must implement at most ONE of '{nameof(ISoftDeletableEntity)}', '{nameof(IHardDeletableEntity)}', or '{nameof(IImmutableEntity)}'.");
+            }
 
             // Fail-closed Global Whitelist Guard: Only approved platform tables may omit TenantId
             if (isGlobal && !WhitelistedGlobalEntities.Contains(clrType))

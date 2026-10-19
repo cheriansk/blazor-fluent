@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Imports;
 /// for ALL file import formats (Excel, CSV, TSV, space-delimited, XML, JSON).
 /// Eliminates the need for per-file-type staging tables and database migrations.
 /// </summary>
-public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity
+public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity
 {
     /// <summary>
     /// Shared batch identifier grouping all files uploaded together in the same session.

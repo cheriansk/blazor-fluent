@@ -8,10 +8,13 @@ namespace BlazorFluent.Core.Domain.Jobs;
 /// Stored in PostgreSQL with execution duration, attempt count, and error diagnostics.
 /// Implements <see cref="IGlobalEntity"/> (host-wide visibility) and <see cref="IAuditExemptEntity"/> (prevents recursive auditing).
 /// </summary>
-public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity
+public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity, IImmutableEntity
 {
-    /// <summary>Correlation identifier linking all chained batch steps in the same pipeline.</summary>
-    public string? CorrelationId { get; set; }
+    /// <summary>Standard sentinel tenant identifier for platform-wide, cross-tenant maintenance jobs.</summary>
+    public const string HostTenantId = "HOST";
+
+    /// <summary>Mandatory correlation identifier linking all chained batch steps in the same pipeline.</summary>
+    public string CorrelationId { get; set; } = string.Empty;
 
     /// <summary>Identifier of the predecessor job execution that triggered this step (if chained).</summary>
     public Guid? ParentExecutionId { get; set; }
@@ -19,11 +22,11 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
     /// <summary>Name or type of the background batch job.</summary>
     public string JobName { get; set; } = string.Empty;
 
-    /// <summary>Originating tenant identifier, or null/host for system jobs.</summary>
-    public string? TenantId { get; set; }
+    /// <summary>Originating tenant identifier, or 'HOST' for platform-wide system jobs.</summary>
+    public string TenantId { get; set; } = HostTenantId;
 
-    /// <summary>How the job was initiated: 'Cron', 'Manual', 'Event', 'Manual Retry'.</summary>
-    public string TriggerSource { get; set; } = "Cron";
+    /// <summary>Strongly-typed trigger mechanism that initiated the execution.</summary>
+    public JobTriggerSourceEnum TriggerSource { get; set; } = JobTriggerSourceEnum.Cron;
 
 
     /// <summary>Current lifecycle status.</summary>

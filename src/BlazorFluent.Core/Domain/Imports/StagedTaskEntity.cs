@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Imports;
 /// Isolated per tenant and per project in schema 'staging.StagedTasks'.
 /// Validated rows are staged here before final transaction commit into 'tasks.Tasks'.
 /// </summary>
-public class StagedTaskEntity : TenantAuditableEntity, IProjectScopedEntity
+public class StagedTaskEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity
 {
     /// <summary>
     /// Foreign key link to the parent ImportFileEntity.

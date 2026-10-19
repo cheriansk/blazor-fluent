@@ -62,10 +62,10 @@ public class JobManagerService : IJobManagerService
 
         // Least Privilege: Non-host users can only trigger jobs for their own active tenant
         var targetTenantId = _tenantContext.IsHost
-            ? tenantId
-            : _tenantContext.TenantId;
+            ? (tenantId ?? JobExecutionEntity.HostTenantId)
+            : (_tenantContext.TenantId ?? JobExecutionEntity.HostTenantId);
 
-        if (!_tenantContext.IsHost && string.IsNullOrWhiteSpace(targetTenantId))
+        if (!_tenantContext.IsHost && string.IsNullOrWhiteSpace(_tenantContext.TenantId))
         {
             return Result.Failure("Cannot trigger job: active tenant context is missing.");
         }

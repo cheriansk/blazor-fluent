@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -7,7 +7,7 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Explicit task dependency link tracking blockers and resolution deadlines.
 /// Enforces tenant and project isolation.
 /// </summary>
-public class TaskDependencyEntity : TenantAuditableEntity, IProjectScopedEntity
+public class TaskDependencyEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity
 {
     /// <summary>
     /// ID of the project owning both tasks.

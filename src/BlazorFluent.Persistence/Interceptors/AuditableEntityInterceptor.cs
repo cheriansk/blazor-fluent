@@ -1,8 +1,9 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Events;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Utilities;
@@ -90,12 +91,29 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
+            // ─── 0. IMMUTABLE RECORD SECURITY GUARD ─────────────────────────────────
+            // Guard immutable records (AuditRecordEntity, EventTrackers, JobExecutions) from deletion and mutation
+            if (entry.Entity is IImmutableEntity)
+            {
+                if (entry.State == EntityState.Deleted)
+                {
+                    throw new InvalidOperationException(
+                        $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}) and can NEVER be deleted.");
+                }
+
+                if (entry.State == EntityState.Modified && entry.Entity is AuditRecordEntity or EventPublishTrackerEntity or EventConsumptionTrackerEntity)
+                {
+                    throw new InvalidOperationException(
+                        $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}) and can NEVER be modified after creation.");
+                }
+            }
+
             if (entry.Entity is DataProtectionKey || entry.Entity is AuditRecordEntity)
             {
                 continue;
             }
 
-            // ─── 0. AUTOMATIC SOFT-DELETE CONVERSION ─────────────────────────────────
+            // ─── 1. AUTOMATIC SOFT-DELETE CONVERSION ─────────────────────────────────
             // If code calls context.Remove(entity) on an ISoftDeletableEntity,
             // intercept the hard delete and convert it into a soft delete.
             if (entry.State == EntityState.Deleted && entry.Entity is ISoftDeletableEntity softDeletable)
@@ -105,6 +123,10 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 softDeletable.DeletedAtUtc = now;
                 softDeletable.DeletedBy = currentUserId;
             }
+
+            // ─── 2. HARD-DELETE CONFORMANCE ──────────────────────────────────────────
+            // If entry.Entity is IHardDeletableEntity, entry.State remains EntityState.Deleted,
+            // proceeding to physical SQL DELETE in PostgreSQL.
 
             // ─── TENANT SECURITY ──────────────────────────────────────────────────────
             if (entry.Entity is ITenantEntity tenantEntity)

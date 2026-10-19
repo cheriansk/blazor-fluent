@@ -9,7 +9,7 @@ namespace BlazorFluent.Core.Domain.Events;
 /// Implements <see cref="ITenantEntity"/> for tenancy scoping,
 /// <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
 /// </summary>
-public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity
+public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
 {
     /// <summary>Tenant scope for row-level isolation. Multi-tenant queries filter by this value.</summary>
     public string TenantId { get; set; } = string.Empty;
