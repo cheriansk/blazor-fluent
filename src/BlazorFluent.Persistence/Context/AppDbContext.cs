@@ -1,7 +1,6 @@
 using System.Reflection;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
-using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Events;
 using BlazorFluent.Core.Domain.Identity;
@@ -59,7 +58,6 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public ICurrentUser CurrentUser => _currentUser;
     public IServiceProvider? ServiceProvider => _serviceProvider;
 
-    public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
     public DbSet<ProgramEntity> Programs => Set<ProgramEntity>();
     public DbSet<ProgramUserRoleEntity> ProgramUserRoles => Set<ProgramUserRoleEntity>();

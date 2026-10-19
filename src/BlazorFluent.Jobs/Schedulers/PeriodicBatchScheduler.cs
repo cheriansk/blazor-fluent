@@ -3,7 +3,6 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Audit;
-using BlazorFluent.Jobs.Jobs.Catalog;
 using BlazorFluent.Jobs.Jobs.Tasks;
 using BlazorFluent.Persistence.Context;
 using Cronos;
@@ -164,21 +163,6 @@ public class PeriodicBatchScheduler : BackgroundService
     private List<ScheduleEntry> BuildSchedules()
     {
         var entries = new List<ScheduleEntry>();
-
-        var catalogCron = _configuration["Jobs:Schedules:CatalogSyncJob"] ?? "*/15 * * * *";
-        if (TryParseCron("CatalogSyncJob", catalogCron, out var parsedCatalog))
-        {
-            entries.Add(new ScheduleEntry(
-                "CatalogSyncJob",
-                parsedCatalog,
-                (tenantId, email) => new CatalogSyncJobEvent(
-                    TriggerSource: "Cron",
-                    TenantId: tenantId,
-                    CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
-                    SenderOrigin: "CatalogSyncJob",
-                    SenderUserId: "cron:CatalogSyncJob",
-                    SenderUserEmail: email)));
-        }
 
         var auditPurgeCron = _configuration["Jobs:Schedules:AuditPurgeJob"] ?? "0 2 * * *";
         var retentionDays = int.TryParse(_configuration["Audit:RetentionDays"], out var days) ? days : 365;

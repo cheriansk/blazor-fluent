@@ -20,7 +20,7 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
     /// <summary>Correlation identifier linking all downstream consumer steps and workflow chains.</summary>
     public required string CorrelationId { get; set; }
 
-    /// <summary>Short name of the event type (e.g. 'CatalogSyncJobEvent', 'ArticleApprovedEvent').</summary>
+    /// <summary>Short name of the event type (e.g. 'TaskCadenceAlertJobEvent', 'ArticleApprovedEvent').</summary>
     public required string EventName { get; set; }
 
     /// <summary>Full assembly-qualified or CLR type name of the event.</summary>
@@ -90,8 +90,8 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
 
     /// <summary>
     /// Computes the sender origin:
-    /// - If batch: the batch name (e.g. CatalogSyncJob)
-    /// - If button on razor page: the button name (e.g. Button:RunCatalogSyncJob)
+    /// - If batch: the batch name (e.g. TaskCadenceAlertJob)
+    /// - If button on razor page: the button name (e.g. Button:RunTaskCadenceAlertJob)
     /// - If class function: the functionName (e.g. ImportFileService.UploadBatchAsync)
     /// </summary>
     public string GetEffectiveSenderOrigin()

@@ -30,7 +30,7 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     /// <summary>Severity classification.</summary>
     public required AuditSeverity Severity { get; set; }
 
-    /// <summary>Name of the entity modified (e.g. 'ProductEntity', 'ProjectEntity'), if applicable.</summary>
+    /// <summary>Name of the entity modified (e.g. 'TaskEntity', 'ProjectEntity'), if applicable.</summary>
     public string? EntityName { get; set; }
 
     /// <summary>Primary key of the modified entity as a string, if applicable.</summary>

@@ -23,12 +23,19 @@
         </div>
         @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
         {
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10" Wrap="true">
+                <FluentSelect TOption="JobTriggerOption"
+                              TValue="string"
+                              Items="@_availableJobs"
+                              OptionText="@(j => j.Name)"
+                              OptionValue="@(j => j.Id)"
+                              @bind-Value="_selectedJobToRun"
+                              Style="min-width: 220px;" />
+                <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Play())" OnClick="@TriggerSelectedJobAsync">
+                    Run Job
+                </FluentButton>
                 <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.ArrowSync())" OnClick="@LoadExecutionsAsync">
                     Refresh
-                </FluentButton>
-                <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Play())" OnClick="@TriggerCatalogSyncAsync">
-                    Run Catalog Sync Job
                 </FluentButton>
             </FluentStack>
         }
@@ -234,6 +241,15 @@
 
 @code {
     public record TenantFilterOption(string Id, string Name);
+    public record JobTriggerOption(string Id, string Name);
+
+    private readonly List<JobTriggerOption> _availableJobs = new()
+    {
+        new("TaskCadenceAlertJob", "Task Cadence Alert Job"),
+        new("DailyTaskSummaryJob", "Daily Task Summary Job"),
+        new("AuditPurgeJob", "Forensic Audit Purge Job")
+    };
+    private string _selectedJobToRun = "TaskCadenceAlertJob";
 
     private List<TenantFilterOption> _availableTenants = new();
     private string? _selectedTenantId;
@@ -334,14 +350,14 @@
         }
     }
 
-    private async Task TriggerCatalogSyncAsync()
+    private async Task TriggerSelectedJobAsync()
     {
-        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        if (string.IsNullOrWhiteSpace(_selectedTenantId) || string.IsNullOrWhiteSpace(_selectedJobToRun)) return;
 
-        var result = await JobManagerService.TriggerJobAsync("CatalogSyncJob", _selectedTenantId);
+        var result = await JobManagerService.TriggerJobAsync(_selectedJobToRun, _selectedTenantId);
         if (result.Succeeded)
         {
-            _statusMessage = result.Message ?? "Catalog Sync job event enqueued successfully. Processing in background.";
+            _statusMessage = result.Message ?? $"Job '{_selectedJobToRun}' enqueued successfully. Processing in background.";
             _isError = false;
             await Task.Delay(300);
             await LoadExecutionsAsync();

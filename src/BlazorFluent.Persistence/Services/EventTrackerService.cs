@@ -62,7 +62,7 @@ public class EventTrackerService : IEventTrackerService
     {
         try
         {
-            // Use runtime type so concrete derived event types (e.g. CatalogSyncJobEvent) are captured accurately
+            // Use runtime type so concrete derived event types (e.g. TaskCadenceAlertJobEvent) are captured accurately
             var runtimeType = @event?.GetType() ?? typeof(TEvent);
             var eventName = runtimeType.Name;
             var eventTypeFullName = runtimeType.FullName;

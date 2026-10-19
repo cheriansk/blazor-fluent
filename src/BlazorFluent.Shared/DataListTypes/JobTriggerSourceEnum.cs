@@ -52,7 +52,7 @@ public static class JobTriggerSourceDefinitions
 public static class JobTriggerSourceExtensions
 {
     /// <summary>
-    /// Safely maps raw trigger string tags (e.g. 'Button:RunCatalogSync', 'Cron', 'FileImport:xlsx') to the strongly-typed enum.
+    /// Safely maps raw trigger string tags (e.g. 'Button:RunTaskCadenceAlert', 'Cron', 'FileImport:xlsx') to the strongly-typed enum.
     /// </summary>
     public static JobTriggerSourceEnum ParseTriggerSource(string? source)
     {

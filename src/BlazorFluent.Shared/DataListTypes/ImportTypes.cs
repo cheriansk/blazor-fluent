@@ -59,17 +59,7 @@ public enum ImportFileType
     [Display(Name = "Project Tasks (CSV .csv)", Description = "Project tasks comma-delimited plain text file.")]
     [DataListCategory(ImportFileTypeDefinitions.Categories.Text)]
     [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
-    TaskCsv = 4,
-
-    [Display(Name = "Catalog Products (Excel .xlsx)", Description = "Catalog products workbook with Items and Inventory.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Spreadsheet)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
-    ProductExcel = 5,
-
-    [Display(Name = "Catalog Products (JSON .json)", Description = "Catalog products JSON document.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Hierarchical)]
-    ProductJson = 6
+    TaskCsv = 4
 }
 
 #endregion

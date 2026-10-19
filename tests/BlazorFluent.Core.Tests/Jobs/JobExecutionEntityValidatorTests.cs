@@ -15,7 +15,7 @@ public class JobExecutionEntityValidatorTests
         var execution = new JobExecutionEntity
         {
             Id = Guid.CreateVersion7(),
-            JobName = "CatalogSyncJob",
+            JobName = "TaskCadenceAlertJob",
             TenantId = "tnt_acme",
             CorrelationId = "corr_12345678",
             TriggerSource = JobTriggerSourceEnum.Manual,
@@ -61,7 +61,7 @@ public class JobExecutionEntityValidatorTests
         var execution = new JobExecutionEntity
         {
             Id = Guid.CreateVersion7(),
-            JobName = "CatalogSyncJob",
+            JobName = "TaskCadenceAlertJob",
             TenantId = "tnt_acme",
             CorrelationId = "", // Invalid
             TriggerSource = JobTriggerSourceEnum.Cron,
@@ -83,7 +83,7 @@ public class JobExecutionEntityValidatorTests
         var execution = new JobExecutionEntity
         {
             Id = Guid.CreateVersion7(),
-            JobName = "CatalogSyncJob",
+            JobName = "TaskCadenceAlertJob",
             TenantId = "", // Invalid
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
@@ -127,7 +127,7 @@ public class JobExecutionEntityValidatorTests
         var execution = new JobExecutionEntity
         {
             Id = Guid.CreateVersion7(),
-            JobName = "CatalogSyncJob",
+            JobName = "TaskCadenceAlertJob",
             TenantId = "tnt_acme",
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,

@@ -1,8 +1,10 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
-using BlazorFluent.Jobs.Jobs.Catalog;
+using BlazorFluent.Jobs.Jobs.Audit;
+using BlazorFluent.Jobs.Jobs.Tasks;
 using BlazorFluent.Persistence.Context;
 using BlazorFluent.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -104,32 +106,42 @@ public class JobManagerService : IJobManagerService
         var correlationId = Guid.CreateVersion7().ToString("N")[..12];
 
         // Map known job names to their respective typed event triggers
-        if (jobName.Equals("CatalogSyncJob", StringComparison.OrdinalIgnoreCase) ||
-            jobName.Equals("CatalogSyncJobEvent", StringComparison.OrdinalIgnoreCase))
+        BaseJobEvent? jobEvent = jobName switch
         {
-            var jobEvent = new CatalogSyncJobEvent(
+            nameof(TaskCadenceAlertJobEvent) or "TaskCadenceAlertJob" => new TaskCadenceAlertJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
                 CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
-                SenderUserEmail: senderUserEmail);
+                SenderUserEmail: senderUserEmail),
 
-            await _queue.EnqueueAsync(jobEvent, cancellationToken);
-        }
-        else
-        {
-            // Generic catalog sync fallback for demo purposes
-            var jobEvent = new CatalogSyncJobEvent(
+            nameof(DailyTaskSummaryJobEvent) or "DailyTaskSummaryJob" => new DailyTaskSummaryJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
                 CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
-                SenderUserEmail: senderUserEmail);
+                SenderUserEmail: senderUserEmail),
 
-            await _queue.EnqueueAsync(jobEvent, cancellationToken);
+            nameof(AuditPurgeJobEvent) or "AuditPurgeJob" => new AuditPurgeJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: targetTenantId,
+                CorrelationId: correlationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: senderUserId,
+                SenderUserEmail: senderUserEmail),
+
+            _ => null
+        };
+
+        if (jobEvent is null)
+        {
+            _logger.LogWarning("Cannot trigger unknown job type: '{JobName}'", jobName);
+            return Result.Failure($"Unknown job type: '{jobName}'. Supported jobs are: TaskCadenceAlertJob, DailyTaskSummaryJob, AuditPurgeJob.");
         }
+
+        await _queue.EnqueueAsync(jobEvent, cancellationToken);
 
         await _auditService.LogUserActivityAsync(
             $"Triggered background job '{jobName}' manually",
@@ -167,14 +179,44 @@ public class JobManagerService : IJobManagerService
         var senderOrigin = $"Button:Retry{execution.JobName}";
         var retryUserId = _currentUser.UserId ?? _currentUser.Email;
         var retryUserEmail = _currentUser.Email;
-        var retryEvent = new CatalogSyncJobEvent(
-            TriggerSource: senderOrigin,
-            TenantId: execution.TenantId,
-            CorrelationId: execution.CorrelationId,
-            SenderOrigin: senderOrigin,
-            SenderUserId: retryUserId,
-            SenderUserEmail: retryUserEmail,
-            ParentExecutionId: execution.Id);
+
+        BaseJobEvent? retryEvent = execution.JobName switch
+        {
+            nameof(TaskCadenceAlertJobEvent) or "TaskCadenceAlertJob" => new TaskCadenceAlertJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: execution.TenantId,
+                CorrelationId: execution.CorrelationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: retryUserId,
+                SenderUserEmail: retryUserEmail,
+                ParentExecutionId: execution.Id),
+
+            nameof(DailyTaskSummaryJobEvent) or "DailyTaskSummaryJob" => new DailyTaskSummaryJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: execution.TenantId,
+                CorrelationId: execution.CorrelationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: retryUserId,
+                SenderUserEmail: retryUserEmail,
+                ParentExecutionId: execution.Id),
+
+            nameof(AuditPurgeJobEvent) or "AuditPurgeJob" => new AuditPurgeJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: execution.TenantId,
+                CorrelationId: execution.CorrelationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: retryUserId,
+                SenderUserEmail: retryUserEmail,
+                ParentExecutionId: execution.Id),
+
+            _ => null
+        };
+
+        if (retryEvent is null)
+        {
+            _logger.LogWarning("Cannot retry job execution {ExecutionId}: unsupported job name '{JobName}'", executionId, execution.JobName);
+            return Result.Failure($"Cannot retry job: unsupported job name '{execution.JobName}'.");
+        }
 
         await _queue.EnqueueAsync(retryEvent, cancellationToken);
 
