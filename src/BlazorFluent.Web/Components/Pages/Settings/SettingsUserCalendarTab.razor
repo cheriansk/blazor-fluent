@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Components.Common
+@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Calendar
@@ -206,22 +206,24 @@
         try
         {
             var tenantId = TenantContext.TenantId ?? string.Empty;
-            var userId = CurrentUser.Email ?? CurrentUser.UserId ?? string.Empty;
+            Guid.TryParse(CurrentUser.UserId, out var userGuid);
             var eventDate = _newEventDate ?? DateTime.UtcNow.Date;
+
+            var baseDesc = _newEventDescription?.Trim() ?? string.Empty;
+            var description = !string.IsNullOrWhiteSpace(_newLocation)
+                ? (string.IsNullOrWhiteSpace(baseDesc) ? $"Location: {_newLocation.Trim()}" : $"{baseDesc}\nLocation: {_newLocation.Trim()}")
+                : baseDesc;
 
             var entry = new UserCalendarEntity
             {
                 TenantId = tenantId,
-                UserId = userId,
+                UserId = userGuid,
                 Title = _newEventTitle.Trim(),
-                Description = _newEventDescription?.Trim() ?? string.Empty,
-                StartUtc = eventDate,
-                EndUtc = eventDate.AddHours(1),
-                IsAllDay = false,
+                Description = description,
+                StartDate = eventDate,
+                EndDate = eventDate.AddHours(1),
                 EntryType = _newEntryType,
-                Status = CalendarEntryStatus.Confirmed,
-                OrganizerEmail = CurrentUser.Email ?? string.Empty,
-                LocationOrMeetingUrl = _newLocation
+                Status = CalendarEntryStatus.Confirmed
             };
 
             var result = await CalendarService.CreateUserCalendarEntryAsync(entry);

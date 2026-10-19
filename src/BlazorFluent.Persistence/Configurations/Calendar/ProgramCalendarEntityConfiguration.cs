@@ -29,18 +29,11 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(c => c.StartUtc)
+        builder.Property(c => c.StartDate)
             .IsRequired();
 
-        builder.Property(c => c.EndUtc)
-            .IsRequired();
-
-        builder.Ignore(c => c.StartDate);
-        builder.Ignore(c => c.EndDate);
-
-        builder.Property(c => c.IsAllDay)
-            .IsRequired()
-            .HasDefaultValue(false);
+        builder.Property(c => c.EndDate)
+            .IsRequired(false);
 
         builder.Property(c => c.EntryType)
             .IsRequired()
@@ -49,20 +42,6 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
         builder.Property(c => c.Status)
             .IsRequired()
             .HasConversion<int>();
-
-        builder.Property(c => c.OrganizerEmail)
-            .HasMaxLength(256)
-            .IsRequired()
-            .HasDefaultValue(string.Empty);
-
-        builder.Property(c => c.ParticipantEmails)
-            .HasMaxLength(2000)
-            .IsRequired(false)
-            .HasDefaultValue(string.Empty);
-
-        builder.Property(c => c.LocationOrMeetingUrl)
-            .HasMaxLength(2000)
-            .IsRequired(false);
 
         builder.Property(c => c.AssociatedTaskId)
             .IsRequired(false);
@@ -92,7 +71,7 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
         builder.HasIndex(c => new { c.TenantId, c.ProgramId })
             .HasDatabaseName("IX_ProgramCalendars_Tenant_Program");
 
-        builder.HasIndex(c => new { c.ProgramId, c.StartUtc, c.EndUtc })
+        builder.HasIndex(c => new { c.ProgramId, c.StartDate, c.EndDate })
             .HasDatabaseName("IX_ProgramCalendars_Program_Start_End");
     }
 }

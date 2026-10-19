@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Components.Common
+@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Jobs
@@ -381,7 +381,7 @@
                 var term = _jobSearchText.Trim();
                 query = query.Where(e =>
                     (e.JobName != null && e.JobName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (e.TriggerSource != null && e.TriggerSource.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    e.TriggerSource.ToString().Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     (e.CorrelationId != null && e.CorrelationId.Contains(term, StringComparison.OrdinalIgnoreCase)));
             }
             return query;

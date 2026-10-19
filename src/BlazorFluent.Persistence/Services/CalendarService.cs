@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Dtos.Response;
@@ -38,7 +38,7 @@ public class CalendarService : ICalendarService
         var directEntries = await _context.ProgramCalendars
             .AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.ProgramId == programId && !c.IsDeleted &&
-                        c.StartUtc <= endUtc && c.EndUtc >= startUtc)
+                        c.StartDate <= endUtc && c.EndDate >= startUtc)
             .ToListAsync(ct);
 
         var directDtos = directEntries.Select(c => new CalendarItemDto
@@ -46,13 +46,13 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
-            StartUtc = c.StartUtc,
-            EndUtc = c.EndUtc,
-            IsAllDay = c.IsAllDay,
+            StartUtc = c.StartDate,
+            EndUtc = c.EndDate ?? c.StartDate,
+            IsAllDay = true,
             ItemCategory = c.EntryType.ToString(),
             PriorityOrCriticality = "Normal",
             Status = c.Status.ToString(),
-            OwnerOrAssignee = c.OrganizerEmail,
+            OwnerOrAssignee = string.Empty,
             ColorHex = "#0078d4",
             BadgeIcon = "Calendar",
             ScopeId = c.ProgramId,
@@ -83,7 +83,7 @@ public class CalendarService : ICalendarService
         var directEntries = await _context.ProjectCalendars
             .AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && !c.IsDeleted &&
-                        c.StartUtc <= endUtc && c.EndUtc >= startUtc)
+                        c.StartDate <= endUtc && c.EndDate >= startUtc)
             .ToListAsync(ct);
 
         var directDtos = directEntries.Select(c => new CalendarItemDto
@@ -91,13 +91,13 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
-            StartUtc = c.StartUtc,
-            EndUtc = c.EndUtc,
-            IsAllDay = c.IsAllDay,
+            StartUtc = c.StartDate,
+            EndUtc = c.EndDate ?? c.StartDate,
+            IsAllDay = true,
             ItemCategory = c.EntryType.ToString(),
             PriorityOrCriticality = "Normal",
             Status = c.Status.ToString(),
-            OwnerOrAssignee = c.OrganizerEmail,
+            OwnerOrAssignee = string.Empty,
             ColorHex = "#107c41",
             BadgeIcon = "Calendar",
             ScopeId = c.ProjectId,
@@ -125,10 +125,11 @@ public class CalendarService : ICalendarService
         CancellationToken ct = default)
     {
         // 1. Direct user calendar entries
+        Guid.TryParse(userId, out var userGuid);
         var directEntries = await _context.UserCalendars
             .AsNoTracking()
-            .Where(c => c.TenantId == tenantId && c.UserId == userId && !c.IsDeleted &&
-                        c.StartUtc <= endUtc && c.EndUtc >= startUtc)
+            .Where(c => c.TenantId == tenantId && c.UserId == userGuid && !c.IsDeleted &&
+                        c.StartDate <= endUtc && c.EndDate >= startUtc)
             .ToListAsync(ct);
 
         var directDtos = directEntries.Select(c => new CalendarItemDto
@@ -136,13 +137,13 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
-            StartUtc = c.StartUtc,
-            EndUtc = c.EndUtc,
-            IsAllDay = c.IsAllDay,
+            StartUtc = c.StartDate,
+            EndUtc = c.EndDate ?? c.StartDate,
+            IsAllDay = true,
             ItemCategory = c.EntryType.ToString(),
             PriorityOrCriticality = "Normal",
             Status = c.Status.ToString(),
-            OwnerOrAssignee = c.OrganizerEmail,
+            OwnerOrAssignee = string.Empty,
             ColorHex = "#8764b8",
             BadgeIcon = "Calendar",
             Level = TaskLevel.User
