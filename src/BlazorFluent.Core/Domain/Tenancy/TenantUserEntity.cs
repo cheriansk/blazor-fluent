@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 
@@ -8,7 +8,7 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Represents a user's explicit membership and organizational role within a tenant.
 /// Enables users to belong to multiple client tenants with least-privilege Zero Trust gating.
 /// </summary>
-public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IValidationExemptEntity
+public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
     public Guid TenantEntityId { get; set; }
 

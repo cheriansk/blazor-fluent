@@ -19,6 +19,13 @@ public interface IAuditableEntity : IMarkerEntity
     DateTime Updated { get; set; }
     string UpdatedBy { get; set; }
 }
+/// <summary>
+/// Exempts an entity from Level 2 before/after property diff logging in audit.AuditRecords.
+/// Applied to AuditRecordEntity and JobExecutionEntity to prevent infinite recursive audit loops.
+/// </summary>
+public interface IAuditExemptEntity : IMarkerEntity { }
+
+
 
 /// <summary>
 /// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
@@ -60,11 +67,7 @@ public interface ISoftDeletableEntity : IMarkerEntity
 }
 
 
-/// <summary>
-/// Exempts an entity from Level 2 before/after property diff logging in audit.AuditRecords.
-/// Applied to AuditRecordEntity and JobExecutionEntity to prevent infinite recursive audit loops.
-/// </summary>
-public interface IAuditExemptEntity : IMarkerEntity { }
+
 
 /// <summary>
 /// Enforces effective dating (temporal validity) on database records.
@@ -95,9 +98,3 @@ public interface IVersionedEntity : IMarkerEntity
     void SetVersionNumber(int newVersion);
 }
 
-/// <summary>
-/// Explicitly exempts an internal system or infrastructure entity (e.g. AuditRecordEntity, JobExecutionEntity)
-/// from mandatory fail-closed entity validator enforcement.
-/// Non-exempt entities MUST have an IValidator<TEntity> registered in DI or the application will fail at startup.
-/// </summary>
-public interface IValidationExemptEntity : IMarkerEntity { }

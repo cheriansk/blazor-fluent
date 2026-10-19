@@ -5,9 +5,9 @@ namespace BlazorFluent.Core.Domain.Knowledge;
 /// <summary>
 /// Represents an assigned reviewer for a knowledge article.
 /// Extends <see cref="BaseEntity"/>, implements <see cref="IGlobalEntity"/> as a dependent child record governed
-/// by the parent article's query filter, and <see cref="IValidationExemptEntity"/>.
+/// by the parent article's query filter.
 /// </summary>
-public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity, IValidationExemptEntity
+public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity
 {
     public Guid ArticleId { get; set; }
 

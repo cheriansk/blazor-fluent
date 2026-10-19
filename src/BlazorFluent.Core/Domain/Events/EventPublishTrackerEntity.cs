@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Events;
@@ -8,9 +8,8 @@ namespace BlazorFluent.Core.Domain.Events;
 /// who emitted it (source class and method), acting user, payload JSON, and aggregate status.
 /// Implements <see cref="ITenantEntity"/> for tenancy scoping,
 /// <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
-/// and <see cref="IValidationExemptEntity"/> since it represents an immutable event log.
 /// </summary>
-public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IValidationExemptEntity
+public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity
 {
     /// <summary>Tenant scope for row-level isolation. Multi-tenant queries filter by this value.</summary>
     public string TenantId { get; set; } = string.Empty;

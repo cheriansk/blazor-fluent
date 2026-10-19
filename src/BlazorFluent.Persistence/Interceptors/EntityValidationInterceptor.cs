@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
-using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Exceptions;
 using BlazorFluent.Persistence.Context;
 using FluentValidation;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -69,11 +67,6 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
         foreach (var entry in entries)
         {
-            if (IsExemptEntity(entry.Entity))
-            {
-                continue;
-            }
-
             var entityType = entry.Entity.GetType();
             var validatorType = _validatorTypeCache.GetOrAdd(
                 entityType,
@@ -103,7 +96,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
             }
             else
             {
-                // Fail-closed safety: Non-exempt entity has no registered validator in DI
+                // Fail-closed safety: Entity has no registered validator in DI
                 var entityName = entityType.Name;
                 var key = $"{entityName}.Validator";
                 if (!errors.TryGetValue(key, out var list))
@@ -111,7 +104,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
                     list = new List<string>();
                     errors[key] = list;
                 }
-                list.Add($"Entity '{entityName}' does not implement IValidationExemptEntity and lacks a registered IValidator<{entityName}>.");
+                list.Add($"Entity '{entityName}' lacks a registered IValidator<{entityName}>.");
             }
         }
 
@@ -136,11 +129,6 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
 
         foreach (var entry in entries)
         {
-            if (IsExemptEntity(entry.Entity))
-            {
-                continue;
-            }
-
             var entityType = entry.Entity.GetType();
             var validatorType = _validatorTypeCache.GetOrAdd(
                 entityType,
@@ -177,7 +165,7 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
                     list = new List<string>();
                     errors[key] = list;
                 }
-                list.Add($"Entity '{entityName}' does not implement IValidationExemptEntity and lacks a registered IValidator<{entityName}>.");
+                list.Add($"Entity '{entityName}' lacks a registered IValidator<{entityName}>.");
             }
         }
 
@@ -186,7 +174,4 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
             throw new EntityValidationException(errors.ToDictionary(k => k.Key, v => v.Value.ToArray()));
         }
     }
-
-    private static bool IsExemptEntity(object entity) =>
-        entity is IValidationExemptEntity or DataProtectionKey;
 }

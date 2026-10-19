@@ -158,18 +158,16 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                     $"All project-level tables must be strictly partitioned by both TenantId and ProjectId.");
             }
 
-            // Fail-closed Validation Rule: every business entity must have a registered IValidator<TEntity>
-            // unless explicitly tagged with IValidationExemptEntity (e.g. AuditRecordEntity, JobExecutionEntity).
-            var isValidationExempt = typeof(IValidationExemptEntity).IsAssignableFrom(clrType);
-            if (!isValidationExempt && _serviceProvider is not null)
+            // Fail-closed Validation Rule: every entity must have a registered IValidator<TEntity>
+            if (_serviceProvider is not null)
             {
                 var validatorType = typeof(IValidator<>).MakeGenericType(clrType);
                 if (_serviceProvider.GetService(validatorType) is null)
                 {
                     throw new InvalidOperationException(
                         $"Entity '{clrType.Name}' violates the mandatory entity validation architecture! " +
-                        $"It does not implement '{nameof(IValidationExemptEntity)}' and lacks a registered 'IValidator<{clrType.Name}>' in DI. " +
-                        $"Every business entity must have a companion validator class or explicitly implement '{nameof(IValidationExemptEntity)}'.");
+                        $"It lacks a registered 'IValidator<{clrType.Name}>' in DI. " +
+                        $"Every business entity must have a companion validator class.");
                 }
             }
 

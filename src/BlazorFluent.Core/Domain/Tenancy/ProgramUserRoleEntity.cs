@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 
@@ -9,7 +9,7 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Scoped to a tenant via <see cref="TenantAuditableEntity"/>.
 /// Implements <see cref="ISoftDeletableEntity"/> to maintain authorization audit history.
 /// </summary>
-public class ProgramUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IValidationExemptEntity
+public class ProgramUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// ID of the program to which this role assignment belongs.

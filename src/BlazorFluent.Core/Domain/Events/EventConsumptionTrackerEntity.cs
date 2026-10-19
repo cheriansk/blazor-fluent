@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Events;
@@ -8,9 +8,8 @@ namespace BlazorFluent.Core.Domain.Events;
 /// which handler class and method consumed it, when it ran, duration in ms, and diagnostics.
 /// Implements <see cref="ITenantEntity"/> for tenancy scoping,
 /// <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
-/// and <see cref="IValidationExemptEntity"/> since it represents an immutable execution record.
 /// </summary>
-public class EventConsumptionTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IValidationExemptEntity
+public class EventConsumptionTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity
 {
     /// <summary>Tenant scope for row-level isolation.</summary>
     public string TenantId { get; set; } = string.Empty;

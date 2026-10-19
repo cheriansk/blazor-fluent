@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 
@@ -9,7 +9,7 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Scoped to a tenant via <see cref="TenantAuditableEntity"/> and a project via <see cref="IProjectScopedEntity"/>.
 /// Implements <see cref="ISoftDeletableEntity"/> so revoked roles preserve historical audit trails.
 /// </summary>
-public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IValidationExemptEntity
+public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity
 {
     /// <summary>
     /// ID of the project to which this role assignment belongs.
