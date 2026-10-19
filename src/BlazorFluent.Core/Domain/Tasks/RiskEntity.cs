@@ -1,3 +1,4 @@
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -6,9 +7,15 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Formal enterprise risk entity ("R" of RAID).
 /// Quantitative probability and impact matrix with exposure score, mitigation, and contingency plans.
 /// Can be scoped to Tenant, Program, or Project levels.
+/// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class RiskEntity : BaseTaskEntity
+public class RiskEntity : BaseTaskEntity, IMilestoneLinkedEntity
 {
+    /// <summary>
+    /// Optional foreign key to a project or program milestone.
+    /// </summary>
+    public Guid? MilestoneId { get; set; }
+
     /// <summary>
     /// Financial, schedule, or operational impact rating (Low, Medium, High, Critical).
     /// </summary>

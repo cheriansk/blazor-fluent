@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -85,6 +85,9 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
             .IsRequired(false);
 
         builder.Property(a => a.ProjectId)
+            .IsRequired(false);
+
+        builder.Property(a => a.MilestoneId)
             .IsRequired(false);
 
         builder.Property(a => a.UserId)

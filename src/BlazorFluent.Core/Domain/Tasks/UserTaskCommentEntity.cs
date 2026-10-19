@@ -10,7 +10,7 @@ namespace BlazorFluent.Core.Domain.Tasks;
 public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
 {
     /// <summary>
-    /// Foreign key to the parent <see cref="UserTaskEntity"/>.
+    /// Foreign key to the parent <see cref="TaskEntity"/>.
     /// </summary>
     public required Guid TaskId { get; set; }
 
@@ -51,5 +51,5 @@ public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity
     public string? DeletedBy { get; set; }
 
     // --- Navigation Property ---
-    public UserTaskEntity? Task { get; set; }
+    public TaskEntity? Task { get; set; }
 }

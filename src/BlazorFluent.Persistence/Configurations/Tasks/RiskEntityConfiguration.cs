@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -95,6 +95,9 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
             .IsRequired(false);
 
         builder.Property(r => r.ProjectId)
+            .IsRequired(false);
+
+        builder.Property(r => r.MilestoneId)
             .IsRequired(false);
 
         builder.Property(r => r.UserId)

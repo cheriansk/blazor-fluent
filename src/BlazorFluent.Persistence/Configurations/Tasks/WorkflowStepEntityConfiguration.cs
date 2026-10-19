@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +25,9 @@ public class WorkflowStepEntityConfiguration : IEntityTypeConfiguration<Workflow
 
         builder.Property(s => s.WorkflowTaskId)
             .IsRequired();
+
+        builder.Property(s => s.TaskId)
+            .IsRequired(false);
 
         builder.Property(s => s.Title)
             .HasMaxLength(200)
@@ -98,8 +101,20 @@ public class WorkflowStepEntityConfiguration : IEntityTypeConfiguration<Workflow
             .HasMaxLength(256)
             .IsRequired(false);
 
+        // Relationships
+        builder.HasOne(s => s.WorkflowTask)
+            .WithMany()
+            .HasForeignKey(s => s.WorkflowTaskId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(s => s.Task)
+            .WithMany()
+            .HasForeignKey(s => s.TaskId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Indices
         builder.HasIndex(s => new { s.WorkflowTaskId, s.StepOrder });
         builder.HasIndex(s => new { s.TenantId, s.StepOwnerEmail, s.StepStatus });
+        builder.HasIndex(s => s.TaskId);
     }
 }

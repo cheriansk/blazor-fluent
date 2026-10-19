@@ -11,7 +11,7 @@ namespace BlazorFluent.Jobs.FileImports.Tasks;
 
 /// <summary>
 /// Step 3 Domain Promotion: Promotes valid staged task records into live domain entities.
-/// Inserts records into 'tasks.Tasks' (UserTaskEntity) and completes the file lifecycle.
+/// Inserts records into 'tasks.Tasks' (TaskEntity) and completes the file lifecycle.
 /// </summary>
 public class TaskProcess : IFileProcessor
 {
@@ -87,7 +87,7 @@ public class TaskProcess : IFileProcessor
 
             await _dbContext.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Successfully committed {Count} live UserTaskEntity records for FileId={FileId}",
+            _logger.LogInformation("Successfully committed {Count} live TaskEntity records for FileId={FileId}",
                 liveTasks.Count, file.Id);
 
             return Result<int>.Success(liveTasks.Count);

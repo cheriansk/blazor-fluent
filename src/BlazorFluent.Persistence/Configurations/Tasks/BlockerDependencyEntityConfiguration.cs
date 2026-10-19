@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -28,15 +28,12 @@ public class BlockerDependencyEntityConfiguration : IEntityTypeConfiguration<Blo
         builder.Property(b => b.TargetTaskId)
             .IsRequired();
 
-        builder.Property(b => b.ImpactDetails)
-            .HasMaxLength(5000)
-            .IsRequired();
-
-        builder.Property(b => b.Criticality)
-            .IsRequired()
-            .HasConversion<int>();
-
+        builder.Ignore(b => b.ImpactDetails);
+        builder.Ignore(b => b.Criticality);
         builder.Ignore(b => b.ResolveDueDate);
+
+        builder.Property(b => b.MilestoneId)
+            .IsRequired(false);
 
         builder.Property(b => b.Title)
             .HasMaxLength(200)

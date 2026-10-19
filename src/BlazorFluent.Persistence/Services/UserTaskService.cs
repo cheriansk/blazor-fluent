@@ -739,10 +739,10 @@ public partial class UserTaskService : IUserTaskService
                 SourceTaskId = sourceTaskId,
                 TargetTaskId = targetTaskId,
                 Title = $"Blocker: '{sourceTask.Title}' blocked by '{targetTask.Title}'",
-                Description = $"Dependency contract. Prerequisite: '{targetTask.Title}'. Dependent: '{sourceTask.Title}'.",
-                ImpactDetails = impactDetails,
+                Description = string.IsNullOrWhiteSpace(impactDetails)
+                    ? $"Dependency contract. Prerequisite: '{targetTask.Title}'. Dependent: '{sourceTask.Title}'."
+                    : impactDetails,
                 Criticality = criticality,
-                Priority = criticality == DependencyCriticality.Critical ? TaskPriority.Urgent : TaskPriority.High,
                 Status = targetTask.IsClosed ? TaskStatus.Closed : TaskStatus.Open,
                 StartDate = DateTime.UtcNow,
                 DueDate = resolveDueDate,

@@ -1,3 +1,4 @@
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -6,9 +7,15 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Operational or strategic assumption ("A" of RAID).
 /// Tracks factors believed to be true during planning, along with validation status and invalidation blast radius.
 /// Can be scoped to Program or Project levels.
+/// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class AssumptionEntity : BaseTaskEntity
+public class AssumptionEntity : BaseTaskEntity, IMilestoneLinkedEntity
 {
+    /// <summary>
+    /// Optional foreign key to a project or program milestone.
+    /// </summary>
+    public Guid? MilestoneId { get; set; }
+
     /// <summary>
     /// Explicit criteria or tests required to validate this assumption.
     /// </summary>

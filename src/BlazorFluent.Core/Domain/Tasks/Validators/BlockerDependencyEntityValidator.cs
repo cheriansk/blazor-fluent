@@ -16,11 +16,11 @@ public class BlockerDependencyEntityValidator : AbstractValidator<BlockerDepende
             .Must(x => x.SourceTaskId != x.TargetTaskId)
             .WithMessage("A task cannot block itself.");
 
-        RuleFor(x => x.ImpactDetails)
-            .NotEmpty().WithMessage("Impact details describing consequences of unresolved blocker are mandatory.")
-            .MaximumLength(5000).WithMessage("Impact details cannot exceed 5,000 characters.");
+        RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Description / impact details describing consequences of unresolved blocker are mandatory.")
+            .MaximumLength(10000).WithMessage("Description cannot exceed 10,000 characters.");
 
-        RuleFor(x => x.ResolveDueDate)
+        RuleFor(x => x.DueDate)
             .NotEmpty().WithMessage("Resolve SLA due date is required.");
     }
 }

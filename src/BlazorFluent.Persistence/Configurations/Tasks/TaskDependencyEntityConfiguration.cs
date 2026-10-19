@@ -36,13 +36,13 @@ public class TaskDependencyEntityConfiguration : IEntityTypeConfiguration<TaskDe
             .HasMaxLength(1000)
             .IsRequired(false);
 
-        // Shadow relationships to UserTaskEntity
-        builder.HasOne<UserTaskEntity>()
+        // Shadow relationships to TaskEntity
+        builder.HasOne<TaskEntity>()
             .WithMany()
             .HasForeignKey(d => d.TaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<UserTaskEntity>()
+        builder.HasOne<TaskEntity>()
             .WithMany()
             .HasForeignKey(d => d.DependsOnTaskId)
             .OnDelete(DeleteBehavior.Restrict);

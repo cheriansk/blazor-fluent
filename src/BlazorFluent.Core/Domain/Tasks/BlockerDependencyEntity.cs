@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -9,8 +10,9 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Automatically created when a task link with TaskDependencyType.BlockedBy is established.
 /// State integrity: Automatically closed when prerequisite TargetTask completes;
 /// automatically reopened when prerequisite TargetTask is reopened.
+/// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class BlockerDependencyEntity : BaseTaskEntity
+public class BlockerDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity
 {
     /// <summary>
     /// ID of the dependent task waiting / blocked (e.g. Task A).
@@ -23,19 +25,49 @@ public class BlockerDependencyEntity : BaseTaskEntity
     public required Guid TargetTaskId { get; set; }
 
     /// <summary>
-    /// Multi-paragraph or bulleted explanation of impacts, blast radius, and consequences if the blocker is not resolved on time.
+    /// Optional foreign key to a project or program milestone.
     /// </summary>
-    public string? ImpactDetails { get; set; }
+    public Guid? MilestoneId { get; set; }
 
     /// <summary>
-    /// Criticality / urgency rating of this dependency contract.
+    /// Unmapped convenience alias forwarding to <see cref="BaseTaskEntity.Description"/> to avoid duplicate storage.
     /// </summary>
-    public required DependencyCriticality Criticality { get; set; }
+    [NotMapped]
+    public string? ImpactDetails
+    {
+        get => Description;
+        set => Description = value;
+    }
+
+    /// <summary>
+    /// Unmapped convenience alias mapping to and from <see cref="BaseTaskEntity.Priority"/> to avoid duplicate storage.
+    /// </summary>
+    [NotMapped]
+    public DependencyCriticality Criticality
+    {
+        get => Priority switch
+        {
+            TaskPriority.Low => DependencyCriticality.Low,
+            TaskPriority.Medium => DependencyCriticality.Medium,
+            TaskPriority.High => DependencyCriticality.High,
+            TaskPriority.Urgent => DependencyCriticality.Critical,
+            _ => DependencyCriticality.Medium
+        };
+        set => Priority = value switch
+        {
+            DependencyCriticality.Low => TaskPriority.Low,
+            DependencyCriticality.Medium => TaskPriority.Medium,
+            DependencyCriticality.High => TaskPriority.High,
+            DependencyCriticality.Critical => TaskPriority.Urgent,
+            _ => TaskPriority.Medium
+        };
+    }
 
     /// <summary>
     /// Explicit target deadline by which this dependency must be resolved.
     /// Synchronized with BaseTaskEntity.DueDate.
     /// </summary>
+    [NotMapped]
     public DateTime ResolveDueDate
     {
         get => DueDate;

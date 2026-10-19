@@ -4,7 +4,7 @@ namespace BlazorFluent.Core.Domain.Tasks;
 
 /// <summary>
 /// Represents a discrete, sequential stage or gate within an enterprise <see cref="WorkflowTaskEntity"/>.
-/// Governed by an exact execution order and assigned to exactly one owner.
+/// Governed by an exact execution order and linked to an accountable <see cref="TaskEntity"/>.
 /// Inherits from <see cref="BaseTaskEntity"/>.
 /// </summary>
 public class WorkflowStepEntity : BaseTaskEntity
@@ -13,6 +13,11 @@ public class WorkflowStepEntity : BaseTaskEntity
     /// Foreign key referencing the parent <see cref="WorkflowTaskEntity"/>.
     /// </summary>
     public required Guid WorkflowTaskId { get; set; }
+
+    /// <summary>
+    /// Optional foreign key referencing the underlying task fulfilling this step.
+    /// </summary>
+    public Guid? TaskId { get; set; }
 
     /// <summary>
     /// 1-based sequential execution index (Step 1, Step 2, Step 3...).
@@ -46,4 +51,5 @@ public class WorkflowStepEntity : BaseTaskEntity
 
     // --- Navigation Properties ---
     public WorkflowTaskEntity? WorkflowTask { get; set; }
+    public TaskEntity? Task { get; set; }
 }

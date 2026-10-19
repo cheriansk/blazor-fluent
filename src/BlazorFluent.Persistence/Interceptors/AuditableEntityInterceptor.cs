@@ -171,9 +171,9 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     entry.Property(TenantIdProperty).IsModified = false;
 
                     // Cross-project task immobility: Tasks can NEVER be moved between projects
-                    if (entry.Entity is UserTaskEntity)
+                    if (entry.Entity is TaskEntity)
                     {
-                        entry.Property(nameof(UserTaskEntity.ProjectId)).IsModified = false;
+                        entry.Property(nameof(TaskEntity.ProjectId)).IsModified = false;
                     }
 
                     // Cross-tenant write guard for non-host users (check both original and current values)
