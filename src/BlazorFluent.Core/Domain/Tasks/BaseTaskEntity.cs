@@ -10,12 +10,12 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Implements <see cref="IEffectiveDatedEntity"/> for temporal contract validity.
 /// Implements <see cref="ISoftDeletableEntity"/> for forensic auditability.
 /// </summary>
-public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IProprietaryEncryptedEntity
+public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity, ISourceTrackedEntity, IEncryptedPayloadEntity
 {
     /// <summary>
     /// Organizational level at which this work item exists (Tenant, Program, Project, User).
     /// </summary>
-    public TaskLevel Level { get; set; } = TaskLevel.Project;
+    public TaskLevel Level { get; set; }
 
     /// <summary>
     /// Concise headline title of the work item. Required.
@@ -30,12 +30,12 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     /// <summary>
     /// Urgency and priority rating (Low, Medium, High, Urgent).
     /// </summary>
-    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public TaskPriority Priority { get; set; } 
 
     /// <summary>
     /// Lifecycle status of the work item.
     /// </summary>
-    public TaskStatus Status { get; set; } = TaskStatus.Open;
+    public TaskStatus Status { get; set; } 
 
     /// <summary>
     /// Earliest planned kickoff date for this work item.
@@ -81,8 +81,10 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     public Guid? ProjectId { get; set; }
     public string? UserId { get; set; }
 
-    // --- IProprietaryEncryptedEntity ---
+    // --- ISourceTrackedEntity ---
     public Guid? SourceRowId { get; set; }
+
+    // --- IEncryptedPayloadEntity ---
     public bool IsEncryptedAtRest { get; set; }
     public byte[]? EncryptedPayloadBytes { get; set; }
 
