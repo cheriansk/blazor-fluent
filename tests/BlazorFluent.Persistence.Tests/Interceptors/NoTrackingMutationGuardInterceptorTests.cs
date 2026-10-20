@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Context;
 using BlazorFluent.Persistence.Interceptors;
@@ -53,10 +53,10 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
             {
                 Id = taskId,
                 TenantId = "tenant_x",
-                Level = TaskLevel.Project,
+                Level = TaskLevelEnum.Project,
                 Title = "Original Title",
-                Priority = TaskPriority.Medium,
-                Status = TaskStatus.Open,
+                Priority = TaskPriorityEnum.Medium,
+                Status = TaskStatusEnum.Open,
                 StartDate = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddDays(7)
             });

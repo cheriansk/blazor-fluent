@@ -122,7 +122,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             // Only App Administrators (Root Admins) can assign, modify, or revoke TenantAdmin role
             if (entry.Entity is TenantUserEntity tu && entry.State is EntityState.Added or EntityState.Modified)
             {
-                if (tu.Role == TenantRole.TenantAdmin && !currentUser.IsRootAdmin && !currentUser.IsSystemDaemon && !SystemIdentityUtility.IsSystemDaemon(currentUser.UserId))
+                if (tu.Role == TenantRoleEnum.TenantAdmin && !currentUser.IsRootAdmin && !currentUser.IsSystemDaemon && !SystemIdentityUtility.IsSystemDaemon(currentUser.UserId))
                 {
                     throw new InvalidOperationException(
                         $"Zero-Trust Security Violation: User '{currentUser.Email}' attempted to assign or update the TenantAdmin role on TenantUserEntity {tu.Id}. Only App Administrators (Root Admins) can assign Tenant Admin privileges.");
@@ -374,17 +374,17 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
 
             var operation = entry.State switch
             {
-                EntityState.Added => EntityOperation.Insert,
-                EntityState.Modified => EntityOperation.Update,
-                EntityState.Deleted => EntityOperation.Delete,
-                _ => (EntityOperation?)null
+                EntityState.Added => EntityOperationEnum.Insert,
+                EntityState.Modified => EntityOperationEnum.Update,
+                EntityState.Deleted => EntityOperationEnum.Delete,
+                _ => (EntityOperationEnum?)null
             };
 
             if (operation == null) continue;
 
             var changes = new Dictionary<string, object?>();
 
-            if (operation == EntityOperation.Update)
+            if (operation == EntityOperationEnum.Update)
             {
                 foreach (var prop in entry.Properties)
                 {
@@ -399,7 +399,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     changes[name] = new { Old = oldVal, New = newVal };
                 }
             }
-            else if (operation == EntityOperation.Insert)
+            else if (operation == EntityOperationEnum.Insert)
             {
                 foreach (var prop in entry.Properties)
                 {
@@ -411,7 +411,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     changes[name] = isSensitive ? "****" : prop.CurrentValue;
                 }
             }
-            else if (operation == EntityOperation.Delete)
+            else if (operation == EntityOperationEnum.Delete)
             {
                 foreach (var prop in entry.Properties)
                 {
@@ -442,8 +442,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 UserId = currentUserId,
                 UserEmail = currentUser.Email,
                 UserType = tenantContext.UserType,
-                EventType = AuditEventType.EntityChange,
-                Severity = AuditSeverity.Information,
+                EventType = AuditEventTypeEnum.EntityChange,
+                Severity = AuditSeverityEnum.Information,
                 EntityName = entityName,
                 EntityId = entityId,
                 Operation = operation,
@@ -468,8 +468,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     UserId = currentUserId,
                     UserEmail = currentUser.Email,
                     UserType = tenantContext.UserType,
-                    EventType = AuditEventType.Security,
-                    Severity = AuditSeverity.Warning,
+                    EventType = AuditEventTypeEnum.Security,
+                    Severity = AuditSeverityEnum.Warning,
                     EntityName = entityName,
                     EntityId = entityId,
                     Operation = operation,

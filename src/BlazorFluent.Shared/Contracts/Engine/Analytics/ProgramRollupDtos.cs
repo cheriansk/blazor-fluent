@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Shared.Contracts.Engine.Analytics;
 
@@ -9,7 +9,7 @@ public record ProjectRollupInput(
     int OverdueTasks,
     int ActiveBlockers,
     decimal BudgetVariance,
-    ProjectHealthRating Health
+    ProjectHealthRatingEnum Health
 );
 
 public record ProgramRollupReqDto(
@@ -19,7 +19,7 @@ public record ProgramRollupReqDto(
 
 public record ProgramRollupRespDto(
     Guid ProgramId,
-    ProgramHealthRating ComputedHealth,
+    ProgramHealthRatingEnum ComputedHealth,
     double AggregateProgressPercentage,
     int TotalActiveBlockers,
     decimal TotalBudgetVariance,

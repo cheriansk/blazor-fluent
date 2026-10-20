@@ -155,7 +155,7 @@
             _switchError = "You do not have permission to access the requested tenant.";
             await AuditService.LogSecurityEventAsync(
                 "TenantSwitchBlocked",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Attempted unauthorized switch from '{prevTenant}' to '{newTenantId}'.");
             return;
         }
@@ -165,7 +165,7 @@
         // 1. Audit tenant switch initiation
         await AuditService.LogSecurityEventAsync(
             "TenantSwitchInitiated",
-            AuditSeverity.Information,
+            AuditSeverityEnum.Information,
             $"User initiated tenant switch from '{prevTenant}' to '{newTenantId}'. Purging session and enforcing re-authentication.");
 
         // 2. Purge browser session storage to guarantee zero state bleeding

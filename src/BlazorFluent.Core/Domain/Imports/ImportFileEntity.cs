@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Imports;
@@ -66,12 +66,12 @@ public class ImportFileEntity : TenantAuditableEntity, IProjectScopedEntity, ISo
     /// <summary>
     /// Format type of the imported file (Excel, Json, Xml, DelimitedText).
     /// </summary>
-    public required ImportFileType FileType { get; set; }
+    public required ImportFileTypeEnum FileType { get; set; }
 
     /// <summary>
     /// Current lifecycle processing state (Uploaded, Validating, ValidationSuccess, ValidationFailed, StagingSuccess, etc.).
     /// </summary>
-    public required ImportStatus Status { get; set; }
+    public required ImportStatusEnum Status { get; set; }
 
     /// <summary>
     /// Total number of data records/rows parsed from the file.

@@ -93,13 +93,13 @@
                         <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
                         <FluentSelect TOption="string" TValue="string"
                                       Value="@_programFormStatus.ToString()"
-                                      ValueChanged="@(v => _programFormStatus = Enum.TryParse<ProgramStatus>(v, out var ps) ? ps : ProgramStatus.Active)"
+                                      ValueChanged="@(v => _programFormStatus = Enum.TryParse<ProgramStatusEnum>(v, out var ps) ? ps : ProgramStatusEnum.Active)"
                                       Style="width: 100%;">
-                            <FluentOption Value="@nameof(ProgramStatus.Planning)">Planning</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.Active)">Active</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.AtRisk)">At Risk</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.OnHold)">On Hold</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.Completed)">Completed</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatusEnum.Planning)">Planning</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatusEnum.Active)">Active</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatusEnum.AtRisk)">At Risk</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatusEnum.OnHold)">On Hold</FluentOption>
+                            <FluentOption Value="@nameof(ProgramStatusEnum.Completed)">Completed</FluentOption>
                         </FluentSelect>
                     </div>
                 </FluentStack>
@@ -158,19 +158,19 @@
                 <TemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
                     @switch (context.Status)
                     {
-                        case ProgramStatus.Active:
+                        case ProgramStatusEnum.Active:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                             break;
-                        case ProgramStatus.Planning:
+                        case ProgramStatusEnum.Planning:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">Planning</FluentBadge>
                             break;
-                        case ProgramStatus.AtRisk:
+                        case ProgramStatusEnum.AtRisk:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">At Risk</FluentBadge>
                             break;
-                        case ProgramStatus.OnHold:
+                        case ProgramStatusEnum.OnHold:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">On Hold</FluentBadge>
                             break;
-                        case ProgramStatus.Completed:
+                        case ProgramStatusEnum.Completed:
                             <FluentBadge Appearance="BadgeAppearance.Tint">Completed</FluentBadge>
                             break;
                     }
@@ -245,13 +245,13 @@
                                         <div style="margin-top: 6px;">
                                             @switch (_healthSummary.Health)
                                             {
-                                                case ProgramHealthRating.OnTrack:
+                                                case ProgramHealthRatingEnum.OnTrack:
                                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success" Style="font-size: 14px; padding: 4px 10px;">🟢 Healthy (On Track)</FluentBadge>
                                                     break;
-                                                case ProgramHealthRating.AtRisk:
+                                                case ProgramHealthRatingEnum.AtRisk:
                                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Style="font-size: 14px; padding: 4px 10px;">🟡 At Risk</FluentBadge>
                                                     break;
-                                                case ProgramHealthRating.Critical:
+                                                case ProgramHealthRatingEnum.Critical:
                                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger" Style="font-size: 14px; padding: 4px 10px;">🔴 Critical</FluentBadge>
                                                     break;
                                             }
@@ -352,12 +352,12 @@
                                             <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
                                             <FluentSelect TOption="string" TValue="string"
                                                           Value="@_projStatus.ToString()"
-                                                          ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
+                                                          ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatusEnum>(val, out var res) ? res : ProjectStatusEnum.New)"
                                                           Style="width: 100%;">
-                                                <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatusEnum.New)">New</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatusEnum.Active)">Active</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatusEnum.OnHold)">OnHold</FluentOption>
+                                                <FluentOption Value="@nameof(ProjectStatusEnum.Done)">Done</FluentOption>
                                             </FluentSelect>
                                         </div>
                                     </FluentStack>
@@ -404,16 +404,16 @@
                                 <TemplateColumn Title="Status">
                                     @switch (context.Status)
                                     {
-                                        case ProjectStatus.Active:
+                                        case ProjectStatusEnum.Active:
                                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                                             break;
-                                        case ProjectStatus.New:
+                                        case ProjectStatusEnum.New:
                                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
                                             break;
-                                        case ProjectStatus.OnHold:
+                                        case ProjectStatusEnum.OnHold:
                                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
                                             break;
-                                        case ProjectStatus.Done:
+                                        case ProjectStatusEnum.Done:
                                             <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
                                             break;
                                     }
@@ -615,14 +615,14 @@
     private string _programFormDescription = string.Empty;
     private DateTime? _programFormStartDate;
     private DateTime? _programFormTargetEndDate;
-    private ProgramStatus _programFormStatus = ProgramStatus.Active;
+    private ProgramStatusEnum _programFormStatus = ProgramStatusEnum.Active;
 
     // Add Project Modal under selected program
     private bool _showAddProjectModal = false;
     private string _projName = string.Empty;
     private string _projShortCode = string.Empty;
     private string _projLocation = string.Empty;
-    private ProjectStatus _projStatus = ProjectStatus.New;
+    private ProjectStatusEnum _projStatus = ProjectStatusEnum.New;
     private DateTime? _projStartDate;
     private DateTime? _projEndDate;
     private string _projScopeSummary = string.Empty;
@@ -887,7 +887,7 @@
         _programFormDescription = string.Empty;
         _programFormStartDate = DateTime.UtcNow.Date;
         _programFormTargetEndDate = DateTime.UtcNow.Date.AddMonths(12);
-        _programFormStatus = ProgramStatus.Active;
+        _programFormStatus = ProgramStatusEnum.Active;
         _showProgramModal = true;
         UnsavedChanges.RegisterChange("Settings > Programs", "Creating new program");
     }
@@ -977,7 +977,7 @@
         _projName = string.Empty;
         _projShortCode = string.Empty;
         _projLocation = string.Empty;
-        _projStatus = ProjectStatus.New;
+        _projStatus = ProjectStatusEnum.New;
         _projStartDate = DateTime.UtcNow.Date;
         _projEndDate = DateTime.UtcNow.Date.AddMonths(6);
         _projScopeSummary = string.Empty;

@@ -55,7 +55,7 @@ public class NotificationQueueWorker : BackgroundService
                 _logger.LogDebug("Processing background queued notification '{Title}'", request.Title);
 
                 // 1. Teams dispatch
-                if ((request.Channels & NotificationChannels.Teams) != 0)
+                if ((request.Channels & NotificationChannelsEnum.Teams) != 0)
                 {
                     var webhookUrl = config[$"Notifications:Teams:ProjectWebhooks:{request.ProjectId}"]
                                      ?? config["Notifications:Teams:DefaultWebhookUrl"];
@@ -66,7 +66,7 @@ public class NotificationQueueWorker : BackgroundService
                 }
 
                 // 2. Email dispatch
-                if ((request.Channels & NotificationChannels.Email) != 0)
+                if ((request.Channels & NotificationChannelsEnum.Email) != 0)
                 {
                     var mailbox = config[$"Notifications:Email:ProjectMailboxes:{request.ProjectId}"]
                                   ?? config["Notifications:Email:DefaultMailbox"];

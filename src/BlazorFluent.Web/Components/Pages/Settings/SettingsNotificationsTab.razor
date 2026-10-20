@@ -166,13 +166,13 @@
             <TemplateColumn Title="Sev" Style="text-align: center;">
                 @switch (context.Severity)
                 {
-                    case NotificationSeverity.Success:
+                    case NotificationSeverityEnum.Success:
                         <FluentIcon Value="@(new Icons.Regular.Size20.CheckmarkCircle())" Color="Color.Success" />
                         break;
-                    case NotificationSeverity.Warning:
+                    case NotificationSeverityEnum.Warning:
                         <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" Color="Color.Warning" />
                         break;
-                    case NotificationSeverity.Error:
+                    case NotificationSeverityEnum.Error:
                         <FluentIcon Value="@(new Icons.Regular.Size20.DismissCircle())" Color="Color.Error" />
                         break;
                     default:
@@ -207,10 +207,10 @@
             </TemplateColumn>
 
             <TemplateColumn Title="Category" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.Category))">
-                <FluentBadge Appearance="@(context.Category == NotificationCategory.Personal ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
-                             Color="@(context.Category == NotificationCategory.Personal ? BadgeColor.Informative : BadgeColor.Subtle)"
+                <FluentBadge Appearance="@(context.Category == NotificationCategoryEnum.Personal ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                             Color="@(context.Category == NotificationCategoryEnum.Personal ? BadgeColor.Informative : BadgeColor.Subtle)"
                              Size="BadgeSize.Small">
-                    @(context.Category == NotificationCategory.Personal ? "Personal" : "General")
+                    @(context.Category == NotificationCategoryEnum.Personal ? "Personal" : "General")
                 </FluentBadge>
             </TemplateColumn>
 
@@ -313,19 +313,19 @@
         _isLoading = true;
         try
         {
-            NotificationCategory? category = _selectedCategory switch
+            NotificationCategoryEnum? category = _selectedCategory switch
             {
-                "Generic" => NotificationCategory.Generic,
-                "Personal" => NotificationCategory.Personal,
+                "Generic" => NotificationCategoryEnum.Generic,
+                "Personal" => NotificationCategoryEnum.Personal,
                 _ => null
             };
 
-            NotificationSeverity? severity = _selectedSeverity switch
+            NotificationSeverityEnum? severity = _selectedSeverity switch
             {
-                "Info" => NotificationSeverity.Info,
-                "Success" => NotificationSeverity.Success,
-                "Warning" => NotificationSeverity.Warning,
-                "Error" => NotificationSeverity.Error,
+                "Info" => NotificationSeverityEnum.Info,
+                "Success" => NotificationSeverityEnum.Success,
+                "Warning" => NotificationSeverityEnum.Warning,
+                "Error" => NotificationSeverityEnum.Error,
                 _ => null
             };
 
@@ -388,10 +388,10 @@
     private async Task MarkAllFilteredAsReadAsync()
     {
         var tenantFilter = string.IsNullOrWhiteSpace(_selectedTenantId) ? null : _selectedTenantId;
-        NotificationCategory? category = _selectedCategory switch
+        NotificationCategoryEnum? category = _selectedCategory switch
         {
-            "Generic" => NotificationCategory.Generic,
-            "Personal" => NotificationCategory.Personal,
+            "Generic" => NotificationCategoryEnum.Generic,
+            "Personal" => NotificationCategoryEnum.Personal,
             _ => null
         };
 

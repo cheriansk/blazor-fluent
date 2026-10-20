@@ -308,7 +308,7 @@
             {
                 await AuditService.LogSecurityEventAsync(
                     "StaleSessionsRevoked",
-                    AuditSeverity.Warning,
+                    AuditSeverityEnum.Warning,
                     $"Admin '{adminId}' revoked {count} stale session(s) older than 30 minutes.");
 
                 _statusMessage = $"Successfully cleaned up {count} stale session(s).";
@@ -340,7 +340,7 @@
         {
             await AuditService.LogSecurityEventAsync(
                 "SessionRevokedByAdmin",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Admin '{CurrentUser.Email}' revoked active session '{sessionId}' for user '{userEmail}'.");
 
             _statusMessage = $"Successfully revoked session for '{userEmail}'. Real-time invalidation broadcast.";

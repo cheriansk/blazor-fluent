@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using BlazorFluent.RulesEngine.Analytics;
 using BlazorFluent.RulesEngine.Calendar;
 using BlazorFluent.RulesEngine.Parsers;
@@ -61,8 +61,8 @@ public class RulesEngineUnitTests
     [Fact]
     public void ProgramRollupEngine_CalculatesWeightedProgressAndCriticalHealth()
     {
-        var proj1 = new ProjectRollupInput(Guid.NewGuid(), 10, 8, 0, 0, 0m, ProjectHealthRating.OnTrack);
-        var proj2 = new ProjectRollupInput(Guid.NewGuid(), 10, 2, 5, 6, -1000m, ProjectHealthRating.Critical);
+        var proj1 = new ProjectRollupInput(Guid.NewGuid(), 10, 8, 0, 0, 0m, ProjectHealthRatingEnum.OnTrack);
+        var proj2 = new ProjectRollupInput(Guid.NewGuid(), 10, 2, 5, 6, -1000m, ProjectHealthRatingEnum.Critical);
 
         var req = new ProgramRollupReqDto(Guid.NewGuid(), [proj1, proj2]);
         var result = ProgramRollupEngine.ComputeRollup(req);
@@ -70,7 +70,7 @@ public class RulesEngineUnitTests
         // 10/20 tasks completed = 50.0%
         result.AggregateProgressPercentage.Should().Be(50.0);
         result.TotalActiveBlockers.Should().Be(6);
-        result.ComputedHealth.Should().Be(ProgramHealthRating.Critical);
+        result.ComputedHealth.Should().Be(ProgramHealthRatingEnum.Critical);
         result.RiskAlerts.Should().NotBeEmpty();
     }
 

@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Dtos.Response;
@@ -17,7 +17,7 @@ public interface ITenantService
     Task<Result<UserEntity>> UpdateTenantUserAsync(string tenantSlug, Guid userId, string fullName, string email, DateTime startDate, DateTime endDate, bool isActive, CancellationToken cancellationToken = default);
     Task<Result<TenantUserEntity>> AssignTenantAdminRoleAsync(string tenantSlug, Guid userId, bool isTenantAdmin, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ProjectEntity>> GetTenantProjectsAsync(string tenantSlug, CancellationToken cancellationToken = default);
-    Task<Result<ProjectEntity>> CreateTenantProjectAsync(string tenantSlug, string name, string shortCode, string? location, DateTime? startDate, DateTime? endDate, string? scopeSummary, ProjectStatus status, Guid? programId = null, CancellationToken cancellationToken = default);
-    Task<Result<ProjectEntity>> UpdateTenantProjectAsync(string tenantSlug, Guid projectId, string name, string shortCode, string? location, DateTime? startDate, DateTime? endDate, string? scopeSummary, ProjectStatus status, Guid? programId = null, CancellationToken cancellationToken = default);
+    Task<Result<ProjectEntity>> CreateTenantProjectAsync(string tenantSlug, string name, string shortCode, string? location, DateTime? startDate, DateTime? endDate, string? scopeSummary, ProjectStatusEnum status, Guid? programId = null, CancellationToken cancellationToken = default);
+    Task<Result<ProjectEntity>> UpdateTenantProjectAsync(string tenantSlug, Guid projectId, string name, string shortCode, string? location, DateTime? startDate, DateTime? endDate, string? scopeSummary, ProjectStatusEnum status, Guid? programId = null, CancellationToken cancellationToken = default);
     Task<Result<string>> RegenerateTenantLicenseKeyAsync(string tenantSlug, CancellationToken cancellationToken = default);
 }

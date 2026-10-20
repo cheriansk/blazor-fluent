@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -20,7 +20,7 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
         builder.Property(a => a.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(a => a.Title)
             .HasMaxLength(200)

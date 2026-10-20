@@ -108,7 +108,7 @@ public static class InitialDatabaseSeeder
                     Id = Guid.NewGuid(),
                     Email = normalizedEmail,
                     FullName = $"Root Administrator {index}",
-                    UserType = UserType.CompanyUser,
+                    UserType = UserTypeEnum.CompanyUser,
                     DefaultTenantId = DefaultTenantSlug,
                     IsActive = true,
                     StartDate = DateTime.UtcNow.AddYears(-1),

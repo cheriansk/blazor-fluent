@@ -22,13 +22,13 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     public string? UserEmail { get; set; }
 
     /// <summary>Capacity of the acting user at the time of the action (CompanyUser vs ClientUser).</summary>
-    public UserType? UserType { get; set; }
+    public UserTypeEnum? UserType { get; set; }
 
     /// <summary>High-level classification of the audit event.</summary>
-    public required AuditEventType EventType { get; set; }
+    public required AuditEventTypeEnum EventType { get; set; }
 
     /// <summary>Severity classification.</summary>
-    public required AuditSeverity Severity { get; set; }
+    public required AuditSeverityEnum Severity { get; set; }
 
     /// <summary>Name of the entity modified (e.g. 'TaskEntity', 'ProjectEntity'), if applicable.</summary>
     public string? EntityName { get; set; }
@@ -37,7 +37,7 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     public string? EntityId { get; set; }
 
     /// <summary>Database operation performed (Insert, Update, Delete), if applicable.</summary>
-    public EntityOperation? Operation { get; set; }
+    public EntityOperationEnum? Operation { get; set; }
 
     /// <summary>
     /// Detailed property-level diff serialized as JSON.

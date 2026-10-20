@@ -21,7 +21,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         {
             Email = "test@example.com",
             FullName = "Test User",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             TimeZoneId = "UTC",
             StartDate = new DateTime(2026, 10, 19, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 23, 59, 59, DateTimeKind.Utc)
@@ -39,8 +39,8 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         var milestone = new ProjectCalendarEntity
         {
             ProjectId = Guid.NewGuid(),
-            Title = "Sprint 1", EntryType = CalendarEntryType.Milestone,
-            Status = CalendarEntryStatus.InProgress,
+            Title = "Sprint 1", EntryType = CalendarEntryTypeEnum.Milestone,
+            Status = CalendarEntryStatusEnum.InProgress,
             StartDate = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc)
         };
@@ -58,8 +58,8 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         var milestone = new ProjectCalendarEntity
         {
             ProjectId = Guid.NewGuid(),
-            Title = "Milestone Alpha", EntryType = CalendarEntryType.Milestone,
-            Status = CalendarEntryStatus.InProgress,
+            Title = "Milestone Alpha", EntryType = CalendarEntryTypeEnum.Milestone,
+            Status = CalendarEntryStatusEnum.InProgress,
             StartDate = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 0, 0, 0, DateTimeKind.Utc)
         };
@@ -83,7 +83,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         {
             Email = "contractor@example.com",
             FullName = "Charlie Contractor",
-            UserType = UserType.ClientUser,
+            UserType = UserTypeEnum.ClientUser,
             TimeZoneId = "UTC",
             IsActive = true,
             StartDate = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
@@ -114,7 +114,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         {
             Email = "sameday@example.com",
             FullName = "Same Day",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             TimeZoneId = "UTC",
             StartDate = new DateTime(2026, 10, 19, 14, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 9, 0, 0, DateTimeKind.Utc) // earlier time, same date
@@ -127,8 +127,8 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         var sameDayMilestone = new ProjectCalendarEntity
         {
             ProjectId = Guid.NewGuid(),
-            Title = "Single-Day Milestone", EntryType = CalendarEntryType.Milestone,
-            Status = CalendarEntryStatus.Scheduled,
+            Title = "Single-Day Milestone", EntryType = CalendarEntryTypeEnum.Milestone,
+            Status = CalendarEntryStatusEnum.Scheduled,
             StartDate = new DateTime(2026, 10, 19, 14, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 9, 0, 0, DateTimeKind.Utc) // earlier time, same date
         };

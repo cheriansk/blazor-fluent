@@ -1,4 +1,4 @@
-@using BlazorFluent.Components.Common
+﻿@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Calendar
@@ -62,11 +62,11 @@
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                         <FluentTextInput Label="Title *" @bind-Value="_newEventTitle" Placeholder="e.g. Sprint Review Prep, Focus Time" Style="width: 100%;" />
                         
-                        <FluentSelect TOption="CalendarEntryType" TValue="CalendarEntryType" Label="Category" @bind-Value="_newEntryType" Style="width: 100%;">
-                            <FluentOption Value="CalendarEntryType.General">General</FluentOption>
-                            <FluentOption Value="CalendarEntryType.WorkingSession">Working Focus Session</FluentOption>
-                            <FluentOption Value="CalendarEntryType.Planning">Planning</FluentOption>
-                            <FluentOption Value="CalendarEntryType.TimeOff">Planned Time Off</FluentOption>
+                        <FluentSelect TOption="CalendarEntryTypeEnum" TValue="CalendarEntryTypeEnum" Label="Category" @bind-Value="_newEntryType" Style="width: 100%;">
+                            <FluentOption Value="CalendarEntryTypeEnum.General">General</FluentOption>
+                            <FluentOption Value="CalendarEntryTypeEnum.WorkingSession">Working Focus Session</FluentOption>
+                            <FluentOption Value="CalendarEntryTypeEnum.Planning">Planning</FluentOption>
+                            <FluentOption Value="CalendarEntryTypeEnum.TimeOff">Planned Time Off</FluentOption>
                         </FluentSelect>
 
                         <FluentDatePicker Label="Date" @bind-Value="_newEventDate" Style="width: 100%;" />
@@ -140,7 +140,7 @@
     private string _newEventDescription = string.Empty;
     private string _newLocation = string.Empty;
     private DateTime? _newEventDate = DateTime.UtcNow.Date;
-    private CalendarEntryType _newEntryType = CalendarEntryType.General;
+    private CalendarEntryTypeEnum _newEntryType = CalendarEntryTypeEnum.General;
 
     protected override async Task OnInitializedAsync()
     {
@@ -177,7 +177,7 @@
         _newEventDescription = string.Empty;
         _newLocation = string.Empty;
         _newEventDate = _selectedDate;
-        _newEntryType = CalendarEntryType.General;
+        _newEntryType = CalendarEntryTypeEnum.General;
         _showEventModal = true;
     }
 
@@ -223,7 +223,7 @@
                 StartDate = eventDate,
                 EndDate = eventDate.AddHours(1),
                 EntryType = _newEntryType,
-                Status = CalendarEntryStatus.Confirmed
+                Status = CalendarEntryStatusEnum.Confirmed
             };
 
             var result = await CalendarService.CreateUserCalendarEntryAsync(entry);

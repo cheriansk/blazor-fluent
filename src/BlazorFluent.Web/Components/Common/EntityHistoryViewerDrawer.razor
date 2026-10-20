@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Dtos
 @using BlazorFluent.Core.Dtos.Response
@@ -258,11 +258,11 @@
         }
     }
 
-    private static BadgeAppearance GetOperationBadgeAppearance(EntityOperation operation) => operation switch
+    private static BadgeAppearance GetOperationBadgeAppearance(EntityOperationEnum operation) => operation switch
     {
-        EntityOperation.Insert => BadgeAppearance.Filled,
-        EntityOperation.Update => BadgeAppearance.Filled,
-        EntityOperation.Delete => BadgeAppearance.Outline,
+        EntityOperationEnum.Insert => BadgeAppearance.Filled,
+        EntityOperationEnum.Update => BadgeAppearance.Filled,
+        EntityOperationEnum.Delete => BadgeAppearance.Outline,
         _ => BadgeAppearance.Filled
     };
 

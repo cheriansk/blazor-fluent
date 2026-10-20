@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -95,7 +95,7 @@ public class ProgramService : IProgramService
         string description,
         DateTime? startDateUtc,
         DateTime? targetEndDateUtc,
-        ProgramStatus status = ProgramStatus.Active,
+        ProgramStatusEnum status = ProgramStatusEnum.Active,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(tenantSlug)) return Result<ProgramEntity>.Failure("Tenant slug is required.");
@@ -161,7 +161,7 @@ public class ProgramService : IProgramService
         string description,
         DateTime? startDateUtc,
         DateTime? targetEndDateUtc,
-        ProgramStatus status,
+        ProgramStatusEnum status,
         bool isActive,
         CancellationToken ct = default)
     {
@@ -254,10 +254,10 @@ public class ProgramService : IProgramService
         var projectLookup = program.Projects.ToDictionary(pr => pr.Id, pr => pr.Name);
 
         var totalTasks = tasks.Count;
-        var completedTasks = tasks.Count(t => t.Status is TaskStatus.Closed or TaskStatus.Cancelled);
-        var openTasks = tasks.Count(t => t.Status is TaskStatus.Open or TaskStatus.InProgress);
-        var overdueTasks = tasks.Count(t => t.Status is not TaskStatus.Closed &&
-                                            t.Status is not TaskStatus.Cancelled &&
+        var completedTasks = tasks.Count(t => t.Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled);
+        var openTasks = tasks.Count(t => t.Status is TaskStatusEnum.Open or TaskStatusEnum.InProgress);
+        var overdueTasks = tasks.Count(t => t.Status is not TaskStatusEnum.Closed &&
+                                            t.Status is not TaskStatusEnum.Cancelled &&
                                             t.DueDate.Date < DateTime.UtcNow.Date);
 
         // Identify Cross-Project Dependencies
@@ -285,7 +285,7 @@ public class ProgramService : IProgramService
                 targetProjectName = tName;
             }
 
-            var isResolved = dep.IsResolved || (targetTask?.Status is TaskStatus.Closed or TaskStatus.Cancelled);
+            var isResolved = dep.IsResolved || (targetTask?.Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled);
             var isOverdue = !isResolved && dep.DueDate.Date < DateTime.UtcNow.Date;
 
             crossProjectDeps.Add(new CrossProjectDependencyDto
@@ -305,22 +305,22 @@ public class ProgramService : IProgramService
                 IsResolved = isResolved
             });
 
-            if (isOverdue && dep.DependencyType == TaskDependencyType.Blocks)
+            if (isOverdue && dep.DependencyType == TaskDependencyTypeEnum.Blocks)
             {
                 riskReasons.Add($"Cross-project blocker overdue: '{sourceTask?.Title ?? dep.Title}' in [{sourceProjectName}] is blocked by '{targetTask?.Title ?? dep.DependsOnSnapshotTitle ?? "Prerequisite"}' in [{targetProjectName}].");
             }
         }
 
-        var activeCrossProjectBlockers = crossProjectDeps.Count(d => !d.IsResolved && d.DependencyType == TaskDependencyType.Blocks);
+        var activeCrossProjectBlockers = crossProjectDeps.Count(d => !d.IsResolved && d.DependencyType == TaskDependencyTypeEnum.Blocks);
 
-        var healthRating = ProgramHealthRating.OnTrack;
+        var healthRating = ProgramHealthRatingEnum.OnTrack;
         if (riskReasons.Count > 0 || overdueTasks > 5)
         {
-            healthRating = ProgramHealthRating.Critical;
+            healthRating = ProgramHealthRatingEnum.Critical;
         }
         else if (activeCrossProjectBlockers > 0 || overdueTasks > 0)
         {
-            healthRating = ProgramHealthRating.AtRisk;
+            healthRating = ProgramHealthRatingEnum.AtRisk;
             if (activeCrossProjectBlockers > 0)
                 riskReasons.Add($"{activeCrossProjectBlockers} active cross-project blocking dependency(ies) currently unresolved.");
         }
@@ -334,7 +334,7 @@ public class ProgramService : IProgramService
             Health = healthRating,
             TotalProjects = program.Projects.Count,
             ActiveProjects = program.Projects.Count(pr => pr.IsActive),
-            ProjectsAtRisk = healthRating == ProgramHealthRating.Critical ? 1 : 0,
+            ProjectsAtRisk = healthRating == ProgramHealthRatingEnum.Critical ? 1 : 0,
             TotalTasks = totalTasks,
             CompletedTasks = completedTasks,
             OpenTasks = openTasks,

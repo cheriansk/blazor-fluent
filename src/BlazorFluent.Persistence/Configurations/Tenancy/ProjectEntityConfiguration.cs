@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tenancy;
+﻿using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -44,7 +44,7 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
 
         builder.Property(p => p.Status)
             .IsRequired()
-            .HasDefaultValue(ProjectStatus.New);
+            .HasDefaultValue(ProjectStatusEnum.New);
 
         builder.Property(p => p.IsActive)
             .IsRequired()

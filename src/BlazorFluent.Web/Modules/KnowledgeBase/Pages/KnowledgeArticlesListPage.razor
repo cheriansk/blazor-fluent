@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Shared.DataListTypes
-@attribute [RequiredClearance(ProjectRole.ReadOnly)]
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Dtos
@@ -54,14 +54,14 @@
                                   OnClick="@(() => SetStatusFilter(null))">
                         All
                     </FluentButton>
-                    <FluentButton Appearance="@(_selectedStatus == KnowledgeArticleStatus.Approved ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                    <FluentButton Appearance="@(_selectedStatus == KnowledgeArticleStatusEnum.Approved ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
                                   Size="ButtonSize.Small"
-                                  OnClick="@(() => SetStatusFilter(KnowledgeArticleStatus.Approved))">
+                                  OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.Approved))">
                         Approved
                     </FluentButton>
-                    <FluentButton Appearance="@(_selectedStatus == KnowledgeArticleStatus.PendingReview ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                    <FluentButton Appearance="@(_selectedStatus == KnowledgeArticleStatusEnum.PendingReview ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
                                   Size="ButtonSize.Small"
-                                  OnClick="@(() => SetStatusFilter(KnowledgeArticleStatus.PendingReview))">
+                                  OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.PendingReview))">
                         Pending Review
                     </FluentButton>
 
@@ -139,13 +139,13 @@
                             }
 
                             <!-- Status Badge -->
-                            @if (article.Status == KnowledgeArticleStatus.Approved)
+                            @if (article.Status == KnowledgeArticleStatusEnum.Approved)
                             {
                                 <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #15803d; color: #ffffff;">
                                     ✓ APPROVED
                                 </span>
                             }
-                            else if (article.Status == KnowledgeArticleStatus.PendingReview)
+                            else if (article.Status == KnowledgeArticleStatusEnum.PendingReview)
                             {
                                 <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #d97706; color: #ffffff;">
                                     ⏳ PENDING REVIEW/APPROVAL
@@ -190,7 +190,7 @@
                         </div>
 
                         <div>
-                            @if (article.Status == KnowledgeArticleStatus.Approved)
+                            @if (article.Status == KnowledgeArticleStatusEnum.Approved)
                             {
                                 <span>Approved by <strong>@article.ApprovedByUserName</strong></span>
                             }
@@ -209,7 +209,7 @@
 @code {
     private bool _isLoading = true;
     private string _searchTerm = string.Empty;
-    private KnowledgeArticleStatus? _selectedStatus = null;
+    private KnowledgeArticleStatusEnum? _selectedStatus = null;
     private bool? _isGlobalFilter = null;
     private string _selectedLabel = "All Labels";
 
@@ -218,7 +218,7 @@
     private List<string> _labelSelectItems = new();
 
     private bool IsInternalUser =>
-        CurrentUser.IsAuthenticated && (CurrentUser.IsRootAdmin || TenantContext.UserType == UserType.CompanyUser);
+        CurrentUser.IsAuthenticated && (CurrentUser.IsRootAdmin || TenantContext.UserType == UserTypeEnum.CompanyUser);
 
     protected override async Task OnInitializedAsync()
     {
@@ -261,7 +261,7 @@
         }
     }
 
-    private async Task SetStatusFilter(KnowledgeArticleStatus? status)
+    private async Task SetStatusFilter(KnowledgeArticleStatusEnum? status)
     {
         _selectedStatus = status;
         await LoadArticlesAsync();

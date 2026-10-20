@@ -1,4 +1,4 @@
-namespace BlazorFluent.Core.Contracts;
+﻿namespace BlazorFluent.Core.Contracts;
 
 /// <summary>
 /// Authoritative Zero Trust security service evaluating hierarchical roles:
@@ -61,18 +61,18 @@ public interface IHierarchyAuthorizationService
     /// Computes the effective project role for a user on a given project.
     /// Resolves explicit ProjectUserRole first. If none, resolves parent Program membership to the ReadOnly baseline (10).
     /// </summary>
-    Task<BlazorFluent.Shared.DataListTypes.ProjectRole?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default);
+    Task<BlazorFluent.Shared.DataListTypes.ProjectRoleEnum?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default);
 
     /// <summary>
     /// Evaluates if the user satisfies the required project clearance tier (numeric hierarchy check).
     /// </summary>
-    Task<bool> HasProjectClearanceAsync(Guid projectId, BlazorFluent.Shared.DataListTypes.ProjectRole minimumTier, string? userId = null, CancellationToken ct = default);
+    Task<bool> HasProjectClearanceAsync(Guid projectId, BlazorFluent.Shared.DataListTypes.ProjectRoleEnum minimumTier, string? userId = null, CancellationToken ct = default);
 
     /// <summary>
     /// Enforces the required project clearance tier. Throws SecurityException if user lacks clearance,
     /// and logs a Warning security audit event with Zero-PII forensic context.
     /// </summary>
-    Task EnsureHasProjectClearanceAsync(Guid projectId, BlazorFluent.Shared.DataListTypes.ProjectRole minimumTier, string? userId = null, CancellationToken ct = default);
+    Task EnsureHasProjectClearanceAsync(Guid projectId, BlazorFluent.Shared.DataListTypes.ProjectRoleEnum minimumTier, string? userId = null, CancellationToken ct = default);
 
     /// <summary>
     /// Verifies that a user account is active, within its valid date range, and holds at least 1 project or program role.

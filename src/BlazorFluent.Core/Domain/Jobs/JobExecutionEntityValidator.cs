@@ -25,7 +25,7 @@ public class JobExecutionEntityValidator : AbstractValidator<JobExecutionEntity>
             .MaximumLength(200).WithMessage("JobName cannot exceed 200 characters.");
 
         RuleFor(x => x.TriggerSource)
-            .IsInEnum().WithMessage("A valid JobTriggerSourceEnum is required.");
+            .IsInEnum().WithMessage("A valid JobTriggerSource is required.");
 
         RuleFor(x => x.Status)
             .IsInEnum().WithMessage("A valid JobStatus is required.");
@@ -36,7 +36,7 @@ public class JobExecutionEntityValidator : AbstractValidator<JobExecutionEntity>
         RuleFor(x => x.MaxRetries)
             .GreaterThanOrEqualTo(1).WithMessage("MaxRetries must be at least 1.");
 
-        When(x => x.Status is JobStatus.Succeeded or JobStatus.Failed, () =>
+        When(x => x.Status is JobStatusEnum.Succeeded or JobStatusEnum.Failed, () =>
         {
             RuleFor(x => x.CompletedAt)
                 .NotNull().WithMessage("CompletedAt must be recorded when job execution terminates.");

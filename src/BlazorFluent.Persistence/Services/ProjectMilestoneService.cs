@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos.Response;
@@ -68,7 +68,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
     {
         try
         {
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRole.Dev, operation: "CreateMilestone", ct: ct);
+            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "CreateMilestone", ct: ct);
 
             if (string.IsNullOrWhiteSpace(milestone.TenantId))
             {
@@ -108,7 +108,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 return Result<ProjectCalendarEntity>.Failure("Milestone not found in the specified project.");
             }
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRole.Dev, operation: "UpdateMilestone", ct: ct);
+            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "UpdateMilestone", ct: ct);
 
             if (updated.EndDate.HasValue && updated.EndDate.Value.Date < updated.StartDate.Date)
             {
@@ -148,9 +148,9 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 return Result<bool>.Failure("Milestone not found.");
             }
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRole.Admin, operation: "CompleteMilestone", ct: ct);
+            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Admin, operation: "CompleteMilestone", ct: ct);
 
-            milestone.Status = CalendarEntryStatus.Completed;
+            milestone.Status = CalendarEntryStatusEnum.Completed;
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Milestone gate '{Title}' ({Id}) marked Completed in project {ProjectId}", milestone.Title, milestone.Id, milestone.ProjectId);
@@ -178,7 +178,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 return Result<bool>.Failure("Milestone not found.");
             }
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRole.Dev, operation: "DeleteMilestone", ct: ct);
+            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "DeleteMilestone", ct: ct);
 
             // Unlink any tasks linked to this milestone (preserve tasks as ad-hoc)
             var linkedTasks = await _context.Tasks
@@ -267,7 +267,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 MilestoneId = milestoneId,
                 DependsOnMilestoneId = predId,
                 DependsOnMilestoneName = pred?.Title ?? link.DependsOnSnapshotTitle ?? "Unknown Milestone",
-                DependsOnStatus = pred?.Status ?? CalendarEntryStatus.Scheduled,
+                DependsOnStatus = pred?.Status ?? CalendarEntryStatusEnum.Scheduled,
                 DependsOnEndDate = pred?.EndDate ?? link.DependsOnSnapshotDueDate
             });
         }
@@ -292,7 +292,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             if (milestone == null) return Result<bool>.Failure("Successor milestone not found.");
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRole.Dev, operation: "AddMilestoneDependency", ct: ct);
+            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "AddMilestoneDependency", ct: ct);
 
             var predecessor = await _context.ProjectCalendars
                 .AsNoTracking()
@@ -315,28 +315,28 @@ public class ProjectMilestoneService : IProjectMilestoneService
             var dependency = new WorkDependencyEntity
             {
                 TenantId = tenantId,
-                Level = TaskLevel.Project,
+                Level = TaskLevelEnum.Project,
                 ProjectId = milestone.ProjectId,
                 ProgramId = milestone.ProgramId,
                 DependentType = DependencyNodeTypeEnum.CalendarGate,
                 DependentItemId = milestoneId,
                 DependsOnType = DependencyNodeTypeEnum.CalendarGate,
                 DependsOnItemId = dependsOnMilestoneId,
-                DependsOnLevel = TaskLevel.Project,
+                DependsOnLevel = TaskLevelEnum.Project,
                 DependsOnProjectId = predecessor.ProjectId,
                 DependsOnProgramId = predecessor.ProgramId,
                 DependsOnSnapshotTitle = predecessor.Title,
                 DependsOnSnapshotStatus = predecessor.Status.ToString(),
                 DependsOnSnapshotDueDate = predecessor.EndDate ?? predecessor.StartDate,
                 IsScheduleConflict = isConflict,
-                DependencyType = TaskDependencyType.Blocks,
+                DependencyType = TaskDependencyTypeEnum.Blocks,
                 Title = $"Delivery Gate Dependency: '{milestone.Title}' waiting on '{predecessor.Title}'",
                 Description = notes ?? $"Predecessor delivery gate dependency: {predecessor.Title}",
-                Priority = TaskPriority.High,
-                Status = predecessor.Status == CalendarEntryStatus.Completed ? TaskStatus.Closed : TaskStatus.Open,
+                Priority = TaskPriorityEnum.High,
+                Status = predecessor.Status == CalendarEntryStatusEnum.Completed ? TaskStatusEnum.Closed : TaskStatusEnum.Open,
                 StartDate = DateTime.UtcNow,
                 DueDate = predecessor.EndDate ?? milestone.StartDate,
-                EndDate = predecessor.Status == CalendarEntryStatus.Completed ? DateTime.UtcNow : null
+                EndDate = predecessor.Status == CalendarEntryStatusEnum.Completed ? DateTime.UtcNow : null
             };
 
             _context.WorkDependencies.Add(dependency);
@@ -372,7 +372,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             if (link.ProjectId.HasValue)
             {
-                await _projectAuth.EnsureCanEditAsync(link.ProjectId.Value, minRole: ProjectRole.Dev, operation: "RemoveMilestoneDependency", ct: ct);
+                await _projectAuth.EnsureCanEditAsync(link.ProjectId.Value, minRole: ProjectRoleEnum.Contribute, operation: "RemoveMilestoneDependency", ct: ct);
             }
 
             link.IsDeleted = true;

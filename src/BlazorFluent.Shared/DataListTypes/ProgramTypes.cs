@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Lifecycle status of an enterprise program.
 /// </summary>
-public enum ProgramStatus
+public enum ProgramStatusEnum
 {
     [Display(Name = "Planning", Description = "Program scope and roadmap being defined")]
     Planning = 1,
@@ -26,7 +26,7 @@ public enum ProgramStatus
 /// <summary>
 /// Tenant-level organizational role for a user within a client tenant.
 /// </summary>
-public enum TenantRole
+public enum TenantRoleEnum
 {
     [Display(Name = "Tenant Admin", Description = "Full administrative control over tenant settings, programs, projects, and users")]
     TenantAdmin = 1,
@@ -38,7 +38,7 @@ public enum TenantRole
 /// <summary>
 /// Program-level governance role for a user within a specific program.
 /// </summary>
-public enum ProgramRole
+public enum ProgramRoleEnum
 {
     [Display(Name = "ReadOnly Team", Description = "View-only visibility into program delivery scorecard and member projects")]
     ReadOnly = 10,
@@ -57,28 +57,24 @@ public enum ProgramRole
 
     [Display(Name = "Admin Team", Description = "Full governance and administrative control over the program")]
     Admin = 100,
-
-    // Backward-compatibility aliases
-    ProgramAdmin = Admin,
-    ProgramMember = ReadOnly
 }
 
 public static class ProgramRoleExtensions
 {
-    public static bool CanWrite(this ProgramRole role) =>
-        (int)role >= (int)ProgramRole.Contribute;
+    public static bool CanWrite(this ProgramRoleEnum role) =>
+        (int)role >= (int)ProgramRoleEnum.Contribute;
 
-    public static bool CanManageAccess(this ProgramRole role) =>
-        (int)role >= (int)ProgramRole.Admin;
+    public static bool CanManageAccess(this ProgramRoleEnum role) =>
+        (int)role >= (int)ProgramRoleEnum.Admin;
 
-    public static bool Satisfies(this ProgramRole role, ProgramRole requiredRole) =>
+    public static bool Satisfies(this ProgramRoleEnum role, ProgramRoleEnum requiredRole) =>
         (int)role >= (int)requiredRole;
 }
 
 /// <summary>
 /// Real-time health rating of a program rolled up from member projects.
 /// </summary>
-public enum ProgramHealthRating
+public enum ProgramHealthRatingEnum
 {
     [Display(Name = "On Track", Description = "Member projects progressing on schedule without critical blockers")]
     OnTrack = 1,
@@ -98,8 +94,8 @@ public class ProgramHealthSummaryDto
     public Guid ProgramId { get; set; }
     public string ProgramName { get; set; } = string.Empty;
     public string ProgramCode { get; set; } = string.Empty;
-    public ProgramStatus Status { get; set; }
-    public ProgramHealthRating Health { get; set; } = ProgramHealthRating.OnTrack;
+    public ProgramStatusEnum Status { get; set; }
+    public ProgramHealthRatingEnum Health { get; set; } = ProgramHealthRatingEnum.OnTrack;
     public int TotalProjects { get; set; }
     public int ActiveProjects { get; set; }
     public int ProjectsAtRisk { get; set; }
@@ -128,7 +124,7 @@ public class CrossProjectDependencyDto
     public Guid TargetTaskId { get; set; }
     public string TargetTaskTitle { get; set; } = string.Empty;
     public string TargetAssigneeEmails { get; set; } = string.Empty;
-    public TaskDependencyType DependencyType { get; set; }
+    public TaskDependencyTypeEnum DependencyType { get; set; }
     public DateTime? ResolveByUtc { get; set; }
     public bool IsResolved { get; set; }
     public bool IsOverdue => !IsResolved && ResolveByUtc.HasValue && ResolveByUtc.Value.Date < DateTime.UtcNow.Date;

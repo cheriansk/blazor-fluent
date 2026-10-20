@@ -27,10 +27,10 @@ public class ProjectResourceAuthorizationHandler : AuthorizationHandler<Operatio
     {
         var minRole = requirement.Name switch
         {
-            nameof(ResourceOperations.Delete) => ProjectRole.Admin,
-            nameof(ResourceOperations.Update) => ProjectRole.Dev,
-            nameof(ResourceOperations.Create) => ProjectRole.Dev,
-            _ => ProjectRole.ReadOnly
+            nameof(ResourceOperations.Delete) => ProjectRoleEnum.Admin,
+            nameof(ResourceOperations.Update) => ProjectRoleEnum.Contribute,
+            nameof(ResourceOperations.Create) => ProjectRoleEnum.Contribute,
+            _ => ProjectRoleEnum.ReadOnly
         };
 
         var canAccess = await _projectAuth.CanVisitAsync(resource.ProjectId, minRole);

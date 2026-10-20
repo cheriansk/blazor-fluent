@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,7 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
         builder.Property(w => w.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(w => w.Title)
             .HasMaxLength(200)

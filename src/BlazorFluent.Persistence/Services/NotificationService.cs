@@ -85,7 +85,7 @@ public class NotificationService : INotifyService
     /// </para>
     /// <para>
     /// This implementation explicitly copies over the caller's active tenant properties (including TenantId, 
-    /// TenantName, UserType, AllowedTenants, and IsHost). This ensures that EF Core's global query filters 
+    /// TenantName, UserTypeEnum, AllowedTenants, and IsHost). This ensures that EF Core's global query filters 
     /// remain intact and continue to isolate notification data strictly to the correct tenant.
     /// </para>
     /// </remarks>
@@ -121,7 +121,7 @@ public class NotificationService : INotifyService
         {
             TenantId = tenantId,
             ProjectId = request.ProjectId,
-            UserId = request.Category == NotificationCategory.Personal ? request.UserId : null,
+            UserId = request.Category == NotificationCategoryEnum.Personal ? request.UserId : null,
             Category = request.Category,
             Severity = request.Severity,
             Title = request.Title,
@@ -135,7 +135,7 @@ public class NotificationService : INotifyService
         await db.SaveChangesAsync(ct);
 
         // 1. Teams Dispatch (if requested and configured)
-        if ((request.Channels & NotificationChannels.Teams) != 0)
+        if ((request.Channels & NotificationChannelsEnum.Teams) != 0)
         {
             var webhookUrl = ResolveTeamsWebhook(request.ProjectId);
             if (!string.IsNullOrWhiteSpace(webhookUrl))
@@ -150,7 +150,7 @@ public class NotificationService : INotifyService
         }
 
         // 2. Email Dispatch (if requested and configured)
-        if ((request.Channels & NotificationChannels.Email) != 0)
+        if ((request.Channels & NotificationChannelsEnum.Email) != 0)
         {
             var recipientMailbox = ResolveProjectMailbox(request.ProjectId);
             if (!string.IsNullOrWhiteSpace(recipientMailbox))
@@ -214,21 +214,21 @@ public class NotificationService : INotifyService
         // 3. Category & Personal Privacy filtering
         var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
-        if (filter.Category == NotificationCategory.Personal)
+        if (filter.Category == NotificationCategoryEnum.Personal)
         {
             if (string.IsNullOrWhiteSpace(currentUserId)) return [];
-            query = query.Where(n => n.Category == NotificationCategory.Personal && n.UserId == currentUserId);
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId);
         }
-        else if (filter.Category == NotificationCategory.Generic)
+        else if (filter.Category == NotificationCategoryEnum.Generic)
         {
-            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Generic && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
         }
         else
         {
             query = query.Where(n =>
-                (n.Category == NotificationCategory.Personal && n.UserId == currentUserId) ||
-                (n.Category == NotificationCategory.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                (n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId) ||
+                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             );
         }
 
@@ -302,7 +302,7 @@ public class NotificationService : INotifyService
         var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
         var genericCount = await baseQuery
-            .Where(n => n.Category == NotificationCategory.Generic
+            .Where(n => n.Category == NotificationCategoryEnum.Generic
                 && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             .CountWithAuditedBypassAsync(auditService, "Counting unread generic notifications across authorized tenants.", ct);
@@ -311,7 +311,7 @@ public class NotificationService : INotifyService
         if (!string.IsNullOrWhiteSpace(currentUserId))
         {
             personalCount = await baseQuery
-                .Where(n => n.Category == NotificationCategory.Personal
+                .Where(n => n.Category == NotificationCategoryEnum.Personal
                     && n.UserId == currentUserId
                     && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
                 .CountWithAuditedBypassAsync(auditService, "Counting unread personal notifications across authorized tenants.", ct);
@@ -353,7 +353,7 @@ public class NotificationService : INotifyService
         }
 
         // Privacy check: Personal notification can only be read by recipient
-        if (notification.Category == NotificationCategory.Personal && notification.UserId != currentUserId)
+        if (notification.Category == NotificationCategoryEnum.Personal && notification.UserId != currentUserId)
         {
             _logger.LogWarning("Security violation: User '{UserId}' attempted to mark personal notification '{NotificationId}' belonging to '{Owner}' as read.",
                 currentUserId, notificationId, notification.UserId);
@@ -376,7 +376,7 @@ public class NotificationService : INotifyService
         return true;
     }
 
-    public async Task<int> MarkAllAsReadAsync(NotificationCategory? category = null, string? tenantId = null, CancellationToken ct = default)
+    public async Task<int> MarkAllAsReadAsync(NotificationCategoryEnum? category = null, string? tenantId = null, CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -405,21 +405,21 @@ public class NotificationService : INotifyService
 
         var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
-        if (category == NotificationCategory.Personal)
+        if (category == NotificationCategoryEnum.Personal)
         {
             if (string.IsNullOrWhiteSpace(currentUserId)) return 0;
-            query = query.Where(n => n.Category == NotificationCategory.Personal && n.UserId == currentUserId);
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId);
         }
-        else if (category == NotificationCategory.Generic)
+        else if (category == NotificationCategoryEnum.Generic)
         {
-            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Generic && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
         }
         else
         {
             query = query.Where(n =>
-                (n.Category == NotificationCategory.Personal && n.UserId == currentUserId) ||
-                (n.Category == NotificationCategory.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                (n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId) ||
+                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             );
         }
 
@@ -468,7 +468,7 @@ public class NotificationService : INotifyService
                 ct);
 
         return userRoles
-            .Where(r => r.Role.Satisfies(ProjectRole.ReadOnly))
+            .Where(r => r.Role.Satisfies(ProjectRoleEnum.ReadOnly))
             .Select(r => r.ProjectId)
             .Distinct()
             .ToList();

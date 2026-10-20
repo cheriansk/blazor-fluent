@@ -153,11 +153,11 @@
                 <FluentBadge>@context.EventType</FluentBadge>
             </TemplateColumn>
             <TemplateColumn Title="Severity" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Severity))">
-                @if (context.Severity == AuditSeverity.Critical || context.Severity == AuditSeverity.Error)
+                @if (context.Severity == AuditSeverityEnum.Critical || context.Severity == AuditSeverityEnum.Error)
                 {
                     <FluentBadge Color="BadgeColor.Severe">@context.Severity</FluentBadge>
                 }
-                else if (context.Severity == AuditSeverity.Warning)
+                else if (context.Severity == AuditSeverityEnum.Warning)
                 {
                     <FluentBadge Color="BadgeColor.Warning">@context.Severity</FluentBadge>
                 }
@@ -355,10 +355,10 @@
         _selectedEventType = val;
         _filter.EventType = val switch
         {
-            "EntityChange" => AuditEventType.EntityChange,
-            "Security" => AuditEventType.Security,
-            "TenantSwitch" => AuditEventType.TenantSwitch,
-            "UserActivity" => AuditEventType.UserActivity,
+            "EntityChange" => AuditEventTypeEnum.EntityChange,
+            "Security" => AuditEventTypeEnum.Security,
+            "TenantSwitch" => AuditEventTypeEnum.TenantSwitch,
+            "UserActivity" => AuditEventTypeEnum.UserActivity,
             _ => null
         };
     }
@@ -368,10 +368,10 @@
         _selectedSeverity = val;
         _filter.Severity = val switch
         {
-            "Information" => AuditSeverity.Information,
-            "Warning" => AuditSeverity.Warning,
-            "Error" => AuditSeverity.Error,
-            "Critical" => AuditSeverity.Critical,
+            "Information" => AuditSeverityEnum.Information,
+            "Warning" => AuditSeverityEnum.Warning,
+            "Error" => AuditSeverityEnum.Error,
+            "Critical" => AuditSeverityEnum.Critical,
             _ => null
         };
     }

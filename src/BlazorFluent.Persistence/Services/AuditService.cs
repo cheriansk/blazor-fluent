@@ -54,8 +54,8 @@ internal class AuditService : IAuditService
             UserId = currentUserId,
             UserEmail = _currentUser.Email,
             UserType = _tenantContext.UserType,
-            EventType = AuditEventType.TenantSwitch,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.TenantSwitch,
+            Severity = AuditSeverityEnum.Information,
             Description = $"User switched active tenant from '{fromTenantId}' to '{toTenantId}'. Reason: {reason ?? "User interactive selection"}",
             Created = now,
             CreatedBy = currentUserId,
@@ -72,7 +72,7 @@ internal class AuditService : IAuditService
 
     public async Task LogSecurityEventAsync(
         string action,
-        AuditSeverity severity,
+        AuditSeverityEnum severity,
         string? details = null,
         CancellationToken cancellationToken = default)
     {
@@ -88,7 +88,7 @@ internal class AuditService : IAuditService
             UserId = currentUserId,
             UserEmail = _currentUser.Email,
             UserType = _tenantContext.UserType,
-            EventType = AuditEventType.Security,
+            EventType = AuditEventTypeEnum.Security,
             Severity = severity,
             Description = $"{action}. Details: {details}",
             Created = now,
@@ -101,10 +101,10 @@ internal class AuditService : IAuditService
 
         var logLevel = severity switch
         {
-            AuditSeverity.Information => LogLevel.Information,
-            AuditSeverity.Warning => LogLevel.Warning,
-            AuditSeverity.Error => LogLevel.Error,
-            AuditSeverity.Critical => LogLevel.Critical,
+            AuditSeverityEnum.Information => LogLevel.Information,
+            AuditSeverityEnum.Warning => LogLevel.Warning,
+            AuditSeverityEnum.Error => LogLevel.Error,
+            AuditSeverityEnum.Critical => LogLevel.Critical,
             _ => LogLevel.Information
         };
 
@@ -131,8 +131,8 @@ internal class AuditService : IAuditService
             UserId = currentUserId,
             UserEmail = _currentUser.Email,
             UserType = _tenantContext.UserType,
-            EventType = AuditEventType.UserActivity,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.UserActivity,
+            Severity = AuditSeverityEnum.Information,
             Description = $"{action}. Details: {details}",
             Created = now,
             CreatedBy = currentUserId,
@@ -217,7 +217,7 @@ internal class AuditService : IAuditService
     public async Task<string> LogExceptionAsync(
         Exception exception,
         string? contextDescription = null,
-        AuditSeverity severity = AuditSeverity.Error,
+        AuditSeverityEnum severity = AuditSeverityEnum.Error,
         CancellationToken cancellationToken = default)
     {
         var errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
@@ -273,7 +273,7 @@ internal class AuditService : IAuditService
                 UserId = currentUserId,
                 UserEmail = _currentUser.Email,
                 UserType = _tenantContext.UserType,
-                EventType = AuditEventType.Exception,
+                EventType = AuditEventTypeEnum.Exception,
                 Severity = severity,
                 Description = string.IsNullOrWhiteSpace(contextDescription)
                     ? $"Exception: {exception.Message}"
@@ -339,7 +339,7 @@ internal class AuditService : IAuditService
                     UserId = record.UserId ?? "Unknown",
                     UserEmail = userEmail,
                     UserType = record.UserType,
-                    Operation = record.Operation ?? EntityOperation.Update,
+                    Operation = record.Operation ?? EntityOperationEnum.Update,
                     Timestamp = record.Created,
                     Description = record.Description
                 });
@@ -364,7 +364,7 @@ internal class AuditService : IAuditService
                     string? oldVal = null;
                     string? newVal = null;
 
-                    if (record.Operation == EntityOperation.Update)
+                    if (record.Operation == EntityOperationEnum.Update)
                     {
                         if (prop.Value.ValueKind == JsonValueKind.Object &&
                             (prop.Value.TryGetProperty("Old", out var oldElem) || prop.Value.TryGetProperty("old", out oldElem)) &&
@@ -378,11 +378,11 @@ internal class AuditService : IAuditService
                             newVal = prop.Value.ToString();
                         }
                     }
-                    else if (record.Operation == EntityOperation.Insert)
+                    else if (record.Operation == EntityOperationEnum.Insert)
                     {
                         newVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
                     }
-                    else if (record.Operation == EntityOperation.Delete)
+                    else if (record.Operation == EntityOperationEnum.Delete)
                     {
                         oldVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
                     }
@@ -398,7 +398,7 @@ internal class AuditService : IAuditService
                         UserId = record.UserId ?? "Unknown",
                         UserEmail = userEmail,
                         UserType = record.UserType,
-                        Operation = record.Operation ?? EntityOperation.Update,
+                        Operation = record.Operation ?? EntityOperationEnum.Update,
                         Timestamp = record.Created,
                         Description = record.Description
                     });

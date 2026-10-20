@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -64,7 +64,7 @@ public class AuditableEntityInterceptorTests : IDisposable
             Id = Guid.NewGuid(),
             Name = "Apollo Project",
             ShortCode = "APL",
-            Status = ProjectStatus.Active
+            Status = ProjectStatusEnum.Active
         };
 
         // Act
@@ -89,7 +89,7 @@ public class AuditableEntityInterceptorTests : IDisposable
                 Id = projectId,
                 Name = "Alpha Project",
                 ShortCode = "ALP",
-                Status = ProjectStatus.Active
+                Status = ProjectStatusEnum.Active
             });
             await setupContext.SaveChangesAsync();
         }
@@ -103,7 +103,7 @@ public class AuditableEntityInterceptorTests : IDisposable
                 TenantId = "tenant_acme",
                 Name = "Hacked Name",
                 ShortCode = "ALP",
-                Status = ProjectStatus.Active
+                Status = ProjectStatusEnum.Active
             };
 
             attackerContext.Projects.Attach(entity);

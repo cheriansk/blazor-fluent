@@ -1,12 +1,11 @@
-@page "/projects/{ProjectId:guid}/tasks"
+﻿@page "/projects/{ProjectId:guid}/tasks"
 @page "/tasks"
-@attribute [RequiredClearance(ProjectRole.ReadOnly)]
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
-@using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Calendar
 @using BlazorFluent.Core.Domain.Tenancy
@@ -107,11 +106,11 @@ else
         <div class="health-main-kpis">
             <div class="health-rating-box">
                 <span class="health-pill health-pill-@(_projectHealth.Health.ToString().ToLowerInvariant())">
-                    @if (_projectHealth.Health == ProjectHealthRating.OnTrack)
+                    @if (_projectHealth.Health == ProjectHealthRatingEnum.OnTrack)
                     {
                         <span>🟢 On Track</span>
                     }
-                    else if (_projectHealth.Health == ProjectHealthRating.AtRisk)
+                    else if (_projectHealth.Health == ProjectHealthRatingEnum.AtRisk)
                     {
                         <span>🟡 At Risk</span>
                     }
@@ -336,11 +335,11 @@ else
                 <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Style="width: 100%; margin-top: 12px;" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
 
                 <div class="modal-grid-row" style="margin-top: 12px;">
-                    <FluentSelect TOption="DataListItem<TaskPriority>"
-                                  TValue="TaskPriority"
-                                  Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                    <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
+                                  TValue="TaskPriorityEnum"
+                                  Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                   OptionText="@(i => i.DisplayName)"
-                                  OptionValue="@(i => i != null ? i.Value : TaskPriority.Low)"
+                                  OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Low)"
                                   @bind-Value="_newTask.Priority"
                                   Label="Priority" Style="width: 100%;" />
 
@@ -425,11 +424,11 @@ else
                         <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Style="width: 100%; margin-top: 12px;" />
 
                         <div class="modal-grid-row" style="margin-top: 12px;">
-                            <FluentSelect TOption="DataListItem<TaskPriority>"
-                                          TValue="TaskPriority"
-                                          Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                            <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
+                                          TValue="TaskPriorityEnum"
+                                          Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                           OptionText="@(i => i.DisplayName)"
-                                          OptionValue="@(i => i != null ? i.Value : TaskPriority.Low)"
+                                          OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Low)"
                                           @bind-Value="_selectedTask.Priority"
                                           Label="Priority" Style="width: 100%;" />
 
@@ -437,11 +436,11 @@ else
                         </div>
 
                         <div class="modal-grid-row" style="margin-top: 12px;">
-                            <FluentSelect TOption="DataListItem<TaskStatus>"
-                                          TValue="TaskStatus"
-                                          Items="@(DataListExtensions.GetDataListItems<TaskStatus>())"
+                            <FluentSelect TOption="DataListItem<TaskStatusEnum>"
+                                          TValue="TaskStatusEnum"
+                                          Items="@(DataListExtensions.GetDataListItems<TaskStatusEnum>())"
                                           OptionText="@(i => i.DisplayName)"
-                                          OptionValue="@(i => i != null ? i.Value : TaskStatus.Open)"
+                                          OptionValue="@(i => i != null ? i.Value : TaskStatusEnum.Open)"
                                           @bind-Value="_selectedTask.Status"
                                           Label="Status" Style="width: 100%;" />
 
@@ -513,9 +512,9 @@ else
                                 {
                                     <div class="subtask-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
                                         <div style="display: flex; align-items: center; gap: 10px;">
-                                            <FluentCheckbox Value="@(sub.Status == TaskStatus.Closed)" ValueChanged="@(async (bool val) => await ToggleSubTaskCompleteAsync(sub, val))" />
+                                            <FluentCheckbox Value="@(sub.Status == TaskStatusEnum.Closed)" ValueChanged="@(async (bool val) => await ToggleSubTaskCompleteAsync(sub, val))" />
                                             <div>
-                                                <span style="font-weight: 600; text-decoration: @(sub.Status == TaskStatus.Closed ? "line-through" : "none");">@sub.Title</span>
+                                                <span style="font-weight: 600; text-decoration: @(sub.Status == TaskStatusEnum.Closed ? "line-through" : "none");">@sub.Title</span>
                                                 <div style="font-size: 12px; color: #666;">
                                                     Priority: @sub.Priority &bull; Due: @sub.DueDate.ToString("yyyy-MM-dd")
                                                     @if (sub.BlockedBySubTaskId.HasValue)
@@ -536,11 +535,11 @@ else
                             <FluentLabel Typo="Typography.H6" Style="margin-bottom: 8px;">Add Child Subtask</FluentLabel>
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="width: 100%;">
                                 <FluentTextInput @bind-Value="_newSubTaskTitle" Placeholder="Subtask headline..." Style="flex: 2;" />
-                                <FluentSelect TOption="DataListItem<TaskPriority>"
-                                              TValue="TaskPriority"
-                                              Items="@(DataListExtensions.GetDataListItems<TaskPriority>())"
+                                <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
+                                              TValue="TaskPriorityEnum"
+                                              Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                               OptionText="@(i => i.DisplayName)"
-                                              OptionValue="@(i => i != null ? i.Value : TaskPriority.Medium)"
+                                              OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Medium)"
                                               @bind-Value="_newSubTaskPriority"
                                               Style="flex: 1;" />
                                 <FluentDatePicker @bind-Value="_newSubTaskDueDate" Style="flex: 1;" />
@@ -623,9 +622,9 @@ else
                                               @bind-Value="_newDepTargetTaskId"
                                               Label="Prerequisite / Target Task" Style="width: 100%;" />
 
-                                <FluentSelect TOption="DataListItem<TaskDependencyType>"
-                                              TValue="TaskDependencyType"
-                                              Items="@(DataListExtensions.GetDataListItems<TaskDependencyType>())"
+                                <FluentSelect TOption="DataListItem<TaskDependencyTypeEnum>"
+                                              TValue="TaskDependencyTypeEnum"
+                                              Items="@(DataListExtensions.GetDataListItems<TaskDependencyTypeEnum>())"
                                               OptionText="@(i => i.DisplayName)"
                                               OptionValue="@(i =>i.Value )"
                                               @bind-Value="_newDepType"
@@ -739,7 +738,7 @@ else
                                     </div>
 
                                     <div class="milestone-card-actions">
-                                        @if (m.Status != CalendarEntryStatus.Completed)
+                                        @if (m.Status != CalendarEntryStatusEnum.Completed)
                                         {
                                             <FluentButton Appearance="ButtonAppearance.Primary"
                                                           OnClick="@(() => SignOffMilestoneAsync(m.MilestoneId))"
@@ -815,7 +814,7 @@ else
     <CreateWorkflowWizardModal IsOpen="@_isCreateWorkflowModalOpen"
                                IsOpenChanged="@(val => _isCreateWorkflowModalOpen = val)"
                                ProjectId="@_currentProject.Id"
-                               DefaultLevel="TaskLevel.Project"
+                               DefaultLevel="TaskLevelEnum.Project"
                                WorkflowToEdit="@_workflowToEdit"
                                OnWorkflowCreated="HandleWorkflowCreated"
                                OnWorkflowUpdated="HandleWorkflowUpdated" />
@@ -1383,10 +1382,10 @@ else
 
     private TaskEntity _newTask = new()
     {
-        Level = TaskLevel.Project,
+        Level = TaskLevelEnum.Project,
         Title = string.Empty,
-        Priority = TaskPriority.Medium,
-        Status = TaskStatus.Open,
+        Priority = TaskPriorityEnum.Medium,
+        Status = TaskStatusEnum.Open,
         StartDate = DateTime.UtcNow.Date,
         DueDate = DateTime.UtcNow.Date.AddDays(7)
     };
@@ -1405,14 +1404,14 @@ else
     // SubTasks & Blocker Modal state
     private List<SubTaskEntity> _selectedTaskSubTasks = [];
     private string _newSubTaskTitle = string.Empty;
-    private TaskPriority _newSubTaskPriority = TaskPriority.Medium;
+    private TaskPriorityEnum _newSubTaskPriority = TaskPriorityEnum.Medium;
     private DateTime? _newSubTaskDueDate = DateTime.UtcNow.Date.AddDays(3);
     private bool _isAddingSubTask = false;
     private bool _showBlockerLinkModal = false;
 
     // Dependency form
     private string _newDepTargetTaskId = string.Empty;
-    private TaskDependencyType _newDepType = TaskDependencyType.Blocks;
+    private TaskDependencyTypeEnum _newDepType = TaskDependencyTypeEnum.Blocks;
     private DateTime? _newDepResolveByUtc;
     private string? _newDepNotes;
 
@@ -1422,8 +1421,8 @@ else
         Title = string.Empty,
         StartDate = DateTime.UtcNow.Date,
         EndDate = DateTime.UtcNow.Date.AddDays(14),
-        EntryType = CalendarEntryType.Milestone,
-        Status = CalendarEntryStatus.Scheduled
+        EntryType = CalendarEntryTypeEnum.Milestone,
+        Status = CalendarEntryStatusEnum.Scheduled
     };
     private DateTime? _newMilestoneStartDate;
     private DateTime? _newMilestoneEndDate;
@@ -1463,12 +1462,12 @@ else
 
         _columns = new List<SwimlaneColumn<TaskEntity>>
         {
-            new("Past Due", t => !t.IsClosed && t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled && t.DueDate.Date < _today, "#d13438", "Overdue"),
-            new("Due Today", t => !t.IsClosed && t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled && t.DueDate.Date == _today, "#ff8c00", "Today's priority"),
-            new("Due Tomorrow", t => !t.IsClosed && t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled && t.DueDate.Date == tomorrow, "#0078d4", "Next 24 hours"),
-            new("Due in 2 Days", t => !t.IsClosed && t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled && t.DueDate.Date == in2Days, "#8764b8", "Upcoming"),
-            new("Due Later", t => !t.IsClosed && t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled && t.DueDate.Date > in2Days, "#605e5c", "Future pipeline"),
-            new("Closed", t => t.IsClosed || t.Status == TaskStatus.Closed || t.Status == TaskStatus.Cancelled, "#107c41", "Completed work")
+            new("Past Due", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date < _today, "#d13438", "Overdue"),
+            new("Due Today", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date == _today, "#ff8c00", "Today's priority"),
+            new("Due Tomorrow", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date == tomorrow, "#0078d4", "Next 24 hours"),
+            new("Due in 2 Days", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date == in2Days, "#8764b8", "Upcoming"),
+            new("Due Later", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date > in2Days, "#605e5c", "Future pipeline"),
+            new("Closed", t => t.IsClosed || t.Status == TaskStatusEnum.Closed || t.Status == TaskStatusEnum.Cancelled, "#107c41", "Completed work")
         };
     }
 
@@ -1559,7 +1558,7 @@ else
 
         var dependencies = await DbContext.WorkDependencies
             .AsNoTracking()
-            .Where(d => d.ProjectId == _currentProject.Id && d.DependencyType == TaskDependencyType.Blocks && !d.IsDeleted)
+            .Where(d => d.ProjectId == _currentProject.Id && d.DependencyType == TaskDependencyTypeEnum.Blocks && !d.IsDeleted)
             .ToListAsync();
 
         var taskLookup = _tasks.ToDictionary(t => t.Id);
@@ -1620,10 +1619,10 @@ else
         _newTask = new TaskEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
-            Priority = TaskPriority.Medium,
-            Level = TaskLevel.Project,
+            Priority = TaskPriorityEnum.Medium,
+            Level = TaskLevelEnum.Project,
             Title = string.Empty,
-            Status = TaskStatus.Open,
+            Status = TaskStatusEnum.Open,
             StartDate = DateTime.UtcNow.Date,
             DueDate = DateTime.UtcNow.Date.AddDays(7)
         };
@@ -1644,8 +1643,8 @@ else
             Title = string.Empty,
             StartDate = DateTime.UtcNow.Date,
             EndDate = DateTime.UtcNow.Date.AddDays(14),
-            EntryType = CalendarEntryType.Milestone,
-            Status = CalendarEntryStatus.Confirmed
+            EntryType = CalendarEntryTypeEnum.Milestone,
+            Status = CalendarEntryStatusEnum.Confirmed
         };
         _newMilestoneStartDate = DateTime.UtcNow.Date;
         _newMilestoneEndDate = DateTime.UtcNow.Date.AddDays(14);
@@ -1718,7 +1717,7 @@ else
             _otherProjectTasks = _tasks.Where(t => t.Id != _selectedTask.Id).ToList();
 
             _newDepTargetTaskId = _otherProjectTasks.FirstOrDefault()?.Id.ToString() ?? string.Empty;
-            _newDepType = TaskDependencyType.Blocks;
+            _newDepType = TaskDependencyTypeEnum.Blocks;
             _newDepResolveByUtc = _selectedTask.DueDate;
             _newDepNotes = string.Empty;
             _selectedModalTab = "details";
@@ -1736,9 +1735,9 @@ else
                 ParentTaskId = _selectedTask.Id,
                 Title = _newSubTaskTitle.Trim(),
                 Priority = _newSubTaskPriority,
-                Level = TaskLevel.Project,
+                Level = TaskLevelEnum.Project,
                 StartDate = DateTime.UtcNow.Date,
-                Status = TaskStatus.Open,
+                Status = TaskStatusEnum.Open,
                 DueDate = _newSubTaskDueDate ?? DateTime.UtcNow.Date.AddDays(3),
                 OrderIndex = _selectedTaskSubTasks.Count + 1,
                 ReporterEmail = CurrentUser.Email ?? string.Empty
@@ -1759,7 +1758,7 @@ else
 
     private async Task ToggleSubTaskCompleteAsync(SubTaskEntity subTask, bool isCompleted)
     {
-        subTask.Status = isCompleted ? TaskStatus.Closed : TaskStatus.Open;
+        subTask.Status = isCompleted ? TaskStatusEnum.Closed : TaskStatusEnum.Open;
         subTask.EndDate = isCompleted ? DateTime.UtcNow : null;
         await TaskService.UpdateSubTaskAsync(subTask);
         if (_selectedTask is not null)
@@ -1933,8 +1932,8 @@ else
             _newMilestone.ProjectId = _currentProject!.Id;
             _newMilestone.StartDate = _newMilestoneStartDate.Value;
             _newMilestone.EndDate = _newMilestoneEndDate.Value;
-            _newMilestone.Status = CalendarEntryStatus.Confirmed;
-            _newMilestone.EntryType = CalendarEntryType.Milestone;
+            _newMilestone.Status = CalendarEntryStatusEnum.Confirmed;
+            _newMilestone.EntryType = CalendarEntryTypeEnum.Milestone;
 
             var res = await MilestoneService.CreateMilestoneAsync(_newMilestone);
             if (res.IsSuccess)
@@ -1997,11 +1996,11 @@ else
         BuildMilestoneOptions();
     }
 
-    private static string GetPriorityColor(TaskPriority priority) => priority switch
+    private static string GetPriorityColor(TaskPriorityEnum priority) => priority switch
     {
-        TaskPriority.Urgent => "#d13438", // Red
-        TaskPriority.High => "#ff8c00",   // Orange
-        TaskPriority.Medium => "#0078d4", // Blue
+        TaskPriorityEnum.Urgent => "#d13438", // Red
+        TaskPriorityEnum.High => "#ff8c00",   // Orange
+        TaskPriorityEnum.Medium => "#0078d4", // Blue
         _ => "#605e5c"                    // Gray
     };
 

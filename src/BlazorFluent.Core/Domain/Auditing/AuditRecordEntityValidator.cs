@@ -30,7 +30,7 @@ public class AuditRecordEntityValidator : AbstractValidator<AuditRecordEntity>
             .WithMessage("A valid AuditSeverity is required.");
 
         // 2. Conditional Invariants: EntityChange Events
-        When(x => x.EventType == AuditEventType.EntityChange, () =>
+        When(x => x.EventType == AuditEventTypeEnum.EntityChange, () =>
         {
             RuleFor(x => x.EntityName)
                 .NotEmpty()
@@ -52,7 +52,7 @@ public class AuditRecordEntityValidator : AbstractValidator<AuditRecordEntity>
         });
 
         // 3. Conditional Invariants: Non-Entity Events (Security, TenantSwitch, UserActivity, Exception)
-        When(x => x.EventType != AuditEventType.EntityChange, () =>
+        When(x => x.EventType != AuditEventTypeEnum.EntityChange, () =>
         {
             RuleFor(x => x.Description)
                 .NotEmpty()

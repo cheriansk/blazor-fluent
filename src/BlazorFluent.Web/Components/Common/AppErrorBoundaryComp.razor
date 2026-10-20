@@ -65,7 +65,7 @@ else
             _errorReferenceId = await AuditService.LogExceptionAsync(
                 exception,
                 $"Razor Page Rendering Error at URL: {currentUri} (Tenant: {tenantId}, User: {userId})",
-                AuditSeverity.Critical);
+                AuditSeverityEnum.Critical);
         }
         catch (Exception logEx)
         {

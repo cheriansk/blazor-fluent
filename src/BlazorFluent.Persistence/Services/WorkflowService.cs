@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -52,12 +52,12 @@ public class WorkflowService : IWorkflowService
             throw new ArgumentException("A workflow requires at least one sequential step.", nameof(request));
         }
 
-        if (request.Level == TaskLevel.Program && (!request.ProgramId.HasValue || request.ProgramId == Guid.Empty))
+        if (request.Level == TaskLevelEnum.Program && (!request.ProgramId.HasValue || request.ProgramId == Guid.Empty))
         {
             throw new ArgumentException("A valid Program ID is required for Program-scoped workflows.", nameof(request));
         }
 
-        if (request.Level == TaskLevel.Project && (!request.ProjectId.HasValue || request.ProjectId == Guid.Empty))
+        if (request.Level == TaskLevelEnum.Project && (!request.ProjectId.HasValue || request.ProjectId == Guid.Empty))
         {
             throw new ArgumentException("A valid Project ID is required for Project-scoped workflows.", nameof(request));
         }
@@ -83,12 +83,12 @@ public class WorkflowService : IWorkflowService
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             Level = request.Level,
-            ProgramId = request.Level == TaskLevel.Program ? request.ProgramId : null,
-            ProjectId = request.Level == TaskLevel.Project ? request.ProjectId : null,
+            ProgramId = request.Level == TaskLevelEnum.Program ? request.ProgramId : null,
+            ProjectId = request.Level == TaskLevelEnum.Project ? request.ProjectId : null,
             Title = request.Title.Trim(),
             Description = request.Description.Trim(),
             Priority = request.Priority,
-            Status = TaskStatus.InProgress,
+            Status = TaskStatusEnum.InProgress,
             StartDate = DateTime.UtcNow,
             DueDate = request.DueDate ?? DateTime.UtcNow.AddDays(14),
             ReporterEmail = callerEmail,
@@ -117,7 +117,7 @@ public class WorkflowService : IWorkflowService
 
                 existing.WorkflowId = workflow.Id;
                 existing.WorkflowStepOrder = order;
-                existing.Status = isFirst ? TaskStatus.InProgress : TaskStatus.Pending;
+                existing.Status = isFirst ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending;
                 if (isFirst)
                 {
                     existing.StartDate = DateTime.UtcNow;
@@ -142,7 +142,7 @@ public class WorkflowService : IWorkflowService
                     Title = stepDto.Title.Trim(),
                     Description = stepDto.Description?.Trim() ?? string.Empty,
                     Priority = request.Priority,
-                    Status = isFirst ? TaskStatus.InProgress : TaskStatus.Pending,
+                    Status = isFirst ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending,
                     StartDate = isFirst ? DateTime.UtcNow : (stepDto.DueDate ?? DateTime.UtcNow).AddDays(-3),
                     DueDate = stepDto.DueDate ?? DateTime.UtcNow.AddDays(3),
                     ReporterEmail = callerEmail,
@@ -170,7 +170,7 @@ public class WorkflowService : IWorkflowService
                         AssigneeEmails = subDto.AssigneeEmail?.Trim() ?? string.Empty,
                         DueDate = subDto.DueDate ?? stepTask.DueDate,
                         StartDate = DateTime.UtcNow,
-                        Status = TaskStatus.Open,
+                        Status = TaskStatusEnum.Open,
                         Priority = request.Priority,
                         ReporterEmail = callerEmail,
                         Level = request.Level,
@@ -201,8 +201,8 @@ public class WorkflowService : IWorkflowService
             recipientEmail: firstStep.AssigneeEmails ?? string.Empty,
             title: $"Workflow Action Required: {workflow.Title}",
             message: $"You are the assigned Step Owner of Step 1: '{firstStep.Title}'. Target deadline: {firstStep.DueDate:yyyy-MM-dd}.",
-            severity: NotificationSeverity.Warning,
-            category: NotificationCategory.Personal,
+            severity: NotificationSeverityEnum.Warning,
+            category: NotificationCategoryEnum.Personal,
             projectId: workflow.ProjectId,
             ct: ct);
 
@@ -213,8 +213,8 @@ public class WorkflowService : IWorkflowService
                 recipientEmail: workflow.WorkflowOwnerEmail,
                 title: $"Workflow Launched: {workflow.Title}",
                 message: $"Workflow launched successfully with {workflow.Steps.Count} steps. Step 1 is active under {firstStep.AssigneeEmails}.",
-                severity: NotificationSeverity.Info,
-                category: NotificationCategory.Personal,
+                severity: NotificationSeverityEnum.Info,
+                category: NotificationCategoryEnum.Personal,
                 projectId: workflow.ProjectId,
                 ct: ct);
         }
@@ -237,7 +237,7 @@ public class WorkflowService : IWorkflowService
             ?? throw new InvalidOperationException($"Step Task '{request.StepId}' not found in workflow.");
 
         // Zero Trust Gate 1: Step must be currently active
-        if (activeStep.Status != TaskStatus.InProgress || workflow.CurrentStepId != activeStep.Id)
+        if (activeStep.Status != TaskStatusEnum.InProgress || workflow.CurrentStepId != activeStep.Id)
         {
             throw new InvalidOperationException($"Zero Trust Violation: Step '{activeStep.Title}' is not in Active status (Current status: {activeStep.Status}).");
         }
@@ -258,12 +258,12 @@ public class WorkflowService : IWorkflowService
         // Auto-close any remaining open subtasks under this step
         foreach (var sub in activeStep.SubTasks.Where(s => !s.IsClosed))
         {
-            sub.Status = TaskStatus.Closed;
+            sub.Status = TaskStatusEnum.Closed;
             sub.EndDate = DateTime.UtcNow;
         }
 
         // Complete Active Step
-        activeStep.Status = TaskStatus.Closed;
+        activeStep.Status = TaskStatusEnum.Closed;
         activeStep.EndDate = DateTime.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(request.CompletionNotes))
@@ -280,14 +280,14 @@ public class WorkflowService : IWorkflowService
 
         var priorStepOwner = activeStep.AssigneeEmails;
         var nextStep = workflow.Steps
-            .Where(s => (s.WorkflowStepOrder ?? 0) > (activeStep.WorkflowStepOrder ?? 0) && s.Status != TaskStatus.Cancelled)
+            .Where(s => (s.WorkflowStepOrder ?? 0) > (activeStep.WorkflowStepOrder ?? 0) && s.Status != TaskStatusEnum.Cancelled)
             .OrderBy(s => s.WorkflowStepOrder ?? 0)
             .FirstOrDefault();
 
         if (nextStep != null)
         {
             // Sequential Handoff to Next Step
-            nextStep.Status = TaskStatus.InProgress;
+            nextStep.Status = TaskStatusEnum.InProgress;
             nextStep.StartDate = DateTime.UtcNow;
 
             workflow.CurrentStepId = nextStep.Id;
@@ -302,8 +302,8 @@ public class WorkflowService : IWorkflowService
                 recipientEmail: nextStep.AssigneeEmails ?? string.Empty,
                 title: $"Workflow Action Required: {workflow.Title}",
                 message: $"Step {activeStep.WorkflowStepOrder} ('{activeStep.Title}') was signed off by {callerEmail}. You are now the active Step Owner of Step {nextStep.WorkflowStepOrder}: '{nextStep.Title}'.",
-                severity: NotificationSeverity.Warning,
-                category: NotificationCategory.Personal,
+                severity: NotificationSeverityEnum.Warning,
+                category: NotificationCategoryEnum.Personal,
                 projectId: workflow.ProjectId,
                 ct: ct);
 
@@ -314,8 +314,8 @@ public class WorkflowService : IWorkflowService
                     recipientEmail: workflow.WorkflowOwnerEmail,
                     title: $"Workflow Progress: {workflow.Title}",
                     message: $"Step {activeStep.WorkflowStepOrder} ('{activeStep.Title}') completed. Step {nextStep.WorkflowStepOrder} ('{nextStep.Title}') is now active under {nextStep.AssigneeEmails}.",
-                    severity: NotificationSeverity.Info,
-                    category: NotificationCategory.Personal,
+                    severity: NotificationSeverityEnum.Info,
+                    category: NotificationCategoryEnum.Personal,
                     projectId: workflow.ProjectId,
                     ct: ct);
             }
@@ -331,8 +331,8 @@ public class WorkflowService : IWorkflowService
                         recipientEmail: watcher!,
                         title: $"Workflow Progress: {workflow.Title}",
                         message: $"Step {activeStep.WorkflowStepOrder} completed. Handoff to {nextStep.AssigneeEmails} for Step {nextStep.WorkflowStepOrder} ('{nextStep.Title}').",
-                        severity: NotificationSeverity.Info,
-                        category: NotificationCategory.Generic,
+                        severity: NotificationSeverityEnum.Info,
+                        category: NotificationCategoryEnum.Generic,
                         projectId: workflow.ProjectId,
                         ct: ct);
                 }
@@ -341,7 +341,7 @@ public class WorkflowService : IWorkflowService
         else
         {
             // All sequential steps finished -> Complete workflow
-            workflow.Status = TaskStatus.Closed;
+            workflow.Status = TaskStatusEnum.Closed;
             workflow.EndDate = DateTime.UtcNow;
             workflow.CurrentStepId = null;
 
@@ -361,8 +361,8 @@ public class WorkflowService : IWorkflowService
                     recipientEmail: watcher!,
                     title: $"Workflow Completed: {workflow.Title}",
                     message: $"All sequential steps for workflow '{workflow.Title}' have been delivered and closed successfully.",
-                    severity: NotificationSeverity.Success,
-                    category: NotificationCategory.Generic,
+                    severity: NotificationSeverityEnum.Success,
+                    category: NotificationCategoryEnum.Generic,
                     projectId: workflow.ProjectId,
                     ct: ct);
             }
@@ -419,8 +419,8 @@ public class WorkflowService : IWorkflowService
             recipientEmail: newOwner,
             title: $"Workflow Step Assigned: {workflow.Title}",
             message: $"You were assigned Step {targetStep.WorkflowStepOrder} ('{targetStep.Title}') by {callerEmail}. Reason: {request.Reason}",
-            severity: NotificationSeverity.Warning,
-            category: NotificationCategory.Personal,
+            severity: NotificationSeverityEnum.Warning,
+            category: NotificationCategoryEnum.Personal,
             projectId: workflow.ProjectId,
             ct: ct);
 
@@ -431,8 +431,8 @@ public class WorkflowService : IWorkflowService
                 recipientEmail: workflow.WorkflowOwnerEmail,
                 title: $"Step Reassigned: {workflow.Title}",
                 message: $"Step {targetStep.WorkflowStepOrder} was reassigned from {priorOwner} to {newOwner}. Reason: {request.Reason}",
-                severity: NotificationSeverity.Info,
-                category: NotificationCategory.Personal,
+                severity: NotificationSeverityEnum.Info,
+                category: NotificationCategoryEnum.Personal,
                 projectId: workflow.ProjectId,
                 ct: ct);
         }
@@ -475,7 +475,7 @@ public class WorkflowService : IWorkflowService
             AssigneeEmails = request.AssigneeEmail.Trim(),
             DueDate = request.DueDate ?? stepTask.DueDate,
             StartDate = DateTime.UtcNow,
-            Status = TaskStatus.Open,
+            Status = TaskStatusEnum.Open,
             Priority = stepTask.Priority,
             ReporterEmail = callerEmail,
             Level = stepTask.Level,
@@ -496,8 +496,8 @@ public class WorkflowService : IWorkflowService
                 recipientEmail: subTask.AssigneeEmails,
                 title: $"New Subtask Delegated: {subTask.Title}",
                 message: $"You were assigned a subtask under Step '{stepTask.Title}' of workflow '{workflow.Title}'. Due: {subTask.DueDate:yyyy-MM-dd}.",
-                severity: NotificationSeverity.Info,
-                category: NotificationCategory.Personal,
+                severity: NotificationSeverityEnum.Info,
+                category: NotificationCategoryEnum.Personal,
                 projectId: workflow.ProjectId,
                 ct: ct);
         }
@@ -513,7 +513,7 @@ public class WorkflowService : IWorkflowService
             .FirstOrDefaultAsync(s => s.Id == request.SubTaskId && s.TenantId == tenantId, ct)
             ?? throw new InvalidOperationException($"SubTask '{request.SubTaskId}' not found.");
 
-        subTask.Status = request.IsClosed ? TaskStatus.Closed : TaskStatus.Open;
+        subTask.Status = request.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open;
         subTask.EndDate = request.IsClosed ? DateTime.UtcNow : null;
 
         await _dbContext.SaveChangesAsync(ct);
@@ -547,8 +547,8 @@ public class WorkflowService : IWorkflowService
         if (filter.IsCompleted.HasValue)
         {
             query = filter.IsCompleted.Value
-                ? query.Where(w => w.Status == TaskStatus.Closed)
-                : query.Where(w => w.Status != TaskStatus.Closed);
+                ? query.Where(w => w.Status == TaskStatusEnum.Closed)
+                : query.Where(w => w.Status != TaskStatusEnum.Closed);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
@@ -567,7 +567,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<IReadOnlyList<WorkflowEntity>> GetProjectWorkflowsAsync(Guid projectId, CancellationToken ct = default)
     {
-        return await GetWorkflowsAsync(new WorkflowFilterDto(Level: TaskLevel.Project, ProjectId: projectId), ct);
+        return await GetWorkflowsAsync(new WorkflowFilterDto(Level: TaskLevelEnum.Project, ProjectId: projectId), ct);
     }
 
     public async Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default)
@@ -580,7 +580,7 @@ public class WorkflowService : IWorkflowService
             .FirstOrDefaultAsync(w => w.Id == workflowId && w.TenantId == tenantId && !w.IsDeleted, ct);
     }
 
-    public async Task<bool> CanUserManageWorkflowAsync(TaskLevel level, Guid? programId, Guid? projectId, CancellationToken ct = default)
+    public async Task<bool> CanUserManageWorkflowAsync(TaskLevelEnum level, Guid? programId, Guid? projectId, CancellationToken ct = default)
     {
         if (_currentUser.IsRootAdmin) return true;
         var tenantId = _tenantContext.TenantId;
@@ -589,9 +589,9 @@ public class WorkflowService : IWorkflowService
 
         return level switch
         {
-            TaskLevel.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct),
-            TaskLevel.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
-            TaskLevel.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
+            TaskLevelEnum.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct),
+            TaskLevelEnum.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
+            TaskLevelEnum.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
             _ => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)
         };
     }
@@ -651,17 +651,17 @@ public class WorkflowService : IWorkflowService
         var step = workflow.Steps.FirstOrDefault(s => s.Id == request.StepTaskId)
             ?? throw new InvalidOperationException($"Step task '{request.StepTaskId}' not found in workflow.");
 
-        if (step.Status == TaskStatus.Closed)
+        if (step.Status == TaskStatusEnum.Closed)
         {
             throw new InvalidOperationException("Completed steps cannot be cancelled.");
         }
-        if (step.Status == TaskStatus.Cancelled)
+        if (step.Status == TaskStatusEnum.Cancelled)
         {
             return workflow;
         }
 
-        var wasActive = step.Status == TaskStatus.InProgress;
-        step.Status = TaskStatus.Cancelled;
+        var wasActive = step.Status == TaskStatusEnum.InProgress;
+        step.Status = TaskStatusEnum.Cancelled;
         step.EndDate = DateTime.UtcNow;
 
         _dbContext.TaskComments.Add(new UserTaskCommentEntity
@@ -675,7 +675,7 @@ public class WorkflowService : IWorkflowService
 
         if (wasActive)
         {
-            workflow.Status = TaskStatus.Paused;
+            workflow.Status = TaskStatusEnum.Paused;
             workflow.CurrentStepId = null;
 
             _logger.LogWarning("Active step '{StepTitle}' ({StepId}) on workflow '{Title}' was cancelled. Pipeline is now Paused.",
@@ -685,8 +685,8 @@ public class WorkflowService : IWorkflowService
                 recipientEmail: workflow.WorkflowOwnerEmail,
                 title: $"Workflow Paused (Attention Required): {workflow.Title}",
                 message: $"Active Step #{step.WorkflowStepOrder}: '{step.Title}' was cancelled by {_currentUser.Email} (Reason: {request.CancellationReason}). Pipeline is paused pending admin review.",
-                severity: NotificationSeverity.Warning,
-                category: NotificationCategory.Personal,
+                severity: NotificationSeverityEnum.Warning,
+                category: NotificationCategoryEnum.Personal,
                 projectId: workflow.ProjectId,
                 ct: ct);
         }
@@ -713,34 +713,34 @@ public class WorkflowService : IWorkflowService
         TaskEntity? stepToActivate = null;
         if (request.NextStepTaskId.HasValue && request.NextStepTaskId.Value != Guid.Empty)
         {
-            stepToActivate = workflow.Steps.FirstOrDefault(s => s.Id == request.NextStepTaskId.Value && s.Status == TaskStatus.Pending);
+            stepToActivate = workflow.Steps.FirstOrDefault(s => s.Id == request.NextStepTaskId.Value && s.Status == TaskStatusEnum.Pending);
         }
 
         stepToActivate ??= workflow.Steps
-            .Where(s => s.Status == TaskStatus.Pending)
+            .Where(s => s.Status == TaskStatusEnum.Pending)
             .OrderBy(s => s.WorkflowStepOrder ?? 0)
             .FirstOrDefault();
 
         if (stepToActivate == null)
         {
-            workflow.Status = TaskStatus.Closed;
+            workflow.Status = TaskStatusEnum.Closed;
             workflow.EndDate = DateTime.UtcNow;
             workflow.CurrentStepId = null;
         }
         else
         {
-            stepToActivate.Status = TaskStatus.InProgress;
+            stepToActivate.Status = TaskStatusEnum.InProgress;
             stepToActivate.StartDate = DateTime.UtcNow;
 
             workflow.CurrentStepId = stepToActivate.Id;
-            workflow.Status = TaskStatus.InProgress;
+            workflow.Status = TaskStatusEnum.InProgress;
 
             await DispatchNotificationSilentlyAsync(
                 recipientEmail: stepToActivate.AssigneeEmails ?? string.Empty,
                 title: $"Workflow Action Required: {workflow.Title}",
                 message: $"Workflow resumed. Step #{stepToActivate.WorkflowStepOrder}: '{stepToActivate.Title}' is now active under your ownership.",
-                severity: NotificationSeverity.Warning,
-                category: NotificationCategory.Personal,
+                severity: NotificationSeverityEnum.Warning,
+                category: NotificationCategoryEnum.Personal,
                 projectId: workflow.ProjectId,
                 ct: ct);
         }
@@ -796,7 +796,7 @@ public class WorkflowService : IWorkflowService
 
             existing.WorkflowId = workflow.Id;
             existing.WorkflowStepOrder = targetOrder;
-            existing.Status = TaskStatus.Pending;
+            existing.Status = TaskStatusEnum.Pending;
             if (!string.IsNullOrWhiteSpace(request.DeliverableNotes))
             {
                 existing.Description = string.IsNullOrWhiteSpace(existing.Description)
@@ -821,7 +821,7 @@ public class WorkflowService : IWorkflowService
                 AssigneeEmails = !string.IsNullOrWhiteSpace(request.NewTaskOwnerEmail) ? request.NewTaskOwnerEmail.Trim() : callerEmail,
                 ReporterEmail = callerEmail,
                 Priority = workflow.Priority,
-                Status = TaskStatus.Pending,
+                Status = TaskStatusEnum.Pending,
                 StartDate = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddDays(7),
                 Labels = "WorkflowStep"
@@ -841,7 +841,7 @@ public class WorkflowService : IWorkflowService
         var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
         var query = _dbContext.Tasks
             .AsNoTracking()
-            .Where(t => t.TenantId == tenantId && !t.IsDeleted && t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled);
+            .Where(t => t.TenantId == tenantId && !t.IsDeleted && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled);
 
         if (filter.ExcludeTasksWithWorkflows)
         {
@@ -850,9 +850,9 @@ public class WorkflowService : IWorkflowService
 
         query = filter.Level switch
         {
-            TaskLevel.Project when filter.ProjectId.HasValue => query.Where(t => t.ProjectId == filter.ProjectId.Value),
-            TaskLevel.Program when filter.ProgramId.HasValue => query.Where(t => t.ProgramId == filter.ProgramId.Value),
-            TaskLevel.Tenant => query.Where(t => t.Level == TaskLevel.Tenant),
+            TaskLevelEnum.Project when filter.ProjectId.HasValue => query.Where(t => t.ProjectId == filter.ProjectId.Value),
+            TaskLevelEnum.Program when filter.ProgramId.HasValue => query.Where(t => t.ProgramId == filter.ProgramId.Value),
+            TaskLevelEnum.Tenant => query.Where(t => t.Level == TaskLevelEnum.Tenant),
             _ => query
         };
 
@@ -874,8 +874,8 @@ public class WorkflowService : IWorkflowService
         string recipientEmail,
         string title,
         string message,
-        NotificationSeverity severity,
-        NotificationCategory category,
+        NotificationSeverityEnum severity,
+        NotificationCategoryEnum category,
         Guid? projectId,
         CancellationToken ct)
     {
@@ -896,7 +896,7 @@ public class WorkflowService : IWorkflowService
                 UserId = userId,
                 ProjectId = projectId ?? Guid.Empty,
                 LinkUrl = "workflows",
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             };
 
             await _notifyService.SendAsync(req, ct);

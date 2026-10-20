@@ -30,7 +30,7 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// <summary>
     /// The assigned project role (ReadOnly, QA, Dev, Admin).
     /// </summary>
-    public required ProjectRole Role { get; set; }
+    public required ProjectRoleEnum Role { get; set; }
 
     /// <summary>
     /// Cryptographic HMAC-SHA256 signature sealing project role state against direct database tampering.
@@ -57,7 +57,7 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     public string UserName => !string.IsNullOrWhiteSpace(User?.FullName) ? User.FullName : (User?.Email ?? string.Empty);
 
     [NotMapped]
-    public UserType UserType => User?.UserType ?? UserType.ClientUser;
+    public UserTypeEnum UserType => User?.UserType ?? UserTypeEnum.ClientUser;
 
     /// <summary>
     /// Computes the HMAC-SHA256 signature for this project role's security properties.

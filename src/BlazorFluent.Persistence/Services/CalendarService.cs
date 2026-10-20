@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Dtos.Response;
@@ -56,12 +56,12 @@ public class CalendarService : ICalendarService
             ColorHex = "#0078d4",
             BadgeIcon = "Calendar",
             ScopeId = c.ProgramId,
-            Level = TaskLevel.Program
+            Level = TaskLevelEnum.Program
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
         var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevel.Program, programId, null, startUtc, endUtc, ct));
+            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.Program, programId, null, startUtc, endUtc, ct));
 
         var rollupResults = await Task.WhenAll(rollupTasks);
         var combinedRollups = rollupResults.SelectMany(r => r).ToList();
@@ -101,12 +101,12 @@ public class CalendarService : ICalendarService
             ColorHex = "#107c41",
             BadgeIcon = "Calendar",
             ScopeId = c.ProjectId,
-            Level = TaskLevel.Project
+            Level = TaskLevelEnum.Project
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
         var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevel.Project, projectId, null, startUtc, endUtc, ct));
+            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.Project, projectId, null, startUtc, endUtc, ct));
 
         var rollupResults = await Task.WhenAll(rollupTasks);
         var combinedRollups = rollupResults.SelectMany(r => r).ToList();
@@ -146,12 +146,12 @@ public class CalendarService : ICalendarService
             OwnerOrAssignee = string.Empty,
             ColorHex = "#8764b8",
             BadgeIcon = "Calendar",
-            Level = TaskLevel.User
+            Level = TaskLevelEnum.User
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
         var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevel.User, null, userId, startUtc, endUtc, ct));
+            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.User, null, userId, startUtc, endUtc, ct));
 
         var rollupResults = await Task.WhenAll(rollupTasks);
         var combinedRollups = rollupResults.SelectMany(r => r).ToList();
@@ -207,11 +207,11 @@ public class CalendarService : ICalendarService
         }
     }
 
-    public async Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevel level, CancellationToken ct = default)
+    public async Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevelEnum level, CancellationToken ct = default)
     {
         try
         {
-            if (level == TaskLevel.Program)
+            if (level == TaskLevelEnum.Program)
             {
                 var entry = await _context.ProgramCalendars.FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");
@@ -219,7 +219,7 @@ public class CalendarService : ICalendarService
                 entry.DeletedAtUtc = DateTime.UtcNow;
                 entry.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
             }
-            else if (level == TaskLevel.Project)
+            else if (level == TaskLevelEnum.Project)
             {
                 var entry = await _context.ProjectCalendars.FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");
@@ -227,7 +227,7 @@ public class CalendarService : ICalendarService
                 entry.DeletedAtUtc = DateTime.UtcNow;
                 entry.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
             }
-            else if (level == TaskLevel.User)
+            else if (level == TaskLevelEnum.User)
             {
                 var entry = await _context.UserCalendars.FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");

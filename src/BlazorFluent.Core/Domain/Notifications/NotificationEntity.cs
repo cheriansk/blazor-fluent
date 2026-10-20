@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Notifications;
@@ -25,12 +25,12 @@ public class NotificationEntity : TenantAuditableEntity, ISoftDeletableEntity, I
     /// <summary>
     /// Category determining generic vs personal segmentation.
     /// </summary>
-    public required NotificationCategory Category { get; set; }
+    public required NotificationCategoryEnum Category { get; set; }
 
     /// <summary>
     /// Visual severity level.
     /// </summary>
-    public required NotificationSeverity Severity { get; set; }
+    public required NotificationSeverityEnum Severity { get; set; }
 
     /// <summary>
     /// Headline title of the notification.

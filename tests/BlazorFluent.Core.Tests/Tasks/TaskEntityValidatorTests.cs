@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tasks;
+﻿using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tasks.Validators;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
@@ -14,12 +14,12 @@ public class TaskEntityValidatorTests
     {
         Id = Guid.CreateVersion7(),
         TenantId = "tenant_test",
-        Level = TaskLevel.Project,
+        Level = TaskLevelEnum.Project,
         ProjectId = Guid.CreateVersion7(),
         Title = "Implement Security Gate",
         Description = "Enforce clearance policy on API endpoints",
-        Priority = TaskPriority.High,
-        Status = TaskStatus.Open,
+        Priority = TaskPriorityEnum.High,
+        Status = TaskStatusEnum.Open,
         StartDate = DateTime.UtcNow,
         DueDate = DateTime.UtcNow.AddDays(7),
         ReporterEmail = "lead@company.local",
@@ -117,7 +117,7 @@ public class TaskEntityValidatorTests
     public void Validate_TenantLevel_ValidScoping_Passes()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Tenant;
+        task.Level = TaskLevelEnum.Tenant;
         task.ProgramId = null;
         task.ProjectId = Guid.Empty;
         task.UserId = null;
@@ -131,7 +131,7 @@ public class TaskEntityValidatorTests
     public void Validate_TenantLevel_WithProgramOrProject_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Tenant;
+        task.Level = TaskLevelEnum.Tenant;
         task.ProgramId = Guid.CreateVersion7();
         task.ProjectId = Guid.CreateVersion7();
 
@@ -148,7 +148,7 @@ public class TaskEntityValidatorTests
     public void Validate_ProgramLevel_ValidScoping_Passes()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Program;
+        task.Level = TaskLevelEnum.Program;
         task.ProgramId = Guid.CreateVersion7();
         task.ProjectId = Guid.Empty;
         task.UserId = null;
@@ -162,7 +162,7 @@ public class TaskEntityValidatorTests
     public void Validate_ProgramLevel_WithoutProgramId_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Program;
+        task.Level = TaskLevelEnum.Program;
         task.ProgramId = null;
         task.ProjectId = Guid.Empty;
 
@@ -177,7 +177,7 @@ public class TaskEntityValidatorTests
     public void Validate_ProgramLevel_WithProjectId_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Program;
+        task.Level = TaskLevelEnum.Program;
         task.ProgramId = Guid.CreateVersion7();
         task.ProjectId = Guid.CreateVersion7();
 
@@ -192,7 +192,7 @@ public class TaskEntityValidatorTests
     public void Validate_ProjectLevel_WithoutProjectId_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Project;
+        task.Level = TaskLevelEnum.Project;
         task.ProjectId = Guid.Empty;
         task.ProgramId = null;
 
@@ -207,7 +207,7 @@ public class TaskEntityValidatorTests
     public void Validate_ProjectLevel_WithProgramId_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.Project;
+        task.Level = TaskLevelEnum.Project;
         task.ProjectId = Guid.CreateVersion7();
         task.ProgramId = Guid.CreateVersion7();
 
@@ -222,7 +222,7 @@ public class TaskEntityValidatorTests
     public void Validate_UserLevel_ValidScoping_Passes()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.User;
+        task.Level = TaskLevelEnum.User;
         task.UserId = "user-12345";
         task.ProgramId = null;
         task.ProjectId = Guid.Empty;
@@ -236,7 +236,7 @@ public class TaskEntityValidatorTests
     public void Validate_UserLevel_WithoutUserId_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.User;
+        task.Level = TaskLevelEnum.User;
         task.UserId = null;
         task.ProgramId = null;
         task.ProjectId = Guid.Empty;
@@ -252,7 +252,7 @@ public class TaskEntityValidatorTests
     public void Validate_UserLevel_WithProgramOrProject_Fails()
     {
         var task = CreateBaseTask();
-        task.Level = TaskLevel.User;
+        task.Level = TaskLevelEnum.User;
         task.UserId = "user-12345";
         task.ProgramId = Guid.CreateVersion7();
         task.ProjectId = Guid.CreateVersion7();

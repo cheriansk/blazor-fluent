@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tenancy;
@@ -24,7 +24,7 @@ public class ProjectEntity : TenantAuditableEntity, ISoftDeletableEntity
 
     public string? ScopeSummary { get; set; }
 
-    public required ProjectStatus Status { get; set; }
+    public required ProjectStatusEnum Status { get; set; }
 
     public bool IsActive { get; set; }
 

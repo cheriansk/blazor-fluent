@@ -17,7 +17,7 @@
 }
 else if (_isAuthorized)
 {
-    @Authorized?.Invoke(_userRole ?? ProjectRole.ReadOnly)
+    @Authorized?.Invoke(_userRole ?? ProjectRoleEnum.ReadOnly)
 }
 else
 {
@@ -29,14 +29,14 @@ else
 
 @code {
     [Parameter] public Guid ProjectId { get; set; }
-    [Parameter] public ProjectRole MinimumRole { get; set; } = ProjectRole.ReadOnly;
-    [Parameter] public RenderFragment<ProjectRole>? Authorized { get; set; }
-    [Parameter] public RenderFragment<ProjectRole?>? NotAuthorized { get; set; }
+    [Parameter] public ProjectRoleEnum MinimumRole { get; set; } = ProjectRoleEnum.ReadOnly;
+    [Parameter] public RenderFragment<ProjectRoleEnum>? Authorized { get; set; }
+    [Parameter] public RenderFragment<ProjectRoleEnum?>? NotAuthorized { get; set; }
     [Parameter] public RenderFragment? LoadingContent { get; set; }
 
     private bool _isEvaluating = true;
     private bool _isAuthorized;
-    private ProjectRole? _userRole;
+    private ProjectRoleEnum? _userRole;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -44,7 +44,7 @@ else
 
         if (CurrentUser.IsRootAdmin)
         {
-            _userRole = ProjectRole.Admin;
+            _userRole = ProjectRoleEnum.Admin;
             _isAuthorized = true;
         }
         else if (ProjectId == Guid.Empty)

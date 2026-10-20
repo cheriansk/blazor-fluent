@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tenancy;
@@ -20,7 +20,7 @@ public class ProgramEntity : TenantAuditableEntity, ISoftDeletableEntity
 
     public DateTime? TargetEndDateUtc { get; set; }
 
-    public required ProgramStatus Status { get; set; }
+    public required ProgramStatusEnum Status { get; set; }
 
     public bool IsActive { get; set; }
 

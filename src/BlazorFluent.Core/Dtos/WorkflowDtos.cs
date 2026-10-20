@@ -31,13 +31,13 @@ public record CreateWorkflowStepDto
 /// </summary>
 public record CreateWorkflowReqDto
 {
-    public TaskLevel Level { get; set; } = TaskLevel.Project;
+    public TaskLevelEnum Level { get; set; } = TaskLevelEnum.Project;
     public Guid? ProgramId { get; set; }
     public Guid? ProjectId { get; set; }
     public string WorkflowOwnerEmail { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public TaskPriorityEnum Priority { get; set; } = TaskPriorityEnum.Medium;
     public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(14);
     public string WatcherEmails { get; set; } = string.Empty;
     public List<CreateWorkflowStepDto> Steps { get; set; } = new();
@@ -85,7 +85,7 @@ public record ToggleSubTaskStatusReqDto(
 /// Filter criteria for querying workflows across Tenant, Program, and Project levels.
 /// </summary>
 public record WorkflowFilterDto(
-    TaskLevel? Level = null,
+    TaskLevelEnum? Level = null,
     Guid? ProgramId = null,
     Guid? ProjectId = null,
     string? SearchTerm = null,
@@ -101,7 +101,7 @@ public record EditWorkflowReqDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string WorkflowOwnerEmail { get; set; } = string.Empty;
-    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public TaskPriorityEnum Priority { get; set; } = TaskPriorityEnum.Medium;
     public DateTime? DueDate { get; set; }
     public string WatcherEmails { get; set; } = string.Empty;
 }
@@ -140,7 +140,7 @@ public record AppendStepToWorkflowReqDto(
 /// Filter criteria for finding eligible existing tasks to attach to a workflow.
 /// </summary>
 public record TaskSearchFilterDto(
-    TaskLevel Level,
+    TaskLevelEnum Level,
     Guid? ProgramId = null,
     Guid? ProjectId = null,
     string? SearchTerm = null,

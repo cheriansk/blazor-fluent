@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Shared.DataListTypes;
@@ -20,7 +20,7 @@ public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IHm
 
     public required Guid UserEntityId { get; set; }
 
-    public required TenantRole Role { get; set; }
+    public required TenantRoleEnum Role { get; set; }
 
     public bool IsActive { get; set; }
 

@@ -19,12 +19,12 @@ public class RiskEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// <summary>
     /// Financial, schedule, or operational impact rating (Low, Medium, High, Critical).
     /// </summary>
-    public required RiskImpact Impact { get; set; }
+    public required RiskImpactEnum Impact { get; set; }
 
     /// <summary>
     /// Likelihood of risk realization (Low, Medium, High).
     /// </summary>
-    public required RiskProbability Probability { get; set; }
+    public required RiskProbabilityEnum Probability { get; set; }
 
     /// <summary>
     /// Calculated risk exposure score (1 to 12).
@@ -44,5 +44,5 @@ public class RiskEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// <summary>
     /// Governance lifecycle status of the risk.
     /// </summary>
-    public required RiskStatus RiskStatus { get; set; }
+    public required RiskStatusEnum RiskStatus { get; set; }
 }

@@ -17,15 +17,15 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.EntityChange,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
             EntityName = "ProjectEntity",
             EntityId = Guid.NewGuid().ToString(),
-            Operation = EntityOperation.Update,
+            Operation = EntityOperationEnum.Update,
             ChangesJson = "{\"Name\":{\"Old\":\"Project A\",\"New\":\"Project B\"}}",
             UserId = "usr_456",
             UserEmail = "architect@acme.com",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             Created = DateTime.UtcNow,
             CreatedBy = "usr_456"
         };
@@ -46,11 +46,11 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.EntityChange,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
             EntityName = "", // Invalid
             EntityId = "proj_123",
-            Operation = EntityOperation.Insert,
+            Operation = EntityOperationEnum.Insert,
             ChangesJson = "{}"
         };
 
@@ -70,11 +70,11 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.EntityChange,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
             EntityName = "ProjectEntity",
             EntityId = "proj_123",
-            Operation = EntityOperation.Insert,
+            Operation = EntityOperationEnum.Insert,
             ChangesJson = null // Invalid
         };
 
@@ -94,8 +94,8 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.EntityChange,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
             EntityName = "ProjectEntity",
             EntityId = "proj_123",
             Operation = null, // Invalid
@@ -118,8 +118,8 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.Security,
-            Severity = AuditSeverity.Warning,
+            EventType = AuditEventTypeEnum.Security,
+            Severity = AuditSeverityEnum.Warning,
             Description = "Detected brute-force authentication attempt from IP 192.168.1.50",
             EntityName = null,
             EntityId = null,
@@ -145,8 +145,8 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.Security,
-            Severity = AuditSeverity.Warning,
+            EventType = AuditEventTypeEnum.Security,
+            Severity = AuditSeverityEnum.Warning,
             Description = null // Invalid for Security event
         };
 
@@ -166,8 +166,8 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "", // Invalid
-            EventType = AuditEventType.TenantSwitch,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.TenantSwitch,
+            Severity = AuditSeverityEnum.Information,
             Description = "Switched tenant context"
         };
 
@@ -187,10 +187,10 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.UserActivity,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.UserActivity,
+            Severity = AuditSeverityEnum.Information,
             Description = "Profile updated",
-            UserType = UserType.ClientUser,
+            UserType = UserTypeEnum.ClientUser,
             UserId = null, // Invalid when UserType is set
             UserEmail = null // Invalid when UserType is set
         };
@@ -216,8 +216,8 @@ public class AuditRecordEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_acme",
-            EventType = AuditEventType.UserActivity,
-            Severity = AuditSeverity.Information,
+            EventType = AuditEventTypeEnum.UserActivity,
+            Severity = AuditSeverityEnum.Information,
             Description = "User session heartbeat",
             UserEmail = email
         };

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -101,5 +101,5 @@ public interface IWorkflowService
     /// <summary>
     /// Evaluates whether the current caller is authorized to design, edit, or cancel workflows at the given scope.
     /// </summary>
-    Task<bool> CanUserManageWorkflowAsync(TaskLevel level, Guid? programId, Guid? projectId, CancellationToken ct = default);
+    Task<bool> CanUserManageWorkflowAsync(TaskLevelEnum level, Guid? programId, Guid? projectId, CancellationToken ct = default);
 }

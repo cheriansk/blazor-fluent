@@ -82,19 +82,19 @@
             <FluentGridItem xs="6" sm="3">
                 <FluentCard Style="padding: 16px; text-align: center;">
                     <FluentLabel Typo="Typography.Subject">Completed</FluentLabel>
-                    <FluentLabel Typo="Typography.H4" Color="Color.Success">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatus.Completed) ?? 0)</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Success">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.Completed) ?? 0)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
                 <FluentCard Style="padding: 16px; text-align: center;">
                     <FluentLabel Typo="Typography.Subject">In Progress</FluentLabel>
-                    <FluentLabel Typo="Typography.H4" Color="Color.Warning">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatus.InProgress || e.Status == EventTrackerStatus.Published) ?? 0)</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Warning">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.InProgress || e.Status == EventTrackerStatusEnum.Published) ?? 0)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
                 <FluentCard Style="padding: 16px; text-align: center;">
                     <FluentLabel Typo="Typography.Subject">Failed / Partial</FluentLabel>
-                    <FluentLabel Typo="Typography.H4" Color="Color.Error">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatus.Failed || e.Status == EventTrackerStatus.PartiallyFailed) ?? 0)</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Error">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.Failed || e.Status == EventTrackerStatusEnum.PartiallyFailed) ?? 0)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
         </FluentGrid>
@@ -187,11 +187,11 @@
                             @context.DurationMs.ToString("F1") ms
                         </TemplateColumn>
                         <TemplateColumn Title="Status">
-                            @if (context.Status == EventConsumptionStatus.Succeeded)
+                            @if (context.Status == EventConsumptionStatusEnum.Succeeded)
                             {
                                 <FluentBadge Color="BadgeColor.Success">Succeeded</FluentBadge>
                             }
-                            else if (context.Status == EventConsumptionStatus.Running)
+                            else if (context.Status == EventConsumptionStatusEnum.Running)
                             {
                                 <FluentBadge Color="BadgeColor.Warning">Running</FluentBadge>
                             }
@@ -282,19 +282,19 @@
                         </span>
                     </TemplateColumn>
                     <TemplateColumn Title="Status" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.Status))">
-                        @if (context.Status == EventTrackerStatus.Completed)
+                        @if (context.Status == EventTrackerStatusEnum.Completed)
                         {
                             <FluentBadge Color="BadgeColor.Success">Completed</FluentBadge>
                         }
-                        else if (context.Status == EventTrackerStatus.InProgress)
+                        else if (context.Status == EventTrackerStatusEnum.InProgress)
                         {
                             <FluentBadge Color="BadgeColor.Warning">In Progress</FluentBadge>
                         }
-                        else if (context.Status == EventTrackerStatus.Failed)
+                        else if (context.Status == EventTrackerStatusEnum.Failed)
                         {
                             <FluentBadge Color="BadgeColor.Severe">Failed</FluentBadge>
                         }
-                        else if (context.Status == EventTrackerStatus.PartiallyFailed)
+                        else if (context.Status == EventTrackerStatusEnum.PartiallyFailed)
                         {
                             <FluentBadge Color="BadgeColor.Warning">Partial Fail</FluentBadge>
                         }
@@ -481,7 +481,7 @@
     private void OnStatusChanged(string? value)
     {
         _selectedStatus = value ?? "All";
-        if (_selectedStatus == "All" || !Enum.TryParse<EventTrackerStatus>(_selectedStatus, out var status))
+        if (_selectedStatus == "All" || !Enum.TryParse<EventTrackerStatusEnum>(_selectedStatus, out var status))
         {
             _filter.Status = null;
         }
@@ -523,12 +523,12 @@
         }
     }
 
-    private static BadgeColor GetStatusBadgeColor(EventTrackerStatus status) => status switch
+    private static BadgeColor GetStatusBadgeColor(EventTrackerStatusEnum status) => status switch
     {
-        EventTrackerStatus.Completed => BadgeColor.Success,
-        EventTrackerStatus.InProgress => BadgeColor.Warning,
-        EventTrackerStatus.Failed => BadgeColor.Severe,
-        EventTrackerStatus.PartiallyFailed => BadgeColor.Warning,
+        EventTrackerStatusEnum.Completed => BadgeColor.Success,
+        EventTrackerStatusEnum.InProgress => BadgeColor.Warning,
+        EventTrackerStatusEnum.Failed => BadgeColor.Severe,
+        EventTrackerStatusEnum.PartiallyFailed => BadgeColor.Warning,
         _ => BadgeColor.Informative
     };
 

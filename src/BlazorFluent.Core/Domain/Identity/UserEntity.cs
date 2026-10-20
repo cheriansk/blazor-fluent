@@ -20,7 +20,7 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
 
     public required string FullName { get; set; }
 
-    public required UserType UserType { get; set; }
+    public required UserTypeEnum UserType { get; set; }
 
     public bool IsActive { get; set; }
 

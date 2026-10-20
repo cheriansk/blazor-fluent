@@ -95,7 +95,7 @@ public class ImpersonationService : IImpersonationService
         // Forensic Security Audit Log
         await _auditService.LogSecurityEventAsync(
             "OperatorImpersonationStarted",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"SuperAdmin '{grant.SourceAdminEmail}' started impersonating '{grant.TargetUserEmail}' (Target Tenant: {grant.TargetTenantId}). Reason: '{reason}'. Duration: {cappedMinutes} mins.");
 
         _logger.LogWarning("IMPERSONATION STARTED: Admin {Admin} is now impersonating {TargetUser} (Expires at {ExpiresUtc})",
@@ -120,7 +120,7 @@ public class ImpersonationService : IImpersonationService
 
             await _auditService.LogSecurityEventAsync(
                 "OperatorImpersonationEnded",
-                AuditSeverity.Information,
+                AuditSeverityEnum.Information,
                 $"SuperAdmin '{g.SourceAdminEmail}' exited impersonation of '{g.TargetUserEmail}'.");
         }
 

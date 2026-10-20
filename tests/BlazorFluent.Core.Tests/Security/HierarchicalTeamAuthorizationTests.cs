@@ -14,69 +14,69 @@ public class HierarchicalTeamAuthorizationTests
     public void ProjectRole_NumericHierarchy_MaintainsStrictCumulativeOrder()
     {
         // 10 < 20 < 30 < 40 < 50 < 100
-        Assert.True((int)ProjectRole.ReadOnly < (int)ProjectRole.Contribute);
-        Assert.True((int)ProjectRole.Contribute < (int)ProjectRole.Lead);
-        Assert.True((int)ProjectRole.Lead < (int)ProjectRole.ElevatedLead);
-        Assert.True((int)ProjectRole.ElevatedLead < (int)ProjectRole.PMO);
-        Assert.True((int)ProjectRole.PMO < (int)ProjectRole.Admin);
+        Assert.True((int)ProjectRoleEnum.ReadOnly < (int)ProjectRoleEnum.Contribute);
+        Assert.True((int)ProjectRoleEnum.Contribute < (int)ProjectRoleEnum.Lead);
+        Assert.True((int)ProjectRoleEnum.Lead < (int)ProjectRoleEnum.ElevatedLead);
+        Assert.True((int)ProjectRoleEnum.ElevatedLead < (int)ProjectRoleEnum.PMO);
+        Assert.True((int)ProjectRoleEnum.PMO < (int)ProjectRoleEnum.Admin);
 
-        Assert.Equal(10, (int)ProjectRole.ReadOnly);
-        Assert.Equal(20, (int)ProjectRole.Contribute);
-        Assert.Equal(30, (int)ProjectRole.Lead);
-        Assert.Equal(40, (int)ProjectRole.ElevatedLead);
-        Assert.Equal(50, (int)ProjectRole.PMO);
-        Assert.Equal(100, (int)ProjectRole.Admin);
+        Assert.Equal(10, (int)ProjectRoleEnum.ReadOnly);
+        Assert.Equal(20, (int)ProjectRoleEnum.Contribute);
+        Assert.Equal(30, (int)ProjectRoleEnum.Lead);
+        Assert.Equal(40, (int)ProjectRoleEnum.ElevatedLead);
+        Assert.Equal(50, (int)ProjectRoleEnum.PMO);
+        Assert.Equal(100, (int)ProjectRoleEnum.Admin);
     }
 
     [Fact]
     public void ProgramRole_NumericHierarchy_MirrorsProjectRoleHierarchy()
     {
-        Assert.Equal(10, (int)ProgramRole.ReadOnly);
-        Assert.Equal(20, (int)ProgramRole.Contribute);
-        Assert.Equal(30, (int)ProgramRole.Lead);
-        Assert.Equal(40, (int)ProgramRole.ElevatedLead);
-        Assert.Equal(50, (int)ProgramRole.PMO);
-        Assert.Equal(100, (int)ProgramRole.Admin);
+        Assert.Equal(10, (int)ProgramRoleEnum.ReadOnly);
+        Assert.Equal(20, (int)ProgramRoleEnum.Contribute);
+        Assert.Equal(30, (int)ProgramRoleEnum.Lead);
+        Assert.Equal(40, (int)ProgramRoleEnum.ElevatedLead);
+        Assert.Equal(50, (int)ProgramRoleEnum.PMO);
+        Assert.Equal(100, (int)ProgramRoleEnum.Admin);
     }
 
     [Theory]
-    [InlineData(ProjectRole.Admin, ProjectRole.ReadOnly, true)]
-    [InlineData(ProjectRole.Admin, ProjectRole.PMO, true)]
-    [InlineData(ProjectRole.PMO, ProjectRole.ElevatedLead, true)]
-    [InlineData(ProjectRole.ElevatedLead, ProjectRole.Lead, true)]
-    [InlineData(ProjectRole.Lead, ProjectRole.Contribute, true)]
-    [InlineData(ProjectRole.Contribute, ProjectRole.ReadOnly, true)]
-    [InlineData(ProjectRole.Contribute, ProjectRole.Lead, false)]
-    [InlineData(ProjectRole.ReadOnly, ProjectRole.Contribute, false)]
-    [InlineData(ProjectRole.Lead, ProjectRole.PMO, false)]
+    [InlineData(ProjectRoleEnum.Admin, ProjectRoleEnum.ReadOnly, true)]
+    [InlineData(ProjectRoleEnum.Admin, ProjectRoleEnum.PMO, true)]
+    [InlineData(ProjectRoleEnum.PMO, ProjectRoleEnum.ElevatedLead, true)]
+    [InlineData(ProjectRoleEnum.ElevatedLead, ProjectRoleEnum.Lead, true)]
+    [InlineData(ProjectRoleEnum.Lead, ProjectRoleEnum.Contribute, true)]
+    [InlineData(ProjectRoleEnum.Contribute, ProjectRoleEnum.ReadOnly, true)]
+    [InlineData(ProjectRoleEnum.Contribute, ProjectRoleEnum.Lead, false)]
+    [InlineData(ProjectRoleEnum.ReadOnly, ProjectRoleEnum.Contribute, false)]
+    [InlineData(ProjectRoleEnum.Lead, ProjectRoleEnum.PMO, false)]
     public void ProjectRoleExtensions_Satisfies_CorrectlyEvaluatesClearance(
-        ProjectRole userRole,
-        ProjectRole requiredTier,
+        ProjectRoleEnum userRole,
+        ProjectRoleEnum requiredTier,
         bool expectedSatisfies)
     {
         Assert.Equal(expectedSatisfies, userRole.Satisfies(requiredTier));
     }
 
     [Theory]
-    [InlineData(ProjectRole.ReadOnly, false)]
-    [InlineData(ProjectRole.Contribute, true)]
-    [InlineData(ProjectRole.Lead, true)]
-    [InlineData(ProjectRole.ElevatedLead, true)]
-    [InlineData(ProjectRole.PMO, true)]
-    [InlineData(ProjectRole.Admin, true)]
-    public void ProjectRoleExtensions_CanWrite_PermitsContributeAndAboveOnly(ProjectRole role, bool expectedCanWrite)
+    [InlineData(ProjectRoleEnum.ReadOnly, false)]
+    [InlineData(ProjectRoleEnum.Contribute, true)]
+    [InlineData(ProjectRoleEnum.Lead, true)]
+    [InlineData(ProjectRoleEnum.ElevatedLead, true)]
+    [InlineData(ProjectRoleEnum.PMO, true)]
+    [InlineData(ProjectRoleEnum.Admin, true)]
+    public void ProjectRoleExtensions_CanWrite_PermitsContributeAndAboveOnly(ProjectRoleEnum role, bool expectedCanWrite)
     {
         Assert.Equal(expectedCanWrite, role.CanWrite());
     }
 
     [Theory]
-    [InlineData(ProjectRole.ReadOnly, false)]
-    [InlineData(ProjectRole.Contribute, false)]
-    [InlineData(ProjectRole.Lead, false)]
-    [InlineData(ProjectRole.ElevatedLead, false)]
-    [InlineData(ProjectRole.PMO, false)]
-    [InlineData(ProjectRole.Admin, true)]
-    public void ProjectRoleExtensions_CanManageAccess_RestrictedToAdminOnly(ProjectRole role, bool expectedCanManage)
+    [InlineData(ProjectRoleEnum.ReadOnly, false)]
+    [InlineData(ProjectRoleEnum.Contribute, false)]
+    [InlineData(ProjectRoleEnum.Lead, false)]
+    [InlineData(ProjectRoleEnum.ElevatedLead, false)]
+    [InlineData(ProjectRoleEnum.PMO, false)]
+    [InlineData(ProjectRoleEnum.Admin, true)]
+    public void ProjectRoleExtensions_CanManageAccess_RestrictedToAdminOnly(ProjectRoleEnum role, bool expectedCanManage)
     {
         Assert.Equal(expectedCanManage, role.CanManageAccess());
     }
@@ -84,30 +84,30 @@ public class HierarchicalTeamAuthorizationTests
     [Fact]
     public void RequiredClearanceAttribute_SingleTier_SetsExpectedViewAndEditTiers()
     {
-        var readOnlyAttr = new RequiredClearanceAttribute(ProjectRole.ReadOnly);
-        Assert.Equal(ProjectRole.ReadOnly, readOnlyAttr.ViewTier);
-        Assert.Equal(ProjectRole.Contribute, readOnlyAttr.EditTier); // ReadOnly can view, Contribute can edit
+        var readOnlyAttr = new RequiredClearanceAttribute(ProjectRoleEnum.ReadOnly);
+        Assert.Equal(ProjectRoleEnum.ReadOnly, readOnlyAttr.ViewTier);
+        Assert.Equal(ProjectRoleEnum.Contribute, readOnlyAttr.EditTier); // ReadOnly can view, Contribute can edit
 
-        var leadAttr = new RequiredClearanceAttribute(ProjectRole.Lead);
-        Assert.Equal(ProjectRole.Lead, leadAttr.ViewTier);
-        Assert.Equal(ProjectRole.Lead, leadAttr.EditTier); // Lead can view and edit
+        var leadAttr = new RequiredClearanceAttribute(ProjectRoleEnum.Lead);
+        Assert.Equal(ProjectRoleEnum.Lead, leadAttr.ViewTier);
+        Assert.Equal(ProjectRoleEnum.Lead, leadAttr.EditTier); // Lead can view and edit
     }
 
     [Fact]
     public void RequiredClearanceAttribute_DualTier_DecouplesViewAndEditTiers()
     {
-        var dualAttr = new RequiredClearanceAttribute(viewTier: ProjectRole.Lead, editTier: ProjectRole.PMO);
-        Assert.Equal(ProjectRole.Lead, dualAttr.ViewTier);
-        Assert.Equal(ProjectRole.PMO, dualAttr.EditTier);
+        var dualAttr = new RequiredClearanceAttribute(viewTier: ProjectRoleEnum.Lead, editTier: ProjectRoleEnum.PMO);
+        Assert.Equal(ProjectRoleEnum.Lead, dualAttr.ViewTier);
+        Assert.Equal(ProjectRoleEnum.PMO, dualAttr.EditTier);
 
         // A user with Lead clearance can view:
-        Assert.True(ProjectRole.Lead.Satisfies(dualAttr.ViewTier));
+        Assert.True(ProjectRoleEnum.Lead.Satisfies(dualAttr.ViewTier));
         // But cannot edit:
-        Assert.False(ProjectRole.Lead.Satisfies(dualAttr.EditTier));
+        Assert.False(ProjectRoleEnum.Lead.Satisfies(dualAttr.EditTier));
 
         // A user with PMO clearance can both view and edit:
-        Assert.True(ProjectRole.PMO.Satisfies(dualAttr.ViewTier));
-        Assert.True(ProjectRole.PMO.Satisfies(dualAttr.EditTier));
+        Assert.True(ProjectRoleEnum.PMO.Satisfies(dualAttr.ViewTier));
+        Assert.True(ProjectRoleEnum.PMO.Satisfies(dualAttr.EditTier));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class HierarchicalTeamAuthorizationTests
             Id = Guid.NewGuid(),
             Email = "inactive@company.com",
             FullName = "Inactive User",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = false,
             StartDate = now.AddDays(-10),
@@ -140,7 +140,7 @@ public class HierarchicalTeamAuthorizationTests
             Id = Guid.NewGuid(),
             Email = "expired@company.com",
             FullName = "Expired User",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
             StartDate = now.AddYears(-2),
@@ -161,7 +161,7 @@ public class HierarchicalTeamAuthorizationTests
             Id = Guid.NewGuid(),
             Email = "future@company.com",
             FullName = "Future User",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
             StartDate = now.AddDays(5), // Starts in 5 days
@@ -182,7 +182,7 @@ public class HierarchicalTeamAuthorizationTests
             Id = Guid.NewGuid(),
             Email = "active@company.com",
             FullName = "Active User",
-            UserType = UserType.CompanyUser,
+            UserType = UserTypeEnum.CompanyUser,
             TimeZoneId = "UTC",
             IsActive = true,
             StartDate = now.AddDays(-10),

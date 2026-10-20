@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Dtos.Response;
 using Microsoft.Extensions.Logging;
 
@@ -13,7 +13,7 @@ public interface ITenantContext
     string? TenantName { get; }
 
     /// <summary>Identifies whether this user is a company employee or a client.</summary>
-    UserType UserType { get; }
+    UserTypeEnum UserType { get; }
 
     /// <summary>
     /// True for host/superadmin: bypasses all tenant query filters.
@@ -30,7 +30,7 @@ public interface ITenantContext
     /// <summary>
     /// Called once at the start of a session to populate context from authenticated claims.
     /// </summary>
-    void Initialize(string? tenantId, string? tenantName, UserType userType,
+    void Initialize(string? tenantId, string? tenantName, UserTypeEnum userType,
         IEnumerable<TenantInfo> allowedTenants, bool isHost = false);
 
     /// <summary>
@@ -55,7 +55,7 @@ public sealed class TenantContext : ITenantContext
     private readonly ILogger<TenantContext> _logger;
     private string? _tenantId;
     private string? _tenantName;
-    private UserType _userType;
+    private UserTypeEnum _userType;
     private bool _isHost;
     private List<TenantInfo> _allowedTenants = new();
 
@@ -66,19 +66,19 @@ public sealed class TenantContext : ITenantContext
 
     public string? TenantId => _tenantId;
     public string? TenantName => _tenantName;
-    public UserType UserType => _userType;
+    public UserTypeEnum UserType => _userType;
     public bool IsHost => _isHost;
     public IReadOnlyList<TenantInfo> AllowedTenants => _allowedTenants.AsReadOnly();
 
     /// <summary>
     /// Only company users may switch tenants. This is enforced at data level too.
     /// </summary>
-    public bool CanSwitchTenant => _userType == UserType.CompanyUser;
+    public bool CanSwitchTenant => _userType == UserTypeEnum.CompanyUser;
 
     public void Initialize(
         string? tenantId,
         string? tenantName,
-        UserType userType,
+        UserTypeEnum userType,
         IEnumerable<TenantInfo> allowedTenants,
         bool isHost = false)
     {
@@ -101,7 +101,7 @@ public sealed class TenantContext : ITenantContext
     /// </summary>
     public Result SwitchTenant(string newTenantId)
     {
-        if (_userType == UserType.ClientUser || string.Equals(newTenantId, "default", StringComparison.OrdinalIgnoreCase))
+        if (_userType == UserTypeEnum.ClientUser || string.Equals(newTenantId, "default", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security violation: Attempted unauthorized tenant switch to {TargetTenantId}", newTenantId);
             return Result.Failure("Access denied.");
@@ -138,7 +138,7 @@ public sealed class TenantContext : ITenantContext
     {
         _tenantId = null;
         _tenantName = null;
-        _userType = UserType.CompanyUser;
+        _userType = UserTypeEnum.CompanyUser;
         _isHost = false;
         _allowedTenants.Clear();
         _logger.LogInformation("Tenant context reset.");

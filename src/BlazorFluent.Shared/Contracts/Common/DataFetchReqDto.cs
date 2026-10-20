@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Shared.Contracts.Common;
 
@@ -19,13 +19,13 @@ public abstract class DataFetchReqDto
 public class AuditTrailFilterReqDto : DataFetchReqDto
 {
     public List<string>? AllowedTenantIds { get; set; }
-    public AuditEventType? EventType { get; set; }
-    public AuditSeverity? Severity { get; set; }
+    public AuditEventTypeEnum? EventType { get; set; }
+    public AuditSeverityEnum? Severity { get; set; }
 }
 
 public class EventTrackerFilterReqDto : DataFetchReqDto
 {
-    public EventTrackerStatus? Status { get; set; }
+    public EventTrackerStatusEnum? Status { get; set; }
     public string? EventName { get; set; }
     public string? SourceClass { get; set; }
 }

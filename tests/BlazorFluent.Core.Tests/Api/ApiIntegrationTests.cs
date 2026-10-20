@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -130,7 +130,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
         var reqDto = new FileConvertReqDto(
             SessionId: Guid.NewGuid(),
             FileName: "test.csv",
-            FileType: ImportFileType.TaskCsv,
+            FileType: ImportFileTypeEnum.TaskCsv,
             FileBytes: Encoding.UTF8.GetBytes("Title,Status\nTask 1,Open\n")
         );
 
@@ -260,7 +260,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
         var reqDto = new FileConvertReqDto(
             SessionId: Guid.NewGuid(),
             FileName: "worker_batch.csv",
-            FileType: ImportFileType.TaskCsv,
+            FileType: ImportFileTypeEnum.TaskCsv,
             FileBytes: Encoding.UTF8.GetBytes("Title,Status\nWorker Task 1,Open\n")
         );
 

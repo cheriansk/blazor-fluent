@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +14,11 @@ public class BlockerRollupProvider : IWorkItemRollupProvider
         _context = context;
     }
 
-    public TaskItemType ItemType => TaskItemType.BlockerDependency;
+    public TaskItemTypeEnum ItemType => TaskItemTypeEnum.BlockerDependency;
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
         string tenantId,
-        TaskLevel level,
+        TaskLevelEnum level,
         Guid? scopeId,
         string? userId,
         DateTime startUtc,
@@ -29,17 +29,17 @@ public class BlockerRollupProvider : IWorkItemRollupProvider
             .AsNoTracking()
             .Where(b => b.TenantId == tenantId && !b.IsDeleted && b.DueDate >= startUtc && b.DueDate <= endUtc);
 
-        if (level == TaskLevel.Program && scopeId.HasValue)
+        if (level == TaskLevelEnum.Program && scopeId.HasValue)
         {
             query = query.Where(b => b.ProgramId == scopeId.Value ||
                 b.DependsOnProgramId == scopeId.Value ||
                 (b.ProjectId.HasValue && _context.Projects.Any(p => p.Id == b.ProjectId.Value && p.ProgramId == scopeId.Value)));
         }
-        else if (level == TaskLevel.Project && scopeId.HasValue)
+        else if (level == TaskLevelEnum.Project && scopeId.HasValue)
         {
             query = query.Where(b => b.ProjectId == scopeId.Value || b.DependsOnProjectId == scopeId.Value);
         }
-        else if (level == TaskLevel.User && !string.IsNullOrWhiteSpace(userId))
+        else if (level == TaskLevelEnum.User && !string.IsNullOrWhiteSpace(userId))
         {
             query = query.Where(b => b.UserId == userId || (b.AssigneeEmails != null && b.AssigneeEmails.Contains(userId)) || (b.WatcherEmails != null && b.WatcherEmails.Contains(userId)));
         }

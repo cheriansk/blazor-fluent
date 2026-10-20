@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -17,7 +17,7 @@ namespace BlazorFluent.Api.Security;
 /// </summary>
 public static class EndpointClearanceExtensions
 {
-    public static RouteHandlerBuilder RequireClearance(this RouteHandlerBuilder builder, ProjectRole minTier)
+    public static RouteHandlerBuilder RequireClearance(this RouteHandlerBuilder builder, ProjectRoleEnum minTier)
     {
         return builder.AddEndpointFilter(async (context, next) =>
         {
@@ -59,7 +59,7 @@ public static class EndpointClearanceExtensions
                 {
                     if (numericTier > highestTier) highestTier = numericTier;
                 }
-                else if (Enum.TryParse<ProjectRole>(r, ignoreCase: true, out var parsedRole))
+                else if (Enum.TryParse<ProjectRoleEnum>(r, ignoreCase: true, out var parsedRole))
                 {
                     if ((int)parsedRole > highestTier) highestTier = (int)parsedRole;
                 }

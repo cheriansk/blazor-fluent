@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Lifecycle status of a project workspace.
 /// </summary>
-public enum ProjectStatus
+public enum ProjectStatusEnum
 {
     [Display(Name = "New", Description = "Project has been created and is pending kickoff")]
     New = 1,

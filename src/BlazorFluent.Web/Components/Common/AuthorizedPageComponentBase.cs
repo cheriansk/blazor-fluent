@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using BlazorFluent.Core.Contracts;
@@ -34,15 +34,15 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
     /// Minimum role required to view/visit this page.
     /// Defaults dynamically from [RequiredClearance] attribute on derived page class.
     /// </summary>
-    protected virtual ProjectRole MinimumVisitRole =>
-        GetType().GetCustomAttribute<RequiredClearanceAttribute>()?.ViewTier ?? ProjectRole.ReadOnly;
+    protected virtual ProjectRoleEnum MinimumVisitRole =>
+        GetType().GetCustomAttribute<RequiredClearanceAttribute>()?.ViewTier ?? ProjectRoleEnum.ReadOnly;
 
     /// <summary>
     /// Minimum role required to edit or perform actions on this page.
     /// Defaults dynamically from [RequiredClearance] attribute on derived page class.
     /// </summary>
-    protected virtual ProjectRole MinimumEditRole =>
-        GetType().GetCustomAttribute<RequiredClearanceAttribute>()?.EditTier ?? ProjectRole.Contribute;
+    protected virtual ProjectRoleEnum MinimumEditRole =>
+        GetType().GetCustomAttribute<RequiredClearanceAttribute>()?.EditTier ?? ProjectRoleEnum.Contribute;
 
     /// <summary>
     /// True if the current user has permission to view this page.
@@ -64,7 +64,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
     /// <summary>
     /// The user's active role within the specified project (null if no access).
     /// </summary>
-    protected ProjectRole? CurrentRole { get; private set; }
+    protected ProjectRoleEnum? CurrentRole { get; private set; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -100,7 +100,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
             {
                 CanVisit = true;
                 CanEdit = true;
-                CurrentRole = ProjectRole.Admin;
+                CurrentRole = ProjectRoleEnum.Admin;
             }
             else
             {
@@ -130,7 +130,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
 
             await AuditService.LogSecurityEventAsync(
                 "PageAccessDenied",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"UserId: {CurrentUser.UserId ?? "anonymous"}, ProjectId: {ProjectId}, Page: {GetType().Name}, RequiredTier: {MinimumVisitRole}, ActualTier: {CurrentRole?.ToString() ?? "None"}");
         }
 

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tenancy;
+﻿using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
@@ -18,7 +18,7 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             TenantEntityId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = TenantRole.TenantMember,
+            Role = TenantRoleEnum.TenantMember,
             IsActive = true
         };
 
@@ -36,14 +36,14 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             TenantEntityId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = TenantRole.TenantMember,
+            Role = TenantRoleEnum.TenantMember,
             IsActive = true
         };
 
         tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(SecretKey);
 
         // Attacker attempts direct database SQL update to elevate themselves to TenantAdmin
-        tenantUser.Role = TenantRole.TenantAdmin;
+        tenantUser.Role = TenantRoleEnum.TenantAdmin;
 
         tenantUser.VerifyIntegritySignature(SecretKey).Should().BeFalse();
     }
@@ -57,7 +57,7 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             TenantEntityId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = TenantRole.TenantMember,
+            Role = TenantRoleEnum.TenantMember,
             IsActive = false
         };
 
@@ -78,7 +78,7 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             ProgramId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = ProgramRole.ReadOnly
+            Role = ProgramRoleEnum.ReadOnly
         };
 
         role.RowSignature = role.ComputeIntegritySignature(SecretKey);
@@ -95,13 +95,13 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             ProgramId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = ProgramRole.ReadOnly
+            Role = ProgramRoleEnum.ReadOnly
         };
 
         role.RowSignature = role.ComputeIntegritySignature(SecretKey);
 
         // Attacker elevates to Program Admin directly in DB
-        role.Role = ProgramRole.Admin;
+        role.Role = ProgramRoleEnum.Admin;
 
         role.VerifyIntegritySignature(SecretKey).Should().BeFalse();
     }
@@ -115,7 +115,7 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             ProgramId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = ProgramRole.Admin
+            Role = ProgramRoleEnum.Admin
         };
 
         role.RowSignature = role.ComputeIntegritySignature(SecretKey);
@@ -135,7 +135,7 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             ProjectId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = ProjectRole.Dev
+            Role = ProjectRoleEnum.Contribute
         };
 
         role.RowSignature = role.ComputeIntegritySignature(SecretKey);
@@ -152,13 +152,13 @@ public class HmacRoleIntegrityTests
             TenantId = "tenant_test",
             ProjectId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
-            Role = ProjectRole.Dev
+            Role = ProjectRoleEnum.Contribute
         };
 
         role.RowSignature = role.ComputeIntegritySignature(SecretKey);
 
         // Attacker elevates to Project Admin
-        role.Role = ProjectRole.Admin;
+        role.Role = ProjectRoleEnum.Admin;
 
         role.VerifyIntegritySignature(SecretKey).Should().BeFalse();
     }

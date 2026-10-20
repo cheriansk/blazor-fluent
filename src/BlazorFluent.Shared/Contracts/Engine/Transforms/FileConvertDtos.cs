@@ -1,11 +1,11 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Shared.Models;
 
 namespace BlazorFluent.Shared.Contracts.Engine.Transforms;
 
 public record FileConvertReqDto(
     Guid SessionId,
-    ImportFileType FileType,
+    ImportFileTypeEnum FileType,
     string FileName,
     byte[] FileBytes
 );

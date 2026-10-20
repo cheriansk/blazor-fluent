@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Jobs;
@@ -35,7 +35,7 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
 
 
     /// <summary>Current lifecycle status.</summary>
-    public required JobStatus Status { get; set; }
+    public required JobStatusEnum Status { get; set; }
 
     /// <summary>Current attempt number (1 to MaxRetries).</summary>
     public required int AttemptCount { get; set; }

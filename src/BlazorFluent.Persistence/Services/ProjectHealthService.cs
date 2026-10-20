@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Context;
@@ -54,7 +54,7 @@ public class ProjectHealthService : IProjectHealthService
             .AsNoTracking()
             .Where(d => d.TenantId == tenantId &&
                         d.ProjectId == projectId &&
-                        d.DependencyType == TaskDependencyType.Blocks &&
+                        d.DependencyType == TaskDependencyTypeEnum.Blocks &&
                         !d.IsDeleted)
             .ToListAsync(ct);
 
@@ -73,10 +73,10 @@ public class ProjectHealthService : IProjectHealthService
             }
         }
 
-        var totalTasks = tasks.Count(t => t.Status != TaskStatus.Cancelled);
-        var completedTasks = tasks.Count(t => t.Status == TaskStatus.Closed);
-        var inProgressTasks = tasks.Count(t => t.Status == TaskStatus.InProgress);
-        var openTasks = tasks.Count(t => t.Status == TaskStatus.Open);
+        var totalTasks = tasks.Count(t => t.Status != TaskStatusEnum.Cancelled);
+        var completedTasks = tasks.Count(t => t.Status == TaskStatusEnum.Closed);
+        var inProgressTasks = tasks.Count(t => t.Status == TaskStatusEnum.InProgress);
+        var openTasks = tasks.Count(t => t.Status == TaskStatusEnum.Open);
         var overdueTasks = tasks.Count(t => !t.IsClosed && t.DueDate.Date < today);
 
         var summary = new ProjectHealthSummaryDto
@@ -89,8 +89,8 @@ public class ProjectHealthService : IProjectHealthService
             OpenTasks = openTasks,
             OverdueTasks = overdueTasks,
             ActiveBlockersCount = activeBlockersCount,
-            TotalMilestones = milestones.Count(m => m.Status != CalendarEntryStatus.Cancelled),
-            CompletedMilestones = milestones.Count(m => m.Status == CalendarEntryStatus.Completed)
+            TotalMilestones = milestones.Count(m => m.Status != CalendarEntryStatusEnum.Cancelled),
+            CompletedMilestones = milestones.Count(m => m.Status == CalendarEntryStatusEnum.Completed)
         };
 
         // Root cause attribution
@@ -109,7 +109,7 @@ public class ProjectHealthService : IProjectHealthService
         }
 
         var breachedMilestones = milestones
-            .Where(m => m.Status is CalendarEntryStatus.Scheduled or CalendarEntryStatus.InProgress or CalendarEntryStatus.Confirmed or CalendarEntryStatus.AtRisk or CalendarEntryStatus.Delayed &&
+            .Where(m => m.Status is CalendarEntryStatusEnum.Scheduled or CalendarEntryStatusEnum.InProgress or CalendarEntryStatusEnum.Confirmed or CalendarEntryStatusEnum.AtRisk or CalendarEntryStatusEnum.Delayed &&
                         m.EndDate.HasValue && m.EndDate.Value.Date < today)
             .ToList();
 
@@ -124,15 +124,15 @@ public class ProjectHealthService : IProjectHealthService
         // Determine traffic light health
         if (overdueBlockersCount > 0 || breachedMilestones.Count > 0 || overdueTasks > 3)
         {
-            summary.Health = ProjectHealthRating.Critical;
+            summary.Health = ProjectHealthRatingEnum.Critical;
         }
         else if (activeBlockersCount > 0 || overdueTasks > 0)
         {
-            summary.Health = ProjectHealthRating.AtRisk;
+            summary.Health = ProjectHealthRatingEnum.AtRisk;
         }
         else
         {
-            summary.Health = ProjectHealthRating.OnTrack;
+            summary.Health = ProjectHealthRatingEnum.OnTrack;
         }
 
         return summary;
@@ -153,7 +153,7 @@ public class ProjectHealthService : IProjectHealthService
             {
                 MilestoneId = milestoneId,
                 MilestoneName = "Unknown Milestone",
-                Health = ProjectHealthRating.OnTrack
+                Health = ProjectHealthRatingEnum.OnTrack
             };
         }
 
@@ -173,7 +173,7 @@ public class ProjectHealthService : IProjectHealthService
                         d.DependentType == DependencyNodeTypeEnum.TaskItem &&
                         d.DependentItemId.HasValue &&
                         taskIds.Contains(d.DependentItemId.Value) &&
-                        d.DependencyType == TaskDependencyType.Blocks &&
+                        d.DependencyType == TaskDependencyTypeEnum.Blocks &&
                         !d.IsDeleted)
             .ToListAsync(ct);
 
@@ -220,16 +220,16 @@ public class ProjectHealthService : IProjectHealthService
         foreach (var pred in predecessors)
         {
             predecessorNames.Add(pred.Title);
-            if (pred.Status != CalendarEntryStatus.Completed && pred.EndDate.HasValue && pred.EndDate.Value.Date < today)
+            if (pred.Status != CalendarEntryStatusEnum.Completed && pred.EndDate.HasValue && pred.EndDate.Value.Date < today)
             {
                 hasOverduePredecessors = true;
                 riskReasons.Add($"Predecessor gate '{pred.Title}' end date expired ({pred.EndDate:yyyy-MM-dd}) and is not completed.");
             }
         }
 
-        var totalTasks = tasks.Count(t => t.Status != TaskStatus.Cancelled);
-        var completedTasks = tasks.Count(t => t.Status == TaskStatus.Closed);
-        var inProgressTasks = tasks.Count(t => t.Status == TaskStatus.InProgress);
+        var totalTasks = tasks.Count(t => t.Status != TaskStatusEnum.Cancelled);
+        var completedTasks = tasks.Count(t => t.Status == TaskStatusEnum.Closed);
+        var inProgressTasks = tasks.Count(t => t.Status == TaskStatusEnum.InProgress);
         var overdueTasks = tasks.Count(t => !t.IsClosed && t.DueDate.Date < today);
         var daysRemaining = milestone.EndDate.HasValue ? (int)Math.Ceiling((milestone.EndDate.Value.Date - today).TotalDays) : 0;
 
@@ -247,28 +247,28 @@ public class ProjectHealthService : IProjectHealthService
             riskReasons.Add($"{overdueTasks} task(s) assigned to this milestone are past their due date.");
         }
 
-        if (milestone.Status != CalendarEntryStatus.Completed && daysRemaining < 0)
+        if (milestone.Status != CalendarEntryStatusEnum.Completed && daysRemaining < 0)
         {
             riskReasons.Add($"Milestone target deadline has passed ({Math.Abs(daysRemaining)} days overdue).");
         }
 
         // Health Rating calculation
-        ProjectHealthRating health;
-        if (milestone.Status == CalendarEntryStatus.Completed)
+        ProjectHealthRatingEnum health;
+        if (milestone.Status == CalendarEntryStatusEnum.Completed)
         {
-            health = ProjectHealthRating.OnTrack;
+            health = ProjectHealthRatingEnum.OnTrack;
         }
         else if (daysRemaining < 0 || overdueBlockersCount > 0 || (overdueTasks > 2 && daysRemaining <= 3))
         {
-            health = ProjectHealthRating.Critical;
+            health = ProjectHealthRatingEnum.Critical;
         }
         else if (activeBlockersCount > 0 || overdueTasks > 0 || hasOverduePredecessors || (daysRemaining <= 3 && completedTasks < totalTasks))
         {
-            health = ProjectHealthRating.AtRisk;
+            health = ProjectHealthRatingEnum.AtRisk;
         }
         else
         {
-            health = ProjectHealthRating.OnTrack;
+            health = ProjectHealthRatingEnum.OnTrack;
         }
 
         return new MilestoneHealthSummaryDto

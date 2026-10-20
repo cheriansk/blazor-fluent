@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -71,7 +71,7 @@ public static class SystemIdentityUtility
         tenantContext.Initialize(
             SystemTenantSlug, 
             "System Host", 
-            UserType.CompanyUser, 
+            UserTypeEnum.CompanyUser, 
             Array.Empty<TenantInfo>(), 
             isHost: true);
     }

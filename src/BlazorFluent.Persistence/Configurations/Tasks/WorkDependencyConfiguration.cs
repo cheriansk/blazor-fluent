@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tasks;
+﻿using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Configurations;
 using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,7 @@ public class WorkDependencyConfiguration : IEntityTypeConfiguration<WorkDependen
         builder.Property(w => w.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(w => w.ProgramId)
             .IsRequired(false);
@@ -52,7 +52,7 @@ public class WorkDependencyConfiguration : IEntityTypeConfiguration<WorkDependen
         builder.Property(w => w.DependsOnLevel)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(w => w.DependsOnProjectId)
             .IsRequired(false);

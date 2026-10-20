@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -72,15 +74,77 @@ namespace TemplateGuard.Analyzers
         public static readonly DiagnosticDescriptor RuleTg006 = new(
             id: "TG006",
             title: "DataList enum type name must end with 'Enum' suffix",
-            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all new enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
             category: "Naming",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "All newly created enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            description: "All enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
             helpLinkUri: HelpBaseUrl + "#tg006");
 
+        public static readonly DiagnosticDescriptor RuleTg007 = new(
+            id: "TG007",
+            title: "Domain entity class name must end with 'Entity' suffix",
+            messageFormat: "Class '{0}' inherits from BaseEntity or is declared in a domain entity namespace but does not end with 'Entity' (e.g. '{0}Entity'). All domain entities must end with the 'Entity' suffix.",
+            category: "Naming",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "All domain entities must end with the 'Entity' suffix for immediate cognitive recognition.",
+            helpLinkUri: HelpBaseUrl + "#tg007");
+
+        public static readonly DiagnosticDescriptor RuleTg008 = new(
+            id: "TG008",
+            title: "Domain entity must inherit BaseEntity and implement required scoping and lifecycle marker interfaces",
+            messageFormat: "Entity '{0}' violates architectural requirements: {1}. ALLOWED APPROACH: Inherit BaseEntity, implement ITenantEntity or IGlobalEntity, and implement exactly one deletion lifecycle marker (ISoftDeletableEntity, IHardDeletableEntity, or IImmutableEntity).",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Domain entities must adhere to base class inheritance and marker interface scoping rules.",
+            helpLinkUri: HelpBaseUrl + "#tg008");
+
+        public static readonly DiagnosticDescriptor RuleTg009 = new(
+            id: "TG009",
+            title: "Concrete domain entity must have a companion FluentValidation validator",
+            messageFormat: "Concrete domain entity '{0}' lacks a companion validator class (e.g. '{0}Validator' implementing AbstractValidator<{0}>). Every business entity must have a companion validator.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Every concrete domain entity must have a companion FluentValidation validator for fail-closed runtime safety.",
+            helpLinkUri: HelpBaseUrl + "#tg009");
+
+        public static readonly DiagnosticDescriptor RuleTg010 = new(
+            id: "TG010",
+            title: "Concrete domain entity must have a companion EF Core entity type configuration",
+            messageFormat: "Concrete domain entity '{0}' lacks an EF Core configuration class implementing IEntityTypeConfiguration<{0}>. Every persisted domain entity must have a companion configuration.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Every persisted domain entity must have a companion IEntityTypeConfiguration<TEntity>.",
+            helpLinkUri: HelpBaseUrl + "#tg010");
+
+        public static readonly DiagnosticDescriptor RuleTg011 = new(
+            id: "TG011",
+            title: "Strict prohibition of DateOnly in domain entities",
+            messageFormat: "Property '{0}.{1}' uses DateOnly. DateOnly is strictly prohibited in domain entities; all dates and timestamps must use UTC DateTime.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "DateOnly is prohibited across domain entities in favor of UTC DateTime.",
+            helpLinkUri: HelpBaseUrl + "#tg011");
+
+        public static readonly DiagnosticDescriptor RuleTg012 = new(
+            id: "TG012",
+            title: "Domain entity must not persist mutable user attributes without [NotMapped]",
+            messageFormat: "Property '{0}.{1}' duplicates mutable user attribute '{1}'. Relational 3NF requires persisting foreign keys (e.g. UserEntityId) only; apply [NotMapped] to convenience navigation forwarders.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: "Domain entities must persist foreign keys only and decorate convenience navigation properties with [NotMapped].",
+            helpLinkUri: HelpBaseUrl + "#tg012");
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006);
+            ImmutableArray.Create(
+                RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
+                RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -91,6 +155,119 @@ namespace TemplateGuard.Analyzers
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
+                var compilation = compilationContext.Compilation;
+                var assemblyName = compilation.AssemblyName ?? string.Empty;
+
+                bool isCoreAssembly = assemblyName.EndsWith(".Core", StringComparison.OrdinalIgnoreCase) ||
+                                      assemblyName.Equals("BlazorFluent.Core", StringComparison.OrdinalIgnoreCase);
+
+                bool isPersistenceAssembly = assemblyName.EndsWith(".Persistence", StringComparison.OrdinalIgnoreCase) ||
+                                            assemblyName.Equals("BlazorFluent.Persistence", StringComparison.OrdinalIgnoreCase);
+
+                var concreteEntitiesInSource = new ConcurrentBag<INamedTypeSymbol>();
+                var validatorTargetTypes = new ConcurrentBag<string>();
+                var configurationTargetTypes = new ConcurrentBag<string>();
+
+                compilationContext.RegisterSymbolAction(symCtx =>
+                {
+                    if (symCtx.Symbol is not INamedTypeSymbol namedType || namedType.TypeKind != TypeKind.Class) return;
+                    if (namedType.IsImplicitlyDeclared || namedType.Name.StartsWith("<")) return;
+
+                    if (!namedType.IsAbstract && InheritsFrom(namedType, "BaseEntity") && namedType.DeclaringSyntaxReferences.Length > 0)
+                    {
+                        concreteEntitiesInSource.Add(namedType);
+                    }
+
+                    if (isCoreAssembly)
+                    {
+                        var genericBase = namedType.BaseType;
+                        while (genericBase != null)
+                        {
+                            if (genericBase.Name == "AbstractValidator" && genericBase.TypeArguments.Length > 0)
+                            {
+                                validatorTargetTypes.Add(genericBase.TypeArguments[0].Name);
+                            }
+                            genericBase = genericBase.BaseType;
+                        }
+
+                        foreach (var iface in namedType.AllInterfaces)
+                        {
+                            if (iface.Name == "IValidator" && iface.TypeArguments.Length > 0)
+                            {
+                                validatorTargetTypes.Add(iface.TypeArguments[0].Name);
+                            }
+                        }
+
+                        if (namedType.Name.EndsWith("Validator"))
+                        {
+                            var targetName = namedType.Name.Substring(0, namedType.Name.Length - "Validator".Length);
+                            validatorTargetTypes.Add(targetName);
+                        }
+                    }
+
+                    if (isPersistenceAssembly)
+                    {
+                        foreach (var iface in namedType.AllInterfaces)
+                        {
+                            if (iface.Name == "IEntityTypeConfiguration" && iface.TypeArguments.Length > 0)
+                            {
+                                configurationTargetTypes.Add(iface.TypeArguments[0].Name);
+                            }
+                        }
+
+                        if (namedType.Name.EndsWith("Configuration"))
+                        {
+                            var targetName = namedType.Name.Substring(0, namedType.Name.Length - "Configuration".Length);
+                            configurationTargetTypes.Add(targetName);
+                            if (!targetName.EndsWith("Entity"))
+                            {
+                                configurationTargetTypes.Add(targetName + "Entity");
+                            }
+                        }
+                    }
+                }, SymbolKind.NamedType);
+
+                compilationContext.RegisterCompilationEndAction(endCtx =>
+                {
+                    if (isCoreAssembly)
+                    {
+                        var validators = new HashSet<string>(validatorTargetTypes, StringComparer.Ordinal);
+                        foreach (var entity in concreteEntitiesInSource)
+                        {
+                            if (!validators.Contains(entity.Name))
+                            {
+                                var location = entity.Locations.FirstOrDefault() ?? Location.None;
+                                endCtx.ReportDiagnostic(Diagnostic.Create(RuleTg009, location, entity.Name));
+                            }
+                        }
+                    }
+
+                    if (isPersistenceAssembly)
+                    {
+                        var configurations = new HashSet<string>(configurationTargetTypes, StringComparer.Ordinal);
+                        var allEntities = new List<INamedTypeSymbol>(concreteEntitiesInSource);
+
+                        foreach (var refAssembly in endCtx.Compilation.SourceModule.ReferencedAssemblySymbols)
+                        {
+                            if (refAssembly.Name.EndsWith(".Core", StringComparison.OrdinalIgnoreCase) ||
+                                refAssembly.Name.Equals("BlazorFluent.Core", StringComparison.OrdinalIgnoreCase))
+                            {
+                                CollectEntitiesFromNamespace(refAssembly.GlobalNamespace, allEntities);
+                            }
+                        }
+
+                        foreach (var entity in allEntities)
+                        {
+                            if (!entity.IsAbstract && InheritsFrom(entity, "BaseEntity") && !configurations.Contains(entity.Name))
+                            {
+                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName("BlazorFluent.Persistence.Context.AppDbContext");
+                                var location = appDbContextSymbol?.Locations.FirstOrDefault() ?? Location.None;
+                                endCtx.ReportDiagnostic(Diagnostic.Create(RuleTg010, location, entity.Name));
+                            }
+                        }
+                    }
+                });
+
                 var manifestFile = compilationContext.Options.AdditionalFiles
                     .FirstOrDefault(f => Path.GetFileName(f.Path).Equals(".basefiles.json", StringComparison.OrdinalIgnoreCase));
 
@@ -266,54 +443,12 @@ namespace TemplateGuard.Analyzers
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
         }
 
-        private static readonly System.Collections.Generic.HashSet<string> WhitelistedAnonymousRoutes = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> WhitelistedAnonymousRoutes = new(StringComparer.OrdinalIgnoreCase)
         {
             "/login",
             "/error",
             "/auth-error",
             "/not-found"
-        };
-
-        private static readonly System.Collections.Generic.HashSet<string> WhitelistedLegacyEnums = new(StringComparer.Ordinal)
-        {
-            "AssumptionValidationStatus",
-            "AuditEventType",
-            "AuditSeverity",
-            "CalendarEntryStatus",
-            "CalendarEntryType",
-            "DependencyCriticality",
-            "DependencyNodeTypeEnum",
-            "EntityOperation",
-            "EventConsumptionStatus",
-            "EventTrackerStatus",
-            "ImportFileType",
-            "ImportStatus",
-            "IssueSeverity",
-            "JobStatus",
-            "KnowledgeArticleScope",
-            "KnowledgeArticleStatus",
-            "NotificationCategory",
-            "NotificationChannels",
-            "NotificationSeverity",
-            "ProgramHealthRating",
-            "ProgramRole",
-            "ProgramStatus",
-            "ProjectHealthRating",
-            "ProjectRole",
-            "ProjectStatus",
-            "RiskImpact",
-            "RiskProbability",
-            "RiskStatus",
-            "TaskDependencyType",
-            "TaskItemType",
-            "TaskLevel",
-            "TaskPriority",
-            "TaskStatus",
-            "TenantRole",
-            "UserTaskPriority",
-            "UserTaskStatus",
-            "UserType",
-            "WorkflowStepStatus"
         };
 
         private void AnalyzeNamedType(SymbolAnalysisContext context)
@@ -328,6 +463,157 @@ namespace TemplateGuard.Analyzers
 
             if (namedType.TypeKind != TypeKind.Class) return;
 
+            AnalyzeEntity(context, namedType);
+
+            AnalyzePageRoute(context, namedType);
+        }
+
+        private void AnalyzeEntity(SymbolAnalysisContext context, INamedTypeSymbol namedType)
+        {
+            if (namedType.IsImplicitlyDeclared || namedType.Name.StartsWith("<")) return;
+
+            var ns = namedType.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+            var isDomainNamespace = ns.Contains(".Core.Domain") || ns.StartsWith("BlazorFluent.Core.Domain");
+            var isValueObjectNamespace = ns.EndsWith(".ValueObjects") || ns.Contains(".ValueObjects.");
+
+            // Exclude value objects (e.g. Address) and nested definitions/validators
+            if (isValueObjectNamespace) return;
+            if (namedType.Name.EndsWith("Validator") || namedType.Name.EndsWith("Definitions")) return;
+
+            // Exclude EF Core Migrations and ModelSnapshots (e.g. migration classes named *Entity inheriting Migration)
+            if (InheritsFrom(namedType, "Migration") || InheritsFrom(namedType, "ModelSnapshot")) return;
+            if (ns.Contains(".Migrations") || ns.EndsWith(".Migrations") || ns.Equals("Migrations", StringComparison.OrdinalIgnoreCase)) return;
+            if (namedType.GetAttributes().Any(a => a.AttributeClass?.Name is "MigrationAttribute" or "DbContextAttribute")) return;
+            if (namedType.Locations.Any(loc => loc.SourceTree?.FilePath != null && loc.SourceTree.FilePath.Replace('\\', '/').Contains("/Migrations/"))) return;
+
+            var inheritsBaseEntity = InheritsFrom(namedType, "BaseEntity");
+            var endsWithEntity = namedType.Name.EndsWith("Entity", StringComparison.Ordinal);
+
+            if (!inheritsBaseEntity && !isDomainNamespace && !endsWithEntity) return;
+
+            // Rule TG007: Entity name must end with 'Entity' suffix
+            if ((inheritsBaseEntity || isDomainNamespace) && !endsWithEntity)
+            {
+                var location = namedType.Locations.FirstOrDefault() ?? Location.None;
+                context.ReportDiagnostic(Diagnostic.Create(RuleTg007, location, namedType.Name));
+            }
+
+            // Rule TG008: Inheritance & marker interfaces
+            if (endsWithEntity || isDomainNamespace || inheritsBaseEntity)
+            {
+                AnalyzeEntityInheritanceAndMarkers(context, namedType, inheritsBaseEntity);
+            }
+
+            // Rule TG011 & TG012: Property invariants
+            if (inheritsBaseEntity)
+            {
+                AnalyzeEntityProperties(context, namedType);
+            }
+        }
+
+        private void AnalyzeEntityInheritanceAndMarkers(SymbolAnalysisContext context, INamedTypeSymbol namedType, bool inheritsBaseEntity)
+        {
+            if (namedType.Name == "BaseEntity") return;
+
+            var location = namedType.Locations.FirstOrDefault() ?? Location.None;
+
+            if (!inheritsBaseEntity)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "must inherit from 'BaseEntity' (directly or via 'AuditableEntity' / 'TenantAuditableEntity')"));
+                return;
+            }
+
+            // Rules below apply to concrete entity tables
+            if (namedType.IsAbstract) return;
+
+            var isTenant = ImplementsInterface(namedType, "ITenantEntity");
+            var isGlobal = ImplementsInterface(namedType, "IGlobalEntity");
+
+            if (!isTenant && !isGlobal)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "must declare its tenancy boundary by implementing either 'ITenantEntity' (for tenant-scoped data) or 'IGlobalEntity' (for platform-wide data)"));
+            }
+
+            var isSoft = ImplementsInterface(namedType, "ISoftDeletableEntity");
+            var isHard = ImplementsInterface(namedType, "IHardDeletableEntity");
+            var isImmutable = ImplementsInterface(namedType, "IImmutableEntity");
+            var markerCount = (isSoft ? 1 : 0) + (isHard ? 1 : 0) + (isImmutable ? 1 : 0);
+
+            if (markerCount == 0)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "must implement exactly one deletion lifecycle marker: 'ISoftDeletableEntity', 'IHardDeletableEntity', or 'IImmutableEntity'"));
+            }
+            else if (markerCount > 1)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "implements multiple conflicting deletion markers. An entity must implement at most ONE of 'ISoftDeletableEntity', 'IHardDeletableEntity', or 'IImmutableEntity'"));
+            }
+
+            var isProjectScoped = ImplementsInterface(namedType, "IProjectScopedEntity");
+            if (isProjectScoped && !isTenant)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "implements 'IProjectScopedEntity' but violates multi-tenant architecture by not implementing 'ITenantEntity'. All project tables must be tenant-scoped"));
+            }
+        }
+
+        private void AnalyzeEntityProperties(SymbolAnalysisContext context, INamedTypeSymbol namedType)
+        {
+            var isImmutable = ImplementsInterface(namedType, "IImmutableEntity");
+
+            foreach (var member in namedType.GetMembers())
+            {
+                if (member is not IPropertySymbol property || property.IsImplicitlyDeclared) continue;
+
+                // Rule TG011: Strict prohibition of DateOnly
+                var propTypeName = property.Type.Name;
+                if (property.Type is INamedTypeSymbol namedPropType && namedPropType.IsGenericType && namedPropType.Name == "Nullable")
+                {
+                    propTypeName = namedPropType.TypeArguments.FirstOrDefault()?.Name ?? propTypeName;
+                }
+
+                if (propTypeName == "DateOnly")
+                {
+                    var location = property.Locations.FirstOrDefault() ?? namedType.Locations.FirstOrDefault() ?? Location.None;
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg011, location, namedType.Name, property.Name));
+                }
+
+                // Rule TG012: Mutable user attributes without [NotMapped]
+                if (!isImmutable && (property.Name == "UserEmail" || property.Name == "UserName" || property.Name == "AuthorEmail" || property.Name == "AuthorName"))
+                {
+                    if (namedType.Name != "UserSessionEntity")
+                    {
+                        var hasNotMapped = property.GetAttributes().Any(a => a.AttributeClass?.Name is "NotMappedAttribute" or "NotMapped");
+                        if (!hasNotMapped)
+                        {
+                            var location = property.Locations.FirstOrDefault() ?? namedType.Locations.FirstOrDefault() ?? Location.None;
+                            context.ReportDiagnostic(Diagnostic.Create(RuleTg012, location, namedType.Name, property.Name));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void AnalyzePageRoute(SymbolAnalysisContext context, INamedTypeSymbol namedType)
+        {
             var routeAttributes = namedType.GetAttributes()
                 .Where(a => a.AttributeClass?.Name == "RouteAttribute" || a.AttributeClass?.ToDisplayString() == "Microsoft.AspNetCore.Components.RouteAttribute")
                 .ToList();
@@ -376,9 +662,7 @@ namespace TemplateGuard.Analyzers
         private void AnalyzeEnum(SymbolAnalysisContext context, INamedTypeSymbol enumSymbol)
         {
             var ns = enumSymbol.ContainingNamespace?.ToDisplayString();
-            if (ns != "BlazorFluent.Shared.DataListTypes") return;
-
-            if (WhitelistedLegacyEnums.Contains(enumSymbol.Name)) return;
+            if (ns == null || (!ns.EndsWith(".Shared.DataListTypes") && ns != "Shared.DataListTypes")) return;
 
             if (!enumSymbol.Name.EndsWith("Enum", StringComparison.Ordinal))
             {
@@ -388,6 +672,39 @@ namespace TemplateGuard.Analyzers
                     location,
                     enumSymbol.Name,
                     ns));
+            }
+        }
+
+        private static bool InheritsFrom(INamedTypeSymbol? symbol, string baseTypeName)
+        {
+            var current = symbol?.BaseType;
+            while (current != null)
+            {
+                if (current.Name == baseTypeName) return true;
+                current = current.BaseType;
+            }
+            return false;
+        }
+
+        private static bool ImplementsInterface(INamedTypeSymbol? symbol, string interfaceName)
+        {
+            if (symbol == null) return false;
+            return symbol.AllInterfaces.Any(i => i.Name == interfaceName);
+        }
+
+        private static void CollectEntitiesFromNamespace(INamespaceSymbol nsSymbol, List<INamedTypeSymbol> result)
+        {
+            foreach (var type in nsSymbol.GetTypeMembers())
+            {
+                if (type.TypeKind == TypeKind.Class && !type.IsAbstract && InheritsFrom(type, "BaseEntity"))
+                {
+                    result.Add(type);
+                }
+            }
+
+            foreach (var subNs in nsSymbol.GetNamespaceMembers())
+            {
+                CollectEntitiesFromNamespace(subNs, result);
             }
         }
     }

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using BlazorFluent.Shared.Models;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
@@ -131,7 +131,7 @@ public class ImportFileService : IImportFileService
                     FileSizeBytes = item.FileSizeBytes,
                     Sha256Checksum = checksum,
                     FileType = item.FileType,
-                    Status = ImportStatus.Uploaded,
+                    Status = ImportStatusEnum.Uploaded,
                     TotalRowsCount = 0,
                     ValidRowsCount = 0,
                     ErrorRowsCount = 0
@@ -166,7 +166,7 @@ public class ImportFileService : IImportFileService
             await SendNotificationAsync(
                 title: "Batch Upload Succeeded",
                 message: $"{importFiles.Count} file(s) uploaded and encrypted in batch '{importId:N}'. Queued for background validation and staging.",
-                severity: NotificationSeverity.Info,
+                severity: NotificationSeverityEnum.Info,
                 projectId: request.ProjectId,
                 ct: ct);
 
@@ -192,7 +192,7 @@ public class ImportFileService : IImportFileService
             await SendNotificationAsync(
                 title: "Batch Upload Failed",
                 message: $"Failed to upload batch files: {ex.Message}",
-                severity: NotificationSeverity.Error,
+                severity: NotificationSeverityEnum.Error,
                 projectId: request.ProjectId,
                 ct: ct);
 
@@ -342,7 +342,7 @@ public class ImportFileService : IImportFileService
         return Result<bool>.Success(true);
     }
 
-    private async Task SendNotificationAsync(string title, string message, NotificationSeverity severity, Guid projectId, CancellationToken ct)
+    private async Task SendNotificationAsync(string title, string message, NotificationSeverityEnum severity, Guid projectId, CancellationToken ct)
     {
         try
         {
@@ -351,14 +351,14 @@ public class ImportFileService : IImportFileService
 
             var request = new SendNotificationReqDto
             {
-                Category = NotificationCategory.Generic,
+                Category = NotificationCategoryEnum.Generic,
                 Severity = severity,
                 Title = title,
                 Message = message,
                 ProjectId = projectId,
                 UserId = userId,
                 LinkUrl = "/imports",
-                Channels = NotificationChannels.InApp
+                Channels = NotificationChannelsEnum.InApp
             };
 
             await _notificationService.SendAsync(request, ct);

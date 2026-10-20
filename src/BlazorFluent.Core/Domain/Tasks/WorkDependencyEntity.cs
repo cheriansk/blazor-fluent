@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -56,7 +56,7 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// <summary>
     /// Hierarchy scoping level of Side A (Program or Project).
     /// </summary>
-    public TaskLevel DependsOnLevel { get; set; } = TaskLevel.Project;
+    public TaskLevelEnum DependsOnLevel { get; set; } = TaskLevelEnum.Project;
 
     /// <summary>
     /// Target project ID of Side A (supports intra-project or cross-project within/across programs).
@@ -110,7 +110,7 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// <summary>
     /// Semantic nature of the relationship (Blocks, BlockedBy, RelatesTo).
     /// </summary>
-    public TaskDependencyType DependencyType { get; set; } = TaskDependencyType.Blocks;
+    public TaskDependencyTypeEnum DependencyType { get; set; } = TaskDependencyTypeEnum.Blocks;
 
     /// <summary>
     /// Optional foreign key to a project or program milestone.
@@ -131,23 +131,23 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// Unmapped convenience alias mapping to and from <see cref="BaseTaskEntity.Priority"/> to avoid duplicate storage.
     /// </summary>
     [NotMapped]
-    public DependencyCriticality Criticality
+    public DependencyCriticalityEnum Criticality
     {
         get => Priority switch
         {
-            TaskPriority.Low => DependencyCriticality.Low,
-            TaskPriority.Medium => DependencyCriticality.Medium,
-            TaskPriority.High => DependencyCriticality.High,
-            TaskPriority.Urgent => DependencyCriticality.Critical,
-            _ => DependencyCriticality.Medium
+            TaskPriorityEnum.Low => DependencyCriticalityEnum.Low,
+            TaskPriorityEnum.Medium => DependencyCriticalityEnum.Medium,
+            TaskPriorityEnum.High => DependencyCriticalityEnum.High,
+            TaskPriorityEnum.Urgent => DependencyCriticalityEnum.Critical,
+            _ => DependencyCriticalityEnum.Medium
         };
         set => Priority = value switch
         {
-            DependencyCriticality.Low => TaskPriority.Low,
-            DependencyCriticality.Medium => TaskPriority.Medium,
-            DependencyCriticality.High => TaskPriority.High,
-            DependencyCriticality.Critical => TaskPriority.Urgent,
-            _ => TaskPriority.Medium
+            DependencyCriticalityEnum.Low => TaskPriorityEnum.Low,
+            DependencyCriticalityEnum.Medium => TaskPriorityEnum.Medium,
+            DependencyCriticalityEnum.High => TaskPriorityEnum.High,
+            DependencyCriticalityEnum.Critical => TaskPriorityEnum.Urgent,
+            _ => TaskPriorityEnum.Medium
         };
     }
 
@@ -167,5 +167,5 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// Derived from status.
     /// </summary>
     [NotMapped]
-    public bool IsResolved => Status is TaskStatus.Closed or TaskStatus.Cancelled;
+    public bool IsResolved => Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled;
 }

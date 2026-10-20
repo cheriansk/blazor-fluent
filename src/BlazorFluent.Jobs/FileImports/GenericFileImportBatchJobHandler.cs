@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Imports;
@@ -166,7 +166,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 var errorMsg = $"No declarative FileTemplateConfig or Canonical Batch Stager registered for file type '{file.FileType}'.";
                 _logger.LogError(errorMsg);
 
-                file.Status = ImportStatus.ValidationFailed;
+                file.Status = ImportStatusEnum.ValidationFailed;
                 file.StepStage = "ValidationFailed";
                 file.ErrorMessage = errorMsg;
                 file.ValidationErrorsJson = JsonSerializer.Serialize(new[]
@@ -176,7 +176,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 file.ProcessedAtUtc = DateTime.UtcNow;
                 await _dbContext.SaveChangesAsync(ct);
 
-                await SendNotificationAsync(file, "Import Failed", errorMsg, NotificationSeverity.Error, ct);
+                await SendNotificationAsync(file, "Import Failed", errorMsg, NotificationSeverityEnum.Error, ct);
                 return;
             }
 
@@ -186,7 +186,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         {
             _logger.LogError(ex, "Unexpected error processing file '{FileName}' ({FileId})", file.OriginalFileName, file.Id);
 
-            file.Status = ImportStatus.ProcessingFailed;
+            file.Status = ImportStatusEnum.ProcessingFailed;
             file.StepStage = "Failed";
             file.ErrorMessage = $"Unhandled pipeline error: {ex.Message}";
             file.ProcessedAtUtc = DateTime.UtcNow;
@@ -196,7 +196,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 file,
                 title: "File Processing Error",
                 message: $"File '{file.OriginalFileName}' failed due to an unexpected error: {ex.Message}",
-                severity: NotificationSeverity.Error,
+                severity: NotificationSeverityEnum.Error,
                 ct);
         }
     }
@@ -224,7 +224,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             var errorSummary = stageOutcome.Error ?? "Local schema validation failed.";
             _logger.LogWarning("Hybrid Canonical Staging failed for '{FileName}': {Error}", file.OriginalFileName, errorSummary);
 
-            file.Status = ImportStatus.ValidationFailed;
+            file.Status = ImportStatusEnum.ValidationFailed;
             file.StepStage = "ValidationFailed";
             file.ErrorMessage = errorSummary;
             file.ErrorRowsCount = 1;
@@ -247,13 +247,13 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 file,
                 title: "File Validation / Staging Failed",
                 message: $"File '{file.OriginalFileName}' failed validation: {errorSummary}",
-                severity: NotificationSeverity.Warning,
+                severity: NotificationSeverityEnum.Warning,
                 ct);
 
             return;
         }
 
-        file.Status = ImportStatus.StagingSuccess;
+        file.Status = ImportStatusEnum.StagingSuccess;
         file.StepStage = "Staged";
         file.TotalRowsCount = stageOutcome.Value;
         file.ValidRowsCount = stageOutcome.Value;
@@ -322,7 +322,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     c.ErrorMessage = firstError;
                 }
 
-                file.Status = ImportStatus.ProcessingFailed;
+                file.Status = ImportStatusEnum.ProcessingFailed;
                 file.StepStage = "ProcessingFailed";
                 file.ErrorMessage = firstError;
                 file.ErrorRowsCount = cloudErrors.Count;
@@ -349,7 +349,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     file,
                     title: "Domain Processing Failed",
                     message: $"File '{file.OriginalFileName}' failed during cloud batch processing: {firstError}",
-                    severity: NotificationSeverity.Error,
+                    severity: NotificationSeverityEnum.Error,
                     ct);
 
                 return;
@@ -371,14 +371,14 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 row.DomainProperties.TryGetValue("Priority", out var priorityStr);
                 row.DomainProperties.TryGetValue("DueDateUtc", out var dueDateStr);
 
-                if (!Enum.TryParse<BlazorFluent.Shared.DataListTypes.TaskStatus>(statusStr, ignoreCase: true, out var status))
+                if (!Enum.TryParse<BlazorFluent.Shared.DataListTypes.TaskStatusEnum>(statusStr, ignoreCase: true, out var status))
                 {
-                    status = BlazorFluent.Shared.DataListTypes.TaskStatus.Open;
+                    status = BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open;
                 }
 
-                if (!Enum.TryParse<TaskPriority>(priorityStr, ignoreCase: true, out var priority))
+                if (!Enum.TryParse<TaskPriorityEnum>(priorityStr, ignoreCase: true, out var priority))
                 {
-                    priority = TaskPriority.Medium;
+                    priority = TaskPriorityEnum.Medium;
                 }
 
                 DateTime dueDateUtc = DateTime.UtcNow.AddDays(7);
@@ -393,7 +393,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     Id = Guid.CreateVersion7(),
                     TenantId = file.TenantId,
                     ProjectId = file.ProjectId,
-                    Level = TaskLevel.Project,
+                    Level = TaskLevelEnum.Project,
                     Title = string.IsNullOrWhiteSpace(title) ? "[ENCRYPTED]" : title,
                     Description = description,
                     Status = status,
@@ -419,7 +419,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             chunk.ErrorMessage = null;
         }
 
-        file.Status = ImportStatus.Completed;
+        file.Status = ImportStatusEnum.Completed;
         file.StepStage = "Completed";
         file.ValidRowsCount = allProcessedRows.Count;
         file.ProcessedAtUtc = nowUtc;
@@ -442,7 +442,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             file,
             title: "File Import Completed",
             message: $"File '{file.OriginalFileName}' successfully processed. {allProcessedRows.Count} records committed to project.",
-            severity: NotificationSeverity.Success,
+            severity: NotificationSeverityEnum.Success,
             ct);
     }
 
@@ -450,7 +450,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         ImportFileEntity file,
         string title,
         string message,
-        NotificationSeverity severity,
+        NotificationSeverityEnum severity,
         CancellationToken ct)
     {
         try
@@ -460,14 +460,14 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
             var request = new SendNotificationReqDto
             {
-                Category = NotificationCategory.Generic,
+                Category = NotificationCategoryEnum.Generic,
                 Severity = severity,
                 Title = title,
                 Message = message,
                 ProjectId = file.ProjectId,
                 UserId = uploader,
                 LinkUrl = "/imports",
-                Channels = NotificationChannels.InApp
+                Channels = NotificationChannelsEnum.InApp
             };
 
             await _notificationService.SendAsync(request, ct);

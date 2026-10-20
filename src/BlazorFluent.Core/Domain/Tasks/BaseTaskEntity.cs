@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
@@ -15,7 +15,7 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     /// <summary>
     /// Organizational level at which this work item exists (Tenant, Program, Project, User).
     /// </summary>
-    public required TaskLevel Level { get; set; }
+    public required TaskLevelEnum Level { get; set; }
 
     /// <summary>
     /// Concise headline title of the work item. Required.
@@ -30,12 +30,12 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
     /// <summary>
     /// Urgency and priority rating (Low, Medium, High, Urgent).
     /// </summary>
-    public required TaskPriority Priority { get; set; } 
+    public required TaskPriorityEnum Priority { get; set; } 
 
     /// <summary>
     /// Lifecycle status of the work item.
     /// </summary>
-    public required TaskStatus Status { get; set; } 
+    public required TaskStatusEnum Status { get; set; } 
 
     /// <summary>
     /// Earliest planned kickoff date for this work item.
@@ -95,7 +95,7 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IEffectiveDatedEnt
 
     // --- Derived Unmapped Metadata ---
     [NotMapped]
-    public bool IsClosed => Status is TaskStatus.Closed or TaskStatus.Cancelled;
+    public bool IsClosed => Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled;
 
     [NotMapped]
     public DateTime? ClosedAtUtc => IsClosed ? EndDate ?? Updated : null;

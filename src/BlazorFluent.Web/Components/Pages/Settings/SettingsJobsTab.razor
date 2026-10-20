@@ -1,4 +1,4 @@
-@using BlazorFluent.Components.Common
+﻿@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Jobs
@@ -100,19 +100,19 @@
             <FluentGridItem xs="6" sm="3">
                 <FluentCard Style="padding: 16px; text-align: center;">
                     <FluentLabel Typo="Typography.Subject">Succeeded</FluentLabel>
-                    <FluentLabel Typo="Typography.H4" Color="Color.Success">@_executions.Count(e => e.Status == JobStatus.Succeeded)</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Success">@_executions.Count(e => e.Status == JobStatusEnum.Succeeded)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
                 <FluentCard Style="padding: 16px; text-align: center;">
                     <FluentLabel Typo="Typography.Subject">Failed</FluentLabel>
-                    <FluentLabel Typo="Typography.H4" Color="Color.Error">@_executions.Count(e => e.Status == JobStatus.Failed)</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Error">@_executions.Count(e => e.Status == JobStatusEnum.Failed)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
                 <FluentCard Style="padding: 16px; text-align: center;">
                     <FluentLabel Typo="Typography.Subject">Running / Retrying</FluentLabel>
-                    <FluentLabel Typo="Typography.H4" Color="Color.Warning">@_executions.Count(e => e.Status == JobStatus.Running || e.Status == JobStatus.Retrying)</FluentLabel>
+                    <FluentLabel Typo="Typography.H4" Color="Color.Warning">@_executions.Count(e => e.Status == JobStatusEnum.Running || e.Status == JobStatusEnum.Retrying)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
         </FluentGrid>
@@ -120,10 +120,10 @@
         <!-- Execution Detail Modal Dialog -->
         @if (_selectedErrorExecution != null)
         {
-            <FluentCard Style="@($"margin-bottom: 20px; border-left: 4px solid {(_selectedErrorExecution.Status == JobStatus.Failed ? "var(--error)" : "var(--accent-fill-rest)")};")">
+            <FluentCard Style="@($"margin-bottom: 20px; border-left: 4px solid {(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "var(--error)" : "var(--accent-fill-rest)")};")">
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
                     <FluentLabel Typo="Typography.H5">
-                        @(_selectedErrorExecution.Status == JobStatus.Failed ? "Job Error Diagnostics" : "Job Execution Details"): @_selectedErrorExecution.JobName
+                        @(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "Job Error Diagnostics" : "Job Execution Details"): @_selectedErrorExecution.JobName
                     </FluentLabel>
                     <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedErrorExecution = null)" />
                 </FluentStack>
@@ -186,16 +186,16 @@
                     <TemplateColumn Title="Status" SortBy="@(GridSort<JobExecutionEntity>.ByAscending(e => e.Status))">
                         @switch (context.Status)
                         {
-                            case JobStatus.Succeeded:
+                            case JobStatusEnum.Succeeded:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Succeeded</FluentBadge>
                                 break;
-                            case JobStatus.Failed:
+                            case JobStatusEnum.Failed:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">Failed</FluentBadge>
                                 break;
-                            case JobStatus.Running:
+                            case JobStatusEnum.Running:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">Running</FluentBadge>
                                 break;
-                            case JobStatus.Retrying:
+                            case JobStatusEnum.Retrying:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">Retrying</FluentBadge>
                                 break;
                             default:
@@ -215,7 +215,7 @@
                     </TemplateColumn>
                     <TemplateColumn Title="Actions">
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
-                            @if (context.Status == JobStatus.Failed)
+                            @if (context.Status == JobStatusEnum.Failed)
                             {
                                 <FluentButton Appearance="ButtonAppearance.Primary"
                                               Size="ButtonSize.Small"

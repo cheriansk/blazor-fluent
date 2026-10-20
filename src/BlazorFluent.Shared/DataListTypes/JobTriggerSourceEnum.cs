@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.Attributes;
+﻿using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -10,31 +10,31 @@ namespace BlazorFluent.Shared.DataListTypes;
 public enum JobTriggerSourceEnum
 {
     [Display(Name = "Cron", Description = "Scheduled periodic timer or Cronos expression")]
-    [DataListCategory(JobTriggerSourceDefinitions.Categories.Scheduled)]
+    [DataListCategory(JobTriggerSourceEnumDefinitions.Categories.Scheduled)]
     Cron = 1,
 
     [Display(Name = "Manual", Description = "Manually triggered by an operator from the UI or API")]
-    [DataListCategory(JobTriggerSourceDefinitions.Categories.Interactive)]
+    [DataListCategory(JobTriggerSourceEnumDefinitions.Categories.Interactive)]
     Manual = 2,
 
     [Display(Name = "Domain Event", Description = "Dispatched by an in-process domain event")]
-    [DataListCategory(JobTriggerSourceDefinitions.Categories.Automated)]
+    [DataListCategory(JobTriggerSourceEnumDefinitions.Categories.Automated)]
     Event = 3,
 
     [Display(Name = "File Import", Description = "Triggered by bulk spreadsheet or file upload ingestion")]
-    [DataListCategory(JobTriggerSourceDefinitions.Categories.Automated)]
+    [DataListCategory(JobTriggerSourceEnumDefinitions.Categories.Automated)]
     FileImport = 4,
 
     [Display(Name = "Retry", Description = "Automated retry backoff or operator retry")]
-    [DataListCategory(JobTriggerSourceDefinitions.Categories.Interactive)]
+    [DataListCategory(JobTriggerSourceEnumDefinitions.Categories.Interactive)]
     Retry = 5,
 
     [Display(Name = "Webhook", Description = "Inbound HTTP webhook or external system trigger")]
-    [DataListCategory(JobTriggerSourceDefinitions.Categories.Automated)]
+    [DataListCategory(JobTriggerSourceEnumDefinitions.Categories.Automated)]
     Webhook = 6
 }
 
-public static class JobTriggerSourceDefinitions
+public static class JobTriggerSourceEnumDefinitions
 {
     public static class Categories
     {

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -38,52 +38,52 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         _logger = logger;
     }
 
-    public async Task<ProjectRole?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
+    public async Task<ProjectRoleEnum?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
     {
         return await _hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, _currentUser.UserId, ct);
     }
 
-    public async Task<bool> CanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    public async Task<bool> CanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task<bool> CanEditAsync(Guid projectId, ProjectRole minRole = ProjectRole.Dev, CancellationToken ct = default)
+    public async Task<bool> CanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, CancellationToken ct = default)
     {
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task EnsureCanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, string operation = "", CancellationToken ct = default)
+    public async Task EnsureCanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, string operation = "", CancellationToken ct = default)
     {
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task EnsureCanEditAsync(Guid projectId, ProjectRole minRole = ProjectRole.Dev, string operation = "", CancellationToken ct = default)
+    public async Task EnsureCanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, string operation = "", CancellationToken ct = default)
     {
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task<bool> HasClearanceAsync(Guid projectId, ProjectRole minimumRole, CancellationToken ct = default)
+    public async Task<bool> HasClearanceAsync(Guid projectId, ProjectRoleEnum minimumRole, CancellationToken ct = default)
     {
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minimumRole, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanContributeAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
     {
-        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRole.QA, _currentUser.UserId, ct);
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Contribute, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanManageWorkflowAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
     {
-        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRole.Admin, _currentUser.UserId, ct);
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Admin, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanManageAccessAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
     {
-        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRole.Admin, _currentUser.UserId, ct);
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Admin, _currentUser.UserId, ct);
     }
 
-    public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId ?? string.Empty;
         var userId = _currentUser.UserId ?? "anonymous";
@@ -114,7 +114,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             .ToList();
     }
 
-    public Task<IReadOnlyList<Guid>> GetAccessibleProjectIdsAsync(ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    public Task<IReadOnlyList<Guid>> GetAccessibleProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
         => GetAuthorizedProjectIdsAsync(minRole, ct);
 
     public async Task<IReadOnlyList<ProjectUserRoleEntity>> GetProjectMembersAsync(Guid projectId, CancellationToken ct = default)
@@ -134,12 +134,12 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         string userId,
         string userEmail,
         string userName,
-        UserType userType,
-        ProjectRole role,
+        UserTypeEnum userType,
+        ProjectRoleEnum role,
         CancellationToken ct = default)
     {
         // Separation of duties: Appointing Project Admin requires CanManageProjectAdminsAsync
-        if (role == ProjectRole.Admin)
+        if (role == ProjectRoleEnum.Admin)
         {
             var canManageAdmins = await _hierarchyAuth.CanManageProjectAdminsAsync(projectId, _currentUser.UserId, ct);
             if (!canManageAdmins)

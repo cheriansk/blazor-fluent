@@ -30,7 +30,7 @@ public class UploadFileRequestValidator : AbstractValidator<UploadFileRequest>
             .NotNull().WithMessage("File content stream is required.");
     }
 
-    private static bool HasValidExtension(string? fileName, ImportFileType fileType)
+    private static bool HasValidExtension(string? fileName, ImportFileTypeEnum fileType)
     {
         if (string.IsNullOrWhiteSpace(fileName)) return false;
         var ext = Path.GetExtension(fileName).ToLowerInvariant();
@@ -38,10 +38,10 @@ public class UploadFileRequestValidator : AbstractValidator<UploadFileRequest>
 
 /*        return fileType switch
         {
-            ImportFileType.Excel => ext is ".xlsx" or ".xls",
-            ImportFileType.Json => ext is ".json",
-            ImportFileType.Xml => ext is ".xml",
-            ImportFileType.DelimitedText => ext is ".txt" or ".csv" or ".tsv",
+            ImportFileTypeEnum.Excel => ext is ".xlsx" or ".xls",
+            ImportFileTypeEnum.Json => ext is ".json",
+            ImportFileTypeEnum.Xml => ext is ".xml",
+            ImportFileTypeEnum.DelimitedText => ext is ".txt" or ".csv" or ".tsv",
             _ => false
         };*/
     }

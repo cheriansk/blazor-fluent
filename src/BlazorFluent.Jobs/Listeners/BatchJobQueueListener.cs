@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
@@ -102,7 +102,7 @@ public class BatchJobQueueListener : BackgroundService
             tenantContext.Initialize(
                 tenantId: tenantId,
                 tenantName: tenantId,
-                userType: UserType.CompanyUser,
+                userType: UserTypeEnum.CompanyUser,
                 allowedTenants: [],
                 isHost: false);
 
@@ -151,7 +151,7 @@ public class BatchJobQueueListener : BackgroundService
                 TriggerSource = JobTriggerSourceExtensions.ParseTriggerSource(jobEvent.TriggerSource),
                 CorrelationId = !string.IsNullOrWhiteSpace(jobEvent.CorrelationId) ? jobEvent.CorrelationId : Guid.CreateVersion7().ToString("N")[..12],
                 ParentExecutionId = jobEvent.ParentExecutionId,
-                Status = JobStatus.Running,
+                Status = JobStatusEnum.Running,
                 AttemptCount = 1,
                 MaxRetries = MaxRetries,
                 StartedAt = DateTime.UtcNow
@@ -169,7 +169,7 @@ public class BatchJobQueueListener : BackgroundService
                 _logger.LogWarning("No IBatchJobHandler registered for event type {EventType}. Marking job {EventId} as failed.",
                     eventType.Name, jobEvent.EventId);
 
-                execution.Status = JobStatus.Failed;
+                execution.Status = JobStatusEnum.Failed;
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"No IBatchJobHandler registered for {eventType.Name}.";
                 await dbContext.SaveChangesAsync(stoppingToken);
@@ -196,7 +196,7 @@ public class BatchJobQueueListener : BackgroundService
             if (method == null)
             {
                 _logger.LogError("HandleAsync method not found on handler {HandlerType}.", handlerType.Name);
-                execution.Status = JobStatus.Failed;
+                execution.Status = JobStatusEnum.Failed;
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"HandleAsync not found on {handlerType.Name}.";
                 await dbContext.SaveChangesAsync(stoppingToken);
@@ -225,7 +225,7 @@ public class BatchJobQueueListener : BackgroundService
                     if (attempt > 1)
                     {
                         execution.AttemptCount = attempt;
-                        execution.Status = JobStatus.Retrying;
+                        execution.Status = JobStatusEnum.Retrying;
                         await dbContext.SaveChangesAsync(stoppingToken);
                     }
 
@@ -234,7 +234,7 @@ public class BatchJobQueueListener : BackgroundService
 
                     // Succeeded!
                     stopwatch.Stop();
-                    execution.Status = JobStatus.Succeeded;
+                    execution.Status = JobStatusEnum.Succeeded;
                     execution.CompletedAt = DateTime.UtcNow;
                     execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
                     execution.ErrorMessage = null;
@@ -272,7 +272,7 @@ public class BatchJobQueueListener : BackgroundService
                         jobName, jobEvent.EventId, jobEvent.CorrelationId, attempt, MaxRetries, backoffDelay.TotalMilliseconds);
 
                     execution.AttemptCount = attempt;
-                    execution.Status = JobStatus.Retrying;
+                    execution.Status = JobStatusEnum.Retrying;
                     execution.ErrorMessage = $"Attempt {attempt}/{MaxRetries} failed: {ex.Message}";
                     await dbContext.SaveChangesAsync(stoppingToken);
 
@@ -287,7 +287,7 @@ public class BatchJobQueueListener : BackgroundService
 
             // All attempts exhausted: Flag as Failed
             stopwatch.Stop();
-            execution.Status = JobStatus.Failed;
+            execution.Status = JobStatusEnum.Failed;
             execution.CompletedAt = DateTime.UtcNow;
             execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
             execution.ErrorMessage = lastException?.ToString() ?? "Unknown batch job failure.";
@@ -308,7 +308,7 @@ public class BatchJobQueueListener : BackgroundService
             {
                 await auditService.LogSecurityEventAsync(
                     $"Background batch job '{jobName}' failed after {MaxRetries} attempts",
-                    AuditSeverity.Error,
+                    AuditSeverityEnum.Error,
                     $"JobId: {jobEvent.EventId}, CorrelationId: {jobEvent.CorrelationId}, Error: {lastException?.Message}",
                     stoppingToken);
             }

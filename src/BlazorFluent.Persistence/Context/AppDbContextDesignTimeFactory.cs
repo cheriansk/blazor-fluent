@@ -29,7 +29,7 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
         tenantContext.Initialize(
             tenantId: null,
             tenantName: null,
-            userType: UserType.CompanyUser,
+            userType: UserTypeEnum.CompanyUser,
             allowedTenants: Array.Empty<TenantInfo>(),
             isHost: true);
 

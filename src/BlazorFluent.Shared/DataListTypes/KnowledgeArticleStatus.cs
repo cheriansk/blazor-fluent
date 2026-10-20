@@ -1,9 +1,9 @@
-namespace BlazorFluent.Shared.DataListTypes;
+﻿namespace BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Status lifecycle of a knowledge article.
 /// </summary>
-public enum KnowledgeArticleStatus
+public enum KnowledgeArticleStatusEnum
 {
     Draft = 0,
     PendingReview = 1,
@@ -14,7 +14,7 @@ public enum KnowledgeArticleStatus
 /// <summary>
 /// Audience boundary for a knowledge article.
 /// </summary>
-public enum KnowledgeArticleScope
+public enum KnowledgeArticleScopeEnum
 {
     TenantOnly = 1,
     Global = 2

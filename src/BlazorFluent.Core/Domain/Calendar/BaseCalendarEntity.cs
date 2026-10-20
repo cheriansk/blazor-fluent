@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Calendar;
@@ -35,12 +35,12 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// <summary>
     /// Classification category of this calendar entry (Milestone, Sprint, Release, Deadline, etc.).
     /// </summary>
-    public required CalendarEntryType EntryType { get; set; } 
+    public required CalendarEntryTypeEnum EntryType { get; set; } 
 
     /// <summary>
     /// Current scheduling status (Scheduled, Confirmed, InProgress, Completed, Cancelled).
     /// </summary>
-    public required CalendarEntryStatus Status { get; set; }
+    public required CalendarEntryStatusEnum Status { get; set; }
 
     /// <summary>
     /// Optional foreign key to an associated work item (Task, Subtask, Risk, etc.).

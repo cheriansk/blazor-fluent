@@ -1,9 +1,9 @@
-using BlazorFluent.Shared.Attributes;
+﻿using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
-public enum EventTrackerStatus
+public enum EventTrackerStatusEnum
 {
     [Display(Name = "Published", Description = "Event has been dispatched and is awaiting processing")]
     [DataListCategory(EventTrackerDefinitions.Categories.Lifecycle)]
@@ -26,7 +26,7 @@ public enum EventTrackerStatus
     Failed = 5
 }
 
-public enum EventConsumptionStatus
+public enum EventConsumptionStatusEnum
 {
     [Display(Name = "Running", Description = "Consumer is actively executing")]
     [DataListCategory(EventTrackerDefinitions.Categories.Execution)]

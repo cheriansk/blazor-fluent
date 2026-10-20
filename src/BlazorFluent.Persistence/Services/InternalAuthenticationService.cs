@@ -61,7 +61,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         {
             await auditService.LogSecurityEventAsync(
                 "SecurityViolationSystemLoginAttempt",
-                AuditSeverity.Critical,
+                AuditSeverityEnum.Critical,
                 $"Illicit login attempt blocked for reserved system daemon identity '{email}'.",
                 ct);
 
@@ -76,7 +76,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         {
             await auditService.LogSecurityEventAsync(
                 "LoginFailedUnprovisioned",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Authentication rejected for unprovisioned email '{email}'.",
                 ct);
 
@@ -92,7 +92,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         {
             await auditService.LogSecurityEventAsync(
                 "LoginFailedValidityGate",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Login rejected for '{email}': {failureReason}",
                 ct);
 
@@ -113,7 +113,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             {
                 await auditService.LogSecurityEventAsync(
                     "LoginFailedNoAssignedRoles",
-                    AuditSeverity.Warning,
+                    AuditSeverityEnum.Warning,
                     $"UserId '{user.Id}' denied access: account is active but has zero assigned project or program roles.",
                     ct);
 
@@ -287,7 +287,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
                 resolvedTenantName = defaultMatch.Name;
             }
         }
-        else if (user.UserType == UserType.CompanyUser)
+        else if (user.UserType == UserTypeEnum.CompanyUser)
         {
             // Zero Trust: Company user only receives access to tenants where their email domain matches
             // or where they have an explicit DefaultTenantId assignment. Default deny for all other tenants.

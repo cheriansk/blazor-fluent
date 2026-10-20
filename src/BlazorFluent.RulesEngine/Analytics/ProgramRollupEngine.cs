@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.Contracts.Engine.Analytics;
+﻿using BlazorFluent.Shared.Contracts.Engine.Analytics;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.RulesEngine.Analytics;
@@ -15,7 +15,7 @@ public static class ProgramRollupEngine
         {
             return new ProgramRollupRespDto(
                 ProgramId: request.ProgramId,
-                ComputedHealth: ProgramHealthRating.OnTrack,
+                ComputedHealth: ProgramHealthRatingEnum.OnTrack,
                 AggregateProgressPercentage: 0,
                 TotalActiveBlockers: 0,
                 TotalBudgetVariance: 0m,
@@ -34,27 +34,27 @@ public static class ProgramRollupEngine
         var riskAlerts = new List<string>();
 
         // Heuristic Health Evaluation
-        var criticalProjects = request.Projects.Count(p => p.Health == ProjectHealthRating.Critical);
-        var atRiskProjects = request.Projects.Count(p => p.Health == ProjectHealthRating.AtRisk);
+        var criticalProjects = request.Projects.Count(p => p.Health == ProjectHealthRatingEnum.Critical);
+        var atRiskProjects = request.Projects.Count(p => p.Health == ProjectHealthRatingEnum.AtRisk);
 
-        ProgramHealthRating computedHealth;
+        ProgramHealthRatingEnum computedHealth;
 
         if (criticalProjects > 0 || totalBlockers >= 5 || overdueTasks >= 10)
         {
-            computedHealth = ProgramHealthRating.Critical;
+            computedHealth = ProgramHealthRatingEnum.Critical;
             if (criticalProjects > 0) riskAlerts.Add($"{criticalProjects} project(s) in Critical status.");
             if (totalBlockers >= 5) riskAlerts.Add($"High blocker volume: {totalBlockers} active blockers across program.");
             if (overdueTasks >= 10) riskAlerts.Add($"Schedule slippage: {overdueTasks} overdue tasks across program.");
         }
         else if (atRiskProjects > 0 || totalBlockers >= 2 || overdueTasks >= 3 || totalBudgetVariance < -50000m)
         {
-            computedHealth = ProgramHealthRating.AtRisk;
+            computedHealth = ProgramHealthRatingEnum.AtRisk;
             if (atRiskProjects > 0) riskAlerts.Add($"{atRiskProjects} project(s) currently marked AtRisk.");
             if (totalBudgetVariance < -50000m) riskAlerts.Add($"Negative budget variance: {totalBudgetVariance:C}");
         }
         else
         {
-            computedHealth = ProgramHealthRating.OnTrack;
+            computedHealth = ProgramHealthRatingEnum.OnTrack;
         }
 
         return new ProgramRollupRespDto(

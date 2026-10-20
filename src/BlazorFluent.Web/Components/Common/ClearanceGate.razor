@@ -1,4 +1,4 @@
-@using BlazorFluent.Core.Contracts
+﻿@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @inject IHierarchyAuthorizationService HierarchyAuth
 @inject IProjectContext ProjectContext
@@ -23,7 +23,7 @@ else if (FallbackContent != null)
     /// Razor compiler fails with an error if this parameter is omitted.
     /// </summary>
     [Parameter, EditorRequired]
-    public ProjectRole MinTier { get; set; }
+    public ProjectRoleEnum MinTier { get; set; }
 
     /// <summary>
     /// ID of the project scope. If omitted or Guid.Empty, uses active ProjectContext.ProjectId.

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -49,7 +49,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         if (decryptedStream.CanSeek)
             decryptedStream.Position = 0;
 
-        file.Status = ImportStatus.Validating;
+        file.Status = ImportStatusEnum.Validating;
         file.StepStage = "Validate";
         await _dbContext.SaveChangesAsync(ct);
 
@@ -271,7 +271,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             // All-or-Nothing Fail-Closed Policy: If any error exists, abort and stage 0 chunks
             if (errors.Count > 0)
             {
-                file.Status = ImportStatus.ValidationFailed;
+                file.Status = ImportStatusEnum.ValidationFailed;
                 file.StepStage = "ValidationFailed";
                 file.TotalRowsCount = totalRowsRead;
                 file.ValidRowsCount = 0;
@@ -285,7 +285,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             }
 
             // Stage into 'staging.StagedImports' in chunks of ChunkSize (1,000 rows default)
-            file.Status = ImportStatus.Staging;
+            file.Status = ImportStatusEnum.Staging;
             file.StepStage = "Stage";
             await _dbContext.SaveChangesAsync(ct);
 
@@ -339,7 +339,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             await _dbContext.SaveChangesAsync(ct);
 
             int totalStagedRows = stagedChunksToPersist.Sum(c => c.RowCount);
-            file.Status = ImportStatus.StagingSuccess;
+            file.Status = ImportStatusEnum.StagingSuccess;
             file.StepStage = "Staged";
             file.TotalRowsCount = totalStagedRows;
             file.ValidRowsCount = totalStagedRows;
@@ -356,7 +356,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected failure during validation and staging for FileId={FileId}.", file.Id);
-            file.Status = ImportStatus.ValidationFailed;
+            file.Status = ImportStatusEnum.ValidationFailed;
             file.StepStage = "ValidationFailed";
             file.ErrorMessage = $"Staging failure: {ex.Message}";
             file.ProcessedAtUtc = DateTime.UtcNow;
@@ -377,7 +377,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         if (string.Equals(config.Format.Type, "delimited", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        return file.FileType == ImportFileType.TaskExcel ||
+        return file.FileType == ImportFileTypeEnum.TaskExcel ||
                file.OriginalFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase);
     }
 

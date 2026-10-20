@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.Contracts.Engine.Client;
 using BlazorFluent.Shared.Contracts.Engine.Transforms;
 using BlazorFluent.Shared.DataListTypes;
@@ -232,18 +232,18 @@ public partial class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = TaskStatus.Closed;
+            task.Status = TaskStatusEnum.Closed;
             task.EndDate = DateTime.UtcNow;
 
             // Automated Lifecycle Integrity: auto-resolve any WorkDependency contracts where this task was blocking other tasks
             var blockers = await _context.WorkDependencies
                 .AsTracking()
-                .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status != TaskStatus.Closed)
+                .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status != TaskStatusEnum.Closed)
                 .ToListAsync(ct);
 
             foreach (var blocker in blockers)
             {
-                blocker.Status = TaskStatus.Closed;
+                blocker.Status = TaskStatusEnum.Closed;
                 blocker.EndDate = DateTime.UtcNow;
 
                 if (blocker.DependentItemId.HasValue)
@@ -256,7 +256,7 @@ public partial class UserTaskService : IUserTaskService
                         {
                             await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
                                 $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
-                                NotificationSeverity.Info, sourceTask.ProjectId, ct);
+                                NotificationSeverityEnum.Info, sourceTask.ProjectId, ct);
                         }
                     }
                 }
@@ -286,18 +286,18 @@ public partial class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = TaskStatus.Open;
+            task.Status = TaskStatusEnum.Open;
             task.EndDate = null;
 
             // Automated Lifecycle Integrity: auto-reopen any WorkDependency contracts where this task was blocking other tasks
             var blockers = await _context.WorkDependencies
                 .AsTracking()
-                .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status == TaskStatus.Closed)
+                .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status == TaskStatusEnum.Closed)
                 .ToListAsync(ct);
 
             foreach (var blocker in blockers)
             {
-                blocker.Status = TaskStatus.Open;
+                blocker.Status = TaskStatusEnum.Open;
                 blocker.EndDate = null;
 
                 if (blocker.DependentItemId.HasValue)
@@ -310,7 +310,7 @@ public partial class UserTaskService : IUserTaskService
                         {
                             await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
                                 $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
-                                NotificationSeverity.Warning, sourceTask.ProjectId, ct);
+                                NotificationSeverityEnum.Warning, sourceTask.ProjectId, ct);
                         }
                     }
                 }
@@ -340,7 +340,7 @@ public partial class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = TaskStatus.Cancelled;
+            task.Status = TaskStatusEnum.Cancelled;
 
             await _context.SaveChangesAsync(ct);
             _logger.LogInformation("Task '{Title}' ({Id}) marked Cancelled in project {ProjectId}", task.Title, task.Id, projectId);
@@ -463,7 +463,7 @@ public partial class UserTaskService : IUserTaskService
         Guid projectId,
         Guid taskId,
         Guid dependsOnTaskId,
-        TaskDependencyType dependencyType = TaskDependencyType.Blocks,
+        TaskDependencyTypeEnum dependencyType = TaskDependencyTypeEnum.Blocks,
         DateTime? resolveByUtc = null,
         string? notes = null,
         CancellationToken ct = default)
@@ -511,14 +511,14 @@ public partial class UserTaskService : IUserTaskService
             var link = new WorkDependencyEntity
             {
                 TenantId = tenantId,
-                Level = TaskLevel.Project,
+                Level = TaskLevelEnum.Project,
                 ProjectId = projectId,
                 ProgramId = task.ProgramId,
                 DependentType = DependencyNodeTypeEnum.TaskItem,
                 DependentItemId = taskId,
                 DependsOnType = DependencyNodeTypeEnum.TaskItem,
                 DependsOnItemId = dependsOnTaskId,
-                DependsOnLevel = TaskLevel.Project,
+                DependsOnLevel = TaskLevelEnum.Project,
                 DependsOnProjectId = dependsOnTask.ProjectId,
                 DependsOnProgramId = dependsOnTask.ProgramId,
                 DependsOnSnapshotTitle = dependsOnTask.Title,
@@ -529,7 +529,7 @@ public partial class UserTaskService : IUserTaskService
                 Title = $"Task Dependency: '{task.Title}' depends on '{dependsOnTask.Title}'",
                 Description = notes ?? $"Prerequisite task dependency on '{dependsOnTask.Title}'",
                 Priority = task.Priority,
-                Status = dependsOnTask.IsClosed ? TaskStatus.Closed : TaskStatus.Open,
+                Status = dependsOnTask.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open,
                 StartDate = DateTime.UtcNow,
                 DueDate = resolveByUtc ?? dependsOnTask.DueDate,
                 EndDate = dependsOnTask.IsClosed ? DateTime.UtcNow : null,
@@ -619,14 +619,14 @@ public partial class UserTaskService : IUserTaskService
 
                 var request = new SendNotificationReqDto
                 {
-                    Category = NotificationCategory.Personal,
-                    Severity = task.Priority == TaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,
+                    Category = NotificationCategoryEnum.Personal,
+                    Severity = task.Priority == TaskPriorityEnum.Urgent ? NotificationSeverityEnum.Warning : NotificationSeverityEnum.Info,
                     Title = title,
                     Message = message,
                     ProjectId = task.ProjectId,
                     UserId = targetUserId,
                     LinkUrl = linkUrl,
-                    Channels = NotificationChannels.InApp | NotificationChannels.Email
+                    Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
                 };
 
                 await _notificationService.SendAsync(request, ct);
@@ -763,7 +763,7 @@ public partial class UserTaskService : IUserTaskService
         Guid sourceTaskId,
         Guid targetTaskId,
         DateTime resolveDueDate,
-        DependencyCriticality criticality,
+        DependencyCriticalityEnum criticality,
         string impactDetails,
         string? watcherEmails = null,
         CancellationToken ct = default)
@@ -826,21 +826,21 @@ public partial class UserTaskService : IUserTaskService
                     : impactDetails,
                 Priority = criticality switch
                 {
-                    DependencyCriticality.Low => TaskPriority.Low,
-                    DependencyCriticality.Medium => TaskPriority.Medium,
-                    DependencyCriticality.High => TaskPriority.High,
-                    DependencyCriticality.Critical => TaskPriority.Urgent,
-                    _ => TaskPriority.Medium
+                    DependencyCriticalityEnum.Low => TaskPriorityEnum.Low,
+                    DependencyCriticalityEnum.Medium => TaskPriorityEnum.Medium,
+                    DependencyCriticalityEnum.High => TaskPriorityEnum.High,
+                    DependencyCriticalityEnum.Critical => TaskPriorityEnum.Urgent,
+                    _ => TaskPriorityEnum.Medium
                 },
                 Criticality = criticality,
-                Status = targetTask.IsClosed ? TaskStatus.Closed : TaskStatus.Open,
+                Status = targetTask.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open,
                 StartDate = DateTime.UtcNow,
                 DueDate = resolveDueDate,
                 EndDate = targetTask.IsClosed ? DateTime.UtcNow : null,
                 ReporterEmail = _currentUser.Email ?? sourceTask.ReporterEmail,
                 AssigneeEmails = targetTask.AssigneeEmails ?? targetTask.ReporterEmail,
                 WatcherEmails = watcherEmails ?? string.Empty,
-                DependencyType = TaskDependencyType.BlockedBy
+                DependencyType = TaskDependencyTypeEnum.BlockedBy
             };
 
             await _context.WorkDependencies.AddAsync(blocker, ct);
@@ -852,7 +852,7 @@ public partial class UserTaskService : IUserTaskService
             {
                 await SendBlockerAlertAsync(email, $"New Blocker Dependency Assigned: '{targetTask.Title}'",
                     $"Your task '{targetTask.Title}' is blocking '{sourceTask.Title}'. Resolve SLA: {resolveDueDate:yyyy-MM-dd}. Criticality: {criticality}.",
-                    NotificationSeverity.Warning, targetTask.ProjectId, ct);
+                    NotificationSeverityEnum.Warning, targetTask.ProjectId, ct);
             }
 
             return Result<WorkDependencyEntity>.Success(blocker);
@@ -942,7 +942,7 @@ public partial class UserTaskService : IUserTaskService
         }
     }
 
-    private async Task SendBlockerAlertAsync(string email, string title, string message, NotificationSeverity severity, Guid projectId, CancellationToken ct)
+    private async Task SendBlockerAlertAsync(string email, string title, string message, NotificationSeverityEnum severity, Guid projectId, CancellationToken ct)
     {
         try
         {
@@ -952,13 +952,13 @@ public partial class UserTaskService : IUserTaskService
 
             var request = new SendNotificationReqDto
             {
-                Category = NotificationCategory.Personal,
+                Category = NotificationCategoryEnum.Personal,
                 Severity = severity,
                 Title = title,
                 Message = message,
                 ProjectId = projectId,
                 UserId = userId,
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             };
 
             await _notificationService.SendAsync(request, ct);

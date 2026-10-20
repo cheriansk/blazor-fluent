@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Calendar;
+﻿using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Domain.Calendar.Validators;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
@@ -21,8 +21,8 @@ public class UserCalendarEntityValidatorTests
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddHours(2),
-            EntryType = CalendarEntryType.WorkingSession,
-            Status = CalendarEntryStatus.Confirmed
+            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            Status = CalendarEntryStatusEnum.Confirmed
         };
 
         var result = _validator.Validate(entry);
@@ -42,8 +42,8 @@ public class UserCalendarEntityValidatorTests
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddHours(2),
-            EntryType = CalendarEntryType.WorkingSession,
-            Status = CalendarEntryStatus.Scheduled
+            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            Status = CalendarEntryStatusEnum.Scheduled
         };
 
         var result = _validator.Validate(entry);
@@ -63,8 +63,8 @@ public class UserCalendarEntityValidatorTests
             Title = "", // Invalid
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddHours(2),
-            EntryType = CalendarEntryType.WorkingSession,
-            Status = CalendarEntryStatus.Scheduled
+            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            Status = CalendarEntryStatusEnum.Scheduled
         };
 
         var result = _validator.Validate(entry);
@@ -84,8 +84,8 @@ public class UserCalendarEntityValidatorTests
             Title = "Sprint Review",
             StartDate = DateTime.UtcNow.AddHours(2),
             EndDate = DateTime.UtcNow, // Invalid: earlier than StartDate
-            EntryType = CalendarEntryType.WorkingSession,
-            Status = CalendarEntryStatus.Scheduled
+            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            Status = CalendarEntryStatusEnum.Scheduled
         };
 
         var result = _validator.Validate(entry);

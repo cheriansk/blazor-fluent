@@ -1,9 +1,9 @@
-@page "/knowledge/new"
+﻿@page "/knowledge/new"
 @page "/knowledge/{Id:guid}/edit"
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Shared.DataListTypes
-@attribute [RequiredClearance(ProjectRole.Contribute)]
+@attribute [RequiredClearance(ProjectRoleEnum.Contribute)]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Dtos
@@ -73,8 +73,8 @@
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
                             <input type="radio"
                                    name="articleScope"
-                                   checked="@(_model.Scope == KnowledgeArticleScope.TenantOnly)"
-                                   @onchange="@(() => _model.Scope = KnowledgeArticleScope.TenantOnly)" />
+                                   checked="@(_model.Scope == KnowledgeArticleScopeEnum.TenantOnly)"
+                                   @onchange="@(() => _model.Scope = KnowledgeArticleScopeEnum.TenantOnly)" />
                             <div>
                                 <strong>Tenant Only</strong>
                                 <div style="font-size: 11px; color: var(--neutral-foreground-hint);">Visible only to internal users in your tenant</div>
@@ -84,8 +84,8 @@
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
                             <input type="radio"
                                    name="articleScope"
-                                   checked="@(_model.Scope == KnowledgeArticleScope.Global)"
-                                   @onchange="@(() => _model.Scope = KnowledgeArticleScope.Global)" />
+                                   checked="@(_model.Scope == KnowledgeArticleScopeEnum.Global)"
+                                   @onchange="@(() => _model.Scope = KnowledgeArticleScopeEnum.Global)" />
                             <div>
                                 <strong>Global (Cross-Tenant)</strong>
                                 <div style="font-size: 11px; color: var(--neutral-foreground-hint);">Visible to all internal users across all tenants</div>
@@ -233,7 +233,7 @@
                     {
                         Title = existing.Title,
                         Content = existing.Content,
-                        Scope = existing.IsGlobal ? KnowledgeArticleScope.Global : KnowledgeArticleScope.TenantOnly,
+                        Scope = existing.IsGlobal ? KnowledgeArticleScopeEnum.Global : KnowledgeArticleScopeEnum.TenantOnly,
                         Labels = existing.Labels.ToList(),
                         ProjectId = existing.ProjectId,
                         ReviewerUserIds = existing.Reviewers.Select(r => r.UserId).ToList()

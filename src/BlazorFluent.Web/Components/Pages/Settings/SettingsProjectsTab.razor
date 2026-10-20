@@ -158,16 +158,16 @@
                     <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
                         @switch (context.Status)
                         {
-                            case ProjectStatus.Active:
+                            case ProjectStatusEnum.Active:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                                 break;
-                            case ProjectStatus.New:
+                            case ProjectStatusEnum.New:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
                                 break;
-                            case ProjectStatus.OnHold:
+                            case ProjectStatusEnum.OnHold:
                                 <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
                                 break;
-                            case ProjectStatus.Done:
+                            case ProjectStatusEnum.Done:
                                 <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
                                 break;
                         }
@@ -210,16 +210,16 @@
                             }
                             @switch (_selectedProject.Status)
                             {
-                                case ProjectStatus.Active:
+                                case ProjectStatusEnum.Active:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                                     break;
-                                case ProjectStatus.New:
+                                case ProjectStatusEnum.New:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
                                     break;
-                                case ProjectStatus.OnHold:
+                                case ProjectStatusEnum.OnHold:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
                                     break;
-                                case ProjectStatus.Done:
+                                case ProjectStatusEnum.Done:
                                     <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
                                     break;
                             }
@@ -305,12 +305,12 @@
                                                 <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
                                                 <FluentSelect TOption="string" TValue="string"
                                                               Value="@_editStatus.ToString()"
-                                                              ValueChanged="@(val => _editStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
+                                                              ValueChanged="@(val => _editStatus = Enum.TryParse<ProjectStatusEnum>(val, out var res) ? res : ProjectStatusEnum.New)"
                                                               Style="width: 100%;">
-                                                    <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatusEnum.New)">New</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatusEnum.Active)">Active</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatusEnum.OnHold)">OnHold</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectStatusEnum.Done)">Done</FluentOption>
                                                 </FluentSelect>
                                             </div>
                                         </FluentStack>
@@ -398,7 +398,7 @@
                                                 <FluentSelect TOption="UserEntity"
                                                               TValue="string"
                                                               Items="@_tenantUsers"
-                                                              OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserType.CompanyUser ? "Internal Staff" : "External Client")}]")"
+                                                              OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserTypeEnum.CompanyUser ? "Internal Staff" : "External Client")}]")"
                                                               OptionValue="@(u => u.Id.ToString())"
                                                               Value="@_selectedTenantUserId"
                                                               ValueChanged="@OnTenantUserSelected"
@@ -412,7 +412,7 @@
                                                         <span>Member: <strong>@_formUserName</strong></span>
                                                         <span>Email: <code>@_formEmail</code></span>
                                                         <span>Type:
-                                                            @if (_formUserType == UserType.CompanyUser)
+                                                            @if (_formUserType == UserTypeEnum.CompanyUser)
                                                             {
                                                                 <FluentBadge Appearance="BadgeAppearance.Filled">Internal Staff</FluentBadge>
                                                             }
@@ -435,14 +435,14 @@
                                                 <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
                                                 <FluentSelect TOption="string" TValue="string"
                                                               Value="@_formRole.ToString()"
-                                                              ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
+                                                              ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRoleEnum>(val, out var res) ? res : ProjectRoleEnum.ReadOnly)"
                                                               Style="width: 100%;">
-                                                    <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.Contribute)">💻 Contribute</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.Lead)">⭐ Lead</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.ElevatedLead)">🛡️ ElevatedLead</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.PMO)">📊 PMO</FluentOption>
-                                                    <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRoleEnum.ReadOnly)">👁️ ReadOnly</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRoleEnum.Contribute)">💻 Contribute</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRoleEnum.Lead)">⭐ Lead</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRoleEnum.ElevatedLead)">🛡️ ElevatedLead</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRoleEnum.PMO)">📊 PMO</FluentOption>
+                                                    <FluentOption Value="@nameof(ProjectRoleEnum.Admin)">👑 Admin</FluentOption>
                                                 </FluentSelect>
                                             </div>
 
@@ -538,7 +538,7 @@
                                     </TemplateColumn>
                                     <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
                                     <TemplateColumn Title="Type" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserType))">
-                                        @if (context.UserType == UserType.CompanyUser)
+                                        @if (context.UserType == UserTypeEnum.CompanyUser)
                                         {
                                             <FluentBadge Appearance="BadgeAppearance.Filled">Company</FluentBadge>
                                         }
@@ -550,22 +550,22 @@
                                     <TemplateColumn Title="Role" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.Role))">
                                         @switch (context.Role)
                                         {
-                                            case ProjectRole.Admin:
+                                            case ProjectRoleEnum.Admin:
                                                 <FluentBadge Appearance="BadgeAppearance.Filled">👑 Admin</FluentBadge>
                                                 break;
-                                            case ProjectRole.PMO:
+                                            case ProjectRoleEnum.PMO:
                                                 <FluentBadge Appearance="BadgeAppearance.Tint">📊 PMO</FluentBadge>
                                                 break;
-                                            case ProjectRole.ElevatedLead:
+                                            case ProjectRoleEnum.ElevatedLead:
                                                 <FluentBadge Appearance="BadgeAppearance.Tint">🛡️ ElevatedLead</FluentBadge>
                                                 break;
-                                            case ProjectRole.Lead:
+                                            case ProjectRoleEnum.Lead:
                                                 <FluentBadge Appearance="BadgeAppearance.Tint">⭐ Lead</FluentBadge>
                                                 break;
-                                            case ProjectRole.Contribute:
+                                            case ProjectRoleEnum.Contribute:
                                                 <FluentBadge Appearance="BadgeAppearance.Tint">💻 Contribute</FluentBadge>
                                                 break;
-                                            case ProjectRole.ReadOnly:
+                                            case ProjectRoleEnum.ReadOnly:
                                                 <FluentBadge Appearance="BadgeAppearance.Tint">👁️ ReadOnly</FluentBadge>
                                                 break;
                                             default:
@@ -633,7 +633,7 @@
     private string _editName = string.Empty;
     private string _editShortCode = string.Empty;
     private string? _editLocation;
-    private ProjectStatus _editStatus = ProjectStatus.New;
+    private ProjectStatusEnum _editStatus = ProjectStatusEnum.New;
     private string? _editProgramId;
     private DateTime? _editStartDate;
     private DateTime? _editEndDate;
@@ -650,8 +650,8 @@
     private string _formUserId = string.Empty;
     private string _formUserName = string.Empty;
     private string _formEmail = string.Empty;
-    private UserType _formUserType = UserType.CompanyUser;
-    private ProjectRole _formRole = ProjectRole.Contribute;
+    private UserTypeEnum _formUserType = UserTypeEnum.CompanyUser;
+    private ProjectRoleEnum _formRole = ProjectRoleEnum.Contribute;
 
     // Impersonation state
     private bool _showImpersonateModal;
@@ -954,9 +954,9 @@
             _formUserId = string.Empty;
             _formUserName = string.Empty;
             _formEmail = string.Empty;
-            _formUserType = UserType.CompanyUser;
+            _formUserType = UserTypeEnum.CompanyUser;
         }
-        _formRole = ProjectRole.Contribute;
+        _formRole = ProjectRoleEnum.Contribute;
         _showAssignRoleModal = true;
     }
 

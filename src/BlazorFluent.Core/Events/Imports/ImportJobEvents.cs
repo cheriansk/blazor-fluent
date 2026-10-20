@@ -8,7 +8,7 @@ namespace BlazorFluent.Core.Events.Imports;
 /// </summary>
 public record FileImportedJobEvent(
     Guid ImportFileId,
-    ImportFileType FileType,
+    ImportFileTypeEnum FileType,
     Guid ProjectId,
     string TenantId,
     string CorrelationId,

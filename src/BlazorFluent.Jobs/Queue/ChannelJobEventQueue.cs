@@ -1,4 +1,4 @@
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
@@ -56,7 +56,7 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                     tenantContext.Initialize(
                         tenantId: targetTenantId,
                         tenantName: targetTenantId,
-                        userType: UserType.CompanyUser,
+                        userType: UserTypeEnum.CompanyUser,
                         allowedTenants: [],
                         isHost: false);
                 }

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Security;
@@ -15,7 +15,7 @@ namespace BlazorFluent.Persistence.Interceptors;
 /// Fail-closed EF Core SaveChangesInterceptor that enforces per-project RBAC write gates
 /// directly at the database persistence boundary.
 /// Any attempt to add, modify, or delete an <see cref="IProjectScopedEntity"/> without
-/// at least <see cref="ProjectRole.QA"/> or <see cref="ProjectRole.Dev"/> permissions
+/// at least <see cref="ProjectRoleEnum.Contribute"/> or <see cref="ProjectRoleEnum.Contribute"/> permissions
 /// immediately aborts the transaction.
 /// </summary>
 public class ProjectSecurityInterceptor : SaveChangesInterceptor
@@ -105,7 +105,7 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         }
     }
 
-    private ProjectRole? ResolveRoleForProject(string userId, Guid projectId)
+    private ProjectRoleEnum? ResolveRoleForProject(string userId, Guid projectId)
     {
         // Isolated scope query avoids DbContext concurrency collisions
         using var scope = _scopeFactory.CreateScope();

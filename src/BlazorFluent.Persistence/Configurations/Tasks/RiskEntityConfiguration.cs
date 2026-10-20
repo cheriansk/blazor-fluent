@@ -20,7 +20,7 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.Property(r => r.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(r => r.Title)
             .HasMaxLength(200)

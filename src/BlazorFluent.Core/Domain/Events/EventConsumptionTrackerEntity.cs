@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Events;
@@ -39,7 +39,7 @@ public class EventConsumptionTrackerEntity : AuditableEntity, ITenantEntity, IAu
     public double DurationMs { get; set; }
 
     /// <summary>Execution status of this specific consumer.</summary>
-    public required EventConsumptionStatus Status { get; set; }
+    public required EventConsumptionStatusEnum Status { get; set; }
 
     /// <summary>Attempt number for this consumer execution.</summary>
     public required int AttemptCount { get; set; }

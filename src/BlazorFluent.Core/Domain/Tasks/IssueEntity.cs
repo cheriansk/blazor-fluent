@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -21,23 +21,23 @@ public class IssueEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// Unmapped convenience alias mapping to and from <see cref="BaseTaskEntity.Priority"/> to avoid duplicate storage.
     /// </summary>
     [NotMapped]
-    public IssueSeverity Severity
+    public IssueSeverityEnum Severity
     {
         get => Priority switch
         {
-            TaskPriority.Low => IssueSeverity.Low,
-            TaskPriority.Medium => IssueSeverity.Medium,
-            TaskPriority.High => IssueSeverity.High,
-            TaskPriority.Urgent => IssueSeverity.Critical,
-            _ => IssueSeverity.Medium
+            TaskPriorityEnum.Low => IssueSeverityEnum.Low,
+            TaskPriorityEnum.Medium => IssueSeverityEnum.Medium,
+            TaskPriorityEnum.High => IssueSeverityEnum.High,
+            TaskPriorityEnum.Urgent => IssueSeverityEnum.Critical,
+            _ => IssueSeverityEnum.Medium
         };
         set => Priority = value switch
         {
-            IssueSeverity.Low => TaskPriority.Low,
-            IssueSeverity.Medium => TaskPriority.Medium,
-            IssueSeverity.High => TaskPriority.High,
-            IssueSeverity.Critical => TaskPriority.Urgent,
-            _ => TaskPriority.Medium
+            IssueSeverityEnum.Low => TaskPriorityEnum.Low,
+            IssueSeverityEnum.Medium => TaskPriorityEnum.Medium,
+            IssueSeverityEnum.High => TaskPriorityEnum.High,
+            IssueSeverityEnum.Critical => TaskPriorityEnum.Urgent,
+            _ => TaskPriorityEnum.Medium
         };
     }
 

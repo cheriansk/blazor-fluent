@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Events;
@@ -51,7 +51,7 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
     public required DateTime PublishedAtUtc { get; set; }
 
     /// <summary>Overall lifecycle status of the published event.</summary>
-    public required EventTrackerStatus Status { get; set; }
+    public required EventTrackerStatusEnum Status { get; set; }
 
     /// <summary>Count of consumers that have picked up or executed this event.</summary>
     public int ConsumerCount { get; set; }

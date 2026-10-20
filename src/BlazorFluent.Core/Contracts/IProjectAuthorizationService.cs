@@ -15,34 +15,34 @@ public interface IProjectAuthorizationService
     /// Retrieves the active user's assigned role in the specified project.
     /// Returns null if the user has no role in the project.
     /// </summary>
-    Task<ProjectRole?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default);
+    Task<ProjectRoleEnum?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
     /// Checks whether the active user has at least the required role to view/visit the project.
     /// </summary>
-    Task<bool> CanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default);
+    Task<bool> CanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default);
 
     /// <summary>
     /// Checks whether the active user has at least the required role to edit/mutate project data.
     /// </summary>
-    Task<bool> CanEditAsync(Guid projectId, ProjectRole minRole = ProjectRole.Dev, CancellationToken ct = default);
+    Task<bool> CanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, CancellationToken ct = default);
 
     /// <summary>
     /// Defense-in-depth gate for read operations.
     /// Throws <see cref="UnauthorizedAccessException"/> and records a forensic security audit event if unauthorized.
     /// </summary>
-    Task EnsureCanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, string operation = "", CancellationToken ct = default);
+    Task EnsureCanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, string operation = "", CancellationToken ct = default);
 
     /// <summary>
     /// Defense-in-depth gate for write operations.
     /// Throws <see cref="UnauthorizedAccessException"/> and records a forensic security audit event if unauthorized.
     /// </summary>
-    Task EnsureCanEditAsync(Guid projectId, ProjectRole minRole = ProjectRole.Dev, string operation = "", CancellationToken ct = default);
+    Task EnsureCanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, string operation = "", CancellationToken ct = default);
 
     /// <summary>
     /// Returns all project IDs in the active tenant where the current user meets or exceeds the required role.
     /// </summary>
-    Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default);
+    Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default);
 
     /// <summary>
     /// Lists all members and assigned roles for a project.
@@ -57,8 +57,8 @@ public interface IProjectAuthorizationService
         string userId,
         string userEmail,
         string userName,
-        UserType userType,
-        ProjectRole role,
+        UserTypeEnum userType,
+        ProjectRoleEnum role,
         CancellationToken ct = default);
 
     /// <summary>

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Jobs;
+﻿using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
@@ -19,7 +19,7 @@ public class JobExecutionEntityValidatorTests
             TenantId = "tnt_acme",
             CorrelationId = "corr_12345678",
             TriggerSource = JobTriggerSourceEnum.Manual,
-            Status = JobStatus.Running,
+            Status = JobStatusEnum.Running,
             AttemptCount = 1,
             MaxRetries = 3,
             StartedAt = DateTime.UtcNow
@@ -41,7 +41,7 @@ public class JobExecutionEntityValidatorTests
             TenantId = "HOST",
             CorrelationId = "corr_system_999",
             TriggerSource = JobTriggerSourceEnum.Cron,
-            Status = JobStatus.Succeeded,
+            Status = JobStatusEnum.Succeeded,
             AttemptCount = 1,
             MaxRetries = 3,
             StartedAt = DateTime.UtcNow.AddMinutes(-5),
@@ -65,7 +65,7 @@ public class JobExecutionEntityValidatorTests
             TenantId = "tnt_acme",
             CorrelationId = "", // Invalid
             TriggerSource = JobTriggerSourceEnum.Cron,
-            Status = JobStatus.Running,
+            Status = JobStatusEnum.Running,
             AttemptCount = 1,
             MaxRetries = 3,
             StartedAt = DateTime.UtcNow
@@ -87,7 +87,7 @@ public class JobExecutionEntityValidatorTests
             TenantId = "", // Invalid
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
-            Status = JobStatus.Running,
+            Status = JobStatusEnum.Running,
             AttemptCount = 1,
             MaxRetries = 3,
             StartedAt = DateTime.UtcNow
@@ -109,7 +109,7 @@ public class JobExecutionEntityValidatorTests
             TenantId = "tnt_acme",
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
-            Status = JobStatus.Running,
+            Status = JobStatusEnum.Running,
             AttemptCount = 1,
             MaxRetries = 3,
             StartedAt = DateTime.UtcNow
@@ -131,7 +131,7 @@ public class JobExecutionEntityValidatorTests
             TenantId = "tnt_acme",
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
-            Status = JobStatus.Succeeded,
+            Status = JobStatusEnum.Succeeded,
             AttemptCount = 1,
             MaxRetries = 3,
             StartedAt = DateTime.UtcNow,

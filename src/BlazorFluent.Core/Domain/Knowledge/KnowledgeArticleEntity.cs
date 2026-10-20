@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
@@ -47,7 +47,7 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     /// <summary>
     /// Current approval lifecycle status.
     /// </summary>
-    public required KnowledgeArticleStatus Status { get; set; }
+    public required KnowledgeArticleStatusEnum Status { get; set; }
 
     /// <summary>
     /// Optional project to which the article belongs.

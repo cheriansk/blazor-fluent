@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tasks;
+﻿using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tasks.Validators;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
@@ -17,16 +17,16 @@ public class WorkDependencyEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_test",
-            Level = TaskLevel.Project,
+            Level = TaskLevelEnum.Project,
             DependentType = DependencyNodeTypeEnum.TaskItem,
             DependentItemId = Guid.CreateVersion7(),
             DependsOnType = DependencyNodeTypeEnum.TaskItem,
             DependsOnItemId = Guid.CreateVersion7(),
             Title = "Backend API Blocker",
             Description = "Waiting on backend API endpoints to deploy before UI integration can proceed.",
-            Priority = TaskPriority.High,
-            Criticality = DependencyCriticality.High,
-            Status = TaskStatus.Open,
+            Priority = TaskPriorityEnum.High,
+            Criticality = DependencyCriticalityEnum.High,
+            Status = TaskStatusEnum.Open,
             StartDate = DateTime.UtcNow,
             DueDate = DateTime.UtcNow.AddDays(3)
         };
@@ -35,7 +35,7 @@ public class WorkDependencyEntityValidatorTests
 
         result.IsValid.Should().BeTrue();
         result.Errors.Should().BeEmpty();
-        dependency.Priority.Should().Be(TaskPriority.High);
+        dependency.Priority.Should().Be(TaskPriorityEnum.High);
         dependency.ImpactDetails.Should().Be(dependency.Description);
         dependency.ResolveDueDate.Should().Be(dependency.DueDate);
     }
@@ -48,16 +48,16 @@ public class WorkDependencyEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_test",
-            Level = TaskLevel.Project,
+            Level = TaskLevelEnum.Project,
             DependentType = DependencyNodeTypeEnum.TaskItem,
             DependentItemId = sameItemId,
             DependsOnType = DependencyNodeTypeEnum.TaskItem,
             DependsOnItemId = sameItemId, // Cannot depend on self
             Title = "Self blocker",
             Description = "Impact description",
-            Priority = TaskPriority.Urgent,
-            Criticality = DependencyCriticality.Critical,
-            Status = TaskStatus.Open,
+            Priority = TaskPriorityEnum.Urgent,
+            Criticality = DependencyCriticalityEnum.Critical,
+            Status = TaskStatusEnum.Open,
             StartDate = DateTime.UtcNow,
             DueDate = DateTime.UtcNow.AddDays(1)
         };
@@ -66,7 +66,7 @@ public class WorkDependencyEntityValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("An item cannot depend on itself"));
-        dependency.Priority.Should().Be(TaskPriority.Urgent); // Critical criticality maps to Urgent priority
+        dependency.Priority.Should().Be(TaskPriorityEnum.Urgent); // Critical criticality maps to Urgent priority
     }
 
     [Fact]
@@ -76,16 +76,16 @@ public class WorkDependencyEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             TenantId = "tenant_test",
-            Level = TaskLevel.Project,
+            Level = TaskLevelEnum.Project,
             DependentType = DependencyNodeTypeEnum.TaskItem,
             DependentItemId = Guid.CreateVersion7(),
             DependsOnType = DependencyNodeTypeEnum.TaskItem,
             DependsOnItemId = Guid.CreateVersion7(),
             Title = "", // Missing
             Description = "Some details",
-            Priority = TaskPriority.Medium,
-            Criticality = DependencyCriticality.Medium,
-            Status = TaskStatus.Open,
+            Priority = TaskPriorityEnum.Medium,
+            Criticality = DependencyCriticalityEnum.Medium,
+            Status = TaskStatusEnum.Open,
             StartDate = DateTime.UtcNow,
             DueDate = DateTime.UtcNow.AddDays(5)
         };

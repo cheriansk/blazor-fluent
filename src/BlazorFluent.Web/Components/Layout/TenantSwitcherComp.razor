@@ -1,4 +1,4 @@
-@using BlazorFluent.Core.Contracts
+﻿@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Infrastructure.Security
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ITenantContext TenantContext
@@ -68,7 +68,7 @@ else
             _switchError = "You do not have permission to access the requested tenant.";
             await AuditService.LogSecurityEventAsync(
                 "TenantSwitchBlocked",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Attempted unauthorized switch from '{prevTenant}' to '{newTenantId}'.");
             return;
         }
@@ -78,7 +78,7 @@ else
         // 1. Audit tenant switch initiation
         await AuditService.LogSecurityEventAsync(
             "TenantSwitchInitiated",
-            AuditSeverity.Information,
+            AuditSeverityEnum.Information,
             $"User initiated tenant switch from '{prevTenant}' to '{newTenantId}'. Purging session and enforcing re-authentication.");
 
         // 2. Purge browser session storage to eliminate cross-tenant state bleeding

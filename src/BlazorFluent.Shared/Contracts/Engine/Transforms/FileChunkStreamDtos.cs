@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Shared.Contracts.Engine.Transforms;
 
@@ -6,7 +6,7 @@ public record FileChunkStreamReqDto(
     Guid SessionId,
     int ChunkIndex,
     bool IsLastChunk,
-    ImportFileType FileType,
+    ImportFileTypeEnum FileType,
     string FileName,
     byte[] ChunkData
 );

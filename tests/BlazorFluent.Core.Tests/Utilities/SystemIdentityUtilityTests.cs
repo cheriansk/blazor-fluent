@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Utilities;
 using FluentAssertions;
@@ -74,7 +74,7 @@ public class SystemIdentityUtilityTests
         mockTenant.Verify(t => t.Initialize(
             SystemIdentityUtility.SystemTenantSlug,
             "System Host",
-            UserType.CompanyUser,
+            UserTypeEnum.CompanyUser,
             It.IsAny<TenantInfo[]>(),
             true), Times.Once);
     }

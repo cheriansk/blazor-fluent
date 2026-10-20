@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Shared.DataListTypes;
@@ -30,7 +30,7 @@ public class ProgramUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// <summary>
     /// Governance role: ProgramAdmin or ProgramMember.
     /// </summary>
-    public required ProgramRole Role { get; set; }
+    public required ProgramRoleEnum Role { get; set; }
 
     /// <summary>
     /// Cryptographic HMAC-SHA256 signature sealing program role state against direct database tampering.

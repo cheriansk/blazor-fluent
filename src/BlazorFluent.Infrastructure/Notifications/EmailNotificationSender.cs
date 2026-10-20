@@ -64,9 +64,9 @@ public class EmailNotificationSender : IEmailNotificationSender
 
             var colorHex = notification.Severity switch
             {
-                NotificationSeverity.Success => "#107c41",
-                NotificationSeverity.Warning => "#d83b01",
-                NotificationSeverity.Error => "#a80000",
+                NotificationSeverityEnum.Success => "#107c41",
+                NotificationSeverityEnum.Warning => "#d83b01",
+                NotificationSeverityEnum.Error => "#a80000",
                 _ => "#0076d7"
             };
 

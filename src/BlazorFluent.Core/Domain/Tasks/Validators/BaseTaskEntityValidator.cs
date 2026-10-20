@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using FluentValidation;
 
 namespace BlazorFluent.Core.Domain.Tasks.Validators;
@@ -36,7 +36,7 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
         // ─── STRICT HIERARCHY SCOPING INVARIANTS ───────────────────────────────────
 
         // 1. Tenant Level: executive tenant-wide governance item; strictly no ProgramId or ProjectId
-        When(x => x.Level == TaskLevel.Tenant, () =>
+        When(x => x.Level == TaskLevelEnum.Tenant, () =>
         {
             RuleFor(x => x.ProgramId)
                 .Null().WithMessage("Tenant-level items cannot belong to a specific Program.");
@@ -49,7 +49,7 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
         });
 
         // 2. Program Level: multi-project strategic initiative; ProgramId mandatory, ProjectId strictly null
-        When(x => x.Level == TaskLevel.Program, () =>
+        When(x => x.Level == TaskLevelEnum.Program, () =>
         {
             RuleFor(x => x.ProgramId)
                 .NotNull().WithMessage("ProgramId is mandatory for Program-level items.")
@@ -63,7 +63,7 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
         });
 
         // 3. Project Level: team delivery item; ProjectId mandatory, ProgramId strictly null (traversed via Project.ProgramId)
-        When(x => x.Level == TaskLevel.Project, () =>
+        When(x => x.Level == TaskLevelEnum.Project, () =>
         {
             RuleFor(x => x.ProjectId)
                 .NotNull().WithMessage("ProjectId is mandatory for Project-level items.")
@@ -77,7 +77,7 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
         });
 
         // 4. User Level: personal workload item; UserId mandatory, ProgramId & ProjectId strictly null
-        When(x => x.Level == TaskLevel.User, () =>
+        When(x => x.Level == TaskLevelEnum.User, () =>
         {
             RuleFor(x => x.UserId)
                 .NotEmpty().WithMessage("UserId is mandatory for personal User-level items.");

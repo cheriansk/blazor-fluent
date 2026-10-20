@@ -1,11 +1,10 @@
-@page "/workflows"
-@attribute [RequiredClearance(ProjectRole.Lead)]
+﻿@page "/workflows"
+@attribute [RequiredClearance(ProjectRoleEnum.Lead)]
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
-@using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Core.Dtos
@@ -105,17 +104,17 @@
             <FluentButton Appearance="@(_selectedScope == "tenant" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
                           IconStart="@(new Icons.Regular.Size16.Building())"
                           OnClick="@(() => SetScopeFilter("tenant"))">
-                Tenant Governance (@_allWorkflows.Count(w => w.Level == TaskLevel.Tenant))
+                Tenant Governance (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Tenant))
             </FluentButton>
             <FluentButton Appearance="@(_selectedScope == "program" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
                           IconStart="@(new Icons.Regular.Size16.Folder())"
                           OnClick="@(() => SetScopeFilter("program"))">
-                Program Strategic (@_allWorkflows.Count(w => w.Level == TaskLevel.Program))
+                Program Strategic (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Program))
             </FluentButton>
             <FluentButton Appearance="@(_selectedScope == "project" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
                           IconStart="@(new Icons.Regular.Size16.TaskListSquareLtr())"
                           OnClick="@(() => SetScopeFilter("project"))">
-                Project Delivery (@_allWorkflows.Count(w => w.Level == TaskLevel.Project))
+                Project Delivery (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Project))
             </FluentButton>
         </div>
 
@@ -418,9 +417,9 @@
 
     private void ComputeKpis()
     {
-        _activeWorkflowsCount = _allWorkflows.Count(w => w.Status != TaskStatus.Closed);
-        _completedWorkflowsCount = _allWorkflows.Count(w => w.Status == TaskStatus.Closed);
-        _activeStepsCount = _allWorkflows.Sum(w => w.Steps.Count(s => s.Status == TaskStatus.InProgress));
+        _activeWorkflowsCount = _allWorkflows.Count(w => w.Status != TaskStatusEnum.Closed);
+        _completedWorkflowsCount = _allWorkflows.Count(w => w.Status == TaskStatusEnum.Closed);
+        _activeStepsCount = _allWorkflows.Sum(w => w.Steps.Count(s => s.Status == TaskStatusEnum.InProgress));
         _totalDelegatedSubtasksCount = _allWorkflows.Sum(w => w.Steps.Sum(s => s.SubTasks.Count));
     }
 
@@ -455,11 +454,11 @@
 
         if (_selectedScope == "tenant")
         {
-            result = result.Where(w => w.Level == TaskLevel.Tenant);
+            result = result.Where(w => w.Level == TaskLevelEnum.Tenant);
         }
         else if (_selectedScope == "program")
         {
-            result = result.Where(w => w.Level == TaskLevel.Program);
+            result = result.Where(w => w.Level == TaskLevelEnum.Program);
             if (_filterProgram is not null)
             {
                 result = result.Where(w => w.ProgramId == _filterProgram.Id);
@@ -467,7 +466,7 @@
         }
         else if (_selectedScope == "project")
         {
-            result = result.Where(w => w.Level == TaskLevel.Project);
+            result = result.Where(w => w.Level == TaskLevelEnum.Project);
             if (_filterProject is not null)
             {
                 result = result.Where(w => w.ProjectId == _filterProject.Id);
@@ -476,11 +475,11 @@
 
         if (_selectedStatusFilter == "Active")
         {
-            result = result.Where(w => w.Status != TaskStatus.Closed);
+            result = result.Where(w => w.Status != TaskStatusEnum.Closed);
         }
         else if (_selectedStatusFilter == "Completed")
         {
-            result = result.Where(w => w.Status == TaskStatus.Closed);
+            result = result.Where(w => w.Status == TaskStatusEnum.Closed);
         }
 
         if (!string.IsNullOrWhiteSpace(_searchTerm))
@@ -494,11 +493,11 @@
         _filteredWorkflows = result.ToList();
     }
 
-    private TaskLevel GetDefaultCreateLevel() => _selectedScope switch
+    private TaskLevelEnum GetDefaultCreateLevel() => _selectedScope switch
     {
-        "tenant" => TaskLevel.Tenant,
-        "program" => TaskLevel.Program,
-        _ => TaskLevel.Project
+        "tenant" => TaskLevelEnum.Tenant,
+        "program" => TaskLevelEnum.Program,
+        _ => TaskLevelEnum.Project
     };
 
     private void OpenCreateModal()

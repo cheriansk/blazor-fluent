@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tasks;
+﻿using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tasks.Validators;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
@@ -14,12 +14,12 @@ public class WorkflowEntityValidatorTests
     {
         Id = Guid.CreateVersion7(),
         TenantId = "tenant_test",
-        Level = TaskLevel.Project,
+        Level = TaskLevelEnum.Project,
         ProjectId = Guid.CreateVersion7(),
         Title = "Quarterly Release Pipeline",
         Description = "Orchestrate release readiness across dev, QA, and security",
-        Priority = TaskPriority.High,
-        Status = TaskStatus.InProgress,
+        Priority = TaskPriorityEnum.High,
+        Status = TaskStatusEnum.InProgress,
         StartDate = DateTime.UtcNow,
         DueDate = DateTime.UtcNow.AddDays(14),
         ReporterEmail = "admin@company.local",

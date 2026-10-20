@@ -35,7 +35,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<List<KnowledgeArticleListDto>> GetArticlesAsync(
         string? searchTerm = null,
-        KnowledgeArticleStatus? status = null,
+        KnowledgeArticleStatusEnum? status = null,
         string? labelFilter = null,
         bool? isGlobalOnly = null,
         CancellationToken cancellationToken = default)
@@ -180,7 +180,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             throw new ArgumentException("Article must contain between 1 and 10 labels.", nameof(dto.Labels));
         }
 
-        var isGlobal = dto.Scope == KnowledgeArticleScope.Global;
+        var isGlobal = dto.Scope == KnowledgeArticleScopeEnum.Global;
         var labelsString = string.Join(";", dto.Labels.Select(l => l.Trim()).Where(l => !string.IsNullOrWhiteSpace(l)).Distinct());
 
         var sanitizedTitle = _inputSanitizer.SanitizePlainText(dto.Title.Trim());
@@ -202,7 +202,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             Content = sanitizedContent,
             Labels = labelsString,
             IsGlobal = isGlobal,
-            Status = KnowledgeArticleStatus.PendingReview,
+            Status = KnowledgeArticleStatusEnum.PendingReview,
             ProjectId = dto.ProjectId ?? Guid.Empty,
             AuthorUserEntityId = authorUserEntityId
         };
@@ -250,8 +250,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                 {
                     ProjectId = article.ProjectId,
                     UserId = reviewerUser.Id.ToString(),
-                    Category = NotificationCategory.Personal,
-                    Severity = NotificationSeverity.Info,
+                    Category = NotificationCategoryEnum.Personal,
+                    Severity = NotificationSeverityEnum.Info,
                     Title = "Knowledge Article Review Requested",
                     Message = $"{authorDisplayName} requested your review on '{article.Title}'.",
                     LinkUrl = $"/knowledge/{article.Id}"
@@ -288,7 +288,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         article.Content = _inputSanitizer.SanitizeHtml(dto.Content);
         if (dto.Scope.HasValue)
         {
-            article.IsGlobal = dto.Scope == KnowledgeArticleScope.Global;
+            article.IsGlobal = dto.Scope == KnowledgeArticleScopeEnum.Global;
         }
 
         if (dto.Labels.Count > 0)
@@ -302,9 +302,9 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }
 
         // Reset to PendingReview if content changed significantly
-        if (article.Status == KnowledgeArticleStatus.Approved)
+        if (article.Status == KnowledgeArticleStatusEnum.Approved)
         {
-            article.Status = KnowledgeArticleStatus.PendingReview;
+            article.Status = KnowledgeArticleStatusEnum.PendingReview;
             article.ApprovedAtUtc = null;
             article.ApprovedByUserEntityId = null;
             foreach (var r in article.Reviewers)
@@ -351,7 +351,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }
 
         // 1-approval workflow: Any 1 reviewer approval marks article as Approved
-        article.Status = KnowledgeArticleStatus.Approved;
+        article.Status = KnowledgeArticleStatusEnum.Approved;
         article.ApprovedByUserEntityId = currentUserGuid != Guid.Empty ? currentUserGuid : null;
         article.ApprovedAtUtc = now;
 
@@ -366,8 +366,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             {
                 ProjectId = article.ProjectId,
                 UserId = article.AuthorUserId,
-                Category = NotificationCategory.Personal,
-                Severity = NotificationSeverity.Info,
+                Category = NotificationCategoryEnum.Personal,
+                Severity = NotificationSeverityEnum.Info,
                 Title = "Knowledge Article Approved",
                 Message = $"Your article '{article.Title}' was approved by {approverDisplayName}.",
                 LinkUrl = $"/knowledge/{article.Id}"
@@ -411,7 +411,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
         var users = await _context.Users
             .AsNoTracking()
-            .Where(u => u.IsActive && !u.IsDeleted && u.UserType == UserType.CompanyUser)
+            .Where(u => u.IsActive && !u.IsDeleted && u.UserType == UserTypeEnum.CompanyUser)
             .OrderBy(u => u.FullName)
             .ToListAsync(cancellationToken);
 

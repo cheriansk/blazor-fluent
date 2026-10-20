@@ -55,8 +55,8 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
         var projectIds = projects.Select(p => p.Id).ToList();
         var allTasks = await _dbContext.Tasks
             .Where(t => projectIds.Contains(t.ProjectId) &&
-                        t.Status != TaskStatus.Closed &&
-                        t.Status != TaskStatus.Cancelled)
+                        t.Status != TaskStatusEnum.Closed &&
+                        t.Status != TaskStatusEnum.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
 
@@ -117,8 +117,8 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
                 ProjectId = project.Id,
                 Title = $"Daily Task Digest: {project.Name}",
                 Message = sb.ToString(),
-                Severity = pastDue.Count > 0 ? NotificationSeverity.Warning : NotificationSeverity.Info,
-                Category = NotificationCategory.Generic,
+                Severity = pastDue.Count > 0 ? NotificationSeverityEnum.Warning : NotificationSeverityEnum.Info,
+                Category = NotificationCategoryEnum.Generic,
                 LinkUrl = $"/projects/{project.Id}/tasks"
             };
 

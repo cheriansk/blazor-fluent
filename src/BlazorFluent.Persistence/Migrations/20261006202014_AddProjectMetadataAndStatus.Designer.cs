@@ -96,7 +96,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<int?>("UserType")
+                    b.Property<int?>("UserTypeEnum")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -544,7 +544,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
-                    b.Property<int>("UserType")
+                    b.Property<int>("UserTypeEnum")
                         .HasColumnType("integer");
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "PhysicalAddress", "BlazorFluent.Core.Domain.Identity.UserEntity.PhysicalAddress#Address", b1 =>
@@ -1641,7 +1641,7 @@ namespace BlazorFluent.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("UserType")
+                    b.Property<int>("UserTypeEnum")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

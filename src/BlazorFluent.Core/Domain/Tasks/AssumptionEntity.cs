@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Base;
+﻿using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -24,7 +24,7 @@ public class AssumptionEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// <summary>
     /// Current validation status (Unconfirmed, Validated, Invalidated).
     /// </summary>
-    public required AssumptionValidationStatus ValidationStatus { get; set; }
+    public required AssumptionValidationStatusEnum ValidationStatus { get; set; }
 
     /// <summary>
     /// Downstream blast radius and impact on scope, schedule, or budget if this assumption proves false.

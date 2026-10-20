@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Extensions;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
@@ -48,7 +48,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.TenantId.ToLower() == normalizedTenant &&
                                       ((hasGuid && u.UserEntityId == userGuid) || u.User!.Email.ToLower() == normalizedUser) &&
-                                      u.Role == TenantRole.TenantAdmin &&
+                                      u.Role == TenantRoleEnum.TenantAdmin &&
                                       !u.IsDeleted, ct);
 
         if (tenantUser != null)
@@ -60,7 +60,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedTenantAdminDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"TenantUser {tenantUser.Id} for user '{userId}' in tenant '{tenantId}' failed HMAC integrity verification. Administrative privilege denied.",
                     ct);
                 return false;
@@ -92,7 +92,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ProgramId == programId &&
                                       ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-                                      r.Role == ProgramRole.Admin &&
+                                      r.Role == ProgramRoleEnum.Admin &&
                                       !r.IsDeleted, ct);
 
         if (programRole != null)
@@ -102,7 +102,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedProgramAdminDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"ProgramUserRole {programRole.Id} for user '{userId}' on program '{programId}' failed HMAC integrity verification. Administrative privilege denied.",
                     ct);
                 return false;
@@ -138,7 +138,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ProjectId == projectId &&
                                       ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-                                      r.Role == ProjectRole.Admin &&
+                                      r.Role == ProjectRoleEnum.Admin &&
                                       !r.IsDeleted, ct);
 
         if (projectRole != null)
@@ -148,7 +148,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedProjectAdminDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"ProjectUserRole {projectRole.Id} for user '{userId}' on project '{projectId}' failed HMAC integrity verification. Administrative privilege denied.",
                     ct);
                 return false;
@@ -175,7 +175,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .AsNoTracking()
             .AnyAsync(r => r.TenantId.ToLower() == normalizedTenant &&
                            ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-                           r.Role == ProgramRole.Admin &&
+                           r.Role == ProgramRoleEnum.Admin &&
                            !r.IsDeleted, ct);
     }
 
@@ -210,7 +210,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedTenantUserDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"TenantUser {tenantUser.Id} for user '{userId}' in tenant '{tenantId}' failed HMAC integrity verification. Access denied.",
                     ct);
                 return false;
@@ -258,7 +258,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedProgramUserRoleDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"ProgramUserRole {programRole.Id} for user '{userId}' on program '{programId}' failed HMAC integrity verification. Access denied.",
                     ct);
                 return false;
@@ -314,7 +314,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedProjectUserRoleDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"ProjectUserRole {projectRole.Id} for user '{userId}' on project '{projectId}' failed HMAC integrity verification. Access denied.",
                     ct);
                 return false;
@@ -375,7 +375,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .ToList();
     }
 
-    public async Task<ProjectRole?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default)
+    public async Task<ProjectRoleEnum?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default)
     {
         if (projectId == Guid.Empty) return null;
 
@@ -396,7 +396,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         // Tenant Admin has overarching Admin rights on all child projects
         if (await IsTenantAdminAsync(project.TenantId, targetUserId, ct))
         {
-            return ProjectRole.Admin;
+            return ProjectRoleEnum.Admin;
         }
 
         var normalizedUser = targetUserId.Trim().ToLowerInvariant();
@@ -417,7 +417,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             {
                 await _auditService.LogSecurityEventAsync(
                     "TamperedProjectUserRoleDetected",
-                    AuditSeverity.Critical,
+                    AuditSeverityEnum.Critical,
                     $"ProjectUserRole {projectRoleEntity.Id} for user '{targetUserId}' on project '{projectId}' failed HMAC integrity verification. Access denied.",
                     ct);
                 return null;
@@ -441,7 +441,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                 var integritySecret = _configuration["Security:IntegritySecret"];
                 if (string.IsNullOrWhiteSpace(integritySecret) || programRoleEntity.VerifyIntegritySignature(integritySecret))
                 {
-                    return ProjectRole.ReadOnly;
+                    return ProjectRoleEnum.ReadOnly;
                 }
             }
         }
@@ -449,13 +449,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         return null;
     }
 
-    public async Task<bool> HasProjectClearanceAsync(Guid projectId, ProjectRole minimumTier, string? userId = null, CancellationToken ct = default)
+    public async Task<bool> HasProjectClearanceAsync(Guid projectId, ProjectRoleEnum minimumTier, string? userId = null, CancellationToken ct = default)
     {
         var effectiveRole = await GetEffectiveProjectRoleAsync(projectId, userId, ct);
         return effectiveRole.HasValue && (int)effectiveRole.Value >= (int)minimumTier;
     }
 
-    public async Task EnsureHasProjectClearanceAsync(Guid projectId, ProjectRole minimumTier, string? userId = null, CancellationToken ct = default)
+    public async Task EnsureHasProjectClearanceAsync(Guid projectId, ProjectRoleEnum minimumTier, string? userId = null, CancellationToken ct = default)
     {
         var targetUserId = !string.IsNullOrWhiteSpace(userId)
             ? userId
@@ -471,7 +471,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             await _auditService.LogSecurityEventAsync(
                 "ClearanceDenied",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Project clearance denied. Required: {minimumTier}, Actual: {effectiveRole?.ToString() ?? "None"}. ProjectId: {projectId}",
                 ct);
 
@@ -498,7 +498,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         {
             await _auditService.LogSecurityEventAsync(
                 "TamperedUserEntityDetected",
-                AuditSeverity.Critical,
+                AuditSeverityEnum.Critical,
                 $"UserEntity {user.Id} ({user.Email}) failed HMAC integrity verification. Account disabled.",
                 ct);
             return false;
@@ -522,7 +522,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         var hasTenantAdminRole = await _context.TenantUsers
             .AsNoTracking()
             .AnyAsync(u => ((hasGuid && u.UserEntityId == userGuid) || u.User!.Email.ToLower() == normalizedUser) &&
-                           u.Role == TenantRole.TenantAdmin && u.IsActive && !u.IsDeleted, ct);
+                           u.Role == TenantRoleEnum.TenantAdmin && u.IsActive && !u.IsDeleted, ct);
 
         return hasTenantAdminRole;
     }
@@ -554,7 +554,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ProgramId == programId &&
                                       ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-                                      r.Role == ProgramRole.Admin &&
+                                      r.Role == ProgramRoleEnum.Admin &&
                                       !r.IsDeleted, ct);
 
         if (programRole != null)
@@ -590,7 +590,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ProjectId == projectId &&
                                       ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-                                      r.Role == ProjectRole.Admin &&
+                                      r.Role == ProjectRoleEnum.Admin &&
                                       !r.IsDeleted, ct);
 
         if (projectRole != null)

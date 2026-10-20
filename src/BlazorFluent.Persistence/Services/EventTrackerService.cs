@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Configuration;
+﻿using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Events;
@@ -155,7 +155,7 @@ public class EventTrackerService : IEventTrackerService
                 TriggerSource = resolvedSenderOrigin ?? triggerSource ?? (isSystemOrCron ? "System" : "Manual"),
                 PayloadJson = payloadJson,
                 PublishedAtUtc = DateTime.UtcNow,
-                Status = EventTrackerStatus.Published,
+                Status = EventTrackerStatusEnum.Published,
                 ConsumerCount = 0
             };
 
@@ -207,7 +207,7 @@ public class EventTrackerService : IEventTrackerService
                 ConsumerClass = consumerClass,
                 ConsumerMethod = consumerMethod,
                 StartedAtUtc = DateTime.UtcNow,
-                Status = EventConsumptionStatus.Running,
+                Status = EventConsumptionStatusEnum.Running,
                 AttemptCount = attemptCount
             };
 
@@ -215,9 +215,9 @@ public class EventTrackerService : IEventTrackerService
 
             if (parent != null)
             {
-                if (parent.Status == EventTrackerStatus.Published)
+                if (parent.Status == EventTrackerStatusEnum.Published)
                 {
-                    parent.Status = EventTrackerStatus.InProgress;
+                    parent.Status = EventTrackerStatusEnum.InProgress;
                 }
                 _dbContext.EventPublishTrackers.Update(parent);
             }
@@ -263,7 +263,7 @@ public class EventTrackerService : IEventTrackerService
 
             consumption.CompletedAtUtc = DateTime.UtcNow;
             consumption.DurationMs = durationMs;
-            consumption.Status = isSuccess ? EventConsumptionStatus.Succeeded : EventConsumptionStatus.Failed;
+            consumption.Status = isSuccess ? EventConsumptionStatusEnum.Succeeded : EventConsumptionStatusEnum.Failed;
             consumption.ErrorMessage = errorMessage;
             consumption.ExceptionDetails = exceptionDetails;
 
@@ -278,22 +278,22 @@ public class EventTrackerService : IEventTrackerService
                     .ToListWithAuditedBypassAsync(_auditService, $"Event consumption status aggregation for ParentEvent '{consumption.EventPublishTrackerId}'", cancellationToken);
 
                 var total = siblingConsumptions.Count;
-                var succeededCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? isSuccess : c.Status == EventConsumptionStatus.Succeeded);
-                var failedCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? !isSuccess : c.Status == EventConsumptionStatus.Failed);
+                var succeededCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? isSuccess : c.Status == EventConsumptionStatusEnum.Succeeded);
+                var failedCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? !isSuccess : c.Status == EventConsumptionStatusEnum.Failed);
 
                 consumption.PublishTracker.ConsumerCount = total;
 
                 if (failedCount > 0 && succeededCount > 0)
                 {
-                    consumption.PublishTracker.Status = EventTrackerStatus.PartiallyFailed;
+                    consumption.PublishTracker.Status = EventTrackerStatusEnum.PartiallyFailed;
                 }
                 else if (failedCount > 0)
                 {
-                    consumption.PublishTracker.Status = EventTrackerStatus.Failed;
+                    consumption.PublishTracker.Status = EventTrackerStatusEnum.Failed;
                 }
                 else if (succeededCount == total)
                 {
-                    consumption.PublishTracker.Status = EventTrackerStatus.Completed;
+                    consumption.PublishTracker.Status = EventTrackerStatusEnum.Completed;
                 }
 
                 _dbContext.EventPublishTrackers.Update(consumption.PublishTracker);

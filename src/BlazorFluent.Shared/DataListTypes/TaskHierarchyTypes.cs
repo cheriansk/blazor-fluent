@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Organizational scoping level for a work item or calendar event.
 /// </summary>
-public enum TaskLevel
+public enum TaskLevelEnum
 {
     [Display(Name = "Tenant", Description = "Executive tenant-wide governance item")]
     Tenant = 1,
@@ -23,7 +23,7 @@ public enum TaskLevel
 /// <summary>
 /// Execution and SLA priority rating for a task or work item.
 /// </summary>
-public enum TaskPriority
+public enum TaskPriorityEnum
 {
     [Display(Name = "Low", Description = "Routine task, low business impact")]
     Low = 1,
@@ -41,7 +41,7 @@ public enum TaskPriority
 /// <summary>
 /// Lifecycle status of any work item inheriting from BaseTaskEntity.
 /// </summary>
-public enum TaskStatus
+public enum TaskStatusEnum
 {
     [Display(Name = "Open", Description = "Ready for work, awaiting triage")]
     Open = 1,
@@ -65,7 +65,7 @@ public enum TaskStatus
 /// <summary>
 /// Discriminator classification for work items.
 /// </summary>
-public enum TaskItemType
+public enum TaskItemTypeEnum
 {
     Task = 1,
     SubTask = 2,
@@ -79,7 +79,7 @@ public enum TaskItemType
 /// <summary>
 /// Impact severity rating for formal enterprise risks.
 /// </summary>
-public enum RiskImpact
+public enum RiskImpactEnum
 {
     [Display(Name = "Low", Description = "Minor inconvenience, negligible cost")]
     Low = 1,
@@ -97,7 +97,7 @@ public enum RiskImpact
 /// <summary>
 /// Probability of risk realization.
 /// </summary>
-public enum RiskProbability
+public enum RiskProbabilityEnum
 {
     [Display(Name = "Low", Description = "Unlikely to occur (< 25%)")]
     Low = 1,
@@ -112,7 +112,7 @@ public enum RiskProbability
 /// <summary>
 /// Lifecycle governance status for an enterprise risk.
 /// </summary>
-public enum RiskStatus
+public enum RiskStatusEnum
 {
     [Display(Name = "Identified", Description = "Risk logged, awaiting mitigation planning")]
     Identified = 1,
@@ -133,7 +133,7 @@ public enum RiskStatus
 /// <summary>
 /// Validation status for an enterprise assumption (A of RAID).
 /// </summary>
-public enum AssumptionValidationStatus
+public enum AssumptionValidationStatusEnum
 {
     [Display(Name = "Unconfirmed", Description = "Assumption made, requires validation")]
     Unconfirmed = 1,
@@ -148,7 +148,7 @@ public enum AssumptionValidationStatus
 /// <summary>
 /// Severity rating for an active issue (I of RAID).
 /// </summary>
-public enum IssueSeverity
+public enum IssueSeverityEnum
 {
     [Display(Name = "Low", Description = "Minor issue, workaround readily available")]
     Low = 1,
@@ -167,7 +167,7 @@ public enum IssueSeverity
 /// <summary>
 /// Criticality rating for a blocker dependency contract.
 /// </summary>
-public enum DependencyCriticality
+public enum DependencyCriticalityEnum
 {
     [Display(Name = "Low", Description = "Minor convenience dependency")]
     Low = 1,
@@ -185,7 +185,7 @@ public enum DependencyCriticality
 /// <summary>
 /// Category of a calendar entry.
 /// </summary>
-public enum CalendarEntryType
+public enum CalendarEntryTypeEnum
 {
     [Display(Name = "Planning Session", Description = "Sprint or roadmap planning")]
     Planning = 1,
@@ -233,7 +233,7 @@ public enum CalendarEntryType
 /// <summary>
 /// Status of a calendar entry.
 /// </summary>
-public enum CalendarEntryStatus
+public enum CalendarEntryStatusEnum
 {
     Scheduled = 1,
     Confirmed = 2,
@@ -278,6 +278,6 @@ public class CalendarItemDto
     public string BadgeIcon { get; set; } = "Calendar";
     public Guid? SourceTaskId { get; set; }
     public Guid? ScopeId { get; set; }
-    public TaskLevel Level { get; set; } = TaskLevel.Project;
+    public TaskLevelEnum Level { get; set; } = TaskLevelEnum.Project;
     public bool IsOverdue => Status != "Closed" && Status != "Completed" && EndUtc.Date < DateTime.UtcNow.Date;
 }

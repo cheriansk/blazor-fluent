@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Dtos.Response;
 
@@ -23,7 +23,7 @@ public interface IAuditService
     /// <summary>
     /// Records a security event (login success/failure, permission denied, policy violation).
     /// </summary>
-    Task LogSecurityEventAsync(string action, AuditSeverity severity, string? details = null, CancellationToken cancellationToken = default);
+    Task LogSecurityEventAsync(string action, AuditSeverityEnum severity, string? details = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Records a critical business or user action.
@@ -38,7 +38,7 @@ public interface IAuditService
     Task<string> LogExceptionAsync(
         Exception exception,
         string? contextDescription = null,
-        AuditSeverity severity = AuditSeverity.Error,
+        AuditSeverityEnum severity = AuditSeverityEnum.Error,
         CancellationToken cancellationToken = default);
 
     /// <summary>

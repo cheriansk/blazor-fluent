@@ -1,11 +1,11 @@
-using BlazorFluent.Shared.Attributes;
+﻿using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
-#region ImportFileType Definitions
+#region ImportFileTypeEnum Definitions
 
-public static class ImportFileTypeDefinitions
+public static class ImportFileTypeEnumDefinitions
 {
     public static class Categories
     {
@@ -39,38 +39,38 @@ public static class ImportFileTypeDefinitions
 /// <summary>
 /// Supported import file formats for data ingestion.
 /// </summary>
-public enum ImportFileType
+public enum ImportFileTypeEnum
 {
     [Display(Name = "Project Tasks (Excel .xlsx)", Description = "Project tasks workbook with Tasks and Comments sheets.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Spreadsheet)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
     TaskExcel = 1,
 
     [Display(Name = "Project Tasks (JSON .json)", Description = "Project tasks JSON structured document.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Hierarchical)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
     TaskJson = 2,
 
     [Display(Name = "Project Tasks (XML .xml)", Description = "Project tasks XML document.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Hierarchical)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
     TaskXml = 3,
 
     [Display(Name = "Project Tasks (CSV .csv)", Description = "Project tasks comma-delimited plain text file.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Text)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Text)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
     TaskCsv = 4
 }
 
 #endregion
 
-#region ImportStatus Definitions
+#region ImportStatusEnum Definitions
 
 /// <summary>
 /// Processing lifecycle state of an imported file.
 /// Follows the linear 3-stage pipeline: Uploaded -> Validating -> Staging -> Processing -> Completed.
 /// </summary>
-public enum ImportStatus
+public enum ImportStatusEnum
 {
     [Display(Name = "Uploaded", Description = "Raw file uploaded, encrypted, and stored in blob storage.")]
     Uploaded = 1,

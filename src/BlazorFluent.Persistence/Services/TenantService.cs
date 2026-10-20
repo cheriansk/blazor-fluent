@@ -241,18 +241,18 @@ public class TenantService : ITenantService
             }
         }
 
-        // Automatically determine UserType from configured tenant domains
-        UserType userType;
+        // Automatically determine UserTypeEnum from configured tenant domains
+        UserTypeEnum userType;
         var internalDomains = tenant.GetInternalDomains();
         var externalDomains = tenant.GetExternalDomains();
 
         if (internalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            userType = UserType.CompanyUser;
+            userType = UserTypeEnum.CompanyUser;
         }
         else if (externalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            userType = UserType.ClientUser;
+            userType = UserTypeEnum.ClientUser;
         }
         else
         {
@@ -295,7 +295,7 @@ public class TenantService : ITenantService
             TenantId = normalizedSlug,
             TenantEntityId = tenant.Id,
             UserEntityId = user.Id,
-            Role = TenantRole.TenantMember,
+            Role = TenantRoleEnum.TenantMember,
             IsActive = isActive
         });
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -361,14 +361,14 @@ public class TenantService : ITenantService
         var internalDomains = tenant.GetInternalDomains();
         var externalDomains = tenant.GetExternalDomains();
 
-        UserType userType;
+        UserTypeEnum userType;
         if (internalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            userType = UserType.CompanyUser;
+            userType = UserTypeEnum.CompanyUser;
         }
         else if (externalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            userType = UserType.ClientUser;
+            userType = UserTypeEnum.ClientUser;
         }
         else
         {
@@ -431,7 +431,7 @@ public class TenantService : ITenantService
         {
             await _auditService.LogSecurityEventAsync(
                 "UnauthorizedTenantAdminElevationAttempt",
-                AuditSeverity.Critical,
+                AuditSeverityEnum.Critical,
                 $"User '{_currentUser.Email}' attempted to assign TenantAdmin role in tenant '{tenantSlug}'. Denied.",
                 cancellationToken);
             return Result<TenantUserEntity>.Failure("Access Denied: Only App Administrators can assign, modify, or revoke Tenant Administrator privileges.");
@@ -448,7 +448,7 @@ public class TenantService : ITenantService
         }
 
         var oldRole = tenantUser.Role;
-        tenantUser.Role = isTenantAdmin ? TenantRole.TenantAdmin : TenantRole.TenantMember;
+        tenantUser.Role = isTenantAdmin ? TenantRoleEnum.TenantAdmin : TenantRoleEnum.TenantMember;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -491,7 +491,7 @@ public class TenantService : ITenantService
 
         await _auditService.LogSecurityEventAsync(
             $"Tenant status changed for '{tenant.Name}' to {(isActive ? "Active" : "Inactive")}",
-            isActive ? AuditSeverity.Information : AuditSeverity.Warning,
+            isActive ? AuditSeverityEnum.Information : AuditSeverityEnum.Warning,
             $"TenantId: {tenant.Id}",
             cancellationToken);
 
@@ -559,7 +559,7 @@ public class TenantService : ITenantService
         DateTime? startDate,
         DateTime? endDate,
         string? scopeSummary,
-        ProjectStatus status,
+        ProjectStatusEnum status,
         Guid? programId = null,
         CancellationToken cancellationToken = default)
     {
@@ -612,7 +612,7 @@ public class TenantService : ITenantService
             ScopeSummary = scopeSummary?.Trim(),
             Description = scopeSummary?.Trim(),
             Status = status,
-            IsActive = status == ProjectStatus.Active || status == ProjectStatus.New,
+            IsActive = status == ProjectStatusEnum.Active || status == ProjectStatusEnum.New,
             TenantEntityId = tenant.Id,
             TenantId = normalizedSlug,
             ProgramId = programId
@@ -632,7 +632,7 @@ public class TenantService : ITenantService
         {
             await _auditService.LogSecurityEventAsync(
                 "HostCrossTenantAction",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"[Host Privilege] Host user '{_currentUser.UserId}' created project '{project.Name}' in tenant '{normalizedSlug}'.",
                 cancellationToken);
         }
@@ -649,7 +649,7 @@ public class TenantService : ITenantService
         DateTime? startDate,
         DateTime? endDate,
         string? scopeSummary,
-        ProjectStatus status,
+        ProjectStatusEnum status,
         Guid? programId = null,
         CancellationToken cancellationToken = default)
     {
@@ -690,7 +690,7 @@ public class TenantService : ITenantService
         project.TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null;
         project.ScopeSummary = scopeSummary?.Trim();
         project.Status = status;
-        project.IsActive = status == ProjectStatus.Active || status == ProjectStatus.New;
+        project.IsActive = status == ProjectStatusEnum.Active || status == ProjectStatusEnum.New;
         if (programId.HasValue) project.ProgramId = programId;
         project.ShortCode = trimmedCode;
         project.Location = location?.Trim();
@@ -702,7 +702,7 @@ public class TenantService : ITenantService
             project.Description = scopeSummary.Trim();
         }
         project.Status = status;
-        project.IsActive = status == ProjectStatus.Active || status == ProjectStatus.New;
+        project.IsActive = status == ProjectStatusEnum.Active || status == ProjectStatusEnum.New;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -717,7 +717,7 @@ public class TenantService : ITenantService
         {
             await _auditService.LogSecurityEventAsync(
                 "HostCrossTenantAction",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"[Host Privilege] Host user '{_currentUser.UserId}' updated project '{project.Name}' in tenant '{normalizedSlug}'.",
                 cancellationToken);
         }
@@ -751,7 +751,7 @@ public class TenantService : ITenantService
 
         await _auditService.LogSecurityEventAsync(
             "TenantLicenseKeyRotated",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"License key for tenant '{normalizedSlug}' was rotated by user '{_currentUser.UserId}' ({_currentUser.Email}).",
             cancellationToken);
 

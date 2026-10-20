@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tasks;
+﻿using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -66,7 +66,7 @@ public interface IUserTaskService
         Guid projectId,
         Guid taskId,
         Guid dependsOnTaskId,
-        TaskDependencyType dependencyType = TaskDependencyType.Blocks,
+        TaskDependencyTypeEnum dependencyType = TaskDependencyTypeEnum.Blocks,
         DateTime? resolveByUtc = null,
         string? notes = null,
         CancellationToken ct = default);
@@ -89,7 +89,7 @@ public interface IUserTaskService
         Guid sourceTaskId,
         Guid targetTaskId,
         DateTime resolveDueDate,
-        DependencyCriticality criticality,
+        DependencyCriticalityEnum criticality,
         string impactDetails,
         string? watcherEmails = null,
         CancellationToken ct = default);

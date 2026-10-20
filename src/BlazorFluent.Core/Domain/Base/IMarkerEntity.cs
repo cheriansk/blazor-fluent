@@ -1,4 +1,4 @@
-namespace BlazorFluent.Core.Domain.Base;
+﻿namespace BlazorFluent.Core.Domain.Base;
 
 /// <summary>
 /// ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK MARKER INTERFACES
@@ -48,7 +48,7 @@ public interface ITenantEntity : IMarkerEntity
 /// <summary>
 /// Scopes an entity to a specific project workspace.
 /// ProjectSecurityInterceptor intercepts write operations (Insert/Update/Delete) on this entity,
-/// validating the user's ProjectRole against required write permissions.
+/// validating the user's ProjectRoleEnum against required write permissions.
 /// </summary>
 public interface IProjectScopedEntity : ITenantEntity
 {
