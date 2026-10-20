@@ -276,12 +276,20 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         // 3. Dispatch Unprocessed Staged Chunks to Stateless Cloud API (All-or-Nothing Atomicity)
         var stagedChunks = await _dbContext.StagedImports
             .Where(s => s.TenantId == file.TenantId && s.ImportFileId == file.Id && !s.IsProcessed)
-            .OrderBy(s => s.ChunkIndex)
             .ToListAsync(ct);
+
+        var sheetOrder = config.Sheets
+            .Select((s, idx) => new { s.Name, idx })
+            .ToDictionary(x => x.Name, x => x.idx, StringComparer.OrdinalIgnoreCase);
+
+        var orderedChunks = stagedChunks
+            .OrderBy(s => sheetOrder.TryGetValue(s.SheetName, out var idx) ? idx : int.MaxValue)
+            .ThenBy(s => s.ChunkIndex)
+            .ToList();
 
         var allProcessedRows = new List<ProcessedDomainRowDto>();
 
-        foreach (var chunk in stagedChunks)
+        foreach (var chunk in orderedChunks)
         {
             chunk.Status = "Processing";
             var compressedBytes = PayloadEncryptionUtility.CompressGzip(chunk.PayloadJson);
@@ -292,7 +300,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 FileType: chunk.FileType,
                 ChunkIndex: chunk.ChunkIndex,
                 TotalChunks: chunk.TotalChunks,
-                IsLastChunk: chunk.ChunkIndex == chunk.TotalChunks - 1,
+                IsLastChunk: chunk.ChunkIndex == chunk.TotalChunks,
                 HeaderMap: new Dictionary<string, string>(),
                 Rows: [],
                 CompressedChunkBytes: compressedBytes);
@@ -308,7 +316,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     ?? "Cloud batch processing rejected the staged chunk.";
 
                 // All-or-nothing rollback: mark all chunks for this file as Failed and commit 0 domain rows
-                foreach (var c in stagedChunks)
+                foreach (var c in orderedChunks)
                 {
                     c.IsProcessed = false;
                     c.Status = "Failed";
@@ -404,7 +412,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         }
 
         var nowUtc = DateTime.UtcNow;
-        foreach (var chunk in stagedChunks)
+        foreach (var chunk in orderedChunks)
         {
             chunk.IsProcessed = true;
             chunk.Status = "Processed";
