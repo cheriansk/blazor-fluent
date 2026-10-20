@@ -6,7 +6,6 @@ using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -249,7 +248,7 @@ public class ProgramService : IProgramService
 
         var dependencies = await _context.WorkDependencies
             .AsNoTracking()
-            .Where(d => (projectIds.Contains(d.ProjectId) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value))) && !d.IsDeleted)
+            .Where(d => ((d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value))) && !d.IsDeleted)
             .ToListAsync(ct);
 
         var projectLookup = program.Projects.ToDictionary(pr => pr.Id, pr => pr.Name);
@@ -270,12 +269,21 @@ public class ProgramService : IProgramService
             var sourceTask = tasks.FirstOrDefault(t => t.Id == dep.DependentItemId);
             var targetTask = tasks.FirstOrDefault(t => t.Id == dep.DependsOnItemId);
 
-            var sourceProjectName = sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName)
-                ? sName
-                : (projectLookup.TryGetValue(dep.ProjectId, out var sProj) ? sProj : "External Project");
-            var targetProjectName = dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName)
-                ? tName
-                : "External Project";
+            string sourceProjectName = "External Project";
+            if (sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName))
+            {
+                sourceProjectName = sName;
+            }
+            else if (dep.ProjectId.HasValue && projectLookup.TryGetValue(dep.ProjectId.Value, out var sProj))
+            {
+                sourceProjectName = sProj;
+            }
+
+            string targetProjectName = "External Project";
+            if (dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName))
+            {
+                targetProjectName = tName;
+            }
 
             var isResolved = dep.IsResolved || (targetTask?.Status is TaskStatus.Closed or TaskStatus.Cancelled);
             var isOverdue = !isResolved && dep.DueDate.Date < DateTime.UtcNow.Date;
@@ -283,7 +291,7 @@ public class ProgramService : IProgramService
             crossProjectDeps.Add(new CrossProjectDependencyDto
             {
                 DependencyId = dep.Id,
-                SourceProjectId = dep.ProjectId,
+                SourceProjectId = dep.ProjectId ?? Guid.Empty,
                 SourceProjectName = sourceProjectName,
                 SourceTaskId = dep.DependentItemId ?? Guid.Empty,
                 SourceTaskTitle = sourceTask?.Title ?? dep.Title,

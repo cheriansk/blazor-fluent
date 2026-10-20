@@ -10,7 +10,7 @@ public interface IHierarchyAuthorizationService
 {
     /// <summary>
     /// Checks whether the user is an active Tenant Admin for the specified tenant.
-    /// Root Admins automatically return true.
+    /// Strictly verifies HMAC row integrity.
     /// </summary>
     Task<bool> IsTenantAdminAsync(string tenantId, string userId, CancellationToken ct = default);
 
@@ -78,4 +78,22 @@ public interface IHierarchyAuthorizationService
     /// Verifies that a user account is active, within its valid date range, and holds at least 1 project or program role.
     /// </summary>
     Task<bool> IsUserActiveAndProvisionedAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Checks whether the caller has permission to assign, modify, or revoke Tenant Administrator privileges for a tenant.
+    /// Strictly restricted to App Administrators (Root Admins).
+    /// </summary>
+    Task<bool> CanManageTenantAdminsAsync(string tenantId, string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Checks whether the caller has permission to assign, modify, or revoke Program Administrator privileges for a program.
+    /// Permitted to Tenant Admins of the owning tenant or existing Program Admins of that program.
+    /// </summary>
+    Task<bool> CanManageProgramAdminsAsync(Guid programId, string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Checks whether the caller has permission to assign, modify, or revoke Project Administrator privileges for a project.
+    /// Permitted to Tenant Admins of the owning tenant, Program Admins of the parent program, or existing Project Admins of that project.
+    /// </summary>
+    Task<bool> CanManageProjectAdminsAsync(Guid projectId, string userId, CancellationToken ct = default);
 }

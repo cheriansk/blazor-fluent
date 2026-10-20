@@ -363,11 +363,14 @@
         try
         {
             var tenantId = TenantContext.TenantId ?? "default";
-            _tenantUsers = await DbContext.Users
+            var tenantMembers = await DbContext.TenantUsers
                 .AsNoTracking()
-                .Where(u => (u.DefaultTenantId == tenantId || (tenantId == "default" && string.IsNullOrEmpty(u.DefaultTenantId))) && !u.IsDeleted && u.IsActive)
-                .OrderBy(u => u.FullName)
+                .Include(tu => tu.User)
+                .Where(tu => tu.TenantId == tenantId && tu.IsActive && !tu.IsDeleted && tu.User != null && !tu.User.IsDeleted && tu.User.IsActive)
+                .OrderBy(tu => tu.User!.FullName)
                 .ToListAsync();
+
+            _tenantUsers = tenantMembers.Select(tu => tu.User!).ToList();
         }
         catch
         {
@@ -411,26 +414,21 @@
             else
             {
                 // Fallback demo projects if database has not been seeded yet
-                _projects = new List<ProjectEntity>
-                {
-                    new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Alpha Customer Portal", TenantId = TenantContext.TenantId ?? "" },
-                    new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Beta Analytics Service", TenantId = TenantContext.TenantId ?? "" },
-                    new() { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Gamma Mobile Gateway", TenantId = TenantContext.TenantId ?? "" }
-                };
+                _projects = new List<ProjectEntity>();
             }
 
             _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Notice: Using local project list ({ex.Message}).";
+          /*  _statusMessage = $"Notice: Using local project list ({ex.Message}).";
             _isError = false;
             _projects = new List<ProjectEntity>
             {
                 new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Alpha Customer Portal", TenantId = TenantContext.TenantId ?? "" },
                 new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Beta Analytics Service", TenantId = TenantContext.TenantId ?? "" }
             };
-            _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();
+              _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();*/
         }
     }
 

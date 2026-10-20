@@ -6,7 +6,6 @@ using BlazorFluent.Persistence.Context;
 using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
 
 namespace BlazorFluent.Persistence.Services;
 

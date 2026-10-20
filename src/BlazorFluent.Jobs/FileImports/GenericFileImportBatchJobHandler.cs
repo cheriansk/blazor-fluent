@@ -8,7 +8,6 @@ using BlazorFluent.Core.Events.Imports;
 using BlazorFluent.Core.Security;
 using BlazorFluent.Core.Storage;
 using BlazorFluent.Jobs.Abstractions;
-using BlazorFluent.Jobs.FileImports.Abstractions;
 using BlazorFluent.Jobs.FileImports.Configuration;
 using BlazorFluent.Jobs.FileImports.Staging;
 using BlazorFluent.Persistence.Context;
@@ -278,7 +277,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             .Where(s => s.TenantId == file.TenantId && s.ImportFileId == file.Id && !s.IsProcessed)
             .ToListAsync(ct);
 
-        var sheetOrder = config.Sheets
+        var sheetOrder = (templateConfig.Sheets ?? [])
             .Select((s, idx) => new { s.Name, idx })
             .ToDictionary(x => x.Name, x => x.idx, StringComparer.OrdinalIgnoreCase);
 

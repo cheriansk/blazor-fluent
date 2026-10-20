@@ -25,6 +25,10 @@ public class ProjectUserRoleEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.Property(r => r.Role)
             .IsRequired();
 
+        builder.Property(r => r.RowSignature)
+            .HasMaxLength(128)
+            .IsRequired(false);
+
         // Soft delete
         builder.Property(r => r.IsDeleted).IsRequired().HasDefaultValue(false);
         builder.Property(r => r.DeletedBy).HasMaxLength(256).IsRequired(false);

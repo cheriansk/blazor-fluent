@@ -1381,7 +1381,15 @@ else
     private string _createErrorMessage = string.Empty;
     private string _milestoneErrorMessage = string.Empty;
 
-    private TaskEntity _newTask = new();
+    private TaskEntity _newTask = new()
+    {
+        Level = TaskLevel.Project,
+        Title = string.Empty,
+        Priority = TaskPriority.Medium,
+        Status = TaskStatus.Open,
+        StartDate = DateTime.UtcNow.Date,
+        DueDate = DateTime.UtcNow.Date.AddDays(7)
+    };
     private DateTime? _newTaskDueDate;
     private string _newTaskMilestoneIdString = string.Empty;
 
@@ -1409,7 +1417,14 @@ else
     private string? _newDepNotes;
 
     // Milestone create form
-    private ProjectCalendarEntity _newMilestone = new();
+    private ProjectCalendarEntity _newMilestone = new()
+    {
+        Title = string.Empty,
+        StartDate = DateTime.UtcNow.Date,
+        EndDate = DateTime.UtcNow.Date.AddDays(14),
+        EntryType = CalendarEntryType.Milestone,
+        Status = CalendarEntryStatus.Scheduled
+    };
     private DateTime? _newMilestoneStartDate;
     private DateTime? _newMilestoneEndDate;
     private string _newMilestonePredecessorId = string.Empty;
@@ -1496,7 +1511,7 @@ else
 
             // Load milestones & health
             _milestones = (await MilestoneService.GetMilestonesByProjectAsync(_currentProject.Id)).ToList();
-            _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Name);
+            _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Title);
             _milestonesHealth = (await HealthService.GetProjectMilestonesHealthAsync(_currentProject.Id)).ToList();
             _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
 
@@ -1606,7 +1621,11 @@ else
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
             Priority = TaskPriority.Medium,
-            Status = TaskStatus.Open
+            Level = TaskLevel.Project,
+            Title = string.Empty,
+            Status = TaskStatus.Open,
+            StartDate = DateTime.UtcNow.Date,
+            DueDate = DateTime.UtcNow.Date.AddDays(7)
         };
         _newTaskDueDate = DateTime.UtcNow.Date.AddDays(7);
         _newTaskMilestoneIdString = _selectedMilestoneFilter != "all" && _selectedMilestoneFilter != "adhoc"
@@ -1622,7 +1641,11 @@ else
         _newMilestone = new ProjectCalendarEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
-            OrderIndex = _milestones.Count + 1
+            Title = string.Empty,
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddDays(14),
+            EntryType = CalendarEntryType.Milestone,
+            Status = CalendarEntryStatus.Confirmed
         };
         _newMilestoneStartDate = DateTime.UtcNow.Date;
         _newMilestoneEndDate = DateTime.UtcNow.Date.AddDays(14);
@@ -1713,6 +1736,8 @@ else
                 ParentTaskId = _selectedTask.Id,
                 Title = _newSubTaskTitle.Trim(),
                 Priority = _newSubTaskPriority,
+                Level = TaskLevel.Project,
+                StartDate = DateTime.UtcNow.Date,
                 Status = TaskStatus.Open,
                 DueDate = _newSubTaskDueDate ?? DateTime.UtcNow.Date.AddDays(3),
                 OrderIndex = _selectedTaskSubTasks.Count + 1,
@@ -1883,7 +1908,7 @@ else
 
     private async Task CreateMilestoneAsync()
     {
-        if (string.IsNullOrWhiteSpace(_newMilestone.Name))
+        if (string.IsNullOrWhiteSpace(_newMilestone.Title))
         {
             _milestoneErrorMessage = "Milestone name is required.";
             return;
@@ -1909,6 +1934,7 @@ else
             _newMilestone.StartDate = _newMilestoneStartDate.Value;
             _newMilestone.EndDate = _newMilestoneEndDate.Value;
             _newMilestone.Status = CalendarEntryStatus.Confirmed;
+            _newMilestone.EntryType = CalendarEntryType.Milestone;
 
             var res = await MilestoneService.CreateMilestoneAsync(_newMilestone);
             if (res.IsSuccess)
@@ -1964,7 +1990,7 @@ else
         _tasks = freshTasks.ToList();
 
         _milestones = (await MilestoneService.GetMilestonesByProjectAsync(_currentProject.Id)).ToList();
-        _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Name);
+        _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Title);
         await RefreshHealthKpisAsync();
 
         await RefreshActiveBlockersAsync();

@@ -24,6 +24,7 @@ public class WorkDependencyEntityValidatorTests
             DependsOnItemId = Guid.CreateVersion7(),
             Title = "Backend API Blocker",
             Description = "Waiting on backend API endpoints to deploy before UI integration can proceed.",
+            Priority = TaskPriority.High,
             Criticality = DependencyCriticality.High,
             Status = TaskStatus.Open,
             StartDate = DateTime.UtcNow,
@@ -54,6 +55,7 @@ public class WorkDependencyEntityValidatorTests
             DependsOnItemId = sameItemId, // Cannot depend on self
             Title = "Self blocker",
             Description = "Impact description",
+            Priority = TaskPriority.Urgent,
             Criticality = DependencyCriticality.Critical,
             Status = TaskStatus.Open,
             StartDate = DateTime.UtcNow,
@@ -81,6 +83,7 @@ public class WorkDependencyEntityValidatorTests
             DependsOnItemId = Guid.CreateVersion7(),
             Title = "", // Missing
             Description = "Some details",
+            Priority = TaskPriority.Medium,
             Criticality = DependencyCriticality.Medium,
             Status = TaskStatus.Open,
             StartDate = DateTime.UtcNow,

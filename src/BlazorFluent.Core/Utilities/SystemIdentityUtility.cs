@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -82,4 +82,18 @@ public static class SystemIdentityUtility
     /// </summary>
     public static string FormatInternalDaemonEmail(string daemonName) =>
         $"system+{daemonName.ToLowerInvariant()}@{SystemTenantSlug}.internal";
+
+    /// <summary>
+    /// Determines whether a given user ID, email, or principal identifier represents an internal system daemon.
+    /// Recognizes standard daemon formats (e.g. "daemon:*", "system+*@*.internal", "*.internal").
+    /// </summary>
+    public static bool IsSystemDaemon(string? identity)
+    {
+        if (string.IsNullOrWhiteSpace(identity)) return false;
+        var trimmed = identity.Trim();
+        return trimmed.StartsWith("daemon:", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.StartsWith("system+", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.EndsWith($"@{SystemTenantSlug}.internal", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.EndsWith(".internal", StringComparison.OrdinalIgnoreCase);
+    }
 }

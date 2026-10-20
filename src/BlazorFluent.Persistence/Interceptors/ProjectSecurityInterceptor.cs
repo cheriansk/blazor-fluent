@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using BlazorFluent.Core.Utilities;
 
 namespace BlazorFluent.Persistence.Interceptors;
 
@@ -57,9 +58,10 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
     {
         if (context is null) return;
 
-        // Root Admin and verified internal background system daemons bypass per-project user gates
-        if (_currentUser.IsRootAdmin) return;
-        if (SystemIdentityUtility.IsSystemDaemon(_currentUser.UserId) ||
+        // Verified internal background system daemons bypass per-project user gates.
+        // App Admins (Root Admins) are subject to project zero-trust boundaries and cannot write business data unless granted a project role.
+        if (_currentUser.IsSystemDaemon ||
+            SystemIdentityUtility.IsSystemDaemon(_currentUser.UserId) ||
             SystemIdentityUtility.IsSystemDaemon(_currentUser.Email))
         {
             return;

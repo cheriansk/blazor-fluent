@@ -1,4 +1,3 @@
-using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.Contracts.Engine.Client;
 using BlazorFluent.Shared.Contracts.Engine.Transforms;
@@ -308,10 +307,11 @@ public partial class UserTaskService : IUserTaskService
                     {
                         var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
                         foreach (var recipient in recipients)
-                    {
-                        await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
-                            $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
-                            NotificationSeverity.Warning, sourceTask.ProjectId, ct);
+                        {
+                            await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
+                                $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
+                                NotificationSeverity.Warning, sourceTask.ProjectId, ct);
+                        }
                     }
                 }
             }
@@ -824,6 +824,14 @@ public partial class UserTaskService : IUserTaskService
                 Description = string.IsNullOrWhiteSpace(impactDetails)
                     ? $"Dependency contract. Prerequisite: '{targetTask.Title}'. Dependent: '{sourceTask.Title}'."
                     : impactDetails,
+                Priority = criticality switch
+                {
+                    DependencyCriticality.Low => TaskPriority.Low,
+                    DependencyCriticality.Medium => TaskPriority.Medium,
+                    DependencyCriticality.High => TaskPriority.High,
+                    DependencyCriticality.Critical => TaskPriority.Urgent,
+                    _ => TaskPriority.Medium
+                },
                 Criticality = criticality,
                 Status = targetTask.IsClosed ? TaskStatus.Closed : TaskStatus.Open,
                 StartDate = DateTime.UtcNow,

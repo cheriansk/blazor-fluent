@@ -143,6 +143,48 @@ public static class InitialDatabaseSeeder
                     logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for '{Email}'.", user.Email);
                 }
             }
+
+            var devTenantUsers = await dbContext.TenantUsers
+                .Where(u => !u.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var tu in devTenantUsers)
+            {
+                if (!tu.VerifyIntegritySignature(integrityKey))
+                {
+                    tu.RowSignature = tu.ComputeIntegritySignature(integrityKey);
+                    changesMade = true;
+                    logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for TenantUser '{Id}'.", tu.Id);
+                }
+            }
+
+            var devProgRoles = await dbContext.ProgramUserRoles
+                .Where(r => !r.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var pr in devProgRoles)
+            {
+                if (!pr.VerifyIntegritySignature(integrityKey))
+                {
+                    pr.RowSignature = pr.ComputeIntegritySignature(integrityKey);
+                    changesMade = true;
+                    logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for ProgramUserRole '{Id}'.", pr.Id);
+                }
+            }
+
+            var devProjRoles = await dbContext.ProjectUserRoles
+                .Where(r => !r.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var pjr in devProjRoles)
+            {
+                if (!pjr.VerifyIntegritySignature(integrityKey))
+                {
+                    pjr.RowSignature = pjr.ComputeIntegritySignature(integrityKey);
+                    changesMade = true;
+                    logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for ProjectUserRole '{Id}'.", pjr.Id);
+                }
+            }
         }
 
         if (changesMade)

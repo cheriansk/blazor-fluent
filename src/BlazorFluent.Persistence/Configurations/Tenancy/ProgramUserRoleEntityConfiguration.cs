@@ -26,6 +26,10 @@ public class ProgramUserRoleEntityConfiguration : IEntityTypeConfiguration<Progr
             .IsRequired()
             .HasConversion<int>();
 
+        builder.Property(r => r.RowSignature)
+            .HasMaxLength(128)
+            .IsRequired(false);
+
         builder.HasIndex(r => r.TenantId);
         builder.HasIndex(r => new { r.TenantId, r.ProgramId, r.UserEntityId }).IsUnique().HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(r => new { r.ProgramId, r.Role });

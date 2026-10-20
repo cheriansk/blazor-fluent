@@ -3,7 +3,6 @@ using BlazorFluent.Core.Domain.Tasks.Validators;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
-using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
 
 namespace BlazorFluent.Core.Tests.Tasks;
 

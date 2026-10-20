@@ -1622,7 +1622,8 @@
                 Priority = TaskPriority.High,
                 StartDate = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddDays(14),
-                CreatedBy = CurrentUser.Email ?? "system"
+                CreatedBy = CurrentUser.Email ?? "system",
+                Status = TaskStatus.Pending
             };
             DbContext.Risks.Add(risk);
             await DbContext.SaveChangesAsync();

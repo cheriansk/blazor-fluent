@@ -3,7 +3,6 @@ using BlazorFluent.Core.Domain.Tasks.Validators;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
-using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
 
 namespace BlazorFluent.Core.Tests.Tasks;
 
@@ -120,7 +119,7 @@ public class TaskEntityValidatorTests
         var task = CreateBaseTask();
         task.Level = TaskLevel.Tenant;
         task.ProgramId = null;
-        task.ProjectId = null;
+        task.ProjectId = Guid.Empty;
         task.UserId = null;
 
         var result = _validator.Validate(task);
@@ -151,7 +150,7 @@ public class TaskEntityValidatorTests
         var task = CreateBaseTask();
         task.Level = TaskLevel.Program;
         task.ProgramId = Guid.CreateVersion7();
-        task.ProjectId = null;
+        task.ProjectId = Guid.Empty;
         task.UserId = null;
 
         var result = _validator.Validate(task);
@@ -165,7 +164,7 @@ public class TaskEntityValidatorTests
         var task = CreateBaseTask();
         task.Level = TaskLevel.Program;
         task.ProgramId = null;
-        task.ProjectId = null;
+        task.ProjectId = Guid.Empty;
 
         var result = _validator.Validate(task);
 
@@ -194,7 +193,7 @@ public class TaskEntityValidatorTests
     {
         var task = CreateBaseTask();
         task.Level = TaskLevel.Project;
-        task.ProjectId = null;
+        task.ProjectId = Guid.Empty;
         task.ProgramId = null;
 
         var result = _validator.Validate(task);
@@ -226,7 +225,7 @@ public class TaskEntityValidatorTests
         task.Level = TaskLevel.User;
         task.UserId = "user-12345";
         task.ProgramId = null;
-        task.ProjectId = null;
+        task.ProjectId = Guid.Empty;
 
         var result = _validator.Validate(task);
 
@@ -240,7 +239,7 @@ public class TaskEntityValidatorTests
         task.Level = TaskLevel.User;
         task.UserId = null;
         task.ProgramId = null;
-        task.ProjectId = null;
+        task.ProjectId = Guid.Empty;
 
         var result = _validator.Validate(task);
 

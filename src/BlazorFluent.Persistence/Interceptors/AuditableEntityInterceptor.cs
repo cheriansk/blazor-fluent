@@ -11,12 +11,14 @@ using BlazorFluent.Persistence.Context;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Persistence.Interceptors;
 
 public class AuditableEntityInterceptor : SaveChangesInterceptor
 {
+    private readonly IConfiguration? _configuration;
     private readonly ILogger<AuditableEntityInterceptor> _logger;
 
     public const string CreatedProperty = "Created";
@@ -28,8 +30,11 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     private static readonly string[] SensitiveKeywords =
         ["password", "secret", "token", "apikey", "key", "connectionstring", "securitystamp"];
 
-    public AuditableEntityInterceptor(ILogger<AuditableEntityInterceptor>? logger = null)
+    public AuditableEntityInterceptor(
+        IConfiguration? configuration = null,
+        ILogger<AuditableEntityInterceptor>? logger = null)
     {
+        _configuration = configuration;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<AuditableEntityInterceptor>.Instance;
     }
 
@@ -81,13 +86,13 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             : baseUserId;
 
         // 1. Stamp Level 1 audit properties & enforce tenant isolation
-        UpdateAuditFields(context, now, currentUserId, tenantContext);
+        UpdateAuditFields(context, now, currentUserId, tenantContext, currentUser);
 
         // 2. Capture Level 2 property diffs and append AuditRecordEntity to the same transaction
         CaptureEntityDiffs(context, now, currentUserId, currentUser, tenantContext);
     }
 
-    private void UpdateAuditFields(DbContext context, DateTime now, string currentUserId, ITenantContext tenantContext)
+    private void UpdateAuditFields(DbContext context, DateTime now, string currentUserId, ITenantContext tenantContext, ICurrentUser currentUser)
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
@@ -111,6 +116,28 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             if (entry.Entity is DataProtectionKey || entry.Entity is AuditRecordEntity)
             {
                 continue;
+            }
+
+            // ─── 0b. TENANT ADMIN SEPARATION OF DUTIES GUARD ─────────────────────────
+            // Only App Administrators (Root Admins) can assign, modify, or revoke TenantAdmin role
+            if (entry.Entity is TenantUserEntity tu && entry.State is EntityState.Added or EntityState.Modified)
+            {
+                if (tu.Role == TenantRole.TenantAdmin && !currentUser.IsRootAdmin && !currentUser.IsSystemDaemon && !SystemIdentityUtility.IsSystemDaemon(currentUser.UserId))
+                {
+                    throw new InvalidOperationException(
+                        $"Zero-Trust Security Violation: User '{currentUser.Email}' attempted to assign or update the TenantAdmin role on TenantUserEntity {tu.Id}. Only App Administrators (Root Admins) can assign Tenant Admin privileges.");
+                }
+            }
+
+            // ─── 0c. CRYPTOGRAPHIC HMAC ROW-INTEGRITY SEALING ────────────────────────
+            // Automatically recompute HMAC-SHA256 signature for all IHmacSignableEntity records on insert or update
+            if (entry.Entity is IHmacSignableEntity hmacSignable && entry.State is EntityState.Added or EntityState.Modified)
+            {
+                var secret = _configuration?["Security:IntegritySecret"];
+                if (!string.IsNullOrWhiteSpace(secret) && !secret.StartsWith("__SET_VIA_"))
+                {
+                    hmacSignable.RowSignature = hmacSignable.ComputeIntegritySignature(secret);
+                }
             }
 
             // ─── 1. AUTOMATIC SOFT-DELETE CONVERSION ─────────────────────────────────

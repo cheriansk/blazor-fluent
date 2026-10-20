@@ -369,7 +369,6 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             archive?.Dispose();
         }
     }
-    }
 
     private static bool IsExcelFormat(ImportFileEntity file, FileTemplateConfig config)
     {

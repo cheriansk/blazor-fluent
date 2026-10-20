@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
+using System.Text;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
@@ -11,8 +13,9 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Implements <see cref="ISoftDeletableEntity"/> so revoked roles preserve historical audit trails.
 /// Enforces 3NF relational normalization by persisting only <see cref="ProjectId"/> and <see cref="UserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
+/// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
-public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity
+public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IHmacSignableEntity
 {
     /// <summary>
     /// ID of the project to which this role assignment belongs.
@@ -28,6 +31,11 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     /// The assigned project role (ReadOnly, QA, Dev, Admin).
     /// </summary>
     public required ProjectRole Role { get; set; }
+
+    /// <summary>
+    /// Cryptographic HMAC-SHA256 signature sealing project role state against direct database tampering.
+    /// </summary>
+    public string? RowSignature { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
@@ -50,4 +58,27 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
 
     [NotMapped]
     public UserType UserType => User?.UserType ?? UserType.ClientUser;
+
+    /// <summary>
+    /// Computes the HMAC-SHA256 signature for this project role's security properties.
+    /// </summary>
+    public string ComputeIntegritySignature(string secretKey)
+    {
+        var payload = $"{Id}:{TenantId}:{ProjectId}:{UserEntityId}:{(int)Role}";
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+        return Convert.ToBase64String(hash);
+    }
+
+    /// <summary>
+    /// Validates whether the row's stored signature matches the expected HMAC in constant time.
+    /// </summary>
+    public bool VerifyIntegritySignature(string secretKey)
+    {
+        if (string.IsNullOrWhiteSpace(RowSignature)) return false;
+        var expected = ComputeIntegritySignature(secretKey);
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(RowSignature),
+            Encoding.UTF8.GetBytes(expected));
+    }
 }

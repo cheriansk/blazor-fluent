@@ -29,6 +29,10 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
         builder.Property(u => u.IsActive)
             .IsRequired();
 
+        builder.Property(u => u.RowSignature)
+            .HasMaxLength(128)
+            .IsRequired(false);
+
         builder.HasIndex(u => u.TenantId);
         builder.HasIndex(u => new { u.TenantId, u.UserEntityId }).IsUnique().HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(u => new { u.TenantId, u.Role });

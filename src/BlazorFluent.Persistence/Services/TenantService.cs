@@ -287,13 +287,15 @@ public class TenantService : ITenantService
         user.RowSignature = user.ComputeIntegritySignature(secretKey);
 
         _dbContext.Users.Add(user);
+        // Separation of duties: Tenant Admins add users as TenantMember.
+        // TenantAdmin role can strictly and exclusively be assigned by App Administrators.
         _dbContext.TenantUsers.Add(new TenantUserEntity
         {
             Id = Guid.CreateVersion7(),
             TenantId = normalizedSlug,
             TenantEntityId = tenant.Id,
             UserEntityId = user.Id,
-            Role = userType == UserType.CompanyUser ? TenantRole.TenantAdmin : TenantRole.TenantMember,
+            Role = TenantRole.TenantMember,
             IsActive = isActive
         });
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -397,6 +399,15 @@ public class TenantService : ITenantService
         }
         user.RowSignature = user.ComputeIntegritySignature(secretKey);
 
+        // Synchronize active status on TenantUserEntity for immediate fail-closed cascade
+        var tenantUser = await _dbContext.TenantUsers
+            .AsTracking()
+            .FirstOrDefaultAsync(tu => tu.TenantId == normalizedSlug && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
+        if (tenantUser != null)
+        {
+            tenantUser.IsActive = isActive;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Updated user '{Email}' ({UserType}, Active={Active}) in tenant '{TenantSlug}'", user.Email, user.UserType, user.IsActive, tenantSlug);
@@ -407,6 +418,47 @@ public class TenantService : ITenantService
             cancellationToken);
 
         return Result<UserEntity>.Success(user);
+    }
+
+    public async Task<Result<TenantUserEntity>> AssignTenantAdminRoleAsync(
+        string tenantSlug,
+        Guid userId,
+        bool isTenantAdmin,
+        CancellationToken cancellationToken = default)
+    {
+        // Separation of duties: strictly App Administrators (Root Admins) can assign/modify/revoke TenantAdmin role
+        if (!_currentUser.IsRootAdmin)
+        {
+            await _auditService.LogSecurityEventAsync(
+                "UnauthorizedTenantAdminElevationAttempt",
+                AuditSeverity.Critical,
+                $"User '{_currentUser.Email}' attempted to assign TenantAdmin role in tenant '{tenantSlug}'. Denied.",
+                cancellationToken);
+            return Result<TenantUserEntity>.Failure("Access Denied: Only App Administrators can assign, modify, or revoke Tenant Administrator privileges.");
+        }
+
+        var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+        var tenantUser = await _dbContext.TenantUsers
+            .AsTracking()
+            .FirstOrDefaultAsync(tu => tu.TenantId == normalizedSlug && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
+
+        if (tenantUser == null)
+        {
+            return Result<TenantUserEntity>.Failure($"Tenant user record not found for user {userId} in tenant '{tenantSlug}'.");
+        }
+
+        var oldRole = tenantUser.Role;
+        tenantUser.Role = isTenantAdmin ? TenantRole.TenantAdmin : TenantRole.TenantMember;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var action = isTenantAdmin ? "Appointed Tenant Administrator" : "Revoked Tenant Administrator";
+        await _auditService.LogUserActivityAsync(
+            $"{action} for user '{tenantUser.UserEmail}' ({userId})",
+            $"Tenant: {tenantSlug}, PreviousRole: {oldRole}, NewRole: {tenantUser.Role}, AppAdmin: {_currentUser.Email}",
+            cancellationToken);
+
+        return Result<TenantUserEntity>.Success(tenantUser);
     }
 
     public async Task<Result> UpdateTenantStatusAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default)

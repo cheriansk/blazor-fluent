@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Utilities;
 using FluentAssertions;
@@ -104,5 +104,21 @@ public class SystemIdentityUtilityTests
         user.UserName.Should().Be("NotificationEngine");
         user.Email.Should().Be("system+notificationengine@default.internal");
         user.IsAuthenticated.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("daemon:JobEngine", true)]
+    [InlineData("daemon:AuditTrailLogger", true)]
+    [InlineData("system+audit@default.internal", true)]
+    [InlineData("worker@subsystem.internal", true)]
+    [InlineData("admin@company.com", false)]
+    [InlineData("usr_12345", false)]
+    [InlineData("", false)]
+    [InlineData("   ", false)]
+    [InlineData(null, false)]
+    public void IsSystemDaemon_ValidatesIdentityFormat(string? identity, bool expectedResult)
+    {
+        var result = SystemIdentityUtility.IsSystemDaemon(identity);
+        result.Should().Be(expectedResult);
     }
 }
