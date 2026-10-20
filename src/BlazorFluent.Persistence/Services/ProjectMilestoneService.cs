@@ -16,17 +16,20 @@ public class ProjectMilestoneService : IProjectMilestoneService
     private readonly AppDbContext _context;
     private readonly ITenantContext _tenantContext;
     private readonly IProjectAuthorizationService _projectAuth;
+    private readonly IAuditService _auditService;
     private readonly ILogger<ProjectMilestoneService> _logger;
 
     public ProjectMilestoneService(
         AppDbContext context,
         ITenantContext tenantContext,
         IProjectAuthorizationService projectAuth,
+        IAuditService auditService,
         ILogger<ProjectMilestoneService> logger)
     {
         _context = context;
         _tenantContext = tenantContext;
         _projectAuth = projectAuth;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -196,6 +199,15 @@ public class ProjectMilestoneService : IProjectMilestoneService
             _context.Milestones.Remove(milestone);
 
             await _context.SaveChangesAsync(ct);
+
+            if (dependencies.Count > 0)
+            {
+                await _auditService.LogUserActivityAsync(
+                    $"Cascaded removal of {dependencies.Count} milestone dependency link(s) due to deletion of milestone '{milestone.Name}'",
+                    $"ProjectId: {milestone.ProjectId}, MilestoneId: {milestoneId}, DependencyIds: [{string.Join(", ", dependencies.Select(d => d.Id))}]",
+                    ct);
+            }
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -291,6 +303,12 @@ public class ProjectMilestoneService : IProjectMilestoneService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Added milestone dependency: Milestone {MilestoneId} depends on {DependsOnId}", milestoneId, dependsOnMilestoneId);
+
+            await _auditService.LogUserActivityAsync(
+                $"Added milestone predecessor dependency: '{milestone.Name}' depends on '{predecessor.Name}'",
+                $"ProjectId: {milestone.ProjectId}, MilestoneId: {milestoneId}, DependsOnMilestoneId: {dependsOnMilestoneId}, Notes: {notes}",
+                ct);
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -318,6 +336,12 @@ public class ProjectMilestoneService : IProjectMilestoneService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Removed milestone dependency {DependencyId}", dependencyId);
+
+            await _auditService.LogUserActivityAsync(
+                $"Removed milestone dependency link between Milestone {link.MilestoneId} and Predecessor {link.DependsOnMilestoneId}",
+                $"ProjectId: {link.ProjectId}, DependencyId: {dependencyId}, MilestoneId: {link.MilestoneId}, DependsOnMilestoneId: {link.DependsOnMilestoneId}",
+                ct);
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)

@@ -21,6 +21,7 @@ public partial class UserTaskService : IUserTaskService
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
     private readonly IProjectAuthorizationService _projectAuth;
+    private readonly IAuditService _auditService;
     private readonly ILogger<UserTaskService> _logger;
     private readonly IEngineClient? _engineClient;
 
@@ -30,6 +31,7 @@ public partial class UserTaskService : IUserTaskService
         ITenantContext tenantContext,
         INotifyService notificationService,
         IProjectAuthorizationService projectAuth,
+        IAuditService auditService,
         ILogger<UserTaskService> logger,
         IEngineClient? engineClient = null)
     {
@@ -38,6 +40,7 @@ public partial class UserTaskService : IUserTaskService
         _tenantContext = tenantContext;
         _notificationService = notificationService;
         _projectAuth = projectAuth;
+        _auditService = auditService;
         _logger = logger;
         _engineClient = engineClient;
     }
@@ -498,6 +501,12 @@ public partial class UserTaskService : IUserTaskService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Task dependency created: Task {TaskId} -> {DependsOnId} ({Type})", taskId, dependsOnTaskId, dependencyType);
+
+            await _auditService.LogUserActivityAsync(
+                $"Established task dependency: Task '{task.Title}' {dependencyType} Prerequisite '{dependsOnTask.Title}'",
+                $"ProjectId: {projectId}, TaskId: {taskId}, DependsOnTaskId: {dependsOnTaskId}, Type: {dependencyType}, ResolveBy: {resolveByUtc:yyyy-MM-dd}",
+                ct);
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -525,6 +534,12 @@ public partial class UserTaskService : IUserTaskService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Task dependency {DependencyId} removed in project {ProjectId}", dependencyId, projectId);
+
+            await _auditService.LogUserActivityAsync(
+                $"Removed task dependency link ({link.DependencyType}) between Task {link.TaskId} and Prerequisite {link.DependsOnTaskId}",
+                $"ProjectId: {projectId}, DependencyId: {dependencyId}, TaskId: {link.TaskId}, DependsOnTaskId: {link.DependsOnTaskId}, Type: {link.DependencyType}",
+                ct);
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)

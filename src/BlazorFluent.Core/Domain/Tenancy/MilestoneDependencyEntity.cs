@@ -3,8 +3,12 @@ using BlazorFluent.Core.Domain.Base;
 namespace BlazorFluent.Core.Domain.Tenancy;
 
 /// <summary>
-/// Predecessor relationship between project milestones.
+/// Predecessor scheduling relationship (Gantt / Critical Path) between project milestones.
 /// Example: 'UAT' depends on 'Build' and 'QA' completing.
+/// <para>
+/// <b>Note:</b> This is a pure scheduling sequence edge, NOT a RAID log item.
+/// The "D" in RAID is represented by <see cref="BlazorFluent.Core.Domain.Tasks.BlockerDependencyEntity"/> (an accountable work item subtype of BaseTaskEntity).
+/// </para>
 /// </summary>
 public class MilestoneDependencyEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity
 {

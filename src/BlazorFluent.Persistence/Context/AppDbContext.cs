@@ -78,7 +78,6 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<IssueEntity> Issues => Set<IssueEntity>();
     public DbSet<BlockerDependencyEntity> BlockerDependencies => Set<BlockerDependencyEntity>();
     public DbSet<TaskLinkEntity> TaskLinks => Set<TaskLinkEntity>();
-    public DbSet<WorkItemCommentEntity> WorkItemComments => Set<WorkItemCommentEntity>();
     public DbSet<ProgramCalendarEntity> ProgramCalendars => Set<ProgramCalendarEntity>();
     public DbSet<ProjectCalendarEntity> ProjectCalendars => Set<ProjectCalendarEntity>();
     public DbSet<UserCalendarEntity> UserCalendars => Set<UserCalendarEntity>();
