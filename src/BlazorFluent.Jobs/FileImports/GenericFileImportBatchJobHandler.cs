@@ -24,12 +24,11 @@ namespace BlazorFluent.Jobs.FileImports;
 
 /// <summary>
 /// Generic batch worker handling FileImportBatchJobEvent.
-/// Supports the Hybrid Canonical Batch Processing Pipeline:
+/// Executes the Hybrid Canonical Batch Processing Pipeline:
 /// 1. Orders files by manifest DependsOn dependencies.
 /// 2. Stages validated rows into the universal staging.StagedImports table using ILocalBatchStagerResolver.
 /// 3. Compresses staged JSON chunks with Gzip and dispatches them to the stateless Cloud API (/api/v1/transforms/process-batch).
 /// 4. Enforces all-or-nothing atomicity and commits processed domain rows (including optional byte[] EncryptedPayloadBytes) to PostgreSQL.
-/// Falls back to legacy IFileStager / IFileProcessor if no JSON template configuration is registered for a file type.
 /// </summary>
 public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatchJobEvent>
 {
@@ -38,8 +37,6 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
     private readonly ITenantBlobStorageService _blobStorageService;
     private readonly INotifyService _notificationService;
     private readonly IJobEventPublisher _eventPublisher;
-    private readonly IEnumerable<IFileStager> _stagers;
-    private readonly IEnumerable<IFileProcessor> _processors;
     private readonly IFileTemplateConfigRepository? _templateRepository;
     private readonly ILocalBatchStagerResolver? _batchStagerResolver;
     private readonly IEngineClient? _engineClient;
@@ -51,8 +48,6 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         ITenantBlobStorageService blobStorageService,
         INotifyService notificationService,
         IJobEventPublisher eventPublisher,
-        IEnumerable<IFileStager> stagers,
-        IEnumerable<IFileProcessor> processors,
         ILogger<GenericFileImportBatchJobHandler> logger,
         IFileTemplateConfigRepository? templateRepository = null,
         ILocalBatchStagerResolver? batchStagerResolver = null,
@@ -63,8 +58,6 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         _blobStorageService = blobStorageService;
         _notificationService = notificationService;
         _eventPublisher = eventPublisher;
-        _stagers = stagers;
-        _processors = processors;
         _logger = logger;
         _templateRepository = templateRepository;
         _batchStagerResolver = batchStagerResolver;
@@ -98,6 +91,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             {
                 _logger.LogCritical("Zero-Trust Security Violation: ImportFile {FileId} belongs to tenant '{FileTenantId}' but batch job was triggered for tenant '{JobTenantId}'. Aborting batch execution immediately.",
                     file.Id, file.TenantId, jobEvent.TenantId);
+
                 throw new InvalidOperationException($"Zero-Trust Security Violation: Cross-tenant data access detected for file {file.Id}. Execution halted.");
             }
 
@@ -168,19 +162,9 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         try
         {
             var templateConfig = _templateRepository?.GetTemplate(file.FileType.ToString());
-            if (templateConfig != null && _batchStagerResolver != null && _engineClient != null)
+            if (templateConfig == null || _batchStagerResolver == null || _engineClient == null)
             {
-                await ProcessHybridCanonicalPipelineAsync(file, templateConfig, jobEvent, ct);
-                return;
-            }
-
-            // ─── LEGACY / FALLBACK STAGER & PROCESSOR PATH ────────────────────────
-            var stager = _stagers.FirstOrDefault(s => s.CanHandle(file.FileType));
-            var processor = _processors.FirstOrDefault(p => p.CanHandle(file.FileType));
-
-            if (stager == null || processor == null)
-            {
-                var errorMsg = $"No handler registered for file type '{file.FileType}'. Staging or Processor missing.";
+                var errorMsg = $"No declarative FileTemplateConfig or Canonical Batch Stager registered for file type '{file.FileType}'.";
                 _logger.LogError(errorMsg);
 
                 file.Status = ImportStatus.ValidationFailed;
@@ -197,100 +181,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 return;
             }
 
-            using var encryptedStream = await _blobStorageService.DownloadBlobAsync(file.BlobUri, ct);
-            using var decryptedStream = await _encryptionService.DecryptStreamAsync(encryptedStream, file.TenantId, ct);
-
-            _logger.LogInformation("Executing Validate & Stage for '{FileName}'", file.OriginalFileName);
-            var stageResult = await stager.ValidateAndStageAsync(file, decryptedStream, ct);
-
-            if (!stageResult.IsSuccess)
-            {
-                _logger.LogWarning("Validate & Stage failed for '{FileName}': {Error}", file.OriginalFileName, stageResult.Error);
-
-                await _eventPublisher.PublishAsync(new FileStagingCompletedJobEvent(
-                    file.Id,
-                    IsSuccess: false,
-                    StagedCount: 0,
-                    ErrorMessage: stageResult.Error,
-                    TenantId: file.TenantId,
-                    CorrelationId: jobEvent.CorrelationId,
-                    SenderOrigin: jobEvent.SenderOrigin,
-                    SenderUserId: jobEvent.SenderUserId,
-                    SenderUserEmail: jobEvent.SenderUserEmail,
-                    ParentExecutionId: jobEvent.EventId), ct);
-
-                await SendNotificationAsync(
-                    file,
-                    title: "File Validation / Staging Failed",
-                    message: $"File '{file.OriginalFileName}' failed: {stageResult.Error}",
-                    severity: NotificationSeverity.Warning,
-                    ct);
-
-                return;
-            }
-
-            await _eventPublisher.PublishAsync(new FileStagingCompletedJobEvent(
-                file.Id,
-                IsSuccess: true,
-                StagedCount: stageResult.Value,
-                ErrorMessage: null,
-                TenantId: file.TenantId,
-                CorrelationId: jobEvent.CorrelationId,
-                SenderOrigin: jobEvent.SenderOrigin,
-                SenderUserId: jobEvent.SenderUserId,
-                SenderUserEmail: jobEvent.SenderUserEmail,
-                ParentExecutionId: jobEvent.EventId), ct);
-
-            _logger.LogInformation("Executing Domain Promotion (Process) for '{FileName}'", file.OriginalFileName);
-            var processResult = await processor.ProcessAsync(file, ct);
-
-            if (!processResult.IsSuccess)
-            {
-                _logger.LogError("Domain promotion failed for '{FileName}': {Error}", file.OriginalFileName, processResult.Error);
-
-                await _eventPublisher.PublishAsync(new FileProcessingCompletedJobEvent(
-                    file.Id,
-                    IsSuccess: false,
-                    ProcessedCount: 0,
-                    ErrorMessage: processResult.Error,
-                    TenantId: file.TenantId,
-                    CorrelationId: jobEvent.CorrelationId,
-                    SenderOrigin: jobEvent.SenderOrigin,
-                    SenderUserId: jobEvent.SenderUserId,
-                    SenderUserEmail: jobEvent.SenderUserEmail,
-                    ParentExecutionId: jobEvent.EventId), ct);
-
-                await SendNotificationAsync(
-                    file,
-                    title: "Domain Processing Failed",
-                    message: $"File '{file.OriginalFileName}' failed during live domain commit: {processResult.Error}",
-                    severity: NotificationSeverity.Error,
-                    ct);
-
-                return;
-            }
-
-            await _eventPublisher.PublishAsync(new FileProcessingCompletedJobEvent(
-                file.Id,
-                IsSuccess: true,
-                ProcessedCount: processResult.Value,
-                ErrorMessage: null,
-                TenantId: file.TenantId,
-                CorrelationId: jobEvent.CorrelationId,
-                SenderOrigin: jobEvent.SenderOrigin,
-                SenderUserId: jobEvent.SenderUserId,
-                SenderUserEmail: jobEvent.SenderUserEmail,
-                ParentExecutionId: jobEvent.EventId), ct);
-
-            await SendNotificationAsync(
-                file,
-                title: "File Import Completed",
-                message: $"File '{file.OriginalFileName}' successfully processed. {processResult.Value} records committed to project.",
-                severity: NotificationSeverity.Success,
-                ct);
-
-            _logger.LogInformation("Successfully completed ingestion and domain promotion for '{FileName}' ({Count} records).",
-                file.OriginalFileName, processResult.Value);
+            await ProcessHybridCanonicalPipelineAsync(file, templateConfig, jobEvent, ct);
         }
         catch (Exception ex)
         {
@@ -388,7 +279,6 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             .OrderBy(s => s.ChunkIndex)
             .ToListAsync(ct);
 
-        var sessionId = Guid.CreateVersion7();
         var allProcessedRows = new List<ProcessedDomainRowDto>();
 
         foreach (var chunk in stagedChunks)

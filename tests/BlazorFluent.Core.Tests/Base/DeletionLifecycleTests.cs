@@ -90,7 +90,6 @@ public class DeletionLifecycleTests
     [InlineData(typeof(MilestoneDependencyEntity))]
     [InlineData(typeof(KnowledgeArticleReviewerEntity))]
     [InlineData(typeof(StagedImportEntity))]
-    [InlineData(typeof(StagedTaskEntity))]
     public void Graph_Links_And_Staging_Records_Must_Only_Implement_IHardDeletableEntity(Type entityType)
     {
         typeof(IHardDeletableEntity).IsAssignableFrom(entityType).Should().BeTrue();

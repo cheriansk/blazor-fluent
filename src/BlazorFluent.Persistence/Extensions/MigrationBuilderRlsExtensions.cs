@@ -88,7 +88,7 @@ END $$;");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "EventConsumptionTrackers");
         migrationBuilder.EnableTenantRowLevelSecurity("identity", "UserSessions");
         migrationBuilder.EnableTenantRowLevelSecurity("imports", "ImportFiles");
-        migrationBuilder.EnableTenantRowLevelSecurity("staging", "StagedTasks");
+        migrationBuilder.EnableTenantRowLevelSecurity("staging", "StagedImports");
 
         return migrationBuilder;
     }
@@ -109,7 +109,7 @@ END $$;");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "EventConsumptionTrackers");
         migrationBuilder.DisableTenantRowLevelSecurity("identity", "UserSessions");
         migrationBuilder.DisableTenantRowLevelSecurity("imports", "ImportFiles");
-        migrationBuilder.DisableTenantRowLevelSecurity("staging", "StagedTasks");
+        migrationBuilder.DisableTenantRowLevelSecurity("staging", "StagedImports");
 
         return migrationBuilder;
     }

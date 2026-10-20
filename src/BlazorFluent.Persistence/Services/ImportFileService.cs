@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using BlazorFluent.Shared.Models;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
@@ -334,7 +334,7 @@ public class ImportFileService : IImportFileService
         file.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
         // Clean up staged tasks for this file directly via SQL without materializing entities into memory
-        await _context.StagedTasks
+        await _context.StagedImports
             .Where(s => s.TenantId == tenantId && s.ProjectId == projectId && s.ImportFileId == importFileId)
             .ExecuteDeleteAsync(ct);
 

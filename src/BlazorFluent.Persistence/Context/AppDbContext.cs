@@ -91,7 +91,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<EventPublishTrackerEntity> EventPublishTrackers => Set<EventPublishTrackerEntity>();
     public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();
     public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
-    public DbSet<StagedTaskEntity> StagedTasks => Set<StagedTaskEntity>();
+
     public DbSet<StagedImportEntity> StagedImports => Set<StagedImportEntity>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
