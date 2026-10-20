@@ -1,7 +1,7 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
-using BlazorFluent.Core.Domain.Notifications;
+using BlazorFluent.Core.Security;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -11,27 +11,36 @@ using Microsoft.Extensions.Logging;
 namespace BlazorFluent.Persistence.Interceptors;
 
 /// <summary>
-/// Fail-closed singleton EF Core SaveChangesInterceptor that enforces project-level write security.
-/// Automatically intercepts any Added, Modified, or Deleted entities implementing <see cref="IProjectScopedEntity"/>
-/// and verifies that the active user possesses write permissions (Dev, QA, Admin) in that project.
-/// Dynamically extracts user and tenant context from AppDbContext per invocation.
+/// Fail-closed EF Core SaveChangesInterceptor that enforces per-project RBAC write gates
+/// directly at the database persistence boundary.
+/// Any attempt to add, modify, or delete an <see cref="IProjectScopedEntity"/> without
+/// at least <see cref="ProjectRole.QA"/> or <see cref="ProjectRole.Dev"/> permissions
+/// immediately aborts the transaction.
 /// </summary>
 public class ProjectSecurityInterceptor : SaveChangesInterceptor
 {
+    private readonly ICurrentUser _currentUser;
+    private readonly ITenantContext _tenantContext;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProjectSecurityInterceptor> _logger;
 
     public ProjectSecurityInterceptor(
+        ICurrentUser currentUser,
+        ITenantContext tenantContext,
         IServiceScopeFactory scopeFactory,
-        ILogger<ProjectSecurityInterceptor>? logger = null)
+        ILogger<ProjectSecurityInterceptor> logger)
     {
+        _currentUser = currentUser;
+        _tenantContext = tenantContext;
         _scopeFactory = scopeFactory;
-        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ProjectSecurityInterceptor>.Instance;
+        _logger = logger;
     }
 
-    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
+    public override InterceptionResult<int> SavingChanges(
+        DbContextEventData eventData,
+        InterceptionResult<int> result)
     {
-        ValidateProjectSecurity(eventData.Context);
+        EnforceProjectWritePermissions(eventData.Context);
         return base.SavingChanges(eventData, result);
     }
 
@@ -40,54 +49,46 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        ValidateProjectSecurity(eventData.Context);
+        EnforceProjectWritePermissions(eventData.Context);
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private void ValidateProjectSecurity(DbContext? context)
+    private void EnforceProjectWritePermissions(DbContext? context)
     {
         if (context is null) return;
 
-        var appDb = context as AppDbContext;
-        var currentUser = appDb?.CurrentUser ?? new DefaultCurrentUser();
-        var tenantContext = appDb?.TenantContext ?? new TenantContext();
-
-        // System daemon workers, migrations, and Root SuperAdmins have bypass
-        if (currentUser.IsRootAdmin || currentUser.IsSystemDaemon)
+        // Root Admin and verified internal background system daemons bypass per-project user gates
+        if (_currentUser.IsRootAdmin) return;
+        if (SystemIdentityUtility.IsSystemDaemon(_currentUser.UserId) ||
+            SystemIdentityUtility.IsSystemDaemon(_currentUser.Email))
         {
             return;
         }
 
-        var modifiedProjectEntities = context.ChangeTracker.Entries<IProjectScopedEntity>()
+        var scopedEntries = context.ChangeTracker
+            .Entries<IProjectScopedEntity>()
             .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             .ToList();
 
-        if (modifiedProjectEntities.Count == 0)
+        if (scopedEntries.Count == 0) return;
+
+        var userId = _currentUser.UserId;
+        if (string.IsNullOrWhiteSpace(userId) || !_currentUser.IsAuthenticated)
         {
-            return;
+            _logger.LogCritical(
+                "SECURITY INTERCEPTOR VIOLATION: Unauthenticated user attempted to mutate {Count} project-scoped entities.",
+                scopedEntries.Count);
+            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Unauthenticated write to project-scoped entity is forbidden.");
         }
 
-        var userId = currentUser.UserId ?? "anonymous";
-        var tenantId = tenantContext.TenantId ?? "no_tenant";
-
-        // Allow users to update their own personal notifications (e.g., mark as read)
-        var projectEntitiesToValidate = modifiedProjectEntities
-            .Where(e => !(e.Entity is NotificationEntity notif && notif.UserId == userId))
-            .ToList();
-
-        if (projectEntitiesToValidate.Count == 0)
-        {
-            return;
-        }
-
-        // Group by ProjectId to minimize verification lookups
-        var projectIds = projectEntitiesToValidate
+        // Group by distinct ProjectId to minimize role lookups per SaveChanges batch
+        var distinctProjectIds = scopedEntries
             .Select(e => e.Entity.ProjectId)
             .Where(id => id != Guid.Empty)
             .Distinct()
             .ToList();
 
-        foreach (var projectId in projectIds)
+        foreach (var projectId in distinctProjectIds)
         {
             var role = ResolveRoleForProject(userId, projectId);
             if (role is null || !role.Value.CanWrite())
@@ -110,9 +111,14 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         currentUser?.SetSystemDaemon("ProjectSecurityInterceptor");
         var isolatedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        var hasGuid = Guid.TryParse(userId, out var userGuid);
+        var normalizedUser = userId.Trim().ToLowerInvariant();
+
         var roleEntity = isolatedDb.ProjectUserRoles
             .AsNoTracking()
-            .FirstOrDefault(r => r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted);
+            .FirstOrDefault(r => r.ProjectId == projectId &&
+                                 ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                                 !r.IsDeleted);
 
         return roleEntity?.Role;
     }

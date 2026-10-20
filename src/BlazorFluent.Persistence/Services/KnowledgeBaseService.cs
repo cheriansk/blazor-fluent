@@ -50,6 +50,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
         var query = _context.KnowledgeArticles
             .AsNoTracking()
+            .Include(a => a.AuthorUser)
+            .Include(a => a.ApprovedByUser)
             .Include(a => a.Reviewers)
             .Where(a => a.IsGlobal || a.TenantId == tenantId)
             .AsQueryable();
@@ -67,7 +69,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         if (!string.IsNullOrWhiteSpace(labelFilter))
         {
             var trimmedLabel = labelFilter.Trim().ToLower();
-            query = query.Where(a => a.Labels.ToLower().Contains(trimmedLabel));
+            query = query.Where(a => a.Labels != null && a.Labels.ToLower().Contains(trimmedLabel));
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -76,9 +78,9 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             query = query.Where(a =>
                 a.Title.ToLower().Contains(term) ||
                 a.Content.ToLower().Contains(term) ||
-                a.AuthorUserName.ToLower().Contains(term) ||
-                a.AuthorUserEmail.ToLower().Contains(term) ||
-                a.Labels.ToLower().Contains(term));
+                a.AuthorUser!.FullName.ToLower().Contains(term) ||
+                a.AuthorUser!.Email.ToLower().Contains(term) ||
+                (a.Labels != null && a.Labels.ToLower().Contains(term)));
         }
 
         var articles = await query
@@ -122,7 +124,10 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
         var a = await _context.KnowledgeArticles
             .AsNoTracking()
+            .Include(x => x.AuthorUser)
+            .Include(x => x.ApprovedByUser)
             .Include(x => x.Reviewers)
+                .ThenInclude(r => r.User)
             .Include(x => x.Project)
             .FirstOrDefaultAsync(x => x.Id == articleId && (x.IsGlobal || x.TenantId == tenantId), cancellationToken);
 
@@ -181,6 +186,15 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         var sanitizedTitle = _inputSanitizer.SanitizePlainText(dto.Title.Trim());
         var sanitizedContent = _inputSanitizer.SanitizeHtml(dto.Content);
 
+        if (!Guid.TryParse(_currentUser.UserId, out var authorUserEntityId))
+        {
+            var authorUser = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == (_currentUser.Email ?? string.Empty).ToLower() && !u.IsDeleted, cancellationToken)
+                ?? throw new UnauthorizedAccessException("Authenticated author user record could not be resolved.");
+            authorUserEntityId = authorUser.Id;
+        }
+
         var article = new KnowledgeArticleEntity
         {
             TenantId = _tenantContext.TenantId,
@@ -190,17 +204,22 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             IsGlobal = isGlobal,
             Status = KnowledgeArticleStatus.PendingReview,
             ProjectId = dto.ProjectId ?? Guid.Empty,
-            AuthorUserId = _currentUser.UserId ?? string.Empty,
-            AuthorUserEmail = _currentUser.Email ?? string.Empty,
-            AuthorUserName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Unknown")
+            AuthorUserEntityId = authorUserEntityId
         };
 
         // Populate reviewers
+        var reviewerUsers = new List<BlazorFluent.Core.Domain.Identity.UserEntity>();
         if (dto.ReviewerUserIds.Count > 0)
         {
-            var reviewerUsers = await _context.Users
+            var parsedReviewerGuids = dto.ReviewerUserIds
+                .Select(id => Guid.TryParse(id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            reviewerUsers = await _context.Users
                 .AsNoTracking()
-                .Where(u => dto.ReviewerUserIds.Contains(u.Id.ToString()))
+                .Where(u => parsedReviewerGuids.Contains(u.Id) && !u.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             foreach (var user in reviewerUsers)
@@ -208,9 +227,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                 article.Reviewers.Add(new KnowledgeArticleReviewerEntity
                 {
                     ArticleId = article.Id,
-                    UserId = user.Id.ToString(),
-                    UserEmail = user.Email,
-                    UserName = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Email,
+                    UserEntityId = user.Id,
                     HasApproved = false
                 });
             }
@@ -219,28 +236,30 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         _context.KnowledgeArticles.Add(article);
         await _context.SaveChangesAsync(cancellationToken);
 
+        var authorDisplayName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Unknown");
+
         _logger.LogInformation("Knowledge article '{ArticleId}' created by '{Author}' (Scope: {Scope})",
-            article.Id, article.AuthorUserEmail, isGlobal ? "Global" : "TenantOnly");
+            article.Id, _currentUser.Email, isGlobal ? "Global" : "TenantOnly");
 
         // Send in-app notification to assigned reviewers
-        foreach (var reviewer in article.Reviewers)
+        foreach (var reviewerUser in reviewerUsers)
         {
             try
             {
                 await _notificationService.SendAsync(new SendNotificationReqDto
                 {
                     ProjectId = article.ProjectId,
-                    UserId = reviewer.UserId,
+                    UserId = reviewerUser.Id.ToString(),
                     Category = NotificationCategory.Personal,
                     Severity = NotificationSeverity.Info,
                     Title = "Knowledge Article Review Requested",
-                    Message = $"{article.AuthorUserName} requested your review on '{article.Title}'.",
+                    Message = $"{authorDisplayName} requested your review on '{article.Title}'.",
                     LinkUrl = $"/knowledge/{article.Id}"
                 }, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send notification to reviewer '{ReviewerEmail}'", reviewer.UserEmail);
+                _logger.LogWarning(ex, "Failed to send notification to reviewer '{ReviewerEmail}'", reviewerUser.Email);
             }
         }
 
@@ -287,9 +306,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         {
             article.Status = KnowledgeArticleStatus.PendingReview;
             article.ApprovedAtUtc = null;
-            article.ApprovedByUserId = null;
-            article.ApprovedByUserName = null;
-            article.ApprovedByUserEmail = null;
+            article.ApprovedByUserEntityId = null;
             foreach (var r in article.Reviewers)
             {
                 r.HasApproved = false;
@@ -316,7 +333,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         if (article is null) return false;
 
         var currentUserId = _currentUser.UserId;
-        var reviewer = article.Reviewers.FirstOrDefault(r => r.UserId == currentUserId);
+        Guid.TryParse(currentUserId, out var currentUserGuid);
+        var reviewer = article.Reviewers.FirstOrDefault(r => r.UserEntityId == currentUserGuid);
 
         var isHostOrAdmin = _currentUser.IsRootAdmin;
         if (reviewer is null && !isHostOrAdmin)
@@ -334,13 +352,12 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
         // 1-approval workflow: Any 1 reviewer approval marks article as Approved
         article.Status = KnowledgeArticleStatus.Approved;
-        article.ApprovedByUserId = currentUserId;
-        article.ApprovedByUserEmail = _currentUser.Email;
-        article.ApprovedByUserName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : _currentUser.Email;
+        article.ApprovedByUserEntityId = currentUserGuid != Guid.Empty ? currentUserGuid : null;
         article.ApprovedAtUtc = now;
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Knowledge article '{ArticleId}' approved by '{Approver}'", articleId, article.ApprovedByUserEmail);
+        var approverDisplayName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Approver");
+        _logger.LogInformation("Knowledge article '{ArticleId}' approved by '{Approver}'", articleId, _currentUser.Email);
 
         // Notify article author
         try
@@ -352,7 +369,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                 Category = NotificationCategory.Personal,
                 Severity = NotificationSeverity.Info,
                 Title = "Knowledge Article Approved",
-                Message = $"Your article '{article.Title}' was approved by {article.ApprovedByUserName}.",
+                Message = $"Your article '{article.Title}' was approved by {approverDisplayName}.",
                 LinkUrl = $"/knowledge/{article.Id}"
             }, cancellationToken);
         }
@@ -421,7 +438,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             .ToListAsync(cancellationToken);
 
         var labels = labelStrings
-            .SelectMany(s => s.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .SelectMany(s => s!.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(l => l)
             .ToList();

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -45,9 +45,15 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         var tenantId = _tenantContext.TenantId ?? string.Empty;
         var userId = _currentUser.UserId ?? "anonymous";
+        var hasGuid = Guid.TryParse(userId, out var userGuid);
+        var normalizedUser = userId.Trim().ToLowerInvariant();
+
         var roleEntity = await _dbContext.ProjectUserRoles
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId &&
+                                      r.ProjectId == projectId &&
+                                      ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                                      !r.IsDeleted, ct);
 
         return roleEntity?.Role;
     }
@@ -114,9 +120,14 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         }
 
         var userId = _currentUser.UserId ?? "anonymous";
+        var hasGuid = Guid.TryParse(userId, out var userGuid);
+        var normalizedUser = userId.Trim().ToLowerInvariant();
+
         var userRoles = await _dbContext.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => r.TenantId == tenantId && r.UserId == userId && !r.IsDeleted)
+            .Where(r => r.TenantId == tenantId &&
+                        ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                        !r.IsDeleted)
             .ToListAsync(ct);
 
         return userRoles
@@ -132,8 +143,9 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         return await _dbContext.ProjectUserRoles
             .AsNoTracking()
+            .Include(r => r.User)
             .Where(r => r.TenantId == tenantId && r.ProjectId == projectId && !r.IsDeleted)
-            .OrderBy(r => r.UserName)
+            .OrderBy(r => r.User!.FullName)
             .ToListAsync(ct);
     }
 
@@ -155,16 +167,27 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         var tenantId = _tenantContext.TenantId ?? string.Empty;
 
+        if (!Guid.TryParse(userId, out var userEntityId))
+        {
+            var resolvedUser = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == userEmail.Trim().ToLower() && !u.IsDeleted, ct);
+
+            if (resolvedUser is null)
+            {
+                return Result.Failure($"User '{userEmail}' could not be resolved in the user directory.");
+            }
+
+            userEntityId = resolvedUser.Id;
+        }
+
         var existing = await _dbContext.ProjectUserRoles
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserEntityId == userEntityId && !r.IsDeleted, ct);
 
         if (existing is not null)
         {
             existing.Role = role;
-            existing.UserEmail = userEmail;
-            existing.UserName = userName;
-            existing.UserType = userType;
         }
         else
         {
@@ -172,10 +195,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             {
                 TenantId = tenantId,
                 ProjectId = projectId,
-                UserId = userId,
-                UserEmail = userEmail,
-                UserName = userName,
-                UserType = userType,
+                UserEntityId = userEntityId,
                 Role = role
             };
             _dbContext.ProjectUserRoles.Add(assignment);
@@ -185,7 +205,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         await _auditService.LogUserActivityAsync(
             "AssignProjectRole",
-            $"Role '{role}' assigned to user '{userName}' ({userId}) on project '{projectId}'.",
+            $"Role '{role}' assigned to user '{userName}' ({userEntityId}) on project '{projectId}'.",
             ct);
 
         return Result.Success();
@@ -200,10 +220,16 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         }
 
         var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var hasGuid = Guid.TryParse(userId, out var userGuid);
+        var normalizedUser = userId.Trim().ToLowerInvariant();
 
         var existing = await _dbContext.ProjectUserRoles
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId &&
+                                      r.ProjectId == projectId &&
+                                      ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                                      !r.IsDeleted, ct);
 
         if (existing is null)
         {

@@ -38,12 +38,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         var normalizedTenant = tenantId.Trim().ToLowerInvariant();
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         // 1. Check explicit TenantUser membership
         var hasTenantAdminRole = await _context.TenantUsers
             .AsNoTracking()
             .AnyAsync(u => u.TenantId.ToLower() == normalizedTenant &&
-                           u.UserId.ToLower() == normalizedUser &&
+                           ((hasGuid && u.UserEntityId == userGuid) || u.User!.Email.ToLower() == normalizedUser) &&
                            u.Role == TenantRole.TenantAdmin &&
                            u.IsActive &&
                            !u.IsDeleted, ct);
@@ -53,7 +54,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         // 2. Compatibility check: User is internal CompanyUser with home tenant matching tenantId and no explicit member record yet
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => (u.Email.ToLower() == normalizedUser || u.Id.ToString() == normalizedUser) && !u.IsDeleted, ct);
+            .FirstOrDefaultAsync(u => (u.Email.ToLower() == normalizedUser || (hasGuid && u.Id == userGuid)) && !u.IsDeleted, ct);
 
         if (user != null && user.UserType == UserType.CompanyUser &&
             string.Equals(user.DefaultTenantId, normalizedTenant, StringComparison.OrdinalIgnoreCase))
@@ -79,11 +80,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         if (await IsTenantAdminAsync(program.TenantId, userId, ct)) return true;
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         return await _context.ProgramUserRoles
             .AsNoTracking()
             .AnyAsync(r => r.ProgramId == programId &&
-                           r.UserId.ToLower() == normalizedUser &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            r.Role == ProgramRole.ProgramAdmin &&
                            !r.IsDeleted, ct);
     }
@@ -107,11 +109,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         // 3. Project Admin role assignment
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         return await _context.ProjectUserRoles
             .AsNoTracking()
             .AnyAsync(r => r.ProjectId == projectId &&
-                           (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            r.Role == ProjectRole.Admin &&
                            !r.IsDeleted, ct);
     }
@@ -126,12 +129,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         var normalizedTenant = tenantId.Trim().ToLowerInvariant();
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         // Program Admin of ANY program in this tenant can view tenant settings in read-only mode
         return await _context.ProgramUserRoles
             .AsNoTracking()
             .AnyAsync(r => r.TenantId.ToLower() == normalizedTenant &&
-                           r.UserId.ToLower() == normalizedUser &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            r.Role == ProgramRole.ProgramAdmin &&
                            !r.IsDeleted, ct);
     }
@@ -150,12 +154,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         var normalizedTenant = tenantId.Trim().ToLowerInvariant();
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         // Check TenantUser membership
         var hasMembership = await _context.TenantUsers
             .AsNoTracking()
             .AnyAsync(u => u.TenantId.ToLower() == normalizedTenant &&
-                           u.UserId.ToLower() == normalizedUser &&
+                           ((hasGuid && u.UserEntityId == userGuid) || u.User!.Email.ToLower() == normalizedUser) &&
                            u.IsActive &&
                            !u.IsDeleted, ct);
 
@@ -164,7 +169,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         // Check fallback home tenant
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => (u.Email.ToLower() == normalizedUser || u.Id.ToString() == normalizedUser) && !u.IsDeleted, ct);
+            .FirstOrDefaultAsync(u => (u.Email.ToLower() == normalizedUser || (hasGuid && u.Id == userGuid)) && !u.IsDeleted, ct);
 
         if (user != null && string.Equals(user.DefaultTenantId, normalizedTenant, StringComparison.OrdinalIgnoreCase))
             return true;
@@ -173,7 +178,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         return await _context.ProjectUserRoles
             .AsNoTracking()
             .AnyAsync(r => r.TenantId.ToLower() == normalizedTenant &&
-                           (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            !r.IsDeleted, ct);
     }
 
@@ -192,12 +197,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         if (await IsTenantAdminAsync(program.TenantId, userId, ct)) return true;
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         // Explicit Program Role
         var hasProgramRole = await _context.ProgramUserRoles
             .AsNoTracking()
             .AnyAsync(r => r.ProgramId == programId &&
-                           r.UserId.ToLower() == normalizedUser &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            !r.IsDeleted, ct);
 
         if (hasProgramRole) return true;
@@ -212,7 +218,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         return await _context.ProjectUserRoles
             .AsNoTracking()
             .AnyAsync(r => projectIdsInProgram.Contains(r.ProjectId) &&
-                           (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            !r.IsDeleted, ct);
     }
 
@@ -235,11 +241,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         // Explicit Project Role assignment
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         return await _context.ProjectUserRoles
             .AsNoTracking()
             .AnyAsync(r => r.ProjectId == projectId &&
-                           (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                           ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                            !r.IsDeleted, ct);
     }
 
@@ -260,12 +267,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         }
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         // Program Admin / Member direct assignments
         var directlyAssignedProgramIds = await _context.ProgramUserRoles
             .AsNoTracking()
             .Where(r => r.TenantId.ToLower() == normalizedTenant &&
-                        r.UserId.ToLower() == normalizedUser &&
+                        ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                         !r.IsDeleted)
             .Select(r => r.ProgramId)
             .ToListAsync(ct);
@@ -274,7 +282,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         var projectIdsWithRoles = await _context.ProjectUserRoles
             .AsNoTracking()
             .Where(r => r.TenantId.ToLower() == normalizedTenant &&
-                        (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                        ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                         !r.IsDeleted)
             .Select(r => r.ProjectId)
             .ToListAsync(ct);
@@ -307,12 +315,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         }
 
         var normalizedUser = targetUserId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         // 1. Check explicit ProjectUserRole assignment
         var explicitProjectRole = await _context.ProjectUserRoles
             .AsNoTracking()
             .Where(r => r.ProjectId == projectId &&
-                        (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                        ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                         !r.IsDeleted)
             .Select(r => (ProjectRole?)r.Role)
             .FirstOrDefaultAsync(ct);
@@ -334,7 +343,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             var hasProgramRole = await _context.ProgramUserRoles
                 .AsNoTracking()
                 .AnyAsync(r => r.ProgramId == project.ProgramId.Value &&
-                               (r.UserId.ToLower() == normalizedUser || r.UserEmail.ToLower() == normalizedUser) &&
+                               ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
                                !r.IsDeleted, ct);
 
             if (hasProgramRole)
@@ -385,24 +394,23 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         if (_currentUser.IsRootAdmin) return true;
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
 
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => (u.Id.ToString() == normalizedUser || u.Email.ToLower() == normalizedUser) && !u.IsDeleted, ct);
+            .FirstOrDefaultAsync(u => ((hasGuid && u.Id == userGuid) || u.Email.ToLower() == normalizedUser) && !u.IsDeleted, ct);
 
         if (user == null || !user.IsActive) return false;
 
         var now = DateTime.UtcNow;
         if (!user.IsActiveAt(now)) return false;
 
-        var userIdStr = user.Id.ToString();
-
         var hasAssignedRole = await _context.ProjectUserRoles
             .AsNoTracking()
-            .AnyAsync(r => (r.UserId == userIdStr || r.UserEmail.ToLower() == normalizedUser) && !r.IsDeleted, ct)
+            .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct)
             || await _context.ProgramUserRoles
             .AsNoTracking()
-            .AnyAsync(r => (r.UserId == userIdStr || r.UserEmail.ToLower() == normalizedUser) && !r.IsDeleted, ct);
+            .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct);
 
         return hasAssignedRole;
     }

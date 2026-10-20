@@ -16,16 +16,11 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(u => u.UserId)
-            .IsRequired()
-            .HasMaxLength(150);
+        builder.Property(u => u.TenantEntityId)
+            .IsRequired();
 
-        builder.Property(u => u.UserEmail)
-            .IsRequired()
-            .HasMaxLength(255);
-
-        builder.Property(u => u.UserName)
-            .HasMaxLength(200);
+        builder.Property(u => u.UserEntityId)
+            .IsRequired();
 
         builder.Property(u => u.Role)
             .IsRequired()
@@ -35,7 +30,7 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
             .IsRequired();
 
         builder.HasIndex(u => u.TenantId);
-        builder.HasIndex(u => new { u.TenantId, u.UserId }).IsUnique().HasFilter("\"IsDeleted\" = false");
+        builder.HasIndex(u => new { u.TenantId, u.UserEntityId }).IsUnique().HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(u => new { u.TenantId, u.Role });
 
         builder.HasOne(u => u.Tenant)

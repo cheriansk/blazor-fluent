@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Core.Dtos;
@@ -461,7 +461,7 @@ public class NotificationService : INotifyService
 
         var userRoles = await db.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => allowedTenants.Contains(r.TenantId) && r.UserId == currentUserId && !r.IsDeleted)
+            .Where(r => allowedTenants.Contains(r.TenantId) && (r.UserEntityId.ToString() == currentUserId || r.User!.Email == currentUserId) && !r.IsDeleted)
             .ToListWithAuditedBypassAsync(
                 auditService,
                 "Resolving user project memberships across permitted tenant partition.",

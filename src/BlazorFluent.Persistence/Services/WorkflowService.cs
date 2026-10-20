@@ -274,8 +274,8 @@ public class WorkflowService : IWorkflowService
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
                 TaskId = activeStep.Id,
-                AuthorEmail = callerEmail,
-                Comment = $"[Step #{activeStep.WorkflowStepOrder} Sign-Off]: {request.CompletionNotes.Trim()}"
+                ProjectId = workflow.ProjectId ?? Guid.Empty, AuthorUserEntityId = Guid.TryParse(_currentUser.UserId, out var stepAuthorGuid) ? stepAuthorGuid : Guid.Empty, CreatedAtUtc = DateTime.UtcNow,
+                CommentText = $"[Step #{activeStep.WorkflowStepOrder} Sign-Off]: {request.CompletionNotes.Trim()}"
             });
         }
 
@@ -407,8 +407,8 @@ public class WorkflowService : IWorkflowService
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             TaskId = targetStep.Id,
-            AuthorEmail = callerEmail,
-            Comment = $"[Step Reassigned]: Reassigned from {priorOwner} to {newOwner}. Reason: {request.Reason}"
+            ProjectId = workflow.ProjectId ?? Guid.Empty, AuthorUserEntityId = Guid.TryParse(_currentUser.UserId, out var reassignAuthorGuid) ? reassignAuthorGuid : Guid.Empty, CreatedAtUtc = DateTime.UtcNow,
+            CommentText = $"[Step Reassigned]: Reassigned from {priorOwner} to {newOwner}. Reason: {request.Reason}"
         });
 
         await _dbContext.SaveChangesAsync(ct);
@@ -670,8 +670,8 @@ public class WorkflowService : IWorkflowService
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             TaskId = step.Id,
-            AuthorEmail = _currentUser.Email ?? "system",
-            Comment = $"[Step Cancelled]: {request.CancellationReason.Trim()}"
+            ProjectId = workflow.ProjectId ?? Guid.Empty, AuthorUserEntityId = Guid.TryParse(_currentUser.UserId, out var cancelAuthorGuid) ? cancelAuthorGuid : Guid.Empty, CreatedAtUtc = DateTime.UtcNow,
+            CommentText = $"[Step Cancelled]: {request.CancellationReason.Trim()}"
         });
 
         if (wasActive)

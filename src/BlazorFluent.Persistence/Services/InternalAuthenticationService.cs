@@ -104,11 +104,10 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         if (!isRootAdmin)
         {
-            var userIdStr = user.Id.ToString();
             var hasAssignedRole = await dbContext.ProjectUserRoles
-                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct)
+                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct)
                 || await dbContext.ProgramUserRoles
-                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct);
+                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct);
 
             if (!hasAssignedRole)
             {
@@ -235,11 +234,10 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         if (!isRootAdmin)
         {
-            var userIdStr = user.Id.ToString();
             var hasAssignedRole = await dbContext.ProjectUserRoles
-                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct)
+                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct)
                 || await dbContext.ProgramUserRoles
-                .AnyAsync(r => r.UserId == userIdStr && !r.IsDeleted, ct);
+                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct);
 
             if (!hasAssignedRole)
             {

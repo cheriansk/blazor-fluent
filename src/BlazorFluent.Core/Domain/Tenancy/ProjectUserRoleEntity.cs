@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
@@ -8,6 +9,8 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Represents the role assigned to a user within a specific project under a tenant.
 /// Scoped to a tenant via <see cref="TenantAuditableEntity"/> and a project via <see cref="IProjectScopedEntity"/>.
 /// Implements <see cref="ISoftDeletableEntity"/> so revoked roles preserve historical audit trails.
+/// Enforces 3NF relational normalization by persisting only <see cref="ProjectId"/> and <see cref="UserEntityId"/>
+/// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
 /// </summary>
 public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity
 {
@@ -17,34 +20,14 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     public required Guid ProjectId { get; set; }
 
     /// <summary>
-    /// Primary identifier of the user (corresponds to <see cref="BlazorFluent.Core.Contracts.ICurrentUser.UserId"/>).
+    /// Foreign key to <see cref="UserEntity"/>.
     /// </summary>
-    public required string UserId { get; set; }
-
-    /// <summary>
-    /// User's email address at the time of assignment for display and audit.
-    /// </summary>
-    public required string UserEmail { get; set; }
-
-    /// <summary>
-    /// User's full name at the time of assignment.
-    /// </summary>
-    public required string UserName { get; set; }
-
-    /// <summary>
-    /// User type classification (CompanyUser or ClientUser).
-    /// </summary>
-    public required UserType UserType { get; set; }
+    public required Guid UserEntityId { get; set; }
 
     /// <summary>
     /// The assigned project role (ReadOnly, QA, Dev, Admin).
     /// </summary>
     public required ProjectRole Role { get; set; }
-
-    /// <summary>
-    /// Optional foreign key to <see cref="UserEntity"/> if tracked locally in the database.
-    /// </summary>
-    public Guid? UserEntityId { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
@@ -54,4 +37,17 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     // --- Navigation Properties ---
     public ProjectEntity? Project { get; set; }
     public UserEntity? User { get; set; }
+
+    // --- [NotMapped] Navigation Forwarders ---
+    [NotMapped]
+    public string UserId => UserEntityId.ToString();
+
+    [NotMapped]
+    public string UserEmail => User?.Email ?? string.Empty;
+
+    [NotMapped]
+    public string UserName => !string.IsNullOrWhiteSpace(User?.FullName) ? User.FullName : (User?.Email ?? string.Empty);
+
+    [NotMapped]
+    public UserType UserType => User?.UserType ?? UserType.ClientUser;
 }

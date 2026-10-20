@@ -376,9 +376,9 @@ public partial class UserTaskService : IUserTaskService
                 TaskId = taskId,
                 ProjectId = projectId,
                 TenantId = task.TenantId,
-                AuthorUserId = _currentUser.UserId ?? _currentUser.Email,
-                AuthorName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : _currentUser.Email,
-                AuthorEmail = _currentUser.Email,
+                AuthorUserEntityId = Guid.TryParse(_currentUser.UserId, out var parsedUserGuid) ? parsedUserGuid : (await _context.Users.AsNoTracking().Where(u => u.Email.ToLower() == _currentUser.Email.ToLower() && !u.IsDeleted).Select(u => u.Id).FirstOrDefaultAsync(ct)),
+
+
                 CommentText = commentText.Trim(),
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -402,7 +402,7 @@ public partial class UserTaskService : IUserTaskService
 
         var tenantId = _tenantContext.TenantId ?? string.Empty;
 
-        return await _context.TaskComments
+        return await _context.TaskComments.Include(c => c.AuthorUser)
             .AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && c.TaskId == taskId && !c.IsDeleted)
             .OrderBy(c => c.CreatedAtUtc)

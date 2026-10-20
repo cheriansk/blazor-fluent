@@ -27,7 +27,7 @@ public class KnowledgeArticleEntityValidator : AbstractValidator<KnowledgeArticl
                 return count >= 1 && count <= 10;
             }).WithMessage("An article must contain between 1 and 10 labels.");
 
-        RuleFor(x => x.AuthorUserId)
+        RuleFor(x => x.AuthorUserEntityId)
             .NotEmpty().WithMessage("Author user ID is required.");
     }
 }

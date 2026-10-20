@@ -22,16 +22,7 @@ public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserT
         builder.Property(c => c.ProjectId)
             .IsRequired();
 
-        builder.Property(c => c.AuthorUserId)
-            .HasMaxLength(256)
-            .IsRequired();
-
-        builder.Property(c => c.AuthorName)
-            .HasMaxLength(200)
-            .IsRequired();
-
-        builder.Property(c => c.AuthorEmail)
-            .HasMaxLength(256)
+        builder.Property(c => c.AuthorUserEntityId)
             .IsRequired();
 
         builder.Property(c => c.CommentText)
@@ -49,6 +40,11 @@ public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserT
         builder.Property(c => c.DeletedBy)
             .HasMaxLength(256)
             .IsRequired(false);
+
+        builder.HasOne(c => c.AuthorUser)
+            .WithMany()
+            .HasForeignKey(c => c.AuthorUserEntityId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes
         builder.HasIndex(c => c.TenantId)

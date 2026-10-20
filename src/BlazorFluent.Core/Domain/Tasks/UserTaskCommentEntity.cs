@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -6,6 +8,8 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// <summary>
 /// Chronological Jira-style discussion comment attached to a parent task.
 /// Maintained within tenant and project scope with audit dates and soft-deletion support.
+/// Enforces 3NF relational normalization by persisting only <see cref="AuthorUserEntityId"/>
+/// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="AuthorUser"/>.
 /// </summary>
 public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
 {
@@ -21,19 +25,9 @@ public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity
     public required Guid ProjectId { get; set; }
 
     /// <summary>
-    /// User identifier of the comment author.
+    /// Foreign key to the author <see cref="UserEntity"/>.
     /// </summary>
-    public required string AuthorUserId { get; set; }
-
-    /// <summary>
-    /// Display name of the author at the time of posting.
-    /// </summary>
-    public required string AuthorName { get; set; }
-
-    /// <summary>
-    /// Email of the author for display and avatar resolution.
-    /// </summary>
-    public required string AuthorEmail { get; set; }
+    public required Guid AuthorUserEntityId { get; set; }
 
     /// <summary>
     /// Body text of the comment (Markdown or plain text).
@@ -50,6 +44,17 @@ public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity
     public DateTime? DeletedAtUtc { get; set; }
     public string? DeletedBy { get; set; }
 
-    // --- Navigation Property ---
+    // --- Navigation Properties ---
     public TaskEntity? Task { get; set; }
+    public UserEntity? AuthorUser { get; set; }
+
+    // --- [NotMapped] Navigation Forwarders ---
+    [NotMapped]
+    public string AuthorUserId => AuthorUserEntityId.ToString();
+
+    [NotMapped]
+    public string AuthorEmail => AuthorUser?.Email ?? string.Empty;
+
+    [NotMapped]
+    public string AuthorName => !string.IsNullOrWhiteSpace(AuthorUser?.FullName) ? AuthorUser.FullName : (AuthorUser?.Email ?? "System");
 }

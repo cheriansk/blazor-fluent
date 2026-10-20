@@ -185,7 +185,7 @@ public class TenantService : ITenantService
 
         return await _dbContext.Users
             .AsNoTracking()
-            .Where(u => u.DefaultTenantId == normalizedSlug && !u.IsDeleted)
+            .Where(u => (u.DefaultTenantId == normalizedSlug || u.TenantMemberships.Any(tm => tm.TenantId == normalizedSlug && !tm.IsDeleted)) && !u.IsDeleted)
             .OrderBy(u => u.FullName)
             .ToListAsync(cancellationToken);
     }
@@ -287,6 +287,15 @@ public class TenantService : ITenantService
         user.RowSignature = user.ComputeIntegritySignature(secretKey);
 
         _dbContext.Users.Add(user);
+        _dbContext.TenantUsers.Add(new TenantUserEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = normalizedSlug,
+            TenantEntityId = tenant.Id,
+            UserEntityId = user.Id,
+            Role = userType == UserType.CompanyUser ? TenantRole.TenantAdmin : TenantRole.TenantMember,
+            IsActive = isActive
+        });
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Added user '{Email}' ({UserType}) to tenant '{TenantSlug}'", user.Email, user.UserType, tenantSlug);

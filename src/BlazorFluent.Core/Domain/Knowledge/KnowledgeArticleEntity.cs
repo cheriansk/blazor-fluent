@@ -1,5 +1,7 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 
 namespace BlazorFluent.Core.Domain.Knowledge;
@@ -8,6 +10,8 @@ namespace BlazorFluent.Core.Domain.Knowledge;
 /// Represents a knowledge base article.
 /// Extends <see cref="TenantAuditableEntity"/> and <see cref="ISoftDeletableEntity"/>.
 /// Can be scoped to a project via <see cref="IProjectScopedEntity"/> or be cross-project/tenant/global.
+/// Enforces 3NF relational normalization by persisting only <see cref="AuthorUserEntityId"/> and <see cref="ApprovedByUserEntityId"/>
+/// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="AuthorUser"/> and <see cref="ApprovedByUser"/>.
 /// </summary>
 public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity
 {
@@ -29,6 +33,7 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     /// <summary>
     /// Helper to access parsed labels.
     /// </summary>
+    [NotMapped]
     public List<string> LabelList => string.IsNullOrWhiteSpace(Labels)
         ? new List<string>()
         : Labels.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
@@ -54,15 +59,13 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     /// </summary>
     public ProjectEntity? Project { get; set; }
 
-    // --- Author Details ---
-    public required string AuthorUserId { get; set; }
-    public required string AuthorUserEmail { get; set; }
-    public required string AuthorUserName { get; set; }
+    // --- Author Foreign Key & Navigation ---
+    public required Guid AuthorUserEntityId { get; set; }
+    public UserEntity? AuthorUser { get; set; }
 
-    // --- Approval Details ---
-    public string? ApprovedByUserId { get; set; }
-    public string? ApprovedByUserEmail { get; set; }
-    public string? ApprovedByUserName { get; set; }
+    // --- Approval Foreign Key & Navigation ---
+    public Guid? ApprovedByUserEntityId { get; set; }
+    public UserEntity? ApprovedByUser { get; set; }
     public DateTime? ApprovedAtUtc { get; set; }
 
     // --- Assigned Reviewers ---
@@ -72,4 +75,23 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public string? DeletedBy { get; set; }
+
+    // --- [NotMapped] Navigation Forwarders ---
+    [NotMapped]
+    public string AuthorUserId => AuthorUserEntityId.ToString();
+
+    [NotMapped]
+    public string AuthorUserEmail => AuthorUser?.Email ?? string.Empty;
+
+    [NotMapped]
+    public string AuthorUserName => !string.IsNullOrWhiteSpace(AuthorUser?.FullName) ? AuthorUser.FullName : (AuthorUser?.Email ?? string.Empty);
+
+    [NotMapped]
+    public string? ApprovedByUserId => ApprovedByUserEntityId?.ToString();
+
+    [NotMapped]
+    public string? ApprovedByUserEmail => ApprovedByUser?.Email;
+
+    [NotMapped]
+    public string? ApprovedByUserName => !string.IsNullOrWhiteSpace(ApprovedByUser?.FullName) ? ApprovedByUser.FullName : ApprovedByUser?.Email;
 }
