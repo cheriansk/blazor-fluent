@@ -18,27 +18,6 @@ public enum ProjectHealthRating
 }
 
 /// <summary>
-/// Lifecycle status of a project milestone.
-/// </summary>
-public enum MilestoneStatus
-{
-    [Display(Name = "Planned", Description = "Milestone defined, pending kickoff.")]
-    Planned = 1,
-
-    [Display(Name = "Active", Description = "Milestone currently underway.")]
-    Active = 2,
-
-    [Display(Name = "Completed", Description = "All deliverables achieved and signed off.")]
-    Completed = 3,
-
-    [Display(Name = "At Risk", Description = "Milestone facing schedule slippage or unresolved blockers.")]
-    AtRisk = 4,
-
-    [Display(Name = "Cancelled", Description = "Milestone aborted or scope descoped.")]
-    Cancelled = 5
-}
-
-/// <summary>
 /// Relational classification between two project tasks.
 /// </summary>
 public enum TaskDependencyType
@@ -98,7 +77,8 @@ public class MilestoneHealthSummaryDto
     public string MilestoneName { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
-    public MilestoneStatus Status { get; set; }
+    public CalendarEntryStatus Status { get; set; }
+    public CalendarEntryType EntryType { get; set; } = CalendarEntryType.Milestone;
     public ProjectHealthRating Health { get; set; } = ProjectHealthRating.OnTrack;
     public int TotalTasks { get; set; }
     public int CompletedTasks { get; set; }
@@ -113,20 +93,64 @@ public class MilestoneHealthSummaryDto
 }
 
 /// <summary>
-/// DTO representing a task dependency link.
+/// DTO representing a dependency item across tasks, calendar gates, or manual dependencies.
 /// </summary>
 public class TaskDependencyItemDto
 {
     public Guid DependencyId { get; set; }
-    public Guid TaskId { get; set; }
-    public Guid DependsOnTaskId { get; set; }
-    public string DependsOnTaskTitle { get; set; } = string.Empty;
-    public TaskStatus DependsOnTaskStatus { get; set; }
+
+    // --- Side B: Dependent / Successor ---
+    public DependencyNodeTypeEnum DependentType { get; set; } = DependencyNodeTypeEnum.TaskItem;
+    public Guid? DependentItemId { get; set; }
+    public TaskLevel DependentLevel { get; set; } = TaskLevel.Project;
+    public Guid? ProjectId { get; set; }
+    public Guid? ProgramId { get; set; }
+
+    // Backward-compat forwarder for legacy TaskId
+    public Guid TaskId
+    {
+        get => DependentItemId ?? Guid.Empty;
+        set => DependentItemId = value;
+    }
+
+    // --- Side A: Prerequisite / Predecessor ---
+    public DependencyNodeTypeEnum DependsOnType { get; set; } = DependencyNodeTypeEnum.TaskItem;
+    public Guid? DependsOnItemId { get; set; }
+    public TaskLevel DependsOnLevel { get; set; } = TaskLevel.Project;
+    public Guid? DependsOnProjectId { get; set; }
+    public Guid? DependsOnProgramId { get; set; }
+
+    // Backward-compat forwarder for legacy DependsOnTaskId
+    public Guid DependsOnTaskId
+    {
+        get => DependsOnItemId ?? Guid.Empty;
+        set => DependsOnItemId = value;
+    }
+
+    public string DependsOnTitle { get; set; } = string.Empty;
+    public string DependsOnTaskTitle
+    {
+        get => DependsOnTitle;
+        set => DependsOnTitle = value;
+    }
+
+    public TaskStatus DependsOnTaskStatus { get; set; } = TaskStatus.Open;
+    public string DependsOnStatus { get; set; } = "Open";
     public string DependsOnAssigneeEmails { get; set; } = string.Empty;
     public DateTime? DependsOnDueDate { get; set; }
-    public TaskDependencyType DependencyType { get; set; }
+
+    // --- Dependency & RAID Metadata ---
+    public string Title { get; set; } = string.Empty;
+    public string ImpactDetails { get; set; } = string.Empty;
+    public TaskDependencyType DependencyType { get; set; } = TaskDependencyType.Blocks;
+    public TaskPriority Criticality { get; set; } = TaskPriority.Medium;
+    public TaskStatus Status { get; set; } = TaskStatus.Open;
     public DateTime? ResolveByUtc { get; set; }
-    public bool IsResolved => DependsOnTaskStatus is TaskStatus.Closed or TaskStatus.Cancelled;
+    public bool IsScheduleConflict { get; set; }
+
+    public bool IsResolved => Status is TaskStatus.Closed or TaskStatus.Cancelled ||
+                              DependsOnTaskStatus is TaskStatus.Closed or TaskStatus.Cancelled ||
+                              DependsOnStatus is "Completed" or "Closed";
     public bool IsOverdue => !IsResolved && ResolveByUtc.HasValue && ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
 }
 
@@ -139,7 +163,7 @@ public class MilestoneDependencyItemDto
     public Guid MilestoneId { get; set; }
     public Guid DependsOnMilestoneId { get; set; }
     public string DependsOnMilestoneName { get; set; } = string.Empty;
-    public MilestoneStatus DependsOnStatus { get; set; }
+    public CalendarEntryStatus DependsOnStatus { get; set; }
     public DateTime? DependsOnEndDate { get; set; }
-    public bool IsCompleted => DependsOnStatus == MilestoneStatus.Completed;
+    public bool IsCompleted => DependsOnStatus == CalendarEntryStatus.Completed;
 }

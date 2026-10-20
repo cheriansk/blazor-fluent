@@ -1,6 +1,7 @@
 using System.Reflection;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Domain.Events;
 using BlazorFluent.Core.Domain.Imports;
 using BlazorFluent.Core.Domain.Jobs;
@@ -74,7 +75,8 @@ public class DeletionLifecycleTests
 
     [Theory]
     [InlineData(typeof(TenantEntity))]
-    [InlineData(typeof(ProjectMilestoneEntity))]
+    [InlineData(typeof(ProjectCalendarEntity))]
+    [InlineData(typeof(WorkDependencyEntity))]
     [InlineData(typeof(ProjectEntity))]
     [InlineData(typeof(ProgramEntity))]
     [InlineData(typeof(TaskEntity))]
@@ -86,8 +88,6 @@ public class DeletionLifecycleTests
     }
 
     [Theory]
-    [InlineData(typeof(TaskDependencyEntity))]
-    [InlineData(typeof(MilestoneDependencyEntity))]
     [InlineData(typeof(KnowledgeArticleReviewerEntity))]
     [InlineData(typeof(StagedImportEntity))]
     public void Graph_Links_And_Staging_Records_Must_Only_Implement_IHardDeletableEntity(Type entityType)

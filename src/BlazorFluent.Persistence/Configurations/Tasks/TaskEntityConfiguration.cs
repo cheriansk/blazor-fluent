@@ -115,11 +115,6 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasForeignKey(t => t.ProgramId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<ProjectMilestoneEntity>()
-            .WithMany()
-            .HasForeignKey(t => t.MilestoneId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasOne(t => t.Workflow)
             .WithMany(w => w.Steps)
             .HasForeignKey(t => t.WorkflowId)
@@ -128,16 +123,6 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
         builder.HasMany(t => t.SubTasks)
             .WithOne(s => s.ParentTask)
             .HasForeignKey(s => s.ParentTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(t => t.OutgoingLinks)
-            .WithOne(l => l.SourceTask)
-            .HasForeignKey(l => l.SourceTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(t => t.IncomingLinks)
-            .WithOne(l => l.TargetTask)
-            .HasForeignKey(l => l.TargetTaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Targeted High-Performance Compound Indexes

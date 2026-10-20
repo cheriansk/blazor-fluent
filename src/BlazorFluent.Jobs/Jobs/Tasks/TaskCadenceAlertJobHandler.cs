@@ -1,4 +1,5 @@
-﻿using System.Text;
+using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
+using System.Text;
 
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
@@ -54,8 +55,8 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
         var taskLookup = activeTasks.ToDictionary(t => t.Id);
 
         // 2. Fetch blocking dependencies
-        var blockingDependencies = await _dbContext.TaskDependencies
-            .Where(d => d.DependencyType == TaskDependencyType.Blocks)
+        var blockingDependencies = await _dbContext.WorkDependencies
+            .Where(d => d.DependencyType == TaskDependencyType.Blocks && d.Status != TaskStatus.Closed && d.Status != TaskStatus.Cancelled && !d.IsDeleted)
             .ToListAsync(cancellationToken);
 
         // 3. User email to ID lookup for in-app notification routing (global non-deleted users)
@@ -111,27 +112,29 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
         // 5. Evaluate blocking dependencies
         foreach (var dep in blockingDependencies)
         {
-            if (!taskLookup.TryGetValue(dep.DependsOnTaskId, out var blockerTask) ||
-                !taskLookup.TryGetValue(dep.TaskId, out var blockedTask))
+            if (!dep.DependsOnItemId.HasValue || !dep.DependentItemId.HasValue) continue;
+
+            if (!taskLookup.TryGetValue(dep.DependsOnItemId.Value, out var blockerTask) ||
+                !taskLookup.TryGetValue(dep.DependentItemId.Value, out var blockedTask))
             {
-                continue; // Either blocker or blocked task is already closed/cancelled or not found
+                continue; // Either blocker or blocked task is already closed/cancelled or not found in active tasks
             }
 
             var blockerAssignees = blockerTask.GetParsedAssigneeEmails();
             var targetDueDays = (blockedTask.DueDate.Date - today).Days;
 
             // Check if blocker deadline is approaching or breached
-            var isDepOverdue = dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date < today;
-            var isDepDueToday = dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date == today;
+            var isDepOverdue = dep.DueDate.Date < today;
+            var isDepDueToday = dep.DueDate.Date == today;
             var isTargetUrgent = targetDueDays <= 3; // Blocked task is due soon!
 
-            if (isDepOverdue || isDepDueToday || isTargetUrgent)
+            if (isDepOverdue || isDepDueToday || isTargetUrgent || dep.IsScheduleConflict)
             {
                 foreach (var email in blockerAssignees)
                 {
                     var normEmail = email.Trim().ToLowerInvariant();
                     if (!blockerAlertsByAssignee.ContainsKey(normEmail)) blockerAlertsByAssignee[normEmail] = new();
-                    blockerAlertsByAssignee[normEmail].Add((blockerTask, blockedTask, dep.ResolveByUtc));
+                    blockerAlertsByAssignee[normEmail].Add((blockerTask, blockedTask, dep.DueDate));
                 }
             }
         }

@@ -23,6 +23,9 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.Property(c => c.ProgramId)
             .IsRequired(false);
 
+        builder.Property(c => c.ParentProgramCalendarId)
+            .IsRequired(false);
+
         builder.Property(c => c.Title)
             .HasMaxLength(200)
             .IsRequired();
@@ -70,6 +73,11 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.HasOne(c => c.Program)
             .WithMany()
             .HasForeignKey(c => c.ProgramId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(c => c.ParentProgramCalendar)
+            .WithMany()
+            .HasForeignKey(c => c.ParentProgramCalendarId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Indexes

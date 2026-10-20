@@ -1,6 +1,8 @@
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
+using BlazorFluent.Core.Domain.Calendar;
+using BlazorFluent.Core.Domain.Calendar.Validators;
 using BlazorFluent.Core.Extensions;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
@@ -32,13 +34,13 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
     }
 
     [Fact]
-    public void ProjectMilestoneEntity_Implements_IEffectiveDatedEntity()
+    public void ProjectCalendarEntity_Implements_IEffectiveDatedEntity()
     {
-        var milestone = new ProjectMilestoneEntity
+        var milestone = new ProjectCalendarEntity
         {
             ProjectId = Guid.NewGuid(),
-            Name = "Sprint 1",
-            Status = MilestoneStatus.Active,
+            Title = "Sprint 1", EntryType = CalendarEntryType.Milestone,
+            Status = CalendarEntryStatus.InProgress,
             StartDate = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc)
         };
@@ -53,11 +55,11 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
     public void IsActiveAt_ComparesByDate_RemainsActiveThroughoutEntireDayOfEndDate()
     {
         // Arrange: EndDate is Oct 19 at 00:00:00 UTC (start of day)
-        var milestone = new ProjectMilestoneEntity
+        var milestone = new ProjectCalendarEntity
         {
             ProjectId = Guid.NewGuid(),
-            Name = "Milestone Alpha",
-            Status = MilestoneStatus.Active,
+            Title = "Milestone Alpha", EntryType = CalendarEntryType.Milestone,
+            Status = CalendarEntryStatus.InProgress,
             StartDate = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 0, 0, 0, DateTimeKind.Utc)
         };
@@ -121,12 +123,12 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         var userResult = userValidator.Validate(sameDayUser);
         userResult.IsValid.Should().BeTrue();
 
-        var milestoneValidator = new ProjectMilestoneEntityValidator();
-        var sameDayMilestone = new ProjectMilestoneEntity
+        var milestoneValidator = new ProjectCalendarEntityValidator();
+        var sameDayMilestone = new ProjectCalendarEntity
         {
             ProjectId = Guid.NewGuid(),
-            Name = "Single-Day Milestone",
-            Status = MilestoneStatus.Planned,
+            Title = "Single-Day Milestone", EntryType = CalendarEntryType.Milestone,
+            Status = CalendarEntryStatus.Scheduled,
             StartDate = new DateTime(2026, 10, 19, 14, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 9, 0, 0, DateTimeKind.Utc) // earlier time, same date
         };

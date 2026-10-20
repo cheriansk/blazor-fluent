@@ -6,6 +6,7 @@ using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -246,9 +247,9 @@ public class ProgramService : IProgramService
             .Where(t => projectIds.Contains(t.ProjectId))
             .ToListAsync(ct);
 
-        var dependencies = await _context.TaskDependencies
+        var dependencies = await _context.WorkDependencies
             .AsNoTracking()
-            .Where(d => projectIds.Contains(d.ProjectId) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value)))
+            .Where(d => (projectIds.Contains(d.ProjectId) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value))) && !d.IsDeleted)
             .ToListAsync(ct);
 
         var projectLookup = program.Projects.ToDictionary(pr => pr.Id, pr => pr.Name);
@@ -264,37 +265,41 @@ public class ProgramService : IProgramService
         var crossProjectDeps = new List<CrossProjectDependencyDto>();
         var riskReasons = new List<string>();
 
-        foreach (var dep in dependencies.Where(d => d.IsCrossProject))
+        foreach (var dep in dependencies.Where(d => d.DependsOnProjectId.HasValue && d.ProjectId != d.DependsOnProjectId.Value))
         {
-            var sourceTask = tasks.FirstOrDefault(t => t.Id == dep.TaskId);
-            var targetTask = tasks.FirstOrDefault(t => t.Id == dep.DependsOnTaskId);
+            var sourceTask = tasks.FirstOrDefault(t => t.Id == dep.DependentItemId);
+            var targetTask = tasks.FirstOrDefault(t => t.Id == dep.DependsOnItemId);
 
-            var sourceProjectName = sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName) ? sName : "External Project";
-            var targetProjectName = dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName) ? tName : "External Project";
+            var sourceProjectName = sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName)
+                ? sName
+                : (projectLookup.TryGetValue(dep.ProjectId, out var sProj) ? sProj : "External Project");
+            var targetProjectName = dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName)
+                ? tName
+                : "External Project";
 
-            var isResolved = targetTask?.Status is TaskStatus.Closed or TaskStatus.Cancelled;
-            var isOverdue = !isResolved && dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
+            var isResolved = dep.IsResolved || (targetTask?.Status is TaskStatus.Closed or TaskStatus.Cancelled);
+            var isOverdue = !isResolved && dep.DueDate.Date < DateTime.UtcNow.Date;
 
             crossProjectDeps.Add(new CrossProjectDependencyDto
             {
                 DependencyId = dep.Id,
                 SourceProjectId = dep.ProjectId,
                 SourceProjectName = sourceProjectName,
-                SourceTaskId = dep.TaskId,
-                SourceTaskTitle = sourceTask?.Title ?? "Task",
+                SourceTaskId = dep.DependentItemId ?? Guid.Empty,
+                SourceTaskTitle = sourceTask?.Title ?? dep.Title,
                 TargetProjectId = dep.DependsOnProjectId ?? Guid.Empty,
                 TargetProjectName = targetProjectName,
-                TargetTaskId = dep.DependsOnTaskId,
-                TargetTaskTitle = targetTask?.Title ?? "Prerequisite Task",
+                TargetTaskId = dep.DependsOnItemId ?? Guid.Empty,
+                TargetTaskTitle = targetTask?.Title ?? dep.DependsOnSnapshotTitle ?? "Prerequisite Item",
                 TargetAssigneeEmails = targetTask?.AssigneeEmails ?? string.Empty,
                 DependencyType = dep.DependencyType,
-                ResolveByUtc = dep.ResolveByUtc,
+                ResolveByUtc = dep.DueDate,
                 IsResolved = isResolved
             });
 
             if (isOverdue && dep.DependencyType == TaskDependencyType.Blocks)
             {
-                riskReasons.Add($"Cross-project blocker overdue: '{sourceTask?.Title}' in [{sourceProjectName}] is blocked by '{targetTask?.Title}' in [{targetProjectName}].");
+                riskReasons.Add($"Cross-project blocker overdue: '{sourceTask?.Title ?? dep.Title}' in [{sourceProjectName}] is blocked by '{targetTask?.Title ?? dep.DependsOnSnapshotTitle ?? "Prerequisite"}' in [{targetProjectName}].");
             }
         }
 

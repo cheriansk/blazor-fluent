@@ -1,33 +1,35 @@
-﻿using BlazorFluent.Shared.DataListTypes;
-using BlazorFluent.Core.Domain.Tenancy;
+using BlazorFluent.Core.Domain.Calendar;
 using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Contracts;
 
 /// <summary>
-/// Domain service contract managing project milestones and milestone-to-milestone dependencies.
+/// Domain service contract managing project milestones and milestone-to-milestone delivery gate dependencies.
+/// Milestones are unified into <see cref="ProjectCalendarEntity"/> (where EntryType is Milestone or a delivery gate).
+/// Dependencies are unified into <see cref="BlazorFluent.Core.Domain.Tasks.WorkDependencyEntity"/>.
 /// </summary>
 public interface IProjectMilestoneService
 {
     /// <summary>
-    /// Retrieves all milestones configured for a project, ordered by sequence and start date.
+    /// Retrieves all milestones configured for a project, ordered by start date.
     /// </summary>
-    Task<IReadOnlyList<ProjectMilestoneEntity>> GetMilestonesByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a single milestone by ID.
     /// </summary>
-    Task<ProjectMilestoneEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default);
+    Task<ProjectCalendarEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default);
 
     /// <summary>
     /// Creates a new milestone for a project.
     /// </summary>
-    Task<Result<ProjectMilestoneEntity>> CreateMilestoneAsync(ProjectMilestoneEntity milestone, CancellationToken ct = default);
+    Task<Result<ProjectCalendarEntity>> CreateMilestoneAsync(ProjectCalendarEntity milestone, CancellationToken ct = default);
 
     /// <summary>
     /// Updates details, status, or date boundaries of a milestone.
     /// </summary>
-    Task<Result<ProjectMilestoneEntity>> UpdateMilestoneAsync(ProjectMilestoneEntity milestone, CancellationToken ct = default);
+    Task<Result<ProjectCalendarEntity>> UpdateMilestoneAsync(ProjectCalendarEntity milestone, CancellationToken ct = default);
 
     /// <summary>
     /// Explicit human lead sign-off marking a milestone as Completed.

@@ -76,15 +76,11 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<RiskEntity> Risks => Set<RiskEntity>();
     public DbSet<AssumptionEntity> Assumptions => Set<AssumptionEntity>();
     public DbSet<IssueEntity> Issues => Set<IssueEntity>();
-    public DbSet<BlockerDependencyEntity> BlockerDependencies => Set<BlockerDependencyEntity>();
-    public DbSet<TaskLinkEntity> TaskLinks => Set<TaskLinkEntity>();
+    public DbSet<WorkDependencyEntity> WorkDependencies => Set<WorkDependencyEntity>();
     public DbSet<ProgramCalendarEntity> ProgramCalendars => Set<ProgramCalendarEntity>();
     public DbSet<ProjectCalendarEntity> ProjectCalendars => Set<ProjectCalendarEntity>();
     public DbSet<UserCalendarEntity> UserCalendars => Set<UserCalendarEntity>();
     public DbSet<UserTaskCommentEntity> TaskComments => Set<UserTaskCommentEntity>();
-    public DbSet<ProjectMilestoneEntity> Milestones => Set<ProjectMilestoneEntity>();
-    public DbSet<MilestoneDependencyEntity> MilestoneDependencies => Set<MilestoneDependencyEntity>();
-    public DbSet<TaskDependencyEntity> TaskDependencies => Set<TaskDependencyEntity>();
     public DbSet<KnowledgeArticleEntity> KnowledgeArticles => Set<KnowledgeArticleEntity>();
     public DbSet<WorkflowEntity> Workflows => Set<WorkflowEntity>();
     public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();

@@ -46,16 +46,6 @@ public partial class TaskEntity : BaseTaskEntity, IProjectScopedEntity, IMilesto
     public ICollection<SubTaskEntity> SubTasks { get; set; } = new List<SubTaskEntity>();
 
     /// <summary>
-    /// Collection of outgoing dependency links where this task is the source.
-    /// </summary>
-    public ICollection<TaskLinkEntity> OutgoingLinks { get; set; } = new List<TaskLinkEntity>();
-
-    /// <summary>
-    /// Collection of incoming dependency links where this task is the target.
-    /// </summary>
-    public ICollection<TaskLinkEntity> IncomingLinks { get; set; } = new List<TaskLinkEntity>();
-
-    /// <summary>
     /// Discussion comments thread.
     /// </summary>
     public ICollection<UserTaskCommentEntity> Comments { get; set; } = new List<UserTaskCommentEntity>();

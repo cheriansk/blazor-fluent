@@ -8,6 +8,7 @@
 @using BlazorFluent.Shared.DataListTypes
 @using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Tasks
+@using BlazorFluent.Core.Domain.Calendar
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Core.Extensions
 @using BlazorFluent.Persistence.Context
@@ -738,7 +739,7 @@ else
                                     </div>
 
                                     <div class="milestone-card-actions">
-                                        @if (m.Status != MilestoneStatus.Completed)
+                                        @if (m.Status != CalendarEntryStatus.Completed)
                                         {
                                             <FluentButton Appearance="ButtonAppearance.Primary"
                                                           OnClick="@(() => SignOffMilestoneAsync(m.MilestoneId))"
@@ -760,7 +761,7 @@ else
                     <div class="milestone-add-section">
                         <FluentLabel Typo="Typography.H5">Create New Milestone</FluentLabel>
 
-                        <FluentTextInput @bind-Value="_newMilestone.Name" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Style="width: 100%; margin-top: 8px;" />
+                        <FluentTextInput @bind-Value="_newMilestone.Title" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Style="width: 100%; margin-top: 8px;" />
 
                         <FluentTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Style="width: 100%; margin-top: 8px;" />
 
@@ -772,10 +773,10 @@ else
                         @if (_milestones.Count > 0)
                         {
                             <div style="margin-top: 8px;">
-                                <FluentSelect TOption="ProjectMilestoneEntity"
+                                <FluentSelect TOption="ProjectCalendarEntity"
                                               TValue="string"
                                               Items="@_milestones"
-                                              OptionText="@(m => $"{m.Name} (Ends {m.EndDate:yyyy-MM-dd})")"
+                                              OptionText="@(m => $"{m.Title} (Ends {m.EndDate:yyyy-MM-dd})")"
                                               OptionValue="@(m => m.Id.ToString())"
                                               @bind-Value="_newMilestonePredecessorId"
                                               Label="Predecessor Milestone (Optional Dependency)" Style="width: 100%;" />
@@ -1356,7 +1357,7 @@ else
     private ProjectEntity? _currentProject;
     private List<ProjectEntity> _availableProjects = [];
     private List<TaskEntity> _tasks = [];
-    private List<ProjectMilestoneEntity> _milestones = [];
+    private List<ProjectCalendarEntity> _milestones = [];
     private List<MilestoneHealthSummaryDto> _milestonesHealth = [];
     private ProjectHealthSummaryDto _projectHealth = new();
     private Dictionary<Guid, string> _milestoneLookup = new();
@@ -1408,7 +1409,7 @@ else
     private string? _newDepNotes;
 
     // Milestone create form
-    private ProjectMilestoneEntity _newMilestone = new();
+    private ProjectCalendarEntity _newMilestone = new();
     private DateTime? _newMilestoneStartDate;
     private DateTime? _newMilestoneEndDate;
     private string _newMilestonePredecessorId = string.Empty;
@@ -1541,9 +1542,9 @@ else
     {
         if (_currentProject is null) return;
 
-        var dependencies = await DbContext.TaskDependencies
+        var dependencies = await DbContext.WorkDependencies
             .AsNoTracking()
-            .Where(d => d.ProjectId == _currentProject.Id && d.DependencyType == TaskDependencyType.Blocks)
+            .Where(d => d.ProjectId == _currentProject.Id && d.DependencyType == TaskDependencyType.Blocks && !d.IsDeleted)
             .ToListAsync();
 
         var taskLookup = _tasks.ToDictionary(t => t.Id);
@@ -1551,12 +1552,17 @@ else
 
         foreach (var dep in dependencies)
         {
-            if (taskLookup.TryGetValue(dep.DependsOnTaskId, out var blocker))
+            if (dep.DependsOnItemId.HasValue && taskLookup.TryGetValue(dep.DependsOnItemId.Value, out var blocker))
             {
-                if (!blocker.IsClosed)
+                if (!blocker.IsClosed && dep.DependentItemId.HasValue)
                 {
-                    _activeBlockedTaskIds.Add(dep.TaskId);
+                    _activeBlockedTaskIds.Add(dep.DependentItemId.Value);
                 }
+            }
+            else if (!dep.IsResolved && dep.DependentItemId.HasValue)
+            {
+                // Unresolved cross-project, gate, or manual dependency
+                _activeBlockedTaskIds.Add(dep.DependentItemId.Value);
             }
         }
     }
@@ -1571,7 +1577,7 @@ else
 
         foreach (var m in _milestones)
         {
-            _milestoneFilterOptions.Add(new(m.Id.ToString(), $"🚩 {m.Name} ({m.Status})"));
+            _milestoneFilterOptions.Add(new(m.Id.ToString(), $"🚩 {m.Title} ({m.Status})"));
         }
 
         _milestoneSelectOptions = new List<MilestoneOptionItem>
@@ -1581,7 +1587,7 @@ else
 
         foreach (var m in _milestones)
         {
-            _milestoneSelectOptions.Add(new(m.Id.ToString(), m.Name));
+            _milestoneSelectOptions.Add(new(m.Id.ToString(), m.Title));
         }
     }
 
@@ -1613,7 +1619,7 @@ else
     private void OpenMilestonesModal()
     {
         _milestoneErrorMessage = string.Empty;
-        _newMilestone = new ProjectMilestoneEntity
+        _newMilestone = new ProjectCalendarEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
             OrderIndex = _milestones.Count + 1
@@ -1902,7 +1908,7 @@ else
             _newMilestone.ProjectId = _currentProject!.Id;
             _newMilestone.StartDate = _newMilestoneStartDate.Value;
             _newMilestone.EndDate = _newMilestoneEndDate.Value;
-            _newMilestone.Status = MilestoneStatus.Active;
+            _newMilestone.Status = CalendarEntryStatus.Confirmed;
 
             var res = await MilestoneService.CreateMilestoneAsync(_newMilestone);
             if (res.IsSuccess)

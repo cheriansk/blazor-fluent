@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -25,26 +25,23 @@ public class BlockerRollupProvider : IWorkItemRollupProvider
         DateTime endUtc,
         CancellationToken ct = default)
     {
-        var query = _context.BlockerDependencies
+        var query = _context.WorkDependencies
             .AsNoTracking()
-            .Include(b => b.SourceTask)
-            .Include(b => b.TargetTask)
             .Where(b => b.TenantId == tenantId && !b.IsDeleted && b.DueDate >= startUtc && b.DueDate <= endUtc);
 
         if (level == TaskLevel.Program && scopeId.HasValue)
         {
             query = query.Where(b => b.ProgramId == scopeId.Value ||
+                b.DependsOnProgramId == scopeId.Value ||
                 (b.ProjectId.HasValue && _context.Projects.Any(p => p.Id == b.ProjectId.Value && p.ProgramId == scopeId.Value)));
         }
         else if (level == TaskLevel.Project && scopeId.HasValue)
         {
-            query = query.Where(b => b.ProjectId == scopeId.Value ||
-                (b.SourceTask != null && b.SourceTask.ProjectId == scopeId.Value) ||
-                (b.TargetTask != null && b.TargetTask.ProjectId == scopeId.Value));
+            query = query.Where(b => b.ProjectId == scopeId.Value || b.DependsOnProjectId == scopeId.Value);
         }
         else if (level == TaskLevel.User && !string.IsNullOrWhiteSpace(userId))
         {
-            query = query.Where(b => b.UserId == userId || b.AssigneeEmails.Contains(userId) || b.WatcherEmails.Contains(userId));
+            query = query.Where(b => b.UserId == userId || (b.AssigneeEmails != null && b.AssigneeEmails.Contains(userId)) || (b.WatcherEmails != null && b.WatcherEmails.Contains(userId)));
         }
 
         var items = await query.ToListAsync(ct);
@@ -53,17 +50,17 @@ public class BlockerRollupProvider : IWorkItemRollupProvider
         {
             Id = b.Id,
             Title = $"[Blocker] {b.Title}",
-            Description = $"{b.ImpactDetails}\n(Blocks: {b.SourceTask?.Title ?? "Task"}, Blocked By: {b.TargetTask?.Title ?? "Task"})",
+            Description = $"{b.ImpactDetails}\n(Waiting on: {b.DependsOnSnapshotTitle ?? "Prerequisite"})",
             StartUtc = b.StartDate,
             EndUtc = b.DueDate,
             IsAllDay = true,
             ItemCategory = "Blocker",
             PriorityOrCriticality = $"Criticality: {b.Criticality}",
             Status = b.Status.ToString(),
-            OwnerOrAssignee = b.AssigneeEmails ?? b.ReporterEmail,
-            ColorHex = "#e81123",
+            OwnerOrAssignee = b.AssigneeEmails ?? b.ReporterEmail ?? string.Empty,
+            ColorHex = b.IsScheduleConflict ? "#d13438" : "#e81123",
             BadgeIcon = "Blocked",
-            SourceTaskId = b.SourceTaskId,
+            SourceTaskId = b.DependentItemId,
             ScopeId = b.ProjectId ?? b.ProgramId,
             Level = b.Level
         }).ToList();

@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Components.Common
+@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Calendar
@@ -536,11 +536,15 @@
                                 else
                                 {
                                     <FluentDataGrid Items="@_programBlockers.AsQueryable()" ResizableColumns="true">
-                                        <TemplateColumn Title="Dependent Task (Blocked)">
-                                            <strong>@context.SourceTask?.Title</strong>
+                                        <TemplateColumn Title="Dependent Item (Blocked)">
+                                            <strong>@context.Title</strong>
                                         </TemplateColumn>
-                                        <TemplateColumn Title="Prerequisite Task (Blocking)">
-                                            <strong>@context.TargetTask?.Title</strong>
+                                        <TemplateColumn Title="Prerequisite Item (Blocking)">
+                                            <strong>@(context.DependsOnSnapshotTitle ?? "Prerequisite Item")</strong>
+                                            @if (context.IsScheduleConflict)
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Style="margin-left: 6px;">Schedule Conflict</FluentBadge>
+                                            }
                                         </TemplateColumn>
                                         <PropertyColumn Property="@(b => b.Criticality)" Title="Criticality" />
                                         <TemplateColumn Title="Status">
@@ -601,7 +605,7 @@
     private List<RiskEntity> _programRisks = [];
     private List<AssumptionEntity> _programAssumptions = [];
     private List<IssueEntity> _programIssues = [];
-    private List<BlockerDependencyEntity> _programBlockers = [];
+    private List<WorkDependencyEntity> _programBlockers = [];
 
     // Add / Edit Program Form
     private bool _showProgramModal = false;
@@ -815,10 +819,8 @@
                 .OrderByDescending(i => i.Created)
                 .ToListAsync();
 
-            _programBlockers = await DbContext.BlockerDependencies
+            _programBlockers = await DbContext.WorkDependencies
                 .AsNoTracking()
-                .Include(b => b.SourceTask)
-                .Include(b => b.TargetTask)
                 .Where(b => b.TenantId == _selectedTenantId && b.ProgramId == _selectedProgram.Id && !b.IsDeleted)
                 .OrderByDescending(b => b.Created)
                 .ToListAsync();

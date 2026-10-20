@@ -20,7 +20,7 @@ public class ProjectCalendarEntityValidator : AbstractValidator<ProjectCalendarE
             .NotEmpty().WithMessage("Start date is required.");
 
         RuleFor(x => x.EndDate)
-            .NotNull().WithMessage("End date is required.")
-            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("End date cannot be before start date.");
+            .Must((entity, endDate) => !endDate.HasValue || endDate.Value.Date >= entity.StartDate.Date)
+            .WithMessage("End date cannot precede start date.");
     }
 }

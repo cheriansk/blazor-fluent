@@ -1,10 +1,11 @@
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Contracts;
 
 /// <summary>
-/// Domain service contract managing project work items, swimlane task lifecycle, and Jira-style comments.
+/// Domain service contract managing project work items, swimlane task lifecycle, and universal enterprise dependencies.
 /// </summary>
 public interface IUserTaskService
 {
@@ -59,7 +60,7 @@ public interface IUserTaskService
     Task<IReadOnlyList<TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default);
 
     /// <summary>
-    /// Registers a blocking or prerequisite dependency between two tasks.
+    /// Registers a blocking or prerequisite dependency between two tasks or endpoints.
     /// </summary>
     Task<Result<bool>> AddTaskDependencyAsync(
         Guid projectId,
@@ -82,8 +83,9 @@ public interface IUserTaskService
     Task<Result<bool>> DeleteSubTaskAsync(Guid subTaskId, CancellationToken ct = default);
 
     // --- Enterprise Blocker Dependencies (D of RAID) & Links ---
-    Task<IReadOnlyList<TaskLinkEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default);
-    Task<Result<TaskLinkEntity>> CreateBlockedByLinkAsync(
+    Task<IReadOnlyList<WorkDependencyEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default);
+
+    Task<Result<WorkDependencyEntity>> CreateBlockedByLinkAsync(
         Guid sourceTaskId,
         Guid targetTaskId,
         DateTime resolveDueDate,
@@ -91,5 +93,17 @@ public interface IUserTaskService
         string impactDetails,
         string? watcherEmails = null,
         CancellationToken ct = default);
+
     Task<Result<bool>> RemoveTaskLinkAsync(Guid linkId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Promotes an existing ManualDependency into a linked TaskItem or CalendarGate in-place.
+    /// </summary>
+    Task<Result<WorkDependencyEntity>> PromoteManualDependencyAsync(
+        Guid dependencyId,
+        DependencyNodeTypeEnum targetType,
+        Guid targetItemId,
+        Guid? targetProjectId,
+        Guid? targetProgramId,
+        CancellationToken ct = default);
 }

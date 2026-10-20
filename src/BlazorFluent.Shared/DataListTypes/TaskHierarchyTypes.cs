@@ -215,7 +215,19 @@ public enum CalendarEntryType
     Sprint = 9,
 
     [Display(Name = "Deadline", Description = "Target completion deadline or code freeze")]
-    Deadline = 10
+    Deadline = 10,
+
+    [Display(Name = "Vendor Delivery", Description = "Inbound or outbound vendor/partner delivery gate")]
+    VendorDelivery = 11,
+
+    [Display(Name = "SIT Window", Description = "System Integration Testing execution and sign-off")]
+    SitWindow = 12,
+
+    [Display(Name = "UAT Window", Description = "User Acceptance Testing execution and business sign-off")]
+    UatWindow = 13,
+
+    [Display(Name = "Go-Live Preparation", Description = "Cutover dry run, dress rehearsal, or go-live prep")]
+    GoLivePrep = 14
 }
 
 /// <summary>
@@ -227,7 +239,24 @@ public enum CalendarEntryStatus
     Confirmed = 2,
     InProgress = 3,
     Completed = 4,
-    Cancelled = 5
+    Cancelled = 5,
+    AtRisk = 6,
+    Delayed = 7
+}
+
+/// <summary>
+/// Identifies the endpoint classification for Side B (Dependent) or Side A (Prerequisite) in WorkDependencyEntity.
+/// </summary>
+public enum DependencyNodeTypeEnum
+{
+    [Display(Name = "Calendar / Milestone", Description = "A program or project calendar delivery gate (Milestone, Sprint, SIT, UAT, Vendor Delivery, Release, etc.)")]
+    CalendarGate = 1,
+
+    [Display(Name = "Task / Work Item", Description = "A program or project task or work item")]
+    TaskItem = 2,
+
+    [Display(Name = "Manual Dependency", Description = "A manually logged external, vendor, or ad-hoc RAID dependency")]
+    ManualDependency = 3
 }
 
 /// <summary>
