@@ -46,7 +46,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return new List<KnowledgeArticleListDto>();
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var query = _context.KnowledgeArticles
             .AsNoTracking()
@@ -120,7 +120,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return null;
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var a = await _context.KnowledgeArticles
             .AsNoTracking()
@@ -273,7 +273,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             throw new UnauthorizedAccessException("Only authenticated users can update knowledge articles.");
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var article = await _context.KnowledgeArticles
             .AsTracking()
             .Include(a => a.Reviewers)
@@ -324,7 +324,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return false;
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var article = await _context.KnowledgeArticles
             .AsTracking()
             .Include(a => a.Reviewers)
@@ -388,7 +388,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return false;
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var article = await _context.KnowledgeArticles
             .AsTracking()
             .FirstOrDefaultAsync(a => a.Id == articleId && (a.IsGlobal || a.TenantId == tenantId), cancellationToken);
@@ -430,7 +430,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             return new List<string>();
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var labelStrings = await _context.KnowledgeArticles
             .AsNoTracking()
             .Where(a => a.IsGlobal || a.TenantId == tenantId)

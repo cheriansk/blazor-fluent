@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.Extensions;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tenancy;
@@ -74,4 +75,40 @@ public class ProjectEntity : TenantAuditableEntity, IScheduledWorkEntity, ISoftD
 
     /// <summary>Navigation to project user role assignments.</summary>
     public ICollection<ProjectUserRoleEntity> UserRoles { get; set; } = new List<ProjectUserRoleEntity>();
+
+    /// <summary>
+    /// Executes a validated state transition for this project, atomically managing lifecycle timestamps.
+    /// </summary>
+    public virtual void TransitionTo(ProjectStatusEnum nextStatus, DateTime utcNow, string reason = "")
+    {
+        if (Status == nextStatus) return;
+        if (!Status.CanTransitionTo(nextStatus))
+        {
+            throw new InvalidOperationException($"Cannot transition project '{Name}' from {Status} to {nextStatus}.");
+        }
+
+        Status = nextStatus;
+
+        if (nextStatus == ProjectStatusEnum.Active && ActualStartDate == null)
+        {
+            ActualStartDate = utcNow;
+        }
+        else if (nextStatus == ProjectStatusEnum.Done)
+        {
+            ActualEndDate = utcNow;
+        }
+        else if (nextStatus is ProjectStatusEnum.New or ProjectStatusEnum.Active && ActualEndDate != null)
+        {
+            ActualEndDate = null;
+        }
+    }
+
+    /// <summary>Activates this project.</summary>
+    public virtual void Activate(DateTime utcNow) => TransitionTo(ProjectStatusEnum.Active, utcNow);
+
+    /// <summary>Suspends this project with a stated reason.</summary>
+    public virtual void PutOnHold(DateTime utcNow, string reason = "") => TransitionTo(ProjectStatusEnum.OnHold, utcNow, reason: reason);
+
+    /// <summary>Completes this project.</summary>
+    public virtual void Complete(DateTime utcNow) => TransitionTo(ProjectStatusEnum.Done, utcNow);
 }

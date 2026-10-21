@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -6,6 +6,7 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// <summary>
 /// Status of a background batch job execution.
 /// </summary>
+[LifecycleEnum]
 public enum JobStatusEnum
 {
     [Display(Name = "Queued", Description = "Job is queued in channel awaiting worker pickup")]
@@ -47,5 +48,15 @@ public static class JobStatusEnumDefinitions
     {
         [Display(Name = "Active Jobs", Description = "Filters for active and pending jobs")]
         public const string ActiveOnly = "ActiveOnly";
+
+    public static readonly IReadOnlyDictionary<JobStatusEnum, IReadOnlySet<JobStatusEnum>> AllowedTransitions =
+        new Dictionary<JobStatusEnum, IReadOnlySet<JobStatusEnum>>
+        {
+            [JobStatusEnum.Queued] = new HashSet<JobStatusEnum> { JobStatusEnum.Running, JobStatusEnum.Failed },
+            [JobStatusEnum.Running] = new HashSet<JobStatusEnum> { JobStatusEnum.Succeeded, JobStatusEnum.Failed, JobStatusEnum.Retrying },
+            [JobStatusEnum.Retrying] = new HashSet<JobStatusEnum> { JobStatusEnum.Running, JobStatusEnum.Failed },
+            [JobStatusEnum.Failed] = new HashSet<JobStatusEnum> { JobStatusEnum.Queued },
+            [JobStatusEnum.Succeeded] = new HashSet<JobStatusEnum>()
+        };
     }
 }

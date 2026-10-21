@@ -141,10 +141,41 @@ namespace TemplateGuard.Analyzers
             description: "Domain entities must persist foreign keys only and decorate convenience navigation properties with [NotMapped].",
             helpLinkUri: HelpBaseUrl + "#tg012");
 
+        public static readonly DiagnosticDescriptor RuleTg013 = new(
+            id: "TG013",
+            title: "Enum operations must use DataListExtensions extension methods",
+            messageFormat: "Direct invocation of '{0}' on enum '{1}' violates architectural standards. ALLOWED APPROACH: Use DataListExtensions extension methods (.ToEnum<T>(), .TryToEnum<T>(), .GetEnumDisplayName<T>(), .GetEnumCode<T>(), .GetEnumCodesByCategory<T>(), or .GetDataListItems<T>()).",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Direct Enum parsing and raw reflection on enums must use centralized DataListExtensions.",
+            helpLinkUri: HelpBaseUrl + "#tg013");
+
+        public static readonly DiagnosticDescriptor RuleTg014 = new(
+            id: "TG014",
+            title: "Enum must declare taxonomy attribute [LifecycleEnum] or [ClassificationEnum]",
+            messageFormat: "Enum '{0}' in namespace '{1}' must be decorated with either [LifecycleEnum] or [ClassificationEnum] to explicitly specify its domain taxonomy.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "All enums in BlazorFluent.Shared.DataListTypes must declare their taxonomy category via [LifecycleEnum] or [ClassificationEnum].",
+            helpLinkUri: HelpBaseUrl + "#tg014");
+
+        public static readonly DiagnosticDescriptor RuleTg015 = new(
+            id: "TG015",
+            title: "Lifecycle enum must declare companion definitions containing 'AllowedTransitions'",
+            messageFormat: "Lifecycle enum '{0}' lacks a companion definitions class containing an 'AllowedTransitions' dictionary. State machines must define their legal transition matrix.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Enums decorated with [LifecycleEnum] must declare a companion definitions class with an AllowedTransitions matrix.",
+            helpLinkUri: HelpBaseUrl + "#tg015");
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
-                RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012);
+                RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
+                RuleTg014, RuleTg015);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -152,6 +183,7 @@ namespace TemplateGuard.Analyzers
             context.EnableConcurrentExecution();
 
             context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
+            context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
@@ -664,14 +696,81 @@ namespace TemplateGuard.Analyzers
             var ns = enumSymbol.ContainingNamespace?.ToDisplayString();
             if (ns == null || (!ns.EndsWith(".Shared.DataListTypes") && ns != "Shared.DataListTypes")) return;
 
+            var location = enumSymbol.Locations.FirstOrDefault() ?? Location.None;
+
             if (!enumSymbol.Name.EndsWith("Enum", StringComparison.Ordinal))
             {
-                var location = enumSymbol.Locations.FirstOrDefault() ?? Location.None;
                 context.ReportDiagnostic(Diagnostic.Create(
                     RuleTg006,
                     location,
                     enumSymbol.Name,
                     ns));
+            }
+
+            // Rule TG014: Taxonomy Attribute Law
+            var attributes = enumSymbol.GetAttributes();
+            var isLifecycle = attributes.Any(a => a.AttributeClass?.Name is "LifecycleEnumAttribute" or "LifecycleEnum");
+            var isClassification = attributes.Any(a => a.AttributeClass?.Name is "ClassificationEnumAttribute" or "ClassificationEnum");
+
+            if (!isLifecycle && !isClassification)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg014,
+                    location,
+                    enumSymbol.Name,
+                    ns));
+            }
+
+            // Rule TG015: Lifecycle Enum Transition Matrix Law
+            if (isLifecycle)
+            {
+                var containingTypes = enumSymbol.ContainingNamespace.GetTypeMembers();
+                var expectedDefNames = new[] { $"{enumSymbol.Name}Definitions", $"{enumSymbol.Name}Meta" };
+                var hasAllowedTransitions = containingTypes.Any(t =>
+                    expectedDefNames.Contains(t.Name, StringComparer.OrdinalIgnoreCase) &&
+                    t.GetMembers().Any(m => m.Name.Equals("AllowedTransitions", StringComparison.OrdinalIgnoreCase)));
+
+                if (!hasAllowedTransitions)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        RuleTg015,
+                        location,
+                        enumSymbol.Name));
+                }
+            }
+        }
+
+        private void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+        {
+            if (context.Node is not InvocationExpressionSyntax invocation) return;
+
+            var filePath = invocation.SyntaxTree.FilePath?.Replace('\\', '/');
+            if (filePath != null)
+            {
+                if (filePath.EndsWith("/DataListExtensions.cs", StringComparison.OrdinalIgnoreCase) ||
+                    filePath.Contains("/BlazorFluent.Shared/Extensions/") ||
+                    filePath.Contains("/Migrations/") ||
+                    filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
+            if (symbolInfo.Symbol is not IMethodSymbol methodSymbol) return;
+
+            var containingType = methodSymbol.ContainingType;
+            if (containingType == null) return;
+
+            // Rule TG013: Prohibit direct Enum.Parse, Enum.TryParse, Enum.GetValues, Enum.GetNames
+            if (containingType.SpecialType == SpecialType.System_Enum ||
+                (containingType.Name == "Enum" && containingType.ContainingNamespace?.ToDisplayString() == "System"))
+            {
+                if (methodSymbol.Name is "TryParse" or "Parse" or "GetValues" or "GetNames")
+                {
+                    var targetEnumName = methodSymbol.TypeArguments.FirstOrDefault()?.Name ?? "Enum";
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg013, invocation.GetLocation(), methodSymbol.Name, targetEnumName));
+                }
             }
         }
 

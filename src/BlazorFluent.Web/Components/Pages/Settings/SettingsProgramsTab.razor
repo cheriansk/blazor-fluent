@@ -90,17 +90,7 @@
                     <FluentDatePicker Label="Start Date" @bind-Value="_programFormStartDate" Style="flex: 1;" />
                     <FluentDatePicker Label="Target Completion Date" @bind-Value="_programFormTargetEndDate" Style="flex: 1;" />
                     <div style="flex: 1;">
-                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
-                        <FluentSelect TOption="string" TValue="string"
-                                      Value="@_programFormStatus.ToString()"
-                                      ValueChanged="@(v => _programFormStatus = Enum.TryParse<ProgramStatusEnum>(v, out var ps) ? ps : ProgramStatusEnum.Active)"
-                                      Style="width: 100%;">
-                            <FluentOption Value="@nameof(ProgramStatusEnum.Planning)">Planning</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatusEnum.Active)">Active</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatusEnum.AtRisk)">At Risk</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatusEnum.OnHold)">On Hold</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatusEnum.Completed)">Completed</FluentOption>
-                        </FluentSelect>
+                        <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_programFormStatus" Style="width: 100%;" />
                     </div>
                 </FluentStack>
 
@@ -349,16 +339,7 @@
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
                                         <FluentTextInput Label="Location" @bind-Value="_projLocation" Style="flex: 2;" Placeholder="e.g. Headquarters / Remote" />
                                         <div style="flex: 1;">
-                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
-                                            <FluentSelect TOption="string" TValue="string"
-                                                          Value="@_projStatus.ToString()"
-                                                          ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatusEnum>(val, out var res) ? res : ProjectStatusEnum.New)"
-                                                          Style="width: 100%;">
-                                                <FluentOption Value="@nameof(ProjectStatusEnum.New)">New</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatusEnum.Active)">Active</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatusEnum.OnHold)">OnHold</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatusEnum.Done)">Done</FluentOption>
-                                            </FluentSelect>
+                                            <DataListSelect TEnum="ProjectStatusEnum" TValue="ProjectStatusEnum" Label="Status" @bind-Value="_projStatus" Style="width: 100%;" />
                                         </div>
                                     </FluentStack>
 

@@ -13,7 +13,7 @@ public class TaskEntityValidatorTests
     private static TaskEntity CreateBaseTask() => new()
     {
         Id = Guid.CreateVersion7(),
-        TenantId = "tenant_test",
+        TenantId = Guid.CreateVersion7(),
         Level = TaskLevelEnum.Project,
         ProjectId = Guid.CreateVersion7(),
         Title = "Implement Security Gate",

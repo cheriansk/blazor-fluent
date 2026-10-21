@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Imports;
@@ -211,7 +211,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         // 1. Download & Decrypt Stream Locally
         using var encryptedStream = await _blobStorageService.DownloadBlobAsync(file.BlobUri, ct);
-        using var decryptedStream = await _encryptionService.DecryptStreamAsync(encryptedStream, file.TenantId, ct);
+        using var decryptedStream = await _encryptionService.DecryptStreamAsync(encryptedStream, file.TenantId.ToString(), ct);
 
         // 2. Local Schema Validation & Universal JSON Staging (staging.StagedImports)
         _logger.LogInformation(
@@ -371,15 +371,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 row.DomainProperties.TryGetValue("Priority", out var priorityStr);
                 row.DomainProperties.TryGetValue("DueDateUtc", out var dueDateStr);
 
-                if (!Enum.TryParse<BlazorFluent.Shared.DataListTypes.TaskStatusEnum>(statusStr, ignoreCase: true, out var status))
-                {
-                    status = BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open;
-                }
-
-                if (!Enum.TryParse<TaskPriorityEnum>(priorityStr, ignoreCase: true, out var priority))
-                {
-                    priority = TaskPriorityEnum.Medium;
-                }
+                var status = statusStr.ToEnum(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open);
+                var priority = priorityStr.ToEnum(TaskPriorityEnum.Medium);
 
                 DateTime dueDateUtc = DateTime.UtcNow.AddDays(7);
                 if (!string.IsNullOrWhiteSpace(dueDateStr) &&

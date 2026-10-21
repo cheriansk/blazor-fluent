@@ -33,7 +33,7 @@ public class ProjectHealthService : IProjectHealthService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectHealth", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var today = DateTime.UtcNow.Date;
 
         var project = await _context.Projects
@@ -140,7 +140,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<MilestoneHealthSummaryDto> GetMilestoneHealthAsync(Guid milestoneId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var today = DateTime.UtcNow.Date;
 
         var milestone = await _context.ProjectCalendars
@@ -296,7 +296,7 @@ public class ProjectHealthService : IProjectHealthService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectMilestonesHealth", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var milestoneIds = await _context.ProjectCalendars
             .AsNoTracking()

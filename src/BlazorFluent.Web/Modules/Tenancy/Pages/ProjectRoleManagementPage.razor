@@ -129,7 +129,7 @@
                         <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
                         <FluentSelect TOption="string" TValue="string"
                                       Value="@_formRole.ToString()"
-                                      ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRoleEnum>(val, out var res) ? res : ProjectRoleEnum.ReadOnly)"
+                                      ValueChanged="@(val => _formRole = val.ToEnum(ProjectRoleEnum.ReadOnly))"
                                       Style="width: 100%;">
                             <FluentOption Value="@nameof(ProjectRoleEnum.ReadOnly)">👁️ ReadOnly</FluentOption>
                             <FluentOption Value="@nameof(ProjectRoleEnum.Contribute)">💻 Contribute</FluentOption>
@@ -362,7 +362,7 @@
     {
         try
         {
-            var tenantId = TenantContext.TenantId ?? "default";
+            var tenantId = TenantContext.TenantId;
             var tenantMembers = await DbContext.TenantUsers
                 .AsNoTracking()
                 .Include(tu => tu.User)

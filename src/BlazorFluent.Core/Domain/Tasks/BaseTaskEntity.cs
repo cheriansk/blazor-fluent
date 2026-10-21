@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.Extensions;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -152,4 +153,54 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEnti
         string.IsNullOrWhiteSpace(Labels)
             ? []
             : Labels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>
+    /// Gets the default category for this work item subtype (Task, SubTask, or Risk).
+    /// </summary>
+    public virtual string GetDefaultCategory() => TaskStatusEnumDefinitions.Categories.Task;
+
+    /// <summary>
+    /// Executes a validated state transition for this work item, atomically managing lifecycle timestamps.
+    /// </summary>
+    public virtual void TransitionTo(TaskStatusEnum nextStatus, DateTime utcNow, string? category = null, string reason = "")
+    {
+        if (Status == nextStatus) return;
+
+        var effectiveCategory = !string.IsNullOrWhiteSpace(category) ? category : GetDefaultCategory();
+        if (!Status.CanTransitionTo(nextStatus, effectiveCategory))
+        {
+            throw new InvalidOperationException($"Cannot transition {effectiveCategory} '{Title}' from {Status} to {nextStatus}.");
+        }
+
+        Status = nextStatus;
+
+        if (nextStatus == TaskStatusEnum.InProgress && ActualStartDate == null)
+        {
+            ActualStartDate = utcNow;
+        }
+        else if (nextStatus == TaskStatusEnum.Closed)
+        {
+            ActualEndDate = utcNow;
+            IsClosed = true;
+            ClosedAtUtc = utcNow;
+        }
+        else if (nextStatus is TaskStatusEnum.Open or TaskStatusEnum.InProgress && IsClosed)
+        {
+            IsClosed = false;
+            ClosedAtUtc = null;
+            ActualEndDate = null;
+        }
+    }
+
+    /// <summary>Starts execution on this work item.</summary>
+    public virtual void StartWork(DateTime utcNow) => TransitionTo(TaskStatusEnum.InProgress, utcNow);
+
+    /// <summary>Pauses execution on this work item with a stated reason.</summary>
+    public virtual void Pause(DateTime utcNow, string reason = "") => TransitionTo(TaskStatusEnum.Paused, utcNow, reason: reason);
+
+    /// <summary>Completes and closes this work item.</summary>
+    public virtual void Complete(DateTime utcNow) => TransitionTo(TaskStatusEnum.Closed, utcNow);
+
+    /// <summary>Cancels this work item with a stated reason.</summary>
+    public virtual void Cancel(DateTime utcNow, string reason = "") => TransitionTo(TaskStatusEnum.Cancelled, utcNow, reason: reason);
 }

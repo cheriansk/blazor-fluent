@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
+[ClassificationEnum]
 public enum UserTypeEnum
 {
     /// <summary>Client / external user. Strictly bound to a single tenant. Cannot switch.</summary>

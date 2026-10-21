@@ -152,9 +152,9 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
             return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open);
         }
 
-        if (Enum.TryParse<BlazorFluent.Shared.DataListTypes.TaskStatusEnum>(statusRaw, ignoreCase: true, out var parsed))
+        if (statusRaw.TryToEnum<BlazorFluent.Shared.DataListTypes.TaskStatusEnum>(out var parsed))
         {
-            return parsed.ToString();
+            return parsed.GetCode();
         }
 
         switch (statusRaw.Replace(" ", "", StringComparison.Ordinal).ToUpperInvariant())
@@ -194,9 +194,9 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
             return nameof(TaskPriorityEnum.Medium);
         }
 
-        if (Enum.TryParse<TaskPriorityEnum>(priorityRaw, ignoreCase: true, out var parsed))
+        if (priorityRaw.TryToEnum<TaskPriorityEnum>(out var parsed))
         {
-            return parsed.ToString();
+            return parsed.GetCode();
         }
 
         if (string.Equals(priorityRaw, "Critical", StringComparison.OrdinalIgnoreCase))

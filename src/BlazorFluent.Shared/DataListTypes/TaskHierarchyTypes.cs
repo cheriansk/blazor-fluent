@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using BlazorFluent.Shared.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Organizational scoping level for a work item or calendar event.
 /// </summary>
+[ClassificationEnum]
 public enum TaskLevelEnum
 {
     [Display(Name = "Tenant", Description = "Executive tenant-wide governance item")]
@@ -23,6 +25,7 @@ public enum TaskLevelEnum
 /// <summary>
 /// Execution and SLA priority rating for a task or work item.
 /// </summary>
+[ClassificationEnum]
 public enum TaskPriorityEnum
 {
     [Display(Name = "Low", Description = "Routine task, low business impact")]
@@ -40,31 +43,100 @@ public enum TaskPriorityEnum
 
 /// <summary>
 /// Lifecycle status of any work item inheriting from BaseTaskEntity.
+/// Multi-category membership allows statuses to be partitioned across Tasks, SubTasks, and Risks.
 /// </summary>
+[LifecycleEnum]
 public enum TaskStatusEnum
 {
     [Display(Name = "Open", Description = "Ready for work, awaiting triage")]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Task)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.SubTask)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Risk)]
     Open = 1,
 
     [Display(Name = "In Progress", Description = "Work actively underway")]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Task)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.SubTask)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Risk)]
     InProgress = 2,
 
     [Display(Name = "Closed", Description = "Deliverable completed and verified")]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Task)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.SubTask)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Risk)]
     Closed = 3,
 
     [Display(Name = "Cancelled", Description = "Work item descoped or abandoned")]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Task)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.SubTask)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Risk)]
     Cancelled = 4,
 
     [Display(Name = "Paused", Description = "Pipeline paused, awaiting administrator decision")]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Task)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.SubTask)]
     Paused = 5,
 
     [Display(Name = "Pending", Description = "Awaiting preceding workflow step completion")]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.Task)]
+    [DataListCategory(TaskStatusEnumDefinitions.Categories.SubTask)]
     Pending = 6
+}
+
+public static class TaskStatusEnumDefinitions
+{
+    public static class Categories
+    {
+        [Display(Name = "Project Task", Description = "Standard deliverables and work items")]
+        public const string Task = "TASK";
+
+        [Display(Name = "Sub-Task", Description = "Discrete child work item")]
+        public const string SubTask = "SUBTASK";
+
+        [Display(Name = "Enterprise Risk", Description = "Risk deliverable or threat item")]
+        public const string Risk = "RISK";
+    }
+
+    /// <summary>
+    /// Category-scoped state transition rules.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<TaskStatusEnum, IReadOnlySet<TaskStatusEnum>>> AllowedTransitions =
+        new Dictionary<string, IReadOnlyDictionary<TaskStatusEnum, IReadOnlySet<TaskStatusEnum>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            [Categories.Task] = new Dictionary<TaskStatusEnum, IReadOnlySet<TaskStatusEnum>>
+            {
+                [TaskStatusEnum.Open] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress, TaskStatusEnum.Paused, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.InProgress] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Paused, TaskStatusEnum.Closed, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Paused] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Pending] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Open, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Closed] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress },
+                [TaskStatusEnum.Cancelled] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Open }
+            },
+
+            [Categories.SubTask] = new Dictionary<TaskStatusEnum, IReadOnlySet<TaskStatusEnum>>
+            {
+                [TaskStatusEnum.Open] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress, TaskStatusEnum.Paused, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.InProgress] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Closed, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Paused] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Pending] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Open, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Closed] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress },
+                [TaskStatusEnum.Cancelled] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Open }
+            },
+
+            [Categories.Risk] = new Dictionary<TaskStatusEnum, IReadOnlySet<TaskStatusEnum>>
+            {
+                [TaskStatusEnum.Open] = new HashSet<TaskStatusEnum> { TaskStatusEnum.InProgress, TaskStatusEnum.Closed, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.InProgress] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Closed, TaskStatusEnum.Cancelled },
+                [TaskStatusEnum.Closed] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Open },
+                [TaskStatusEnum.Cancelled] = new HashSet<TaskStatusEnum> { TaskStatusEnum.Open }
+            }
+        };
 }
 
 /// <summary>
 /// Discriminator classification for work items.
 /// </summary>
+[ClassificationEnum]
 public enum TaskItemTypeEnum
 {
     Task = 1,
@@ -79,6 +151,7 @@ public enum TaskItemTypeEnum
 /// <summary>
 /// Impact severity rating for formal enterprise risks.
 /// </summary>
+[ClassificationEnum]
 public enum RiskImpactEnum
 {
     [Display(Name = "Low", Description = "Minor inconvenience, negligible cost")]
@@ -97,6 +170,7 @@ public enum RiskImpactEnum
 /// <summary>
 /// Probability of risk realization.
 /// </summary>
+[ClassificationEnum]
 public enum RiskProbabilityEnum
 {
     [Display(Name = "Low", Description = "Unlikely to occur (< 25%)")]
@@ -112,6 +186,7 @@ public enum RiskProbabilityEnum
 /// <summary>
 /// Lifecycle governance status for an enterprise risk.
 /// </summary>
+[LifecycleEnum]
 public enum RiskStatusEnum
 {
     [Display(Name = "Identified", Description = "Risk logged, awaiting mitigation planning")]
@@ -130,9 +205,23 @@ public enum RiskStatusEnum
     Closed = 5
 }
 
+public static class RiskStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<RiskStatusEnum, IReadOnlySet<RiskStatusEnum>> AllowedTransitions =
+        new Dictionary<RiskStatusEnum, IReadOnlySet<RiskStatusEnum>>
+        {
+            [RiskStatusEnum.Identified] = new HashSet<RiskStatusEnum> { RiskStatusEnum.Mitigating, RiskStatusEnum.Closed },
+            [RiskStatusEnum.Mitigating] = new HashSet<RiskStatusEnum> { RiskStatusEnum.Monitored, RiskStatusEnum.Realized, RiskStatusEnum.Closed },
+            [RiskStatusEnum.Monitored] = new HashSet<RiskStatusEnum> { RiskStatusEnum.Mitigating, RiskStatusEnum.Realized, RiskStatusEnum.Closed },
+            [RiskStatusEnum.Realized] = new HashSet<RiskStatusEnum> { RiskStatusEnum.Closed },
+            [RiskStatusEnum.Closed] = new HashSet<RiskStatusEnum> { RiskStatusEnum.Identified }
+        };
+}
+
 /// <summary>
 /// Validation status for an enterprise assumption (A of RAID).
 /// </summary>
+[LifecycleEnum]
 public enum AssumptionValidationStatusEnum
 {
     [Display(Name = "Unconfirmed", Description = "Assumption made, requires validation")]
@@ -145,9 +234,21 @@ public enum AssumptionValidationStatusEnum
     Invalidated = 3
 }
 
+public static class AssumptionValidationStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<AssumptionValidationStatusEnum, IReadOnlySet<AssumptionValidationStatusEnum>> AllowedTransitions =
+        new Dictionary<AssumptionValidationStatusEnum, IReadOnlySet<AssumptionValidationStatusEnum>>
+        {
+            [AssumptionValidationStatusEnum.Unconfirmed] = new HashSet<AssumptionValidationStatusEnum> { AssumptionValidationStatusEnum.Validated, AssumptionValidationStatusEnum.Invalidated },
+            [AssumptionValidationStatusEnum.Validated] = new HashSet<AssumptionValidationStatusEnum> { AssumptionValidationStatusEnum.Invalidated },
+            [AssumptionValidationStatusEnum.Invalidated] = new HashSet<AssumptionValidationStatusEnum> { AssumptionValidationStatusEnum.Unconfirmed }
+        };
+}
+
 /// <summary>
 /// Severity rating for an active issue (I of RAID).
 /// </summary>
+[ClassificationEnum]
 public enum IssueSeverityEnum
 {
     [Display(Name = "Low", Description = "Minor issue, workaround readily available")]
@@ -163,10 +264,10 @@ public enum IssueSeverityEnum
     Critical = 4
 }
 
-
 /// <summary>
 /// Criticality rating for a blocker dependency contract.
 /// </summary>
+[ClassificationEnum]
 public enum DependencyCriticalityEnum
 {
     [Display(Name = "Low", Description = "Minor convenience dependency")]
@@ -185,6 +286,7 @@ public enum DependencyCriticalityEnum
 /// <summary>
 /// Category of a calendar entry.
 /// </summary>
+[ClassificationEnum]
 public enum CalendarEntryTypeEnum
 {
     [Display(Name = "Planning Session", Description = "Sprint or roadmap planning")]
@@ -233,6 +335,7 @@ public enum CalendarEntryTypeEnum
 /// <summary>
 /// Status of a calendar entry.
 /// </summary>
+[LifecycleEnum]
 public enum CalendarEntryStatusEnum
 {
     Scheduled = 1,
@@ -244,9 +347,25 @@ public enum CalendarEntryStatusEnum
     Delayed = 7
 }
 
+public static class CalendarEntryStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<CalendarEntryStatusEnum, IReadOnlySet<CalendarEntryStatusEnum>> AllowedTransitions =
+        new Dictionary<CalendarEntryStatusEnum, IReadOnlySet<CalendarEntryStatusEnum>>
+        {
+            [CalendarEntryStatusEnum.Scheduled] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Confirmed, CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Cancelled },
+            [CalendarEntryStatusEnum.Confirmed] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.AtRisk, CalendarEntryStatusEnum.Cancelled },
+            [CalendarEntryStatusEnum.InProgress] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Completed, CalendarEntryStatusEnum.AtRisk, CalendarEntryStatusEnum.Delayed, CalendarEntryStatusEnum.Cancelled },
+            [CalendarEntryStatusEnum.AtRisk] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Delayed, CalendarEntryStatusEnum.Cancelled },
+            [CalendarEntryStatusEnum.Delayed] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Completed, CalendarEntryStatusEnum.Cancelled },
+            [CalendarEntryStatusEnum.Completed] = new HashSet<CalendarEntryStatusEnum>(),
+            [CalendarEntryStatusEnum.Cancelled] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Scheduled }
+        };
+}
+
 /// <summary>
 /// Identifies the endpoint classification for Side B (Dependent) or Side A (Prerequisite) in WorkDependencyEntity.
 /// </summary>
+[ClassificationEnum]
 public enum DependencyNodeTypeEnum
 {
     [Display(Name = "Calendar / Milestone", Description = "A program or project calendar delivery gate (Milestone, Sprint, SIT, UAT, Vendor Delivery, Release, etc.)")]

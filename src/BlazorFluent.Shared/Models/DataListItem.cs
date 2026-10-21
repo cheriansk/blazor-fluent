@@ -26,5 +26,6 @@ public record DataListItem<TEnum>(
     string DisplayName,
     string? Description = null,
     CategoryInfo? Category = null,
-    IReadOnlyList<FilterInfo>? Filters = null
+    IReadOnlyList<FilterInfo>? Filters = null,
+    IReadOnlyList<CategoryInfo>? Categories = null
 ) where TEnum : struct, Enum;

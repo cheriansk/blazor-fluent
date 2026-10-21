@@ -1,8 +1,9 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
+[LifecycleEnum]
 public enum EventTrackerStatusEnum
 {
     [Display(Name = "Published", Description = "Event has been dispatched and is awaiting processing")]
@@ -26,6 +27,7 @@ public enum EventTrackerStatusEnum
     Failed = 5
 }
 
+[LifecycleEnum]
 public enum EventConsumptionStatusEnum
 {
     [Display(Name = "Running", Description = "Consumer is actively executing")]
@@ -43,6 +45,19 @@ public enum EventConsumptionStatusEnum
     [Display(Name = "Retrying", Description = "Consumer failed and is awaiting a scheduled retry attempt")]
     [DataListCategory(EventTrackerDefinitions.Categories.Execution)]
     Retrying = 4
+}
+
+public static class EventTrackerStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<EventTrackerStatusEnum, IReadOnlySet<EventTrackerStatusEnum>> AllowedTransitions =
+        new Dictionary<EventTrackerStatusEnum, IReadOnlySet<EventTrackerStatusEnum>>
+        {
+            [EventTrackerStatusEnum.Published] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.InProgress, EventTrackerStatusEnum.Failed },
+            [EventTrackerStatusEnum.InProgress] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.Completed, EventTrackerStatusEnum.PartiallyFailed, EventTrackerStatusEnum.Failed },
+            [EventTrackerStatusEnum.Completed] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.Published },
+            [EventTrackerStatusEnum.PartiallyFailed] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.InProgress, EventTrackerStatusEnum.Failed },
+            [EventTrackerStatusEnum.Failed] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.InProgress }
+        };
 }
 
 public static class EventTrackerDefinitions

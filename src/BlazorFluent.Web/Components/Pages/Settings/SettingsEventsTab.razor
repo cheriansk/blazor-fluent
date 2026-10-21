@@ -1,4 +1,4 @@
-﻿
+
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.Contracts.Common
 @using BlazorFluent.Core.Dtos.Response
@@ -481,13 +481,14 @@
     private void OnStatusChanged(string? value)
     {
         _selectedStatus = value ?? "All";
-        if (_selectedStatus == "All" || !Enum.TryParse<EventTrackerStatusEnum>(_selectedStatus, out var status))
+        var parsedStatus = _selectedStatus.ToEnumOrNull<EventTrackerStatusEnum>();
+        if (_selectedStatus == "All" || parsedStatus == null)
         {
             _filter.Status = null;
         }
         else
         {
-            _filter.Status = status;
+            _filter.Status = parsedStatus;
         }
     }
 

@@ -1,4 +1,4 @@
-﻿@page "/imports"
+@page "/imports"
 @attribute [RequiredClearance(ProjectRoleEnum.Lead)]
 @attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("file-upload")]
 @rendermode InteractiveServer
@@ -341,7 +341,7 @@
 
     private void OnItemFileTypeChanged(PendingUploadItem item, string? newCode)
     {
-        if (Enum.TryParse<ImportFileTypeEnum>(newCode, out var fileType))
+        if (newCode.TryToEnum<ImportFileTypeEnum>(out var fileType))
         {
             item.SelectedFileType = fileType;
         }

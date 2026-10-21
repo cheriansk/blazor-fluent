@@ -39,7 +39,7 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
     public async Task<Result<TResp>> CallApiAsync<TReq, TResp>(string route, TReq request, CancellationToken ct = default)
     {
         try { 
-            var tenantId = _tenantContext.TenantId ?? _configuration["Tenant:TenantId"];
+            var tenantId = _tenantContext.TenantId;
             if (string.IsNullOrWhiteSpace(tenantId))
             {
                 throw new InvalidOperationException("Zero-Trust Security Violation: Cannot invoke Cloud ProcessAPI without an active TenantId context.");

@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using BlazorFluent.Shared.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
 /// <summary>
 /// Traffic-light health evaluation rating for projects and milestones.
 /// </summary>
+[ClassificationEnum]
 public enum ProjectHealthRatingEnum
 {
     [Display(Name = "On Track", Description = "Deliverables progressing on schedule with zero overdue blockers.")]
@@ -20,6 +22,7 @@ public enum ProjectHealthRatingEnum
 /// <summary>
 /// Relational classification between two project tasks.
 /// </summary>
+[ClassificationEnum]
 public enum TaskDependencyTypeEnum
 {
     /// <summary>

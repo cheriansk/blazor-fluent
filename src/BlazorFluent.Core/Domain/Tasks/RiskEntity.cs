@@ -1,5 +1,6 @@
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.Extensions;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
@@ -45,4 +46,20 @@ public class RiskEntity : BaseTaskEntity, IMilestoneLinkedEntity
     /// Governance lifecycle status of the risk.
     /// </summary>
     public required RiskStatusEnum RiskStatus { get; set; }
+
+    /// <summary>Risk category discriminator for BaseTaskEntity transition validation.</summary>
+    public override string GetDefaultCategory() => TaskStatusEnumDefinitions.Categories.Risk;
+
+    /// <summary>
+    /// Executes a validated state transition for this risk's governance status.
+    /// </summary>
+    public virtual void TransitionRiskStatusTo(RiskStatusEnum nextStatus, DateTime utcNow, string reason = "")
+    {
+        if (RiskStatus == nextStatus) return;
+        if (!RiskStatus.CanTransitionTo(nextStatus))
+        {
+            throw new InvalidOperationException($"Cannot transition risk '{Title}' from {RiskStatus} to {nextStatus}.");
+        }
+        RiskStatus = nextStatus;
+    }
 }

@@ -5,7 +5,7 @@ namespace BlazorFluent.Shared.Attributes;
 /// The category's DisplayName and optional Description are defined in the companion Categories definition class.
 /// An enum entry can belong to at most one category (enforced by AllowMultiple = false).
 /// </summary>
-[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = false)]
 public sealed class DataListCategoryAttribute : Attribute
 {
     /// <summary>

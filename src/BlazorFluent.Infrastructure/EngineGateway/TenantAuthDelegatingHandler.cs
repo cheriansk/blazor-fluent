@@ -29,7 +29,7 @@ public class TenantAuthDelegatingHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var tenantId = _tenantContext.TenantId;
-        if (string.IsNullOrWhiteSpace(tenantId))
+        if (tenantId==null)
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: Cannot invoke Cloud ProcessAPI without an established TenantId context.");
         }

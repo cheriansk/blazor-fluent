@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -59,19 +59,19 @@ public static class EndpointClearanceExtensions
                 {
                     if (numericTier > highestTier) highestTier = numericTier;
                 }
-                else if (Enum.TryParse<ProjectRoleEnum>(r, ignoreCase: true, out var parsedRole))
+                else if (r.TryToEnum<ProjectRoleEnum>(out var parsedRole))
                 {
-                    if ((int)parsedRole > highestTier) highestTier = (int)parsedRole;
+                    if (parsedRole.ToInt() > highestTier) highestTier = parsedRole.ToInt();
                 }
             }
 
-            if (highestTier < (int)minTier)
+            if (highestTier < minTier.ToInt())
             {
                 var tenantId = user.FindFirstValue("tenant_id") ?? user.FindFirstValue("tid") ?? "unknown";
                 // Zero-PII Warning logging (strictly GUIDs, zero emails)
                 logger.LogWarning(
                     "AUDIT [Security]: API clearance denied. UserId='{UserId}', TenantId='{TenantId}', Route='{Route}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
-                    userId, tenantId, httpContext.Request.Path, (int)minTier, highestTier);
+                    userId, tenantId, httpContext.Request.Path, minTier.ToInt(), highestTier);
 
                 return Results.Forbid();
             }

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -7,6 +7,7 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// Originating trigger source that initiated a background batch job execution.
 /// Follows the *Enum naming convention.
 /// </summary>
+[ClassificationEnum]
 public enum JobTriggerSourceEnum
 {
     [Display(Name = "Cron", Description = "Scheduled periodic timer or Cronos expression")]
@@ -85,7 +86,7 @@ public static class JobTriggerSourceExtensions
             return JobTriggerSourceEnum.Webhook;
         }
 
-        if (Enum.TryParse<JobTriggerSourceEnum>(source, true, out var parsed))
+        if (source.TryToEnum<JobTriggerSourceEnum>(out var parsed))
         {
             return parsed;
         }

@@ -417,17 +417,7 @@
                                 <FluentDatePicker Label="Start Date" @bind-Value="_progStartDate" Style="flex: 1;" />
                                 <FluentDatePicker Label="Target Completion Date" @bind-Value="_progEndDate" Style="flex: 1;" />
                                 <div style="flex: 1;">
-                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
-                                    <FluentSelect TOption="string" TValue="string"
-                                                  Value="@_progStatus.ToString()"
-                                                  ValueChanged="@(val => _progStatus = Enum.TryParse<ProgramStatusEnum>(val, out var res) ? res : ProgramStatusEnum.Active)"
-                                                  Style="width: 100%;">
-                                        <FluentOption Value="@nameof(ProgramStatusEnum.Planning)">Planning</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatusEnum.Active)">Active</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatusEnum.AtRisk)">At Risk</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatusEnum.OnHold)">On Hold</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatusEnum.Completed)">Completed</FluentOption>
-                                    </FluentSelect>
+                                    <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_progStatus" Style="width: 100%;" />
                                 </div>
                             </FluentStack>
 
@@ -553,16 +543,7 @@
                                     <FluentTextInput Label="Task Title" @bind-Value="_newTenantTaskTitle" Placeholder="e.g. Annual Compliance Certification" Style="flex: 2;" />
                                     <FluentTextInput Label="Description" @bind-Value="_newTenantTaskDesc" Placeholder="Deliverable details..." Style="flex: 2;" />
                                     <div style="flex: 1;">
-                                        <FluentLabel Typo="Typography.Caption">Priority</FluentLabel>
-                                        <FluentSelect TOption="string" TValue="string"
-                                                      Value="@_newTenantTaskPriority.ToString()"
-                                                      ValueChanged="@(v => _newTenantTaskPriority = Enum.TryParse<TaskPriorityEnum>(v, out var p) ? p : TaskPriorityEnum.Medium)"
-                                                      Style="width: 100%;">
-                                            <FluentOption Value="@nameof(TaskPriorityEnum.Low)">Low</FluentOption>
-                                            <FluentOption Value="@nameof(TaskPriorityEnum.Medium)">Medium</FluentOption>
-                                            <FluentOption Value="@nameof(TaskPriorityEnum.High)">High</FluentOption>
-                                            <FluentOption Value="@nameof(TaskPriorityEnum.Urgent)">Urgent</FluentOption>
-                                        </FluentSelect>
+                                        <DataListSelect TEnum="TaskPriorityEnum" TValue="TaskPriorityEnum" Label="Priority" @bind-Value="_newTenantTaskPriority" Style="width: 100%;" />
                                     </div>
                                     <FluentDatePicker Label="Due Date" @bind-Value="_newTenantTaskDueDate" Style="flex: 1;" />
                                     <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantTaskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantTaskTitle)">
@@ -621,27 +602,10 @@
                                     <FluentTextInput Label="Risk Title" @bind-Value="_newTenantRiskTitle" Placeholder="e.g. Regulatory Data Residency Non-Compliance" Style="flex: 2;" />
                                     <FluentTextInput Label="Description" @bind-Value="_newTenantRiskDesc" Placeholder="Impact assessment..." Style="flex: 2;" />
                                     <div style="flex: 1;">
-                                        <FluentLabel Typo="Typography.Caption">Probability</FluentLabel>
-                                        <FluentSelect TOption="string" TValue="string"
-                                                      Value="@_newTenantRiskProb.ToString()"
-                                                      ValueChanged="@(v => _newTenantRiskProb = Enum.TryParse<RiskProbabilityEnum>(v, out var p) ? p : RiskProbabilityEnum.Medium)"
-                                                      Style="width: 100%;">
-                                            <FluentOption Value="@nameof(RiskProbabilityEnum.Low)">Low</FluentOption>
-                                            <FluentOption Value="@nameof(RiskProbabilityEnum.Medium)">Medium</FluentOption>
-                                            <FluentOption Value="@nameof(RiskProbabilityEnum.High)">High</FluentOption>
-                                        </FluentSelect>
+                                        <DataListSelect TEnum="RiskProbabilityEnum" TValue="RiskProbabilityEnum" Label="Probability" @bind-Value="_newTenantRiskProb" Style="width: 100%;" />
                                     </div>
                                     <div style="flex: 1;">
-                                        <FluentLabel Typo="Typography.Caption">Impact</FluentLabel>
-                                        <FluentSelect TOption="string" TValue="string"
-                                                      Value="@_newTenantRiskImpact.ToString()"
-                                                      ValueChanged="@(v => _newTenantRiskImpact = Enum.TryParse<RiskImpactEnum>(v, out var p) ? p : RiskImpactEnum.Medium)"
-                                                      Style="width: 100%;">
-                                            <FluentOption Value="@nameof(RiskImpactEnum.Low)">Low</FluentOption>
-                                            <FluentOption Value="@nameof(RiskImpactEnum.Medium)">Medium</FluentOption>
-                                            <FluentOption Value="@nameof(RiskImpactEnum.High)">High</FluentOption>
-                                            <FluentOption Value="@nameof(RiskImpactEnum.Critical)">Critical</FluentOption>
-                                        </FluentSelect>
+                                        <DataListSelect TEnum="RiskImpactEnum" TValue="RiskImpactEnum" Label="Impact" @bind-Value="_newTenantRiskImpact" Style="width: 100%;" />
                                     </div>
                                     <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantRiskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantRiskTitle)">
                                         Add Risk
@@ -865,7 +829,7 @@
     {
         var tenantId = TenantContext.TenantId;
         var userId = CurrentUser.UserId ?? string.Empty;
-        _canEditTenants = IsRootAdmin || (!string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(userId) && await HierarchyAuth.CanEditTenantSettingsAsync(tenantId, userId));
+        _canEditTenants = IsRootAdmin || (tenantId!=null && !string.IsNullOrWhiteSpace(userId) && await HierarchyAuth.CanEditTenantSettingsAsync(tenantId, userId));
         await LoadTenantsAsync();
     }
 
@@ -1551,12 +1515,12 @@
         {
             var tenantIdStr = _managingTasksTenant.Id.ToString();
             _tenantTasks = await DbContext.Tasks
-                .Where(t => t.TenantId == tenantIdStr && t.Level == TaskLevelEnum.Tenant && !t.IsDeleted)
+                .Where(t => t.TenantId.ToString() == tenantIdStr && t.Level == TaskLevelEnum.Tenant && !t.IsDeleted)
                 .OrderByDescending(t => t.Created)
                 .ToListAsync();
 
             _tenantRisks = await DbContext.Risks
-                .Where(r => r.TenantId == tenantIdStr && r.Level == TaskLevelEnum.Tenant && !r.IsDeleted)
+                .Where(r => r.TenantId.ToString() == tenantIdStr && r.Level == TaskLevelEnum.Tenant && !r.IsDeleted)
                 .OrderByDescending(r => r.Created)
                 .ToListAsync();
         }
@@ -1578,7 +1542,7 @@
         {
             var task = new TaskEntity
             {
-                TenantId = _managingTasksTenant.Id.ToString(),
+                TenantId = _managingTasksTenant.Id,
                 Level = TaskLevelEnum.Tenant,
                 Title = _newTenantTaskTitle.Trim(),
                 Description = _newTenantTaskDesc?.Trim() ?? string.Empty,
@@ -1611,7 +1575,7 @@
         {
             var risk = new RiskEntity
             {
-                TenantId = _managingTasksTenant.Id.ToString(),
+                TenantId = _managingTasksTenant.Id,
                 Level = TaskLevelEnum.Tenant,
                 Title = _newTenantRiskTitle.Trim(),
                 Description = _newTenantRiskDesc?.Trim() ?? string.Empty,

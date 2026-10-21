@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -39,6 +39,7 @@ public static class ImportFileTypeEnumDefinitions
 /// <summary>
 /// Supported import file formats for data ingestion.
 /// </summary>
+[ClassificationEnum]
 public enum ImportFileTypeEnum
 {
     [Display(Name = "Project Tasks (Excel .xlsx)", Description = "Project tasks workbook with Tasks and Comments sheets.")]
@@ -62,6 +63,24 @@ public enum ImportFileTypeEnum
     TaskCsv = 4
 }
 
+public static class ImportStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>> AllowedTransitions =
+        new Dictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>>
+        {
+            [ImportStatusEnum.Uploaded] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
+            [ImportStatusEnum.Validating] = new HashSet<ImportStatusEnum> { ImportStatusEnum.ValidationSuccess, ImportStatusEnum.ValidationFailed },
+            [ImportStatusEnum.ValidationSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
+            [ImportStatusEnum.ValidationFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
+            [ImportStatusEnum.Staging] = new HashSet<ImportStatusEnum> { ImportStatusEnum.StagingSuccess, ImportStatusEnum.StagingFailed },
+            [ImportStatusEnum.StagingSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
+            [ImportStatusEnum.StagingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
+            [ImportStatusEnum.Processing] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Completed, ImportStatusEnum.ProcessingFailed },
+            [ImportStatusEnum.ProcessingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
+            [ImportStatusEnum.Completed] = new HashSet<ImportStatusEnum>()
+        };
+}
+
 #endregion
 
 #region ImportStatusEnum Definitions
@@ -70,6 +89,7 @@ public enum ImportFileTypeEnum
 /// Processing lifecycle state of an imported file.
 /// Follows the linear 3-stage pipeline: Uploaded -> Validating -> Staging -> Processing -> Completed.
 /// </summary>
+[LifecycleEnum]
 public enum ImportStatusEnum
 {
     [Display(Name = "Uploaded", Description = "Raw file uploaded, encrypted, and stored in blob storage.")]
@@ -101,6 +121,24 @@ public enum ImportStatusEnum
 
     [Display(Name = "Processing Failed", Description = "Encountered an error while committing staged records to domain tables.")]
     ProcessingFailed = 10
+}
+
+public static class ImportStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>> AllowedTransitions =
+        new Dictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>>
+        {
+            [ImportStatusEnum.Uploaded] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
+            [ImportStatusEnum.Validating] = new HashSet<ImportStatusEnum> { ImportStatusEnum.ValidationSuccess, ImportStatusEnum.ValidationFailed },
+            [ImportStatusEnum.ValidationSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
+            [ImportStatusEnum.ValidationFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
+            [ImportStatusEnum.Staging] = new HashSet<ImportStatusEnum> { ImportStatusEnum.StagingSuccess, ImportStatusEnum.StagingFailed },
+            [ImportStatusEnum.StagingSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
+            [ImportStatusEnum.StagingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
+            [ImportStatusEnum.Processing] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Completed, ImportStatusEnum.ProcessingFailed },
+            [ImportStatusEnum.ProcessingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
+            [ImportStatusEnum.Completed] = new HashSet<ImportStatusEnum>()
+        };
 }
 
 #endregion

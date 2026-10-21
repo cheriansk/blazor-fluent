@@ -85,7 +85,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var userId = _currentUser.UserId ?? "anonymous";
         var hasGuid = Guid.TryParse(userId, out var userGuid);
         var normalizedUser = userId.Trim().ToLowerInvariant();
@@ -119,7 +119,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<ProjectUserRoleEntity>> GetProjectMembersAsync(Guid projectId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         return await _dbContext.ProjectUserRoles
             .AsNoTracking()
@@ -156,7 +156,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             }
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         if (!Guid.TryParse(userId, out var userEntityId))
         {
@@ -220,7 +220,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             return Result.Failure("Only Project Admins, parent Program Admins, or Tenant Admins can revoke project roles.");
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         var hasGuid = Guid.TryParse(userId, out var userGuid);
         var normalizedUser = userId.Trim().ToLowerInvariant();
 

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -7,6 +7,7 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// Lightweight, extensible project-level role enumeration.
 /// Controls access and edit permissions on project-scoped resources.
 /// </summary>
+[ClassificationEnum]
 public enum ProjectRoleEnum
 {
     [Display(Name = "ReadOnly Team", Description = "View-only access to project resources")]

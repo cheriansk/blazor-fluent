@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -6,6 +6,7 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// <summary>
 /// Broad categorization of the notification scope.
 /// </summary>
+[ClassificationEnum]
 public enum NotificationCategoryEnum
 {
     /// <summary>
@@ -26,6 +27,7 @@ public enum NotificationCategoryEnum
 /// <summary>
 /// Severity level indicating visual styling and alert priority.
 /// </summary>
+[ClassificationEnum]
 public enum NotificationSeverityEnum
 {
     [Display(Name = "Information", Description = "Informational message")]
@@ -49,6 +51,7 @@ public enum NotificationSeverityEnum
 /// Bitmask channels for notification dispatch.
 /// </summary>
 [Flags]
+[ClassificationEnum]
 public enum NotificationChannelsEnum
 {
     [Display(Name = "None")]

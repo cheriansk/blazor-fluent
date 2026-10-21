@@ -16,7 +16,7 @@ public class WorkDependencyEntityValidatorTests
         var dependency = new WorkDependencyEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_test",
+            TenantId = Guid.CreateVersion7(),
             Level = TaskLevelEnum.Project,
             DependentType = DependencyNodeTypeEnum.TaskItem,
             DependentItemId = Guid.CreateVersion7(),
@@ -47,7 +47,7 @@ public class WorkDependencyEntityValidatorTests
         var dependency = new WorkDependencyEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_test",
+            TenantId = Guid.CreateVersion7(),
             Level = TaskLevelEnum.Project,
             DependentType = DependencyNodeTypeEnum.TaskItem,
             DependentItemId = sameItemId,
@@ -75,7 +75,7 @@ public class WorkDependencyEntityValidatorTests
         var dependency = new WorkDependencyEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_test",
+            TenantId = Guid.CreateVersion7(),
             Level = TaskLevelEnum.Project,
             DependentType = DependencyNodeTypeEnum.TaskItem,
             DependentItemId = Guid.CreateVersion7(),
