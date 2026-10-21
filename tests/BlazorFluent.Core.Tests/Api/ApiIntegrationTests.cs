@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -28,9 +28,9 @@ public class ApiTestWebApplicationFactory : WebApplicationFactory<Program>
     public const string TestSigningKey = "BlazorFluent-Cloud-AuthGateway-MasterKey-2026-Secure!";
     public const string TrustedOrigin = "https://trusted.company.com";
     public const string ValidTenantId = "TENANT-001";
-    public const string ValidLicenseKey = "DEV-COMMUNITY-KEY-0000";
+    public const string ValidLicenseKey = "DEV-COMMUNITY-KEY-0000-SECURE-KEY32";
     public const string TenantBId = "TENANT-002";
-    public const string TenantBLicenseKey = "DEV-COMMUNITY-KEY-0002";
+    public const string TenantBLicenseKey = "DEV-COMMUNITY-KEY-0002-SECURE-KEY32";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -325,6 +325,8 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
                 new Claim("cid", "CORR-EXPIRED-001"),
                 new Claim("act", "BatchWorker")
             }),
+            NotBefore = DateTime.UtcNow.AddMinutes(-30),
+            IssuedAt = DateTime.UtcNow.AddMinutes(-30),
             Expires = DateTime.UtcNow.AddMinutes(-10), // Expired 10 minutes ago
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(keyBytes),

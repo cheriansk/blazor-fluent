@@ -7,7 +7,7 @@
 @inject NavigationManager NavigationManager
 @using Microsoft.FluentUI.AspNetCore.Components
 
-@if (TenantContext.TenantId is null)
+@if (!TenantContext.HasActiveTenant)
 {
     @* Not yet initialized — show nothing *@
     return;
@@ -21,7 +21,7 @@
                   Items="@TenantContext.AllowedTenants.ToList()"
                   OptionValue="@(t => t.Id.ToString())"
                   OptionText="@(t => t.Name)"
-                  Value="@TenantContext.TenantId?.ToString()"
+                  Value="@(TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : string.Empty)"
                   ValueChanged="@((string? id) => OnTenantChanged(id))"
                   Style="min-width: 180px;">
     </FluentSelect>
@@ -60,7 +60,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(newTenantId) || (Guid.TryParse(newTenantId, out var gId) && gId == TenantContext.TenantId)) return;
 
-        var prevTenant = TenantContext.TenantSlug ?? TenantContext.TenantId?.ToString() ?? "unknown";
+        var prevTenant = TenantContext.HasActiveTenant ? TenantContext.TenantSlug : "unknown";
 
         // Zero Trust: Validate that the requested tenant is authorized for this user
         var targetMatch = TenantContext.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == newTenantId || t.Slug == newTenantId);

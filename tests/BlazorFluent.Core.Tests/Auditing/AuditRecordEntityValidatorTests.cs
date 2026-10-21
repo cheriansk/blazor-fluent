@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Auditing;
+﻿using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
@@ -16,7 +16,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.EntityChange,
             Severity = AuditSeverityEnum.Information,
             EntityName = "ProjectEntity",
@@ -45,7 +45,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.EntityChange,
             Severity = AuditSeverityEnum.Information,
             EntityName = "", // Invalid
@@ -69,7 +69,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.EntityChange,
             Severity = AuditSeverityEnum.Information,
             EntityName = "ProjectEntity",
@@ -93,7 +93,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.EntityChange,
             Severity = AuditSeverityEnum.Information,
             EntityName = "ProjectEntity",
@@ -117,7 +117,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.Security,
             Severity = AuditSeverityEnum.Warning,
             Description = "Detected brute-force authentication attempt from IP 192.168.1.50",
@@ -144,7 +144,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.Security,
             Severity = AuditSeverityEnum.Warning,
             Description = null // Invalid for Security event
@@ -165,7 +165,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "", // Invalid
+            TenantId = Guid.Empty, // Invalid
             EventType = AuditEventTypeEnum.TenantSwitch,
             Severity = AuditSeverityEnum.Information,
             Description = "Switched tenant context"
@@ -186,7 +186,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.UserActivity,
             Severity = AuditSeverityEnum.Information,
             Description = "Profile updated",
@@ -215,7 +215,7 @@ public class AuditRecordEntityValidatorTests
         var record = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             EventType = AuditEventTypeEnum.UserActivity,
             Severity = AuditSeverityEnum.Information,
             Description = "User session heartbeat",

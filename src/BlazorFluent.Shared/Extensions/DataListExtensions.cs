@@ -696,12 +696,6 @@ public static class DataListExtensions
         ToDataListItems<TEnum>(categoryCode: null, filterCriteria: null);
 
     /// <summary>
-    /// Retrieves enum values projected as DataListItem Dtos filtered by category code.
-    /// </summary>
-    public static IReadOnlyList<DataListItem<TEnum>> GetDataListItemsByCategory<TEnum>(string? categoryCode) where TEnum : struct, Enum =>
-        ToDataListItems<TEnum>(categoryCode: categoryCode, filterCriteria: null);
-
-    /// <summary>
     /// Retrieves enum values projected as DataListItem Dtos filtered by a specific filter criteria code.
     /// If the enum does not declare filter criteria or the criteria is null/empty, returns all items.
     /// </summary>

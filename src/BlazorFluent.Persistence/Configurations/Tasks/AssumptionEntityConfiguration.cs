@@ -57,10 +57,10 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
         builder.Property(a => a.DueDate)
             .IsRequired();
 
-        builderbuilder.Property(a => a.RevisedDueDate)
+        builder.Property(a => a.RevisedDueDate)
             .IsRequired(false);
 
-        .Property(a => a.EndDate)
+        builder.Property(a => a.EndDate)
             .IsRequired(false);
 
         builder.Property(a => a.ActualStartDate)

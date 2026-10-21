@@ -13,7 +13,7 @@ public class WorkflowEntityValidatorTests
     private static WorkflowEntity CreateBaseWorkflow() => new()
     {
         Id = Guid.CreateVersion7(),
-        TenantId = "tenant_test",
+        TenantId = Guid.NewGuid(),
         Level = TaskLevelEnum.Project,
         ProjectId = Guid.CreateVersion7(),
         Title = "Quarterly Release Pipeline",

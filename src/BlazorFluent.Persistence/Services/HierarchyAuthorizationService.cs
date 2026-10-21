@@ -1,3 +1,4 @@
+using BlazorFluent.Core.Utilities;
 ﻿using BlazorFluent.Core.Contracts;
 
 using BlazorFluent.Core.Extensions;
@@ -35,6 +36,8 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
     private readonly AppDbContext _context;
 
     private readonly ICurrentUser _currentUser;
+    private readonly ITenantContext _tenantContext;
+
 
     private readonly IAuditService _auditService;
 
@@ -49,6 +52,8 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         AppDbContext context,
 
         ICurrentUser currentUser,
+        ITenantContext tenantContext,
+
 
         IAuditService auditService,
 
@@ -61,6 +66,8 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         _context = context;
 
         _currentUser = currentUser;
+        _tenantContext = tenantContext;
+
 
         _auditService = auditService;
 
@@ -76,7 +83,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (tenantId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
+        if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || tenantId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
 
 
 
@@ -356,7 +363,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (_currentUser.IsRootAdmin) return true;
+        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && tenantId == IRootAdminService.RootTenantId) return true;
 
         if (await IsTenantAdminAsync(tenantId, userId, ct)) return true;
 
@@ -408,7 +415,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (_currentUser.IsRootAdmin) return true;
+        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && tenantId == IRootAdminService.RootTenantId) return true;
 
         return await IsTenantAdminAsync(tenantId, userId, ct);
 
@@ -420,7 +427,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (_currentUser.IsRootAdmin) return true;
+        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && (string.Equals(tenantId.Trim(), IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || (Guid.TryParse(tenantId.Trim(), out var gt) && gt == IRootAdminService.RootTenantId))) return true;
 
         return await IsTenantAdminAsync(tenantId, userId, ct);
 
@@ -432,7 +439,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (tenantId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
+        if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || tenantId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
 
 
 
@@ -492,7 +499,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-        if (_currentUser.IsRootAdmin)
+        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && tenantId == IRootAdminService.RootTenantId)
 
         {
 

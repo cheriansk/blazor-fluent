@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -67,10 +67,10 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.Property(r => r.DueDate)
             .IsRequired();
 
-        builderbuilder.Property(r => r.RevisedDueDate)
+        builder.Property(r => r.RevisedDueDate)
             .IsRequired(false);
 
-        .Property(r => r.EndDate)
+        builder.Property(r => r.EndDate)
             .IsRequired(false);
 
         builder.Property(r => r.ActualStartDate)

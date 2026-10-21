@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Tasks;
+﻿using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Configurations;
 using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
@@ -105,10 +105,10 @@ public class WorkDependencyConfiguration : IEntityTypeConfiguration<WorkDependen
         builder.Property(w => w.DueDate)
             .IsRequired();
 
-        builderbuilder.Property(w => w.RevisedDueDate)
+        builder.Property(w => w.RevisedDueDate)
             .IsRequired(false);
 
-        .Property(w => w.EndDate)
+        builder.Property(w => w.EndDate)
             .IsRequired(false);
 
         builder.Property(w => w.ActualStartDate)

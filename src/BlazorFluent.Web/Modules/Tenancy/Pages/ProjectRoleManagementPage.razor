@@ -592,7 +592,7 @@
         {
             if (CurrentUser is AppCurrentUser appUser)
             {
-                var adminId = appUser.UserId ?? string.Empty;
+                var adminId = appUser.IsAuthenticated ? appUser.UserId : string.Empty;
                 appUser.SetImpersonation(_impersonateTargetUserId, _impersonateTargetEmail, _impersonateTargetName, adminId);
             }
 

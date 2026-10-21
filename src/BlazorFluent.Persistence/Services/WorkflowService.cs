@@ -46,7 +46,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity> CreateWorkflowAsync(CreateWorkflowReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         if (request.Steps == null || request.Steps.Count == 0)
         {
             throw new ArgumentException("A workflow requires at least one sequential step.", nameof(request));
@@ -224,7 +224,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity> CompleteStepAsync(CompleteWorkflowStepReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
 
         var workflow = await _dbContext.Workflows
@@ -245,7 +245,7 @@ public class WorkflowService : IWorkflowService
         var isStepOwner = string.Equals(callerEmail, activeStep.AssigneeEmails, StringComparison.OrdinalIgnoreCase) ||
                           activeStep.GetParsedAssigneeEmails().Contains(callerEmail, StringComparer.OrdinalIgnoreCase);
         var isWorkflowOwner = string.Equals(callerEmail, workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase);
-        var isTenantAdmin = await _hierarchyAuth.IsTenantAdminAsync(workflow.TenantId, _currentUser.UserId ?? string.Empty, ct);
+        var isTenantAdmin = await _hierarchyAuth.IsTenantAdminAsync(workflow.TenantId, _currentUser.UserId, ct);
         var isAdmin = _currentUser.IsRootAdmin || isTenantAdmin;
 
         if (!isStepOwner && !isWorkflowOwner && !isAdmin)
@@ -373,7 +373,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity> ReassignStepAsync(ReassignWorkflowStepReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
 
         var workflow = await _dbContext.Workflows
@@ -388,7 +388,7 @@ public class WorkflowService : IWorkflowService
         var isStepOwner = string.Equals(callerEmail, targetStep.AssigneeEmails, StringComparison.OrdinalIgnoreCase) ||
                           targetStep.GetParsedAssigneeEmails().Contains(callerEmail, StringComparer.OrdinalIgnoreCase);
         var isWorkflowOwner = string.Equals(callerEmail, workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase);
-        var isTenantAdmin = await _hierarchyAuth.IsTenantAdminAsync(workflow.TenantId, _currentUser.UserId ?? string.Empty, ct);
+        var isTenantAdmin = await _hierarchyAuth.IsTenantAdminAsync(workflow.TenantId, _currentUser.UserId, ct);
         var isAdmin = _currentUser.IsRootAdmin || isTenantAdmin;
 
         if (!isStepOwner && !isWorkflowOwner && !isAdmin)
@@ -442,7 +442,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<SubTaskEntity> AddSubTaskToStepAsync(AddSubTaskToStepReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
 
         var workflow = await _dbContext.Workflows
@@ -457,7 +457,7 @@ public class WorkflowService : IWorkflowService
         var isStepOwner = string.Equals(callerEmail, stepTask.AssigneeEmails, StringComparison.OrdinalIgnoreCase) ||
                           stepTask.GetParsedAssigneeEmails().Contains(callerEmail, StringComparer.OrdinalIgnoreCase);
         var isWorkflowOwner = string.Equals(callerEmail, workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase);
-        var isTenantAdmin = await _hierarchyAuth.IsTenantAdminAsync(workflow.TenantId, _currentUser.UserId ?? string.Empty, ct);
+        var isTenantAdmin = await _hierarchyAuth.IsTenantAdminAsync(workflow.TenantId, _currentUser.UserId, ct);
         var isAdmin = _currentUser.IsRootAdmin || isTenantAdmin;
 
         if (!isStepOwner && !isWorkflowOwner && !isAdmin)
@@ -507,7 +507,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<SubTaskEntity> ToggleSubTaskStatusAsync(ToggleSubTaskStatusReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
 
         var subTask = await _dbContext.SubTasks
             .FirstOrDefaultAsync(s => s.Id == request.SubTaskId && s.TenantId == tenantId, ct)
@@ -522,7 +522,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<IReadOnlyList<WorkflowEntity>> GetWorkflowsAsync(WorkflowFilterDto filter, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
 
         var query = _dbContext.Workflows
             .Include(w => w.Steps)
@@ -572,7 +572,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
 
         return await _dbContext.Workflows
             .Include(w => w.Steps)
@@ -582,23 +582,22 @@ public class WorkflowService : IWorkflowService
 
     public async Task<bool> CanUserManageWorkflowAsync(TaskLevelEnum level, Guid? programId, Guid? projectId, CancellationToken ct = default)
     {
-        if (_currentUser.IsRootAdmin) return true;
+        if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty) return false;
         var tenantId = _tenantContext.TenantId;
-        if (!tenantId.HasValue || tenantId.Value == Guid.Empty) return false;
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         return level switch
         {
-            TaskLevelEnum.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct),
-            TaskLevelEnum.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct)),
-            TaskLevelEnum.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct)),
-            _ => await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct)
+            TaskLevelEnum.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct),
+            TaskLevelEnum.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
+            TaskLevelEnum.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
+            _ => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)
         };
     }
 
     public async Task<WorkflowEntity> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
@@ -633,7 +632,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
@@ -697,7 +696,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
@@ -753,7 +752,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<WorkflowEntity> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
@@ -838,7 +837,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<IReadOnlyList<TaskEntity>> GetAvailableTasksForWorkflowAsync(TaskSearchFilterDto filter, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Active tenant context is required.");
+        var tenantId = _tenantContext.TenantId;
         var query = _dbContext.Tasks
             .AsNoTracking()
             .Where(t => t.TenantId == tenantId && !t.IsDeleted && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled);

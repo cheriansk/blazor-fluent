@@ -43,7 +43,7 @@ public class ProgramService : IProgramService
         if (string.IsNullOrWhiteSpace(tenantSlug)) return [];
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         // Zero Trust Gate: User must have access to tenant
         if (!await _hierarchyAuth.CanAccessTenantAsync(normalizedSlug, userId, ct))
@@ -73,7 +73,7 @@ public class ProgramService : IProgramService
     {
         if (programId == Guid.Empty) return Result<ProgramEntity>.Failure("Invalid Program ID.");
 
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         if (!await _hierarchyAuth.CanAccessProgramAsync(programId, userId, ct))
         {
@@ -106,7 +106,7 @@ public class ProgramService : IProgramService
         if (string.IsNullOrWhiteSpace(code)) return Result<ProgramEntity>.Failure("Program code is required.");
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         // Zero Trust Gate: Creating programs requires Tenant Admin or Root Admin
         if (!await _hierarchyAuth.IsTenantAdminAsync(normalizedSlug, userId, ct))
@@ -172,7 +172,7 @@ public class ProgramService : IProgramService
         if (string.IsNullOrWhiteSpace(name)) return Result<ProgramEntity>.Failure("Program name is required.");
         if (string.IsNullOrWhiteSpace(code)) return Result<ProgramEntity>.Failure("Program code is required.");
 
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         // Zero Trust Gate: Must be Program Admin or Tenant Admin
         if (!await _hierarchyAuth.IsProgramAdminAsync(programId, userId, ct))
@@ -221,7 +221,7 @@ public class ProgramService : IProgramService
     {
         if (programId == Guid.Empty) return [];
 
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
         if (!await _hierarchyAuth.CanAccessProgramAsync(programId, userId, ct)) return [];
 
         return await _context.Projects

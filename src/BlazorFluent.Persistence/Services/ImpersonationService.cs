@@ -60,7 +60,7 @@ public class ImpersonationService : IImpersonationService
         }
 
         // Revoke any previous active grants for this admin
-        var adminId = _currentUser.UserId ?? "admin";
+        var adminId = _currentUser.UserId;
         var existingGrants = await _dbContext.ImpersonationGrants
             .Where(g => g.SourceAdminId == adminId && !g.IsRevoked)
             .ToListAsync(ct);
@@ -82,7 +82,7 @@ public class ImpersonationService : IImpersonationService
                 : throw new InvalidOperationException("Zero-Trust Security Violation: Impersonating administrator must have an authenticated email."),
             TargetUserId = targetUser.Id.ToString(),
             TargetUserEmail = targetUser.Email,
-            TargetTenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Zero-Trust Security Violation: Impersonation requires an active target tenant context."),
+            TargetTenantId = _tenantContext.TenantId,
             StartedAtUtc = DateTime.UtcNow,
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(cappedMinutes),
             Reason = reason,
@@ -106,7 +106,7 @@ public class ImpersonationService : IImpersonationService
 
     public async Task<Result> StopImpersonationAsync(CancellationToken ct = default)
     {
-        var adminId = _currentUser.UserId ?? "admin";
+        var adminId = _currentUser.UserId;
         var activeGrants = await _dbContext.ImpersonationGrants
             .Where(g => g.SourceAdminId == adminId && !g.IsRevoked)
             .ToListAsync(ct);
@@ -131,7 +131,7 @@ public class ImpersonationService : IImpersonationService
 
     public async Task<ImpersonationGrantEntity?> GetActiveGrantAsync(CancellationToken ct = default)
     {
-        var adminId = _currentUser.UserId ?? "admin";
+        var adminId = _currentUser.UserId;
         var now = DateTime.UtcNow;
 
         return await _dbContext.ImpersonationGrants

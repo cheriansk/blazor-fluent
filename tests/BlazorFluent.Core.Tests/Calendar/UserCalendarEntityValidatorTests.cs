@@ -16,7 +16,7 @@ public class UserCalendarEntityValidatorTests
         var entry = new UserCalendarEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             UserId = Guid.CreateVersion7(),
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
@@ -37,7 +37,7 @@ public class UserCalendarEntityValidatorTests
         var entry = new UserCalendarEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             UserId = Guid.Empty, // Invalid
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
@@ -58,7 +58,7 @@ public class UserCalendarEntityValidatorTests
         var entry = new UserCalendarEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             UserId = Guid.CreateVersion7(),
             Title = "", // Invalid
             StartDate = DateTime.UtcNow,
@@ -79,7 +79,7 @@ public class UserCalendarEntityValidatorTests
         var entry = new UserCalendarEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = "tenant_acme",
+            TenantId = Guid.NewGuid(),
             UserId = Guid.CreateVersion7(),
             Title = "Sprint Review",
             StartDate = DateTime.UtcNow.AddHours(2),

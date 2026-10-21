@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Core.Events;
@@ -45,12 +45,8 @@ public class JobManagerService : IJobManagerService
     {
         var query = _dbContext.JobExecutions.AsNoTracking();
 
-        // Zero Trust: Non-host users can only see background jobs for their active tenant
-        if (!_tenantContext.IsHost)
-        {
-            var activeTenant = _tenantContext.TenantId ?? Guid.Empty;
-            query = query.Where(j => j.TenantId == activeTenant);
-        }
+        var activeTenant = _tenantContext.TenantId;
+        query = query.Where(j => j.TenantId == activeTenant);
 
         return await query
             .OrderByDescending(j => j.StartedAt)
@@ -64,63 +60,33 @@ public class JobManagerService : IJobManagerService
             return Result.Failure("JobName is required.");
 
         // Zero Trust / Least Privilege: Enforce strict tenant isolation
-        Guid targetTenantId;
-        if (_tenantContext.IsHost)
+        if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty)
         {
-            if (!string.IsNullOrWhiteSpace(tenantId))
-            {
-                if (Guid.TryParse(tenantId, out var parsedId))
-                {
-                    targetTenantId = parsedId;
-                }
-                else
-                {
-                    var foundId = await _dbContext.Tenants
-                        .AsNoTracking()
-                        .Where(t => t.Slug == tenantId)
-                        .Select(t => t.Id)
-                        .FirstOrDefaultAsync(cancellationToken);
+            return Result.Failure("Cannot trigger job: active tenant context is missing.");
+        }
 
-                    targetTenantId = foundId != Guid.Empty
-                        ? foundId
-                        : SystemIdentityUtility.SystemDaemonTenantId;
-                }
-            }
-            else
+        // Fail-closed: Users can only trigger background jobs for their active tenant
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            Guid requestedId = Guid.Empty;
+            if (!Guid.TryParse(tenantId, out requestedId))
             {
-                targetTenantId = _tenantContext.TenantId ?? SystemIdentityUtility.SystemDaemonTenantId;
+                requestedId = await _dbContext.Tenants
+                    .AsNoTracking()
+                    .Where(t => t.Slug == tenantId)
+                    .Select(t => t.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
+            if (requestedId != _tenantContext.TenantId)
+            {
+                _logger.LogWarning("Security Violation: User '{UserId}' in tenant '{ActiveTenant}' attempted to trigger job for foreign tenant '{TargetTenant}'",
+                    _currentUser.UserId, _tenantContext.TenantId, tenantId);
+                return Result.Failure("Access Denied: You cannot trigger background jobs for another tenant.");
             }
         }
-        else
-        {
-            if (!_tenantContext.TenantId.HasValue || _tenantContext.TenantId.Value == Guid.Empty)
-            {
-                return Result.Failure("Cannot trigger job: active tenant context is missing.");
-            }
 
-            // Fail-closed: non-host users can NEVER trigger jobs for a foreign tenant
-            if (!string.IsNullOrWhiteSpace(tenantId))
-            {
-                Guid requestedId = Guid.Empty;
-                if (!Guid.TryParse(tenantId, out requestedId))
-                {
-                    requestedId = await _dbContext.Tenants
-                        .AsNoTracking()
-                        .Where(t => t.Slug == tenantId)
-                        .Select(t => t.Id)
-                        .FirstOrDefaultAsync(cancellationToken);
-                }
-
-                if (requestedId != _tenantContext.TenantId.Value)
-                {
-                    _logger.LogWarning("Security Violation: User '{UserId}' in tenant '{ActiveTenant}' attempted to trigger job for foreign tenant '{TargetTenant}'",
-                        _currentUser.UserId, _tenantContext.TenantId, tenantId);
-                    return Result.Failure("Access Denied: Non-host users cannot trigger background jobs for another tenant.");
-                }
-            }
-
-            targetTenantId = _tenantContext.TenantId.Value;
-        }
+        Guid targetTenantId = _tenantContext.TenantId;
 
         if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
         {
@@ -130,7 +96,7 @@ public class JobManagerService : IJobManagerService
         _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId);
 
         var senderOrigin = $"Button:Run{jobName}";
-        var senderUserId = _currentUser.UserId ?? _currentUser.Email;
+        var senderUserId = _currentUser.UserId;
         var senderUserEmail = _currentUser.Email;
         var correlationId = Guid.CreateVersion7().ToString("N")[..12];
 
@@ -190,7 +156,7 @@ public class JobManagerService : IJobManagerService
         }
 
         // Zero Trust: Non-host users can only retry jobs for their active tenant
-        if (!_tenantContext.IsHost && execution.TenantId != (_tenantContext.TenantId ?? Guid.Empty))
+        if (execution.TenantId != _tenantContext.TenantId)
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to retry job execution {ExecutionId} in tenant '{JobTenant}' outside active tenant '{ActiveTenant}'",
                 _currentUser.UserId, executionId, execution.TenantId, _tenantContext.TenantId);
@@ -206,7 +172,7 @@ public class JobManagerService : IJobManagerService
             execution.JobName, executionId);
 
         var senderOrigin = $"Button:Retry{execution.JobName}";
-        var retryUserId = _currentUser.UserId ?? _currentUser.Email;
+        var retryUserId = _currentUser.UserId;
         var retryUserEmail = _currentUser.Email;
 
         BaseJobEvent? retryEvent = execution.JobName switch
@@ -251,7 +217,7 @@ public class JobManagerService : IJobManagerService
 
         await _auditService.LogUserActivityAsync(
             $"Initiated manual retry for background job '{execution.JobName}'",
-            $"PreviousExecutionId: {executionId}, CorrelationId: {execution.CorrelationId}, TenantId: {execution.TenantId ?? "Host"}",
+            $"PreviousExecutionId: {executionId}, CorrelationId: {execution.CorrelationId}, TenantId: {execution.TenantId}",
             cancellationToken);
 
         return Result.Success();

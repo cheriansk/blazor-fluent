@@ -97,7 +97,7 @@ public class NotificationService : INotifyService
         scopedUser?.SetSystemDaemon("NotificationService");
 
         var scopedTenant = scope.ServiceProvider.GetService<ITenantContext>();
-        if (scopedTenant != null && !string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        if (scopedTenant != null && _tenantContext.HasActiveTenant)
         {
             scopedTenant.Initialize(
                 _tenantContext.TenantId,
@@ -115,7 +115,7 @@ public class NotificationService : INotifyService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var tenantId = _tenantContext.TenantId ?? "default";
+        var tenantId = _tenantContext.TenantId;
 
         var notification = new NotificationEntity
         {
@@ -179,8 +179,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -192,13 +192,13 @@ public class NotificationService : INotifyService
             .Where(n => !n.IsDeleted);
 
         // 1. Tenant filtering (all allowed tenants by default, or specific if provided)
-        if (!string.IsNullOrWhiteSpace(filter.TenantId))
+        if (filter.TenantId.HasValue)
         {
-            if (!isHost && !allowedTenants.Contains(filter.TenantId))
+            if (!isHost && !allowedTenants.Contains(filter.TenantId.Value))
             {
                 return [];
             }
-            query = query.Where(n => n.TenantId == filter.TenantId);
+            query = query.Where(n => n.TenantId == filter.TenantId.Value);
         }
         else if (!isHost)
         {
@@ -283,8 +283,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -331,8 +331,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -383,8 +383,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -393,10 +393,10 @@ public class NotificationService : INotifyService
         var query = db.Notifications
             .Where(n => !n.IsDeleted && !n.IsRead);
 
-        if (!string.IsNullOrWhiteSpace(tenantId))
+        if (!string.IsNullOrWhiteSpace(tenantId) && Guid.TryParse(tenantId, out var targetTenantId))
         {
-            if (!isHost && !allowedTenants.Contains(tenantId)) return 0;
-            query = query.Where(n => n.TenantId == tenantId);
+            if (!isHost && !allowedTenants.Contains(targetTenantId)) return 0;
+            query = query.Where(n => n.TenantId == targetTenantId);
         }
         else if (!isHost)
         {
@@ -442,7 +442,7 @@ public class NotificationService : INotifyService
         IAuditService auditService,
         bool isHost,
         string? currentUserId,
-        IReadOnlyCollection<string> allowedTenants,
+        IReadOnlyCollection<Guid> allowedTenants,
         CancellationToken ct = default)
     {
         if (isHost)

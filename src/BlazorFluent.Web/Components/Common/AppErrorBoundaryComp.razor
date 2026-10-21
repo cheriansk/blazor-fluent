@@ -57,8 +57,8 @@ else
     protected override async Task OnErrorAsync(Exception exception)
     {
         var currentUri = NavigationManager.Uri;
-        var tenantId = TenantContext.TenantId ?? "none";
-        var userId = CurrentUser.UserId ?? "anonymous";
+        var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "none";
+        var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "anonymous";
 
         try
         {

@@ -410,6 +410,22 @@
         "EnforceMandatoryCorrelationIdMiddleware.InvokeAsync(HttpContext, ICorrelationContext)": "d956f0589c5e30a481ac43a7df58159e44514da6a2d81c50abb0d909bae5fb39"
       }
     },
+    "Api/Middleware/EnforceMandatoryTenantAndAuthMiddleware.cs": {
+      "RelativePath": "Api/Middleware/EnforceMandatoryTenantAndAuthMiddleware.cs",
+      "KnownMembers": [
+        "_next",
+        "EnforceMandatoryTenantAndAuthMiddleware._next",
+        "_logger",
+        "EnforceMandatoryTenantAndAuthMiddleware._logger",
+        ".ctor",
+        "EnforceMandatoryTenantAndAuthMiddleware.EnforceMandatoryTenantAndAuthMiddleware(RequestDelegate, ILogger\u003CEnforceMandatoryTenantAndAuthMiddleware\u003E)",
+        "InvokeAsync",
+        "EnforceMandatoryTenantAndAuthMiddleware.InvokeAsync(HttpContext)"
+      ],
+      "MemberSyntaxHashes": {
+        "EnforceMandatoryTenantAndAuthMiddleware.InvokeAsync(HttpContext)": "e3f1d135291642e4e71da3a03589ebe7199153d04d590a8f21eab6bd87941fb5"
+      }
+    },
     "Api/Program.cs": {
       "RelativePath": "Api/Program.cs",
       "KnownMembers": [
@@ -427,7 +443,7 @@
         "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRoleEnum)"
       ],
       "MemberSyntaxHashes": {
-        "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRoleEnum)": "ef17ea7795a93441e1a842e0907fa83cbb150b49810165082eb6207702021329"
+        "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRoleEnum)": "e53353ffba012998e2c321aef9f0886fac5441fbf7579499601859453f447b13"
       }
     },
     "AppHost/Program.cs": {
@@ -747,11 +763,11 @@
       "RelativePath": "Core/Contracts/ICalendarService.cs",
       "KnownMembers": [
         "GetProgramCalendarAsync",
-        "ICalendarService.GetProgramCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)",
+        "ICalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)",
         "GetProjectCalendarAsync",
-        "ICalendarService.GetProjectCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)",
+        "ICalendarService.GetProjectCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)",
         "GetUserCalendarAsync",
-        "ICalendarService.GetUserCalendarAsync(string, string, DateTime, DateTime, CancellationToken)",
+        "ICalendarService.GetUserCalendarAsync(Guid, string, DateTime, DateTime, CancellationToken)",
         "CreateProgramCalendarEntryAsync",
         "ICalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)",
         "CreateProjectCalendarEntryAsync",
@@ -762,9 +778,9 @@
         "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ICalendarService.GetProgramCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "99b8db4ac477e5aee846597690855e488f68bf8520bca24505893467367c6768",
-        "ICalendarService.GetProjectCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "ff99945d48aab35ef99a163b04d86b0f98546f2fa342881904c14f65009d8d53",
-        "ICalendarService.GetUserCalendarAsync(string, string, DateTime, DateTime, CancellationToken)": "f9a1285b9716869ed060e471be215f23dcc87893850df8f1aaf5f612837b9f50",
+        "ICalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)": "0e29cfad38afd928f175f3f0f7d604bba9573074406b18789123b4f773519078",
+        "ICalendarService.GetProjectCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)": "fc46a3fb27a0e6d3cd676bdd2c697a36c61ee4bdf522499b2edcf5f338eb9d42",
+        "ICalendarService.GetUserCalendarAsync(Guid, string, DateTime, DateTime, CancellationToken)": "502753d4555b6ed9cca03f61b1ecd3c3d8267832947797d1b72916294e676ce1",
         "ICalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)": "9ae01a6bf92f41ea3a85065ed2bd4465506478f756a6c50960752ae65961645c",
         "ICalendarService.CreateProjectCalendarEntryAsync(ProjectCalendarEntity, CancellationToken)": "87c212c3b3b33ea7461d5c04ec1b623996fc7463f26bad2f5ad9e7f2b2ac0ec4",
         "ICalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "e5d4d47efba23ca14c7a1dd41e9b29cd21ca3239a9a483bd335a33cf4f2fbd4c",
@@ -793,22 +809,22 @@
     "Core/Contracts/ICurrentUser.cs": {
       "RelativePath": "Core/Contracts/ICurrentUser.cs",
       "KnownMembers": [
-        "Email",
-        "ICurrentUser.Email",
-        "get_Email",
-        "ICurrentUser.Email.get",
-        "UserId",
-        "ICurrentUser.UserId",
-        "get_UserId",
-        "ICurrentUser.UserId.get",
-        "UserName",
-        "ICurrentUser.UserName",
-        "get_UserName",
-        "ICurrentUser.UserName.get",
         "IsAuthenticated",
         "ICurrentUser.IsAuthenticated",
         "get_IsAuthenticated",
         "ICurrentUser.IsAuthenticated.get",
+        "UserId",
+        "ICurrentUser.UserId",
+        "get_UserId",
+        "ICurrentUser.UserId.get",
+        "Email",
+        "ICurrentUser.Email",
+        "get_Email",
+        "ICurrentUser.Email.get",
+        "UserName",
+        "ICurrentUser.UserName",
+        "get_UserName",
+        "ICurrentUser.UserName.get",
         "IsInRole",
         "ICurrentUser.IsInRole(string)",
         "IsImpersonated",
@@ -831,10 +847,16 @@
         "ICurrentUser.IsSystemDaemon",
         "get_IsSystemDaemon",
         "ICurrentUser.IsSystemDaemon.get",
+        "IsAuthenticatedTenantUser",
+        "ICurrentUser.IsAuthenticatedTenantUser",
+        "get_IsAuthenticatedTenantUser",
+        "ICurrentUser.IsAuthenticatedTenantUser.get",
         "SetSystemDaemon",
         "ICurrentUser.SetSystemDaemon(string, string?)",
         "RestoreUserContext",
         "ICurrentUser.RestoreUserContext(string, string, string, bool)",
+        "_tenantContext",
+        "DefaultCurrentUser._tenantContext",
         "_isSystemDaemon",
         "DefaultCurrentUser._isSystemDaemon",
         "_daemonName",
@@ -849,14 +871,16 @@
         "DefaultCurrentUser._restoredUserName",
         "_restoredIsRootAdmin",
         "DefaultCurrentUser._restoredIsRootAdmin",
+        ".ctor",
+        "DefaultCurrentUser.DefaultCurrentUser(ITenantContext?)",
+        "DefaultCurrentUser.IsAuthenticated",
+        "DefaultCurrentUser.IsAuthenticated.get",
         "DefaultCurrentUser.Email",
         "DefaultCurrentUser.Email.get",
         "DefaultCurrentUser.UserId",
         "DefaultCurrentUser.UserId.get",
         "DefaultCurrentUser.UserName",
         "DefaultCurrentUser.UserName.get",
-        "DefaultCurrentUser.IsAuthenticated",
-        "DefaultCurrentUser.IsAuthenticated.get",
         "DefaultCurrentUser.IsInRole(string)",
         "DefaultCurrentUser.IsImpersonated",
         "DefaultCurrentUser.IsImpersonated.get",
@@ -868,17 +892,17 @@
         "DefaultCurrentUser.IsRootAdmin.get",
         "DefaultCurrentUser.IsSystemDaemon",
         "DefaultCurrentUser.IsSystemDaemon.get",
+        "DefaultCurrentUser.IsAuthenticatedTenantUser",
+        "DefaultCurrentUser.IsAuthenticatedTenantUser.get",
         "DefaultCurrentUser.SetSystemDaemon(string, string?)",
-        "DefaultCurrentUser.RestoreUserContext(string, string, string, bool)",
-        ".ctor",
-        "DefaultCurrentUser.DefaultCurrentUser()"
+        "DefaultCurrentUser.RestoreUserContext(string, string, string, bool)"
       ],
       "MemberSyntaxHashes": {
         "ICurrentUser.IsInRole(string)": "d3c97604b5e12e10620c6ae6a92cbf04c40a9df39c3c9b3531545f6f6b39f239",
-        "ICurrentUser.SetSystemDaemon(string, string?)": "9d37a627f95ece8d3d72ff4f4ca57d075bab3b2c53a7f76b61b8f480b2ac105a",
+        "ICurrentUser.SetSystemDaemon(string, string?)": "f12d0407b4895847e01e02d1a20a84e8fe5a33e208f342e5c8a9701a6729fcd8",
         "ICurrentUser.RestoreUserContext(string, string, string, bool)": "c6d8a600c05134d70962daa38940f8baecaef4da94cdde1c500b69870b02a6fa",
         "DefaultCurrentUser.IsInRole(string)": "9806818c32f1181a53a5c20156c811d329078d94b0de5fd2a0fc43731f49b630",
-        "DefaultCurrentUser.SetSystemDaemon(string, string?)": "2e0d221f3609d3cab420b1b97d1f7fc0908e0f887b164c9fdb1324e4f39fea18",
+        "DefaultCurrentUser.SetSystemDaemon(string, string?)": "1be877a4ad7b04558edbc5f932354e5c725c3e375355794b1c523aaad3442363",
         "DefaultCurrentUser.RestoreUserContext(string, string, string, bool)": "f9db1d276127f3cfa10b61f285ff263fff0887aee6a0a63ae3ccb16235440636"
       }
     },
@@ -956,22 +980,29 @@
       "RelativePath": "Core/Contracts/IHierarchyAuthorizationService.cs",
       "KnownMembers": [
         "IsTenantAdminAsync",
+        "IHierarchyAuthorizationService.IsTenantAdminAsync(Guid, string, CancellationToken)",
+        "CanViewTenantSettingsAsync",
+        "IHierarchyAuthorizationService.CanViewTenantSettingsAsync(Guid, string, CancellationToken)",
+        "CanEditTenantSettingsAsync",
+        "IHierarchyAuthorizationService.CanEditTenantSettingsAsync(Guid, string, CancellationToken)",
+        "CanAccessTenantAsync",
+        "IHierarchyAuthorizationService.CanAccessTenantAsync(Guid, string, CancellationToken)",
+        "GetAccessibleProgramIdsAsync",
+        "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(Guid, string, CancellationToken)",
+        "CanManageTenantAdminsAsync",
+        "IHierarchyAuthorizationService.CanManageTenantAdminsAsync(Guid, string, CancellationToken)",
         "IHierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)",
         "IsProgramAdminAsync",
         "IHierarchyAuthorizationService.IsProgramAdminAsync(Guid, string, CancellationToken)",
         "IsProjectAdminAsync",
         "IHierarchyAuthorizationService.IsProjectAdminAsync(Guid, string, CancellationToken)",
-        "CanViewTenantSettingsAsync",
         "IHierarchyAuthorizationService.CanViewTenantSettingsAsync(string, string, CancellationToken)",
-        "CanEditTenantSettingsAsync",
         "IHierarchyAuthorizationService.CanEditTenantSettingsAsync(string, string, CancellationToken)",
-        "CanAccessTenantAsync",
         "IHierarchyAuthorizationService.CanAccessTenantAsync(string, string, CancellationToken)",
         "CanAccessProgramAsync",
         "IHierarchyAuthorizationService.CanAccessProgramAsync(Guid, string, CancellationToken)",
         "CanAccessProjectAsync",
         "IHierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)",
-        "GetAccessibleProgramIdsAsync",
         "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)",
         "GetEffectiveProjectRoleAsync",
         "IHierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)",
@@ -981,7 +1012,6 @@
         "IHierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRoleEnum, string?, CancellationToken)",
         "IsUserActiveAndProvisionedAsync",
         "IHierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)",
-        "CanManageTenantAdminsAsync",
         "IHierarchyAuthorizationService.CanManageTenantAdminsAsync(string, string, CancellationToken)",
         "CanManageProgramAdminsAsync",
         "IHierarchyAuthorizationService.CanManageProgramAdminsAsync(Guid, string, CancellationToken)",
@@ -989,6 +1019,12 @@
         "IHierarchyAuthorizationService.CanManageProjectAdminsAsync(Guid, string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
+        "IHierarchyAuthorizationService.IsTenantAdminAsync(Guid, string, CancellationToken)": "e2110b0d4a3440507b2413f926cea0aacb2abe73eff1e8a626e262cb5e28bd9b",
+        "IHierarchyAuthorizationService.CanViewTenantSettingsAsync(Guid, string, CancellationToken)": "ae554ba163a3d9fc696157098bd69d13773c085afa6f5a437246addd5784ab91",
+        "IHierarchyAuthorizationService.CanEditTenantSettingsAsync(Guid, string, CancellationToken)": "37f49369435ff4699e89a919437783b6a44ceb273bc1fef39c5e99f9f0ef09cc",
+        "IHierarchyAuthorizationService.CanAccessTenantAsync(Guid, string, CancellationToken)": "da7e3e160808efb60e0d92f269e6a2ffa37049b09892445ff52756b77d701cd4",
+        "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(Guid, string, CancellationToken)": "3de1ec9905f76951e78ff5e15d2fc396251e19ed3ab457e731f37a932088c604",
+        "IHierarchyAuthorizationService.CanManageTenantAdminsAsync(Guid, string, CancellationToken)": "232e2fb7919843eaac8dfeb07e477f63ab4a608afd7115faaa7715a5ee08d966",
         "IHierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)": "9190b5a3df94bbd2c16ee63a38b5dcccb25a34c052896c2c24c1e2ee4eff14ad",
         "IHierarchyAuthorizationService.IsProgramAdminAsync(Guid, string, CancellationToken)": "3b4aa48885f5899203092b1c29c6e4f670ad27010baa6f78b6e337552a18e7f3",
         "IHierarchyAuthorizationService.IsProjectAdminAsync(Guid, string, CancellationToken)": "35335bdd8117b93a26eeadcd9b32584309ffca07b889d3b098ee943cadfc6ade",
@@ -1065,7 +1101,7 @@
       "RelativePath": "Core/Contracts/IInternalAuthenticationService.cs",
       "KnownMembers": [
         ".ctor",
-        "AuthUserResult.AuthUserResult(UserEntity, bool, List\u003CTenantInfo\u003E, string, string)",
+        "AuthUserResult.AuthUserResult(UserEntity, bool, List\u003CTenantInfo\u003E, Guid, string, string)",
         "get_EqualityContract",
         "AuthUserResult.EqualityContract.get",
         "EqualityContract",
@@ -1110,6 +1146,14 @@
         "AuthUserResult.ResolvedTenantName.init",
         "ResolvedTenantName",
         "AuthUserResult.ResolvedTenantName",
+        "\u003CResolvedTenantSlug\u003Ek__BackingField",
+        "AuthUserResult.ResolvedTenantSlug.field",
+        "get_ResolvedTenantSlug",
+        "AuthUserResult.ResolvedTenantSlug.get",
+        "set_ResolvedTenantSlug",
+        "AuthUserResult.ResolvedTenantSlug.init",
+        "ResolvedTenantSlug",
+        "AuthUserResult.ResolvedTenantSlug",
         "ToString",
         "AuthUserResult.ToString()",
         "PrintMembers",
@@ -1127,7 +1171,7 @@
         "AuthUserResult.\u003CClone\u003E$()",
         "AuthUserResult.AuthUserResult(AuthUserResult)",
         "Deconstruct",
-        "AuthUserResult.Deconstruct(out UserEntity, out bool, out List\u003CTenantInfo\u003E, out string, out string)",
+        "AuthUserResult.Deconstruct(out UserEntity, out bool, out List\u003CTenantInfo\u003E, out Guid, out string, out string)",
         "VerifyLoginCredentialsAsync",
         "IInternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)",
         "VerifyAndRehydrateSessionAsync",
@@ -1544,7 +1588,15 @@
         "MaxRootAdminCount",
         "IRootAdminService.MaxRootAdminCount",
         "DefaultTenantSlug",
-        "IRootAdminService.DefaultTenantSlug"
+        "IRootAdminService.DefaultTenantSlug",
+        "RootTenantId",
+        "IRootAdminService.RootTenantId",
+        "RootTenantSlug",
+        "IRootAdminService.RootTenantSlug",
+        "RootTenantName",
+        "IRootAdminService.RootTenantName",
+        ".cctor",
+        "IRootAdminService.IRootAdminService()"
       ],
       "MemberSyntaxHashes": {
         "IRootAdminService.GetRootAdminEmails()": "d8dd333cda7609342815636d04a4ef2004f8ec9e66003d848bb251c521e75693",
@@ -1608,10 +1660,26 @@
     "Core/Contracts/ITenantContext.cs": {
       "RelativePath": "Core/Contracts/ITenantContext.cs",
       "KnownMembers": [
+        "HasActiveTenant",
+        "ITenantContext.HasActiveTenant",
+        "get_HasActiveTenant",
+        "ITenantContext.HasActiveTenant.get",
+        "IsRootTenant",
+        "ITenantContext.IsRootTenant",
+        "get_IsRootTenant",
+        "ITenantContext.IsRootTenant.get",
         "TenantId",
         "ITenantContext.TenantId",
         "get_TenantId",
         "ITenantContext.TenantId.get",
+        "RequiredTenantId",
+        "ITenantContext.RequiredTenantId",
+        "get_RequiredTenantId",
+        "ITenantContext.RequiredTenantId.get",
+        "TenantSlug",
+        "ITenantContext.TenantSlug",
+        "get_TenantSlug",
+        "ITenantContext.TenantSlug.get",
         "TenantName",
         "ITenantContext.TenantName",
         "get_TenantName",
@@ -1632,9 +1700,13 @@
         "ITenantContext.CanSwitchTenant",
         "get_CanSwitchTenant",
         "ITenantContext.CanSwitchTenant.get",
+        "SetTenant",
+        "ITenantContext.SetTenant(Guid, string, string)",
         "Initialize",
-        "ITenantContext.Initialize(string?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool)",
+        "ITenantContext.Initialize(Guid, string, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, string)",
+        "ITenantContext.Initialize(Guid?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool, string?)",
         "SwitchTenant",
+        "ITenantContext.SwitchTenant(Guid)",
         "ITenantContext.SwitchTenant(string)",
         "Reset",
         "ITenantContext.Reset()",
@@ -1642,18 +1714,26 @@
         "TenantContext._logger",
         "_tenantId",
         "TenantContext._tenantId",
+        "_tenantSlug",
+        "TenantContext._tenantSlug",
         "_tenantName",
         "TenantContext._tenantName",
         "_userType",
         "TenantContext._userType",
-        "_isHost",
-        "TenantContext._isHost",
         "_allowedTenants",
         "TenantContext._allowedTenants",
         ".ctor",
         "TenantContext.TenantContext(ILogger\u003CTenantContext\u003E?)",
+        "TenantContext.HasActiveTenant",
+        "TenantContext.HasActiveTenant.get",
+        "TenantContext.IsRootTenant",
+        "TenantContext.IsRootTenant.get",
         "TenantContext.TenantId",
         "TenantContext.TenantId.get",
+        "TenantContext.RequiredTenantId",
+        "TenantContext.RequiredTenantId.get",
+        "TenantContext.TenantSlug",
+        "TenantContext.TenantSlug.get",
         "TenantContext.TenantName",
         "TenantContext.TenantName.get",
         "TenantContext.UserType",
@@ -1664,17 +1744,29 @@
         "TenantContext.AllowedTenants.get",
         "TenantContext.CanSwitchTenant",
         "TenantContext.CanSwitchTenant.get",
-        "TenantContext.Initialize(string?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool)",
+        "SecurityViolation",
+        "TenantContext.SecurityViolation(string)",
+        "TenantContext.Initialize(Guid, string, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, string)",
+        "TenantContext.SetTenant(Guid, string, string)",
+        "TenantContext.Initialize(Guid?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool, string?)",
+        "TenantContext.SwitchTenant(Guid)",
         "TenantContext.SwitchTenant(string)",
         "TenantContext.Reset()"
       ],
       "MemberSyntaxHashes": {
-        "ITenantContext.Initialize(string?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool)": "395f600bb5518394e8a70c670c0751724d987b1e847c9c969f9e65da1d4504a3",
-        "ITenantContext.SwitchTenant(string)": "1b170aa6c4e479a64e0794adf10361d2373b98dc7b277bf22869357507635c93",
+        "ITenantContext.SetTenant(Guid, string, string)": "7076b9adf640e579d1d98fddc7e474309b5a91d00ae53c88a7bf4db0cb34c1fe",
+        "ITenantContext.Initialize(Guid, string, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, string)": "0de6b18a9de5fb3fd6bceaba97699730cd8655e8176845721ab67715b02d6932",
+        "ITenantContext.Initialize(Guid?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool, string?)": "be6bef7d0c6df05cdbd5d763bb4933e78cd0147776dae7ee61a9dad9dc10b1eb",
+        "ITenantContext.SwitchTenant(Guid)": "1eeb554a7527b4ba19f79a36b8c69567b44d2f91d12a2c80d570fe5e6433326b",
+        "ITenantContext.SwitchTenant(string)": "699b12af713417df80f300d98a54db883ca01eb3d7b5f6593cfe36a44871de4b",
         "ITenantContext.Reset()": "722004652733febbcc10155637d921360d8ff3fc27c3426db9c187d9d9da5f2c",
-        "TenantContext.Initialize(string?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool)": "a26c65b2bbfffc6911b5150cece746f709e0f323d9d6b1fcf561aa63f64e472f",
-        "TenantContext.SwitchTenant(string)": "68de087aa979d04f9c57cf51df19d589b1c22a277c8e013b89027399fb12b696",
-        "TenantContext.Reset()": "b3daed5870a72ac5b893bd6bec200721b700edf3a45e0a7d3bd1cf42ad7ccc3f"
+        "TenantContext.SecurityViolation(string)": "fcb0528dbada0460398b31bba00e8022975bf18d3b1eac81696e26d91c087670",
+        "TenantContext.Initialize(Guid, string, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, string)": "03f1d638483dc4da5126b8ab7c25cedbe786f80ca33173c677deea4a7fb53e80",
+        "TenantContext.SetTenant(Guid, string, string)": "95dfb1067d6fcc2ea71a952d54be004befb15a524ce6f6e5875ca9dca7c8b8bb",
+        "TenantContext.Initialize(Guid?, string?, UserTypeEnum, IEnumerable\u003CTenantInfo\u003E, bool, string?)": "37092814026d273696fedd5b03247465f975fd7e8b3ba625fea47d1e356f6c9d",
+        "TenantContext.SwitchTenant(Guid)": "355bb04cda7c99d020be08268a33216f9e431a53891e28c7bd82b7b0aabfd74b",
+        "TenantContext.SwitchTenant(string)": "5269f3afa548f754f8c92595666a531134df52be6e530962bbe0a27df0ba669a",
+        "TenantContext.Reset()": "88922ef052ac38b485ccc9cc357abd91c6fd9670967206bb1c323533ceda2206"
       }
     },
     "Core/Contracts/ITenantService.cs": {
@@ -1974,10 +2066,10 @@
         "get_ItemType",
         "IWorkItemRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "IWorkItemRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "IWorkItemRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "IWorkItemRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "bac9aad2626a1be1bbe5b8d4eb11ac1d4760d59310553dc2fb4fa48cbaf36c4e"
+        "IWorkItemRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "187eb72ad6da14ae7bcadc3f5c9643774ac1316445c1b5c65d6596bb7affab38"
       }
     },
     "Core/Contracts/ResourceOperations.cs": {
@@ -2307,6 +2399,40 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Domain/Base/IScheduledWorkEntity.cs": {
+      "RelativePath": "Core/Domain/Base/IScheduledWorkEntity.cs",
+      "KnownMembers": [
+        "DueDate",
+        "IScheduledWorkEntity.DueDate",
+        "get_DueDate",
+        "IScheduledWorkEntity.DueDate.get",
+        "set_DueDate",
+        "IScheduledWorkEntity.DueDate.set",
+        "RevisedDueDate",
+        "IScheduledWorkEntity.RevisedDueDate",
+        "get_RevisedDueDate",
+        "IScheduledWorkEntity.RevisedDueDate.get",
+        "set_RevisedDueDate",
+        "IScheduledWorkEntity.RevisedDueDate.set",
+        "ActualStartDate",
+        "IScheduledWorkEntity.ActualStartDate",
+        "get_ActualStartDate",
+        "IScheduledWorkEntity.ActualStartDate.get",
+        "set_ActualStartDate",
+        "IScheduledWorkEntity.ActualStartDate.set",
+        "ActualEndDate",
+        "IScheduledWorkEntity.ActualEndDate",
+        "get_ActualEndDate",
+        "IScheduledWorkEntity.ActualEndDate.get",
+        "set_ActualEndDate",
+        "IScheduledWorkEntity.ActualEndDate.set",
+        "ScheduleVarianceDays",
+        "IScheduledWorkEntity.ScheduleVarianceDays",
+        "get_ScheduleVarianceDays",
+        "IScheduledWorkEntity.ScheduleVarianceDays.get"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Core/Domain/Base/ISourceTrackedEntity.cs": {
       "RelativePath": "Core/Domain/Base/ISourceTrackedEntity.cs",
       "KnownMembers": [
@@ -2370,6 +2496,16 @@
         "BaseCalendarEntity.EndDate.get",
         "set_EndDate",
         "BaseCalendarEntity.EndDate.set",
+        "\u003CVerNum\u003Ek__BackingField",
+        "BaseCalendarEntity.VerNum.field",
+        "VerNum",
+        "BaseCalendarEntity.VerNum",
+        "get_VerNum",
+        "BaseCalendarEntity.VerNum.get",
+        "set_VerNum",
+        "BaseCalendarEntity.VerNum.set",
+        "SetVersionNumber",
+        "BaseCalendarEntity.SetVersionNumber(int)",
         "\u003CEntryType\u003Ek__BackingField",
         "BaseCalendarEntity.EntryType.field",
         "EntryType",
@@ -2421,7 +2557,9 @@
         ".ctor",
         "BaseCalendarEntity.BaseCalendarEntity()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "BaseCalendarEntity.SetVersionNumber(int)": "ec5780d77da75062d720e8f73c7462d17dbc7b37167d5dd590aa29c1d2b51c16"
+      }
     },
     "Core/Domain/Calendar/ProgramCalendarEntity.cs": {
       "RelativePath": "Core/Domain/Calendar/ProgramCalendarEntity.cs",
@@ -3005,14 +3143,6 @@
         "UserEntity.RowSignature.get",
         "set_RowSignature",
         "UserEntity.RowSignature.set",
-        "\u003CDefaultTenantId\u003Ek__BackingField",
-        "UserEntity.DefaultTenantId.field",
-        "DefaultTenantId",
-        "UserEntity.DefaultTenantId",
-        "get_DefaultTenantId",
-        "UserEntity.DefaultTenantId.get",
-        "set_DefaultTenantId",
-        "UserEntity.DefaultTenantId.set",
         "\u003CTimeZoneId\u003Ek__BackingField",
         "UserEntity.TimeZoneId.field",
         "TimeZoneId",
@@ -3087,7 +3217,7 @@
         "UserEntity.UserEntity()"
       ],
       "MemberSyntaxHashes": {
-        "UserEntity.ComputeIntegritySignature(string)": "7a3158dfcce0faecd293c7bc693d9d2bec0409b4c49a581ade8e3c995ae3eb82",
+        "UserEntity.ComputeIntegritySignature(string)": "f5cb4830400d0c3558d7620e85bedf0664b5882149244f31f55a50e63f9ca6a7",
         "UserEntity.VerifyIntegritySignature(string)": "8b97c93c1e5674fae3d04f184ca56ca99266dea257fe78d46814092d30552590",
         "UserEntity.IsValidForLogin(DateTime, string, out string)": "45bf16a64d3dc2d180ca5c420cbfe37588e120323fe7e5c7b46f45c0dbacc5da"
       }
@@ -4143,6 +4273,14 @@
         "BaseTaskEntity.DueDate.get",
         "set_DueDate",
         "BaseTaskEntity.DueDate.set",
+        "\u003CRevisedDueDate\u003Ek__BackingField",
+        "BaseTaskEntity.RevisedDueDate.field",
+        "RevisedDueDate",
+        "BaseTaskEntity.RevisedDueDate",
+        "get_RevisedDueDate",
+        "BaseTaskEntity.RevisedDueDate.get",
+        "set_RevisedDueDate",
+        "BaseTaskEntity.RevisedDueDate.set",
         "\u003CEndDate\u003Ek__BackingField",
         "BaseTaskEntity.EndDate.field",
         "EndDate",
@@ -4151,6 +4289,26 @@
         "BaseTaskEntity.EndDate.get",
         "set_EndDate",
         "BaseTaskEntity.EndDate.set",
+        "\u003CActualStartDate\u003Ek__BackingField",
+        "BaseTaskEntity.ActualStartDate.field",
+        "ActualStartDate",
+        "BaseTaskEntity.ActualStartDate",
+        "get_ActualStartDate",
+        "BaseTaskEntity.ActualStartDate.get",
+        "set_ActualStartDate",
+        "BaseTaskEntity.ActualStartDate.set",
+        "\u003CActualEndDate\u003Ek__BackingField",
+        "BaseTaskEntity.ActualEndDate.field",
+        "ActualEndDate",
+        "BaseTaskEntity.ActualEndDate",
+        "get_ActualEndDate",
+        "BaseTaskEntity.ActualEndDate.get",
+        "set_ActualEndDate",
+        "BaseTaskEntity.ActualEndDate.set",
+        "ScheduleVarianceDays",
+        "BaseTaskEntity.ScheduleVarianceDays",
+        "get_ScheduleVarianceDays",
+        "BaseTaskEntity.ScheduleVarianceDays.get",
         "\u003CReporterEmail\u003Ek__BackingField",
         "BaseTaskEntity.ReporterEmail.field",
         "ReporterEmail",
@@ -4273,13 +4431,31 @@
         "BaseTaskEntity.GetParsedWatcherEmails()",
         "GetParsedLabels",
         "BaseTaskEntity.GetParsedLabels()",
+        "GetDefaultCategory",
+        "BaseTaskEntity.GetDefaultCategory()",
+        "TransitionTo",
+        "BaseTaskEntity.TransitionTo(TaskStatusEnum, DateTime, string?, string)",
+        "StartWork",
+        "BaseTaskEntity.StartWork(DateTime)",
+        "Pause",
+        "BaseTaskEntity.Pause(DateTime, string)",
+        "Complete",
+        "BaseTaskEntity.Complete(DateTime)",
+        "Cancel",
+        "BaseTaskEntity.Cancel(DateTime, string)",
         ".ctor",
         "BaseTaskEntity.BaseTaskEntity()"
       ],
       "MemberSyntaxHashes": {
         "BaseTaskEntity.GetParsedAssigneeEmails()": "539e35c748f5da92ccc266031c0834be1a40bb85270c1433976acc719012fb54",
         "BaseTaskEntity.GetParsedWatcherEmails()": "e6ece18e6096649b94dab669a1fd58d54b1006d1d6bcaf63a7eb0f27372e5b64",
-        "BaseTaskEntity.GetParsedLabels()": "b8e836214966e64a0406a23c99d39489cce224d8283f633bf58afb6aa6700a38"
+        "BaseTaskEntity.GetParsedLabels()": "b8e836214966e64a0406a23c99d39489cce224d8283f633bf58afb6aa6700a38",
+        "BaseTaskEntity.GetDefaultCategory()": "876ecb3fbe99ddeccb1c72afdaf9a74346e7074aea500e5be484bfcfb53ef980",
+        "BaseTaskEntity.TransitionTo(TaskStatusEnum, DateTime, string?, string)": "31e9beb09167902b3ff2c0dff0eda1ce8ec2fff5a6380e7b080b62f40958313e",
+        "BaseTaskEntity.StartWork(DateTime)": "273c36643fe65cdcb4e2816a3e04694eacb155961eee51e2814f2b88aed2e251",
+        "BaseTaskEntity.Pause(DateTime, string)": "1d922265d1597f14f7e50994d0a2a9ca5baee9487eab67282d94c7e43ab2ffff",
+        "BaseTaskEntity.Complete(DateTime)": "19e9064a61047f5d9f0d548b18bb3d3b643925ffe2d0c6235141b113d4308634",
+        "BaseTaskEntity.Cancel(DateTime, string)": "7784811c70e58119cbd03cbfc03551593842b494b60ee8a9be4f9e3c31815724"
       }
     },
     "Core/Domain/Tasks/IssueEntity.cs": {
@@ -4383,10 +4559,17 @@
         "RiskEntity.RiskStatus.get",
         "set_RiskStatus",
         "RiskEntity.RiskStatus.set",
+        "GetDefaultCategory",
+        "RiskEntity.GetDefaultCategory()",
+        "TransitionRiskStatusTo",
+        "RiskEntity.TransitionRiskStatusTo(RiskStatusEnum, DateTime, string)",
         ".ctor",
         "RiskEntity.RiskEntity()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "RiskEntity.GetDefaultCategory()": "d1b5d3fec20a57d3817d1c2a0fb7f9c60ced9fee12650ffe4b131b9f071059c6",
+        "RiskEntity.TransitionRiskStatusTo(RiskStatusEnum, DateTime, string)": "4765d7b914b495fe9108ea46171b13e7952f80daf2eb883d81125cb6f412215a"
+      }
     },
     "Core/Domain/Tasks/SubTaskEntity.cs": {
       "RelativePath": "Core/Domain/Tasks/SubTaskEntity.cs",
@@ -4431,10 +4614,14 @@
         "SubTaskEntity.BlockedBySubTask.get",
         "set_BlockedBySubTask",
         "SubTaskEntity.BlockedBySubTask.set",
+        "GetDefaultCategory",
+        "SubTaskEntity.GetDefaultCategory()",
         ".ctor",
         "SubTaskEntity.SubTaskEntity()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "SubTaskEntity.GetDefaultCategory()": "4736ca4e2f9d071ba62e9c7916b10b0b442af8271e63896bf35a8a540be451f5"
+      }
     },
     "Core/Domain/Tasks/TaskEntity.cs": {
       "RelativePath": "Core/Domain/Tasks/TaskEntity.cs",
@@ -4873,22 +5060,6 @@
         "ProgramEntity.Description.get",
         "set_Description",
         "ProgramEntity.Description.set",
-        "\u003CStartDateUtc\u003Ek__BackingField",
-        "ProgramEntity.StartDateUtc.field",
-        "StartDateUtc",
-        "ProgramEntity.StartDateUtc",
-        "get_StartDateUtc",
-        "ProgramEntity.StartDateUtc.get",
-        "set_StartDateUtc",
-        "ProgramEntity.StartDateUtc.set",
-        "\u003CTargetEndDateUtc\u003Ek__BackingField",
-        "ProgramEntity.TargetEndDateUtc.field",
-        "TargetEndDateUtc",
-        "ProgramEntity.TargetEndDateUtc",
-        "get_TargetEndDateUtc",
-        "ProgramEntity.TargetEndDateUtc.get",
-        "set_TargetEndDateUtc",
-        "ProgramEntity.TargetEndDateUtc.set",
         "\u003CStatus\u003Ek__BackingField",
         "ProgramEntity.Status.field",
         "Status",
@@ -4905,6 +5076,74 @@
         "ProgramEntity.IsActive.get",
         "set_IsActive",
         "ProgramEntity.IsActive.set",
+        "\u003CStartDate\u003Ek__BackingField",
+        "ProgramEntity.StartDate.field",
+        "StartDate",
+        "ProgramEntity.StartDate",
+        "get_StartDate",
+        "ProgramEntity.StartDate.get",
+        "set_StartDate",
+        "ProgramEntity.StartDate.set",
+        "\u003CDueDate\u003Ek__BackingField",
+        "ProgramEntity.DueDate.field",
+        "DueDate",
+        "ProgramEntity.DueDate",
+        "get_DueDate",
+        "ProgramEntity.DueDate.get",
+        "set_DueDate",
+        "ProgramEntity.DueDate.set",
+        "\u003CRevisedDueDate\u003Ek__BackingField",
+        "ProgramEntity.RevisedDueDate.field",
+        "RevisedDueDate",
+        "ProgramEntity.RevisedDueDate",
+        "get_RevisedDueDate",
+        "ProgramEntity.RevisedDueDate.get",
+        "set_RevisedDueDate",
+        "ProgramEntity.RevisedDueDate.set",
+        "\u003CEndDate\u003Ek__BackingField",
+        "ProgramEntity.EndDate.field",
+        "EndDate",
+        "ProgramEntity.EndDate",
+        "get_EndDate",
+        "ProgramEntity.EndDate.get",
+        "set_EndDate",
+        "ProgramEntity.EndDate.set",
+        "\u003CActualStartDate\u003Ek__BackingField",
+        "ProgramEntity.ActualStartDate.field",
+        "ActualStartDate",
+        "ProgramEntity.ActualStartDate",
+        "get_ActualStartDate",
+        "ProgramEntity.ActualStartDate.get",
+        "set_ActualStartDate",
+        "ProgramEntity.ActualStartDate.set",
+        "\u003CActualEndDate\u003Ek__BackingField",
+        "ProgramEntity.ActualEndDate.field",
+        "ActualEndDate",
+        "ProgramEntity.ActualEndDate",
+        "get_ActualEndDate",
+        "ProgramEntity.ActualEndDate.get",
+        "set_ActualEndDate",
+        "ProgramEntity.ActualEndDate.set",
+        "\u003CClosedAtUtc\u003Ek__BackingField",
+        "ProgramEntity.ClosedAtUtc.field",
+        "ClosedAtUtc",
+        "ProgramEntity.ClosedAtUtc",
+        "get_ClosedAtUtc",
+        "ProgramEntity.ClosedAtUtc.get",
+        "set_ClosedAtUtc",
+        "ProgramEntity.ClosedAtUtc.set",
+        "StartDateUtc",
+        "ProgramEntity.StartDateUtc",
+        "get_StartDateUtc",
+        "ProgramEntity.StartDateUtc.get",
+        "set_StartDateUtc",
+        "ProgramEntity.StartDateUtc.set",
+        "TargetEndDateUtc",
+        "ProgramEntity.TargetEndDateUtc",
+        "get_TargetEndDateUtc",
+        "ProgramEntity.TargetEndDateUtc.get",
+        "set_TargetEndDateUtc",
+        "ProgramEntity.TargetEndDateUtc.set",
         "\u003CIsDeleted\u003Ek__BackingField",
         "ProgramEntity.IsDeleted.field",
         "IsDeleted",
@@ -4929,14 +5168,6 @@
         "ProgramEntity.DeletedBy.get",
         "set_DeletedBy",
         "ProgramEntity.DeletedBy.set",
-        "\u003CTenantEntityId\u003Ek__BackingField",
-        "ProgramEntity.TenantEntityId.field",
-        "TenantEntityId",
-        "ProgramEntity.TenantEntityId",
-        "get_TenantEntityId",
-        "ProgramEntity.TenantEntityId.get",
-        "set_TenantEntityId",
-        "ProgramEntity.TenantEntityId.set",
         "\u003CTenantEntity\u003Ek__BackingField",
         "ProgramEntity.TenantEntity.field",
         "TenantEntity",
@@ -4961,10 +5192,26 @@
         "ProgramEntity.UserRoles.get",
         "set_UserRoles",
         "ProgramEntity.UserRoles.set",
+        "TransitionTo",
+        "ProgramEntity.TransitionTo(ProgramStatusEnum, DateTime, string)",
+        "Activate",
+        "ProgramEntity.Activate(DateTime)",
+        "MarkAtRisk",
+        "ProgramEntity.MarkAtRisk(DateTime, string)",
+        "PutOnHold",
+        "ProgramEntity.PutOnHold(DateTime, string)",
+        "Complete",
+        "ProgramEntity.Complete(DateTime)",
         ".ctor",
         "ProgramEntity.ProgramEntity()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "ProgramEntity.TransitionTo(ProgramStatusEnum, DateTime, string)": "66644f2f1da441099e29851fdfc78a611477091c6987a89d65091f78577b292c",
+        "ProgramEntity.Activate(DateTime)": "b13bb9141c8f00342d77037ee8737b866bda47160421be51ef61f28f5153ed4f",
+        "ProgramEntity.MarkAtRisk(DateTime, string)": "e8c48f47586f24520ff484b1f66bf2b2a1a012289a783278e5c10dab03562698",
+        "ProgramEntity.PutOnHold(DateTime, string)": "0275541f1d429869f7f64f8d2d31880ececec132642ce8d54aa5e7ab73a0bf9c",
+        "ProgramEntity.Complete(DateTime)": "227862edff4c760b507b66157131d2ae5e18122fd141509577c69077bf7d8295"
+      }
     },
     "Core/Domain/Tenancy/ProgramEntityValidator.cs": {
       "RelativePath": "Core/Domain/Tenancy/ProgramEntityValidator.cs",
@@ -5116,22 +5363,6 @@
         "ProjectEntity.Location.get",
         "set_Location",
         "ProjectEntity.Location.set",
-        "\u003CTentativeStartDate\u003Ek__BackingField",
-        "ProjectEntity.TentativeStartDate.field",
-        "TentativeStartDate",
-        "ProjectEntity.TentativeStartDate",
-        "get_TentativeStartDate",
-        "ProjectEntity.TentativeStartDate.get",
-        "set_TentativeStartDate",
-        "ProjectEntity.TentativeStartDate.set",
-        "\u003CTentativeEndDate\u003Ek__BackingField",
-        "ProjectEntity.TentativeEndDate.field",
-        "TentativeEndDate",
-        "ProjectEntity.TentativeEndDate",
-        "get_TentativeEndDate",
-        "ProjectEntity.TentativeEndDate.get",
-        "set_TentativeEndDate",
-        "ProjectEntity.TentativeEndDate.set",
         "\u003CScopeSummary\u003Ek__BackingField",
         "ProjectEntity.ScopeSummary.field",
         "ScopeSummary",
@@ -5164,6 +5395,66 @@
         "ProjectEntity.TeamsWebhookUrl.get",
         "set_TeamsWebhookUrl",
         "ProjectEntity.TeamsWebhookUrl.set",
+        "\u003CStartDate\u003Ek__BackingField",
+        "ProjectEntity.StartDate.field",
+        "StartDate",
+        "ProjectEntity.StartDate",
+        "get_StartDate",
+        "ProjectEntity.StartDate.get",
+        "set_StartDate",
+        "ProjectEntity.StartDate.set",
+        "\u003CDueDate\u003Ek__BackingField",
+        "ProjectEntity.DueDate.field",
+        "DueDate",
+        "ProjectEntity.DueDate",
+        "get_DueDate",
+        "ProjectEntity.DueDate.get",
+        "set_DueDate",
+        "ProjectEntity.DueDate.set",
+        "\u003CRevisedDueDate\u003Ek__BackingField",
+        "ProjectEntity.RevisedDueDate.field",
+        "RevisedDueDate",
+        "ProjectEntity.RevisedDueDate",
+        "get_RevisedDueDate",
+        "ProjectEntity.RevisedDueDate.get",
+        "set_RevisedDueDate",
+        "ProjectEntity.RevisedDueDate.set",
+        "\u003CEndDate\u003Ek__BackingField",
+        "ProjectEntity.EndDate.field",
+        "EndDate",
+        "ProjectEntity.EndDate",
+        "get_EndDate",
+        "ProjectEntity.EndDate.get",
+        "set_EndDate",
+        "ProjectEntity.EndDate.set",
+        "\u003CActualStartDate\u003Ek__BackingField",
+        "ProjectEntity.ActualStartDate.field",
+        "ActualStartDate",
+        "ProjectEntity.ActualStartDate",
+        "get_ActualStartDate",
+        "ProjectEntity.ActualStartDate.get",
+        "set_ActualStartDate",
+        "ProjectEntity.ActualStartDate.set",
+        "\u003CActualEndDate\u003Ek__BackingField",
+        "ProjectEntity.ActualEndDate.field",
+        "ActualEndDate",
+        "ProjectEntity.ActualEndDate",
+        "get_ActualEndDate",
+        "ProjectEntity.ActualEndDate.get",
+        "set_ActualEndDate",
+        "ProjectEntity.ActualEndDate.set",
+        "TentativeStartDate",
+        "ProjectEntity.TentativeStartDate",
+        "get_TentativeStartDate",
+        "ProjectEntity.TentativeStartDate.get",
+        "set_TentativeStartDate",
+        "ProjectEntity.TentativeStartDate.set",
+        "TentativeEndDate",
+        "ProjectEntity.TentativeEndDate",
+        "get_TentativeEndDate",
+        "ProjectEntity.TentativeEndDate.get",
+        "set_TentativeEndDate",
+        "ProjectEntity.TentativeEndDate.set",
         "\u003CIsDeleted\u003Ek__BackingField",
         "ProjectEntity.IsDeleted.field",
         "IsDeleted",
@@ -5188,14 +5479,6 @@
         "ProjectEntity.DeletedBy.get",
         "set_DeletedBy",
         "ProjectEntity.DeletedBy.set",
-        "\u003CTenantEntityId\u003Ek__BackingField",
-        "ProjectEntity.TenantEntityId.field",
-        "TenantEntityId",
-        "ProjectEntity.TenantEntityId",
-        "get_TenantEntityId",
-        "ProjectEntity.TenantEntityId.get",
-        "set_TenantEntityId",
-        "ProjectEntity.TenantEntityId.set",
         "\u003CTenantEntity\u003Ek__BackingField",
         "ProjectEntity.TenantEntity.field",
         "TenantEntity",
@@ -5228,10 +5511,23 @@
         "ProjectEntity.UserRoles.get",
         "set_UserRoles",
         "ProjectEntity.UserRoles.set",
+        "TransitionTo",
+        "ProjectEntity.TransitionTo(ProjectStatusEnum, DateTime, string)",
+        "Activate",
+        "ProjectEntity.Activate(DateTime)",
+        "PutOnHold",
+        "ProjectEntity.PutOnHold(DateTime, string)",
+        "Complete",
+        "ProjectEntity.Complete(DateTime)",
         ".ctor",
         "ProjectEntity.ProjectEntity()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "ProjectEntity.TransitionTo(ProjectStatusEnum, DateTime, string)": "2e5ece87daf132ed73b9d2ec7224f839d4e8d9fb023e464ae0dede92359e69c9",
+        "ProjectEntity.Activate(DateTime)": "c9e9257019c23953901261bf435519be7f7362b1d7261abc86070921a9bc5781",
+        "ProjectEntity.PutOnHold(DateTime, string)": "3340d2455b82d650f4b6f824db6b7d24df84db368e9c0eb6077dc2495773a60b",
+        "ProjectEntity.Complete(DateTime)": "5fe826e47a6585d8cdb9a91686960022fe0adbe3daf448426efdeb5874ee76f6"
+      }
     },
     "Core/Domain/Tenancy/ProjectEntityValidator.cs": {
       "RelativePath": "Core/Domain/Tenancy/ProjectEntityValidator.cs",
@@ -5493,14 +5789,6 @@
     "Core/Domain/Tenancy/TenantUserEntity.cs": {
       "RelativePath": "Core/Domain/Tenancy/TenantUserEntity.cs",
       "KnownMembers": [
-        "\u003CTenantEntityId\u003Ek__BackingField",
-        "TenantUserEntity.TenantEntityId.field",
-        "TenantEntityId",
-        "TenantUserEntity.TenantEntityId",
-        "get_TenantEntityId",
-        "TenantUserEntity.TenantEntityId.get",
-        "set_TenantEntityId",
-        "TenantUserEntity.TenantEntityId.set",
         "\u003CUserEntityId\u003Ek__BackingField",
         "TenantUserEntity.UserEntityId.field",
         "UserEntityId",
@@ -5573,6 +5861,12 @@
         "TenantUserEntity.User.get",
         "set_User",
         "TenantUserEntity.User.set",
+        "TenantEntityId",
+        "TenantUserEntity.TenantEntityId",
+        "get_TenantEntityId",
+        "TenantUserEntity.TenantEntityId.get",
+        "set_TenantEntityId",
+        "TenantUserEntity.TenantEntityId.set",
         "UserId",
         "TenantUserEntity.UserId",
         "get_UserId",
@@ -5593,7 +5887,7 @@
         "TenantUserEntity.TenantUserEntity()"
       ],
       "MemberSyntaxHashes": {
-        "TenantUserEntity.ComputeIntegritySignature(string)": "0950716cf2605a0ef90a3e7c4bc20f741148e4b05b297573637ac446e9e50b5b",
+        "TenantUserEntity.ComputeIntegritySignature(string)": "c89e4e5c81706bde14074759e4d24598cdab3c287c424cbb9c0d13d0266e5044",
         "TenantUserEntity.VerifyIntegritySignature(string)": "8b97c93c1e5674fae3d04f184ca56ca99266dea257fe78d46814092d30552590"
       }
     },
@@ -7557,7 +7851,7 @@
         "set_SenderUserEmail",
         "BaseJobEvent.SenderUserEmail.init",
         ".ctor",
-        "BaseJobEvent.BaseJobEvent(string, string, string, string, string, string, Guid?)",
+        "BaseJobEvent.BaseJobEvent(string, Guid, string, string, string, string, Guid?)",
         "ToString",
         "BaseJobEvent.ToString()",
         "PrintMembers",
@@ -7581,7 +7875,7 @@
       "RelativePath": "Core/Events/Imports/ImportJobEvents.cs",
       "KnownMembers": [
         ".ctor",
-        "FileImportedJobEvent.FileImportedJobEvent(Guid, ImportFileTypeEnum, Guid, string, string, string, string, string, Guid?)",
+        "FileImportedJobEvent.FileImportedJobEvent(Guid, ImportFileTypeEnum, Guid, Guid, string, string, string, string, Guid?)",
         "get_EqualityContract",
         "FileImportedJobEvent.EqualityContract.get",
         "EqualityContract",
@@ -7676,8 +7970,8 @@
         "FileImportedJobEvent.\u003CClone\u003E$()",
         "FileImportedJobEvent.FileImportedJobEvent(FileImportedJobEvent)",
         "Deconstruct",
-        "FileImportedJobEvent.Deconstruct(out Guid, out ImportFileTypeEnum, out Guid, out string, out string, out string, out string, out string, out Guid?)",
-        "FileValidationResultJobEvent.FileValidationResultJobEvent(Guid, bool, int, int, int, string, string, string, string, string, Guid?)",
+        "FileImportedJobEvent.Deconstruct(out Guid, out ImportFileTypeEnum, out Guid, out Guid, out string, out string, out string, out string, out Guid?)",
+        "FileValidationResultJobEvent.FileValidationResultJobEvent(Guid, bool, int, int, int, Guid, string, string, string, string, Guid?)",
         "FileValidationResultJobEvent.EqualityContract.get",
         "FileValidationResultJobEvent.EqualityContract",
         "FileValidationResultJobEvent.ImportFileId.field",
@@ -7750,8 +8044,8 @@
         "FileValidationResultJobEvent.Equals(FileValidationResultJobEvent?)",
         "FileValidationResultJobEvent.\u003CClone\u003E$()",
         "FileValidationResultJobEvent.FileValidationResultJobEvent(FileValidationResultJobEvent)",
-        "FileValidationResultJobEvent.Deconstruct(out Guid, out bool, out int, out int, out int, out string, out string, out string, out string, out string, out Guid?)",
-        "FileStagingCompletedJobEvent.FileStagingCompletedJobEvent(Guid, bool, int, string?, string, string, string, string, string, Guid?)",
+        "FileValidationResultJobEvent.Deconstruct(out Guid, out bool, out int, out int, out int, out Guid, out string, out string, out string, out string, out Guid?)",
+        "FileStagingCompletedJobEvent.FileStagingCompletedJobEvent(Guid, bool, int, string?, Guid, string, string, string, string, Guid?)",
         "FileStagingCompletedJobEvent.EqualityContract.get",
         "FileStagingCompletedJobEvent.EqualityContract",
         "FileStagingCompletedJobEvent.ImportFileId.field",
@@ -7812,8 +8106,8 @@
         "FileStagingCompletedJobEvent.Equals(FileStagingCompletedJobEvent?)",
         "FileStagingCompletedJobEvent.\u003CClone\u003E$()",
         "FileStagingCompletedJobEvent.FileStagingCompletedJobEvent(FileStagingCompletedJobEvent)",
-        "FileStagingCompletedJobEvent.Deconstruct(out Guid, out bool, out int, out string?, out string, out string, out string, out string, out string, out Guid?)",
-        "FileImportBatchJobEvent.FileImportBatchJobEvent(Guid, Guid, string, string, string, string, string, Guid?)",
+        "FileStagingCompletedJobEvent.Deconstruct(out Guid, out bool, out int, out string?, out Guid, out string, out string, out string, out string, out Guid?)",
+        "FileImportBatchJobEvent.FileImportBatchJobEvent(Guid, Guid, Guid, string, string, string, string, Guid?)",
         "FileImportBatchJobEvent.EqualityContract.get",
         "FileImportBatchJobEvent.EqualityContract",
         "\u003CImportId\u003Ek__BackingField",
@@ -7862,8 +8156,8 @@
         "FileImportBatchJobEvent.Equals(FileImportBatchJobEvent?)",
         "FileImportBatchJobEvent.\u003CClone\u003E$()",
         "FileImportBatchJobEvent.FileImportBatchJobEvent(FileImportBatchJobEvent)",
-        "FileImportBatchJobEvent.Deconstruct(out Guid, out Guid, out string, out string, out string, out string, out string, out Guid?)",
-        "FileProcessingCompletedJobEvent.FileProcessingCompletedJobEvent(Guid, bool, int, string?, string, string, string, string, string, Guid?)",
+        "FileImportBatchJobEvent.Deconstruct(out Guid, out Guid, out Guid, out string, out string, out string, out string, out Guid?)",
+        "FileProcessingCompletedJobEvent.FileProcessingCompletedJobEvent(Guid, bool, int, string?, Guid, string, string, string, string, Guid?)",
         "FileProcessingCompletedJobEvent.EqualityContract.get",
         "FileProcessingCompletedJobEvent.EqualityContract",
         "FileProcessingCompletedJobEvent.ImportFileId.field",
@@ -7920,7 +8214,7 @@
         "FileProcessingCompletedJobEvent.Equals(FileProcessingCompletedJobEvent?)",
         "FileProcessingCompletedJobEvent.\u003CClone\u003E$()",
         "FileProcessingCompletedJobEvent.FileProcessingCompletedJobEvent(FileProcessingCompletedJobEvent)",
-        "FileProcessingCompletedJobEvent.Deconstruct(out Guid, out bool, out int, out string?, out string, out string, out string, out string, out string, out Guid?)"
+        "FileProcessingCompletedJobEvent.Deconstruct(out Guid, out bool, out int, out string?, out Guid, out string, out string, out string, out string, out Guid?)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -8062,7 +8356,7 @@
       ],
       "MemberSyntaxHashes": {
         "OpaqueIdUtility.GenerateSecureLicenseKey()": "5be1cb47eb4c5676c9721f8408b52c1a8e949b87e1ebc1e09746acfb77bb645f",
-        "OpaqueIdUtility.GenerateTenantRefId()": "08c5a0f207bdbb98540fc232d83ecf8d68f2106f906f9305976b8278fe1cd63b",
+        "OpaqueIdUtility.GenerateTenantRefId()": "71cece0d4be7f458b28052bc297b881acb1610d5897570e79628eeac57da2f30",
         "OpaqueIdUtility.MaskGuid(Guid, string)": "b5da58ec6891f1e11aa125edd79257fbc2a51a3cdb07a936e247211de8ab491a"
       }
     },
@@ -8096,6 +8390,18 @@
       "KnownMembers": [
         "SystemTenantSlug",
         "SystemIdentityUtility.SystemTenantSlug",
+        "SystemDaemonTenantId",
+        "SystemIdentityUtility.SystemDaemonTenantId",
+        "RootTenantId",
+        "SystemIdentityUtility.RootTenantId",
+        "RootTenantSlug",
+        "SystemIdentityUtility.RootTenantSlug",
+        "RootTenantName",
+        "SystemIdentityUtility.RootTenantName",
+        "IsAuthenticatedTenantUser",
+        "SystemIdentityUtility.IsAuthenticatedTenantUser(ICurrentUser?, ITenantContext?)",
+        "RequireAuthenticatedTenantUser",
+        "SystemIdentityUtility.RequireAuthenticatedTenantUser(ICurrentUser, ITenantContext, string)",
         "RequireAuthenticatedContext",
         "SystemIdentityUtility.RequireAuthenticatedContext(ICurrentUser, ITenantContext, string)",
         "ResolveAuditableUserId",
@@ -8105,12 +8411,16 @@
         "FormatInternalDaemonEmail",
         "SystemIdentityUtility.FormatInternalDaemonEmail(string)",
         "IsSystemDaemon",
-        "SystemIdentityUtility.IsSystemDaemon(string?)"
+        "SystemIdentityUtility.IsSystemDaemon(string?)",
+        ".cctor",
+        "SystemIdentityUtility.SystemIdentityUtility()"
       ],
       "MemberSyntaxHashes": {
-        "SystemIdentityUtility.RequireAuthenticatedContext(ICurrentUser, ITenantContext, string)": "7735e17c379f3623c9898cccc6aa09ca13fbd0ede038f4f03692cb41a37216bf",
+        "SystemIdentityUtility.IsAuthenticatedTenantUser(ICurrentUser?, ITenantContext?)": "122bee1512c640590fed3c22cd674ac7c285ddcb6ed3b1601fb468e52acdab50",
+        "SystemIdentityUtility.RequireAuthenticatedTenantUser(ICurrentUser, ITenantContext, string)": "7e2412e73e39e0f315e4390ba90c9e0423d664b6d6303b999ea68bb6f2382c87",
+        "SystemIdentityUtility.RequireAuthenticatedContext(ICurrentUser, ITenantContext, string)": "0ab480f3ffc80a9d1d46fff9329380508fc334d3f3fa8d1552a511510e2b5eb9",
         "SystemIdentityUtility.ResolveAuditableUserId(ICurrentUser, string)": "1e233bcf64b7fdf39007399c01c54ad1663766cdb4f9ad120a5f57fa81bf2c68",
-        "SystemIdentityUtility.EstablishPreAuthContext(ICurrentUser, ITenantContext, string, string)": "506e04afbe18331f21d6f78aa6c9c3403038151464b5782b9dc87d589a1da8ef",
+        "SystemIdentityUtility.EstablishPreAuthContext(ICurrentUser, ITenantContext, string, string)": "88acf5519c17e2f32d462e538354c53bfe64a9908d3d82659f4cf771d8e45bc7",
         "SystemIdentityUtility.FormatInternalDaemonEmail(string)": "53cb2ff40aedbce2f274fa227a45497d0cde8c01106628c55bc003af4ab76fed",
         "SystemIdentityUtility.IsSystemDaemon(string?)": "ff0f67e8785e2cee0b8248509b3e657dbac7517a2cb32b36fbe92292f0d106a1"
       }
@@ -8218,7 +8528,7 @@
         "RemoteEngineGateway.SendAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "RemoteEngineGateway.CallApiAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)": "4a83a87bbb5708f9b054c091a4e7483505a3ebfe46f8ca8107a780b2b3074442",
+        "RemoteEngineGateway.CallApiAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)": "ee0b568950413e0165c76da6677140d460d6c576b55c6ad380be61129ac4dd78",
         "RemoteEngineGateway.ConvertFileAsync(FileConvertReqDto, CancellationToken)": "cea96d8ed31effe7eee0abada3475368303208e64ccaac08b490f6337f35b18b",
         "RemoteEngineGateway.ProcessStagedBatchAsync(ProcessBatchReqDto, CancellationToken)": "f8a2128a6a9f6e7594f7769581a7daf6ed47770dc51873a32dbeaed312b29a56",
         "RemoteEngineGateway.DecryptProprietaryBatchAsync(DecryptProprietaryReqDto, CancellationToken)": "16170fb6206c020e0593d9a88a37d4e68ddf493245237e273c6055f6b7d64bd1",
@@ -8244,7 +8554,7 @@
         "TenantAuthDelegatingHandler.SendAsync(HttpRequestMessage, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "TenantAuthDelegatingHandler.SendAsync(HttpRequestMessage, CancellationToken)": "854a1be3f6d3073a56aeaa1c012da08970a2fbe2ccd910e580c646b1aa408b10"
+        "TenantAuthDelegatingHandler.SendAsync(HttpRequestMessage, CancellationToken)": "367689dd619cf2fd60febf0942267356f34054aeeaa56f38eb20014378417f00"
       }
     },
     "Infrastructure/InfrastructureExtensions.cs": {
@@ -8352,10 +8662,10 @@
         "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "1e6ae0f893634902bb20dd0128808583a9af5e08d0b3a3326147bb36820d4ba4",
-        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "1b1ef53687e277319caced875e949c94a8e34ad2f35a043fa7f8c709359eaffb",
-        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "3f7895d2196e30a16bde11d598e6446b4d02141693a41331b91f9e40b5ad7075",
-        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "33584ed63937f3c2e275b2c45c7c2f4c7155ed2ec3fde6a8e976e952711f4839"
+        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "30c04305478d2184f487a41869e684f88fc3f9daa3e0cb6080b2bf2321b493f8",
+        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "309a81e59827ce740384204eb41c0eafe0239315accc9ff0557a7964149840f0",
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "5a5d9747a41ab979fdb8d49c7602084b1da39c380d453b62d9cadc131f4f3aaf",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "d62dbdca3b76d7b3487a72ed0918b6be8e005848cfba60cd47926b0a4f9d5918"
       }
     },
     "Infrastructure/Security/CircuitSessionTracker.cs": {
@@ -8420,10 +8730,12 @@
       "RelativePath": "Infrastructure/Security/ITenantTokenService.cs",
       "KnownMembers": [
         "GenerateS2SToken",
-        "ITenantTokenService.GenerateS2SToken(string, string)"
+        "ITenantTokenService.GenerateS2SToken(string, string)",
+        "ITenantTokenService.GenerateS2SToken(Guid, string)"
       ],
       "MemberSyntaxHashes": {
-        "ITenantTokenService.GenerateS2SToken(string, string)": "fe1d529a0e42955ccf5a659af8c751a2448a015498d23d4f684a9ebf5fdc0df9"
+        "ITenantTokenService.GenerateS2SToken(string, string)": "fe1d529a0e42955ccf5a659af8c751a2448a015498d23d4f684a9ebf5fdc0df9",
+        "ITenantTokenService.GenerateS2SToken(Guid, string)": "95fedc0337c219fe094410292a1192cdc889fbfe99885d36d74b455ab01d3375"
       }
     },
     "Infrastructure/Security/PathAwareAuthorizationHandler.cs": {
@@ -8558,9 +8870,11 @@
         ".ctor",
         "TenantTokenService.TenantTokenService(IConfiguration, ICorrelationContext)",
         "GenerateS2SToken",
+        "TenantTokenService.GenerateS2SToken(Guid, string)",
         "TenantTokenService.GenerateS2SToken(string, string)"
       ],
       "MemberSyntaxHashes": {
+        "TenantTokenService.GenerateS2SToken(Guid, string)": "2f877b3ca5ee10f1a26c43534a1b4cadc5ae91793ca96a0b41edcf33e5cb71c5",
         "TenantTokenService.GenerateS2SToken(string, string)": "ae0acd581da2842740248b151665a7ca1fed4e5c1c73f94e740f351685276fce"
       }
     },
@@ -8918,7 +9232,7 @@
         "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "ed61701bb41436fa9f1b058f676723b07b19485ee996707db3f7101c966e15fa",
         "GenericFileImportBatchJobHandler.OrderFilesByDependencies(List\u003CImportFileEntity\u003E)": "61ecb69b96d10ee39fe5fc2aa41c18db8ea97af3a635dc36188c4d819e45e647",
         "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "ff17c8991ca0a012209a12e0e04b2d95f85756a21fcdf269c1d73b956cd518e2",
-        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "dec40c15524c62ed1c78d8ebf3ac60af74436e7723d500ee06faad887a6e9900",
+        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "2dcb4e06606c1095c1913c06f8ea921e2b002d68a7f07d9eaa047ba00c58c0a4",
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)": "f3915a11139c5410afa5e9e4b7f24daf5cb36fe68390d9e8d4355fce75328d26"
       }
     },
@@ -9174,7 +9488,7 @@
       "RelativePath": "Jobs/Jobs/Audit/AuditPurgeJobEvent.cs",
       "KnownMembers": [
         ".ctor",
-        "AuditPurgeJobEvent.AuditPurgeJobEvent(string, string, string, string, string, string, int, Guid?)",
+        "AuditPurgeJobEvent.AuditPurgeJobEvent(string, Guid, string, string, string, string, int, Guid?)",
         "get_EqualityContract",
         "AuditPurgeJobEvent.EqualityContract.get",
         "EqualityContract",
@@ -9261,7 +9575,7 @@
         "AuditPurgeJobEvent.\u003CClone\u003E$()",
         "AuditPurgeJobEvent.AuditPurgeJobEvent(AuditPurgeJobEvent)",
         "Deconstruct",
-        "AuditPurgeJobEvent.Deconstruct(out string, out string, out string, out string, out string, out string, out int, out Guid?)"
+        "AuditPurgeJobEvent.Deconstruct(out string, out Guid, out string, out string, out string, out string, out int, out Guid?)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -9287,7 +9601,7 @@
       "RelativePath": "Jobs/Jobs/Tasks/DailyTaskSummaryJobEvent.cs",
       "KnownMembers": [
         ".ctor",
-        "DailyTaskSummaryJobEvent.DailyTaskSummaryJobEvent(string, string, string, string, string, string, Guid?)",
+        "DailyTaskSummaryJobEvent.DailyTaskSummaryJobEvent(string, Guid, string, string, string, string, Guid?)",
         "get_EqualityContract",
         "DailyTaskSummaryJobEvent.EqualityContract.get",
         "EqualityContract",
@@ -9366,7 +9680,7 @@
         "DailyTaskSummaryJobEvent.\u003CClone\u003E$()",
         "DailyTaskSummaryJobEvent.DailyTaskSummaryJobEvent(DailyTaskSummaryJobEvent)",
         "Deconstruct",
-        "DailyTaskSummaryJobEvent.Deconstruct(out string, out string, out string, out string, out string, out string, out Guid?)"
+        "DailyTaskSummaryJobEvent.Deconstruct(out string, out Guid, out string, out string, out string, out string, out Guid?)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -9397,7 +9711,7 @@
       "RelativePath": "Jobs/Jobs/Tasks/TaskCadenceAlertJobEvent.cs",
       "KnownMembers": [
         ".ctor",
-        "TaskCadenceAlertJobEvent.TaskCadenceAlertJobEvent(string, string, string, string, string, string, Guid?)",
+        "TaskCadenceAlertJobEvent.TaskCadenceAlertJobEvent(string, Guid, string, string, string, string, Guid?)",
         "get_EqualityContract",
         "TaskCadenceAlertJobEvent.EqualityContract.get",
         "EqualityContract",
@@ -9476,7 +9790,7 @@
         "TaskCadenceAlertJobEvent.\u003CClone\u003E$()",
         "TaskCadenceAlertJobEvent.TaskCadenceAlertJobEvent(TaskCadenceAlertJobEvent)",
         "Deconstruct",
-        "TaskCadenceAlertJobEvent.Deconstruct(out string, out string, out string, out string, out string, out string, out Guid?)"
+        "TaskCadenceAlertJobEvent.Deconstruct(out string, out Guid, out string, out string, out string, out string, out Guid?)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -9538,7 +9852,7 @@
       ],
       "MemberSyntaxHashes": {
         "BatchJobQueueListener.ExecuteAsync(CancellationToken)": "4f9034f1d015a2a06b078e391c5b9b3084d6481df95e53dab7f2d03edefc0ef1",
-        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "21bdc2a7e659beda6d4921228ce1a6cc6a857e606e483df8f53c4b0c0dfc4529"
+        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "8d2b97d402609c2d1e12c69bce45e9447c254cab76834d98e7ffdaff93f1c1a1"
       }
     },
     "Jobs/Queue/ChannelJobEventQueue.cs": {
@@ -9562,7 +9876,7 @@
         "ChannelJobEventQueue.Complete()"
       ],
       "MemberSyntaxHashes": {
-        "ChannelJobEventQueue.EnqueueAsync(IJobEvent, CancellationToken)": "0ea1f7b3e8c30f29c0c4b640cb29c683145e9e70a7882f65e7fab86eba77da0e",
+        "ChannelJobEventQueue.EnqueueAsync(IJobEvent, CancellationToken)": "cae1d992566b2fc94abb0978061cb401c34403fbe34b9088429b08e8a1753b62",
         "ChannelJobEventQueue.PublishAsync(IJobEvent, CancellationToken)": "8ae6379b711fb375f5ffe8b63e8e7f2fe07ddeeb6d6cb18dcdeb6fdcec4e28ed",
         "ChannelJobEventQueue.ReadAllAsync(CancellationToken)": "06976582f0b01fa2f6846f53dad27d083cfef8dcbcaf652db77f0f25914cbcb4",
         "ChannelJobEventQueue.Complete()": "0e17fa371c96f93a62289618d7ed102546d5b9bf5bd3563528b10df868af1936"
@@ -9591,7 +9905,7 @@
         "PeriodicBatchScheduler.BuildSchedules()",
         "TryParseCron",
         "PeriodicBatchScheduler.TryParseCron(string, string, out CronExpression)",
-        "PeriodicBatchScheduler.ScheduleEntry.ScheduleEntry(string, CronExpression, Func\u003Cstring, string, IJobEvent\u003E)",
+        "PeriodicBatchScheduler.ScheduleEntry.ScheduleEntry(string, CronExpression, Func\u003CGuid, string, IJobEvent\u003E)",
         "get_EqualityContract",
         "PeriodicBatchScheduler.ScheduleEntry.EqualityContract.get",
         "EqualityContract",
@@ -9637,10 +9951,10 @@
         "PeriodicBatchScheduler.ScheduleEntry.\u003CClone\u003E$()",
         "PeriodicBatchScheduler.ScheduleEntry.ScheduleEntry(PeriodicBatchScheduler.ScheduleEntry)",
         "Deconstruct",
-        "PeriodicBatchScheduler.ScheduleEntry.Deconstruct(out string, out CronExpression, out Func\u003Cstring, string, IJobEvent\u003E)"
+        "PeriodicBatchScheduler.ScheduleEntry.Deconstruct(out string, out CronExpression, out Func\u003CGuid, string, IJobEvent\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "PeriodicBatchScheduler.ExecuteAsync(CancellationToken)": "f76fb7771326173eca12747d76c61d3b4542bf5b6ba15ae18aed3e7d4ff12545",
+        "PeriodicBatchScheduler.ExecuteAsync(CancellationToken)": "f58d91399a23d6b9e9a5dadef73dd79b31821db1cba1049278c8fc4a67d34083",
         "PeriodicBatchScheduler.BuildSchedules()": "bae44dbb94aeea1f9b638c8a58f6b91f8f38fdc4e12b4e4af15aff280fff7ec6",
         "PeriodicBatchScheduler.TryParseCron(string, string, out CronExpression)": "6a6eb0f841e256139b4669715033adb4ca64b2b5b87a81ec50ee77677f727374"
       }
@@ -9670,9 +9984,9 @@
         "JobManagerService.RetryJobAsync(Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "JobManagerService.GetRecentExecutionsAsync(int, CancellationToken)": "a9dc94d9637a4e5e0d30d70c2bdd654ca32788ac768daed7fec89a98bac52d4b",
-        "JobManagerService.TriggerJobAsync(string, string?, CancellationToken)": "b98a45e1ee1a5928f58a8d10ee3d1cf0bdc11f52a87a722109776717310fe047",
-        "JobManagerService.RetryJobAsync(Guid, CancellationToken)": "5068446a7bc01ab650bd161e555192d42a71e25c81da1ce2f151b3c3ab6100fd"
+        "JobManagerService.GetRecentExecutionsAsync(int, CancellationToken)": "4bed4ea5fe6fee5cb97e59e4ef343fa9c77e6d221dfcbef0b62ff0bf89b43436",
+        "JobManagerService.TriggerJobAsync(string, string?, CancellationToken)": "d6a3ec81a25767a3a340256451b9539068e48ea4ba503993ac5298ea73be3108",
+        "JobManagerService.RetryJobAsync(Guid, CancellationToken)": "e6ae0db25b8f4c43db31cee02d081d0713d2998d87f3b9340fd893faf3b620e7"
       }
     },
     "Persistence/Configurations/Auditing/AuditRecordEntityConfiguration.cs": {
@@ -9684,7 +9998,7 @@
         "AuditRecordEntityConfiguration.AuditRecordEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "AuditRecordEntityConfiguration.Configure(EntityTypeBuilder\u003CAuditRecordEntity\u003E)": "e6b20aa9379fedf5dfbe245e64f7ee38a835e7575919a3bd22a958c98800a629"
+        "AuditRecordEntityConfiguration.Configure(EntityTypeBuilder\u003CAuditRecordEntity\u003E)": "d8cb5b2302e57782e1cb30849b14197a6b27353bd58e710d932b0f49da89dc9d"
       }
     },
     "Persistence/Configurations/Calendar/ProgramCalendarEntityConfiguration.cs": {
@@ -9696,7 +10010,7 @@
         "ProgramCalendarEntityConfiguration.ProgramCalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProgramCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProgramCalendarEntity\u003E)": "8f38e3d276e77ee8929a9ec7bd64cbfd025756fabd5de5a5da5e9b3070fcc30d"
+        "ProgramCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProgramCalendarEntity\u003E)": "22fd81618177dcd606a49ccff04d1844672e61d9344b5a974b3385189b6a5626"
       }
     },
     "Persistence/Configurations/Calendar/ProjectCalendarEntityConfiguration.cs": {
@@ -9708,7 +10022,7 @@
         "ProjectCalendarEntityConfiguration.ProjectCalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProjectCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectCalendarEntity\u003E)": "8291175d301171ee88778a4760f180b9fbb0267b4f02a6ce6fbca8a4e85b58fb"
+        "ProjectCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectCalendarEntity\u003E)": "a93d90368b359cc2ca4fb8c4acb62ae9c110eb9022d7dae694fc02f1b80d24fa"
       }
     },
     "Persistence/Configurations/Calendar/UserCalendarEntityConfiguration.cs": {
@@ -9720,7 +10034,7 @@
         "UserCalendarEntityConfiguration.UserCalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "UserCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CUserCalendarEntity\u003E)": "7026af2eba055c3559728e1405349e5fdc1b22700ba7f8584f8441ea5bbace59"
+        "UserCalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CUserCalendarEntity\u003E)": "4921cef28b792387da6e44f1efdc07052877695a415dbee7f107517d47e56893"
       }
     },
     "Persistence/Configurations/EntitySchemas.cs": {
@@ -9750,7 +10064,7 @@
         "EventConsumptionTrackerEntityConfiguration.EventConsumptionTrackerEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "EventConsumptionTrackerEntityConfiguration.Configure(EntityTypeBuilder\u003CEventConsumptionTrackerEntity\u003E)": "59a3fa143d1d4268af375301dc4cc892bbe19c5bd37f9945c3adf2125c8e2994"
+        "EventConsumptionTrackerEntityConfiguration.Configure(EntityTypeBuilder\u003CEventConsumptionTrackerEntity\u003E)": "71df42dcfee130e4f53623c324bca46ff9a4f5478145135de6363ed87875db09"
       }
     },
     "Persistence/Configurations/Events/EventPublishTrackerEntityConfiguration.cs": {
@@ -9762,7 +10076,7 @@
         "EventPublishTrackerEntityConfiguration.EventPublishTrackerEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "EventPublishTrackerEntityConfiguration.Configure(EntityTypeBuilder\u003CEventPublishTrackerEntity\u003E)": "0638f6ea0bb3bdb143a750152cde3f2d151655c6f94fc85e5b297689840ca775"
+        "EventPublishTrackerEntityConfiguration.Configure(EntityTypeBuilder\u003CEventPublishTrackerEntity\u003E)": "aac1e85d0f6e51087f3ce64dd44f7d325cf6c5b7ffbad846095f2c5989ad3c4b"
       }
     },
     "Persistence/Configurations/Identity/ImpersonationGrantEntityConfiguration.cs": {
@@ -9774,7 +10088,7 @@
         "ImpersonationGrantEntityConfiguration.ImpersonationGrantEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ImpersonationGrantEntityConfiguration.Configure(EntityTypeBuilder\u003CImpersonationGrantEntity\u003E)": "84d654c32270611221a57505445a13a95bacde7e5088bb467d747c3fce99519b"
+        "ImpersonationGrantEntityConfiguration.Configure(EntityTypeBuilder\u003CImpersonationGrantEntity\u003E)": "55bd3ce2f7c6d8b65a6efc0c09a7a60cfd6b5e0e34ad4027d7d931570fa2406d"
       }
     },
     "Persistence/Configurations/Identity/UserEntityConfiguration.cs": {
@@ -9786,7 +10100,7 @@
         "UserEntityConfiguration.UserEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "UserEntityConfiguration.Configure(EntityTypeBuilder\u003CUserEntity\u003E)": "32bed2d5809b108fc8d22039de3eefb90dd588638d9c9888a42ccbf456612e50"
+        "UserEntityConfiguration.Configure(EntityTypeBuilder\u003CUserEntity\u003E)": "501fdbc47e78cd53e16bdf144152191abfb365b0c1e69b76334b1b3fa2d8af23"
       }
     },
     "Persistence/Configurations/Identity/UserSessionEntityConfiguration.cs": {
@@ -9798,7 +10112,7 @@
         "UserSessionEntityConfiguration.UserSessionEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "UserSessionEntityConfiguration.Configure(EntityTypeBuilder\u003CUserSessionEntity\u003E)": "6eec942d4b2f3e80a8946d1eebfd3f5aa989638407104dae1f7f08c23b33a84b"
+        "UserSessionEntityConfiguration.Configure(EntityTypeBuilder\u003CUserSessionEntity\u003E)": "e04b92e48ba795134eeaf88c98a800cc0275616a40e9a57313000ed9d0110136"
       }
     },
     "Persistence/Configurations/Imports/ImportFileEntityConfiguration.cs": {
@@ -9810,7 +10124,7 @@
         "ImportFileEntityConfiguration.ImportFileEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ImportFileEntityConfiguration.Configure(EntityTypeBuilder\u003CImportFileEntity\u003E)": "089ed59fec3feffa4fd4a46561c4084b2ab123587862fb6a3e5d3969b13c31a0"
+        "ImportFileEntityConfiguration.Configure(EntityTypeBuilder\u003CImportFileEntity\u003E)": "287c7a0b6b95d6034ceaa5328aa4986f2a2790944f1b0b5d8489136478038f98"
       }
     },
     "Persistence/Configurations/Imports/StagedImportEntityConfiguration.cs": {
@@ -9822,7 +10136,7 @@
         "StagedImportEntityConfiguration.StagedImportEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "StagedImportEntityConfiguration.Configure(EntityTypeBuilder\u003CStagedImportEntity\u003E)": "fa75ab9d96a3edcdb246f1d1f6235c093866b22857028c440249cb5546818d25"
+        "StagedImportEntityConfiguration.Configure(EntityTypeBuilder\u003CStagedImportEntity\u003E)": "4a6eaf75fec9ce49253afb65ff3daa2140f388770b4a33d64ed4bda1b0c47ab4"
       }
     },
     "Persistence/Configurations/Jobs/JobExecutionEntityConfiguration.cs": {
@@ -9834,7 +10148,7 @@
         "JobExecutionEntityConfiguration.JobExecutionEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "JobExecutionEntityConfiguration.Configure(EntityTypeBuilder\u003CJobExecutionEntity\u003E)": "d3755f2c4c1982ac305979759af5e45cbaa897d4bac532f5ebf96af73d4aed95"
+        "JobExecutionEntityConfiguration.Configure(EntityTypeBuilder\u003CJobExecutionEntity\u003E)": "06ed1df7cea8f39ff0837ce95a81a6a75903de4e443188743013b94de7d0033d"
       }
     },
     "Persistence/Configurations/Knowledge/KnowledgeArticleEntityConfiguration.cs": {
@@ -9848,7 +10162,7 @@
         "KnowledgeArticleReviewerEntityConfiguration.KnowledgeArticleReviewerEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "KnowledgeArticleEntityConfiguration.Configure(EntityTypeBuilder\u003CKnowledgeArticleEntity\u003E)": "f6016881a3bdb66f4583d71133254bb6e821bc8d09091ba5d3e76eb878d33a19",
+        "KnowledgeArticleEntityConfiguration.Configure(EntityTypeBuilder\u003CKnowledgeArticleEntity\u003E)": "c4b724a17100eed304e67da1ec75d1f90e56afde99f70d54838064274fa4ee2a",
         "KnowledgeArticleReviewerEntityConfiguration.Configure(EntityTypeBuilder\u003CKnowledgeArticleReviewerEntity\u003E)": "5259570df62cf6533d68d4250e572eaea35ba22d3b294674d10a059064f5bd6d"
       }
     },
@@ -9861,7 +10175,7 @@
         "NotificationEntityConfiguration.NotificationEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "NotificationEntityConfiguration.Configure(EntityTypeBuilder\u003CNotificationEntity\u003E)": "674ef0a9a5bd5e19ee529a5d0eb0e0686634612722d255cd499b5b09b180e654"
+        "NotificationEntityConfiguration.Configure(EntityTypeBuilder\u003CNotificationEntity\u003E)": "fe16e8fb4ed9f6e80898d7afe3401040b11b32d6a70a6aeaa966673f12b42dd6"
       }
     },
     "Persistence/Configurations/Tasks/AssumptionEntityConfiguration.cs": {
@@ -9873,7 +10187,7 @@
         "AssumptionEntityConfiguration.AssumptionEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "AssumptionEntityConfiguration.Configure(EntityTypeBuilder\u003CAssumptionEntity\u003E)": "6c80798bdd211cc2f8c3d6464229f5e48d3fd606900f956ddb0be6c04831934f"
+        "AssumptionEntityConfiguration.Configure(EntityTypeBuilder\u003CAssumptionEntity\u003E)": "0977171e418a52466c35198b6d4ed00b044e05a0196ea50aefadb2eb1109f1bb"
       }
     },
     "Persistence/Configurations/Tasks/IssueEntityConfiguration.cs": {
@@ -9885,7 +10199,7 @@
         "IssueEntityConfiguration.IssueEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "IssueEntityConfiguration.Configure(EntityTypeBuilder\u003CIssueEntity\u003E)": "4dca34870ed94d61ed6b67ad2fa1a1d1412c5143fdf290d0dea0d00ff895d08a"
+        "IssueEntityConfiguration.Configure(EntityTypeBuilder\u003CIssueEntity\u003E)": "d92e2ca9913eca7608af6d3a8625ed18f5979384217f4617b8e86f56fd8da448"
       }
     },
     "Persistence/Configurations/Tasks/RiskEntityConfiguration.cs": {
@@ -9897,7 +10211,7 @@
         "RiskEntityConfiguration.RiskEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "RiskEntityConfiguration.Configure(EntityTypeBuilder\u003CRiskEntity\u003E)": "fab2a10728b12b7c7a116f3536d46557a1cf81e622b444d0e67112d3253bb26c"
+        "RiskEntityConfiguration.Configure(EntityTypeBuilder\u003CRiskEntity\u003E)": "fbe31deca2e931d44abc235db308f038bb0b95b9e2a1518c9c042c7e7a89b137"
       }
     },
     "Persistence/Configurations/Tasks/SubTaskEntityConfiguration.cs": {
@@ -9909,7 +10223,7 @@
         "SubTaskEntityConfiguration.SubTaskEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "SubTaskEntityConfiguration.Configure(EntityTypeBuilder\u003CSubTaskEntity\u003E)": "d95119e9b927b1d580324a8ebeda95fd23fba702e742abe99020359a3c228476"
+        "SubTaskEntityConfiguration.Configure(EntityTypeBuilder\u003CSubTaskEntity\u003E)": "13b4a2ba0ec729dcebecd405332f09d35c290f4f4303e01c25a70deafd6ae376"
       }
     },
     "Persistence/Configurations/Tasks/TaskEntityConfiguration.cs": {
@@ -9923,7 +10237,7 @@
         "TaskEntityConfiguration.TaskEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "TaskEntityConfiguration.Configure(EntityTypeBuilder\u003CTaskEntity\u003E)": "a8bdad98f1e3c6814b1bb321c1d9aa6c173fd0eecc99f3810f691d1e87026e63",
+        "TaskEntityConfiguration.Configure(EntityTypeBuilder\u003CTaskEntity\u003E)": "5fa707c80f394c90fa81f9b9cfc10a858d510d8c37769cf0ae7434b9a39d627c",
         "TaskEntityConfiguration.OnConfigureCustom(EntityTypeBuilder\u003CTaskEntity\u003E)": "35cc17da7b744303d29f751a93dc98c781f63baca632d40bcdd7694dab3d3fdd"
       }
     },
@@ -9936,7 +10250,7 @@
         "UserTaskCommentEntityConfiguration.UserTaskCommentEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "UserTaskCommentEntityConfiguration.Configure(EntityTypeBuilder\u003CUserTaskCommentEntity\u003E)": "b856c85c7e1ae4c2e2ec8888427aac13498c96277611d23e8e9e29c7237d8d51"
+        "UserTaskCommentEntityConfiguration.Configure(EntityTypeBuilder\u003CUserTaskCommentEntity\u003E)": "c20fb999e4f12b915a62eb8162b9296bf1421090d485d0f7f016956a1b2e18c9"
       }
     },
     "Persistence/Configurations/Tasks/WorkDependencyConfiguration.cs": {
@@ -9948,7 +10262,7 @@
         "WorkDependencyConfiguration.WorkDependencyConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "WorkDependencyConfiguration.Configure(EntityTypeBuilder\u003CWorkDependencyEntity\u003E)": "ca8fdd911b9b818d7a76bdffc13ba2c480fad0f1e32385a7d1027d6a0f7afa9e"
+        "WorkDependencyConfiguration.Configure(EntityTypeBuilder\u003CWorkDependencyEntity\u003E)": "f9117f0b338d902d8e92f277ad3f5b76258f0316b6cf160277cf749052eb72fc"
       }
     },
     "Persistence/Configurations/Tasks/WorkflowEntityConfiguration.cs": {
@@ -9960,7 +10274,7 @@
         "WorkflowEntityConfiguration.WorkflowEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "WorkflowEntityConfiguration.Configure(EntityTypeBuilder\u003CWorkflowEntity\u003E)": "2d220813642ca49c49fde43a07f70af76e210fa604bf7713821dc76387e8356b"
+        "WorkflowEntityConfiguration.Configure(EntityTypeBuilder\u003CWorkflowEntity\u003E)": "6a6ee20a1863459f74eee2d7eb54dd7818a1ecea7dea75c7007a0a69f05e0107"
       }
     },
     "Persistence/Configurations/Tenancy/ProgramEntityConfiguration.cs": {
@@ -9972,7 +10286,7 @@
         "ProgramEntityConfiguration.ProgramEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProgramEntityConfiguration.Configure(EntityTypeBuilder\u003CProgramEntity\u003E)": "895f01e9c78507d6dfc184276107c5229bcea4f4022e9fb81cd0d545e0bae0b6"
+        "ProgramEntityConfiguration.Configure(EntityTypeBuilder\u003CProgramEntity\u003E)": "8b7604ab12e7c19b644fdaeb260d2eb6c16426e33389b0d467b2f37b37a1c3ce"
       }
     },
     "Persistence/Configurations/Tenancy/ProgramUserRoleEntityConfiguration.cs": {
@@ -9996,7 +10310,7 @@
         "ProjectEntityConfiguration.ProjectEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProjectEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectEntity\u003E)": "150bdd9615ed5f6dc898c8aad4b5850c35c2947864cc712c56bc0ed26c790509"
+        "ProjectEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectEntity\u003E)": "05161bb7ca215d8a7e463df4fdc71cc8d80dc9f863efd27217f16d11718aa97f"
       }
     },
     "Persistence/Configurations/Tenancy/ProjectUserRoleEntityConfiguration.cs": {
@@ -10008,7 +10322,7 @@
         "ProjectUserRoleEntityConfiguration.ProjectUserRoleEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProjectUserRoleEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectUserRoleEntity\u003E)": "9b28e164204a6f40feb9e42e27dd5905965320ab3c2d18f6d9553169dfb8afed"
+        "ProjectUserRoleEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectUserRoleEntity\u003E)": "3a903821b59303dd738f6df0f6c03bf99ff0f6e2053442a12ccf9577f8826066"
       }
     },
     "Persistence/Configurations/Tenancy/TenantEntityConfiguration.cs": {
@@ -10020,7 +10334,7 @@
         "TenantEntityConfiguration.TenantEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "TenantEntityConfiguration.Configure(EntityTypeBuilder\u003CTenantEntity\u003E)": "20474c29751f9d8589c9e14b85b142255e3a368d3e54efd8a0e037c2d8373a9e"
+        "TenantEntityConfiguration.Configure(EntityTypeBuilder\u003CTenantEntity\u003E)": "189df3ce084b7270614076444aa1f18895854affa1696530f291a49e8e42ffec"
       }
     },
     "Persistence/Configurations/Tenancy/TenantUserEntityConfiguration.cs": {
@@ -10032,7 +10346,7 @@
         "TenantUserEntityConfiguration.TenantUserEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "TenantUserEntityConfiguration.Configure(EntityTypeBuilder\u003CTenantUserEntity\u003E)": "adb781393f7086cc96b8fef2f1fc7e676e43bd55114a24b5c4552d3fa176553b"
+        "TenantUserEntityConfiguration.Configure(EntityTypeBuilder\u003CTenantUserEntity\u003E)": "0bfcabef2ef1afe6304604eb67895d2767b4494a37dff7c4e6e74128704ce55c"
       }
     },
     "Persistence/Context/AppDbContext.cs": {
@@ -10200,7 +10514,7 @@
       "MemberSyntaxHashes": {
         "AppDbContext.ConfigureConventions(ModelConfigurationBuilder)": "d170868feb0ed1ade3dfe2770c32c3302d39003aa4a47e7277aa0f30728ff7c7",
         "AppDbContext.OnModelCreating(ModelBuilder)": "73e0c0dda1f2bb0674dc6cf0d75a483f0e6e16bf3e17e4f41bdd8159d1a3da22",
-        "AppDbContext.ConfigureNamedTenantFilter\u003CTEntity\u003E(ModelBuilder)": "ef6dc227fb8bc2df8e4c29d6b3d55940d5493b32f646d2afe7e9acffb8a774cd",
+        "AppDbContext.ConfigureNamedTenantFilter\u003CTEntity\u003E(ModelBuilder)": "6c608b73ba7a2245d7a2a6301bb94877e9996a0b9c37682d884a5f0636a24481",
         "AppDbContext.ConfigureNamedSoftDeleteFilter\u003CTEntity\u003E(ModelBuilder)": "efef6259e83850f776fd1d7069f48697407f75b2b2b417d447f9aedced4d8183"
       }
     },
@@ -10307,7 +10621,7 @@
         "DevelopmentSeeder.SeedAsync(IServiceProvider, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "DevelopmentSeeder.SeedAsync(IServiceProvider, CancellationToken)": "48da72b6b7fc8b54b67494510c1ad463e95073414b06de9a2ed1684338a4207e"
+        "DevelopmentSeeder.SeedAsync(IServiceProvider, CancellationToken)": "4e3b0686c78d465c6240daa624271b4bf5a78e3136d4bd95883e515437b44f71"
       }
     },
     "Persistence/Initialization/InitialDatabaseSeeder.cs": {
@@ -10321,7 +10635,7 @@
         "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)": "f3244677843ab4c2312f77eab7358b421f11afc9e2eedc2472b9a43570d1e212"
+        "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)": "9fb7063ad8c304b780373e5de7af00990e12cd0f7f4ae181567a840c6177fa03"
       }
     },
     "Persistence/Interceptors/AuditableEntityInterceptor.cs": {
@@ -10364,8 +10678,8 @@
         "AuditableEntityInterceptor.SavingChanges(DbContextEventData, InterceptionResult\u003Cint\u003E)": "896fff71f21d1e16e99ea462436bdd46b4c264050da4bd20154b5fd23b2b54f9",
         "AuditableEntityInterceptor.SavingChangesAsync(DbContextEventData, InterceptionResult\u003Cint\u003E, CancellationToken)": "1c678c99648d767c9e33d57c8fe6304f2b2a723bb241be317afd636fa45cae99",
         "AuditableEntityInterceptor.UpdateAuditFieldsAndCaptureDiffs(DbContext?)": "24a44df0e916ddcbc1ff4f20aeeed368d05449acf59fc04cc3897771282fce6a",
-        "AuditableEntityInterceptor.UpdateAuditFields(DbContext, DateTime, string, ITenantContext, ICurrentUser)": "f06548b2a7e0a77a7dcd1bcb49ce858521b7a42f4436453444a35854b6fe9ba8",
-        "AuditableEntityInterceptor.CaptureEntityDiffs(DbContext, DateTime, string, ICurrentUser, ITenantContext)": "6d9b54fa4d76b3ecb5a5fae574b6c2e042a690b8dede91b9025949833ce16e3a",
+        "AuditableEntityInterceptor.UpdateAuditFields(DbContext, DateTime, string, ITenantContext, ICurrentUser)": "17e7091fc07948d7e3d624ba2cba9b1fb54df43b7cfc056315854cfcfe5e3f6e",
+        "AuditableEntityInterceptor.CaptureEntityDiffs(DbContext, DateTime, string, ICurrentUser, ITenantContext)": "219528d516fc41edb249650658f291ab1d96c863b91bad7ed3ebee8f2dc163a3",
         "AuditableEntityInterceptor.IsSensitiveProperty(string)": "c902f381281d345de7519f28c1eaa74c20dac26bdf141c947b46ec47223a9d08"
       }
     },
@@ -10555,7 +10869,7 @@
         "TenantDbConnectionInterceptor.ConnectionOpenedAsync(DbConnection, ConnectionEndEventData, CancellationToken)": "0b8496047eff78b24ce98de50b547353e0deeb8b0f3e2c8f99606ac9c1b587cc",
         "TenantDbConnectionInterceptor.SetTenantSessionContext(DbConnection, ConnectionEndEventData)": "016926da68fdeb086c00b291f12902615d64429bee63cfa358a87c1a23119fcf",
         "TenantDbConnectionInterceptor.SetTenantSessionContextAsync(DbConnection, ConnectionEndEventData, CancellationToken)": "96009ca5a517cefc7ed8073edfb2ee82f86d37c4ae407cd3ab87d919ffd0e941",
-        "TenantDbConnectionInterceptor.ConfigureCommand(DbCommand, ITenantContext?)": "a3fba2d1088d017827d2857dedbad72c4027f86cf2ae9723ff72c1191bc9fcf9",
+        "TenantDbConnectionInterceptor.ConfigureCommand(DbCommand, ITenantContext?)": "f4f527d6da11cc08dcc2fdc308d6399c3a77ece798a50da025b90d69736367c4",
         "TenantDbConnectionInterceptor.IsPostgreSqlConnection(DbConnection)": "e42e9bb8df598d8893bd8ed4469a7b0ce2bd053bdafb5dba32b626a7f627bdd1"
       }
     },
@@ -10916,13 +11230,13 @@
         "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "AuditService.LogTenantSwitchAsync(string, string, string?, CancellationToken)": "59a5acbbb29c8904e883105e48858ba54ca9812803ae8185dbd92cdf43ef370f",
-        "AuditService.LogSecurityEventAsync(string, AuditSeverityEnum, string?, CancellationToken)": "4039e7d91e825a89572ffbb02631c818e8582dffe979584b36e626c938123eb2",
-        "AuditService.LogUserActivityAsync(string, string?, CancellationToken)": "5d92b14af8a38462c4b61b00cf9a568a739b2c7fb405bad2368232a8d863e28b",
+        "AuditService.LogTenantSwitchAsync(string, string, string?, CancellationToken)": "bb91284dbaf65dfe950be0a7df129eda1f3dc6ec5043a29a92acc026145464f2",
+        "AuditService.LogSecurityEventAsync(string, AuditSeverityEnum, string?, CancellationToken)": "6379e0a46d0f28544d77ded6002ef5b6053f1978159885d01f45fb5bff3e7d4b",
+        "AuditService.LogUserActivityAsync(string, string?, CancellationToken)": "817eff4c7b3904b1c2ab40055e26d1d285eef451518aeb525f71b248ed833b04",
         "AuditService.SaveAuditRecordAsync(AuditRecordEntity, CancellationToken)": "e18634eb62f4ab1db9cef644e7f11b2c41eb358cc199b44bed6319e5924e2bbb",
-        "AuditService.GetAuditTrailAsync(AuditTrailFilterReqDto, CancellationToken)": "139bc3a99911a9669b9985925c259727d50bd2d5a7b79a6f81994d22df7fb0b7",
-        "AuditService.LogExceptionAsync(Exception, string?, AuditSeverityEnum, CancellationToken)": "315df9cbd2bce5a49d6762de6c39cd0265dbc456d623240fab2ab58f35ca4830",
-        "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)": "98b734574b6e2936a00339c58bfb83f616b3ea3569a1cbe158c81d684d7b7c7d"
+        "AuditService.GetAuditTrailAsync(AuditTrailFilterReqDto, CancellationToken)": "ddfb7ded6a7b3ad26ce2771fd83395c63b7de8223e4eef22d42ce995f353be45",
+        "AuditService.LogExceptionAsync(Exception, string?, AuditSeverityEnum, CancellationToken)": "f02264af69c22024e9ee0b969c4d0664fe5ebced58c10f205abc3b6c8ed75295",
+        "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)": "d54b0050b093df7c8008e654e6a733188e47fb14cf9362146963912913fc4a49"
       }
     },
     "Persistence/Services/CalendarService.cs": {
@@ -10939,11 +11253,11 @@
         ".ctor",
         "CalendarService.CalendarService(AppDbContext, IEnumerable\u003CIWorkItemRollupProvider\u003E, ICurrentUser, ILogger\u003CCalendarService\u003E)",
         "GetProgramCalendarAsync",
-        "CalendarService.GetProgramCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)",
+        "CalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)",
         "GetProjectCalendarAsync",
-        "CalendarService.GetProjectCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)",
+        "CalendarService.GetProjectCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)",
         "GetUserCalendarAsync",
-        "CalendarService.GetUserCalendarAsync(string, string, DateTime, DateTime, CancellationToken)",
+        "CalendarService.GetUserCalendarAsync(Guid, string, DateTime, DateTime, CancellationToken)",
         "CreateProgramCalendarEntryAsync",
         "CalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)",
         "CreateProjectCalendarEntryAsync",
@@ -10954,9 +11268,9 @@
         "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "CalendarService.GetProgramCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "ad74ec86804e580d5589173e97c3b7e124668eb49a31372613b62b1fb6fa60e3",
-        "CalendarService.GetProjectCalendarAsync(string, Guid, DateTime, DateTime, CancellationToken)": "e2a09fa276922d4bb37fdec6d1915a0d4f6aea1c68625adc965cd93c4931f53f",
-        "CalendarService.GetUserCalendarAsync(string, string, DateTime, DateTime, CancellationToken)": "3df4440591ec9485ccd43591ff0cf02175e66dd8b6e9d5cb45d3999214c2b4aa",
+        "CalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)": "364b11d42c4f3ffc8594f575320e6aead50fc07829e69894217a804dbb1fb7bc",
+        "CalendarService.GetProjectCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)": "ef1c0de1cf14b51d1c4bd5452d46b7ca30ef481115b41b37ac327af4e59074f2",
+        "CalendarService.GetUserCalendarAsync(Guid, string, DateTime, DateTime, CancellationToken)": "3857c324970aef6e975340567bc1cb623ddc8cef4d33ff431cab67f90f0947ed",
         "CalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)": "82139f3c5559c17a95cdbc6ca4539e4e0204942f58a7456f0d667b0c030c39ed",
         "CalendarService.CreateProjectCalendarEntryAsync(ProjectCalendarEntity, CancellationToken)": "747f80ba54b979a8d022ea4b7bb17b3461865d50f691597c194dadb1355e7e6f",
         "CalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "bcfe6a869998a07003a62709d6ec3134617d4e6e426e0947d6bd6853eadcd5f6",
@@ -10998,12 +11312,12 @@
         "EventTrackerService.EventTrackerService()"
       ],
       "MemberSyntaxHashes": {
-        "EventTrackerService.TrackPublishAsync\u003CTEvent\u003E(TEvent, Guid?, string?, string?, string?, string, string, string?, string?, string?, CancellationToken)": "f7ce3342dcd8fab3e6893c424175b652c592b97aa9e82c0242d111673ba6887b",
-        "EventTrackerService.TrackConsumptionStartAsync(Guid, string, string, int, CancellationToken)": "28f7592bc506ef835a872c6dac9766a0939838e365ff8b3a54d9f1416260573a",
+        "EventTrackerService.TrackPublishAsync\u003CTEvent\u003E(TEvent, Guid?, string?, string?, string?, string, string, string?, string?, string?, CancellationToken)": "38982b13b075eb7c548d2b58c95725a762d3e019204e777f09dd4c728dc8dcd0",
+        "EventTrackerService.TrackConsumptionStartAsync(Guid, string, string, int, CancellationToken)": "76c337dd33fd4599a1eaac95e50693906a8c60426e734bd1c85e8039f66716f3",
         "EventTrackerService.TrackConsumptionCompleteAsync(Guid, bool, double, string?, string?, CancellationToken)": "ac70c4ee53130889421193274c376c449985d86765402620aedeacf9053f9c70",
-        "EventTrackerService.GetEventsAsync(EventTrackerFilterReqDto, CancellationToken)": "343a7179b25deebf54f8d7c6763600cfc7ee3c5d7fddbd566e1c33b90267a5f1",
-        "EventTrackerService.GetConsumptionsAsync(Guid, CancellationToken)": "1bded72d2d6717a3af65627796568b086a4819f40c2d11219b99de3b1132d84c",
-        "EventTrackerService.GetEventByIdAsync(Guid, CancellationToken)": "bfce3416ba8b2b6f4199fb342f18160b907cfaa4c12751bb85b1ec555481d006"
+        "EventTrackerService.GetEventsAsync(EventTrackerFilterReqDto, CancellationToken)": "95fbdb7ff8c3701764027e5677a1e7631d7fe735fbf87fa99a8261dd09523251",
+        "EventTrackerService.GetConsumptionsAsync(Guid, CancellationToken)": "2aad54314157a276952acad8d0148a3f5fb4146a8819e904972cf6ae5fff7628",
+        "EventTrackerService.GetEventByIdAsync(Guid, CancellationToken)": "fa097d3cb53073dd9a0563aef27fc65111aea2835bb016fd5e3463c25bb80cd7"
       }
     },
     "Persistence/Services/HierarchyAuthorizationService.cs": {
@@ -11013,6 +11327,8 @@
         "HierarchyAuthorizationService._context",
         "_currentUser",
         "HierarchyAuthorizationService._currentUser",
+        "_tenantContext",
+        "HierarchyAuthorizationService._tenantContext",
         "_auditService",
         "HierarchyAuthorizationService._auditService",
         "_configuration",
@@ -11020,24 +11336,29 @@
         "_logger",
         "HierarchyAuthorizationService._logger",
         ".ctor",
-        "HierarchyAuthorizationService.HierarchyAuthorizationService(AppDbContext, ICurrentUser, IAuditService, IConfiguration, ILogger\u003CHierarchyAuthorizationService\u003E)",
+        "HierarchyAuthorizationService.HierarchyAuthorizationService(AppDbContext, ICurrentUser, ITenantContext, IAuditService, IConfiguration, ILogger\u003CHierarchyAuthorizationService\u003E)",
         "IsTenantAdminAsync",
+        "HierarchyAuthorizationService.IsTenantAdminAsync(Guid, string, CancellationToken)",
         "HierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)",
         "IsProgramAdminAsync",
         "HierarchyAuthorizationService.IsProgramAdminAsync(Guid, string, CancellationToken)",
         "IsProjectAdminAsync",
         "HierarchyAuthorizationService.IsProjectAdminAsync(Guid, string, CancellationToken)",
         "CanViewTenantSettingsAsync",
+        "HierarchyAuthorizationService.CanViewTenantSettingsAsync(Guid, string, CancellationToken)",
         "HierarchyAuthorizationService.CanViewTenantSettingsAsync(string, string, CancellationToken)",
         "CanEditTenantSettingsAsync",
+        "HierarchyAuthorizationService.CanEditTenantSettingsAsync(Guid, string, CancellationToken)",
         "HierarchyAuthorizationService.CanEditTenantSettingsAsync(string, string, CancellationToken)",
         "CanAccessTenantAsync",
+        "HierarchyAuthorizationService.CanAccessTenantAsync(Guid, string, CancellationToken)",
         "HierarchyAuthorizationService.CanAccessTenantAsync(string, string, CancellationToken)",
         "CanAccessProgramAsync",
         "HierarchyAuthorizationService.CanAccessProgramAsync(Guid, string, CancellationToken)",
         "CanAccessProjectAsync",
         "HierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)",
         "GetAccessibleProgramIdsAsync",
+        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(Guid, string, CancellationToken)",
         "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)",
         "GetEffectiveProjectRoleAsync",
         "HierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)",
@@ -11048,6 +11369,7 @@
         "IsUserActiveAndProvisionedAsync",
         "HierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)",
         "CanManageTenantAdminsAsync",
+        "HierarchyAuthorizationService.CanManageTenantAdminsAsync(Guid, string, CancellationToken)",
         "HierarchyAuthorizationService.CanManageTenantAdminsAsync(string, string, CancellationToken)",
         "CanManageProgramAdminsAsync",
         "HierarchyAuthorizationService.CanManageProgramAdminsAsync(Guid, string, CancellationToken)",
@@ -11055,19 +11377,25 @@
         "HierarchyAuthorizationService.CanManageProjectAdminsAsync(Guid, string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "HierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)": "1621838b8c7f2ed8567579648bae5c95e6b3c344b3fa825416efe23c4b41a50a",
+        "HierarchyAuthorizationService.IsTenantAdminAsync(Guid, string, CancellationToken)": "aec7eb6bca5964a0dfb0d5c2e486904a75269328f5c5fa66a7a3959636cace94",
+        "HierarchyAuthorizationService.IsTenantAdminAsync(string, string, CancellationToken)": "71c6248a5638970db2d5ac1313b6911f0dd5cd572e32692b281f7fd7749abc28",
         "HierarchyAuthorizationService.IsProgramAdminAsync(Guid, string, CancellationToken)": "fd7080f77f3c843bcdc0faae4f60919d4b5e8c9cf14dc70978769ad8f70ac336",
         "HierarchyAuthorizationService.IsProjectAdminAsync(Guid, string, CancellationToken)": "cd1378b0a7f0856e8fdbeb27a239b86314b7d6ec0803eb01aa19a1f00ebbf855",
-        "HierarchyAuthorizationService.CanViewTenantSettingsAsync(string, string, CancellationToken)": "90948fae1bb5affc0f2bfe4ee7abc656225ecf7f439c9448e4fb3d40fae3ef9f",
-        "HierarchyAuthorizationService.CanEditTenantSettingsAsync(string, string, CancellationToken)": "e610ef933b22e66ff3f6041037a615618a612d85fb286ea118533633ab95a3c3",
-        "HierarchyAuthorizationService.CanAccessTenantAsync(string, string, CancellationToken)": "994b6ad89fb7e40f24cb2be60910e8e0fec0b3e63a7fa576822857c1096941de",
+        "HierarchyAuthorizationService.CanViewTenantSettingsAsync(Guid, string, CancellationToken)": "4f4a4561e77e28d32d0e42be245ad7ed4db15cb01e4f5dea33537e3c2d6c3ed5",
+        "HierarchyAuthorizationService.CanViewTenantSettingsAsync(string, string, CancellationToken)": "81783838e5bed9113defbc35a6be2e1c16237e2aa0583ffc93c85b0096157375",
+        "HierarchyAuthorizationService.CanEditTenantSettingsAsync(Guid, string, CancellationToken)": "070fc65fe1b3b89998f1bd76310c37d5e5966c9a72d3a5d0755d9ecf6701e867",
+        "HierarchyAuthorizationService.CanEditTenantSettingsAsync(string, string, CancellationToken)": "0e22c046b35e2b206f27af1ba27d17de92f5cf84031a776b1dc373ad67f37ddd",
+        "HierarchyAuthorizationService.CanAccessTenantAsync(Guid, string, CancellationToken)": "10b094d9c821fe3828f37a05dec93abb4fbfa334514f7888ba443d76c0a165eb",
+        "HierarchyAuthorizationService.CanAccessTenantAsync(string, string, CancellationToken)": "a5c41b7f3a0c5dc8db05fcc395196cb4862344e5932ed5c3aef5c0dfd7385c58",
         "HierarchyAuthorizationService.CanAccessProgramAsync(Guid, string, CancellationToken)": "06c4502139e6100fc5ef46a625388136b40da6d82fb55a6729cf95274085832a",
         "HierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)": "0c80a7f77ce939aea869eb190a99e794361c9defe713263a624e900db6512ba6",
-        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "e64b29e91a39a1557ecd43e79fe590391149f6a2b553e410f46f2abc72211e3b",
+        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(Guid, string, CancellationToken)": "5ffd2de23bd29c773a10263000412a992db373ad86e5d194cdfa7e6029a9f648",
+        "HierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "f92309146f4be32139a3e0bb826cd78ad44b7e82c8aff33e2325d715fb1256e6",
         "HierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)": "2cfcf76afc8aed2d5327a2f25e853de8666c0599eecff383593cbf44ad72f5ca",
         "HierarchyAuthorizationService.HasProjectClearanceAsync(Guid, ProjectRoleEnum, string?, CancellationToken)": "5e1a255f7c62d75ee00fddfde248386593c1864a71fd5c8e26d6887a8770dda0",
         "HierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, ProjectRoleEnum, string?, CancellationToken)": "60e679da5583350fc53850f96626b82ff1e342d2fab85b1e36643a64eaa31a2a",
         "HierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)": "7436ab091d13d4d9f1e4a435ffcde0745d9d407cacc3fea972b956af7a0f441f",
+        "HierarchyAuthorizationService.CanManageTenantAdminsAsync(Guid, string, CancellationToken)": "27f472f18ba6b695ed67e5a273ba13d38cf839fd7ed9a4e33689e42af7a7e7fc",
         "HierarchyAuthorizationService.CanManageTenantAdminsAsync(string, string, CancellationToken)": "e01c4b911a78f8e3a0d82d6497b9b964a48fd45d8045672af3617516ee0b8139",
         "HierarchyAuthorizationService.CanManageProgramAdminsAsync(Guid, string, CancellationToken)": "c77cd0e08292c026f20e7ce695b7027c8d820964d3a791cb33c6e7a21b8e75ea",
         "HierarchyAuthorizationService.CanManageProjectAdminsAsync(Guid, string, CancellationToken)": "dccdd7028fc78e9bcac5b3c345f5fb786ffeda6bb5e8d9f85a165698f263c6b1"
@@ -11096,9 +11424,9 @@
         "ImpersonationService.GetActiveGrantAsync(CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ImpersonationService.StartImpersonationAsync(string, string, int, CancellationToken)": "c6a0975dce525fc080792062ca7dce70f1f5e98c7712eb28734b3069b3e576f9",
-        "ImpersonationService.StopImpersonationAsync(CancellationToken)": "1504df4f3886d8ca6d57a6a97fe56b485fde9db033f5fc99520949765b00fed1",
-        "ImpersonationService.GetActiveGrantAsync(CancellationToken)": "406faa97f2394f21165a0488947d8fdbf0e8b33427b765cf7cdccd7d57f67f97"
+        "ImpersonationService.StartImpersonationAsync(string, string, int, CancellationToken)": "a67bfe3b44b1c043231f5026395199785af61595c194385623bfa3104136e958",
+        "ImpersonationService.StopImpersonationAsync(CancellationToken)": "59efb0533b6e9d7516fdc397dd960e72bf925028fc2efe5faa8c81e120bf9531",
+        "ImpersonationService.GetActiveGrantAsync(CancellationToken)": "40522973dae8e002ea8c00d0bc4507cfd3fbe30cd329de6eef052067666154c7"
       }
     },
     "Persistence/Services/ImportFileService.cs": {
@@ -11138,12 +11466,12 @@
         "ImportFileService.SendNotificationAsync(string, string, NotificationSeverityEnum, Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ImportFileService.UploadBatchAndQueueAsync(UploadBatchRequest, CancellationToken)": "961587a9cb53027df1224252d56b147f67e00a4862e2faf15932cbe1be9f6bd5",
+        "ImportFileService.UploadBatchAndQueueAsync(UploadBatchRequest, CancellationToken)": "11aac2e738e97598fbad46a9445fcf23eadedb742367229e624d691374b7d528",
         "ImportFileService.UploadAndQueueAsync(UploadFileRequest, CancellationToken)": "d8017116b88837bfdd9817bcd9303c83b752b6da035ebd91564b8d01e2f03564",
-        "ImportFileService.GetImportHistoryAsync(Guid, CancellationToken)": "ccd02ba13425176dce689419cb34e36cdab5f6144b9157963914ee57f4347e17",
-        "ImportFileService.GetImportFilesByBatchAsync(Guid, Guid, CancellationToken)": "e7b23e46d180c9f241e86ebb48541d447eae472cf281fc546dbe1f092696a158",
-        "ImportFileService.GetImportFileDetailsAsync(Guid, Guid, CancellationToken)": "f4fd9b866ce0515e91240b6991e978e6421031767e7e6d5d160b36b32712239e",
-        "ImportFileService.DeleteImportFileAsync(Guid, Guid, CancellationToken)": "87fee0d9021e8420566cedc2db1193e02f154bb051df28dadc16f7d8e36ea2cd",
+        "ImportFileService.GetImportHistoryAsync(Guid, CancellationToken)": "db5e4a75312f9b8a629711dd796d4de3a1f4a9e691feb4d2178999a90bc6ea64",
+        "ImportFileService.GetImportFilesByBatchAsync(Guid, Guid, CancellationToken)": "e8a4119d632104f661d45fa37f5333ea067591111fed7c1a1ba8b66fb5f4e666",
+        "ImportFileService.GetImportFileDetailsAsync(Guid, Guid, CancellationToken)": "8925ec8850fd7a7919012b748d67a1f7f2b2be85fbf523cad3ed147445e122e5",
+        "ImportFileService.DeleteImportFileAsync(Guid, Guid, CancellationToken)": "a4a8c442b9775a98933119852c8fdb9ccc42bab4d68c2a55ef12793421ba4f63",
         "ImportFileService.SendNotificationAsync(string, string, NotificationSeverityEnum, Guid, CancellationToken)": "54d812da0087ef34154ef2f032a5e72dfd0ba859911682e998b69eae2858ecf2"
       }
     },
@@ -11165,12 +11493,12 @@
         "VerifyAndRehydrateSessionAsync",
         "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)",
         "ResolveUserTenants",
-        "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E)"
+        "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E, TenantEntity?, List\u003CTenantUserEntity\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "50cf3a90cd5b8b32aca355b09bb9fa81225c9534a9282831b831d75e32fe32ee",
-        "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "1f5704bd474ce3235c042c2f57b6eab62a89890f32a14625685df4682e6f1fe3",
-        "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E)": "995964c0c920893e35ab9d0730f0899ccf663603b301aec34fcb8b5f6b7f2313"
+        "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "39fccce183cc71fd08d8f966be215354adf305064ba48156da5fe9a16bddd964",
+        "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "b0c02f11949726d87ad774c45e89af33bfce5b13b7a8746432c2524753081583",
+        "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E, TenantEntity?, List\u003CTenantUserEntity\u003E)": "09684670466419280fc3875465d6164ca138ff19fe1c33ce3a0a32b208815806"
       }
     },
     "Persistence/Services/KnowledgeBaseService.cs": {
@@ -11208,14 +11536,14 @@
         "KnowledgeBaseService.GetAllLabelsAsync(CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "KnowledgeBaseService.GetArticlesAsync(string?, KnowledgeArticleStatusEnum?, string?, bool?, CancellationToken)": "99ff5fc7cb2872b3b9773500495f29d9257ab205594613df419d250346790234",
-        "KnowledgeBaseService.GetArticleByIdAsync(Guid, CancellationToken)": "d8af13fc29bd64526b991e7c4b3c2210c26a9a6fbac5627b8185561472a8ca1a",
+        "KnowledgeBaseService.GetArticlesAsync(string?, KnowledgeArticleStatusEnum?, string?, bool?, CancellationToken)": "fa21bdd7a3e0b586904fd09bac410f0efa46211cd82de20b44389d4d8308e1c4",
+        "KnowledgeBaseService.GetArticleByIdAsync(Guid, CancellationToken)": "e58015a35704ebed472cc7e67d4955393fd19cc83fb075a27af95c6f94e094c4",
         "KnowledgeBaseService.CreateArticleAsync(CreateArticleDto, CancellationToken)": "fb4d1cc3f18b8ef55ab7abcbbc47635f16202cc973c704296a3570ec96d98220",
-        "KnowledgeBaseService.UpdateArticleAsync(UpdateArticleDto, CancellationToken)": "9a88c56cbdd4b468cd07e7c6f04f2ea3e8112db06d1934b3638b7064f0218afa",
-        "KnowledgeBaseService.ApproveArticleAsync(Guid, CancellationToken)": "aa973549410e175495b31273cf8f644c512871d5fbe7ae6161dfb5a434c480bf",
-        "KnowledgeBaseService.DeleteArticleAsync(Guid, CancellationToken)": "91140bfd011df859d8d5413e166caefe0d193fad8af9b89e365665838d6fa360",
+        "KnowledgeBaseService.UpdateArticleAsync(UpdateArticleDto, CancellationToken)": "74a609175ae51d7aa17c377884da1def58ce51c63a342ae1c82c853047a66429",
+        "KnowledgeBaseService.ApproveArticleAsync(Guid, CancellationToken)": "4495250b52f1bb3d42fe3b4a42317c8101ec2c1f52e106008a296d4da96b2c0d",
+        "KnowledgeBaseService.DeleteArticleAsync(Guid, CancellationToken)": "0a26ec2c38c3fab64b531e290e0324cad8b1ab50571924bd7d6552544fae85eb",
         "KnowledgeBaseService.GetAvailableReviewersAsync(CancellationToken)": "b28b747aafe451483eec345cf9ba1cc1ff574a86f36f6f82c63158bccfa257e1",
-        "KnowledgeBaseService.GetAllLabelsAsync(CancellationToken)": "4ff6d427202962ae9a9233ae626467ca49a716dac76b7f19d4fa586d70ea496d"
+        "KnowledgeBaseService.GetAllLabelsAsync(CancellationToken)": "7f9b2cc6751693386e31e75530fb754cb6a31ea87565a45a26d7c202664bf8b9"
       }
     },
     "Persistence/Services/NotificationService.cs": {
@@ -11250,20 +11578,20 @@
         "MarkAllAsReadAsync",
         "NotificationService.MarkAllAsReadAsync(NotificationCategoryEnum?, string?, CancellationToken)",
         "GetAuthorizedProjectIdsAcrossTenantsAsync",
-        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, IAuditService, bool, string?, IReadOnlyCollection\u003Cstring\u003E, CancellationToken)",
+        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, IAuditService, bool, string?, IReadOnlyCollection\u003CGuid\u003E, CancellationToken)",
         "ResolveTeamsWebhook",
         "NotificationService.ResolveTeamsWebhook(Guid)",
         "ResolveProjectMailbox",
         "NotificationService.ResolveProjectMailbox(Guid)"
       ],
       "MemberSyntaxHashes": {
-        "NotificationService.CreateScopedContext()": "980736b6243afeef7edd4d462a042bc6e6c2ce855e0e9c9ea6d6b8655f8b80b5",
-        "NotificationService.SendAsync(SendNotificationReqDto, CancellationToken)": "44ab9f7b21805cb700da8d3a76d874ed0a22ba76d070cd04b878834cad43ef4c",
-        "NotificationService.GetNotificationsAsync(NotificationFilterReqDto, CancellationToken)": "2dc38f73b774467c922e279029c87eb0d7a19528888ddcbafec17d261362377c",
-        "NotificationService.GetUnreadCountsAsync(CancellationToken)": "03c913e22d6c882b1c4d725e8e9f5a1e4d6146cf7d54655c1a54136fb5c16dd4",
-        "NotificationService.MarkAsReadAsync(Guid, CancellationToken)": "d6a346d63d69cb0121fba646a2cb77aabbfa060e08d57c881b23de68e0195f84",
-        "NotificationService.MarkAllAsReadAsync(NotificationCategoryEnum?, string?, CancellationToken)": "8195512b5c820861b342ca8f5fc9b2595d5d028895d5dbc02a5505137bd74ca6",
-        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, IAuditService, bool, string?, IReadOnlyCollection\u003Cstring\u003E, CancellationToken)": "a696e4ef12867f6320de6450ad67350ef054412a0df8c71dc4791684ff43ae05",
+        "NotificationService.CreateScopedContext()": "a0b4ef5e3f31b389beebd389a2782a994555746fd7b383bd35970c8373d3f843",
+        "NotificationService.SendAsync(SendNotificationReqDto, CancellationToken)": "3bc506428634af92361ec9519192ac5946c8e548c5a44470cc39a88a59d14d66",
+        "NotificationService.GetNotificationsAsync(NotificationFilterReqDto, CancellationToken)": "9c362f7d028bd83b1976b9c74fcf5bf1979e0b8ba09885ab4ca56fc4ab7a9675",
+        "NotificationService.GetUnreadCountsAsync(CancellationToken)": "d438180f1cbc675eb2137c6a2e54a33cf9392e2eaf261c27ce31dbfc782fa170",
+        "NotificationService.MarkAsReadAsync(Guid, CancellationToken)": "88b520fedc354ee5e6d212ff4b1a633ac4539a61687ddc7b58f0adf0a09169b6",
+        "NotificationService.MarkAllAsReadAsync(NotificationCategoryEnum?, string?, CancellationToken)": "5aafaa669a4a4fdbcde85d9f2f003f170011698a1182986dc114cd5ebe1bfb77",
+        "NotificationService.GetAuthorizedProjectIdsAcrossTenantsAsync(AppDbContext, IAuditService, bool, string?, IReadOnlyCollection\u003CGuid\u003E, CancellationToken)": "ec636a499a1c2bb41dac26fe9cff76d91d094031b7a9112fb74195bd50924f33",
         "NotificationService.ResolveTeamsWebhook(Guid)": "8fcf3eeef4263ece6811cd4df4fe46c8c6401659b83a5ba8bc01fc09fbe8e8e5",
         "NotificationService.ResolveProjectMailbox(Guid)": "6749b721d340a8c66c90815f7e352a0c48e060e8191365f7de011555d5ee3ed8"
       }
@@ -11299,11 +11627,11 @@
         "ProgramService.GetProgramHealthAsync(Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ProgramService.GetProgramsAsync(string, CancellationToken)": "7dcb900b6af314bb9ff3d7ea4a27b50b0c5da2b5ce6a1e959fbdcb09d9735394",
-        "ProgramService.GetProgramByIdAsync(Guid, CancellationToken)": "65312d562e893b1fd1057d86b2ceaede568e9139a6e0c65f87cf481654f0a6df",
-        "ProgramService.CreateProgramAsync(string, string, string, string, DateTime?, DateTime?, ProgramStatusEnum, CancellationToken)": "24af7b55fb4af6cda373f912befcdb60d9100c8f59d0098600189170b1809177",
-        "ProgramService.UpdateProgramAsync(Guid, string, string, string, DateTime?, DateTime?, ProgramStatusEnum, bool, CancellationToken)": "80b2dde9e72e9a105fb9d37c9d5a1be5ddcbaef2845ada519b45e398b927d556",
-        "ProgramService.GetProgramProjectsAsync(Guid, CancellationToken)": "1be519250db0b91da914f86324e25a4785ac93f3d697bfc41a9795a67a281117",
+        "ProgramService.GetProgramsAsync(string, CancellationToken)": "eeaa54d2cd861a569694f2321b9ffbf715c9162f481a4949fb345c984abc1708",
+        "ProgramService.GetProgramByIdAsync(Guid, CancellationToken)": "8da4316a446b19c5ac0637ee00dff2608f3f30a40b7fad9763d8c605528b5143",
+        "ProgramService.CreateProgramAsync(string, string, string, string, DateTime?, DateTime?, ProgramStatusEnum, CancellationToken)": "992d1c282b4080a6a0cc9e763bb486fbbdd99a07fe2a39b5160a865f44b325e3",
+        "ProgramService.UpdateProgramAsync(Guid, string, string, string, DateTime?, DateTime?, ProgramStatusEnum, bool, CancellationToken)": "46effc1e76f9ed22efea5daf4c24a65ba579331b7749d3ce6b9acc05740dd0d0",
+        "ProgramService.GetProgramProjectsAsync(Guid, CancellationToken)": "723fb6e6e0a35789c2a92ae1c1daabbdca5655b8d0dfb8805c97d8b0bba1e423",
         "ProgramService.GetProgramHealthAsync(Guid, CancellationToken)": "79b14c2efcebcd4e9d5f99d0a5fcd32313b1691cc699ab1a719c5a4e14d3059a"
       }
     },
@@ -11354,20 +11682,20 @@
         "ProjectAuthorizationService.RevokeUserRoleAsync(Guid, string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ProjectAuthorizationService.GetCurrentUserProjectRoleAsync(Guid, CancellationToken)": "a6688f88e8a4d1beebbfb973dbbd3d002be4aa3fe6b338553323121b51c29cfd",
-        "ProjectAuthorizationService.CanVisitAsync(Guid, ProjectRoleEnum, CancellationToken)": "20d1dac890273a7b92c20239552ead3b2dbdd45bce4f9d405f13044d845277eb",
-        "ProjectAuthorizationService.CanEditAsync(Guid, ProjectRoleEnum, CancellationToken)": "755c82c86716147bfb60a34605aba26b0072348dc54cdcc7af39b97cd68d797c",
+        "ProjectAuthorizationService.GetCurrentUserProjectRoleAsync(Guid, CancellationToken)": "23773758750a66f49267b280013efd414c7d09e418713c41576cb75d77477616",
+        "ProjectAuthorizationService.CanVisitAsync(Guid, ProjectRoleEnum, CancellationToken)": "eba9124facddbbe73ef2587760c76f81cad860f07c203db0ef1f0515c8ddd04d",
+        "ProjectAuthorizationService.CanEditAsync(Guid, ProjectRoleEnum, CancellationToken)": "7c03f00ca8ed5e1e3f7c824213394c3141b5c511fd0a1dcc82dd3829994f9ce3",
         "ProjectAuthorizationService.EnsureCanVisitAsync(Guid, ProjectRoleEnum, string, CancellationToken)": "49191734f08273967ab2167b76a929e5cd694f435e114dddd733f77883c455d7",
         "ProjectAuthorizationService.EnsureCanEditAsync(Guid, ProjectRoleEnum, string, CancellationToken)": "7a912c74980bb51b51b93e12a12a5516e51a3cd12af3b2150e89fcbe0fe86136",
         "ProjectAuthorizationService.HasClearanceAsync(Guid, ProjectRoleEnum, CancellationToken)": "50a25f51503f066dca914a88ed9915474de9fc9b04ca4d77823bbc2b475dea1f",
         "ProjectAuthorizationService.EnsureCanContributeAsync(Guid, string?, CancellationToken)": "eb80785b09869e8135511d1c4af66c8f215dca80a207ee8dc4e01cbd3afb5091",
         "ProjectAuthorizationService.EnsureCanManageWorkflowAsync(Guid, string?, CancellationToken)": "ccea5a7a2681b4aeeed31f397128b0386cda48c76dda6db34ef03d19fd055452",
         "ProjectAuthorizationService.EnsureCanManageAccessAsync(Guid, string?, CancellationToken)": "283a1731cd3e1d4d4de18228eea8ebc308a5da88c66e368e004f0d8b90215af2",
-        "ProjectAuthorizationService.GetAuthorizedProjectIdsAsync(ProjectRoleEnum, CancellationToken)": "1b1946b89c016b4d9776c2dd0d38974237bd4babed7ca429e2afc907a051477c",
+        "ProjectAuthorizationService.GetAuthorizedProjectIdsAsync(ProjectRoleEnum, CancellationToken)": "1cd9adf55cfb8a93ec6d0e48bd0da5f744522ebaeae638100921e069ba31e17a",
         "ProjectAuthorizationService.GetAccessibleProjectIdsAsync(ProjectRoleEnum, CancellationToken)": "d171042f8ab32b2293f195ef77aac1670d6cd01eaa94fb57249e017a80c86f27",
-        "ProjectAuthorizationService.GetProjectMembersAsync(Guid, CancellationToken)": "c527e66d9c7ed8c79e9730f5ad3e46a3b3aa0f8a7c6f371808998a8f5a13f618",
-        "ProjectAuthorizationService.AssignUserRoleAsync(Guid, string, string, string, UserTypeEnum, ProjectRoleEnum, CancellationToken)": "62e8cf0e990021d68cd74de0ab29c23d2a4309e079b0d5f34b8eb271a26af8e0",
-        "ProjectAuthorizationService.RevokeUserRoleAsync(Guid, string, CancellationToken)": "c97841ac401464cd1d0d541e884c7ddb35b1d9c9e564e2ccefe177418b368ca7"
+        "ProjectAuthorizationService.GetProjectMembersAsync(Guid, CancellationToken)": "43e4a2731d0104a10eec0949ac5ca69d2f89d6e220bd58a706ada59aa893ccd9",
+        "ProjectAuthorizationService.AssignUserRoleAsync(Guid, string, string, string, UserTypeEnum, ProjectRoleEnum, CancellationToken)": "d81c7bd09a1522852d8bd675feb808f123fb2e47de6ca6aae4608749d0c65b4a",
+        "ProjectAuthorizationService.RevokeUserRoleAsync(Guid, string, CancellationToken)": "a47699f2d48e0241a44a4fd395c2f8af9bfa53d024ccee434aab974847c89e66"
       }
     },
     "Persistence/Services/ProjectContext.cs": {
@@ -11439,9 +11767,9 @@
         "ProjectHealthService.GetProjectMilestonesHealthAsync(Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ProjectHealthService.GetProjectHealthAsync(Guid, CancellationToken)": "80109e929f51835747db7b90e7a87a4c3542e50ed649ca190c5836ec802c89cf",
-        "ProjectHealthService.GetMilestoneHealthAsync(Guid, CancellationToken)": "3b6d128c8089f632fe15f66cb0680c632161991d3e06cd3e535bf4d3357c10f8",
-        "ProjectHealthService.GetProjectMilestonesHealthAsync(Guid, CancellationToken)": "43d18a4da528fbe146cec2ab1d8c24084fa85341a46991fcb4084efeab50fc2c"
+        "ProjectHealthService.GetProjectHealthAsync(Guid, CancellationToken)": "9c56999c43ff1b98f3733f6ac0de0487a83360e270fb35893593bac13495373a",
+        "ProjectHealthService.GetMilestoneHealthAsync(Guid, CancellationToken)": "ce0ab516a030b550bd39d1aff9ef55589af601b2542951ec62ae99516f21d891",
+        "ProjectHealthService.GetProjectMilestonesHealthAsync(Guid, CancellationToken)": "155f932ff032b5c2b977a67634d1d5135f963a2fc8bd42997b357a4fbfc444b5"
       }
     },
     "Persistence/Services/ProjectMilestoneService.cs": {
@@ -11479,15 +11807,15 @@
         "ProjectMilestoneService.RemoveMilestoneDependencyAsync(Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ProjectMilestoneService.GetMilestonesByProjectAsync(Guid, CancellationToken)": "2be0aa065790ff8f052644375340aa1a92fbd2461f5e197c3da5216c9edcc45d",
-        "ProjectMilestoneService.GetMilestoneByIdAsync(Guid, CancellationToken)": "3cbcd9488f71a66baa54d5c674736a62d21dcae9e21e2697f0c39435eb018245",
-        "ProjectMilestoneService.CreateMilestoneAsync(ProjectCalendarEntity, CancellationToken)": "912a8401a7bc823663175e290c57985284fd0297bced85e0ea58bdf84fadbedd",
-        "ProjectMilestoneService.UpdateMilestoneAsync(ProjectCalendarEntity, CancellationToken)": "a1077965d0c83ea6dc3af521466c09b4307910a2c0ad08bbd4ec0444b8003fb2",
-        "ProjectMilestoneService.CompleteMilestoneAsync(Guid, CancellationToken)": "09b3b15eb43e93b614af63a58f06585906fbbd564f162bebc05dd3a1c274ea87",
-        "ProjectMilestoneService.DeleteMilestoneAsync(Guid, CancellationToken)": "120e5da059ffcd47f218ffc9aaf2d5fa0f7790c9e270ac7c3773c80b205b1389",
-        "ProjectMilestoneService.GetMilestoneDependenciesAsync(Guid, CancellationToken)": "81ed6864f13a0e5047247130a5ffc2109605f3da17b187cbdb572aba54b3970a",
-        "ProjectMilestoneService.AddMilestoneDependencyAsync(Guid, Guid, string?, CancellationToken)": "01d1df3b4b07a1651981d223eb700680dd9618704b5a6699845e2bbbaec4cd58",
-        "ProjectMilestoneService.RemoveMilestoneDependencyAsync(Guid, CancellationToken)": "ed215c5cdda6e2712f1ef694a3572331afb1b42d080d50d7f778f11c8f09e05f"
+        "ProjectMilestoneService.GetMilestonesByProjectAsync(Guid, CancellationToken)": "fe9e87e9f85b479067b418f8554c0878a5c41bf232aa723601bbf942f9b20886",
+        "ProjectMilestoneService.GetMilestoneByIdAsync(Guid, CancellationToken)": "aa5188a3517c2b6a3de512d273be3ff6d048dab1675e50962f5b59453a84b21e",
+        "ProjectMilestoneService.CreateMilestoneAsync(ProjectCalendarEntity, CancellationToken)": "4b6d6be213d903a043c3f74a2ea94c21329d489ff3f07e5e4913c6d7b671b659",
+        "ProjectMilestoneService.UpdateMilestoneAsync(ProjectCalendarEntity, CancellationToken)": "338752afcee9e6efa819d1a32f608bacc965d7265168ca1b0dedd2025969c574",
+        "ProjectMilestoneService.CompleteMilestoneAsync(Guid, CancellationToken)": "42a17ceb1c66f7473546324392702a9073cdda4405740344456528b0af30dee9",
+        "ProjectMilestoneService.DeleteMilestoneAsync(Guid, CancellationToken)": "326baa49253037f629a3144c53d8aeb2b6d31ef5cfda82574d09c32448f373fd",
+        "ProjectMilestoneService.GetMilestoneDependenciesAsync(Guid, CancellationToken)": "fd6a2959c31ee9c4892d9ea41e11cc5d68847024bffd48b9dadc3524ff07dc5b",
+        "ProjectMilestoneService.AddMilestoneDependencyAsync(Guid, Guid, string?, CancellationToken)": "df65c7aa2220e65556d0e699be3468f9eba373f60c20c26b26033b4578483ca5",
+        "ProjectMilestoneService.RemoveMilestoneDependencyAsync(Guid, CancellationToken)": "0f105e28beea1e48ea57b5128a3303898b412ab2253e6d9dd21b0db10860e554"
       }
     },
     "Persistence/Services/Providers/AssumptionRollupProvider.cs": {
@@ -11502,10 +11830,10 @@
         "get_ItemType",
         "AssumptionRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "AssumptionRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "AssumptionRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "AssumptionRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "78f41a917b0ac74d0971ecbabd95855238670b54f78d24b608bb0e12074ed209"
+        "AssumptionRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "89adcdd7956cd7bc2bc0fc350cdd232804f1b764f0d5c94c35973b04e8518998"
       }
     },
     "Persistence/Services/Providers/BlockerRollupProvider.cs": {
@@ -11520,10 +11848,10 @@
         "get_ItemType",
         "BlockerRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "BlockerRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "BlockerRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "BlockerRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "2a1ef036a2997615b5a92a9a3580f7183d991701b2e2dd0bf47aae5cab633b99"
+        "BlockerRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "8a1cf781010a74242291fb646e9215dae01c444405897f4af17fa8c6e805e1f8"
       }
     },
     "Persistence/Services/Providers/IssueRollupProvider.cs": {
@@ -11538,10 +11866,10 @@
         "get_ItemType",
         "IssueRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "IssueRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "IssueRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "IssueRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "37666e16a294c6d0a7086824c2467878d7ec3d38e84ac83bdcb22af9f8e2fe27"
+        "IssueRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "b8adba3da44753583ae8fe60248e227f759f827e3456e2ae95079af087449efb"
       }
     },
     "Persistence/Services/Providers/RiskRollupProvider.cs": {
@@ -11556,10 +11884,10 @@
         "get_ItemType",
         "RiskRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "RiskRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "RiskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "RiskRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "fa1a11183d6e2f126c9231cf4779766fc2b590964387bf158d8613a4ebec4cef"
+        "RiskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "ae73fb092c29ac90735142437a39eab949c3815b488c6eb16b6f618050652f66"
       }
     },
     "Persistence/Services/Providers/SubTaskRollupProvider.cs": {
@@ -11574,10 +11902,10 @@
         "get_ItemType",
         "SubTaskRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "SubTaskRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "SubTaskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "SubTaskRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "55ab09b7c9387d09556e0920334c3e35a60cf74eb54169f09f24e60b453c9421"
+        "SubTaskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "7176c7ee39aaa8829117fd63c8d42b8637903cae819f18d954ecc6fed0d1947e"
       }
     },
     "Persistence/Services/Providers/TaskRollupProvider.cs": {
@@ -11592,10 +11920,10 @@
         "get_ItemType",
         "TaskRollupProvider.ItemType.get",
         "GetCalendarRollupItemsAsync",
-        "TaskRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
+        "TaskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "TaskRollupProvider.GetCalendarRollupItemsAsync(string, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "babe1f9c4880661e0964054250911ec4dcca1877292bb2d778499c770474aabe"
+        "TaskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "b10db9edacabe71d38402fc5191d16bd84309e1215f1bf912e845bc37155d14b"
       }
     },
     "Persistence/Services/TenantHybridCacheService.cs": {
@@ -11629,14 +11957,14 @@
         "TenantHybridCacheService.BuildGlobalKey(string)"
       ],
       "MemberSyntaxHashes": {
-        "TenantHybridCacheService.GetOrCreateAsync\u003CT\u003E(string, Func\u003CCancellationToken, ValueTask\u003CT\u003E\u003E, TimeSpan?, IEnumerable\u003Cstring\u003E?, CancellationToken)": "d59dd6f9d2cbd769b1efc26ca7794ebe3c6a82948650f04347ce3792595ded6b",
+        "TenantHybridCacheService.GetOrCreateAsync\u003CT\u003E(string, Func\u003CCancellationToken, ValueTask\u003CT\u003E\u003E, TimeSpan?, IEnumerable\u003Cstring\u003E?, CancellationToken)": "b37fcebd2f15b46575ce8cc6af6a15621781dcade8981a83e446effac1b80497",
         "TenantHybridCacheService.GetGlobalOrCreateAsync\u003CT\u003E(string, Func\u003CCancellationToken, ValueTask\u003CT\u003E\u003E, TimeSpan?, IEnumerable\u003Cstring\u003E?, CancellationToken)": "f8c3b634a826d6642d37a3eb5e1297ba651dd3d4fc4e6475dbe21686493a1565",
         "TenantHybridCacheService.RemoveAsync(string, CancellationToken)": "e643988afb800dc4e8a6673a217d9ec376b01a68796bbe4d6bd9025cfc0ae6f2",
         "TenantHybridCacheService.RemoveGlobalAsync(string, CancellationToken)": "12986486135a85f57e209a96f36f44eeb80de2b3222012fee943581aacc08b93",
-        "TenantHybridCacheService.InvalidateTenantAsync(string?, CancellationToken)": "6943ef97201342a51dba348c6cb577f989ba5bc024cc2f9994b07272706b4e34",
-        "TenantHybridCacheService.RemoveByTagAsync(string, CancellationToken)": "8251248077b11ed7d8c219ee3517021ecc56f7f7421c83ef6c405eedfa519f3b",
+        "TenantHybridCacheService.InvalidateTenantAsync(string?, CancellationToken)": "ec5501bb0681a48b8330525b6df8eef8019842c73c6b7f5c48c42c12d7340679",
+        "TenantHybridCacheService.RemoveByTagAsync(string, CancellationToken)": "5ad0f95d6700eaf03b418974cc6ccacb1890f1ec21c7c57ce686061a628e557b",
         "TenantHybridCacheService.RemoveGlobalByTagAsync(string, CancellationToken)": "2c4e639100a057b2b473fb5e0ec025862ebd9112904e8b07a4fe293bd5c78e74",
-        "TenantHybridCacheService.BuildTenantKey(string)": "62c8215e0ca2c38f3a12af3e71dc4b58e5b7b4c905eb92208789e1043eea36da",
+        "TenantHybridCacheService.BuildTenantKey(string)": "babf9df866702a81a34c3b054b048d7bb893d8194aa118bdeadc54045b8df7ed",
         "TenantHybridCacheService.BuildGlobalKey(string)": "06ff22dfaa07f8fd743eed8767d9d9b384d3a8097d16b54d5f30b0c70a03b064"
       }
     },
@@ -11690,19 +12018,19 @@
         "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "TenantService.GetAllTenantsAsync(CancellationToken)": "106e57f2f617357c28851524a94f968f423f50e33047a9ac0ce2dad2a161211f",
-        "TenantService.CreateTenantAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, CancellationToken)": "fd1fd1d9d5cf4d256256f7ea918b87ccf4f8c4a1aa990428c094a50ad7a6771e",
+        "TenantService.GetAllTenantsAsync(CancellationToken)": "02c7f762573da902e92695540a474a7a276fe3fc55e6323373959dcd258168ab",
+        "TenantService.CreateTenantAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, CancellationToken)": "8ff35a639cc8cae94778f5827ac1648b69305fe5cf69d7fd47149c1c8bb79b4a",
         "TenantService.CreateTenantAsync(string, string, string, string, DateTime, DateTime, CancellationToken)": "cbabdfd6d7d21f781d648d139df30d109b182ef86c69681717214e0e57841d40",
-        "TenantService.GetTenantUsersAsync(string, CancellationToken)": "b700020d0b6b2c10947cbbd904d232baa792ce8d8acc9baca8cc9e601f51783f",
-        "TenantService.AddTenantUserAsync(string, string, string, DateTime, DateTime, bool, CancellationToken)": "26d78ee20add7cf87cfd2ad2b6bb56cba465899dc91018ad7ca7ba0c8fdbeee2",
-        "TenantService.UpdateTenantUserAsync(string, Guid, string, string, DateTime, DateTime, bool, CancellationToken)": "3526226fe46dbedfa5ab812aa44902a43aac52de97a863633287a9b7c66efa48",
-        "TenantService.AssignTenantAdminRoleAsync(string, Guid, bool, CancellationToken)": "f5234181f2952ca30edd4e7e72f99c9674a12d2497a070149907c2aa3dcbc402",
-        "TenantService.UpdateTenantStatusAsync(Guid, bool, CancellationToken)": "30513928879fa39bfb5d40c8cafb07c5344a95611af7ac76b8902c0bfde624ad",
-        "TenantService.UpdateTenantDatesAsync(Guid, DateTime, DateTime, CancellationToken)": "60e2ff2caac2e649ad17c2d902bb167a39157482382a87663d02df883916c4c7",
-        "TenantService.GetTenantProjectsAsync(string, CancellationToken)": "adb46b453b07b3cad30316f607c1ca060992b914d3f39bfcdcac2a113bef0526",
-        "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "2b698fefac133a6fdf1d22c8fcc7f30257b525987a79955137c25a1f9146ec07",
-        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "b12d3ace7e0ef45b330d12a144d24ba27880633fbecd9497ce5472afdb1ceaf9",
-        "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "a99f8894bbdf495313d9345cd6c73a9b18038bc6213d7acce1261841d5168bac"
+        "TenantService.GetTenantUsersAsync(string, CancellationToken)": "18705528a2a7be573942f9b9628367d053e2fec8dd129ed0f19555361a30de25",
+        "TenantService.AddTenantUserAsync(string, string, string, DateTime, DateTime, bool, CancellationToken)": "490b874175a0aba0f7b2ea9f2be5c45a696fe7eba60c2121be3036fa2bfa2057",
+        "TenantService.UpdateTenantUserAsync(string, Guid, string, string, DateTime, DateTime, bool, CancellationToken)": "df0abbb49e18ebec87b06782cc4e677e7a705593e4281bb7de4f00201280cf8e",
+        "TenantService.AssignTenantAdminRoleAsync(string, Guid, bool, CancellationToken)": "111769db78db860c72c53e2662392c05b70cf0450296add0b7d2196e177619b7",
+        "TenantService.UpdateTenantStatusAsync(Guid, bool, CancellationToken)": "6310fcf1e34ac1251ad13ecee5a6adf34fd3498f333f779e6c88961aa81578de",
+        "TenantService.UpdateTenantDatesAsync(Guid, DateTime, DateTime, CancellationToken)": "72fb7374a34400bf713635c32a4d7064b87d437844c4354b9039c60d7b0ebdc7",
+        "TenantService.GetTenantProjectsAsync(string, CancellationToken)": "ba2dd672693efff79ad5eafb5b932bc5bf30d276e038d6a23eec4f33adb72bc9",
+        "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "f073d6ec91c6714a434d669d9804063ee4df2637fc6b47779f49cbedc666b1e3",
+        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "f868bae8767367c5626c0933cd0f2caa518228601096d4f368bbf6be4ba2dab4",
+        "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "558c25590b169d980d52e2b5fb5e8ee36de18c416071f159b2e78e08b8f6349f"
       }
     },
     "Persistence/Services/UnitOfWork.cs": {
@@ -11790,8 +12118,8 @@
         "UserSessionService.GetActiveSessionsAsync(bool, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "UserSessionService.CreateSessionAsync(string, string, string, string, CancellationToken)": "9fe07d39f4bd3c3b9f278e73002b6531daf7646d179413bb2e38d25f78ff43d5",
-        "UserSessionService.RevokePreviousSessionsAsync(string, Guid?, CancellationToken)": "7ee26538a5fa3b38cf872896c24a219de5571a0a151585413a8c1b1e245bd184",
+        "UserSessionService.CreateSessionAsync(string, string, string, string, CancellationToken)": "09d5964194428ebdfe92675fd1879735b9aa390f629bdf2092233dd637024cec",
+        "UserSessionService.RevokePreviousSessionsAsync(string, Guid?, CancellationToken)": "1ba907b645911806a06e08a416256e169b403a035c3680834be558c6aa2d8680",
         "UserSessionService.RevokeStaleSessionsAsync(TimeSpan, string, CancellationToken)": "d5feeb5ffd77bd7efe352e0a95159a75cc4dd1c1550073537fe2159d98b7580f",
         "UserSessionService.UpdateHeartbeatAsync(Guid, CancellationToken)": "3250a7925c93b36b4b519e09de38e2f44199d576fa458d795c9ec48c08c95291",
         "UserSessionService.IsSessionRevokedAsync(Guid, CancellationToken)": "3a4d98c7346bbaca277371ff7bff300fa2253eb91ac9117b8c3a7ee645d45915",
@@ -11874,28 +12202,28 @@
       "MemberSyntaxHashes": {
         "UserTaskService.OnBeforeCreateTask(TaskEntity)": "00823047e43525dbfaa821322e2ffc9ef620b36dcab832e752d85b3bc0ea566d",
         "UserTaskService.OnAfterCreateTask(TaskEntity)": "fa9031bb760f6902e1f438ce73fc9e039e34cd88de96df309a602c396e67ed75",
-        "UserTaskService.GetTasksByProjectAsync(Guid, CancellationToken)": "d290fcc5688b36212464008b939cfb9f7996158b071db23fa8538e6ed34985bb",
-        "UserTaskService.GetTaskByIdAsync(Guid, Guid, CancellationToken)": "204a82cc66e961ae5c14a8b42f6693d331aabbf1180429e0f3f100a664011bea",
+        "UserTaskService.GetTasksByProjectAsync(Guid, CancellationToken)": "85d208d9ac90f2b082a7e618fd7ce4ed7bb8451bb3dc40e5727801fa85fd6b26",
+        "UserTaskService.GetTaskByIdAsync(Guid, Guid, CancellationToken)": "17f1a70ef211e446158b3109684013b6685278f002bfd8bff7156bfefd9e2a29",
         "UserTaskService.HydrateEncryptedTasksInMemoryAsync(IReadOnlyList\u003CTaskEntity\u003E, CancellationToken)": "2c6e7190fa42147a9982893c0134e8e885615c6ec2e6fcf4a39354a81fee91df",
-        "UserTaskService.CreateTaskAsync(TaskEntity, CancellationToken)": "774110b81ca92720457db9c93c2590943c6416a3a03cf80b5a7487576aeedc39",
-        "UserTaskService.UpdateTaskAsync(TaskEntity, CancellationToken)": "0553aa4896e901abe05733be2a0e39ec34fcb3d396eb019f7cdb58fc0ec1ae75",
-        "UserTaskService.CloseTaskAsync(Guid, Guid, CancellationToken)": "fd25e5de51ee7bca30d8d9661483bf8a947b1e6ad3f371cc22358dc29b205753",
-        "UserTaskService.ReopenTaskAsync(Guid, Guid, CancellationToken)": "28a975e8147cfb8c83935432c95e34187bff359d3aedcbb4f6a4d734fccde0aa",
-        "UserTaskService.CancelTaskAsync(Guid, Guid, CancellationToken)": "db5fc9f85ab6ca5ccc9dd553ea636d203c69fda4a70682f3c4f64e2f27bd3227",
-        "UserTaskService.AddCommentAsync(Guid, Guid, string, CancellationToken)": "8d1c44cffe8d39001dd5373276d15d0fd91f426eb3ba119c3a7b3689d1c11766",
-        "UserTaskService.GetCommentsAsync(Guid, Guid, CancellationToken)": "95441a5811062751840932ca46d9ae129d394f03a5fd9c3ed536c563acbb6db8",
-        "UserTaskService.GetTaskDependenciesAsync(Guid, Guid, CancellationToken)": "676356052eb1bc257e104f8d8672dc55ffad89fda2a67f87485962d3387703a9",
-        "UserTaskService.AddTaskDependencyAsync(Guid, Guid, Guid, TaskDependencyTypeEnum, DateTime?, string?, CancellationToken)": "1aa5fc6cc2bfa86cba40fde936e8a6e151b8d7b5f598595bc4199a26076fef88",
-        "UserTaskService.RemoveTaskDependencyAsync(Guid, Guid, CancellationToken)": "d5889af83cd1e9b4325823ace338cd8487c71861b1f3cf79aa4e6509405bc30a",
+        "UserTaskService.CreateTaskAsync(TaskEntity, CancellationToken)": "98edd694a0f862e23db595f639291ab13ed578e7a44c67c9039aa43cbda07a94",
+        "UserTaskService.UpdateTaskAsync(TaskEntity, CancellationToken)": "9ec492778f249216c1f44f3ceb118fb0b57afe49a77059d333baa85de7c95430",
+        "UserTaskService.CloseTaskAsync(Guid, Guid, CancellationToken)": "ac73cdccd72c6d5f6f73729647dce10e393f8b39a29756bf36112986edd9ab0f",
+        "UserTaskService.ReopenTaskAsync(Guid, Guid, CancellationToken)": "005658929f54355ba91fae5022fcf2cb6cbfee4c8165f3120806aaa7fead6aa3",
+        "UserTaskService.CancelTaskAsync(Guid, Guid, CancellationToken)": "9834c1c5930c0209bcd1247ee7dc3880c42573e3ef45af43f1ccaad16c3118d4",
+        "UserTaskService.AddCommentAsync(Guid, Guid, string, CancellationToken)": "7c6e3f9e718f6110c3654dddbb0fabe93fa507d2fd5e7b5290ec60ad44f148dc",
+        "UserTaskService.GetCommentsAsync(Guid, Guid, CancellationToken)": "f6930cbc6dcaf5c07b751215771f4a369aba496205edfe1cda9572ff428070f0",
+        "UserTaskService.GetTaskDependenciesAsync(Guid, Guid, CancellationToken)": "4be9ce66e50c159085dbefb338879efa9b146f163cee75489d0d7cab556cd816",
+        "UserTaskService.AddTaskDependencyAsync(Guid, Guid, Guid, TaskDependencyTypeEnum, DateTime?, string?, CancellationToken)": "2886a22482462bd6b8db629fbc4850e6732f4f8b2cc04e899a30ae85e4b3c1ac",
+        "UserTaskService.RemoveTaskDependencyAsync(Guid, Guid, CancellationToken)": "dadefb74e95c2d59c4a9302ab6dff38041d4225e4d95170dc44695e5dec7359b",
         "UserTaskService.NotifyAssigneesAsync(TaskEntity, bool, CancellationToken)": "a9b9c7747d913d1df22c27839268d129e601165545f0f6ac728908a1031957f0",
-        "UserTaskService.GetSubTasksByTaskIdAsync(Guid, CancellationToken)": "bb58cd7e17a44eb65b38358ed3b14e0be7e12aba697adcddc5215bcd68fbb661",
-        "UserTaskService.CreateSubTaskAsync(SubTaskEntity, CancellationToken)": "b04129c24c1d7f6f5969289f75718bca38e8b96c2c5c4bc3f88e1aa57c874a69",
-        "UserTaskService.UpdateSubTaskAsync(SubTaskEntity, CancellationToken)": "48bca0659cfacac7e88348767d503483a9c5a33c07d17e1d7da1c9675e15672b",
-        "UserTaskService.DeleteSubTaskAsync(Guid, CancellationToken)": "703554405ce85f59154bc9181f4cf1e2bc9e0034ab7c7e3c5699b0d168abb357",
-        "UserTaskService.GetTaskLinksAsync(Guid, CancellationToken)": "dbb6981b9e064b93ba78820ef443dad55bfe696925afbafd1e6828a846174c45",
-        "UserTaskService.CreateBlockedByLinkAsync(Guid, Guid, DateTime, DependencyCriticalityEnum, string, string?, CancellationToken)": "94feb1a52dd924b38c6c8fc825f7c273fb85e623acbaecb6d91975f29ca6ac26",
-        "UserTaskService.RemoveTaskLinkAsync(Guid, CancellationToken)": "1b8ffc58602ca8c82d3ce5ad2100ee350cd673d6a1c9c8539bd3bcad1f8cc1d3",
-        "UserTaskService.PromoteManualDependencyAsync(Guid, DependencyNodeTypeEnum, Guid, Guid?, Guid?, CancellationToken)": "f3e43159810ef01ab02a08b8df77754f3477b68b90423fb7206125deb7b4a271",
+        "UserTaskService.GetSubTasksByTaskIdAsync(Guid, CancellationToken)": "92cd0bc1eadaeb85963ca2f2640f00d0491149d4f4e51896e312691d8e67c454",
+        "UserTaskService.CreateSubTaskAsync(SubTaskEntity, CancellationToken)": "9cbcda868045fdb4dc2465e31cffb8165f193a2b97ab2e1f02b7f5e61456383a",
+        "UserTaskService.UpdateSubTaskAsync(SubTaskEntity, CancellationToken)": "708cc1699ebd004b1b7c3b50f6725101c47a8e06ae141a8c574b8a2df9ba72e7",
+        "UserTaskService.DeleteSubTaskAsync(Guid, CancellationToken)": "89060f2ae26ae5c3972198b6173730bfb2615bebbdf1434593acbbd7523dd924",
+        "UserTaskService.GetTaskLinksAsync(Guid, CancellationToken)": "0834b58463f3d5e3c5c643669f22478e8c64db0bd3ed3142e04c3b8dc8366c47",
+        "UserTaskService.CreateBlockedByLinkAsync(Guid, Guid, DateTime, DependencyCriticalityEnum, string, string?, CancellationToken)": "46907ebea6e3bb89a63e0c88fda0085d4288c2ac1bad9d11e8f513ceff7ac402",
+        "UserTaskService.RemoveTaskLinkAsync(Guid, CancellationToken)": "639a187e846a04201b5633fc38694ee98105c5f555bcba05ea56438aad9648e1",
+        "UserTaskService.PromoteManualDependencyAsync(Guid, DependencyNodeTypeEnum, Guid, Guid?, Guid?, CancellationToken)": "37156fd184fdd7deb1e9661c629abe6459ce2503e212df4a3b0f40c4ba944546",
         "UserTaskService.SendBlockerAlertAsync(string, string, string, NotificationSeverityEnum, Guid, CancellationToken)": "ddffb17be12638ae1f12de55fef12664bcd44eef3fc3fb52c42a905644a063f3"
       }
     },
@@ -11950,20 +12278,20 @@
         "WorkflowService.ParseEmails(string?)"
       ],
       "MemberSyntaxHashes": {
-        "WorkflowService.CreateWorkflowAsync(CreateWorkflowReqDto, CancellationToken)": "54c8ab3c0a5e667e5a7d44812181d57be824cafeebbf26c73871fe3f14a2206c",
-        "WorkflowService.CompleteStepAsync(CompleteWorkflowStepReqDto, CancellationToken)": "ef40b9c95113b55ad53ceaf004c75a46671e71c22c85fb442985be6b600a4986",
-        "WorkflowService.ReassignStepAsync(ReassignWorkflowStepReqDto, CancellationToken)": "fb92ef71d50346609db9c03550bc8014bec8033ce57196e95b873307fff1a337",
-        "WorkflowService.AddSubTaskToStepAsync(AddSubTaskToStepReqDto, CancellationToken)": "a9b6bd2ed227c29a6e48a25a672c18aec53d6089d019d10916d5563847070cd3",
-        "WorkflowService.ToggleSubTaskStatusAsync(ToggleSubTaskStatusReqDto, CancellationToken)": "c1f29b5745a7dcc094f3f0810ca1f88f157ec60a9b57da8323ef3704aa0c2a83",
-        "WorkflowService.GetWorkflowsAsync(WorkflowFilterDto, CancellationToken)": "9126d17755218dc9851fb7f4e64acc9560003806141d061cfc5fc94c52978d89",
+        "WorkflowService.CreateWorkflowAsync(CreateWorkflowReqDto, CancellationToken)": "16fc0709b7e89f4d17758fb8568410985576d49832a794aa3a4d23d01d2fc0e6",
+        "WorkflowService.CompleteStepAsync(CompleteWorkflowStepReqDto, CancellationToken)": "695e21657c970c4d5d54206ae379230682cd86b6101b56c991eff58ef86a7ced",
+        "WorkflowService.ReassignStepAsync(ReassignWorkflowStepReqDto, CancellationToken)": "279ed42b632b330fb3309c01fa24457fe48026f153f1f5c9b017e3517d1790da",
+        "WorkflowService.AddSubTaskToStepAsync(AddSubTaskToStepReqDto, CancellationToken)": "31210df0ff13c5220ec2fda26fe3ef52a7fb639f747ff7c10b931c4986baa1dc",
+        "WorkflowService.ToggleSubTaskStatusAsync(ToggleSubTaskStatusReqDto, CancellationToken)": "0bc588d0b3bd6cca59afb3d09f5be2d792c149e7b01b4ebcd76bb9de31387f99",
+        "WorkflowService.GetWorkflowsAsync(WorkflowFilterDto, CancellationToken)": "7588f9c275596df58e4c44c768f226a229ea95c58eb35a2cfb024325bda593c4",
         "WorkflowService.GetProjectWorkflowsAsync(Guid, CancellationToken)": "4838f1733dd9fbf06ab0102776697299ce58ff7edf96aa1b5ccf35392dd1f271",
-        "WorkflowService.GetWorkflowByIdAsync(Guid, CancellationToken)": "b85dff0a6127170f1b9b77262a59ea419e54ffe3c619cbbc0c16b65ce7cb7acd",
-        "WorkflowService.CanUserManageWorkflowAsync(TaskLevelEnum, Guid?, Guid?, CancellationToken)": "f95e419a7ad5e3bd12911c1a1d7de37655229fac313473598a6c852aea17eba4",
-        "WorkflowService.EditWorkflowAsync(EditWorkflowReqDto, CancellationToken)": "809b32a26deca712e13b2224c33a37da8fe61ba24ff5bf20e6269887b905b0dc",
-        "WorkflowService.CancelStepAsync(CancelWorkflowStepReqDto, CancellationToken)": "624163c4fb73d3e63ab197efcd6b307526a7a89190405d903ec36e5efd7afc1b",
-        "WorkflowService.ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto, CancellationToken)": "bc3bcb8a5daedc08598bb6e8ab1b028b0f6f246c4babe1cb373c8bd62c0f4508",
-        "WorkflowService.AppendStepAsync(AppendStepToWorkflowReqDto, CancellationToken)": "d728ff805dcd5127fbcc2a1c07c2efbe9346775362772fbf7ca00309e3b4c56a",
-        "WorkflowService.GetAvailableTasksForWorkflowAsync(TaskSearchFilterDto, CancellationToken)": "ad000e194c23fac2c6c46db2eb409076d80f14df6958ff6404aceac4fcd4fe55",
+        "WorkflowService.GetWorkflowByIdAsync(Guid, CancellationToken)": "f94171e3c27ebe2c943883f525accf8a171164ccd8bc8f9b3005e4fbdfd8a67e",
+        "WorkflowService.CanUserManageWorkflowAsync(TaskLevelEnum, Guid?, Guid?, CancellationToken)": "f9c12776e7734cac3555ae09ff98fe3d3faacc285cf415fa7627445d006a3b36",
+        "WorkflowService.EditWorkflowAsync(EditWorkflowReqDto, CancellationToken)": "b78e53f2382a40269bd557fb9425a73f3e240a1ff2d45237506125c41cd150af",
+        "WorkflowService.CancelStepAsync(CancelWorkflowStepReqDto, CancellationToken)": "86aa64a57053847229f1c58010db4536342af70f232fabbdee0e5a8ae17f2534",
+        "WorkflowService.ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto, CancellationToken)": "93564f4694837b521eb01f86b9627731de2142dd78f412bc4a2be95f4c1e8b47",
+        "WorkflowService.AppendStepAsync(AppendStepToWorkflowReqDto, CancellationToken)": "bb4703282075d33a4f88f45c1e1f72cf1a1f9e2f3541831a154c8dbb520d5d24",
+        "WorkflowService.GetAvailableTasksForWorkflowAsync(TaskSearchFilterDto, CancellationToken)": "f314f20e013b2472f750e26063629f53ad6e6275e2daf7868c17f70e9daba4ca",
         "WorkflowService.DispatchNotificationSilentlyAsync(string, string, string, NotificationSeverityEnum, NotificationCategoryEnum, Guid?, CancellationToken)": "b7a72d32b200837c46625bca0d579f650d906a6a07c31c2dd6157b1660e58c9a",
         "WorkflowService.ParseEmails(string?)": "5d72cec686c30ffe6877394ab6154aea19498cb716aaf679c80c024fb1158077"
       }
@@ -12055,8 +12383,8 @@
       ],
       "MemberSyntaxHashes": {
         "TaskCloudProcessor.ProcessChunk(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "891e150214f30f6373d7c03668659d037654877ae255b7fb577bd632b71b5cfe",
-        "TaskCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)": "3e40b04192b24c6d645858ff0288a01fd30e53fcafca65bd541612f06a27626c",
-        "TaskCloudProcessor.NormalizePriority(string?, int, string, List\u003CFileValidationError\u003E)": "f21b7d6f7e1244e83c46406c7cfd4e94e35a3045f6bafb90ff1743efe277e24a"
+        "TaskCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)": "036a6fb87d2681c2131d15ebd99a226f6f885708ba0831dec90818bf73289bda",
+        "TaskCloudProcessor.NormalizePriority(string?, int, string, List\u003CFileValidationError\u003E)": "ee8236824967fcb79839a87dfb9dbd890b11954890408a9e5f9ee22695776975"
       }
     },
     "RulesEngine/Calendar/CalendarWorkingDayEngine.cs": {
@@ -12175,6 +12503,20 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Shared/Attributes/ClassificationEnumAttribute.cs": {
+      "RelativePath": "Shared/Attributes/ClassificationEnumAttribute.cs",
+      "KnownMembers": [
+        "\u003CDescription\u003Ek__BackingField",
+        "ClassificationEnumAttribute.Description.field",
+        "Description",
+        "ClassificationEnumAttribute.Description",
+        "get_Description",
+        "ClassificationEnumAttribute.Description.get",
+        ".ctor",
+        "ClassificationEnumAttribute.ClassificationEnumAttribute(string?)"
+      ],
+      "MemberSyntaxHashes": {}
+    },
     "Shared/Attributes/DataListCategoryAttribute.cs": {
       "RelativePath": "Shared/Attributes/DataListCategoryAttribute.cs",
       "KnownMembers": [
@@ -12237,6 +12579,20 @@
         "set_ErrorMessage",
         "ImportColumnAttribute.ErrorMessage.set",
         "ImportColumnAttribute.ImportColumnAttribute(string, bool, string?)"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Shared/Attributes/LifecycleEnumAttribute.cs": {
+      "RelativePath": "Shared/Attributes/LifecycleEnumAttribute.cs",
+      "KnownMembers": [
+        "\u003CDescription\u003Ek__BackingField",
+        "LifecycleEnumAttribute.Description.field",
+        "Description",
+        "LifecycleEnumAttribute.Description",
+        "get_Description",
+        "LifecycleEnumAttribute.Description.get",
+        ".ctor",
+        "LifecycleEnumAttribute.LifecycleEnumAttribute(string?)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -14198,6 +14554,12 @@
         "Retrying",
         "EventConsumptionStatusEnum.Retrying",
         "EventConsumptionStatusEnum.EventConsumptionStatusEnum()",
+        "AllowedTransitions",
+        "EventTrackerStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "EventTrackerStatusEnumDefinitions.EventTrackerStatusEnumDefinitions()",
+        "EventConsumptionStatusEnumDefinitions.AllowedTransitions",
+        "EventConsumptionStatusEnumDefinitions.EventConsumptionStatusEnumDefinitions()",
         "Categories",
         "EventTrackerDefinitions.Categories",
         "Lifecycle",
@@ -14264,7 +14626,11 @@
         "ImportStatusEnum.Completed",
         "ProcessingFailed",
         "ImportStatusEnum.ProcessingFailed",
-        "ImportStatusEnum.ImportStatusEnum()"
+        "ImportStatusEnum.ImportStatusEnum()",
+        "AllowedTransitions",
+        "ImportStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "ImportStatusEnumDefinitions.ImportStatusEnumDefinitions()"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -14287,6 +14653,10 @@
         "JobStatusEnumDefinitions.Categories",
         "Filters",
         "JobStatusEnumDefinitions.Filters",
+        "AllowedTransitions",
+        "JobStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "JobStatusEnumDefinitions.JobStatusEnumDefinitions()",
         "Pending",
         "JobStatusEnumDefinitions.Categories.Pending",
         "Active",
@@ -14327,7 +14697,7 @@
         "JobTriggerSourceExtensions.ParseTriggerSource(string?)"
       ],
       "MemberSyntaxHashes": {
-        "JobTriggerSourceExtensions.ParseTriggerSource(string?)": "e646556f048541d4e4edf4fdadffbdf7e70680782329be71d732d8e28f154305"
+        "JobTriggerSourceExtensions.ParseTriggerSource(string?)": "853048e2823cc984762d30ebbc1125612c685a2c62e5ee8633ce258aa3b5a450"
       }
     },
     "Shared/DataListTypes/KnowledgeArticleStatus.cs": {
@@ -14343,6 +14713,10 @@
         "KnowledgeArticleStatusEnum.Rejected",
         ".ctor",
         "KnowledgeArticleStatusEnum.KnowledgeArticleStatusEnum()",
+        "AllowedTransitions",
+        "KnowledgeArticleStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "KnowledgeArticleStatusEnumDefinitions.KnowledgeArticleStatusEnumDefinitions()",
         "TenantOnly",
         "KnowledgeArticleScopeEnum.TenantOnly",
         "Global",
@@ -14406,6 +14780,10 @@
         "ProgramStatusEnum.Completed",
         ".ctor",
         "ProgramStatusEnum.ProgramStatusEnum()",
+        "AllowedTransitions",
+        "ProgramStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "ProgramStatusEnumDefinitions.ProgramStatusEnumDefinitions()",
         "TenantAdmin",
         "TenantRoleEnum.TenantAdmin",
         "TenantMember",
@@ -14424,10 +14802,6 @@
         "Admin",
         "ProgramRoleEnum.Admin",
         "ProgramRoleEnum.ProgramRoleEnum()",
-        "CanWrite",
-        "ProgramRoleExtensions.CanWrite(ProgramRoleEnum)",
-        "CanManageAccess",
-        "ProgramRoleExtensions.CanManageAccess(ProgramRoleEnum)",
         "Satisfies",
         "ProgramRoleExtensions.Satisfies(ProgramRoleEnum, ProgramRoleEnum)",
         "OnTrack",
@@ -14672,8 +15046,6 @@
         "CrossProjectDependencyDto.CrossProjectDependencyDto()"
       ],
       "MemberSyntaxHashes": {
-        "ProgramRoleExtensions.CanWrite(ProgramRoleEnum)": "db2215cd3dad3c20b8eeb458df0589693ad56f570f89ab90e3e69674caa75283",
-        "ProgramRoleExtensions.CanManageAccess(ProgramRoleEnum)": "bc68c7ff4086c259b156094082b4d588d97851472f4d4d8e1fe420fd99768224",
         "ProgramRoleExtensions.Satisfies(ProgramRoleEnum, ProgramRoleEnum)": "1702398dfbea9c85f9af09d2406071942555e1ac73e1e4382d2cf975fe34ea54"
       }
     },
@@ -15208,7 +15580,11 @@
         "Done",
         "ProjectStatusEnum.Done",
         ".ctor",
-        "ProjectStatusEnum.ProjectStatusEnum()"
+        "ProjectStatusEnum.ProjectStatusEnum()",
+        "AllowedTransitions",
+        "ProjectStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "ProjectStatusEnumDefinitions.ProjectStatusEnumDefinitions()"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -15247,11 +15623,20 @@
         "Pending",
         "TaskStatusEnum.Pending",
         "TaskStatusEnum.TaskStatusEnum()",
+        "Categories",
+        "TaskStatusEnumDefinitions.Categories",
+        "AllowedTransitions",
+        "TaskStatusEnumDefinitions.AllowedTransitions",
+        ".cctor",
+        "TaskStatusEnumDefinitions.TaskStatusEnumDefinitions()",
         "Task",
-        "TaskItemTypeEnum.Task",
+        "TaskStatusEnumDefinitions.Categories.Task",
         "SubTask",
-        "TaskItemTypeEnum.SubTask",
+        "TaskStatusEnumDefinitions.Categories.SubTask",
         "Risk",
+        "TaskStatusEnumDefinitions.Categories.Risk",
+        "TaskItemTypeEnum.Task",
+        "TaskItemTypeEnum.SubTask",
         "TaskItemTypeEnum.Risk",
         "Assumption",
         "TaskItemTypeEnum.Assumption",
@@ -15282,6 +15667,8 @@
         "RiskStatusEnum.Realized",
         "RiskStatusEnum.Closed",
         "RiskStatusEnum.RiskStatusEnum()",
+        "RiskStatusEnumDefinitions.AllowedTransitions",
+        "RiskStatusEnumDefinitions.RiskStatusEnumDefinitions()",
         "Unconfirmed",
         "AssumptionValidationStatusEnum.Unconfirmed",
         "Validated",
@@ -15289,6 +15676,8 @@
         "Invalidated",
         "AssumptionValidationStatusEnum.Invalidated",
         "AssumptionValidationStatusEnum.AssumptionValidationStatusEnum()",
+        "AssumptionValidationStatusEnumDefinitions.AllowedTransitions",
+        "AssumptionValidationStatusEnumDefinitions.AssumptionValidationStatusEnumDefinitions()",
         "IssueSeverityEnum.Low",
         "IssueSeverityEnum.Medium",
         "IssueSeverityEnum.High",
@@ -15341,6 +15730,8 @@
         "Delayed",
         "CalendarEntryStatusEnum.Delayed",
         "CalendarEntryStatusEnum.CalendarEntryStatusEnum()",
+        "CalendarEntryStatusEnumDefinitions.AllowedTransitions",
+        "CalendarEntryStatusEnumDefinitions.CalendarEntryStatusEnumDefinitions()",
         "CalendarGate",
         "DependencyNodeTypeEnum.CalendarGate",
         "TaskItem",
@@ -15497,7 +15888,7 @@
         "UserTypeEnumDefinitions.Filters.HostOnly",
         "SuperAdmin",
         "UserTypeEnumDefinitions.Filters.SuperAdmin",
-        "TenantInfo.TenantInfo(string, string, bool)",
+        "TenantInfo.TenantInfo(Guid, string, string, bool)",
         "get_EqualityContract",
         "TenantInfo.EqualityContract.get",
         "EqualityContract",
@@ -15510,6 +15901,14 @@
         "TenantInfo.Id.init",
         "Id",
         "TenantInfo.Id",
+        "\u003CSlug\u003Ek__BackingField",
+        "TenantInfo.Slug.field",
+        "get_Slug",
+        "TenantInfo.Slug.get",
+        "set_Slug",
+        "TenantInfo.Slug.init",
+        "Slug",
+        "TenantInfo.Slug",
         "\u003CName\u003Ek__BackingField",
         "TenantInfo.Name.field",
         "get_Name",
@@ -15526,6 +15925,7 @@
         "TenantInfo.IsActive.init",
         "IsActive",
         "TenantInfo.IsActive",
+        "TenantInfo.TenantInfo(Guid, string, bool)",
         "ToString",
         "TenantInfo.ToString()",
         "PrintMembers",
@@ -15543,7 +15943,7 @@
         "TenantInfo.\u003CClone\u003E$()",
         "TenantInfo.TenantInfo(TenantInfo)",
         "Deconstruct",
-        "TenantInfo.Deconstruct(out string, out string, out bool)"
+        "TenantInfo.Deconstruct(out Guid, out string, out string, out bool)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -15566,10 +15966,46 @@
         "DataListExtensions.GetDisplayName(Enum)",
         "GetDescription",
         "DataListExtensions.GetDescription(Enum)",
+        "GetEnumDisplayName",
+        "DataListExtensions.GetEnumDisplayName\u003CTEnum\u003E(int)",
+        "DataListExtensions.GetEnumDisplayName\u003CTEnum\u003E(int?, string)",
+        "GetEnumDescription",
+        "DataListExtensions.GetEnumDescription\u003CTEnum\u003E(int)",
+        "DataListExtensions.GetEnumDescription\u003CTEnum\u003E(int?)",
+        "DataListExtensions.GetEnumDisplayName\u003CTEnum\u003E(string?)",
+        "DataListExtensions.GetEnumDescription\u003CTEnum\u003E(string?)",
+        "GetEnumCode",
+        "DataListExtensions.GetEnumCode\u003CTEnum\u003E(int)",
+        "DataListExtensions.GetEnumCode\u003CTEnum\u003E(int?)",
+        "ToEnum",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(int)",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(int, TEnum)",
+        "ToEnumOrNull",
+        "DataListExtensions.ToEnumOrNull\u003CTEnum\u003E(int?)",
+        "TryToEnum",
+        "DataListExtensions.TryToEnum\u003CTEnum\u003E(int, out TEnum)",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(string?)",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(string?, TEnum)",
+        "DataListExtensions.ToEnumOrNull\u003CTEnum\u003E(string?)",
+        "DataListExtensions.TryToEnum\u003CTEnum\u003E(string?, out TEnum)",
+        "GetCode",
+        "DataListExtensions.GetCode\u003CTEnum\u003E(TEnum)",
+        "ToInt",
+        "DataListExtensions.ToInt\u003CTEnum\u003E(TEnum)",
         "GetCategory",
         "DataListExtensions.GetCategory(Enum)",
         "HasCategory",
         "DataListExtensions.HasCategory(Enum, string)",
+        "GetEnumCodesByCategory",
+        "DataListExtensions.GetEnumCodesByCategory\u003CTEnum\u003E(string)",
+        "GetEnumValuesByCategory",
+        "DataListExtensions.GetEnumValuesByCategory\u003CTEnum\u003E(string)",
+        "GetDataListItemsByCategory",
+        "DataListExtensions.GetDataListItemsByCategory\u003CTEnum\u003E(string)",
+        "GetCategories",
+        "DataListExtensions.GetCategories\u003CTEnum\u003E()",
+        "GetCategoryCodes",
+        "DataListExtensions.GetCategoryCodes\u003CTEnum\u003E()",
         "GetFilters",
         "DataListExtensions.GetFilters(Enum)",
         "GetFilterCriterias",
@@ -15588,10 +16024,20 @@
         "DataListExtensions.GetFilteredDataListItems\u003CTEnum\u003E(string?)",
         "DataListExtensions.GetDataListItems\u003CTEnum\u003E(TEnum)",
         "DataListExtensions.GetFilteredDataListItems\u003CTEnum\u003E(TEnum, string?)",
+        "IsLifecycleEnum",
+        "DataListExtensions.IsLifecycleEnum\u003CTEnum\u003E()",
+        "IsClassificationEnum",
+        "DataListExtensions.IsClassificationEnum\u003CTEnum\u003E()",
+        "BelongsToCategory",
+        "DataListExtensions.BelongsToCategory\u003CTEnum\u003E(TEnum, string?)",
+        "GetAllowedNextStates",
+        "DataListExtensions.GetAllowedNextStates\u003CTEnum\u003E(TEnum, string?)",
+        "CanTransitionTo",
+        "DataListExtensions.CanTransitionTo\u003CTEnum\u003E(TEnum, TEnum, string?)",
         ".cctor",
         "DataListExtensions.DataListExtensions()",
         ".ctor",
-        "DataListExtensions.EnumMemberMetadata.EnumMemberMetadata(string, string, string?, CategoryInfo?, IReadOnlyList\u003CFilterInfo\u003E)",
+        "DataListExtensions.EnumMemberMetadata.EnumMemberMetadata(string, string, string?, CategoryInfo?, IReadOnlyList\u003CCategoryInfo\u003E, IReadOnlyList\u003CFilterInfo\u003E, int, object)",
         "get_EqualityContract",
         "DataListExtensions.EnumMemberMetadata.EqualityContract.get",
         "EqualityContract",
@@ -15628,6 +16074,14 @@
         "DataListExtensions.EnumMemberMetadata.Category.init",
         "Category",
         "DataListExtensions.EnumMemberMetadata.Category",
+        "\u003CCategories\u003Ek__BackingField",
+        "DataListExtensions.EnumMemberMetadata.Categories.field",
+        "get_Categories",
+        "DataListExtensions.EnumMemberMetadata.Categories.get",
+        "set_Categories",
+        "DataListExtensions.EnumMemberMetadata.Categories.init",
+        "Categories",
+        "DataListExtensions.EnumMemberMetadata.Categories",
         "\u003CFilters\u003Ek__BackingField",
         "DataListExtensions.EnumMemberMetadata.Filters.field",
         "get_Filters",
@@ -15636,6 +16090,22 @@
         "DataListExtensions.EnumMemberMetadata.Filters.init",
         "Filters",
         "DataListExtensions.EnumMemberMetadata.Filters",
+        "\u003CIntValue\u003Ek__BackingField",
+        "DataListExtensions.EnumMemberMetadata.IntValue.field",
+        "get_IntValue",
+        "DataListExtensions.EnumMemberMetadata.IntValue.get",
+        "set_IntValue",
+        "DataListExtensions.EnumMemberMetadata.IntValue.init",
+        "IntValue",
+        "DataListExtensions.EnumMemberMetadata.IntValue",
+        "\u003CEnumValue\u003Ek__BackingField",
+        "DataListExtensions.EnumMemberMetadata.EnumValue.field",
+        "get_EnumValue",
+        "DataListExtensions.EnumMemberMetadata.EnumValue.get",
+        "set_EnumValue",
+        "DataListExtensions.EnumMemberMetadata.EnumValue.init",
+        "EnumValue",
+        "DataListExtensions.EnumMemberMetadata.EnumValue",
         "ToString",
         "DataListExtensions.EnumMemberMetadata.ToString()",
         "PrintMembers",
@@ -15653,22 +16123,74 @@
         "DataListExtensions.EnumMemberMetadata.\u003CClone\u003E$()",
         "DataListExtensions.EnumMemberMetadata.EnumMemberMetadata(DataListExtensions.EnumMemberMetadata)",
         "Deconstruct",
-        "DataListExtensions.EnumMemberMetadata.Deconstruct(out string, out string, out string?, out CategoryInfo?, out IReadOnlyList\u003CFilterInfo\u003E)",
-        "DataListExtensions.EnumTypeDefinitions.EnumTypeDefinitions(IReadOnlyDictionary\u003Cstring, CategoryInfo\u003E, IReadOnlyDictionary\u003Cstring, FilterInfo\u003E)",
+        "DataListExtensions.EnumMemberMetadata.Deconstruct(out string, out string, out string?, out CategoryInfo?, out IReadOnlyList\u003CCategoryInfo\u003E, out IReadOnlyList\u003CFilterInfo\u003E, out int, out object)",
+        "DataListExtensions.EnumTypeDefinitions.EnumTypeDefinitions(IReadOnlyDictionary\u003Cstring, CategoryInfo\u003E, IReadOnlyDictionary\u003Cstring, FilterInfo\u003E, IReadOnlyDictionary\u003Cint, DataListExtensions.EnumMemberMetadata\u003E, IReadOnlyDictionary\u003Cstring, DataListExtensions.EnumMemberMetadata\u003E, IReadOnlyDictionary\u003Cstring, IReadOnlyList\u003CDataListExtensions.EnumMemberMetadata\u003E\u003E, IReadOnlyList\u003CDataListExtensions.EnumMemberMetadata\u003E, IReadOnlyList\u003CCategoryInfo\u003E, IReadOnlyDictionary\u003Cstring, Dictionary\u003Cobject, HashSet\u003Cobject\u003E\u003E\u003E, IReadOnlyDictionary\u003Cobject, HashSet\u003Cobject\u003E\u003E)",
         "DataListExtensions.EnumTypeDefinitions.EqualityContract.get",
         "DataListExtensions.EnumTypeDefinitions.EqualityContract",
-        "\u003CCategories\u003Ek__BackingField",
         "DataListExtensions.EnumTypeDefinitions.Categories.field",
-        "get_Categories",
         "DataListExtensions.EnumTypeDefinitions.Categories.get",
-        "set_Categories",
         "DataListExtensions.EnumTypeDefinitions.Categories.init",
-        "Categories",
         "DataListExtensions.EnumTypeDefinitions.Categories",
         "DataListExtensions.EnumTypeDefinitions.Filters.field",
         "DataListExtensions.EnumTypeDefinitions.Filters.get",
         "DataListExtensions.EnumTypeDefinitions.Filters.init",
         "DataListExtensions.EnumTypeDefinitions.Filters",
+        "\u003CIntToMetadata\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.IntToMetadata.field",
+        "get_IntToMetadata",
+        "DataListExtensions.EnumTypeDefinitions.IntToMetadata.get",
+        "set_IntToMetadata",
+        "DataListExtensions.EnumTypeDefinitions.IntToMetadata.init",
+        "IntToMetadata",
+        "DataListExtensions.EnumTypeDefinitions.IntToMetadata",
+        "\u003CCodeToMetadata\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.CodeToMetadata.field",
+        "get_CodeToMetadata",
+        "DataListExtensions.EnumTypeDefinitions.CodeToMetadata.get",
+        "set_CodeToMetadata",
+        "DataListExtensions.EnumTypeDefinitions.CodeToMetadata.init",
+        "CodeToMetadata",
+        "DataListExtensions.EnumTypeDefinitions.CodeToMetadata",
+        "\u003CCategoryToMembers\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.CategoryToMembers.field",
+        "get_CategoryToMembers",
+        "DataListExtensions.EnumTypeDefinitions.CategoryToMembers.get",
+        "set_CategoryToMembers",
+        "DataListExtensions.EnumTypeDefinitions.CategoryToMembers.init",
+        "CategoryToMembers",
+        "DataListExtensions.EnumTypeDefinitions.CategoryToMembers",
+        "\u003CAllMembers\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.AllMembers.field",
+        "get_AllMembers",
+        "DataListExtensions.EnumTypeDefinitions.AllMembers.get",
+        "set_AllMembers",
+        "DataListExtensions.EnumTypeDefinitions.AllMembers.init",
+        "AllMembers",
+        "DataListExtensions.EnumTypeDefinitions.AllMembers",
+        "\u003CAllCategories\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.AllCategories.field",
+        "get_AllCategories",
+        "DataListExtensions.EnumTypeDefinitions.AllCategories.get",
+        "set_AllCategories",
+        "DataListExtensions.EnumTypeDefinitions.AllCategories.init",
+        "AllCategories",
+        "DataListExtensions.EnumTypeDefinitions.AllCategories",
+        "\u003CTransitionsByCategory\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.TransitionsByCategory.field",
+        "get_TransitionsByCategory",
+        "DataListExtensions.EnumTypeDefinitions.TransitionsByCategory.get",
+        "set_TransitionsByCategory",
+        "DataListExtensions.EnumTypeDefinitions.TransitionsByCategory.init",
+        "TransitionsByCategory",
+        "DataListExtensions.EnumTypeDefinitions.TransitionsByCategory",
+        "\u003CDefaultTransitions\u003Ek__BackingField",
+        "DataListExtensions.EnumTypeDefinitions.DefaultTransitions.field",
+        "get_DefaultTransitions",
+        "DataListExtensions.EnumTypeDefinitions.DefaultTransitions.get",
+        "set_DefaultTransitions",
+        "DataListExtensions.EnumTypeDefinitions.DefaultTransitions.init",
+        "DefaultTransitions",
+        "DataListExtensions.EnumTypeDefinitions.DefaultTransitions",
         "DataListExtensions.EnumTypeDefinitions.ToString()",
         "DataListExtensions.EnumTypeDefinitions.PrintMembers(StringBuilder)",
         "DataListExtensions.EnumTypeDefinitions.operator !=(DataListExtensions.EnumTypeDefinitions?, DataListExtensions.EnumTypeDefinitions?)",
@@ -15678,25 +16200,53 @@
         "DataListExtensions.EnumTypeDefinitions.Equals(DataListExtensions.EnumTypeDefinitions?)",
         "DataListExtensions.EnumTypeDefinitions.\u003CClone\u003E$()",
         "DataListExtensions.EnumTypeDefinitions.EnumTypeDefinitions(DataListExtensions.EnumTypeDefinitions)",
-        "DataListExtensions.EnumTypeDefinitions.Deconstruct(out IReadOnlyDictionary\u003Cstring, CategoryInfo\u003E, out IReadOnlyDictionary\u003Cstring, FilterInfo\u003E)"
+        "DataListExtensions.EnumTypeDefinitions.Deconstruct(out IReadOnlyDictionary\u003Cstring, CategoryInfo\u003E, out IReadOnlyDictionary\u003Cstring, FilterInfo\u003E, out IReadOnlyDictionary\u003Cint, DataListExtensions.EnumMemberMetadata\u003E, out IReadOnlyDictionary\u003Cstring, DataListExtensions.EnumMemberMetadata\u003E, out IReadOnlyDictionary\u003Cstring, IReadOnlyList\u003CDataListExtensions.EnumMemberMetadata\u003E\u003E, out IReadOnlyList\u003CDataListExtensions.EnumMemberMetadata\u003E, out IReadOnlyList\u003CCategoryInfo\u003E, out IReadOnlyDictionary\u003Cstring, Dictionary\u003Cobject, HashSet\u003Cobject\u003E\u003E\u003E, out IReadOnlyDictionary\u003Cobject, HashSet\u003Cobject\u003E\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "DataListExtensions.ResolveTypeDefinitions(Type)": "9ae978d73c4200b914b5a5737ba6b242a2dc7c7653bc48d1bc9aeea25ec01e74",
-        "DataListExtensions.ResolveMemberMetadata(Enum)": "7d10b6b499137847628aca6e3d81272958680410c1d5ca9621adbd58be1f9e7d",
+        "DataListExtensions.ResolveTypeDefinitions(Type)": "0c096a989039816c3706d93eb5b0b0cadf56d0d10e5b3cef46cdd341f3d2b147",
+        "DataListExtensions.ResolveMemberMetadata(Enum)": "e0bf9610bc2078d669d0acc7c1693f4dddd293d8e29bf6ae8669f16c0b79d146",
         "DataListExtensions.GetDisplayName(Enum)": "0963b3d4a3c08b80f115d2335a2085c49cda4fe84db7c1b796ca1da37f123377",
         "DataListExtensions.GetDescription(Enum)": "544e9cab10e4d8eaf1a4c7fdc8585168cb182c18b6bc618355a62ba74c18cf6e",
+        "DataListExtensions.GetEnumDisplayName\u003CTEnum\u003E(int)": "3574320e5ec9db236bf1b5760eb0365984b9e240254c33a64e05400389703b06",
+        "DataListExtensions.GetEnumDisplayName\u003CTEnum\u003E(int?, string)": "7909d3a51ebd5368fce2f1bb77387b3e20679172f2502b59251fb3df92a76a8a",
+        "DataListExtensions.GetEnumDescription\u003CTEnum\u003E(int)": "619e873dc45ecbae453b6631b9463cb2232a1799ca926e5baf12163d0acd81f4",
+        "DataListExtensions.GetEnumDescription\u003CTEnum\u003E(int?)": "3a9477d6e064793714b7232d0d9b711441ff4c253b4bd2f7c83fb52f8baa1ddf",
+        "DataListExtensions.GetEnumDisplayName\u003CTEnum\u003E(string?)": "d53a42cf38b9636a0c48e7ebd5a1cd42e6f9806a5b8f87269f9ffd93188247a4",
+        "DataListExtensions.GetEnumDescription\u003CTEnum\u003E(string?)": "1f10875269da1f2111a4c168a4f8e7e18ab46220cd0a956577c16aae02a27ff4",
+        "DataListExtensions.GetEnumCode\u003CTEnum\u003E(int)": "e442f4155b721d193a16e953ffc1e37e1bf70ba66ae5f3e657d39b63fca5466d",
+        "DataListExtensions.GetEnumCode\u003CTEnum\u003E(int?)": "cbd6b13790039f7e14e407dd080cc15320ec58bdec730fd7cbf00078c37144db",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(int)": "f4fdcec9ad7c03ee38aec7b125294113d0153db89adc9ef53a98a305e4e9c9ee",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(int, TEnum)": "a8d94fe39153f73dd7c27c7c94bfc1d788f760a5415767acf717a58d2a9d0334",
+        "DataListExtensions.ToEnumOrNull\u003CTEnum\u003E(int?)": "45e2eaf345c704ae577b52e21eb0896da67308f47cdc6c043cbfa98cb8a88e0b",
+        "DataListExtensions.TryToEnum\u003CTEnum\u003E(int, out TEnum)": "a0cde02444944df0d0179da47f1a983bd2d55129f0049ce726907a8cf7a3c5ee",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(string?)": "da185b1fd9db1df025e7426c59fb10ae5f1566bdb53b95d368f77b4e67776bb8",
+        "DataListExtensions.ToEnum\u003CTEnum\u003E(string?, TEnum)": "9cfb6eb94baeebcfc2aa3b28898fa579e10ec97a6084408cd2e6ccf374d2986d",
+        "DataListExtensions.ToEnumOrNull\u003CTEnum\u003E(string?)": "e69ab6679aca7274def0c0115399f9a26e28e22dc7b18bcd25b519e5c5789068",
+        "DataListExtensions.TryToEnum\u003CTEnum\u003E(string?, out TEnum)": "7dda0a150f9833b5238ecd62609a5001c9ab622437b3184597fc62fc3a7caea3",
+        "DataListExtensions.GetCode\u003CTEnum\u003E(TEnum)": "bf92b2e904e766304b65b0c69b02e4e512c03859deb715f7247dfd317399b73e",
+        "DataListExtensions.ToInt\u003CTEnum\u003E(TEnum)": "6bb1a0129fd1eea06582cc91cd9c85ed25e344ad292b025587d19a2bfe0b35eb",
         "DataListExtensions.GetCategory(Enum)": "88b3a04b9f24a3b8676fedd01309042feb570541102306fd59dfe6122cdce89c",
         "DataListExtensions.HasCategory(Enum, string)": "11d1991b11611ae5397bd7458c665e4d2d53e18e3ea443748676c1e5d7e3d7a9",
+        "DataListExtensions.GetEnumCodesByCategory\u003CTEnum\u003E(string)": "8d84e0f2ed7ae092fd5cf2f934643a02bbbc734f1421b247ac74cc990cf83cb2",
+        "DataListExtensions.GetEnumValuesByCategory\u003CTEnum\u003E(string)": "50645cbe454860d694c328e5e1db5d2bc640d827e9bb1fe5ad2cf316a002f44c",
+        "DataListExtensions.GetDataListItemsByCategory\u003CTEnum\u003E(string)": "c61d19259b7f4d44363ab57e7ed295d9b50de4ac799102a4c9c5b335faf9335a",
+        "DataListExtensions.GetCategories\u003CTEnum\u003E()": "b0893b84cc7df9c4d438386bc0c6cd79ff7f5270f3f3f29ccba71cff1dbf3dc5",
+        "DataListExtensions.GetCategoryCodes\u003CTEnum\u003E()": "c018a659322c486a5b9d47e49108e1a239dcd4367cea7efb5225f4c671946cb9",
         "DataListExtensions.GetFilters(Enum)": "6d73cb0f28d490e27ead41ddb139d661727820a013ca55ea03350747e24a039b",
         "DataListExtensions.GetFilterCriterias(Enum)": "6a6eafb28825e3f8c59b0570edfe4bd16434b1c16e2e0a7e0de424ac8174db69",
         "DataListExtensions.MatchesFilter(Enum, string?)": "5802741470d03d6115faa587fc243cb0906df80c7af5d264b2a0551d24dfec9e",
         "DataListExtensions.MatchesAnyFilter(Enum, IEnumerable\u003Cstring\u003E?)": "d550883bc300feac675451eb756edab4bb7da413f47b60c3837105eac290efb9",
-        "DataListExtensions.GetFilteredValues\u003CTEnum\u003E(string?, string?)": "174ad55c266ee9362e5f19897593bc8e66516dd4c749c38fffe5d6270d7a56af",
-        "DataListExtensions.ToDataListItems\u003CTEnum\u003E(string?, string?)": "60b12610b904307795b1be0c11621761115bf76c6b70f4b3d34370764c2895a4",
+        "DataListExtensions.GetFilteredValues\u003CTEnum\u003E(string?, string?)": "fa435f31a4626ccc3c3c4aa5c1c48fa81a26af7b24a89d6e5332036638616717",
+        "DataListExtensions.ToDataListItems\u003CTEnum\u003E(string?, string?)": "35ef5a8544549a7fda141badc292d23b032cab5ea73d46cf9d1e225246d5a343",
         "DataListExtensions.GetDataListItems\u003CTEnum\u003E()": "0f070ad968818d1cbf920a0f73b9febda6985ba4520a52eda1f5ae181abbd0e3",
         "DataListExtensions.GetFilteredDataListItems\u003CTEnum\u003E(string?)": "934194ab08c493a1555ee29e301555ca7aab85fe21f2dc9cf8c34225e8e660ec",
         "DataListExtensions.GetDataListItems\u003CTEnum\u003E(TEnum)": "a241ef5433e1dd324768c7b61358cfd68243b00cbe4d383d44b6affcb2f5d21c",
-        "DataListExtensions.GetFilteredDataListItems\u003CTEnum\u003E(TEnum, string?)": "19dec0d2cfc356e3c6f8c575b8c02566867abf0c2c9a5731b70680237176bb3b"
+        "DataListExtensions.GetFilteredDataListItems\u003CTEnum\u003E(TEnum, string?)": "19dec0d2cfc356e3c6f8c575b8c02566867abf0c2c9a5731b70680237176bb3b",
+        "DataListExtensions.IsLifecycleEnum\u003CTEnum\u003E()": "1dd7df0016e0027f9d157689f8072ec2e030e5c7888e853eb27fa6554777e239",
+        "DataListExtensions.IsClassificationEnum\u003CTEnum\u003E()": "f245aa86b3dca204f40a7fc51f774220bd6c7f4b91c405515e9c47df8f263dbe",
+        "DataListExtensions.BelongsToCategory\u003CTEnum\u003E(TEnum, string?)": "5263fbf541d190f99d12c0688e082ee71024c7489bfd314c0338312a41146016",
+        "DataListExtensions.GetAllowedNextStates\u003CTEnum\u003E(TEnum, string?)": "eba7d024a2a03759367c19cbfc00f16e921d405a22276e055e30f85abcf114b4",
+        "DataListExtensions.CanTransitionTo\u003CTEnum\u003E(TEnum, TEnum, string?)": "5f8f23cd3b982eef17286f6a253d8b527e620f2557d43e40148bb59a349c2699"
       }
     },
     "Shared/Logging/SharedLoggingExtensions.cs": {
@@ -15785,7 +16335,7 @@
         "FilterInfo.\u003CClone\u003E$()",
         "FilterInfo.FilterInfo(FilterInfo)",
         "FilterInfo.Deconstruct(out string, out string, out string?)",
-        "DataListItem\u003CTEnum\u003E.DataListItem(TEnum, string, string, string?, CategoryInfo?, IReadOnlyList\u003CFilterInfo\u003E?)",
+        "DataListItem\u003CTEnum\u003E.DataListItem(TEnum, string, string, string?, CategoryInfo?, IReadOnlyList\u003CFilterInfo\u003E?, IReadOnlyList\u003CCategoryInfo\u003E?)",
         "DataListItem\u003CTEnum\u003E.EqualityContract.get",
         "DataListItem\u003CTEnum\u003E.EqualityContract",
         "\u003CValue\u003Ek__BackingField",
@@ -15824,6 +16374,14 @@
         "DataListItem\u003CTEnum\u003E.Filters.init",
         "Filters",
         "DataListItem\u003CTEnum\u003E.Filters",
+        "\u003CCategories\u003Ek__BackingField",
+        "DataListItem\u003CTEnum\u003E.Categories.field",
+        "get_Categories",
+        "DataListItem\u003CTEnum\u003E.Categories.get",
+        "set_Categories",
+        "DataListItem\u003CTEnum\u003E.Categories.init",
+        "Categories",
+        "DataListItem\u003CTEnum\u003E.Categories",
         "DataListItem\u003CTEnum\u003E.ToString()",
         "DataListItem\u003CTEnum\u003E.PrintMembers(StringBuilder)",
         "DataListItem\u003CTEnum\u003E.operator !=(DataListItem\u003CTEnum\u003E?, DataListItem\u003CTEnum\u003E?)",
@@ -15833,7 +16391,7 @@
         "DataListItem\u003CTEnum\u003E.Equals(DataListItem\u003CTEnum\u003E?)",
         "DataListItem\u003CTEnum\u003E.\u003CClone\u003E$()",
         "DataListItem\u003CTEnum\u003E.DataListItem(DataListItem\u003CTEnum\u003E)",
-        "DataListItem\u003CTEnum\u003E.Deconstruct(out TEnum, out string, out string, out string?, out CategoryInfo?, out IReadOnlyList\u003CFilterInfo\u003E?)"
+        "DataListItem\u003CTEnum\u003E.Deconstruct(out TEnum, out string, out string, out string?, out CategoryInfo?, out IReadOnlyList\u003CFilterInfo\u003E?, out IReadOnlyList\u003CCategoryInfo\u003E?)"
       ],
       "MemberSyntaxHashes": {}
     },
@@ -16304,7 +16862,7 @@
       ],
       "MemberSyntaxHashes": {
         "AuthorizedPageComponentBase.OnParametersSetAsync()": "95bb073a8344bb6a164bb13966eaf3aeb7c3a7782d4e8bbd66f93e4fafa77dd9",
-        "AuthorizedPageComponentBase.EvaluatePermissionsAsync()": "7fe46bd91cfbb20ed5552dc2c7328debfaa4ccb858cf963341775e80ed7f4795",
+        "AuthorizedPageComponentBase.EvaluatePermissionsAsync()": "45c2b849b2a2a4a3d783fd42354a5d517d22b2510cd5b84b1a5bb202989bde41",
         "AuthorizedPageComponentBase.OnPermissionsEvaluatedAsync()": "ef49d2334a54f100ef0f12fff669542a7a45c09f673d2b2580961f021d360545"
       }
     },
@@ -16384,32 +16942,16 @@
       "KnownMembers": [
         "_rootAdminService",
         "AppCurrentUser._rootAdminService",
+        "_tenantContext",
+        "AppCurrentUser._tenantContext",
+        "_email",
+        "AppCurrentUser._email",
+        "_userId",
+        "AppCurrentUser._userId",
+        "_userName",
+        "AppCurrentUser._userName",
         ".ctor",
-        "AppCurrentUser.AppCurrentUser(IRootAdminService)",
-        "\u003CEmail\u003Ek__BackingField",
-        "AppCurrentUser.Email.field",
-        "Email",
-        "AppCurrentUser.Email",
-        "get_Email",
-        "AppCurrentUser.Email.get",
-        "set_Email",
-        "AppCurrentUser.Email.set",
-        "\u003CUserId\u003Ek__BackingField",
-        "AppCurrentUser.UserId.field",
-        "UserId",
-        "AppCurrentUser.UserId",
-        "get_UserId",
-        "AppCurrentUser.UserId.get",
-        "set_UserId",
-        "AppCurrentUser.UserId.set",
-        "\u003CUserName\u003Ek__BackingField",
-        "AppCurrentUser.UserName.field",
-        "UserName",
-        "AppCurrentUser.UserName",
-        "get_UserName",
-        "AppCurrentUser.UserName.get",
-        "set_UserName",
-        "AppCurrentUser.UserName.set",
+        "AppCurrentUser.AppCurrentUser(IRootAdminService, ITenantContext)",
         "\u003CIsAuthenticated\u003Ek__BackingField",
         "AppCurrentUser.IsAuthenticated.field",
         "IsAuthenticated",
@@ -16418,6 +16960,30 @@
         "AppCurrentUser.IsAuthenticated.get",
         "set_IsAuthenticated",
         "AppCurrentUser.IsAuthenticated.set",
+        "IsAuthenticatedTenantUser",
+        "AppCurrentUser.IsAuthenticatedTenantUser",
+        "get_IsAuthenticatedTenantUser",
+        "AppCurrentUser.IsAuthenticatedTenantUser.get",
+        "Email",
+        "AppCurrentUser.Email",
+        "get_Email",
+        "AppCurrentUser.Email.get",
+        "set_Email",
+        "AppCurrentUser.Email.set",
+        "UserId",
+        "AppCurrentUser.UserId",
+        "get_UserId",
+        "AppCurrentUser.UserId.get",
+        "set_UserId",
+        "AppCurrentUser.UserId.set",
+        "UserName",
+        "AppCurrentUser.UserName",
+        "get_UserName",
+        "AppCurrentUser.UserName.get",
+        "set_UserName",
+        "AppCurrentUser.UserName.set",
+        "SecurityViolation",
+        "AppCurrentUser.SecurityViolation(string)",
         "IsRootAdmin",
         "AppCurrentUser.IsRootAdmin",
         "get_IsRootAdmin",
@@ -16502,15 +17068,16 @@
         "AppCurrentUser.Clear()"
       ],
       "MemberSyntaxHashes": {
+        "AppCurrentUser.SecurityViolation(string)": "c0879fc61569527e15c45f1240a5e6eed96bd10b08dfcb4ad24306cb4d00ea39",
         "AppCurrentUser.IsInRole(string)": "324e0d4642dc06307f1b6cd8ba27882fa46736259cb84eaf1695a2595d4fc4cc",
         "AppCurrentUser.AddRole(string)": "358359e28fce64579ddd9170b95143397d6d06967876868f4d8c9d30d2e45a92",
         "AppCurrentUser.SetRoles(IEnumerable\u003Cstring\u003E)": "ad477399e2f9c711794bc51b77a305a6dbbfcee535836aceaeced74d60828503",
-        "AppCurrentUser.SetUser(string, string, string, bool)": "fc6368f4b83a4a53b02fe572275e7e4c5621e1007db746965006fb3633af9458",
-        "AppCurrentUser.SetImpersonation(string, string, string, string)": "6be4c45ed12eb8025cb4ad8b2a864ea3b1fe585ff6d3193581606e9a11d13c62",
-        "AppCurrentUser.ClearImpersonation(string?, string?, string?)": "01f9d0fb13cf7618a48ab3a9cd764cfa4cc1a1d30ed4685f836359a0e739b984",
-        "AppCurrentUser.SetSystemDaemon(string, string?)": "73a76a412e8cf128ab207ab97dfe2723196112d0e4b228a84b868114e7177773",
-        "AppCurrentUser.RestoreUserContext(string, string, string, bool)": "4db0ad417a89b50797d85252a0d36020e04f1f0f541a72f6e0e17bacd97de65d",
-        "AppCurrentUser.Clear()": "7effc0730c49ca2c667eb79222eb12ee2c32eb9afca7c3b2a09f3dc22925567d"
+        "AppCurrentUser.SetUser(string, string, string, bool)": "811fd511142d8b971ede58e081cf2f2c75f01d832fee8809a95d48e2938b5128",
+        "AppCurrentUser.SetImpersonation(string, string, string, string)": "b923775ca627e6f2cf7bea657bda5631afe06e0c8c8cdbade85d5ccaccc0c2c3",
+        "AppCurrentUser.ClearImpersonation(string?, string?, string?)": "c4d08068256bcfc52be316b9917ce0678edfe86f4b8710d91a7687af2eeed8f4",
+        "AppCurrentUser.SetSystemDaemon(string, string?)": "27d8594ada31814c3123d8c68eafabd1f6d5f35f734ab64842adfdbf25add61b",
+        "AppCurrentUser.RestoreUserContext(string, string, string, bool)": "e66e84d29510b4b18e6fa13b5761b67375e29a66ff4f88cd5c29fe690c71f3a2",
+        "AppCurrentUser.Clear()": "210cb5ec3785cfc04712816916059dfaa6540e697502850cc2f18e0713895fe3"
       }
     },
     "Infrastructure/Security/CurrentUserAuthenticationStateProvider.cs": {
@@ -16518,15 +17085,17 @@
       "KnownMembers": [
         "_currentUser",
         "CurrentUserAuthenticationStateProvider._currentUser",
+        "_tenantContext",
+        "CurrentUserAuthenticationStateProvider._tenantContext",
         ".ctor",
-        "CurrentUserAuthenticationStateProvider.CurrentUserAuthenticationStateProvider(ICurrentUser)",
+        "CurrentUserAuthenticationStateProvider.CurrentUserAuthenticationStateProvider(ICurrentUser, ITenantContext)",
         "GetAuthenticationStateAsync",
         "CurrentUserAuthenticationStateProvider.GetAuthenticationStateAsync()",
         "NotifyUserChanged",
         "CurrentUserAuthenticationStateProvider.NotifyUserChanged()"
       ],
       "MemberSyntaxHashes": {
-        "CurrentUserAuthenticationStateProvider.GetAuthenticationStateAsync()": "603218854d6be5846d6d31bffcdf32d17a2a8f41b8eddc1742f8cc34138d208b",
+        "CurrentUserAuthenticationStateProvider.GetAuthenticationStateAsync()": "73bd88d715d06a6c64d0807c5c557719b4874d4f664950d723e486d3b51a5e03",
         "CurrentUserAuthenticationStateProvider.NotifyUserChanged()": "465725ff7afe2c425d518b86d44a0a353cb67bc8efb90efde8ff13bd2fe48969"
       }
     },
@@ -16744,7 +17313,7 @@
       "RelativePath": "Web/_Imports.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f40b26ad754b24f4bbe21de68874f24859f16bc4daa7b2b63c9d1e6038e5adb0"
+        "$Markup": "40c64a511322ad04e2dde2644a16e84d9486f1b13783ebae221424a2955f5450"
       }
     },
     "Web/Components/App.razor": {
@@ -16758,14 +17327,14 @@
       "RelativePath": "Web/Components/Common/AppErrorBoundaryComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "63b042331c6d9b2a78dee931a8ae5c4082428bb101175915a108027d774c765f"
+        "$Markup": "a71a03f6805c0b442a35f0f101e0ee6b8851469216566447cba13e440f4b20ae"
       }
     },
     "Web/Components/Common/ClearanceGate.razor": {
       "RelativePath": "Web/Components/Common/ClearanceGate.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "01f75c020dec8d55f6fe2ad1595c24c7840ea355deb17cf64bd5c380400c844f"
+        "$Markup": "1abd6be2895cb17c6b6eaf037a11f041421e64e60dce537de1e4491d64155a53"
       }
     },
     "Web/Components/Common/ConfirmDialogModal.razor": {
@@ -16779,7 +17348,14 @@
       "RelativePath": "Web/Components/Common/CreateWorkflowWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "5aa8bc918b605ff7556273d00cbf68268fe48dd88f7fe27917d3be9f702ed7d3"
+        "$Markup": "b94875067b5fd1b334d6723acd3d92971b58bf0afbe3e2093ae95e1d94339db8"
+      }
+    },
+    "Web/Components/Common/DataListSelect.razor": {
+      "RelativePath": "Web/Components/Common/DataListSelect.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "63a9a7f17c886afa4e7baabe731b9c973df0ce50ee3843347d1a68e244b721c8"
       }
     },
     "Web/Components/Common/EmptyStateComp.razor": {
@@ -16849,7 +17425,7 @@
       "RelativePath": "Web/Components/Common/ObservabilityErrorBoundaryComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d9a1b16b6506cb3691acaf0786febff00bed71511e28ffcdedcc4c295da836a4"
+        "$Markup": "20c844925238d1954b2958c10fd4ed82cdc29f6ca15ec48c98d0321c31d40d35"
       }
     },
     "Web/Components/Common/PageHeaderComp.razor": {
@@ -16870,7 +17446,7 @@
       "RelativePath": "Web/Components/Common/ProjectAuthorizeViewComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "5c9b3ceb81b33fc81af2c07ab3ee40dabbf107d8e5ff70108e164a0d0aee8741"
+        "$Markup": "059f5db284b6e97facc3cd31a76882bbde189106df4f843ec42ac13f9097a4c9"
       }
     },
     "Web/Components/Common/RedirectToLogin.razor": {
@@ -16919,14 +17495,14 @@
       "RelativePath": "Web/Components/Layout/MainLayout.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "a8c2d46156c73ceb55c3e78ae5a872827fce03b25b1232c20d04af3176e81104"
+        "$Markup": "8592c240d914865e1056a24722480984c853f5d47dc9c0f908296263e1c92fba"
       }
     },
     "Web/Components/Layout/NavMenuComp.razor": {
       "RelativePath": "Web/Components/Layout/NavMenuComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "3025f9ed78878c56e1bfb0b23e1ba2776cc765bb414ec76ba6abef27dc31ea3d"
+        "$Markup": "c3204555d8d0c2199b0d0fc3a85cf651f192e4e5dbf6b2c0427b3f569b39c764"
       }
     },
     "Web/Components/Layout/NotificationBellPopup.razor": {
@@ -16954,14 +17530,14 @@
       "RelativePath": "Web/Components/Layout/TenantAndProjectSwitcherComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "cc59b3d064ab8f5cb5e7a9907fbe8fe636aecf0dca1d6cde72f0d53fe048dafb"
+        "$Markup": "ffc0d1cac96876694a165ecef33f3d0be0d75fe09592e6c82b19ee4e56433d2d"
       }
     },
     "Web/Components/Layout/TenantSwitcherComp.razor": {
       "RelativePath": "Web/Components/Layout/TenantSwitcherComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "7b61237f4193134e42d18b36ef0882f87ed3d7c6033d41127e02fb2318cfecb2"
+        "$Markup": "2f01d667edd3a15ba65b4fc12106722069a6a333cdf83d3d4e7013be135ed747"
       }
     },
     "Web/Components/Pages/AuthErrorPage.razor": {
@@ -16989,7 +17565,7 @@
       "RelativePath": "Web/Components/Pages/LoginPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "93be7489cf0a18c11fd3ccac4090944447b2049c8475072f40f2108fa5ad5236"
+        "$Markup": "5376bab3ea68d13e7957bf1296c8e36f96d4a49d8d9d765819a2bfddf0dbadee"
       }
     },
     "Web/Components/Pages/NotFoundPage.razor": {
@@ -17003,70 +17579,70 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsAuditTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "76b742c3d21ba378028ce408bacaf94a1fd0e80cc58a7850516af79149750557"
+        "$Markup": "192f028a6c8041be44c056332dcd2c96a474e0d2c265d5711b47c97cffc8adba"
       }
     },
     "Web/Components/Pages/Settings/SettingsEventsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsEventsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "873ec2415497f4f730b064118be66574b00ccac447868ec151f9ae7c9a4269a6"
+        "$Markup": "b80e6bcd8358109418970d0bf6cbdb38f270791da5f6f5c1a0f529023228070a"
       }
     },
     "Web/Components/Pages/Settings/SettingsJobsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsJobsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "9398fca535c7bc39419cd6e212e809e436a58d5acd0c27270e25d81349fa3fbe"
+        "$Markup": "3b0556f5c9cffe0869cb673cdc1f7b5014d854f68569e93c9528e4e15157d8c0"
       }
     },
     "Web/Components/Pages/Settings/SettingsNotificationsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsNotificationsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "6d64ef916080eaa0744d913691cb5b078195bc1aa1fb5990d8010e7b69f4fa75"
+        "$Markup": "75705740befb350721d0293f8e7ef475ad0cb0886d0f5d64985747f60e96c708"
       }
     },
     "Web/Components/Pages/Settings/SettingsPage.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "24c4c3caf60526cb8a212847e60b275386f6b6fa62b45c431676636b09c7a40f"
+        "$Markup": "889a9387754b01d3f6acb526a9966692c57ddde8ae3090f08c526adcb8a0ab24"
       }
     },
     "Web/Components/Pages/Settings/SettingsProgramsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsProgramsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "cb59a4649e874fd5875c359d89ba581eccde070ea7e9cb99aadb4dde7bebe3ea"
+        "$Markup": "9901573f10eda2154054591356d7db2437b912dfbe40a9e57b7cde91a5806d04"
       }
     },
     "Web/Components/Pages/Settings/SettingsProjectsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsProjectsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "1bbacebaf812b9f74a7c0806beb2ecd9426b04b0dc0ec056a37f35a915780d7a"
+        "$Markup": "857bda5d72680f65fd29e15b33ae66ac15e3c149a7aa72f2d29bbc7975bcdf4c"
       }
     },
     "Web/Components/Pages/Settings/SettingsSessionsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsSessionsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "cf23931f8bf284a9878535da3ba2dcd220f02c483b8825cf81baacbfcc0c1298"
+        "$Markup": "0fffae924454edba014a26422927b8ef10536e4ac3b4297dd699f94854c1af04"
       }
     },
     "Web/Components/Pages/Settings/SettingsTenantsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsTenantsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "1020ed4d0eb47d3dd8d7b081450b301a4a3138cfb0bf6b475d08435ccb293292"
+        "$Markup": "f74bc10357ec1d269953140164eefd8416158e741adfbe7de714e40ea4bc525a"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "339ffc0fc25ffcca6f87a43a021e517108138a77b008f5e75dac43add0759b6f"
+        "$Markup": "9141166dc408efdb83572b6279e145d8f0b3d5dc6a61e5a4ccae93abb5c0f3a4"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserTab.razor": {
@@ -17080,7 +17656,7 @@
       "RelativePath": "Web/Components/Routes.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ee31d6b2a22c33f05d41aa78c2842f7998699ad07e4a4abe52fd10323c291dba"
+        "$Markup": "5b7078c2a7a5b8af427add67a2a1d0af1f2870ae7cfe2a8e43ae166510ea2bf6"
       }
     },
     "Web/Modules/Events/Pages/EventTrackerDashboardPage.razor": {
@@ -17101,7 +17677,7 @@
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "0729751c2a382e4416425b703fd8e5cf0116f7ecc1e3842277df9b5b5c5f7361"
+        "$Markup": "d99be91f819a2355b457098c8655b4d53f250fdddd254cce075e1ba4f347d267"
       }
     },
     "Jobs/Pages/JobsDashboardPage.razor": {
@@ -17143,7 +17719,7 @@
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4e46ce33410ba9facc47218f982be8aefe29dc266ebae6456ebfe65b99a350b0"
+        "$Markup": "55a533cc9f22e5952e1c09a600d9658b9c9decb84888534a2d0c6efe19666ae7"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectsDashboardPage.razor": {
@@ -17171,7 +17747,7 @@
       "RelativePath": "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "3766bb0c268d25f47386222cea33cfa0281e1851111c0bbee2a5ac7bde2449ba"
+        "$Markup": "0ccc16ee613c76ac2d6a34b7809d72c2abe9d02abc1770cd6b35c9b6af0770e0"
       }
     }
   }

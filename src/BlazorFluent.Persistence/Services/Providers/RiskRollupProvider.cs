@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +17,7 @@ public class RiskRollupProvider : IWorkItemRollupProvider
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.Risk;
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
-        string tenantId,
+        Guid tenantId,
         TaskLevelEnum level,
         Guid? scopeId,
         string? userId,

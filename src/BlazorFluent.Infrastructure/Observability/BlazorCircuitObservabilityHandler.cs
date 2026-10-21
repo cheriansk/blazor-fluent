@@ -29,7 +29,7 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
         _openedAt = _dateTimeProvider.Now;
         _logger.LogInformation(
             "Blazor Circuit opened: CircuitId={CircuitId}, TenantId={TenantId}, UserId={UserId}",
-            circuit.Id, _tenantContext.TenantId.ToString() ?? "uninitialized", _currentUser.UserId ?? "anonymous");
+            circuit.Id, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"), (_currentUser.IsAuthenticated ? _currentUser.UserId : "anonymous"));
 
         return base.OnCircuitOpenedAsync(circuit, cancellationToken);
     }
@@ -38,7 +38,7 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
     {
         _logger.LogDebug(
             "Blazor Circuit connection up: CircuitId={CircuitId}, TenantId={TenantId}",
-            circuit.Id, _tenantContext.TenantId.ToString() ?? "uninitialized");
+            circuit.Id, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"));
 
         return base.OnConnectionUpAsync(circuit, cancellationToken);
     }
@@ -47,7 +47,7 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
     {
         _logger.LogWarning(
             "Blazor Circuit connection lost (network drop or tab backgrounded): CircuitId={CircuitId}, TenantId={TenantId}",
-            circuit.Id, _tenantContext.TenantId.ToString() ?? "uninitialized");
+            circuit.Id, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"));
 
         return base.OnConnectionDownAsync(circuit, cancellationToken);
     }
@@ -57,7 +57,7 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
         var duration = _dateTimeProvider.Now - _openedAt;
         _logger.LogInformation(
             "Blazor Circuit closed: CircuitId={CircuitId}, Duration={Duration}, TenantId={TenantId}, UserId={UserId}",
-            circuit.Id, duration, _tenantContext.TenantId.ToString() ?? "uninitialized", _currentUser.UserId ?? "anonymous");
+            circuit.Id, duration, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"), (_currentUser.IsAuthenticated ? _currentUser.UserId : "anonymous"));
 
         return base.OnCircuitClosedAsync(circuit, cancellationToken);
     }

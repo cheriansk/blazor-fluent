@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Domain.Jobs;
+﻿using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -48,7 +48,7 @@ public class JobExecutionEntityConfiguration : IEntityTypeConfiguration<JobExecu
             .IsRequired(false);
 
         builder.Property(e => e.StartedAt)
-            .IsRequired(false);
+            .IsRequired();
 
         builder.Property(e => e.CompletedAt)
             .IsRequired(false);

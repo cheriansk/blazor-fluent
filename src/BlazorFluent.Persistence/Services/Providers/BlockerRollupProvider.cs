@@ -17,7 +17,7 @@ public class BlockerRollupProvider : IWorkItemRollupProvider
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.BlockerDependency;
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
-        string tenantId,
+        Guid tenantId,
         TaskLevelEnum level,
         Guid? scopeId,
         string? userId,

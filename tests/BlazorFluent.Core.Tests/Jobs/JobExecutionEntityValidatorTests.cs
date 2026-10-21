@@ -16,7 +16,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "TaskCadenceAlertJob",
-            TenantId = "tnt_acme",
+            TenantId = Guid.NewGuid(),
             CorrelationId = "corr_12345678",
             TriggerSource = JobTriggerSourceEnum.Manual,
             Status = JobStatusEnum.Running,
@@ -38,7 +38,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "DatabaseVacuumJob",
-            TenantId = "HOST",
+            TenantId = BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId,
             CorrelationId = "corr_system_999",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatusEnum.Succeeded,
@@ -62,7 +62,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "TaskCadenceAlertJob",
-            TenantId = "tnt_acme",
+            TenantId = Guid.NewGuid(),
             CorrelationId = "", // Invalid
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatusEnum.Running,
@@ -84,7 +84,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "TaskCadenceAlertJob",
-            TenantId = "", // Invalid
+            TenantId = Guid.Empty, // Invalid
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatusEnum.Running,
@@ -106,7 +106,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "", // Invalid
-            TenantId = "tnt_acme",
+            TenantId = Guid.NewGuid(),
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatusEnum.Running,
@@ -128,7 +128,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "TaskCadenceAlertJob",
-            TenantId = "tnt_acme",
+            TenantId = Guid.NewGuid(),
             CorrelationId = "corr_12345",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatusEnum.Succeeded,

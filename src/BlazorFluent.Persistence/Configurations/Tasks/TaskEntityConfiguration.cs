@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -85,7 +85,7 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .IsRequired(false);
 
         builder.Property(t => t.ProjectId)
-            .IsRequired(false);
+            .IsRequired();
 
         builder.Property(t => t.UserId)
             .HasMaxLength(256)

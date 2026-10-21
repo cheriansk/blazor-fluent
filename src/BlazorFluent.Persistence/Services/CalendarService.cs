@@ -28,7 +28,7 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetProgramCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         Guid programId,
         DateTime startUtc,
         DateTime endUtc,
@@ -73,7 +73,7 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetProjectCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         Guid projectId,
         DateTime startUtc,
         DateTime endUtc,
@@ -118,7 +118,7 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetUserCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         string userId,
         DateTime startUtc,
         DateTime endUtc,

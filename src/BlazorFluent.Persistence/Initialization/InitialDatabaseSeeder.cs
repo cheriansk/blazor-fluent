@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
@@ -17,16 +18,12 @@ namespace BlazorFluent.Persistence.Initialization;
 /// </summary>
 public static class InitialDatabaseSeeder
 {
-    public const string DefaultTenantSlug = "default";
-    public const string DefaultTenantName = "System Root Anchor";
+    public const string DefaultTenantSlug = IRootAdminService.RootTenantSlug;
+    public const string DefaultTenantName = IRootAdminService.RootTenantName;
 
     public static async Task SeedAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         using var scope = serviceProvider.CreateScope();
-        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.SetSystemDaemon("DatabaseSeeder");
-
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var hostEnvironment = scope.ServiceProvider.GetService<IHostEnvironment>();
@@ -38,15 +35,31 @@ public static class InitialDatabaseSeeder
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
         }
-        var adminEmails = rootAdminService.GetRootAdminEmails();
 
-        // 1. Ensure internal root anchor Default Tenant exists
+        var adminEmails = rootAdminService.GetRootAdminEmails();
+        if (adminEmails.Count == 0)
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: RootAdmins configuration must contain at least one valid administrator email address.");
+        }
+
+        var primaryAdminEmail = adminEmails[0].Trim().ToLowerInvariant();
+
+        // Initialize tenant and user context for startup seeding under Root Admin identity in Root Tenant
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        tenantContext.SetTenant(IRootAdminService.RootTenantId, IRootAdminService.RootTenantSlug, IRootAdminService.RootTenantName);
+
+        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+        currentUser?.RestoreUserContext("root-seeder-bootstrap", primaryAdminEmail, "System Administrator", isRootAdmin: true);
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // 1. Ensure internal root anchor Root Tenant exists
         var defaultTenant = await dbContext.Tenants
-            .FirstOrDefaultAsync(t => t.Slug == DefaultTenantSlug, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == IRootAdminService.RootTenantId || t.Slug == DefaultTenantSlug, cancellationToken);
 
         if (defaultTenant is null)
         {
-            logger.LogInformation("Provisioning internal root anchor default tenant ('{Slug}')...", DefaultTenantSlug);
+            logger.LogInformation("Provisioning internal root anchor tenant ('{Slug}', ID: {Id})...", DefaultTenantSlug, IRootAdminService.RootTenantId);
 
             // Derive internal domains strictly from configured admin emails
             var adminDomains = adminEmails
@@ -62,7 +75,7 @@ public static class InitialDatabaseSeeder
 
             defaultTenant = new TenantEntity
             {
-                Id = Guid.NewGuid(),
+                Id = IRootAdminService.RootTenantId,
                 Slug = DefaultTenantSlug,
                 Name = DefaultTenantName,
                 InternalEmailDomains = string.Join(";", adminDomains),
@@ -74,7 +87,7 @@ public static class InitialDatabaseSeeder
 
             dbContext.Tenants.Add(defaultTenant);
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Internal root anchor default tenant provisioned successfully.");
+            logger.LogInformation("Internal root anchor tenant provisioned successfully.");
         }
 
         // 2. Seed up to 3 Root Administrator accounts inside the default tenant
@@ -123,10 +136,8 @@ public static class InitialDatabaseSeeder
                     Id = Guid.NewGuid(),
                     TenantId = defaultTenant.Id,
                     UserEntityId = user.Id,
-                    Role = TenantAdminRoleEnum.TenantAdmin,
+                    Role = TenantRoleEnum.TenantAdmin,
                     IsActive = true,
-                    StartDate = user.StartDate,
-                    EndDate = user.EndDate
                 };
                 tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
                 dbContext.TenantUsers.Add(tenantUser);
@@ -146,10 +157,8 @@ public static class InitialDatabaseSeeder
                         Id = Guid.NewGuid(),
                         TenantId = defaultTenant.Id,
                         UserEntityId = existingUser.Id,
-                        Role = TenantAdminRoleEnum.TenantAdmin,
+                        Role = TenantRoleEnum.TenantAdmin,
                         IsActive = true,
-                        StartDate = existingUser.StartDate,
-                        EndDate = existingUser.EndDate
                     };
                     tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
                     dbContext.TenantUsers.Add(tenantUser);

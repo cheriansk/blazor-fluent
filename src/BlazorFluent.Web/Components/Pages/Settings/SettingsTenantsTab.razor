@@ -827,9 +827,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var tenantId = TenantContext.TenantId;
-        var userId = CurrentUser.UserId ?? string.Empty;
-        _canEditTenants = IsRootAdmin || (tenantId!=null && !string.IsNullOrWhiteSpace(userId) && await HierarchyAuth.CanEditTenantSettingsAsync(tenantId, userId));
+        var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : string.Empty;
+        _canEditTenants = IsRootAdmin || (TenantContext.HasActiveTenant && !string.IsNullOrWhiteSpace(userId) && await HierarchyAuth.CanEditTenantSettingsAsync(TenantContext.TenantId, userId));
         await LoadTenantsAsync();
     }
 

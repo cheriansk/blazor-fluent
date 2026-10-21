@@ -1,11 +1,23 @@
+using System;
+using System.Security;
+
 namespace BlazorFluent.Core.Contracts;
 
 public interface ICurrentUser
 {
-    string Email { get; }
-    string? UserId { get; }
-    string? UserName { get; }
     bool IsAuthenticated { get; }
+
+    /// <summary>
+    /// Non-nullable authenticated UserId. Logs Critical and throws SecurityException if accessed when !IsAuthenticated.
+    /// </summary>
+    string UserId { get; }
+
+    /// <summary>
+    /// Non-nullable authenticated Email. Logs Critical and throws SecurityException if accessed when !IsAuthenticated.
+    /// </summary>
+    string Email { get; }
+
+    string UserName { get; }
     bool IsInRole(string role);
 
     // Impersonation & Session Tracking
@@ -25,11 +37,18 @@ public interface ICurrentUser
     bool IsSystemDaemon { get; }
 
     /// <summary>
+    /// Unified Zero-Trust Guardrail: True if and only if the caller is an authenticated human user (!IsSystemDaemon)
+    /// AND has an active non-empty tenant initialized in ITenantContext (HasActiveTenant).
+    /// SystemDaemons always return false.
+    /// </summary>
+    bool IsAuthenticatedTenantUser { get; }
+
+    /// <summary>
     /// Configures the current scoped context as an internal background system daemon.
     /// Strictly restricted to background workers and seeders.
-    /// When serviceEmail is omitted, dynamically resolves an internal service account scoped to the system tenant authority.
+    /// When initiatingUserEmail is omitted, dynamically resolves an internal service account scoped to the system tenant authority.
     /// </summary>
-    void SetSystemDaemon(string daemonName, string? serviceEmail = null);
+    void SetSystemDaemon(string daemonName, string? initiatingUserEmail = null);
 
     /// <summary>
     /// Restores an authenticated user identity into a background execution scope (e.g. queue listeners).
@@ -39,6 +58,7 @@ public interface ICurrentUser
 
 public class DefaultCurrentUser : ICurrentUser
 {
+    private readonly ITenantContext? _tenantContext;
     private bool _isSystemDaemon;
     private string? _daemonName;
     private string? _daemonEmail;
@@ -47,10 +67,25 @@ public class DefaultCurrentUser : ICurrentUser
     private string? _restoredUserName;
     private bool _restoredIsRootAdmin;
 
-    public string Email => _restoredEmail ?? (_isSystemDaemon ? (_daemonEmail ?? string.Empty) : string.Empty);
-    public string? UserId => _restoredUserId ?? (_isSystemDaemon ? $"daemon:{_daemonName}" : null);
-    public string? UserName => _restoredUserName ?? (_isSystemDaemon ? _daemonName : null);
+    public DefaultCurrentUser(ITenantContext? tenantContext = null)
+    {
+        _tenantContext = tenantContext;
+    }
+
     public bool IsAuthenticated => _isSystemDaemon || _restoredUserId != null;
+
+    public string Email => IsAuthenticated
+        ? (_restoredEmail ?? _daemonEmail ?? string.Empty)
+        : throw new SecurityException("Zero-Trust Security Violation: Email cannot be accessed on an unauthenticated context.");
+
+    public string UserId => IsAuthenticated
+        ? (_restoredUserId ?? (_isSystemDaemon ? $"daemon:{_daemonName}" : string.Empty))
+        : throw new SecurityException("Zero-Trust Security Violation: UserId cannot be accessed on an unauthenticated context.");
+
+    public string UserName => IsAuthenticated
+        ? (_restoredUserName ?? _daemonName ?? string.Empty)
+        : throw new SecurityException("Zero-Trust Security Violation: UserName cannot be accessed on an unauthenticated context.");
+
     public bool IsInRole(string role) => false;
 
     public bool IsImpersonated => false;
@@ -59,12 +94,15 @@ public class DefaultCurrentUser : ICurrentUser
     public bool IsRootAdmin => _restoredIsRootAdmin;
     public bool IsSystemDaemon => _isSystemDaemon;
 
-    public void SetSystemDaemon(string daemonName, string? serviceEmail = null)
+    public bool IsAuthenticatedTenantUser =>
+        IsAuthenticated && !_isSystemDaemon && (_tenantContext?.HasActiveTenant ?? false);
+
+    public void SetSystemDaemon(string daemonName, string? initiatingUserEmail = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(daemonName);
 
-        var resolvedEmail = !string.IsNullOrWhiteSpace(serviceEmail)
-            ? serviceEmail
+        var resolvedEmail = !string.IsNullOrWhiteSpace(initiatingUserEmail)
+            ? initiatingUserEmail
             : Utilities.SystemIdentityUtility.FormatInternalDaemonEmail(daemonName);
 
         _isSystemDaemon = true;

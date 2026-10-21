@@ -1,9 +1,11 @@
+using System.Security;
 using System.Text.Json;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Events;
+using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Utilities;
@@ -118,14 +120,35 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 continue;
             }
 
+            // ─── 0a. SYSTEM DAEMON RESTRICTION GUARD ────────────────────────────────
+            // SystemDaemon can NEVER perform administrative operations: creating/modifying/deleting
+            // Tenants, Users, or Role assignments (TenantUser, ProgramUserRole, ProjectUserRole).
+            // Daemons are restricted to pure data processing only.
+            if (currentUser.IsSystemDaemon || SystemIdentityUtility.IsSystemDaemon(currentUser.UserId))
+            {
+                if (entry.Entity is TenantEntity or UserEntity or TenantUserEntity or ProgramUserRoleEntity or ProjectUserRoleEntity)
+                {
+                    _logger.LogCritical(
+                        "CRITICAL SECURITY VIOLATION: System daemon '{DaemonId}' attempted {State} on administrative entity '{EntityType}'. System daemons are strictly restricted to data processing only.",
+                        currentUser.UserId, entry.State, entry.Entity.GetType().Name);
+
+                    throw new SecurityException(
+                        $"CRITICAL SECURITY VIOLATION: System daemon '{currentUser.UserId}' is strictly restricted to data processing only and cannot modify administrative entity '{entry.Entity.GetType().Name}'.");
+                }
+            }
+
             // ─── 0b. TENANT ADMIN SEPARATION OF DUTIES GUARD ─────────────────────────
-            // Only App Administrators (Root Admins) can assign, modify, or revoke TenantAdmin role
+            // Only Root Admins operating within the Root Tenant can assign, modify, or revoke TenantAdmin role
             if (entry.Entity is TenantUserEntity tu && entry.State is EntityState.Added or EntityState.Modified)
             {
-                if (tu.Role == TenantRoleEnum.TenantAdmin && !currentUser.IsRootAdmin && !currentUser.IsSystemDaemon && !SystemIdentityUtility.IsSystemDaemon(currentUser.UserId))
+                if (tu.Role == TenantRoleEnum.TenantAdmin && (!currentUser.IsRootAdmin || !tenantContext.IsRootTenant))
                 {
-                    throw new InvalidOperationException(
-                        $"Zero-Trust Security Violation: User '{currentUser.Email}' attempted to assign or update the TenantAdmin role on TenantUserEntity {tu.Id}. Only App Administrators (Root Admins) can assign Tenant Admin privileges.");
+                    _logger.LogCritical(
+                        "CRITICAL SECURITY VIOLATION: Caller '{Caller}' (Email: '{Email}') attempted to assign or update the TenantAdmin role on TenantUserEntity {EntityId}. Only Root Admins operating within the Root Tenant can assign Tenant Admin privileges.",
+                        currentUserId, currentUser.Email, tu.Id);
+
+                    throw new SecurityException(
+                        $"Zero-Trust Security Violation: Caller '{currentUser.Email}' attempted to assign or update the TenantAdmin role on TenantUserEntity {tu.Id}. Only Root Admins operating within the Root Tenant can assign Tenant Admin privileges.");
                 }
             }
 
@@ -161,36 +184,34 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 if (entry.State == EntityState.Added)
                 {
                     // If TenantId was not set by application code, inject the current context's tenant.
-                    // Host users with IsHost=true can write to any tenant explicitly.
                     if (tenantEntity.TenantId == Guid.Empty)
                     {
-                        if (!tenantContext.TenantId.HasValue || tenantContext.TenantId.Value == Guid.Empty)
+                        if (!tenantContext.HasActiveTenant || tenantContext.TenantId == Guid.Empty)
                         {
-                            _logger.LogError(
-                                "Tenant isolation error: Cannot save entity '{EntityType}' because TenantId is not set and no active tenant is available in ITenantContext",
+                            _logger.LogCritical(
+                                "CRITICAL SECURITY VIOLATION: Cannot save entity '{EntityType}' because TenantId is not set and no active tenant is available in ITenantContext.",
                                 entry.Entity.GetType().Name);
 
                             // Fail-closed: never persist an entity without a TenantId
-                            throw new InvalidOperationException(
-                                $"Cannot save entity '{entry.Entity.GetType().Name}': " +
-                                $"TenantId is not set and no active tenant is available in ITenantContext. " +
-                                $"Ensure the user session is fully initialized before writing tenant-scoped data.");
+                            throw new SecurityException(
+                                $"Cannot save entity '{entry.Entity.GetType().Name}': TenantId is not set and no active tenant is available in ITenantContext. Ensure the user session is fully initialized before writing tenant-scoped data.");
                         }
 
-                        tenantEntity.TenantId = tenantContext.TenantId.Value;
+                        tenantEntity.TenantId = tenantContext.TenantId;
                     }
-                    else if (!tenantContext.IsHost &&
-                             tenantContext.TenantId.HasValue &&
-                             tenantEntity.TenantId != tenantContext.TenantId.Value)
+                    else if (tenantContext.HasActiveTenant && tenantEntity.TenantId != tenantContext.TenantId)
                     {
-                        _logger.LogWarning(
-                            "Security violation: attempt to insert entity '{EntityType}' into tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
-                            entry.Entity.GetType().Name, tenantEntity.TenantId, tenantContext.TenantId);
+                        // Narrow exception: Root Admin operating in Root Tenant assigning TenantAdmin role to customer tenant
+                        var isRootAssigningTenantAdmin = tenantContext.IsRootTenant && currentUser.IsRootAdmin && entry.Entity is TenantUserEntity newTu && newTu.Role == TenantRoleEnum.TenantAdmin;
+                        if (!isRootAssigningTenantAdmin)
+                        {
+                            _logger.LogCritical(
+                                "CRITICAL SECURITY VIOLATION: attempt to insert entity '{EntityType}' into tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
+                                entry.Entity.GetType().Name, tenantEntity.TenantId, tenantContext.TenantId);
 
-                        // Security: a non-host user is trying to write to a different tenant's data.
-                        throw new InvalidOperationException(
-                            $"Security violation: attempt to insert entity '{entry.Entity.GetType().Name}' " +
-                            $"into tenant '{tenantEntity.TenantId}' while active tenant is '{tenantContext.TenantId}'.");
+                            throw new SecurityException(
+                                $"Security violation: attempt to insert entity '{entry.Entity.GetType().Name}' into tenant '{tenantEntity.TenantId}' while active tenant is '{tenantContext.TenantId}'.");
+                        }
                     }
                 }
                 else if (entry.State == EntityState.Modified)
@@ -199,11 +220,11 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     // 1. TenantId is immutable across all tenant entities
                     if (entry.Property(TenantIdProperty).IsModified)
                     {
-                        _logger.LogWarning(
-                            "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable TenantId on '{Entity}' from '{Original}' to '{Current}'",
+                        _logger.LogCritical(
+                            "CRITICAL SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable TenantId on '{Entity}' from '{Original}' to '{Current}'",
                             currentUserId, entry.Entity.GetType().Name, entry.Property(TenantIdProperty).OriginalValue, entry.Property(TenantIdProperty).CurrentValue);
 
-                        throw new InvalidOperationException(
+                        throw new SecurityException(
                             $"Security Violation: 'TenantId' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
                     }
 
@@ -212,50 +233,52 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     {
                         if (entry.Property(nameof(BaseTaskEntity.Level)).IsModified)
                         {
-                            _logger.LogWarning(
-                                "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable Level on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
+                            _logger.LogCritical(
+                                "CRITICAL SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable Level on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
                                 currentUserId, entry.Entity.GetType().Name, baseTask.Id, entry.Property(nameof(BaseTaskEntity.Level)).OriginalValue, baseTask.Level);
 
-                            throw new InvalidOperationException(
+                            throw new SecurityException(
                                 $"Security Violation: 'Level' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
                         }
 
                         if (entry.Property(nameof(BaseTaskEntity.ProgramId)).IsModified)
                         {
-                            _logger.LogWarning(
-                                "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable ProgramId on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
+                            _logger.LogCritical(
+                                "CRITICAL SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable ProgramId on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
                                 currentUserId, entry.Entity.GetType().Name, baseTask.Id, entry.Property(nameof(BaseTaskEntity.ProgramId)).OriginalValue, baseTask.ProgramId);
 
-                            throw new InvalidOperationException(
+                            throw new SecurityException(
                                 $"Security Violation: 'ProgramId' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
                         }
 
                         if (entry.Property(nameof(BaseTaskEntity.ProjectId)).IsModified)
                         {
-                            _logger.LogWarning(
-                                "SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable ProjectId on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
+                            _logger.LogCritical(
+                                "CRITICAL SECURITY ALERT: Caller '{Caller}' attempted to mutate immutable ProjectId on '{Entity}' ({Id}) from '{Original}' to '{Current}'",
                                 currentUserId, entry.Entity.GetType().Name, baseTask.Id, entry.Property(nameof(BaseTaskEntity.ProjectId)).OriginalValue, baseTask.ProjectId);
 
-                            throw new InvalidOperationException(
+                            throw new SecurityException(
                                 $"Security Violation: 'ProjectId' is immutable on '{entry.Entity.GetType().Name}' and cannot be altered once created.");
                         }
                     }
 
-                    // Cross-tenant write guard for non-host users (check both original and current values)
+                    // Cross-tenant write guard (check both original and current values)
                     var originalTenantId = (Guid)entry.Property(TenantIdProperty).OriginalValue;
-                    if (!tenantContext.IsHost &&
-                        tenantContext.TenantId.HasValue &&
-                        ((originalTenantId != Guid.Empty && originalTenantId != tenantContext.TenantId.Value) ||
-                         tenantEntity.TenantId != tenantContext.TenantId.Value))
+                    if (tenantContext.HasActiveTenant &&
+                        ((originalTenantId != Guid.Empty && originalTenantId != tenantContext.TenantId) ||
+                         tenantEntity.TenantId != tenantContext.TenantId))
                     {
-                        var violatingTenant = originalTenantId != Guid.Empty ? originalTenantId : tenantEntity.TenantId;
-                        _logger.LogWarning(
-                            "Security violation: attempt to modify entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
-                            entry.Entity.GetType().Name, violatingTenant, tenantContext.TenantId);
+                        var isRootAssigningTenantAdmin = tenantContext.IsRootTenant && currentUser.IsRootAdmin && entry.Entity is TenantUserEntity;
+                        if (!isRootAssigningTenantAdmin)
+                        {
+                            var violatingTenant = originalTenantId != Guid.Empty ? originalTenantId : tenantEntity.TenantId;
+                            _logger.LogCritical(
+                                "CRITICAL SECURITY VIOLATION: attempt to modify entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
+                                entry.Entity.GetType().Name, violatingTenant, tenantContext.TenantId);
 
-                        throw new InvalidOperationException(
-                            $"Security violation: attempt to modify entity '{entry.Entity.GetType().Name}' " +
-                            $"belonging to tenant '{violatingTenant}' while active tenant is '{tenantContext.TenantId}'.");
+                            throw new SecurityException(
+                                $"Security violation: attempt to modify entity '{entry.Entity.GetType().Name}' belonging to tenant '{violatingTenant}' while active tenant is '{tenantContext.TenantId}'.");
+                        }
                     }
                 }
                 else if (entry.State == EntityState.Deleted)
@@ -266,15 +289,14 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     {
                         originalTenantId = tenantEntity.TenantId;
                     }
-                    if (!tenantContext.IsHost && tenantContext.TenantId.HasValue && originalTenantId != tenantContext.TenantId.Value)
+                    if (tenantContext.HasActiveTenant && originalTenantId != tenantContext.TenantId)
                     {
-                        _logger.LogWarning(
-                            "Security violation: attempt to delete entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
+                        _logger.LogCritical(
+                            "CRITICAL SECURITY VIOLATION: attempt to delete entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
                             entry.Entity.GetType().Name, originalTenantId, tenantContext.TenantId);
 
-                        throw new InvalidOperationException(
-                            $"Security violation: attempt to delete entity '{entry.Entity.GetType().Name}' " +
-                            $"belonging to tenant '{originalTenantId}' while active tenant is '{tenantContext.TenantId}'.");
+                        throw new SecurityException(
+                            $"Security violation: attempt to delete entity '{entry.Entity.GetType().Name}' belonging to tenant '{originalTenantId}' while active tenant is '{tenantContext.TenantId}'.");
                     }
                 }
             }
@@ -496,24 +518,27 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
 
-            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? tenantContext.TenantId ?? SystemIdentityUtility.SystemDaemonTenantId;
-            if (tenantId == Guid.Empty)
+            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? Guid.Empty;
+            if (tenantId == Guid.Empty && tenantContext.HasActiveTenant)
             {
-                tenantId = tenantContext.TenantId ?? SystemIdentityUtility.SystemDaemonTenantId;
+                tenantId = tenantContext.TenantId;
             }
 
             if (tenantId == Guid.Empty)
             {
-                throw new InvalidOperationException(
+                _logger.LogCritical("CRITICAL SECURITY VIOLATION: Cannot record entity audit for '{EntityName}'. Active tenant context is missing.", entityName);
+                throw new SecurityException(
                     $"Zero-Trust Security Violation: Cannot record entity audit for '{entityName}'. Active tenant context is missing.");
             }
+
+            var userEmail = !string.IsNullOrWhiteSpace(currentUser.Email) ? currentUser.Email : currentUserId;
 
             var record = new AuditRecordEntity
             {
                 Id = Guid.CreateVersion7(),
                 TenantId = tenantId,
                 UserId = currentUserId,
-                UserEmail = currentUser.Email,
+                UserEmail = userEmail,
                 UserType = tenantContext.UserType,
                 EventType = AuditEventTypeEnum.EntityChange,
                 Severity = AuditSeverityEnum.Information,
@@ -528,33 +553,6 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             };
 
             auditRecords.Add(record);
-
-            // Forensic Oversight: Audit Host user exercising cross-tenant modification privilege
-            if (tenantContext.IsHost &&
-                tenantContext.TenantId.HasValue &&
-                tenantContext.TenantId.Value != Guid.Empty &&
-                tenantId != tenantContext.TenantId.Value)
-            {
-                var crossTenantSecurityAudit = new AuditRecordEntity
-                {
-                    Id = Guid.CreateVersion7(),
-                    TenantId = tenantId,
-                    UserId = currentUserId,
-                    UserEmail = currentUser.Email,
-                    UserType = tenantContext.UserType,
-                    EventType = AuditEventTypeEnum.Security,
-                    Severity = AuditSeverityEnum.Warning,
-                    EntityName = entityName,
-                    EntityId = entityId,
-                    Operation = operation,
-                    Description = $"[Host Oversight] Host user '{currentUserId}' performed cross-tenant {operation} on entity '{entityName}' (ID: {entityId}) in tenant '{tenantId}'.",
-                    Created = now,
-                    CreatedBy = currentUserId,
-                    Updated = now,
-                    UpdatedBy = currentUserId
-                };
-                auditRecords.Add(crossTenantSecurityAudit);
-            }
         }
 
         if (auditRecords.Count > 0)

@@ -17,9 +17,9 @@ public sealed class RootAdminService : IRootAdminService
     {
         _logger = logger;
 
-        var rawConfig = configuration["Security:RootAdmins"] ?? string.Empty;
+        var rawConfig = configuration["Admin:RootAdmins"] ?? configuration["Security:RootAdmins"] ?? configuration["Admin:KeyVaultUsers"] ?? string.Empty;
         var parsed = rawConfig
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(e => e.ToLowerInvariant())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();

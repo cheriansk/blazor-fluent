@@ -48,6 +48,7 @@ public static class JobStatusEnumDefinitions
     {
         [Display(Name = "Active Jobs", Description = "Filters for active and pending jobs")]
         public const string ActiveOnly = "ActiveOnly";
+    }
 
     public static readonly IReadOnlyDictionary<JobStatusEnum, IReadOnlySet<JobStatusEnum>> AllowedTransitions =
         new Dictionary<JobStatusEnum, IReadOnlySet<JobStatusEnum>>
@@ -58,5 +59,4 @@ public static class JobStatusEnumDefinitions
             [JobStatusEnum.Failed] = new HashSet<JobStatusEnum> { JobStatusEnum.Queued },
             [JobStatusEnum.Succeeded] = new HashSet<JobStatusEnum>()
         };
-    }
 }

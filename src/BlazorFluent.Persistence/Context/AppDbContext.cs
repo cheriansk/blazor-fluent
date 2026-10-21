@@ -283,12 +283,12 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
         if (typeof(TEntity) == typeof(KnowledgeArticleEntity))
         {
             modelBuilder.Entity<KnowledgeArticleEntity>()
-                .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.IsGlobal || e.TenantId == _tenantContext.TenantId);
+                .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.HasActiveTenant && (e.IsGlobal || e.TenantId == _tenantContext.TenantId));
             return;
         }
 
         modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.TenantId == _tenantContext.TenantId);
+            .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.HasActiveTenant && e.TenantId == _tenantContext.TenantId);
     }
 
     private void ConfigureNamedSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)

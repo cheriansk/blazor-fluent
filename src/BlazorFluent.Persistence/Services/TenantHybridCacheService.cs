@@ -32,7 +32,11 @@ public sealed class TenantHybridCacheService : ITenantCacheService
         CancellationToken cancellationToken = default)
     {
         var namespacedKey = BuildTenantKey(key);
-        var effectiveTenantId = _tenantContext.TenantId!.Trim().ToLowerInvariant();
+        if (!_tenantContext.HasActiveTenant)
+        {
+            throw new InvalidOperationException("Security violation: Attempted to perform a tenant-scoped cache operation without an active TenantId context.");
+        }
+        var effectiveTenantId = _tenantContext.TenantId.ToString("D").ToLowerInvariant();
 
         var tags = new List<string> { $"tenant:{effectiveTenantId}" };
         if (additionalTags != null)
@@ -102,7 +106,9 @@ public sealed class TenantHybridCacheService : ITenantCacheService
 
     public async ValueTask InvalidateTenantAsync(string? tenantId = null, CancellationToken cancellationToken = default)
     {
-        var effectiveTenantId = string.IsNullOrWhiteSpace(tenantId) ? _tenantContext.TenantId : tenantId;
+        var effectiveTenantId = !string.IsNullOrWhiteSpace(tenantId)
+            ? tenantId
+            : (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString("D") : null);
         if (string.IsNullOrWhiteSpace(effectiveTenantId))
         {
             throw new InvalidOperationException("Cannot invalidate tenant cache: No tenant ID was provided or active in context.");
@@ -117,13 +123,13 @@ public sealed class TenantHybridCacheService : ITenantCacheService
 
     public async ValueTask RemoveByTagAsync(string tag, CancellationToken cancellationToken = default)
     {
-        var tenantId = _tenantContext.TenantId;
-        if (string.IsNullOrWhiteSpace(tenantId))
+        if (!_tenantContext.HasActiveTenant)
         {
             throw new InvalidOperationException("Security violation: Attempted to remove tenant tag without an active TenantId context.");
         }
 
-        var namespacedTag = $"t:{tenantId.Trim().ToLowerInvariant()}:{tag.Trim()}";
+        var tenantId = _tenantContext.TenantId.ToString("D").ToLowerInvariant();
+        var namespacedTag = $"t:{tenantId}:{tag.Trim()}";
         await _hybridCache.RemoveByTagAsync(namespacedTag, cancellationToken);
         _logger.LogInformation("Tenant cache tag purged: Tag={Tag}", namespacedTag);
     }
@@ -136,15 +142,15 @@ public sealed class TenantHybridCacheService : ITenantCacheService
 
     private string BuildTenantKey(string rawKey)
     {
-        var tenantId = _tenantContext.TenantId;
-        if (string.IsNullOrWhiteSpace(tenantId))
+        if (!_tenantContext.HasActiveTenant)
         {
             _logger.LogError("Security violation: Attempted to perform a tenant-scoped cache operation without an active TenantId.");
             throw new InvalidOperationException(
                 "Security violation: Attempted to perform a tenant-scoped cache operation without an active TenantId context.");
         }
 
-        return $"t:{tenantId.Trim().ToLowerInvariant()}:{rawKey.Trim()}";
+        var tenantId = _tenantContext.TenantId.ToString("D").ToLowerInvariant();
+        return $"t:{tenantId}:{rawKey.Trim()}";
     }
 
     private static string BuildGlobalKey(string rawKey) => $"g:{rawKey.Trim()}";

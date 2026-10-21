@@ -446,7 +446,7 @@ try
             diagnosticContext.Set("Host", httpContext.Request.Host.Value);
 
             var tenantContext = httpContext.RequestServices.GetService<ITenantContext>();
-            if (!string.IsNullOrWhiteSpace(tenantContext?.TenantId))
+            if (tenantContext?.HasActiveTenant == true)
             {
                 diagnosticContext.Set("TenantId", tenantContext.TenantId);
             }

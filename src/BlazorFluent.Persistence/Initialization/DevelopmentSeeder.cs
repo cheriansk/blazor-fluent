@@ -39,10 +39,17 @@ public static class DevelopmentSeeder
             return;
         }
 
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.SetSystemDaemon("DevelopmentSeeder");
+        var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
+        var adminEmails = rootAdminService.GetRootAdminEmails();
+        var primaryAdminEmail = adminEmails.Count > 0 ? adminEmails[0].Trim().ToLowerInvariant() : "admin@local";
 
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        tenantContext.SetTenant(IRootAdminService.RootTenantId, IRootAdminService.RootTenantSlug, IRootAdminService.RootTenantName);
+
+        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+        currentUser?.RestoreUserContext("root-seeder-bootstrap", primaryAdminEmail, "System Administrator", isRootAdmin: true);
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var changesMade = false;
 
         // 1. Optional Custom Tenant Seeding from DevelopmentSeedOptions
@@ -51,11 +58,12 @@ public static class DevelopmentSeeder
             var tenantSlug = seedOptions.TenantSlug.Trim();
             var existingTenant = await dbContext.Tenants
                 .FirstOrDefaultAsync(t => t.Slug == tenantSlug, cancellationToken);
+            TenantEntity? createdTenant = null;
 
             if (existingTenant is null)
             {
                 logger.LogInformation("DevelopmentSeeder: Provisioning configured dev tenant '{Slug}'...", tenantSlug);
-                var tenant = new TenantEntity
+                createdTenant = new TenantEntity
                 {
                     Id = Guid.NewGuid(),
                     Slug = tenantSlug,
@@ -66,7 +74,7 @@ public static class DevelopmentSeeder
                     StartDate = DateTime.UtcNow.AddYears(-1),
                     EndDate = DateTime.UtcNow.AddYears(10)
                 };
-                dbContext.Tenants.Add(tenant);
+                dbContext.Tenants.Add(createdTenant);
                 changesMade = true;
             }
 
@@ -94,7 +102,7 @@ public static class DevelopmentSeeder
                     adminUser.RowSignature = adminUser.ComputeIntegritySignature(integrityKey);
                     dbContext.Users.Add(adminUser);
 
-                    var assignedTenantId = existingTenant?.Id ?? tenant?.Id;
+                    var assignedTenantId = existingTenant?.Id ?? createdTenant?.Id;
                     if (assignedTenantId.HasValue)
                     {
                         var tenantUser = new TenantUserEntity
@@ -102,10 +110,8 @@ public static class DevelopmentSeeder
                             Id = Guid.NewGuid(),
                             TenantId = assignedTenantId.Value,
                             UserEntityId = adminUser.Id,
-                            Role = TenantAdminRoleEnum.TenantAdmin,
+                            Role = TenantRoleEnum.TenantAdmin,
                             IsActive = true,
-                            StartDate = adminUser.StartDate,
-                            EndDate = adminUser.EndDate
                         };
                         tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
                         dbContext.TenantUsers.Add(tenantUser);
@@ -120,7 +126,8 @@ public static class DevelopmentSeeder
         if (devLoginOptions != null && devLoginOptions.Enabled && devLoginOptions.Users.Count > 0)
         {
             var defaultTenantSlug = seedOptions?.TenantSlug ?? InitialDatabaseSeeder.DefaultTenantSlug;
-            var targetTenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.Slug == defaultTenantSlug, cancellationToken);
+            var targetTenant = await dbContext.Tenants
+                .FirstOrDefaultAsync(t => t.Slug == defaultTenantSlug, cancellationToken);
 
             foreach (var devUser in devLoginOptions.Users)
             {
@@ -154,10 +161,8 @@ public static class DevelopmentSeeder
                             Id = Guid.NewGuid(),
                             TenantId = targetTenant.Id,
                             UserEntityId = user.Id,
-                            Role = TenantAdminRoleEnum.TenantMember,
+                            Role = TenantRoleEnum.TenantMember,
                             IsActive = true,
-                            StartDate = user.StartDate,
-                            EndDate = user.EndDate
                         };
                         tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
                         dbContext.TenantUsers.Add(tenantUser);

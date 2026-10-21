@@ -783,13 +783,14 @@
                 _assignablePrograms = [];
             }
 
+            var selectedGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
             var query = DbContext.Projects
                 .AsNoTracking()
                 .Include(p => p.Program)
-                .Where(p => p.TenantId == _selectedTenantId && !p.IsDeleted)
+                .Where(p => p.TenantId == selectedGuid && !p.IsDeleted)
                 .OrderBy(p => p.Name);
 
-            if (_selectedTenantId != TenantContext.TenantId)
+            if (selectedGuid != TenantContext.TenantId)
             {
                 _projects = await query.ToListWithAuditedBypassAsync(
                     AuditService,
@@ -1064,7 +1065,7 @@
         {
             if (CurrentUser is AppCurrentUser appUser)
             {
-                var adminId = appUser.UserId ?? string.Empty;
+                var adminId = appUser.IsAuthenticated ? appUser.UserId : string.Empty;
                 appUser.SetImpersonation(_impersonateTargetUserId, _impersonateTargetEmail, _impersonateTargetName, adminId);
             }
 

@@ -17,7 +17,7 @@ public class TaskRollupProvider : IWorkItemRollupProvider
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.Task;
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
-        string tenantId,
+        Guid tenantId,
         TaskLevelEnum level,
         Guid? scopeId,
         string? userId,

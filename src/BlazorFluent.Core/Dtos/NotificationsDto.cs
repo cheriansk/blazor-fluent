@@ -27,7 +27,7 @@ public record NotificationFilterReqDto
     public bool OnlyUnread { get; init; }
     public bool? IsRead { get; init; }
     public NotificationSeverityEnum? Severity { get; init; }
-    public string? TenantId { get; init; }
+    public Guid? TenantId { get; init; }
     public Guid? ProjectId { get; init; }
     public DateTime? FromDateUtc { get; init; }
     public DateTime? ToDateUtc { get; init; }

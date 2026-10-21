@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -134,8 +134,8 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         var nowUtc = DateTime.UtcNow;
         var userMemberships = await dbContext.TenantUsers
             .AsNoTracking()
-            .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted && tu.StartDate <= nowUtc && (tu.EndDate == null || tu.EndDate >= nowUtc))
-            .Include(tu => tu.TenantEntity)
+            .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted)
+            .Include(tu => tu.Tenant)
             .ToListAsync(ct);
 
         var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants, rootTenant, userMemberships);
@@ -270,8 +270,8 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var userMemberships = await dbContext.TenantUsers
             .AsNoTracking()
-            .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted && tu.StartDate <= now && (tu.EndDate == null || tu.EndDate >= now))
-            .Include(tu => tu.TenantEntity)
+            .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted)
+            .Include(tu => tu.Tenant)
             .ToListAsync(ct);
 
         var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants, rootTenant, userMemberships);
@@ -301,41 +301,30 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         List<TenantInfo> allowedTenants = [];
         Guid resolvedTenantId = Guid.Empty;
         string resolvedTenantSlug = string.Empty;
-        string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
+        string resolvedTenantName = string.Empty;
 
-        if (isHost)
+        // If user is a verified root admin and root tenant exists and user has root tenant membership
+        var hasRootMembership = userMemberships.Any(m => m.TenantId == IRootAdminService.RootTenantId || m.Tenant?.Slug == IRootAdminService.RootTenantSlug);
+        if (isHost && rootTenant is not null && hasRootMembership)
         {
-            if (rootTenant is not null)
-            {
-                allowedTenants.Add(new TenantInfo(rootTenant.Id, rootTenant.Slug, rootTenant.Name, rootTenant.IsActive));
-            }
-            allowedTenants.AddRange(activeTenants.Select(t => new TenantInfo(t.Id, t.Slug, t.Name, t.IsActive)));
-
-            var anchor = rootTenant ?? activeTenants.FirstOrDefault();
-            if (anchor is not null)
-            {
-                resolvedTenantId = anchor.Id;
-                resolvedTenantSlug = anchor.Slug;
-                resolvedTenantName = anchor.Name;
-            }
+            allowedTenants.Add(new TenantInfo(rootTenant.Id, rootTenant.Slug, rootTenant.Name, rootTenant.IsActive));
         }
-        else
-        {
-            // Pure Zero-Trust: Derived strictly from active, date-valid TenantUserEntity memberships
-            allowedTenants = userMemberships
-                .Where(m => m.TenantEntity != null && m.TenantEntity.IsActive)
-                .Select(m => new TenantInfo(m.TenantEntity!.Id, m.TenantEntity.Slug, m.TenantEntity.Name, m.TenantEntity.IsActive))
-                .DistinctBy(t => t.Id)
-                .ToList();
 
-            // Zero Assumption: Only auto-resolve if the user belongs to exactly one tenant
-            if (allowedTenants.Count == 1)
-            {
-                var single = allowedTenants[0];
-                resolvedTenantId = single.Id;
-                resolvedTenantSlug = single.Slug;
-                resolvedTenantName = single.Name;
-            }
+        // Add customer tenants where user has explicit, active TenantUserEntity membership
+        var customerMemberships = userMemberships
+            .Where(m => m.Tenant != null && m.Tenant.IsActive && m.Tenant.Id != IRootAdminService.RootTenantId && m.Tenant.Slug != IRootAdminService.RootTenantSlug)
+            .Select(m => new TenantInfo(m.Tenant!.Id, m.Tenant.Slug, m.Tenant.Name, m.Tenant.IsActive))
+            .DistinctBy(t => t.Id);
+
+        allowedTenants.AddRange(customerMemberships);
+
+        // Zero Assumption: Only auto-resolve if the user belongs to exactly one tenant
+        if (allowedTenants.Count == 1)
+        {
+            var single = allowedTenants[0];
+            resolvedTenantId = single.Id;
+            resolvedTenantSlug = single.Slug;
+            resolvedTenantName = single.Name;
         }
 
         return (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug);

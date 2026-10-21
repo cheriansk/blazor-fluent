@@ -378,9 +378,9 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != IRootAdminService.DefaultTenantSlug)
+                .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
         }
 

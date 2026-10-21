@@ -193,6 +193,7 @@ app.UseCors();
 app.UseMiddleware<EnforceMandatoryCorrelationIdMiddleware>();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<EnforceMandatoryTenantAndAuthMiddleware>();
 app.UseAuthorization();
 
 // 11. Minimal API Route Groups

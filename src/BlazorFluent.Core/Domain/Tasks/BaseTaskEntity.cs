@@ -172,6 +172,7 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEnti
             throw new InvalidOperationException($"Cannot transition {effectiveCategory} '{Title}' from {Status} to {nextStatus}.");
         }
 
+        var wasClosed = IsClosed;
         Status = nextStatus;
 
         if (nextStatus == TaskStatusEnum.InProgress && ActualStartDate == null)
@@ -181,13 +182,9 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEnti
         else if (nextStatus == TaskStatusEnum.Closed)
         {
             ActualEndDate = utcNow;
-            IsClosed = true;
-            ClosedAtUtc = utcNow;
         }
-        else if (nextStatus is TaskStatusEnum.Open or TaskStatusEnum.InProgress && IsClosed)
+        else if (nextStatus is TaskStatusEnum.Open or TaskStatusEnum.InProgress && wasClosed)
         {
-            IsClosed = false;
-            ClosedAtUtc = null;
             ActualEndDate = null;
         }
     }

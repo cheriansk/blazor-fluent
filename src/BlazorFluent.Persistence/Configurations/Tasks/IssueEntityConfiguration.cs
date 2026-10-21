@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -63,10 +63,10 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.Property(i => i.DueDate)
             .IsRequired();
 
-        builderbuilder.Property(i => i.RevisedDueDate)
+        builder.Property(i => i.RevisedDueDate)
             .IsRequired(false);
 
-        .Property(i => i.EndDate)
+        builder.Property(i => i.EndDate)
             .IsRequired(false);
 
         builder.Property(i => i.ActualStartDate)

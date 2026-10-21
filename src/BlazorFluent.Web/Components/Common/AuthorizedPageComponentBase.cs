@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using BlazorFluent.Core.Contracts;
@@ -12,7 +12,7 @@ namespace BlazorFluent.Components.Common;
 /// <summary>
 /// Mandatory base class for all feature components and pages that require project authorization.
 /// Automatically resolves [RequiredClearance] attribute at runtime to evaluate CanVisit and CanEdit.
-/// Enforces Zero-Trust active provisioning and emits Zero-PII security audit logs on denial.
+/// Enforces Level 2 Zero-Trust active provisioning (IsAuthenticatedTenantUser) and emits Zero-PII security audit logs on denial.
 /// </summary>
 public abstract class AuthorizedPageComponentBase : ComponentBase
 {
@@ -78,36 +78,44 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
     {
         IsEvaluating = true;
 
-        // Zero-Trust Perimeter Check: User must be active, unexpired, and hold >= 1 role
-        if (!CurrentUser.IsRootAdmin && !string.IsNullOrWhiteSpace(CurrentUser.UserId))
+        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user (!IsSystemDaemon && HasActiveTenant && IsAuthenticated).
+        if (!CurrentUser.IsAuthenticatedTenantUser)
         {
-            var isProvisioned = await HierarchyAuth.IsUserActiveAndProvisionedAsync(CurrentUser.UserId);
-            if (!isProvisioned)
-            {
-                Logger.LogWarning(
-                    "AUDIT [Security]: Active circuit eviction. UserId='{UserId}' is inactive, expired, or unassigned.",
-                    CurrentUser.UserId);
+            CanVisit = false;
+            CanEdit = false;
+            CurrentRole = null;
+            IsEvaluating = false;
+            NavigationManager.NavigateTo("/login", forceLoad: false);
+            return;
+        }
 
-                NavigationManager.NavigateTo("/auth-error?reason=Account+is+inactive%2C+expired%2C+or+unassigned.", forceLoad: true);
-                return;
-            }
+        // Strict Sovereignty Rule: Workspace pages are never accessible in the Root Tenant.
+        if (TenantContext.IsRootTenant)
+        {
+            CanVisit = false;
+            CanEdit = false;
+            CurrentRole = null;
+            IsEvaluating = false;
+            return;
+        }
+
+        // Zero-Trust Perimeter Check: User must be active, unexpired, and hold >= 1 role in this tenant
+        var isProvisioned = await HierarchyAuth.IsUserActiveAndProvisionedAsync(CurrentUser.UserId);
+        if (!isProvisioned)
+        {
+            Logger.LogWarning(
+                "AUDIT [Security]: Active circuit eviction. UserId='{UserId}' is inactive, expired, or unassigned.",
+                CurrentUser.UserId);
+
+            NavigationManager.NavigateTo("/auth-error?reason=Account+is+inactive%2C+expired%2C+or+unassigned.", forceLoad: true);
+            return;
         }
 
         if (ProjectId == Guid.Empty)
         {
-            // Multi-project overview or list page
-            if (CurrentUser.IsRootAdmin)
-            {
-                CanVisit = true;
-                CanEdit = true;
-                CurrentRole = ProjectRoleEnum.Admin;
-            }
-            else
-            {
-                var authorizedIds = await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumVisitRole);
-                CanVisit = authorizedIds.Count > 0;
-                CanEdit = (await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumEditRole)).Count > 0;
-            }
+            var authorizedIds = await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumVisitRole);
+            CanVisit = authorizedIds.Count > 0;
+            CanEdit = (await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumEditRole)).Count > 0;
         }
         else
         {
@@ -116,13 +124,13 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
             CanEdit = CurrentRole.HasValue && CurrentRole.Value.Satisfies(MinimumEditRole) && CurrentRole.Value.CanWrite();
         }
 
-        if (!CanVisit && !CurrentUser.IsRootAdmin)
+        if (!CanVisit)
         {
             // Zero-PII warning logging (strictly GUIDs, zero personal email/name)
             Logger.LogWarning(
                 "AUDIT [Security]: Page Access Denied. UserId='{UserId}', TenantId='{TenantId}', ProjectId='{ProjectId}', Page='{PageName}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
-                CurrentUser.UserId ?? "anonymous",
-                TenantContext.TenantId ?? "none",
+                CurrentUser.UserId,
+                TenantContext.TenantId,
                 ProjectId,
                 GetType().Name,
                 MinimumVisitRole,
@@ -131,7 +139,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
             await AuditService.LogSecurityEventAsync(
                 "PageAccessDenied",
                 AuditSeverityEnum.Warning,
-                $"UserId: {CurrentUser.UserId ?? "anonymous"}, ProjectId: {ProjectId}, Page: {GetType().Name}, RequiredTier: {MinimumVisitRole}, ActualTier: {CurrentRole?.ToString() ?? "None"}");
+                $"UserId: {CurrentUser.UserId}, ProjectId: {ProjectId}, Page: {GetType().Name}, RequiredTier: {MinimumVisitRole}, ActualTier: {CurrentRole?.ToString() ?? "None"}");
         }
 
         IsEvaluating = false;

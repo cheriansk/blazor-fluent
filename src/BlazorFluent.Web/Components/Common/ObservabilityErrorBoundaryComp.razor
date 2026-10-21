@@ -1,4 +1,4 @@
-@using BlazorFluent.Core.Contracts
+﻿@using BlazorFluent.Core.Contracts
 @using Microsoft.Extensions.Logging
 @inherits ErrorBoundary
 @inject ILogger<ObservabilityErrorBoundaryComp> Logger
@@ -34,8 +34,8 @@ else
             PageName ?? "UnknownPage",
             PageType?.FullName ?? "UnknownType",
             NavigationManager.Uri,
-            TenantContext.TenantId ?? "host",
-            CurrentUser.UserId ?? "anonymous",
+            (TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "none"),
+            (CurrentUser.IsAuthenticated ? CurrentUser.UserId : "anonymous"),
             exception.Message);
 
         return Task.CompletedTask;

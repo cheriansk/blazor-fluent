@@ -1,4 +1,4 @@
-@using BlazorFluent.Components.Common
+﻿@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Calendar
@@ -663,13 +663,13 @@
                 .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
 
-            if (_availableTenants.Count == 0 && TenantContext.TenantId.HasValue && TenantContext.TenantId.Value != Guid.Empty)
+            if (_availableTenants.Count == 0 && TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty)
             {
-                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId.Value.ToString(), TenantContext.TenantName ?? string.Empty));
+                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId.ToString(), TenantContext.TenantName ?? string.Empty));
             }
         }
 
-        var defaultSlug = TenantContext.TenantId.HasValue && TenantContext.TenantId.Value != Guid.Empty ? TenantContext.TenantId.Value.ToString() : _availableTenants.FirstOrDefault()?.Id;
+        var defaultSlug = TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty ? TenantContext.TenantId.ToString() : _availableTenants.FirstOrDefault()?.Id;
         if (!string.IsNullOrWhiteSpace(defaultSlug))
         {
             await OnTenantSelectedAsync(defaultSlug);
@@ -701,7 +701,7 @@
         _isLoading = true;
         try
         {
-            var userId = CurrentUser.UserId ?? string.Empty;
+            var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : string.Empty;
             _isTenantAdmin = await HierarchyAuth.IsTenantAdminAsync(_selectedTenantId, userId);
             var accessible = await HierarchyAuth.GetAccessibleProgramIdsAsync(_selectedTenantId, userId);
             _accessibleProgramIds = accessible.ToHashSet();
@@ -764,7 +764,8 @@
         {
             var start = DateTime.UtcNow.Date.AddMonths(-2);
             var end = DateTime.UtcNow.Date.AddMonths(10);
-            _programCalendarItems = await CalendarService.GetProgramCalendarAsync(_selectedTenantId, _selectedProgram.Id, start, end);
+            var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
+            _programCalendarItems = await CalendarService.GetProgramCalendarAsync(tenantGuid, _selectedProgram.Id, start, end);
         }
         catch (Exception ex)
         {

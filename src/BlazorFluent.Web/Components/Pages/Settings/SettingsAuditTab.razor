@@ -1,4 +1,4 @@
-﻿
+
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.Contracts.Common
 @using BlazorFluent.Core.Dtos.Response
@@ -223,7 +223,7 @@
                 var term = _inGridSearchText.Trim();
                 query = query.Where(a =>
                     (a.Description != null && a.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (a.TenantId != null && a.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    a.TenantId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     (a.UserId != null && a.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     (a.UserEmail != null && a.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     a.EventType.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -259,9 +259,9 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != IRootAdminService.DefaultTenantSlug)
+                .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
         }
 
@@ -348,7 +348,7 @@
         {
             if (!CurrentUser.IsRootAdmin && string.IsNullOrWhiteSpace(_filter.TenantId))
             {
-                _filter.AllowedTenantIds = TenantContext.AllowedTenants.Select(t => t.Id).ToList();
+                _filter.AllowedTenantIds = TenantContext.AllowedTenants.Select(t => t.Id.ToString()).ToList();
             }
             else
             {

@@ -72,7 +72,7 @@
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
             <AppErrorBoundaryComp>
-                @if (CurrentUser.IsAuthenticated && !CurrentUser.IsRootAdmin && string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+                @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)
                 {
                     <div style="padding: 40px; max-width: 800px; margin: 40px auto;">
                         <FluentCard Style="border-left: 4px solid var(--error); padding: 24px;">
@@ -120,14 +120,14 @@
 </div>
 
 @code {
-    private bool HasActiveTenantSession => CurrentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(TenantContext.TenantId);
+    private bool HasActiveTenantSession => CurrentUser.IsAuthenticatedTenantUser;
 
     private bool IsAnonymousPage
     {
         get
         {
             var uri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLowerInvariant();
-            return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("not-found");
+            return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("error") || uri.StartsWith("not-found");
         }
     }
 
@@ -267,7 +267,7 @@
                 NavigationManager.NavigateTo("/login");
             }
         }
-        else if ((!TenantContext.TenantId.HasValue || TenantContext.TenantId.Value == Guid.Empty) && !IsAnonymousPage)
+        else if ((!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty) && !IsAnonymousPage)
         {
             // Zero Trust: Authenticated but tenant missing -> redirect to login/tenant selection
             NavigationManager.NavigateTo("/login", replace: true);
@@ -281,7 +281,7 @@
             var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
             if (result.Success && result.Value != null)
             {
-                var adminOrSelf = CurrentUser.UserId ?? "user";
+                var adminOrSelf = CurrentUser.IsAuthenticated ? CurrentUser.UserId : (result.Value.UserId ?? "user");
                 await SessionService.RevokeSessionAsync(result.Value.SessionId, adminOrSelf);
             }
             await SessionStorage.DeleteAsync("app_session");

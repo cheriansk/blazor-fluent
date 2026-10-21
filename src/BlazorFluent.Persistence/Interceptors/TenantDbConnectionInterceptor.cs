@@ -1,4 +1,4 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -73,7 +73,7 @@ public class TenantDbConnectionInterceptor : DbConnectionInterceptor
     {
         var isHost = tenantContext?.IsHost == true ? "true" : "false";
         // Fail-closed: unauthenticated / empty tenant defaults to empty string so RLS matches 0 rows
-        var tenantId = tenantContext?.IsHost == true ? string.Empty : (tenantContext?.TenantId ?? string.Empty);
+        var tenantId = tenantContext?.HasActiveTenant == true ? tenantContext.TenantId.ToString() : string.Empty;
 
         command.CommandText = "SELECT set_config('app.is_host', @is_host, false), set_config('app.current_tenant_id', @current_tenant_id, false);";
 

@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -15,7 +16,52 @@ public static class SystemIdentityUtility
     /// <summary>
     /// Sequential / static UUID reserved for host platform background daemons, migrations, and system tasks.
     /// </summary>
-    public static readonly Guid SystemDaemonTenantId = new Guid("00000000-0000-0000-0000-000000000001");
+    public static readonly Guid SystemDaemonTenantId = IRootAdminService.RootTenantId;
+    public static readonly Guid RootTenantId = IRootAdminService.RootTenantId;
+    public const string RootTenantSlug = IRootAdminService.RootTenantSlug;
+    public const string RootTenantName = IRootAdminService.RootTenantName;
+
+    /// <summary>
+    /// Evaluates whether the caller is a verified human tenant user (authenticated, non-daemon, and bound to an active tenant).
+    /// </summary>
+    public static bool IsAuthenticatedTenantUser(ICurrentUser? currentUser, ITenantContext? tenantContext)
+    {
+        return currentUser is not null &&
+               currentUser.IsAuthenticated &&
+               !currentUser.IsSystemDaemon &&
+               !string.IsNullOrWhiteSpace(currentUser.UserId) &&
+               tenantContext is not null &&
+               tenantContext.HasActiveTenant &&
+               tenantContext.TenantId != Guid.Empty;
+    }
+
+    /// <summary>
+    /// Strictly verifies that the current execution context is an authenticated human tenant user (!IsSystemDaemon)
+    /// with an active tenant context. Throws SecurityException on violation.
+    /// </summary>
+    public static void RequireAuthenticatedTenantUser(
+        ICurrentUser currentUser,
+        ITenantContext tenantContext,
+        string operationName)
+    {
+        if (currentUser == null || !currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(currentUser.UserId))
+        {
+            throw new SecurityException(
+                $"Zero-Trust Security Violation: Operation '{operationName}' requires an authenticated user identity.");
+        }
+
+        if (currentUser.IsSystemDaemon)
+        {
+            throw new SecurityException(
+                $"Zero-Trust Security Violation: Operation '{operationName}' is strictly restricted to interactive tenant users and prohibited for SystemDaemon.");
+        }
+
+        if (tenantContext == null || !tenantContext.HasActiveTenant || tenantContext.TenantId == Guid.Empty)
+        {
+            throw new SecurityException(
+                $"Zero-Trust Security Violation: Operation '{operationName}' requires an active tenant context.");
+        }
+    }
 
     /// <summary>
     /// Strictly verifies that the current execution context contains an authenticated user 
@@ -32,7 +78,7 @@ public static class SystemIdentityUtility
                 $"Zero-Trust Security Violation: Operation '{operationName}' requires an established authenticated user identity.");
         }
 
-        if (tenantContext == null || (!tenantContext.IsHost && (!tenantContext.TenantId.HasValue || tenantContext.TenantId.Value == Guid.Empty)))
+        if (tenantContext == null || !tenantContext.HasActiveTenant || tenantContext.TenantId == Guid.Empty)
         {
             throw new InvalidOperationException(
                 $"Zero-Trust Security Violation: Operation '{operationName}' requires an active tenant context.");

@@ -15,7 +15,7 @@ public class HmacRoleIntegrityTests
         var tenantUser = new TenantUserEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TenantEntityId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = TenantRoleEnum.TenantMember,
@@ -33,7 +33,7 @@ public class HmacRoleIntegrityTests
         var tenantUser = new TenantUserEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TenantEntityId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = TenantRoleEnum.TenantMember,
@@ -54,7 +54,7 @@ public class HmacRoleIntegrityTests
         var tenantUser = new TenantUserEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TenantEntityId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = TenantRoleEnum.TenantMember,
@@ -75,7 +75,7 @@ public class HmacRoleIntegrityTests
         var role = new ProgramUserRoleEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             ProgramId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = ProgramRoleEnum.ReadOnly
@@ -92,7 +92,7 @@ public class HmacRoleIntegrityTests
         var role = new ProgramUserRoleEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             ProgramId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = ProgramRoleEnum.ReadOnly
@@ -112,7 +112,7 @@ public class HmacRoleIntegrityTests
         var role = new ProgramUserRoleEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             ProgramId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = ProgramRoleEnum.Admin
@@ -132,7 +132,7 @@ public class HmacRoleIntegrityTests
         var role = new ProjectUserRoleEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             ProjectId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = ProjectRoleEnum.Contribute
@@ -149,7 +149,7 @@ public class HmacRoleIntegrityTests
         var role = new ProjectUserRoleEntity
         {
             Id = Guid.NewGuid(),
-            TenantId = "tenant_test",
+            TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             ProjectId = Guid.NewGuid(),
             UserEntityId = Guid.NewGuid(),
             Role = ProjectRoleEnum.Contribute

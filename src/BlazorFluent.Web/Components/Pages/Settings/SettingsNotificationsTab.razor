@@ -300,7 +300,7 @@
         _tenantFilterItems =
         [
             new("", "All Organizations"),
-            .. TenantContext.AllowedTenants.Select(t => new FilterOptionItem(t.Id, $"{t.Name} ({t.Id})"))
+            .. TenantContext.AllowedTenants.Select(t => new FilterOptionItem(t.Id.ToString(), $"{t.Name} ({t.Id})"))
         ];
 
         await LoadNotificationsAsync();
@@ -338,7 +338,7 @@
 
             var filter = new NotificationFilterReqDto
             {
-                TenantId = string.IsNullOrWhiteSpace(_selectedTenantId) ? null : _selectedTenantId,
+                TenantId = Guid.TryParse(_selectedTenantId, out var parsedTenantGuid) ? parsedTenantGuid : null,
                 Category = category,
                 Severity = severity,
                 IsRead = isRead,

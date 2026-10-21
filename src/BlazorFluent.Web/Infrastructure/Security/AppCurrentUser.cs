@@ -1,3 +1,4 @@
+using System.Security;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Utilities;
 
@@ -10,27 +11,70 @@ namespace BlazorFluent.Infrastructure.Security;
 public class AppCurrentUser : ICurrentUser
 {
     private readonly IRootAdminService _rootAdminService;
+    private readonly ITenantContext _tenantContext;
+    private string _email = string.Empty;
+    private string? _userId;
+    private string? _userName;
 
-    public AppCurrentUser(IRootAdminService rootAdminService)
+    public AppCurrentUser(IRootAdminService rootAdminService, ITenantContext tenantContext)
     {
         _rootAdminService = rootAdminService;
+        _tenantContext = tenantContext;
     }
 
-    public string Email { get; set; } = string.Empty;
-    public string? UserId { get; set; } = null;
-    public string? UserName { get; set; } = null;
     public bool IsAuthenticated { get; set; } = false;
 
     /// <summary>
+    /// Unified Zero-Trust Guardrail: True if and only if the caller is an authenticated human user (!IsSystemDaemon)
+    /// AND has an active non-empty tenant initialized in ITenantContext (HasActiveTenant).
+    /// </summary>
+    public bool IsAuthenticatedTenantUser =>
+        IsAuthenticated &&
+        !IsSystemDaemon &&
+        _tenantContext.HasActiveTenant &&
+        !string.IsNullOrWhiteSpace(_userId);
+
+    public string Email
+    {
+        get => IsAuthenticated
+            ? _email
+            : throw SecurityViolation(nameof(Email));
+        set => _email = value;
+    }
+
+    public string UserId
+    {
+        get => IsAuthenticated
+            ? (_userId ?? string.Empty)
+            : throw SecurityViolation(nameof(UserId));
+        set => _userId = value;
+    }
+
+    public string UserName
+    {
+        get => IsAuthenticated
+            ? (_userName ?? string.Empty)
+            : throw SecurityViolation(nameof(UserName));
+        set => _userName = value;
+    }
+
+    private SecurityException SecurityViolation(string memberName)
+    {
+        return new SecurityException($"Zero-Trust Security Violation: '{memberName}' cannot be accessed on an unauthenticated circuit.");
+    }
+
+    /// <summary>
     /// Computes root administrator privileges on-demand.
-    /// Strict security: Must be Authenticated, NOT Impersonated, with non-empty Email matching configured root admins.
+    /// Strict security: Must be Authenticated, NOT Impersonated, NOT a system daemon,
+    /// with non-empty Email matching configured root admins AND operating in the Root Tenant.
     /// Has no setter or mutable backing field.
     /// </summary>
     public bool IsRootAdmin =>
-        IsAuthenticated &&
+        IsAuthenticatedTenantUser &&
         !IsImpersonated &&
-        !string.IsNullOrWhiteSpace(Email) &&
-        _rootAdminService.IsRootAdmin(Email);
+        !string.IsNullOrWhiteSpace(_email) &&
+        _rootAdminService.IsRootAdmin(_email) &&
+        _tenantContext.IsRootTenant;
 
     private readonly List<string> _roles = [];
 
@@ -59,25 +103,25 @@ public class AppCurrentUser : ICurrentUser
 
     public void SetUser(string userId, string email, string userName, bool isAuthenticated = true)
     {
-        UserId = userId;
-        Email = email;
-        UserName = userName;
+        _userId = userId;
+        _email = email;
+        _userName = userName;
         IsAuthenticated = isAuthenticated;
     }
 
     public void SetImpersonation(string targetUserId, string targetEmail, string targetUserName, string adminId)
     {
-        OriginalUserId = UserId;
-        OriginalEmail = Email;
-        OriginalUserName = UserName;
+        OriginalUserId = _userId;
+        OriginalEmail = _email;
+        OriginalUserName = _userName;
         _originalRoles.Clear();
         _originalRoles.AddRange(_roles);
 
         IsImpersonated = true;
         ImpersonatedBy = adminId;
-        UserId = targetUserId;
-        Email = targetEmail;
-        UserName = targetUserName;
+        _userId = targetUserId;
+        _email = targetEmail;
+        _userName = targetUserName;
         _roles.Clear();
     }
 
@@ -85,9 +129,9 @@ public class AppCurrentUser : ICurrentUser
     {
         IsImpersonated = false;
         ImpersonatedBy = null;
-        UserId = adminId ?? OriginalUserId;
-        Email = adminEmail ?? OriginalEmail ?? string.Empty;
-        UserName = adminName ?? OriginalUserName;
+        _userId = adminId ?? OriginalUserId;
+        _email = adminEmail ?? OriginalEmail ?? string.Empty;
+        _userName = adminName ?? OriginalUserName;
         _roles.Clear();
         if (_originalRoles.Count > 0)
         {
@@ -101,26 +145,26 @@ public class AppCurrentUser : ICurrentUser
 
     public bool IsSystemDaemon { get; private set; }
 
-    public void SetSystemDaemon(string daemonName, string? serviceEmail = null)
+    public void SetSystemDaemon(string daemonName, string? initiatingUserEmail = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(daemonName);
 
-        var resolvedEmail = !string.IsNullOrWhiteSpace(serviceEmail)
-            ? serviceEmail
+        var resolvedEmail = !string.IsNullOrWhiteSpace(initiatingUserEmail)
+            ? initiatingUserEmail
             : SystemIdentityUtility.FormatInternalDaemonEmail(daemonName);
 
         IsSystemDaemon = true;
-        UserId = $"daemon:{daemonName}";
-        UserName = daemonName;
-        Email = resolvedEmail;
+        _userId = $"daemon:{daemonName}";
+        _userName = daemonName;
+        _email = resolvedEmail;
         IsAuthenticated = true;
     }
 
     public void RestoreUserContext(string userId, string email, string userName, bool isRootAdmin = false)
     {
-        UserId = userId;
-        Email = email;
-        UserName = userName;
+        _userId = userId;
+        _email = email;
+        _userName = userName;
         IsAuthenticated = true;
         IsSystemDaemon = false;
         if (isRootAdmin)
@@ -132,9 +176,9 @@ public class AppCurrentUser : ICurrentUser
 
     public void Clear()
     {
-        UserId = null;
-        Email = string.Empty;
-        UserName = null;
+        _userId = null;
+        _email = string.Empty;
+        _userName = null;
         IsAuthenticated = false;
         IsImpersonated = false;
         ImpersonatedBy = null;

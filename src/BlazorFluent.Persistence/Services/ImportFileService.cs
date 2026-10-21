@@ -57,12 +57,11 @@ public class ImportFileService : IImportFileService
 
         try
         {
-            var tenantId = _tenantContext.TenantId;
-            if (!tenantId.HasValue || tenantId.Value == Guid.Empty)
+            if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty)
             {
                 return Result<Guid>.Failure("No active tenant context found for file upload.");
             }
-            var tenantGuid = tenantId.Value;
+            var tenantGuid = _tenantContext.TenantId;
             var tenantKey = tenantGuid.ToString();
 
             if (request.Files.Count == 0)
@@ -225,7 +224,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportHistoryAsync(Guid projectId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         return await _context.ImportFiles
             .AsNoTracking()
@@ -253,7 +252,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid projectId, Guid importId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         return await _context.ImportFiles
             .AsNoTracking()
@@ -281,7 +280,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var file = await _context.ImportFiles
             .AsNoTracking()
@@ -323,7 +322,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<Result<bool>> DeleteImportFileAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var file = await _context.ImportFiles.FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
         if (file == null)

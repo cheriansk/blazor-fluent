@@ -1,4 +1,7 @@
-﻿using BlazorFluent.Core.Contracts;
+using System;
+using System.Threading.Tasks;
+using BlazorFluent.Core.Contracts;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Context;
 using BlazorFluent.Persistence.Interceptors;
@@ -16,7 +19,7 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
 
     public NoTrackingMutationGuardInterceptorTests()
     {
-        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
     }
 
@@ -26,13 +29,16 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
     }
 
     [Fact]
-    public async Task SaveChanges_UntrackedDetachedMutation_ThrowsInvalidOperationException()
+    public async Task SaveChanges_UntrackedEntityModified_ThrowsInvalidOperationException()
     {
+        var tenantId = Guid.NewGuid();
+
         // Arrange
         var mockTime = new Mock<IDateTimeProvider>();
         mockTime.Setup(t => t.UtcNow).Returns(DateTime.UtcNow);
         var mockTenant = new Mock<ITenantContext>();
-        mockTenant.Setup(t => t.TenantId).Returns("tenant_x");
+        mockTenant.Setup(t => t.TenantId).Returns(tenantId);
+        mockTenant.Setup(t => t.HasActiveTenant).Returns(true);
         mockTenant.Setup(t => t.IsHost).Returns(true);
         var mockUser = new Mock<ICurrentUser>();
         mockUser.Setup(u => u.IsAuthenticated).Returns(true);
@@ -52,7 +58,7 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
             setup.Tasks.Add(new TaskEntity
             {
                 Id = taskId,
-                TenantId = "tenant_x",
+                TenantId = tenantId,
                 Level = TaskLevelEnum.Project,
                 Title = "Original Title",
                 Priority = TaskPriorityEnum.Medium,
@@ -73,7 +79,7 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
             // Attempting to SaveChanges without tracking must trigger NoTrackingMutationGuardInterceptor
             var act = async () => await context.SaveChangesAsync();
             await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*NoTrackingMutationGuard*");
+                .WithMessage("*was queried with NoTracking*");
         }
     }
 }

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Knowledge;
 using BlazorFluent.Core.Dtos;

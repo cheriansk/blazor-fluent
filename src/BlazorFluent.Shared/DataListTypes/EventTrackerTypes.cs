@@ -60,6 +60,18 @@ public static class EventTrackerStatusEnumDefinitions
         };
 }
 
+public static class EventConsumptionStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<EventConsumptionStatusEnum, IReadOnlySet<EventConsumptionStatusEnum>> AllowedTransitions =
+        new Dictionary<EventConsumptionStatusEnum, IReadOnlySet<EventConsumptionStatusEnum>>
+        {
+            [EventConsumptionStatusEnum.Running] = new HashSet<EventConsumptionStatusEnum> { EventConsumptionStatusEnum.Succeeded, EventConsumptionStatusEnum.Failed, EventConsumptionStatusEnum.Retrying },
+            [EventConsumptionStatusEnum.Retrying] = new HashSet<EventConsumptionStatusEnum> { EventConsumptionStatusEnum.Running, EventConsumptionStatusEnum.Failed },
+            [EventConsumptionStatusEnum.Failed] = new HashSet<EventConsumptionStatusEnum> { EventConsumptionStatusEnum.Retrying },
+            [EventConsumptionStatusEnum.Succeeded] = new HashSet<EventConsumptionStatusEnum>()
+        };
+}
+
 public static class EventTrackerDefinitions
 {
     public static class Categories

@@ -52,9 +52,9 @@ public class UserSessionService : IUserSessionService
             _currentUser.RestoreUserContext(userId, userEmail, userEmail);
         }
 
-        var tenantId = !string.IsNullOrWhiteSpace(_tenantContext.TenantId)
-            ? _tenantContext.TenantId
-            : SystemIdentityUtility.SystemTenantSlug;
+        var tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.RootTenantId;
+
+
 
         // Enforce strict single-active-session policy per user
         await RevokePreviousSessionsAsync(userId, null, ct);
@@ -95,7 +95,7 @@ public class UserSessionService : IUserSessionService
         }
 
         var revokedBy = _currentUser.IsAuthenticated 
-            ? (_currentUser.Email ?? _currentUser.UserId ?? $"Login:{userId}") 
+            ? (_currentUser.IsAuthenticated ? _currentUser.Email : $"Login:{userId}") 
             : $"Login:{userId}";
 
         var count = await query.ExecuteUpdateWithAuditedBypassAsync(

@@ -1,7 +1,8 @@
-﻿@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @inject IHierarchyAuthorizationService HierarchyAuth
 @inject IProjectContext ProjectContext
+@inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 
 @if (_isEvaluating)
@@ -50,9 +51,11 @@ else if (FallbackContent != null)
     {
         _isEvaluating = true;
 
-        if (CurrentUser.IsRootAdmin)
+        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user in a customer tenant workspace.
+        // SystemDaemons and Root Tenant contexts have zero access to project workspaces.
+        if (!CurrentUser.IsAuthenticatedTenantUser || TenantContext.IsRootTenant)
         {
-            _hasAccess = true;
+            _hasAccess = false;
             _isEvaluating = false;
             return;
         }

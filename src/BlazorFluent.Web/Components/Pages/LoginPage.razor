@@ -4,6 +4,7 @@
 @attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")]
 @using BlazorFluent.Core.Configuration
 @using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Utilities
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Identity
 @using BlazorFluent.Core.Domain.Tenancy
@@ -230,6 +231,13 @@
 
     private async Task TestSignInAsync(string email)
     {
+        if (SystemIdentityUtility.IsSystemDaemon(email))
+        {
+            Logger.LogCritical("CRITICAL SECURITY VIOLATION: Login attempt by system daemon identity '{Email}' rejected.", email);
+            _errorMessage = "System daemon identities are restricted to background processing and can never log in.";
+            return;
+        }
+
         _isLoading = true;
         _errorMessage = null;
 
@@ -257,6 +265,13 @@
 
     private async Task ProcessAuthSuccessAsync(AuthUserResult verified)
     {
+        if (SystemIdentityUtility.IsSystemDaemon(verified.User.Email) || SystemIdentityUtility.IsSystemDaemon(verified.User.Id.ToString()))
+        {
+            Logger.LogCritical("CRITICAL SECURITY VIOLATION: Login attempt by system daemon identity '{Email}' rejected.", verified.User.Email);
+            _errorMessage = "System daemon identities are restricted to background processing and can never log in.";
+            return;
+        }
+
         if (verified.AllowedTenants.Count == 0)
         {
             _errorMessage = "Your account is not assigned to any active organization. Please contact an administrator.";
@@ -303,21 +318,21 @@
         try
         {
             var user = verified.User;
-            var isHost = verified.IsRootAdmin;
+            var isRootTenant = tenantId == IRootAdminService.RootTenantId || string.Equals(tenantSlug, IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase);
 
             TenantContext.Initialize(
                 tenantId: tenantId,
                 tenantName: tenantName,
                 userType: user.UserType,
                 allowedTenants: verified.AllowedTenants,
-                isHost: isHost,
+                isHost: false,
                 tenantSlug: tenantSlug);
 
             // 1. Establish authenticated state on circuit immediately upon verified credentials
             if (CurrentUser is AppCurrentUser appUser)
             {
                 appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
-                if (isHost)
+                if (verified.IsRootAdmin && isRootTenant)
                 {
                     appUser.AddRole("Admin");
                     appUser.AddRole("RootAdmin");

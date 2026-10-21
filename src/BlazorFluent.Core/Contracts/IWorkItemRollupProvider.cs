@@ -18,7 +18,7 @@ public interface IWorkItemRollupProvider
     /// Queries the dedicated subtype table and yields unified CalendarItemDto instances for the specified window.
     /// </summary>
     Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
-        string tenantId,
+        Guid tenantId,
         TaskLevelEnum level,
         Guid? scopeId,
         string? userId,

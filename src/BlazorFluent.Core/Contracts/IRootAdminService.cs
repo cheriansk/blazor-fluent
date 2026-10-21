@@ -24,5 +24,20 @@ public interface IRootAdminService
     /// <summary>
     /// Reserved slug for the internal anchor default tenant.
     /// </summary>
-    public const string DefaultTenantSlug = "default";
+    public const string DefaultTenantSlug = "root";
+
+    /// <summary>
+    /// Fixed sequential UUIDv7 identifier for the platform Root Tenant.
+    /// </summary>
+    public static readonly Guid RootTenantId = new Guid("00000000-0000-0000-0000-000000000001");
+
+    /// <summary>
+    /// Reserved slug for the platform Root Tenant.
+    /// </summary>
+    public const string RootTenantSlug = "root";
+
+    /// <summary>
+    /// Display name for the platform Root Tenant.
+    /// </summary>
+    public const string RootTenantName = "System Administration";
 }

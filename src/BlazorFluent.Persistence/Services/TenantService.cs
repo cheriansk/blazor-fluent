@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using BlazorFluent.Core.Security;
+using BlazorFluent.Persistence.Extensions;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -59,7 +60,7 @@ public class TenantService : ITenantService
             {
                 return (IReadOnlyList<TenantEntity>)await _dbContext.Tenants
                     .AsNoTracking()
-                    .Where(t => t.Slug != "default")
+                    .Where(t => t.Slug != IRootAdminService.RootTenantSlug && t.Slug != "default")
                     .OrderBy(t => t.Name)
                     .ToListAsync(token);
             },
@@ -82,8 +83,9 @@ public class TenantService : ITenantService
         if (string.IsNullOrWhiteSpace(slug))
             return Result<TenantEntity>.Failure("Slug is required.");
 
-        if (string.Equals(slug.Trim(), "default", StringComparison.OrdinalIgnoreCase))
-            return Result<TenantEntity>.Failure("The 'default' slug is reserved for internal system administration.");
+        if (string.Equals(slug.Trim(), IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(slug.Trim(), "default", StringComparison.OrdinalIgnoreCase))
+            return Result<TenantEntity>.Failure("The root slug is reserved for internal system administration.");
 
         if (string.IsNullOrWhiteSpace(displayName))
             return Result<TenantEntity>.Failure("DisplayName is required.");
@@ -175,11 +177,11 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Non-root users can only query users within their own active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only query users within their own active tenant
+        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to access users of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
-                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+                _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
             return [];
         }
 
@@ -193,6 +195,7 @@ public class TenantService : ITenantService
             .Select(tu => tu.User)
             .OrderBy(u => u.FullName)
             .ToListAsync(cancellationToken);
+    }
 
     public async Task<Result<UserEntity>> AddTenantUserAsync(
         string tenantSlug,
@@ -205,11 +208,11 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Non-root users can only add users to their own active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only add users to their own active tenant
+        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to add user to tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
-                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+                _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
             return Result<UserEntity>.Failure("Access Denied: You can only manage users within your active tenant.");
         }
 
@@ -324,11 +327,11 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Non-root users can only modify users within their own active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only modify users within their own active tenant
+        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to modify user in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
-                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+                _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
             return Result<UserEntity>.Failure("Access Denied: You can only manage users within your active tenant.");
         }
 
@@ -452,7 +455,8 @@ public class TenantService : ITenantService
         }
         var tenantUser = await _dbContext.TenantUsers
             .AsTracking()
-            .FirstOrDefaultAsync(tu => tu.TenantId == tenant.Id && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
+            .Where(tu => tu.TenantId == tenant.Id && tu.UserEntityId == userId && !tu.IsDeleted)
+            .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"RootAdmin {_currentUser.Email} updating TenantAdmin role for user {userId} in tenant {tenant.Id}", cancellationToken);
 
         if (tenantUser == null)
         {
@@ -483,7 +487,7 @@ public class TenantService : ITenantService
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
 
-        if (string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(tenant.Slug, IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
             return Result.Failure("The default system root anchor tenant cannot be deactivated or modified.");
 
         tenant.IsActive = isActive;
@@ -523,7 +527,7 @@ public class TenantService : ITenantService
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
 
-        if (string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(tenant.Slug, IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
             return Result.Failure("The default system root anchor tenant cannot be modified.");
 
         tenant.StartDate = startDate;
@@ -548,11 +552,11 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Non-root users can only query projects within their active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only query projects within their active tenant
+        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to access projects of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
-                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+                _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
             return [];
         }
 
@@ -580,11 +584,11 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Non-root users can only create projects within their active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only create projects within their active tenant
+        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to create project in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
-                _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
+                _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
             return Result<ProjectEntity>.Failure("Access Denied: You cannot create projects for other tenants.");
         }
 
@@ -746,8 +750,8 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Only RootAdmin or TenantAdmin can regenerate license keys
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Only RootAdmin in Root Tenant or TenantAdmin can regenerate license keys
+        if (!_currentUser.IsRootAdmin && (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase)))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to regenerate license key for tenant '{TenantSlug}' outside their active tenant.",
                 _currentUser.UserId, tenantSlug);

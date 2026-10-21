@@ -16,7 +16,7 @@ public class SystemIdentityUtilityTests
         var mockUser = new Mock<ICurrentUser>();
         mockUser.Setup(u => u.IsAuthenticated).Returns(false);
         var mockTenant = new Mock<ITenantContext>();
-        mockTenant.Setup(t => t.TenantId).Returns("tenant_123");
+        mockTenant.Setup(t => t.TenantId).Returns(Guid.NewGuid());
 
         // Act
         var act = () => SystemIdentityUtility.RequireAuthenticatedContext(mockUser.Object, mockTenant.Object, "TestOp");
@@ -34,7 +34,8 @@ public class SystemIdentityUtilityTests
         mockUser.Setup(u => u.IsAuthenticated).Returns(true);
         mockUser.Setup(u => u.UserId).Returns("usr_123");
         var mockTenant = new Mock<ITenantContext>();
-        mockTenant.Setup(t => t.TenantId).Returns(string.Empty);
+        mockTenant.Setup(t => t.HasActiveTenant).Returns(false);
+        mockTenant.Setup(t => t.TenantId).Throws(new System.Security.SecurityException("No active tenant context."));
 
         // Act
         var act = () => SystemIdentityUtility.RequireAuthenticatedContext(mockUser.Object, mockTenant.Object, "TestOp");
@@ -52,7 +53,8 @@ public class SystemIdentityUtilityTests
         mockUser.Setup(u => u.IsAuthenticated).Returns(true);
         mockUser.Setup(u => u.UserId).Returns("usr_123");
         var mockTenant = new Mock<ITenantContext>();
-        mockTenant.Setup(t => t.TenantId).Returns("tenant_123");
+        mockTenant.Setup(t => t.TenantId).Returns(Guid.NewGuid());
+        mockTenant.Setup(t => t.HasActiveTenant).Returns(true);
 
         // Act & Assert
         var act = () => SystemIdentityUtility.RequireAuthenticatedContext(mockUser.Object, mockTenant.Object, "TestOp");
@@ -72,11 +74,12 @@ public class SystemIdentityUtilityTests
         // Assert
         mockUser.Verify(u => u.SetSystemDaemon("PreAuth:LoginVerify", "operator@test.com"), Times.Once);
         mockTenant.Verify(t => t.Initialize(
-            SystemIdentityUtility.SystemTenantSlug,
+            SystemIdentityUtility.SystemDaemonTenantId,
             "System Host",
             UserTypeEnum.CompanyUser,
             It.IsAny<TenantInfo[]>(),
-            true), Times.Once);
+            true,
+            SystemIdentityUtility.SystemTenantSlug), Times.Once);
     }
 
     [Fact]
@@ -86,7 +89,7 @@ public class SystemIdentityUtilityTests
         var email = SystemIdentityUtility.FormatInternalDaemonEmail("AuditTrailLogger");
 
         // Assert
-        email.Should().Be("system+audittraillogger@default.internal");
+        email.Should().Be("system+audittraillogger@root.internal");
     }
 
     [Fact]
@@ -102,13 +105,14 @@ public class SystemIdentityUtilityTests
         user.IsSystemDaemon.Should().BeTrue();
         user.UserId.Should().Be("daemon:NotificationEngine");
         user.UserName.Should().Be("NotificationEngine");
-        user.Email.Should().Be("system+notificationengine@default.internal");
+        user.Email.Should().Be("system+notificationengine@root.internal");
         user.IsAuthenticated.Should().BeTrue();
     }
 
     [Theory]
     [InlineData("daemon:JobEngine", true)]
     [InlineData("daemon:AuditTrailLogger", true)]
+    [InlineData("system+audit@root.internal", true)]
     [InlineData("system+audit@default.internal", true)]
     [InlineData("worker@subsystem.internal", true)]
     [InlineData("admin@company.com", false)]

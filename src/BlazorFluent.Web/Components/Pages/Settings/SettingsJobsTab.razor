@@ -1,4 +1,4 @@
-﻿@using BlazorFluent.Components.Common
+@using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Jobs
@@ -287,9 +287,9 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != IRootAdminService.DefaultTenantSlug)
+                .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
         }
 
@@ -331,18 +331,18 @@
         try
         {
             var results = await JobManagerService.GetRecentExecutionsAsync(limit: 200);
-            if (string.Equals(_selectedTenantId, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase))
+            if (Guid.TryParse(_selectedTenantId, out var selectedTenantGuid))
             {
-                _executions = results.Where(e =>
-                    e.TenantId == IRootAdminService.DefaultTenantSlug ||
-                    e.TenantId == "system" ||
-                    e.TenantId == "host" ||
-                    string.IsNullOrEmpty(e.TenantId)).ToList();
+                _executions = results.Where(e => e.TenantId == selectedTenantGuid).ToList();
             }
             else
             {
-                _executions = results.Where(e => e.TenantId == _selectedTenantId).ToList();
+                _executions = results.Where(e => e.TenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId || e.TenantId == Guid.Empty).ToList();
             }
+
+
+
+
         }
         finally
         {

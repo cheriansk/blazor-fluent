@@ -1,4 +1,4 @@
-﻿@rendermode InteractiveServer
+@rendermode InteractiveServer
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Infrastructure.Security
@@ -13,7 +13,7 @@
 @inject IUnsavedChangesStateService UnsavedChanges
 @inject ILogger<TenantAndProjectSwitcherComp> Logger
 
-@if (!TenantContext.TenantId.HasValue || TenantContext.TenantId.Value == Guid.Empty)
+@if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty)
 {
     @* Not yet initialized — render nothing *@
     return;
@@ -30,7 +30,7 @@
                           Items="@TenantContext.AllowedTenants.ToList()"
                           OptionValue="@(t => t.Id.ToString())"
                           OptionText="@(t => t.Name)"
-                          Value="@TenantContext.TenantId?.ToString()"
+                          Value="@TenantContext.TenantId.ToString()"
                           ValueChanged="@OnTenantChanged"
                           Style="min-width: 150px; max-width: 220px;"
                           Title="Select Active Tenant" />
@@ -52,49 +52,52 @@
         }
     </div>
 
-    <!-- Divider / Chevron -->
-    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Style="opacity: 0.35;" />
+    @if (!TenantContext.IsRootTenant)
+    {
+        <!-- Divider / Chevron -->
+        <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Style="opacity: 0.35;" />
 
-    <!-- 2. Project Selector Section -->
-    <div style="display: flex; align-items: center; gap: 6px;">
-        <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Style="opacity: 0.7;" />
-        @if (_isLoadingProjects)
-        {
-            <FluentSpinner Size="SpinnerSize.Small" Style="width: 16px; height: 16px;" />
-        }
-        else if (_projects.Count == 0)
-        {
-            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #888); font-style: italic;">
-                (No Projects)
-            </span>
-        }
-        else if (_projects.Count == 1)
-        {
-            <!-- Exactly 1 project: Defaulted and Read-Only / Disabled -->
-            <FluentSelect TOption="ProjectInfoDto"
-                          TValue="string"
-                          Items="@_projects"
-                          OptionValue="@(p => p.Id.ToString())"
-                          OptionText="@(p => p.Name)"
-                          Value="@(_projects[0].Id.ToString())"
-                          Disabled="true"
-                          Style="min-width: 150px; max-width: 220px;"
-                          Title="Project locked (only 1 project available)" />
-        }
-        else
-        {
-            <!-- Multiple projects: Switchable dropdown -->
-            <FluentSelect TOption="ProjectInfoDto"
-                          TValue="string"
-                          Items="@_projects"
-                          OptionValue="@(p => p.Id.ToString())"
-                          OptionText="@(p => p.Name)"
-                          Value="@(ProjectContext.ProjectId?.ToString() ?? _projects[0].Id.ToString())"
-                          ValueChanged="@OnProjectChanged"
-                          Style="min-width: 150px; max-width: 220px;"
-                          Title="Select Active Project Workspace" />
-        }
-    </div>
+        <!-- 2. Project Selector Section -->
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Style="opacity: 0.7;" />
+            @if (_isLoadingProjects)
+            {
+                <FluentSpinner Size="SpinnerSize.Small" Style="width: 16px; height: 16px;" />
+            }
+            else if (_projects.Count == 0)
+            {
+                <span style="font-size: 12px; color: var(--neutral-foreground-hint, #888); font-style: italic;">
+                    (No Projects)
+                </span>
+            }
+            else if (_projects.Count == 1)
+            {
+                <!-- Exactly 1 project: Defaulted and Read-Only / Disabled -->
+                <FluentSelect TOption="ProjectInfoDto"
+                              TValue="string"
+                              Items="@_projects"
+                              OptionValue="@(p => p.Id.ToString())"
+                              OptionText="@(p => p.Name)"
+                              Value="@(_projects[0].Id.ToString())"
+                              Disabled="true"
+                              Style="min-width: 150px; max-width: 220px;"
+                              Title="Project locked (only 1 project available)" />
+            }
+            else
+            {
+                <!-- Multiple projects: Switchable dropdown -->
+                <FluentSelect TOption="ProjectInfoDto"
+                              TValue="string"
+                              Items="@_projects"
+                              OptionValue="@(p => p.Id.ToString())"
+                              OptionText="@(p => p.Name)"
+                              Value="@(ProjectContext.ProjectId?.ToString() ?? _projects[0].Id.ToString())"
+                              ValueChanged="@OnProjectChanged"
+                              Style="min-width: 150px; max-width: 220px;"
+                              Title="Select Active Project Workspace" />
+            }
+        </div>
+    }
 </div>
 
 @if (!string.IsNullOrEmpty(_switchError))
@@ -116,12 +119,12 @@
 
     private async Task LoadProjectsForCurrentTenantAsync()
     {
-        if (!TenantContext.TenantId.HasValue || TenantContext.TenantId.Value == Guid.Empty) return;
+        if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty || TenantContext.IsRootTenant) return;
 
         try
         {
             _isLoadingProjects = true;
-            var entities = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug ?? TenantContext.TenantId.Value.ToString());
+            var entities = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
             _projects = entities
                 .Select(e => new ProjectInfoDto(e.Id, e.Name, e.ShortCode, e.Status))
                 .ToList();
@@ -135,7 +138,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to load projects for tenant '{TenantId}'", TenantContext.TenantSlug ?? TenantContext.TenantId?.ToString());
+            Logger.LogWarning(ex, "Failed to load projects for tenant '{TenantSlug}'", TenantContext.TenantSlug);
         }
         finally
         {
@@ -147,7 +150,7 @@
     {
         if (string.IsNullOrWhiteSpace(newTenantId) || (Guid.TryParse(newTenantId, out var gId) && gId == TenantContext.TenantId)) return;
 
-        var prevTenant = TenantContext.TenantSlug ?? TenantContext.TenantId?.ToString() ?? "unknown";
+        var prevTenant = TenantContext.TenantSlug;
 
         // Zero Trust: Validate that the requested tenant is authorized for this user
         var targetMatch = TenantContext.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == newTenantId || t.Slug == newTenantId);
@@ -202,30 +205,11 @@
         }
 
         _switchError = null;
-        UnsavedChanges.ResetAll();
-
-        // Persist active project to session storage
-        try
-        {
-            var existing = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
-            if (existing.Success && existing.Value != null)
-            {
-                await SessionStorage.SetAsync("app_session", existing.Value with
-                {
-                    ActiveProjectId = newProjectId
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to persist switched project to session storage.");
-        }
 
         await AuditService.LogUserActivityAsync(
-            $"Switched active project to '{ProjectContext.ProjectName}'",
-            $"Tenant: {TenantContext.TenantSlug ?? TenantContext.TenantId.ToString()}, ProjectId: {newProjectId}");
+            "ProjectWorkspaceSwitched",
+            $"User switched active project workspace to '{ProjectContext.ProjectName}' ({newProjectId}).");
 
-        // Force full circuit reload of the current page to ensure zero stale data
         NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
     }
 }

@@ -63,24 +63,6 @@ public enum ImportFileTypeEnum
     TaskCsv = 4
 }
 
-public static class ImportStatusEnumDefinitions
-{
-    public static readonly IReadOnlyDictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>> AllowedTransitions =
-        new Dictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>>
-        {
-            [ImportStatusEnum.Uploaded] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
-            [ImportStatusEnum.Validating] = new HashSet<ImportStatusEnum> { ImportStatusEnum.ValidationSuccess, ImportStatusEnum.ValidationFailed },
-            [ImportStatusEnum.ValidationSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
-            [ImportStatusEnum.ValidationFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
-            [ImportStatusEnum.Staging] = new HashSet<ImportStatusEnum> { ImportStatusEnum.StagingSuccess, ImportStatusEnum.StagingFailed },
-            [ImportStatusEnum.StagingSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
-            [ImportStatusEnum.StagingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
-            [ImportStatusEnum.Processing] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Completed, ImportStatusEnum.ProcessingFailed },
-            [ImportStatusEnum.ProcessingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
-            [ImportStatusEnum.Completed] = new HashSet<ImportStatusEnum>()
-        };
-}
-
 #endregion
 
 #region ImportStatusEnum Definitions

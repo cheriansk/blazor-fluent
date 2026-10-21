@@ -940,9 +940,9 @@
 
     private async Task LoadScopingEntitiesAsync()
     {
-        var tenantId = TenantContext.TenantId;
-        if (!string.IsNullOrWhiteSpace(tenantId))
+        if (TenantContext.HasActiveTenant)
         {
+            var tenantId = TenantContext.TenantId;
             _availablePrograms = await DbContext.Programs
                 .AsNoTracking()
                 .Where(p => p.TenantId == tenantId && p.IsActive)
