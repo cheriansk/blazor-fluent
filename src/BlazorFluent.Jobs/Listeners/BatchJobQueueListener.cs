@@ -70,7 +70,7 @@ public class BatchJobQueueListener : BackgroundService
 
     private async Task ProcessJobEventAsync(IJobEvent jobEvent, CancellationToken stoppingToken)
     {
-        if (string.IsNullOrWhiteSpace(jobEvent.TenantId))
+        if (jobEvent.TenantId == Guid.Empty)
         {
             _logger.LogCritical("Zero-Trust Security Violation: Batch job event {EventId} missing required TenantId. Aborting job execution (Fail-Closed).", jobEvent.EventId);
             return;
@@ -101,10 +101,10 @@ public class BatchJobQueueListener : BackgroundService
 
             tenantContext.Initialize(
                 tenantId: tenantId,
-                tenantName: tenantId,
+                tenantName: tenantId.ToString(),
                 userType: UserTypeEnum.CompanyUser,
                 allowedTenants: [],
-                isHost: false);
+                isHost: tenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
             if (currentUser != null)

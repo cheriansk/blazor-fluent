@@ -287,12 +287,25 @@
 
             if (!string.IsNullOrWhiteSpace(_selectedTenantId))
             {
-                userQuery = userQuery.Where(u => u.DefaultTenantId == _selectedTenantId);
+                var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
+                var tenantUserIds = await DbContext.TenantUsers
+                    .AsNoTracking()
+                    .Where(tu => tu.TenantId == tenantGuid && !tu.IsDeleted)
+                    .Select(tu => tu.UserEntityId)
+                    .ToListAsync();
+
+                userQuery = userQuery.Where(u => tenantUserIds.Contains(u.Id));
             }
             else if (!CurrentUser.IsRootAdmin)
             {
-                var allowedSlugs = TenantContext.AllowedTenants.Select(t => t.Id).ToList();
-                userQuery = userQuery.Where(u => allowedSlugs.Contains(u.DefaultTenantId));
+                var allowedGuids = TenantContext.AllowedTenants.Select(t => t.Id).ToList();
+                var tenantUserIds = await DbContext.TenantUsers
+                    .AsNoTracking()
+                    .Where(tu => allowedGuids.Contains(tu.TenantId) && !tu.IsDeleted)
+                    .Select(tu => tu.UserEntityId)
+                    .ToListAsync();
+
+                userQuery = userQuery.Where(u => tenantUserIds.Contains(u.Id));
             }
 
             var dbUsers = await userQuery

@@ -127,7 +127,18 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
-        var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants);
+        var rootTenant = await dbContext.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Slug == IRootAdminService.DefaultTenantSlug, ct);
+
+        var nowUtc = DateTime.UtcNow;
+        var userMemberships = await dbContext.TenantUsers
+            .AsNoTracking()
+            .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted && tu.StartDate <= nowUtc && (tu.EndDate == null || tu.EndDate >= nowUtc))
+            .Include(tu => tu.TenantEntity)
+            .ToListAsync(ct);
+
+        var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants, rootTenant, userMemberships);
 
         return Result<AuthUserResult>.Success(new AuthUserResult(
             user,
@@ -253,7 +264,17 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
-        var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants);
+        var rootTenant = await dbContext.Tenants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Slug == IRootAdminService.DefaultTenantSlug, ct);
+
+        var userMemberships = await dbContext.TenantUsers
+            .AsNoTracking()
+            .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted && tu.StartDate <= now && (tu.EndDate == null || tu.EndDate >= now))
+            .Include(tu => tu.TenantEntity)
+            .ToListAsync(ct);
+
+        var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants, rootTenant, userMemberships);
 
         return Result<AuthUserResult>.Success(new AuthUserResult(
             user,
@@ -266,14 +287,16 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
     /// <summary>
     /// Evaluates tenant access using strict Zero-Trust Default-Deny.
-    /// Only RootAdmin (Host) receives all active tenants.
-    /// Company users only receive tenants matching their verified email domain or explicit DefaultTenantId.
-    /// Client users are strictly constrained to their single DefaultTenantId.
+    /// Only RootAdmin (Host) receives all active tenants, anchored initially in the Root Tenant.
+    /// Regular users receive tenants derived strictly from active, date-valid records in tenancy.tenant_users.
+    /// Zero tenant assumption: if a user belongs to multiple tenants, resolvedTenantId is Guid.Empty until explicitly selected.
     /// </summary>
     private static (List<TenantInfo> AllowedTenants, Guid ResolvedTenantId, string ResolvedTenantName, string ResolvedTenantSlug) ResolveUserTenants(
         UserEntity user,
         bool isHost,
-        List<TenantEntity> activeTenants)
+        List<TenantEntity> activeTenants,
+        TenantEntity? rootTenant,
+        List<TenantUserEntity> userMemberships)
     {
         List<TenantInfo> allowedTenants = [];
         Guid resolvedTenantId = Guid.Empty;
@@ -282,49 +305,36 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         if (isHost)
         {
-            allowedTenants = activeTenants.Select(t => new TenantInfo(t.Id, t.Slug, t.Name, t.IsActive)).ToList();
-            var defaultMatch = allowedTenants.FirstOrDefault(t => user.DefaultTenantId.HasValue && t.Id == user.DefaultTenantId.Value) ?? allowedTenants.FirstOrDefault();
-            if (defaultMatch is not null)
+            if (rootTenant is not null)
             {
-                resolvedTenantId = defaultMatch.Id;
-                resolvedTenantSlug = defaultMatch.Slug;
-                resolvedTenantName = defaultMatch.Name;
+                allowedTenants.Add(new TenantInfo(rootTenant.Id, rootTenant.Slug, rootTenant.Name, rootTenant.IsActive));
             }
-        }
-        else if (user.UserType == UserTypeEnum.CompanyUser)
-        {
-            // Zero Trust: Company user only receives access to tenants where their email domain matches
-            // or where they have an explicit DefaultTenantId assignment. Default deny for all other tenants.
-            var userEmail = (user.Email ?? string.Empty).Trim().ToLowerInvariant();
+            allowedTenants.AddRange(activeTenants.Select(t => new TenantInfo(t.Id, t.Slug, t.Name, t.IsActive)));
 
-            allowedTenants = activeTenants
-                .Where(t => (user.DefaultTenantId.HasValue && t.Id == user.DefaultTenantId.Value) ||
-                            t.GetInternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())) ||
-                            t.GetExternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())))
-                .Select(t => new TenantInfo(t.Id, t.Slug, t.Name, t.IsActive))
-                .ToList();
-
-            var defaultMatch = allowedTenants.FirstOrDefault(t => user.DefaultTenantId.HasValue && t.Id == user.DefaultTenantId.Value) ?? allowedTenants.FirstOrDefault();
-            if (defaultMatch is not null)
+            var anchor = rootTenant ?? activeTenants.FirstOrDefault();
+            if (anchor is not null)
             {
-                resolvedTenantId = defaultMatch.Id;
-                resolvedTenantSlug = defaultMatch.Slug;
-                resolvedTenantName = defaultMatch.Name;
+                resolvedTenantId = anchor.Id;
+                resolvedTenantSlug = anchor.Slug;
+                resolvedTenantName = anchor.Name;
             }
         }
         else
         {
-            // ClientUser: Strictly bound to their designated DefaultTenantId
-            if (user.DefaultTenantId.HasValue)
+            // Pure Zero-Trust: Derived strictly from active, date-valid TenantUserEntity memberships
+            allowedTenants = userMemberships
+                .Where(m => m.TenantEntity != null && m.TenantEntity.IsActive)
+                .Select(m => new TenantInfo(m.TenantEntity!.Id, m.TenantEntity.Slug, m.TenantEntity.Name, m.TenantEntity.IsActive))
+                .DistinctBy(t => t.Id)
+                .ToList();
+
+            // Zero Assumption: Only auto-resolve if the user belongs to exactly one tenant
+            if (allowedTenants.Count == 1)
             {
-                var clientTenant = activeTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId.Value);
-                if (clientTenant is not null)
-                {
-                    allowedTenants = [new TenantInfo(clientTenant.Id, clientTenant.Slug, clientTenant.Name, clientTenant.IsActive)];
-                    resolvedTenantId = clientTenant.Id;
-                    resolvedTenantSlug = clientTenant.Slug;
-                    resolvedTenantName = clientTenant.Name;
-                }
+                var single = allowedTenants[0];
+                resolvedTenantId = single.Id;
+                resolvedTenantSlug = single.Slug;
+                resolvedTenantName = single.Name;
             }
         }
 

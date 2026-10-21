@@ -8,7 +8,7 @@ namespace BlazorFluent.Jobs.Jobs.Tasks;
 /// </summary>
 public record TaskCadenceAlertJobEvent(
     string TriggerSource,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,

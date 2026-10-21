@@ -27,9 +27,6 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .IsRequired()
             .HasDefaultValue(true);
 
-        builder.Property(u => u.DefaultTenantId)
-            .IsRequired(false);
-
         builder.Property(u => u.StartDate)
             .IsRequired()
             .HasColumnName("StartDateUtc");
@@ -61,7 +58,6 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasFilter("\"IsDeleted\" = false")
             .IsUnique();
 
-        builder.HasIndex(u => u.DefaultTenantId)
-            .HasDatabaseName("IX_Users_DefaultTenantId");
+
     }
 }

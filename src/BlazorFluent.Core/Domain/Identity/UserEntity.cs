@@ -42,11 +42,6 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
     public string? RowSignature { get; set; }
 
     /// <summary>
-    /// Default or home tenant ID for this user.
-    /// </summary>
-    public Guid? DefaultTenantId { get; set; }
-
-    /// <summary>
     /// User's preferred timezone identifier (e.g., 'Eastern Standard Time', 'UTC').
     /// Used for presentation-layer date/time formatting.
     /// </summary>
@@ -93,7 +88,7 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
                 : (EndDate.Value.Kind == DateTimeKind.Local ? EndDate.Value.ToUniversalTime() : DateTime.SpecifyKind(EndDate.Value, DateTimeKind.Utc)))
             : DateTime.MaxValue;
 
-        var payload = $"{Id}:{DefaultTenantId ?? ""}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}";
+        var payload = $"{Id}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}";
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         return Convert.ToBase64String(hash);

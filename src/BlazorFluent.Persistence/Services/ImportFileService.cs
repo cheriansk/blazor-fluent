@@ -58,10 +58,12 @@ public class ImportFileService : IImportFileService
         try
         {
             var tenantId = _tenantContext.TenantId;
-            if (string.IsNullOrWhiteSpace(tenantId))
+            if (!tenantId.HasValue || tenantId.Value == Guid.Empty)
             {
                 return Result<Guid>.Failure("No active tenant context found for file upload.");
             }
+            var tenantGuid = tenantId.Value;
+            var tenantKey = tenantGuid.ToString();
 
             if (request.Files.Count == 0)
             {
@@ -69,7 +71,7 @@ public class ImportFileService : IImportFileService
             }
 
             var importId = Guid.CreateVersion7();
-            var batchFolder = _blobStorageService.BuildBatchFolderPath(tenantId, request.ProjectId, importId);
+            var batchFolder = _blobStorageService.BuildBatchFolderPath(tenantKey, request.ProjectId, importId);
             var importFiles = new List<ImportFileEntity>(request.Files.Count);
 
             // 1. Process and upload each file in the batch into the batch folder
@@ -108,11 +110,11 @@ public class ImportFileService : IImportFileService
                 }
 
                 // Client-side AES-256-GCM encryption with tenant-derived key
-                using var encryptedStream = await _encryptionService.EncryptStreamAsync(streamToProcess, tenantId, ct);
+                using var encryptedStream = await _encryptionService.EncryptStreamAsync(streamToProcess, tenantKey, ct);
                 bufferStream?.Dispose();
 
                 // Store in batch folder: tenants/{tenantId}/projects/{projectId}/imports/{year}/{month}/batch-{importId}/{fileId}.bin
-                var itemStoragePath = _blobStorageService.BuildBatchItemStoragePath(tenantId, request.ProjectId, importId, fileId, extension);
+                var itemStoragePath = _blobStorageService.BuildBatchItemStoragePath(tenantKey, request.ProjectId, importId, fileId, extension);
                 var blobUri = await _blobStorageService.UploadBlobAsync(itemStoragePath, encryptedStream, "application/octet-stream", ct);
                 uploadedBlobPaths.Add(blobUri);
 
@@ -120,7 +122,7 @@ public class ImportFileService : IImportFileService
                 {
                     Id = fileId,
                     ImportId = importId,
-                    TenantId = tenantId,
+                    TenantId = tenantGuid,
                     ProjectId = request.ProjectId,
                     StorageFolder = batchFolder,
                     StepStage = "Uploaded",
@@ -143,7 +145,7 @@ public class ImportFileService : IImportFileService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Batch {ImportId} with {FileCount} file(s) uploaded and encrypted for Tenant {TenantId}, Project {ProjectId}",
-                importId, importFiles.Count, tenantId, request.ProjectId);
+                importId, importFiles.Count, tenantGuid, request.ProjectId);
 
             // 3. Enqueue generic batch event
             var correlationId = Guid.CreateVersion7().ToString("N")[..12];
@@ -154,7 +156,7 @@ public class ImportFileService : IImportFileService
             var batchEvent = new FileImportBatchJobEvent(
                 ImportId: importId,
                 ProjectId: request.ProjectId,
-                TenantId: tenantId,
+                TenantId: tenantGuid,
                 CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
@@ -223,7 +225,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportHistoryAsync(Guid projectId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         return await _context.ImportFiles
             .AsNoTracking()
@@ -251,7 +253,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid projectId, Guid importId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         return await _context.ImportFiles
             .AsNoTracking()
@@ -279,7 +281,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         var file = await _context.ImportFiles
             .AsNoTracking()
@@ -321,7 +323,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<Result<bool>> DeleteImportFileAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         var file = await _context.ImportFiles.FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
         if (file == null)

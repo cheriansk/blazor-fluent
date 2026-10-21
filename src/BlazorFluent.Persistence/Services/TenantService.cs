@@ -186,9 +186,11 @@ public class TenantService : ITenantService
         var tenant = await _dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, cancellationToken);
         if (tenant is null) return [];
 
-        return await _dbContext.Users
+        return await _dbContext.TenantUsers
             .AsNoTracking()
-            .Where(u => (u.DefaultTenantId == tenant.Id || u.TenantMemberships.Any(tm => tm.TenantId == tenant.Id && !tm.IsDeleted)) && !u.IsDeleted)
+            .Where(tu => tu.TenantId == tenant.Id && !tu.IsDeleted)
+            .Include(tu => tu.User)
+            .Select(tu => tu.User)
             .OrderBy(u => u.FullName)
             .ToListAsync(cancellationToken);
 
@@ -235,8 +237,8 @@ public class TenantService : ITenantService
         // Enforce maximum 3 users in the default system root tenant
         if (string.Equals(normalizedSlug, "default", StringComparison.OrdinalIgnoreCase))
         {
-            var defaultUserCount = await _dbContext.Users
-                .CountAsync(u => u.DefaultTenantId == tenant.Id && !u.IsDeleted, cancellationToken);
+            var defaultUserCount = await _dbContext.TenantUsers
+                .CountAsync(tu => tu.TenantId == tenant.Id && !tu.IsDeleted, cancellationToken);
             if (defaultUserCount >= 3)
             {
                 return Result<UserEntity>.Failure("The default system root tenant cannot exceed a maximum of 3 administrator accounts.");
@@ -279,7 +281,6 @@ public class TenantService : ITenantService
             Email = normalizedEmail,
             FullName = fullName.Trim(),
             UserType = userType,
-            DefaultTenantId = tenant.Id,
             IsActive = isActive,
             StartDate = startDate.ToUniversalTime(),
             EndDate = endDate.ToUniversalTime(),
@@ -352,9 +353,14 @@ public class TenantService : ITenantService
         if (tenant is null)
             return Result<UserEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
 
+        var isMember = await _dbContext.TenantUsers
+            .AnyAsync(tu => tu.TenantId == tenant.Id && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
+        if (!isMember)
+            return Result<UserEntity>.Failure($"User was not found in tenant '{tenantSlug}'.");
+
         var user = await _dbContext.Users
             .AsTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId && (u.DefaultTenantId == tenant.Id || u.TenantMemberships.Any(tm => tm.TenantId == tenant.Id && !tm.IsDeleted)) && !u.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
 
         if (user is null)
             return Result<UserEntity>.Failure($"User was not found in tenant '{tenantSlug}'.");

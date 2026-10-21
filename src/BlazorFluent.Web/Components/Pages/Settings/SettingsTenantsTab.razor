@@ -500,11 +500,11 @@
                                     break;
                             }
                         </TemplateColumn>
-                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDateUtc))">
-                            @(context.StartDateUtc?.ToString("yyyy-MM-dd") ?? "—")
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDate))">
+                            @(context.StartDate.ToString("yyyy-MM-dd"))
                         </TemplateColumn>
-                        <TemplateColumn Title="Target Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.TargetEndDateUtc))">
-                            @(context.TargetEndDateUtc?.ToString("yyyy-MM-dd") ?? "—")
+                        <TemplateColumn Title="Target Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.EndDate ?? p.DueDate))">
+                            @((context.EndDate ?? context.DueDate).ToString("yyyy-MM-dd"))
                         </TemplateColumn>
                         <TemplateColumn Title="Actions">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
@@ -1441,8 +1441,8 @@
         _progName = program.Name;
         _progDescription = program.Description;
         _progStatus = program.Status;
-        _progStartDate = program.StartDateUtc;
-        _progEndDate = program.TargetEndDateUtc;
+        _progStartDate = program.StartDate;
+        _progEndDate = program.EndDate ?? program.DueDate;
         _showAddProgramForm = true;
     }
 

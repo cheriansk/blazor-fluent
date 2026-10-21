@@ -30,7 +30,7 @@ public class PeriodicBatchScheduler : BackgroundService
     private sealed record ScheduleEntry(
         string Name,
         CronExpression Cron,
-        Func<string, string, IJobEvent> EventFactory);
+        Func<Guid, string, IJobEvent> EventFactory);
 
     public PeriodicBatchScheduler(
         IJobEventQueue queue,
@@ -118,7 +118,7 @@ public class PeriodicBatchScheduler : BackgroundService
                         "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be configured when the periodic batch scheduler is running. Fallback identities are prohibited.");
                 }
 
-                List<string> activeTenants = [];
+                List<Guid> activeTenants = [];
                 try
                 {
                     using var scope = _scopeFactory.CreateScope();
@@ -126,7 +126,7 @@ public class PeriodicBatchScheduler : BackgroundService
                     activeTenants = await db.Tenants
                         .AsNoTracking()
                         .Where(t => t.IsActive)
-                        .Select(t => t.Slug)
+                        .Select(t => t.Id)
                         .ToListAsync(stoppingToken);
                 }
                 catch (Exception ex)
@@ -136,7 +136,7 @@ public class PeriodicBatchScheduler : BackgroundService
 
                 if (activeTenants.Count == 0)
                 {
-                    activeTenants.Add(IRootAdminService.DefaultTenantSlug);
+                    activeTenants.Add(BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
                 }
 
                 _logger.LogInformation(

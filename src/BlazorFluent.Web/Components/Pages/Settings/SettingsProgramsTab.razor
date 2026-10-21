@@ -175,9 +175,9 @@
                             break;
                     }
                 </TemplateColumn>
-                <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDateUtc))">
+                <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDate))">
                     <span style="font-size: 12px;">
-                        @TimeZoneService.FormatDate(context.StartDateUtc) ~ @TimeZoneService.FormatDate(context.TargetEndDateUtc)
+                        @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
                     </span>
                 </TemplateColumn>
                 <TemplateColumn Title="Projects">
@@ -420,7 +420,7 @@
                                 </TemplateColumn>
                                 <TemplateColumn Title="Timeline">
                                     <span style="font-size: 12px;">
-                                        @TimeZoneService.FormatDate(context.TentativeStartDate) ~ @TimeZoneService.FormatDate(context.TentativeEndDate)
+                                        @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
                                     </span>
                                 </TemplateColumn>
                                 <TemplateColumn Title="Actions">
@@ -677,18 +677,18 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != "default")
+                .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
 
-            if (_availableTenants.Count == 0 && !string.IsNullOrWhiteSpace(TenantContext.TenantId))
+            if (_availableTenants.Count == 0 && TenantContext.TenantId.HasValue && TenantContext.TenantId.Value != Guid.Empty)
             {
-                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId, TenantContext.TenantName));
+                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId.Value.ToString(), TenantContext.TenantName ?? string.Empty));
             }
         }
 
-        var defaultSlug = !string.IsNullOrWhiteSpace(TenantContext.TenantId) ? TenantContext.TenantId : _availableTenants.FirstOrDefault()?.Id;
+        var defaultSlug = TenantContext.TenantId.HasValue && TenantContext.TenantId.Value != Guid.Empty ? TenantContext.TenantId.Value.ToString() : _availableTenants.FirstOrDefault()?.Id;
         if (!string.IsNullOrWhiteSpace(defaultSlug))
         {
             await OnTenantSelectedAsync(defaultSlug);
@@ -799,29 +799,30 @@
     private async Task LoadProgramRaidAsync()
     {
         if (_selectedProgram == null || string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
         try
         {
             _programRisks = await DbContext.Risks
                 .AsNoTracking()
-                .Where(r => r.TenantId == _selectedTenantId && r.ProgramId == _selectedProgram.Id && !r.IsDeleted)
+                .Where(r => r.TenantId == tenantGuid && r.ProgramId == _selectedProgram.Id && !r.IsDeleted)
                 .OrderByDescending(r => r.Created)
                 .ToListAsync();
 
             _programAssumptions = await DbContext.Assumptions
                 .AsNoTracking()
-                .Where(a => a.TenantId == _selectedTenantId && a.ProgramId == _selectedProgram.Id && !a.IsDeleted)
+                .Where(a => a.TenantId == tenantGuid && a.ProgramId == _selectedProgram.Id && !a.IsDeleted)
                 .OrderByDescending(a => a.Created)
                 .ToListAsync();
 
             _programIssues = await DbContext.Issues
                 .AsNoTracking()
-                .Where(i => i.TenantId == _selectedTenantId && i.ProgramId == _selectedProgram.Id && !i.IsDeleted)
+                .Where(i => i.TenantId == tenantGuid && i.ProgramId == _selectedProgram.Id && !i.IsDeleted)
                 .OrderByDescending(i => i.Created)
                 .ToListAsync();
 
             _programBlockers = await DbContext.WorkDependencies
                 .AsNoTracking()
-                .Where(b => b.TenantId == _selectedTenantId && b.ProgramId == _selectedProgram.Id && !b.IsDeleted)
+                .Where(b => b.TenantId == tenantGuid && b.ProgramId == _selectedProgram.Id && !b.IsDeleted)
                 .OrderByDescending(b => b.Created)
                 .ToListAsync();
         }
@@ -898,8 +899,8 @@
         _programFormCode = program.Code;
         _programFormName = program.Name;
         _programFormDescription = program.Description;
-        _programFormStartDate = program.StartDateUtc;
-        _programFormTargetEndDate = program.TargetEndDateUtc;
+        _programFormStartDate = program.StartDate;
+        _programFormTargetEndDate = program.EndDate ?? program.DueDate;
         _programFormStatus = program.Status;
         _showProgramModal = true;
         UnsavedChanges.RegisterChange("Settings > Programs", $"Editing program '{program.Name}'");

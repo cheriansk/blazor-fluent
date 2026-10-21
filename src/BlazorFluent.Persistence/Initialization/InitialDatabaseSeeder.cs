@@ -78,8 +78,8 @@ public static class InitialDatabaseSeeder
         }
 
         // 2. Seed up to 3 Root Administrator accounts inside the default tenant
-        var existingCount = await dbContext.Users
-            .CountAsync(u => u.DefaultTenantId == defaultTenant.Id && !u.IsDeleted, cancellationToken);
+        var existingCount = await dbContext.TenantUsers
+            .CountAsync(tu => tu.TenantId == defaultTenant.Id && !tu.IsDeleted, cancellationToken);
 
         var index = 1;
         var changesMade = false;
@@ -109,7 +109,6 @@ public static class InitialDatabaseSeeder
                     Email = normalizedEmail,
                     FullName = $"Root Administrator {index}",
                     UserType = UserTypeEnum.CompanyUser,
-                    DefaultTenantId = defaultTenant.Id,
                     IsActive = true,
                     StartDate = DateTime.UtcNow.AddYears(-1),
                     EndDate = DateTime.UtcNow.AddYears(20),
@@ -118,8 +117,44 @@ public static class InitialDatabaseSeeder
 
                 user.RowSignature = user.ComputeIntegritySignature(integrityKey);
                 dbContext.Users.Add(user);
+
+                var tenantUser = new TenantUserEntity
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = defaultTenant.Id,
+                    UserEntityId = user.Id,
+                    Role = TenantAdminRoleEnum.TenantAdmin,
+                    IsActive = true,
+                    StartDate = user.StartDate,
+                    EndDate = user.EndDate
+                };
+                tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
+                dbContext.TenantUsers.Add(tenantUser);
+
                 existingCount++;
                 changesMade = true;
+            }
+            else
+            {
+                var hasMembership = await dbContext.TenantUsers
+                    .AnyAsync(tu => tu.TenantId == defaultTenant.Id && tu.UserEntityId == existingUser.Id && !tu.IsDeleted, cancellationToken);
+
+                if (!hasMembership)
+                {
+                    var tenantUser = new TenantUserEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        TenantId = defaultTenant.Id,
+                        UserEntityId = existingUser.Id,
+                        Role = TenantAdminRoleEnum.TenantAdmin,
+                        IsActive = true,
+                        StartDate = existingUser.StartDate,
+                        EndDate = existingUser.EndDate
+                    };
+                    tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
+                    dbContext.TenantUsers.Add(tenantUser);
+                    changesMade = true;
+                }
             }
 
             index++;

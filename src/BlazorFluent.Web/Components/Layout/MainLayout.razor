@@ -267,35 +267,10 @@
                 NavigationManager.NavigateTo("/login");
             }
         }
-        else if (string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+        else if ((!TenantContext.TenantId.HasValue || TenantContext.TenantId.Value == Guid.Empty) && !IsAnonymousPage)
         {
-            // Edge case: Authenticated but tenant missing -> try resolving from user's default
-            try
-            {
-                var userId = CurrentUser.UserId;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    var user = await DbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-                    if (user != null)
-                    {
-                        var isHost = CurrentUser.IsRootAdmin;
-                        var tenantId = (user.DefaultTenantId != null && user.DefaultTenantId != IRootAdminService.DefaultTenantSlug)
-                            ? user.DefaultTenantId
-                            : "";
-                        var activeTenant = !string.IsNullOrEmpty(tenantId)
-                            ? await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId && t.Slug != IRootAdminService.DefaultTenantSlug)
-                            : null;
-                        var name = activeTenant?.Name ?? (isHost ? "System Root Administration" : "Organization");
-                        var allowed = !string.IsNullOrEmpty(tenantId) ? [new TenantInfo(tenantId, name, isHost)] : new List<TenantInfo>();
-                        TenantContext.Initialize(tenantId, name, user.UserType, allowed, isHost);
-                        StateHasChanged();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to resolve tenant for authenticated user.");
-            }
+            // Zero Trust: Authenticated but tenant missing -> redirect to login/tenant selection
+            NavigationManager.NavigateTo("/login", replace: true);
         }
     }
 

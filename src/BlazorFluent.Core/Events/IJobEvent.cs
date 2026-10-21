@@ -14,9 +14,9 @@ public interface IJobEvent
     /// <summary>
     /// The tenant that enqueued this job. Restored by the background listener
     /// to scope all EF queries and auditing within the job to the correct tenant.
-    /// Never null; defaults to 'system' or 'host' for cross-tenant maintenance jobs.
+    /// Sequential UUIDv7 Guid referencing TenantEntity.Id.
     /// </summary>
-    string TenantId { get; }
+    Guid TenantId { get; }
 
     /// <summary>
     /// Correlation identifier linking all chained batch steps belonging to the same workflow.
@@ -50,7 +50,7 @@ public abstract record BaseJobEvent : IJobEvent
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     public string TriggerSource { get; init; }
     public virtual string JobName => GetType().Name.Replace("Event", string.Empty);
-    public string TenantId { get; init; }
+    public Guid TenantId { get; init; }
     public string CorrelationId { get; init; }
     public Guid? ParentExecutionId { get; init; }
     public string SenderOrigin { get; init; }
@@ -59,7 +59,7 @@ public abstract record BaseJobEvent : IJobEvent
 
     protected BaseJobEvent(
         string triggerSource,
-        string tenantId,
+        Guid tenantId,
         string correlationId,
         string senderOrigin,
         string senderUserId,
@@ -67,7 +67,10 @@ public abstract record BaseJobEvent : IJobEvent
         Guid? parentExecutionId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(triggerSource);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("TenantId must be a valid, non-empty GUID.", nameof(tenantId));
+        }
         ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
         ArgumentException.ThrowIfNullOrWhiteSpace(senderOrigin);
         ArgumentException.ThrowIfNullOrWhiteSpace(senderUserId);
@@ -82,4 +85,3 @@ public abstract record BaseJobEvent : IJobEvent
         ParentExecutionId = parentExecutionId;
     }
 }
-

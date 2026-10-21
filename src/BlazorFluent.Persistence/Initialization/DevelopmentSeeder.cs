@@ -86,7 +86,6 @@ public static class DevelopmentSeeder
                         Email = adminEmail,
                         FullName = string.IsNullOrWhiteSpace(seedOptions.AdminFullName) ? "Configured Dev Admin" : seedOptions.AdminFullName,
                         UserType = UserTypeEnum.CompanyUser,
-                        DefaultTenantId = existingTenant?.Id ?? tenant?.Id,
                         IsActive = true,
                         StartDate = DateTime.UtcNow.AddDays(-30),
                         EndDate = DateTime.UtcNow.AddYears(1),
@@ -94,6 +93,24 @@ public static class DevelopmentSeeder
                     };
                     adminUser.RowSignature = adminUser.ComputeIntegritySignature(integrityKey);
                     dbContext.Users.Add(adminUser);
+
+                    var assignedTenantId = existingTenant?.Id ?? tenant?.Id;
+                    if (assignedTenantId.HasValue)
+                    {
+                        var tenantUser = new TenantUserEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            TenantId = assignedTenantId.Value,
+                            UserEntityId = adminUser.Id,
+                            Role = TenantAdminRoleEnum.TenantAdmin,
+                            IsActive = true,
+                            StartDate = adminUser.StartDate,
+                            EndDate = adminUser.EndDate
+                        };
+                        tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
+                        dbContext.TenantUsers.Add(tenantUser);
+                    }
+
                     changesMade = true;
                 }
             }
@@ -122,7 +139,6 @@ public static class DevelopmentSeeder
                         Email = email,
                         FullName = string.IsNullOrWhiteSpace(devUser.Label) ? email : devUser.Label,
                         UserType = UserTypeEnum.CompanyUser,
-                        DefaultTenantId = targetTenant?.Id,
                         IsActive = true,
                         StartDate = DateTime.UtcNow.AddDays(-30),
                         EndDate = DateTime.UtcNow.AddYears(1),
@@ -130,6 +146,23 @@ public static class DevelopmentSeeder
                     };
                     user.RowSignature = user.ComputeIntegritySignature(integrityKey);
                     dbContext.Users.Add(user);
+
+                    if (targetTenant is not null)
+                    {
+                        var tenantUser = new TenantUserEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            TenantId = targetTenant.Id,
+                            UserEntityId = user.Id,
+                            Role = TenantAdminRoleEnum.TenantMember,
+                            IsActive = true,
+                            StartDate = user.StartDate,
+                            EndDate = user.EndDate
+                        };
+                        tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
+                        dbContext.TenantUsers.Add(tenantUser);
+                    }
+
                     changesMade = true;
                 }
             }

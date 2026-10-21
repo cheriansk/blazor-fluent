@@ -7,7 +7,7 @@ namespace BlazorFluent.Jobs.Jobs.Tasks;
 /// </summary>
 public record DailyTaskSummaryJobEvent(
     string TriggerSource,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,

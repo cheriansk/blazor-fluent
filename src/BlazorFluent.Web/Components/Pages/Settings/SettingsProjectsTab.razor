@@ -173,9 +173,9 @@
                         }
                     </TemplateColumn>
                     <PropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
-                    <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.TentativeStartDate))">
+                    <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.StartDate))">
                         <span style="font-size: 12px;">
-                            @TimeZoneService.FormatDate(context.TentativeStartDate) ~ @TimeZoneService.FormatDate(context.TentativeEndDate)
+                            @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
                         </span>
                     </TemplateColumn>
                     <TemplateColumn Title="Actions">
@@ -265,12 +265,12 @@
 
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="24" Wrap="true">
                                         <div style="flex: 1; min-width: 200px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Tentative Start Date</span>
-                                            <span>@TimeZoneService.FormatDate(_selectedProject.TentativeStartDate)</span>
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Start Date</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.StartDate)</span>
                                         </div>
                                         <div style="flex: 1; min-width: 200px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Tentative End Date</span>
-                                            <span>@TimeZoneService.FormatDate(_selectedProject.TentativeEndDate)</span>
+                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Due / Target End</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.EndDate ?? _selectedProject.DueDate)</span>
                                         </div>
                                     </FluentStack>
 
@@ -328,8 +328,8 @@
                                         </div>
 
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
-                                            <FluentDatePicker Label="Tentative Start Date" @bind-Value="_editStartDate" />
-                                            <FluentDatePicker Label="Tentative End Date" @bind-Value="_editEndDate" />
+                                            <FluentDatePicker Label="Start Date" @bind-Value="_editStartDate" />
+                                            <FluentDatePicker Label="Due / Target Completion Date" @bind-Value="_editEndDate" />
                                         </FluentStack>
 
                                         <div>
@@ -728,9 +728,9 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != "default")
+                .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
         }
 
@@ -854,8 +854,8 @@
         _editLocation = _selectedProject.Location;
         _editStatus = _selectedProject.Status;
         _editProgramId = _selectedProject.ProgramId?.ToString() ?? string.Empty;
-        _editStartDate = _selectedProject.TentativeStartDate;
-        _editEndDate = _selectedProject.TentativeEndDate;
+        _editStartDate = _selectedProject.StartDate;
+        _editEndDate = _selectedProject.EndDate ?? _selectedProject.DueDate;
         _editScopeSummary = !string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : _selectedProject.Description;
         _isEditingDetails = true;
         UnsavedChanges.RegisterChange("Settings > Projects", $"Editing project '{_selectedProject.Name}' details");
@@ -905,11 +905,14 @@
     private async Task LoadTenantUsersForProjectAsync()
     {
         if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
         try
         {
-            _tenantUsers = await DbContext.Users
+            _tenantUsers = await DbContext.TenantUsers
                 .AsNoTracking()
-                .Where(u => (u.DefaultTenantId == _selectedTenantId || (_selectedTenantId == "default" && string.IsNullOrEmpty(u.DefaultTenantId))) && !u.IsDeleted && u.IsActive)
+                .Where(tu => tu.TenantId == tenantGuid && !tu.IsDeleted && tu.IsActive)
+                .Include(tu => tu.User)
+                .Select(tu => tu.User)
                 .OrderBy(u => u.FullName)
                 .ToListAsync();
         }
