@@ -1,4 +1,5 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using System;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Calendar;
@@ -6,10 +7,11 @@ namespace BlazorFluent.Core.Domain.Calendar;
 /// <summary>
 /// Universal abstract base class for all calendar entities across Program, Project, and User levels.
 /// Models milestone target dates, sprint cadences, release schedules, phase gates, and delivery deadlines.
-/// Tied to tenant via <see cref="TenantAuditableEntity"/>.
+/// Tied to tenant via sequential UUIDv7 <see cref="TenantAuditableEntity.TenantId"/>.
 /// Implements <see cref="IEffectiveDatedEntity"/> (StartDate and EndDate) and <see cref="ISoftDeletableEntity"/>.
+/// Implements <see cref="IVersionedEntity"/> to maintain immutable baseline revision slippage history.
 /// </summary>
-public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity
+public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDatedEntity, IVersionedEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// Title for the Event
@@ -31,6 +33,21 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// Required for all entries. For single-day milestones, EndDate equals StartDate.
     /// </summary>
     public DateTime? EndDate { get; set; } 
+
+    /// <summary>
+    /// Formal schedule baseline revision version number (1, 2, 3...).
+    /// Initialized to 1 upon creation; incremented on schedule re-baselining to preserve slippage audit trails.
+    /// </summary>
+    public int VerNum { get; set; } = 1;
+
+    public void SetVersionNumber(int newVersion)
+    {
+        if (newVersion <= VerNum)
+        {
+            throw new InvalidOperationException($"New calendar version ({newVersion}) must be greater than current version ({VerNum}).");
+        }
+        VerNum = newVersion;
+    }
 
     /// <summary>
     /// Classification category of this calendar entry (Milestone, Sprint, Release, Deadline, etc.).

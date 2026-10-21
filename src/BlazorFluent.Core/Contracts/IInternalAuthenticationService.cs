@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Dtos.Response;
 
@@ -8,8 +8,9 @@ public record AuthUserResult(
     UserEntity User,
     bool IsRootAdmin,
     List<TenantInfo> AllowedTenants,
-    string ResolvedTenantId,
-    string ResolvedTenantName
+    Guid ResolvedTenantId,
+    string ResolvedTenantName,
+    string ResolvedTenantSlug
 );
 
 public interface IInternalAuthenticationService

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -14,7 +14,6 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(a => a.Level)
@@ -58,7 +57,16 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
         builder.Property(a => a.DueDate)
             .IsRequired();
 
-        builder.Property(a => a.EndDate)
+        builderbuilder.Property(a => a.RevisedDueDate)
+            .IsRequired(false);
+
+        .Property(a => a.EndDate)
+            .IsRequired(false);
+
+        builder.Property(a => a.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(a => a.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(a => a.ReporterEmail)

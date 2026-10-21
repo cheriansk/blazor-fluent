@@ -197,14 +197,16 @@
 
                         // Prefer the intra-session active tenant if still permitted in allowed tenants
                         var resolvedTenantId = verified.ResolvedTenantId;
+                        var resolvedTenantSlug = verified.ResolvedTenantSlug;
                         var resolvedTenantName = verified.ResolvedTenantName;
 
                         if (!string.IsNullOrWhiteSpace(data.ActiveTenantId))
                         {
-                            var activeMatch = verified.AllowedTenants.FirstOrDefault(t => t.Id == data.ActiveTenantId);
+                            var activeMatch = verified.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == data.ActiveTenantId || t.Slug == data.ActiveTenantId);
                             if (activeMatch != null)
                             {
                                 resolvedTenantId = activeMatch.Id;
+                                resolvedTenantSlug = activeMatch.Slug;
                                 resolvedTenantName = activeMatch.Name;
                             }
                         }
@@ -214,7 +216,8 @@
                             tenantName: resolvedTenantName,
                             userType: user.UserType,
                             allowedTenants: verified.AllowedTenants,
-                            isHost: isHost);
+                            isHost: isHost,
+                            tenantSlug: resolvedTenantSlug);
 
                         if (data.ActiveProjectId.HasValue)
                         {

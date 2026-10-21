@@ -86,7 +86,7 @@ public static class DevelopmentSeeder
                         Email = adminEmail,
                         FullName = string.IsNullOrWhiteSpace(seedOptions.AdminFullName) ? "Configured Dev Admin" : seedOptions.AdminFullName,
                         UserType = UserTypeEnum.CompanyUser,
-                        DefaultTenantId = tenantSlug,
+                        DefaultTenantId = existingTenant?.Id ?? tenant?.Id,
                         IsActive = true,
                         StartDate = DateTime.UtcNow.AddDays(-30),
                         EndDate = DateTime.UtcNow.AddYears(1),
@@ -103,6 +103,7 @@ public static class DevelopmentSeeder
         if (devLoginOptions != null && devLoginOptions.Enabled && devLoginOptions.Users.Count > 0)
         {
             var defaultTenantSlug = seedOptions?.TenantSlug ?? InitialDatabaseSeeder.DefaultTenantSlug;
+            var targetTenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.Slug == defaultTenantSlug, cancellationToken);
 
             foreach (var devUser in devLoginOptions.Users)
             {
@@ -121,7 +122,7 @@ public static class DevelopmentSeeder
                         Email = email,
                         FullName = string.IsNullOrWhiteSpace(devUser.Label) ? email : devUser.Label,
                         UserType = UserTypeEnum.CompanyUser,
-                        DefaultTenantId = defaultTenantSlug,
+                        DefaultTenantId = targetTenant?.Id,
                         IsActive = true,
                         StartDate = DateTime.UtcNow.AddDays(-30),
                         EndDate = DateTime.UtcNow.AddYears(1),

@@ -584,15 +584,15 @@ public class WorkflowService : IWorkflowService
     {
         if (_currentUser.IsRootAdmin) return true;
         var tenantId = _tenantContext.TenantId;
-        if (string.IsNullOrWhiteSpace(tenantId)) return false;
+        if (!tenantId.HasValue || tenantId.Value == Guid.Empty) return false;
         var userId = _currentUser.UserId ?? string.Empty;
 
         return level switch
         {
-            TaskLevelEnum.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct),
-            TaskLevelEnum.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
-            TaskLevelEnum.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
-            _ => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)
+            TaskLevelEnum.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct),
+            TaskLevelEnum.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct)),
+            TaskLevelEnum.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct)),
+            _ => await _hierarchyAuth.IsTenantAdminAsync(tenantId.Value, userId, ct)
         };
     }
 

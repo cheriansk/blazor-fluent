@@ -17,8 +17,7 @@ public class JobExecutionEntityValidator : AbstractValidator<JobExecutionEntity>
             .MaximumLength(100).WithMessage("CorrelationId cannot exceed 100 characters.");
 
         RuleFor(x => x.TenantId)
-            .NotEmpty().WithMessage("TenantId is required; use 'HOST' for system-wide jobs.")
-            .MaximumLength(100).WithMessage("TenantId cannot exceed 100 characters.");
+            .NotEmpty().WithMessage("TenantId is required.");
 
         RuleFor(x => x.JobName)
             .NotEmpty().WithMessage("JobName is required.")

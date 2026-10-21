@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Shared.DataListTypes;
@@ -10,14 +10,12 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// <summary>
 /// Represents a user's explicit membership and organizational role within a tenant.
 /// Enables users to belong to multiple client tenants with least-privilege Zero Trust gating.
-/// Enforces 3NF relational normalization by persisting only <see cref="TenantEntityId"/> and <see cref="UserEntityId"/>
+/// Enforces 3NF relational normalization by persisting only <see cref="TenantAuditableEntity.TenantId"/> and <see cref="UserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
 /// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
 public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity
 {
-    public required Guid TenantEntityId { get; set; }
-
     public required Guid UserEntityId { get; set; }
 
     public required TenantRoleEnum Role { get; set; }
@@ -40,6 +38,9 @@ public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IHm
 
     // --- [NotMapped] Navigation Forwarders ---
     [NotMapped]
+    public Guid TenantEntityId { get => TenantId; set => TenantId = value; }
+
+    [NotMapped]
     public string UserId => UserEntityId.ToString();
 
     [NotMapped]
@@ -53,7 +54,7 @@ public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IHm
     /// </summary>
     public string ComputeIntegritySignature(string secretKey)
     {
-        var payload = $"{Id}:{TenantId}:{TenantEntityId}:{UserEntityId}:{(int)Role}:{IsActive}";
+        var payload = $"{Id}:{TenantId}:{UserEntityId}:{(int)Role}:{IsActive}";
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         return Convert.ToBase64String(hash);

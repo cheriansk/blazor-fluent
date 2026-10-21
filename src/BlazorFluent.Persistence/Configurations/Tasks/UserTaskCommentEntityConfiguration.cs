@@ -13,7 +13,6 @@ public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserT
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(c => c.TaskId)

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Domain.Tenancy;
+using BlazorFluent.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,7 +13,6 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(p => p.Name)
@@ -32,10 +31,22 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
             .HasMaxLength(250)
             .IsRequired(false);
 
-        builder.Property(p => p.TentativeStartDate)
+        builder.Property(p => p.StartDate)
+            .IsRequired();
+
+        builder.Property(p => p.DueDate)
+            .IsRequired();
+
+        builder.Property(p => p.RevisedDueDate)
             .IsRequired(false);
 
-        builder.Property(p => p.TentativeEndDate)
+        builder.Property(p => p.EndDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(p => p.ScopeSummary)
@@ -58,7 +69,6 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
         builder.Property(p => p.IsDeleted).IsRequired().HasDefaultValue(false);
         builder.Property(p => p.DeletedBy).HasMaxLength(256).IsRequired(false);
 
-
         builder.HasIndex(p => p.TenantId)
             .HasDatabaseName("IX_Projects_TenantId");
 
@@ -72,6 +82,11 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
 
         builder.HasIndex(p => p.ProgramId)
             .HasDatabaseName("IX_Projects_ProgramId");
+
+        builder.HasOne(p => p.TenantEntity)
+            .WithMany(t => t.Projects)
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(p => p.Program)
             .WithMany(pr => pr.Projects)

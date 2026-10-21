@@ -59,8 +59,8 @@
                     <FluentSelect TOption="TenantInfo"
                                   TValue="string"
                                   Items="@_pendingAuth.AllowedTenants"
-                                  OptionText="@(t => $"{t.Name} ({t.Id})")"
-                                  OptionValue="@(t => t.Id)"
+                                  OptionText="@(t => $"{t.Name} ({t.Slug})")"
+                                  OptionValue="@(t => t.Id.ToString())"
                                   @bind-Value="_selectedTenantSlug"
                                   Placeholder="-- Select an organization --"
                                   Style="width: 100%;" />
@@ -267,7 +267,7 @@
         {
             // Single tenant: auto-select and proceed directly
             var singleTenant = verified.AllowedTenants[0];
-            await CompleteLoginAsync(verified, singleTenant.Id, singleTenant.Name);
+            await CompleteLoginAsync(verified, singleTenant.Id, singleTenant.Name, singleTenant.Slug);
             return;
         }
 
@@ -281,10 +281,10 @@
     {
         if (_pendingAuth is null || string.IsNullOrWhiteSpace(_selectedTenantSlug)) return;
 
-        var selected = _pendingAuth.AllowedTenants.FirstOrDefault(t => t.Id == _selectedTenantSlug);
-        var tenantName = selected?.Name ?? _selectedTenantSlug;
+        var selected = _pendingAuth.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == _selectedTenantSlug || t.Slug == _selectedTenantSlug);
+        if (selected == null) return;
 
-        await CompleteLoginAsync(_pendingAuth, _selectedTenantSlug, tenantName);
+        await CompleteLoginAsync(_pendingAuth, selected.Id, selected.Name, selected.Slug);
     }
 
     private void CancelTenantSelection()
@@ -295,7 +295,7 @@
         _errorMessage = null;
     }
 
-    private async Task CompleteLoginAsync(AuthUserResult verified, string tenantId, string tenantName)
+    private async Task CompleteLoginAsync(AuthUserResult verified, Guid tenantId, string tenantName, string tenantSlug)
     {
         _isLoading = true;
         _errorMessage = null;
@@ -310,7 +310,8 @@
                 tenantName: tenantName,
                 userType: user.UserType,
                 allowedTenants: verified.AllowedTenants,
-                isHost: isHost);
+                isHost: isHost,
+                tenantSlug: tenantSlug);
 
             // 1. Establish authenticated state on circuit immediately upon verified credentials
             if (CurrentUser is AppCurrentUser appUser)
@@ -342,7 +343,7 @@
                     session.Id,
                     user.Id.ToString(),
                     user.Email,
-                    tenantId,
+                    tenantId.ToString(),
                     TimeZoneId: user.TimeZoneId,
                     StartedAtUtc: session.StartedAtUtc));
             }

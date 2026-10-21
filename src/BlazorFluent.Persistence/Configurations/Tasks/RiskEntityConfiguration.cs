@@ -14,7 +14,6 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(r => r.Level)
@@ -68,7 +67,16 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.Property(r => r.DueDate)
             .IsRequired();
 
-        builder.Property(r => r.EndDate)
+        builderbuilder.Property(r => r.RevisedDueDate)
+            .IsRequired(false);
+
+        .Property(r => r.EndDate)
+            .IsRequired(false);
+
+        builder.Property(r => r.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(r => r.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(r => r.ReporterEmail)

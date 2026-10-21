@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Events;
@@ -12,7 +12,7 @@ namespace BlazorFluent.Core.Domain.Events;
 public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
 {
     /// <summary>Tenant scope for row-level isolation. Multi-tenant queries filter by this value.</summary>
-    public required string TenantId { get; set; }
+    public required Guid TenantId { get; set; }
 
     /// <summary>Unique identifier of the published event (UUIDv7).</summary>
     public Guid EventId { get; set; } = Guid.CreateVersion7();

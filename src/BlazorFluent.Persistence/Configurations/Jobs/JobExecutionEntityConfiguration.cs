@@ -25,7 +25,6 @@ public class JobExecutionEntityConfiguration : IEntityTypeConfiguration<JobExecu
             .IsRequired();
 
         builder.Property(e => e.TenantId)
-            .HasMaxLength(100)
             .IsRequired();
 
         builder.Property(e => e.TriggerSource)

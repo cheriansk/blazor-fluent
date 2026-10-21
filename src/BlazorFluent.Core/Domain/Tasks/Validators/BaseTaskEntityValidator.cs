@@ -1,4 +1,5 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using System;
+using BlazorFluent.Shared.DataListTypes;
 using FluentValidation;
 
 namespace BlazorFluent.Core.Domain.Tasks.Validators;
@@ -11,6 +12,9 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
 {
     protected BaseTaskEntityValidator()
     {
+        RuleFor(x => x.TenantId)
+            .NotEmpty().WithMessage("TenantId is mandatory for all work items.");
+
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Title is required.")
             .MaximumLength(200).WithMessage("Title cannot exceed 200 characters.");
@@ -19,7 +23,22 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
             .MaximumLength(10000).WithMessage("Description cannot exceed 10,000 characters.");
 
         RuleFor(x => x.DueDate)
-            .NotEmpty().WithMessage("Due Date is required.");
+            .NotEmpty().WithMessage("Due Date is required.")
+            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("Due Date cannot precede Start Date.");
+
+        When(x => x.EndDate.HasValue, () =>
+        {
+            RuleFor(x => x.EndDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .WithMessage("End Date cannot precede Start Date.");
+        });
+
+        When(x => x.RevisedDueDate.HasValue, () =>
+        {
+            RuleFor(x => x.RevisedDueDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .WithMessage("Revised Due Date cannot precede Start Date.");
+        });
 
         RuleFor(x => x.ReporterEmail)
             .MaximumLength(256).WithMessage("Reporter email cannot exceed 256 characters.");

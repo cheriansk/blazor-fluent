@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -14,7 +14,6 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(i => i.Level)
@@ -64,7 +63,16 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.Property(i => i.DueDate)
             .IsRequired();
 
-        builder.Property(i => i.EndDate)
+        builderbuilder.Property(i => i.RevisedDueDate)
+            .IsRequired(false);
+
+        .Property(i => i.EndDate)
+            .IsRequired(false);
+
+        builder.Property(i => i.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(i => i.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(i => i.ReporterEmail)

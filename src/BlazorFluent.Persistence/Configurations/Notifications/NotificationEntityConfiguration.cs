@@ -13,7 +13,6 @@ public class NotificationEntityConfiguration : IEntityTypeConfiguration<Notifica
         builder.HasKey(n => n.Id);
 
         builder.Property(n => n.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(n => n.ProjectId)

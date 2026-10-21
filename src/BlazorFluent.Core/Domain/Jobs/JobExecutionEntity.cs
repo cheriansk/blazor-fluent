@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Jobs;
@@ -28,7 +28,7 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
     public required string JobName { get; set; }
 
     /// <summary>Originating tenant identifier, or 'HOST' for platform-wide system jobs.</summary>
-    public required string TenantId { get; set; }
+    public required Guid TenantId { get; set; }
 
     /// <summary>Strongly-typed trigger mechanism that initiated the execution.</summary>
     public required JobTriggerSourceEnum TriggerSource { get; set; }

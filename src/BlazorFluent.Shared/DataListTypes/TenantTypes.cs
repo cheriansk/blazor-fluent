@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.Attributes;
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -38,4 +38,7 @@ public static class UserTypeEnumDefinitions
     }
 }
 
-public record TenantInfo(string Id, string Name, bool IsActive);
+public record TenantInfo(Guid Id, string Slug, string Name, bool IsActive)
+{
+    public TenantInfo(Guid id, string name, bool isActive) : this(id, string.Empty, name, isActive) { }
+}

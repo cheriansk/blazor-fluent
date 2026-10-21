@@ -30,8 +30,7 @@ public class ImpersonationGrantEntityValidator : AbstractValidator<Impersonation
             .MaximumLength(256).WithMessage("TargetUserEmail cannot exceed 256 characters.");
 
         RuleFor(x => x.TargetTenantId)
-            .NotEmpty().WithMessage("TargetTenantId is required.")
-            .MaximumLength(100).WithMessage("TargetTenantId cannot exceed 100 characters.");
+            .NotEmpty().WithMessage("TargetTenantId is required.");
 
         RuleFor(x => x.Reason)
             .NotEmpty().WithMessage("A clear reason is required for administrative impersonation.")

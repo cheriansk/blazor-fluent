@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -56,9 +56,12 @@ public class ProgramService : IProgramService
         // Get list of accessible program IDs (Tenant Admin sees all, Program Admin sees only assigned)
         var accessibleProgramIds = await _hierarchyAuth.GetAccessibleProgramIdsAsync(normalizedSlug, userId, ct);
 
+        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
+        if (tenant == null) return [];
+
         return await _context.Programs
             .AsNoTracking()
-            .Where(p => p.TenantId.ToLower() == normalizedSlug &&
+            .Where(p => p.TenantId == tenant.Id &&
                         accessibleProgramIds.Contains(p.Id) &&
                         !p.IsDeleted)
             .Include(p => p.Projects.Where(pr => !pr.IsDeleted))
@@ -122,7 +125,7 @@ public class ProgramService : IProgramService
 
         // Check unique code
         var codeExists = await _context.Programs
-            .AnyAsync(p => p.TenantId.ToLower() == normalizedSlug &&
+            .AnyAsync(p => p.TenantId == tenant.Id &&
                            p.Code.ToLower() == code.Trim().ToLower() &&
                            !p.IsDeleted, ct);
 
@@ -132,13 +135,13 @@ public class ProgramService : IProgramService
         var program = new ProgramEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = normalizedSlug,
-            TenantEntityId = tenant.Id,
+            TenantId = tenant.Id,
             Name = name.Trim(),
             Code = code.Trim().ToUpperInvariant(),
             Description = description?.Trim(),
-            StartDateUtc = startDateUtc,
-            TargetEndDateUtc = targetEndDateUtc,
+            StartDate = startDateUtc ?? DateTime.UtcNow,
+            DueDate = targetEndDateUtc ?? (startDateUtc ?? DateTime.UtcNow).AddMonths(3),
+            EndDate = targetEndDateUtc,
             Status = status,
             IsActive = true
         };

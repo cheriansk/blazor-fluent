@@ -12,6 +12,12 @@ public interface IHierarchyAuthorizationService
     /// Checks whether the user is an active Tenant Admin for the specified tenant.
     /// Strictly verifies HMAC row integrity.
     /// </summary>
+    Task<bool> IsTenantAdminAsync(Guid tenantId, string userId, CancellationToken ct = default);
+    Task<bool> CanViewTenantSettingsAsync(Guid tenantId, string userId, CancellationToken ct = default);
+    Task<bool> CanEditTenantSettingsAsync(Guid tenantId, string userId, CancellationToken ct = default);
+    Task<bool> CanAccessTenantAsync(Guid tenantId, string userId, CancellationToken ct = default);
+    Task<IReadOnlyList<Guid>> GetAccessibleProgramIdsAsync(Guid tenantId, string userId, CancellationToken ct = default);
+    Task<bool> CanManageTenantAdminsAsync(Guid tenantId, string userId, CancellationToken ct = default);
     Task<bool> IsTenantAdminAsync(string tenantId, string userId, CancellationToken ct = default);
 
     /// <summary>

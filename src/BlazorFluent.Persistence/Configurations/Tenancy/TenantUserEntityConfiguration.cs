@@ -13,10 +13,6 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
         builder.HasKey(u => u.Id);
 
         builder.Property(u => u.TenantId)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(u => u.TenantEntityId)
             .IsRequired();
 
         builder.Property(u => u.UserEntityId)
@@ -39,7 +35,7 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
 
         builder.HasOne(u => u.Tenant)
             .WithMany(t => t.TenantUsers)
-            .HasForeignKey(u => u.TenantEntityId)
+            .HasForeignKey(u => u.TenantId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(u => u.User)

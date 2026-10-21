@@ -13,8 +13,7 @@ public class ProgramEntityConfiguration : IEntityTypeConfiguration<ProgramEntity
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.TenantId)
-            .IsRequired()
-            .HasMaxLength(100);
+            .IsRequired();
 
         builder.Property(p => p.Name)
             .IsRequired()
@@ -34,6 +33,27 @@ public class ProgramEntityConfiguration : IEntityTypeConfiguration<ProgramEntity
         builder.Property(p => p.IsActive)
             .IsRequired();
 
+        builder.Property(p => p.StartDate)
+            .IsRequired();
+
+        builder.Property(p => p.DueDate)
+            .IsRequired();
+
+        builder.Property(p => p.RevisedDueDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.EndDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.ActualEndDate)
+            .IsRequired(false);
+
+        builder.Property(p => p.ClosedAtUtc)
+            .IsRequired(false);
+
         builder.Property(p => p.IsDeleted)
             .IsRequired();
 
@@ -44,7 +64,7 @@ public class ProgramEntityConfiguration : IEntityTypeConfiguration<ProgramEntity
 
         builder.HasOne(p => p.TenantEntity)
             .WithMany(t => t.Programs)
-            .HasForeignKey(p => p.TenantEntityId)
+            .HasForeignKey(p => p.TenantId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(p => p.Projects)

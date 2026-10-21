@@ -127,14 +127,15 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
-        var (allowedTenants, resolvedTenantId, resolvedTenantName) = ResolveUserTenants(user, isHost, dbTenants);
+        var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants);
 
         return Result<AuthUserResult>.Success(new AuthUserResult(
             user,
             isRootAdmin,
             allowedTenants,
             resolvedTenantId,
-            resolvedTenantName));
+            resolvedTenantName,
+            resolvedTenantSlug));
     }
 
     public async Task<Result<AuthUserResult>> VerifyAndRehydrateSessionAsync(string userId, Guid sessionId, CancellationToken ct = default)
@@ -252,14 +253,15 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
-        var (allowedTenants, resolvedTenantId, resolvedTenantName) = ResolveUserTenants(user, isHost, dbTenants);
+        var (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug) = ResolveUserTenants(user, isHost, dbTenants);
 
         return Result<AuthUserResult>.Success(new AuthUserResult(
             user,
             isRootAdmin,
             allowedTenants,
             resolvedTenantId,
-            resolvedTenantName));
+            resolvedTenantName,
+            resolvedTenantSlug));
     }
 
     /// <summary>
@@ -268,22 +270,24 @@ public class InternalAuthenticationService : IInternalAuthenticationService
     /// Company users only receive tenants matching their verified email domain or explicit DefaultTenantId.
     /// Client users are strictly constrained to their single DefaultTenantId.
     /// </summary>
-    private static (List<TenantInfo> AllowedTenants, string ResolvedTenantId, string ResolvedTenantName) ResolveUserTenants(
+    private static (List<TenantInfo> AllowedTenants, Guid ResolvedTenantId, string ResolvedTenantName, string ResolvedTenantSlug) ResolveUserTenants(
         UserEntity user,
         bool isHost,
         List<TenantEntity> activeTenants)
     {
         List<TenantInfo> allowedTenants = [];
-        string resolvedTenantId = string.Empty;
+        Guid resolvedTenantId = Guid.Empty;
+        string resolvedTenantSlug = string.Empty;
         string resolvedTenantName = isHost ? "System Root Administration" : "Organization";
 
         if (isHost)
         {
-            allowedTenants = activeTenants.Select(t => new TenantInfo(t.Slug, t.Name, t.IsActive)).ToList();
-            var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
+            allowedTenants = activeTenants.Select(t => new TenantInfo(t.Id, t.Slug, t.Name, t.IsActive)).ToList();
+            var defaultMatch = allowedTenants.FirstOrDefault(t => user.DefaultTenantId.HasValue && t.Id == user.DefaultTenantId.Value) ?? allowedTenants.FirstOrDefault();
             if (defaultMatch is not null)
             {
                 resolvedTenantId = defaultMatch.Id;
+                resolvedTenantSlug = defaultMatch.Slug;
                 resolvedTenantName = defaultMatch.Name;
             }
         }
@@ -294,34 +298,36 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             var userEmail = (user.Email ?? string.Empty).Trim().ToLowerInvariant();
 
             allowedTenants = activeTenants
-                .Where(t => (!string.IsNullOrWhiteSpace(user.DefaultTenantId) && string.Equals(t.Slug, user.DefaultTenantId, StringComparison.OrdinalIgnoreCase)) ||
+                .Where(t => (user.DefaultTenantId.HasValue && t.Id == user.DefaultTenantId.Value) ||
                             t.GetInternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())) ||
                             t.GetExternalDomains().Any(d => userEmail.EndsWith(d.ToLowerInvariant())))
-                .Select(t => new TenantInfo(t.Slug, t.Name, t.IsActive))
+                .Select(t => new TenantInfo(t.Id, t.Slug, t.Name, t.IsActive))
                 .ToList();
 
-            var defaultMatch = allowedTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId) ?? allowedTenants.FirstOrDefault();
+            var defaultMatch = allowedTenants.FirstOrDefault(t => user.DefaultTenantId.HasValue && t.Id == user.DefaultTenantId.Value) ?? allowedTenants.FirstOrDefault();
             if (defaultMatch is not null)
             {
                 resolvedTenantId = defaultMatch.Id;
+                resolvedTenantSlug = defaultMatch.Slug;
                 resolvedTenantName = defaultMatch.Name;
             }
         }
         else
         {
             // ClientUser: Strictly bound to their designated DefaultTenantId
-            if (!string.IsNullOrWhiteSpace(user.DefaultTenantId))
+            if (user.DefaultTenantId.HasValue)
             {
-                var clientTenant = activeTenants.FirstOrDefault(t => string.Equals(t.Slug, user.DefaultTenantId, StringComparison.OrdinalIgnoreCase));
+                var clientTenant = activeTenants.FirstOrDefault(t => t.Id == user.DefaultTenantId.Value);
                 if (clientTenant is not null)
                 {
-                    allowedTenants = [new TenantInfo(clientTenant.Slug, clientTenant.Name, clientTenant.IsActive)];
-                    resolvedTenantId = clientTenant.Slug;
+                    allowedTenants = [new TenantInfo(clientTenant.Id, clientTenant.Slug, clientTenant.Name, clientTenant.IsActive)];
+                    resolvedTenantId = clientTenant.Id;
+                    resolvedTenantSlug = clientTenant.Slug;
                     resolvedTenantName = clientTenant.Name;
                 }
             }
         }
 
-        return (allowedTenants, resolvedTenantId, resolvedTenantName);
+        return (allowedTenants, resolvedTenantId, resolvedTenantName, resolvedTenantSlug);
     }
 }

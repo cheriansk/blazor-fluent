@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Events;
@@ -12,7 +12,7 @@ namespace BlazorFluent.Core.Domain.Events;
 public class EventConsumptionTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
 {
     /// <summary>Tenant scope for row-level isolation.</summary>
-    public required string TenantId { get; set; }
+    public required Guid TenantId { get; set; }
 
     /// <summary>Foreign key linking to the parent publication record.</summary>
     public required Guid EventPublishTrackerId { get; set; }

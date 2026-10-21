@@ -14,7 +14,6 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(c => c.ProgramId)

@@ -49,7 +49,7 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProject", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         var tasks = await _context.Tasks
             .AsNoTracking()
@@ -66,7 +66,7 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskById", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         var task = await _context.Tasks
             .AsNoTracking()
@@ -140,9 +140,9 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CreateTask", ct: ct);
 
-            if (string.IsNullOrWhiteSpace(task.TenantId))
+            if (task.TenantId == Guid.Empty)
             {
-                task.TenantId = _tenantContext.TenantId ?? string.Empty;
+                task.TenantId = _tenantContext.TenantId ?? Guid.Empty;
             }
 
             // Automatically stamp creator as reporter
@@ -176,7 +176,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             // 1. Compound database lookup: Task MUST match TenantId, ProjectId, and Id to eliminate IDOR
             var task = await _context.Tasks
@@ -224,7 +224,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "CloseTask", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -278,7 +278,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "ReopenTask", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -332,7 +332,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "CancelTask", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -364,7 +364,7 @@ public partial class UserTaskService : IUserTaskService
 
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "AddComment", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -406,7 +406,7 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetComments", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         return await _context.TaskComments.Include(c => c.AuthorUser)
             .AsNoTracking()
@@ -419,7 +419,7 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskDependencies", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
         var dependencies = await _context.WorkDependencies
             .AsNoTracking()
@@ -477,7 +477,7 @@ public partial class UserTaskService : IUserTaskService
 
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "AddTaskDependency", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var task = await _context.Tasks
                 .AsNoTracking()
@@ -563,7 +563,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "RemoveTaskDependency", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var link = await _context.WorkDependencies
                 .AsTracking()
@@ -642,7 +642,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<SubTaskEntity>> GetSubTasksByTaskIdAsync(Guid taskId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
         return await _context.SubTasks
             .AsNoTracking()
             .Where(s => s.TenantId == tenantId && s.ParentTaskId == taskId && !s.IsDeleted)
@@ -655,7 +655,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
             var parentTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == subTask.ParentTaskId, ct);
             if (parentTask == null) return Result<SubTaskEntity>.Failure("Parent task does not exist.");
 
@@ -688,7 +688,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
             var subTask = await _context.SubTasks.AsTracking()
                 .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Id == updated.Id, ct);
             if (subTask == null) return Result<SubTaskEntity>.Failure("Subtask not found.");
@@ -721,7 +721,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
             var subTask = await _context.SubTasks.AsTracking()
                 .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Id == subTaskId, ct);
             if (subTask == null) return Result<bool>.Failure("Subtask not found.");
@@ -749,7 +749,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
         return await _context.WorkDependencies
             .AsNoTracking()
             .Where(d => d.TenantId == tenantId &&
@@ -775,7 +775,7 @@ public partial class UserTaskService : IUserTaskService
                 return Result<WorkDependencyEntity>.Failure("A task cannot block itself.");
             }
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
 
             var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == sourceTaskId, ct);
             if (sourceTask == null) return Result<WorkDependencyEntity>.Failure("Source task not found.");
@@ -868,7 +868,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
             var link = await _context.WorkDependencies.AsTracking()
                 .FirstOrDefaultAsync(l => l.TenantId == tenantId && l.Id == linkId && !l.IsDeleted, ct);
 
@@ -898,7 +898,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId ?? Guid.Empty;
             var dep = await _context.WorkDependencies.AsTracking()
                 .FirstOrDefaultAsync(d => d.TenantId == tenantId && d.Id == dependencyId && !d.IsDeleted, ct);
 

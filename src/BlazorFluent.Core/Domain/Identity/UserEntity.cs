@@ -44,7 +44,7 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
     /// <summary>
     /// Default or home tenant ID for this user.
     /// </summary>
-    public string? DefaultTenantId { get; set; }
+    public Guid? DefaultTenantId { get; set; }
 
     /// <summary>
     /// User's preferred timezone identifier (e.g., 'Eastern Standard Time', 'UTC').

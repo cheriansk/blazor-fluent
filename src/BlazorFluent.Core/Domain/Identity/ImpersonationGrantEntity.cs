@@ -14,7 +14,7 @@ public class ImpersonationGrantEntity : AuditableEntity, IGlobalEntity, ISoftDel
 
     public required string TargetUserId { get; set; }
     public required string TargetUserEmail { get; set; }
-    public required string TargetTenantId { get; set; }
+    public required Guid TargetTenantId { get; set; }
 
     public required DateTime StartedAtUtc { get; set; }
 

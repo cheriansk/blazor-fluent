@@ -162,9 +162,9 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 {
                     // If TenantId was not set by application code, inject the current context's tenant.
                     // Host users with IsHost=true can write to any tenant explicitly.
-                    if (string.IsNullOrWhiteSpace(tenantEntity.TenantId))
+                    if (tenantEntity.TenantId == Guid.Empty)
                     {
-                        if (string.IsNullOrWhiteSpace(tenantContext.TenantId))
+                        if (!tenantContext.TenantId.HasValue || tenantContext.TenantId.Value == Guid.Empty)
                         {
                             _logger.LogError(
                                 "Tenant isolation error: Cannot save entity '{EntityType}' because TenantId is not set and no active tenant is available in ITenantContext",
@@ -177,10 +177,11 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                                 $"Ensure the user session is fully initialized before writing tenant-scoped data.");
                         }
 
-                        tenantEntity.TenantId = tenantContext.TenantId;
+                        tenantEntity.TenantId = tenantContext.TenantId.Value;
                     }
                     else if (!tenantContext.IsHost &&
-                             tenantEntity.TenantId != tenantContext.TenantId)
+                             tenantContext.TenantId.HasValue &&
+                             tenantEntity.TenantId != tenantContext.TenantId.Value)
                     {
                         _logger.LogWarning(
                             "Security violation: attempt to insert entity '{EntityType}' into tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
@@ -241,12 +242,13 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     }
 
                     // Cross-tenant write guard for non-host users (check both original and current values)
-                    var originalTenantId = entry.Property(TenantIdProperty).OriginalValue as string;
+                    var originalTenantId = (Guid)entry.Property(TenantIdProperty).OriginalValue;
                     if (!tenantContext.IsHost &&
-                        ((!string.IsNullOrEmpty(originalTenantId) && originalTenantId != tenantContext.TenantId) ||
-                         tenantEntity.TenantId != tenantContext.TenantId))
+                        tenantContext.TenantId.HasValue &&
+                        ((originalTenantId != Guid.Empty && originalTenantId != tenantContext.TenantId.Value) ||
+                         tenantEntity.TenantId != tenantContext.TenantId.Value))
                     {
-                        var violatingTenant = originalTenantId ?? tenantEntity.TenantId;
+                        var violatingTenant = originalTenantId != Guid.Empty ? originalTenantId : tenantEntity.TenantId;
                         _logger.LogWarning(
                             "Security violation: attempt to modify entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
                             entry.Entity.GetType().Name, violatingTenant, tenantContext.TenantId);
@@ -259,8 +261,12 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 else if (entry.State == EntityState.Deleted)
                 {
                     // Cross-tenant delete guard for hard deletes
-                    var originalTenantId = entry.Property(TenantIdProperty).OriginalValue as string ?? tenantEntity.TenantId;
-                    if (!tenantContext.IsHost && originalTenantId != tenantContext.TenantId)
+                    var originalTenantId = (Guid)entry.Property(TenantIdProperty).OriginalValue;
+                    if (originalTenantId == Guid.Empty)
+                    {
+                        originalTenantId = tenantEntity.TenantId;
+                    }
+                    if (!tenantContext.IsHost && tenantContext.TenantId.HasValue && originalTenantId != tenantContext.TenantId.Value)
                     {
                         _logger.LogWarning(
                             "Security violation: attempt to delete entity '{EntityType}' belonging to tenant '{TargetTenant}' while active tenant is '{ActiveTenant}'",
@@ -352,6 +358,73 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                         $"EndDate ({effectiveDated.EndDate.Value:yyyy-MM-dd}) cannot precede StartDate ({effectiveDated.StartDate:yyyy-MM-dd}).");
                 }
             }
+
+            // ─── SCHEDULED WORK AUTOMATION & GOVERNANCE ────────────────────────
+            if (entry.Entity is IScheduledWorkEntity scheduledWork)
+            {
+                if (entry.Entity is BaseTaskEntity baseTask)
+                {
+                    if (baseTask.Status == TaskStatusEnum.InProgress && !baseTask.ActualStartDate.HasValue)
+                    {
+                        baseTask.ActualStartDate = now;
+                    }
+                    else if (baseTask.Status == TaskStatusEnum.Closed)
+                    {
+                        baseTask.ActualEndDate ??= now;
+                        baseTask.EndDate ??= now;
+                    }
+                    else if (baseTask.Status is TaskStatusEnum.Open or TaskStatusEnum.InProgress)
+                    {
+                        var originalStatusProp = entry.Property(nameof(BaseTaskEntity.Status));
+                        if (originalStatusProp.IsModified && originalStatusProp.OriginalValue is TaskStatusEnum oldStatus && oldStatus == TaskStatusEnum.Closed)
+                        {
+                            baseTask.ActualEndDate = null;
+                        }
+                    }
+                }
+                else if (entry.Entity is ProgramEntity program)
+                {
+                    if (program.Status == ProgramStatusEnum.Active && !program.ActualStartDate.HasValue)
+                    {
+                        program.ActualStartDate = now;
+                    }
+                    else if (program.Status == ProgramStatusEnum.Completed)
+                    {
+                        program.ActualEndDate ??= now;
+                        program.EndDate ??= now;
+                        program.ClosedAtUtc ??= now;
+                    }
+                    else if (program.Status is ProgramStatusEnum.Planning or ProgramStatusEnum.Active)
+                    {
+                        var origStatus = entry.Property(nameof(ProgramEntity.Status));
+                        if (origStatus.IsModified && origStatus.OriginalValue is ProgramStatusEnum oldProgStatus && oldProgStatus == ProgramStatusEnum.Completed)
+                        {
+                            program.ActualEndDate = null;
+                            program.ClosedAtUtc = null;
+                        }
+                    }
+                }
+                else if (entry.Entity is ProjectEntity project)
+                {
+                    if (project.Status == ProjectStatusEnum.Active && !project.ActualStartDate.HasValue)
+                    {
+                        project.ActualStartDate = now;
+                    }
+                    else if (project.Status == ProjectStatusEnum.Done)
+                    {
+                        project.ActualEndDate ??= now;
+                        project.EndDate ??= now;
+                    }
+                    else if (project.Status is ProjectStatusEnum.New or ProjectStatusEnum.Active)
+                    {
+                        var origStatus = entry.Property(nameof(ProjectEntity.Status));
+                        if (origStatus.IsModified && origStatus.OriginalValue is ProjectStatusEnum oldProjStatus && oldProjStatus == ProjectStatusEnum.Done)
+                        {
+                            project.ActualEndDate = null;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -423,13 +496,13 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
 
-            var tenantId = (entry.Entity as ITenantEntity)?.TenantId;
-            if (string.IsNullOrWhiteSpace(tenantId))
+            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? tenantContext.TenantId ?? SystemIdentityUtility.SystemDaemonTenantId;
+            if (tenantId == Guid.Empty)
             {
-                tenantId = tenantContext.TenantId;
+                tenantId = tenantContext.TenantId ?? SystemIdentityUtility.SystemDaemonTenantId;
             }
 
-            if (string.IsNullOrWhiteSpace(tenantId))
+            if (tenantId == Guid.Empty)
             {
                 throw new InvalidOperationException(
                     $"Zero-Trust Security Violation: Cannot record entity audit for '{entityName}'. Active tenant context is missing.");
@@ -458,8 +531,9 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
 
             // Forensic Oversight: Audit Host user exercising cross-tenant modification privilege
             if (tenantContext.IsHost &&
-                !string.IsNullOrWhiteSpace(tenantContext.TenantId) &&
-                !string.Equals(tenantId, tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+                tenantContext.TenantId.HasValue &&
+                tenantContext.TenantId.Value != Guid.Empty &&
+                tenantId != tenantContext.TenantId.Value)
             {
                 var crossTenantSecurityAudit = new AuditRecordEntity
                 {

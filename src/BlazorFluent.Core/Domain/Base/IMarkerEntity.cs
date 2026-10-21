@@ -1,4 +1,4 @@
-﻿namespace BlazorFluent.Core.Domain.Base;
+namespace BlazorFluent.Core.Domain.Base;
 
 /// <summary>
 /// ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK MARKER INTERFACES
@@ -42,7 +42,7 @@ public interface IGlobalEntity : IMarkerEntity { }
 /// </summary>
 public interface ITenantEntity : IMarkerEntity
 {
-    string TenantId { get; set; }
+    Guid TenantId { get; set; }
 }
 
 /// <summary>

@@ -79,7 +79,7 @@ public static class InitialDatabaseSeeder
 
         // 2. Seed up to 3 Root Administrator accounts inside the default tenant
         var existingCount = await dbContext.Users
-            .CountAsync(u => u.DefaultTenantId == DefaultTenantSlug && !u.IsDeleted, cancellationToken);
+            .CountAsync(u => u.DefaultTenantId == defaultTenant.Id && !u.IsDeleted, cancellationToken);
 
         var index = 1;
         var changesMade = false;
@@ -109,7 +109,7 @@ public static class InitialDatabaseSeeder
                     Email = normalizedEmail,
                     FullName = $"Root Administrator {index}",
                     UserType = UserTypeEnum.CompanyUser,
-                    DefaultTenantId = DefaultTenantSlug,
+                    DefaultTenantId = defaultTenant.Id,
                     IsActive = true,
                     StartDate = DateTime.UtcNow.AddYears(-1),
                     EndDate = DateTime.UtcNow.AddYears(20),

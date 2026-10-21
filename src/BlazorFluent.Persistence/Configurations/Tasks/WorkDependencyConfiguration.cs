@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Persistence.Configurations;
 using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +15,6 @@ public class WorkDependencyConfiguration : IEntityTypeConfiguration<WorkDependen
         builder.HasKey(w => w.Id);
 
         builder.Property(w => w.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(w => w.Level)
@@ -106,7 +105,16 @@ public class WorkDependencyConfiguration : IEntityTypeConfiguration<WorkDependen
         builder.Property(w => w.DueDate)
             .IsRequired();
 
-        builder.Property(w => w.EndDate)
+        builderbuilder.Property(w => w.RevisedDueDate)
+            .IsRequired(false);
+
+        .Property(w => w.EndDate)
+            .IsRequired(false);
+
+        builder.Property(w => w.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(w => w.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(w => w.ReporterEmail)

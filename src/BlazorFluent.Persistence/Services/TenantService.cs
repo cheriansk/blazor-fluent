@@ -176,19 +176,21 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         // Zero Trust: Non-root users can only query users within their own active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to access users of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
             return [];
         }
 
+        var tenant = await _dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, cancellationToken);
+        if (tenant is null) return [];
+
         return await _dbContext.Users
             .AsNoTracking()
-            .Where(u => (u.DefaultTenantId == normalizedSlug || u.TenantMemberships.Any(tm => tm.TenantId == normalizedSlug && !tm.IsDeleted)) && !u.IsDeleted)
+            .Where(u => (u.DefaultTenantId == tenant.Id || u.TenantMemberships.Any(tm => tm.TenantId == tenant.Id && !tm.IsDeleted)) && !u.IsDeleted)
             .OrderBy(u => u.FullName)
             .ToListAsync(cancellationToken);
-    }
 
     public async Task<Result<UserEntity>> AddTenantUserAsync(
         string tenantSlug,
@@ -202,7 +204,7 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         // Zero Trust: Non-root users can only add users to their own active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to add user to tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
@@ -234,7 +236,7 @@ public class TenantService : ITenantService
         if (string.Equals(normalizedSlug, "default", StringComparison.OrdinalIgnoreCase))
         {
             var defaultUserCount = await _dbContext.Users
-                .CountAsync(u => u.DefaultTenantId == "default" && !u.IsDeleted, cancellationToken);
+                .CountAsync(u => u.DefaultTenantId == tenant.Id && !u.IsDeleted, cancellationToken);
             if (defaultUserCount >= 3)
             {
                 return Result<UserEntity>.Failure("The default system root tenant cannot exceed a maximum of 3 administrator accounts.");
@@ -277,7 +279,7 @@ public class TenantService : ITenantService
             Email = normalizedEmail,
             FullName = fullName.Trim(),
             UserType = userType,
-            DefaultTenantId = normalizedSlug,
+            DefaultTenantId = tenant.Id,
             IsActive = isActive,
             StartDate = startDate.ToUniversalTime(),
             EndDate = endDate.ToUniversalTime(),
@@ -292,8 +294,7 @@ public class TenantService : ITenantService
         _dbContext.TenantUsers.Add(new TenantUserEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = normalizedSlug,
-            TenantEntityId = tenant.Id,
+            TenantId = tenant.Id,
             UserEntityId = user.Id,
             Role = TenantRoleEnum.TenantMember,
             IsActive = isActive
@@ -323,7 +324,7 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         // Zero Trust: Non-root users can only modify users within their own active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to modify user in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
@@ -353,7 +354,7 @@ public class TenantService : ITenantService
 
         var user = await _dbContext.Users
             .AsTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId && u.DefaultTenantId == normalizedSlug && !u.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == userId && (u.DefaultTenantId == tenant.Id || u.TenantMemberships.Any(tm => tm.TenantId == tenant.Id && !tm.IsDeleted)) && !u.IsDeleted, cancellationToken);
 
         if (user is null)
             return Result<UserEntity>.Failure($"User was not found in tenant '{tenantSlug}'.");
@@ -402,7 +403,7 @@ public class TenantService : ITenantService
         // Synchronize active status on TenantUserEntity for immediate fail-closed cascade
         var tenantUser = await _dbContext.TenantUsers
             .AsTracking()
-            .FirstOrDefaultAsync(tu => tu.TenantId == normalizedSlug && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(tu => tu.TenantId == tenant.Id && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
         if (tenantUser != null)
         {
             tenantUser.IsActive = isActive;
@@ -438,9 +439,14 @@ public class TenantService : ITenantService
         }
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
+        var tenant = await _dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, cancellationToken);
+        if (tenant is null)
+        {
+            return Result<TenantUserEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
+        }
         var tenantUser = await _dbContext.TenantUsers
             .AsTracking()
-            .FirstOrDefaultAsync(tu => tu.TenantId == normalizedSlug && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(tu => tu.TenantId == tenant.Id && tu.UserEntityId == userId && !tu.IsDeleted, cancellationToken);
 
         if (tenantUser == null)
         {
@@ -537,16 +543,19 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         // Zero Trust: Non-root users can only query projects within their active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to access projects of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
             return [];
         }
 
+        var tenant = await _dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, cancellationToken);
+        if (tenant is null) return [];
+
         return await _dbContext.Projects
             .AsNoTracking()
-            .Where(p => p.TenantId == normalizedSlug)
+            .Where(p => p.TenantId == tenant.Id)
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
     }
@@ -566,7 +575,7 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         // Zero Trust: Non-root users can only create projects within their active tenant
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to create project in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.TenantId);
@@ -593,7 +602,8 @@ public class TenantService : ITenantService
         var trimmedCode = shortCode.Trim();
 
         var duplicate = await _dbContext.Projects
-            .AnyAsync(p => p.TenantId == normalizedSlug &&
+            .AnyAsync(p => p.TenantId == tenant.Id &&
+
                            !p.IsDeleted &&
                            (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
                       cancellationToken);
@@ -607,14 +617,14 @@ public class TenantService : ITenantService
             Name = trimmedName,
             ShortCode = trimmedCode,
             Location = location?.Trim(),
-            TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null,
-            TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null,
+            StartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : DateTime.UtcNow,
+            DueDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : DateTime.UtcNow.AddMonths(3),
+            EndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null,
             ScopeSummary = scopeSummary?.Trim(),
             Description = scopeSummary?.Trim(),
             Status = status,
             IsActive = status == ProjectStatusEnum.Active || status == ProjectStatusEnum.New,
-            TenantEntityId = tenant.Id,
-            TenantId = normalizedSlug,
+            TenantId = tenant.Id,
             ProgramId = programId
         };
 
@@ -628,7 +638,7 @@ public class TenantService : ITenantService
             $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}, ProgramId: {programId}",
             cancellationToken);
 
-        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             await _auditService.LogSecurityEventAsync(
                 "HostCrossTenantAction",
@@ -664,9 +674,13 @@ public class TenantService : ITenantService
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
+        var tenant = await _dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, cancellationToken);
+        if (tenant is null)
+            return Result<ProjectEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
+
         var project = await _dbContext.Projects
             .AsTracking()
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == normalizedSlug, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == tenant.Id, cancellationToken);
 
         if (project is null)
             return Result<ProjectEntity>.Failure($"Project was not found in tenant '{tenantSlug}'.");
@@ -675,7 +689,7 @@ public class TenantService : ITenantService
         var trimmedCode = shortCode.Trim();
 
         var duplicate = await _dbContext.Projects
-            .AnyAsync(p => p.TenantId == normalizedSlug && p.Id != projectId &&
+            .AnyAsync(p => p.TenantId == tenant.Id && p.Id != projectId &&
                            !p.IsDeleted &&
                            (p.Name.ToLower() == trimmedName.ToLower() || p.ShortCode.ToLower() == trimmedCode.ToLower()),
                       cancellationToken);
@@ -686,16 +700,12 @@ public class TenantService : ITenantService
         project.Name = trimmedName;
         project.ShortCode = trimmedCode;
         project.Location = location?.Trim();
-        project.TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null;
-        project.TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null;
-        project.ScopeSummary = scopeSummary?.Trim();
-        project.Status = status;
-        project.IsActive = status == ProjectStatusEnum.Active || status == ProjectStatusEnum.New;
-        if (programId.HasValue) project.ProgramId = programId;
-        project.ShortCode = trimmedCode;
-        project.Location = location?.Trim();
-        project.TentativeStartDate = startDate.HasValue ? DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc) : null;
-        project.TentativeEndDate = endDate.HasValue ? DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc) : null;
+        if (startDate.HasValue) project.StartDate = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
+        if (endDate.HasValue)
+        {
+            project.DueDate = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
+            project.EndDate = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
+        }
         project.ScopeSummary = scopeSummary?.Trim();
         if (!string.IsNullOrWhiteSpace(scopeSummary))
         {
@@ -703,6 +713,7 @@ public class TenantService : ITenantService
         }
         project.Status = status;
         project.IsActive = status == ProjectStatusEnum.Active || status == ProjectStatusEnum.New;
+        if (programId.HasValue) project.ProgramId = programId;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -713,7 +724,7 @@ public class TenantService : ITenantService
             $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
             cancellationToken);
 
-        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             await _auditService.LogSecurityEventAsync(
                 "HostCrossTenantAction",
@@ -730,7 +741,7 @@ public class TenantService : ITenantService
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
         // Zero Trust: Only RootAdmin or TenantAdmin can regenerate license keys
-        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+        if (!_currentUser.IsRootAdmin && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to regenerate license key for tenant '{TenantSlug}' outside their active tenant.",
                 _currentUser.UserId, tenantSlug);

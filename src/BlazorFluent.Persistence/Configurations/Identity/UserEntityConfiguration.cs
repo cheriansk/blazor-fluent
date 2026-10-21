@@ -28,7 +28,6 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasDefaultValue(true);
 
         builder.Property(u => u.DefaultTenantId)
-            .HasMaxLength(256)
             .IsRequired(false);
 
         builder.Property(u => u.StartDate)

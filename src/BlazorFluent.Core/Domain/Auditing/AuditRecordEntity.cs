@@ -13,7 +13,7 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     /// <summary>
     /// The tenant scope for this audit record. Multi-tenant queries automatically row-filter by this value.
     /// </summary>
-    public required string TenantId { get; set; }
+    public required Guid TenantId { get; set; }
 
     /// <summary>ID of the user who performed the operation, or 'system' for background workers.</summary>
     public string? UserId { get; set; }

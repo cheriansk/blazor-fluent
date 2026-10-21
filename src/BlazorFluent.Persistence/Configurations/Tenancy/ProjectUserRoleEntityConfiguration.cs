@@ -13,7 +13,6 @@ public class ProjectUserRoleEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(r => r.ProjectId)

@@ -19,9 +19,9 @@
     <FluentSelect TOption="TenantInfo"
                   TValue="string"
                   Items="@TenantContext.AllowedTenants.ToList()"
-                  OptionValue="@(t => t.Id)"
+                  OptionValue="@(t => t.Id.ToString())"
                   OptionText="@(t => t.Name)"
-                  Value="@TenantContext.TenantId"
+                  Value="@TenantContext.TenantId?.ToString()"
                   ValueChanged="@((string? id) => OnTenantChanged(id))"
                   Style="min-width: 180px;">
     </FluentSelect>
@@ -58,12 +58,13 @@ else
 
     private async Task OnTenantChanged(string? newTenantId)
     {
-        if (string.IsNullOrWhiteSpace(newTenantId) || newTenantId == TenantContext.TenantId) return;
+        if (string.IsNullOrWhiteSpace(newTenantId) || (Guid.TryParse(newTenantId, out var gId) && gId == TenantContext.TenantId)) return;
 
-        var prevTenant = TenantContext.TenantId ?? "unknown";
+        var prevTenant = TenantContext.TenantSlug ?? TenantContext.TenantId?.ToString() ?? "unknown";
 
         // Zero Trust: Validate that the requested tenant is authorized for this user
-        if (!TenantContext.AllowedTenants.Any(t => t.Id == newTenantId))
+        var targetMatch = TenantContext.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == newTenantId || t.Slug == newTenantId);
+        if (targetMatch == null)
         {
             _switchError = "You do not have permission to access the requested tenant.";
             await AuditService.LogSecurityEventAsync(
@@ -79,7 +80,7 @@ else
         await AuditService.LogSecurityEventAsync(
             "TenantSwitchInitiated",
             AuditSeverityEnum.Information,
-            $"User initiated tenant switch from '{prevTenant}' to '{newTenantId}'. Purging session and enforcing re-authentication.");
+            $"User initiated tenant switch from '{prevTenant}' to '{targetMatch.Slug}'. Purging session and enforcing re-authentication.");
 
         // 2. Purge browser session storage to eliminate cross-tenant state bleeding
         try
@@ -92,6 +93,6 @@ else
         TenantContext.Reset();
 
         // 4. Force full circuit teardown and navigate to login targeting the selected tenant
-        NavigationManager.NavigateTo($"/login?tenant={Uri.EscapeDataString(newTenantId)}", forceLoad: true);
+        NavigationManager.NavigateTo($"/login?tenant={Uri.EscapeDataString(targetMatch.Slug)}", forceLoad: true);
     }
 }

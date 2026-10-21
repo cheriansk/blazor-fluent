@@ -14,9 +14,6 @@ public class TenantUserEntityValidator : AbstractValidator<TenantUserEntity>
         RuleFor(x => x.TenantId)
             .NotEmpty().WithMessage("TenantId is required for tenant user membership.");
 
-        RuleFor(x => x.TenantEntityId)
-            .NotEmpty().WithMessage("TenantEntityId is required.");
-
         RuleFor(x => x.UserEntityId)
             .NotEmpty().WithMessage("UserEntityId is required.");
 

@@ -9,5 +9,5 @@ namespace BlazorFluent.Core.Domain.Base;
 /// </summary>
 public abstract class TenantAuditableEntity : AuditableEntity, ITenantEntity
 {
-    public string TenantId { get; set; } = string.Empty;
+    public Guid TenantId { get; set; } = Guid.Empty;
 }

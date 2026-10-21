@@ -13,7 +13,6 @@ public class AuditRecordEntityConfiguration : IEntityTypeConfiguration<AuditReco
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(a => a.UserId)

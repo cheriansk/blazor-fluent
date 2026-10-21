@@ -14,7 +14,6 @@ public class UserCalendarEntityConfiguration : IEntityTypeConfiguration<UserCale
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(c => c.UserId)

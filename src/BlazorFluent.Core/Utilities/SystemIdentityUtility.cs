@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -11,6 +11,11 @@ namespace BlazorFluent.Core.Utilities;
 public static class SystemIdentityUtility
 {
     public const string SystemTenantSlug = IRootAdminService.DefaultTenantSlug;
+
+    /// <summary>
+    /// Sequential / static UUID reserved for host platform background daemons, migrations, and system tasks.
+    /// </summary>
+    public static readonly Guid SystemDaemonTenantId = new Guid("00000000-0000-0000-0000-000000000001");
 
     /// <summary>
     /// Strictly verifies that the current execution context contains an authenticated user 
@@ -27,7 +32,7 @@ public static class SystemIdentityUtility
                 $"Zero-Trust Security Violation: Operation '{operationName}' requires an established authenticated user identity.");
         }
 
-        if (tenantContext == null || string.IsNullOrWhiteSpace(tenantContext.TenantId))
+        if (tenantContext == null || (!tenantContext.IsHost && (!tenantContext.TenantId.HasValue || tenantContext.TenantId.Value == Guid.Empty)))
         {
             throw new InvalidOperationException(
                 $"Zero-Trust Security Violation: Operation '{operationName}' requires an active tenant context.");
@@ -69,11 +74,12 @@ public static class SystemIdentityUtility
         var normalizedEmail = string.IsNullOrWhiteSpace(attemptedEmail) ? $"preauth+{operation.ToLowerInvariant()}@system.internal" : attemptedEmail.Trim();
         currentUser.SetSystemDaemon($"PreAuth:{operation}", normalizedEmail);
         tenantContext.Initialize(
-            SystemTenantSlug, 
+            SystemDaemonTenantId, 
             "System Host", 
             UserTypeEnum.CompanyUser, 
             Array.Empty<TenantInfo>(), 
-            isHost: true);
+            isHost: true,
+            tenantSlug: SystemTenantSlug);
     }
 
     /// <summary>

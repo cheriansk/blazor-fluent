@@ -44,10 +44,19 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<TenantEntity>
         builder.Property(t => t.EndDate)
             .IsRequired();
 
-        // One tenant → many projects
         builder.HasMany(t => t.Projects)
             .WithOne(p => p.TenantEntity)
-            .HasForeignKey(p => p.TenantEntityId)
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(t => t.Programs)
+            .WithOne(p => p.TenantEntity)
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(t => t.TenantUsers)
+            .WithOne(u => u.Tenant)
+            .HasForeignKey(u => u.TenantId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
