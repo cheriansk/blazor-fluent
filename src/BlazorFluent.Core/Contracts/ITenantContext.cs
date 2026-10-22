@@ -31,6 +31,7 @@ public interface ITenantContext
     /// <summary>
     /// Backward-compatible alias to TenantId.
     /// </summary>
+    [Obsolete("Deprecated: Use non-nullable ITenantContext.TenantId or ICurrentUser.TenantId instead.")]
     Guid RequiredTenantId => TenantId;
 
     /// <summary>The active tenant's human-friendly vanity URL slug (e.g. 'root' or 'acme').</summary>
@@ -45,6 +46,7 @@ public interface ITenantContext
     /// <summary>
     /// Backward-compatible alias for Root Tenant context.
     /// </summary>
+    [Obsolete("Deprecated: Use ITenantContext.IsRootTenant or ICurrentUser.IsAuthenticated_RootTenant_User instead.")]
     bool IsHost => IsRootTenant;
 
     /// <summary>The complete list of tenants this user is authorized to access.</summary>
@@ -64,6 +66,7 @@ public interface ITenantContext
     /// <summary>
     /// Backward-compatible overload.
     /// </summary>
+    [Obsolete("Deprecated: Use non-nullable Initialize(Guid, string, UserTypeEnum, IEnumerable<TenantInfo>, string) instead.")]
     void Initialize(Guid? tenantId, string? tenantName, UserTypeEnum userType,
         IEnumerable<TenantInfo> allowedTenants, bool isHost = false, string? tenantSlug = null);
 
@@ -90,6 +93,7 @@ public interface ITenantContext
 /// </summary>
 public sealed class TenantContext : ITenantContext
 {
+    private readonly IRootAdminService? _rootAdminService;
     private readonly ILogger<TenantContext> _logger;
     private Guid? _tenantId;
     private string? _tenantSlug;
@@ -97,19 +101,24 @@ public sealed class TenantContext : ITenantContext
     private UserTypeEnum _userType;
     private List<TenantInfo> _allowedTenants = new();
 
-    public TenantContext(ILogger<TenantContext>? logger = null)
+    public TenantContext(IRootAdminService? rootAdminService = null, ILogger<TenantContext>? logger = null)
     {
+        _rootAdminService = rootAdminService;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantContext>.Instance;
     }
 
     public bool HasActiveTenant => _tenantId.HasValue && _tenantId.Value != Guid.Empty;
 
-    public bool IsRootTenant => HasActiveTenant && _tenantId.Value == IRootAdminService.RootTenantId;
+    public bool IsRootTenant => HasActiveTenant && (
+        _rootAdminService != null
+            ? _tenantId.Value == _rootAdminService.RootTenantId
+            : (_tenantId.Value == IRootAdminService.DefaultRootTenantId || string.Equals(_tenantSlug, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase)));
 
     public Guid TenantId => HasActiveTenant
         ? _tenantId!.Value
         : throw SecurityViolation("TenantId");
 
+    [Obsolete("Deprecated: Use non-nullable TenantId instead.")]
     public Guid RequiredTenantId => TenantId;
 
     public string TenantSlug => HasActiveTenant
@@ -122,6 +131,7 @@ public sealed class TenantContext : ITenantContext
 
     public UserTypeEnum UserType => _userType;
 
+    [Obsolete("Deprecated: Use IsRootTenant instead.")]
     public bool IsHost => IsRootTenant;
 
     public IReadOnlyList<TenantInfo> AllowedTenants => _allowedTenants.AsReadOnly();
@@ -166,6 +176,7 @@ public sealed class TenantContext : ITenantContext
         Initialize(tenantId, tenantName, UserTypeEnum.CompanyUser, [new TenantInfo(tenantId, tenantSlug, tenantName, true)], false, tenantSlug);
     }
 
+    [Obsolete("Deprecated: Use non-nullable Initialize(Guid, string, UserTypeEnum, IEnumerable<TenantInfo>, string) instead.")]
     public void Initialize(
         Guid? tenantId,
         string? tenantName,

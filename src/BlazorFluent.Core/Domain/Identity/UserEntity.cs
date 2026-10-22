@@ -22,6 +22,13 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
 
     public required UserTypeEnum UserType { get; set; }
 
+    /// <summary>
+    /// Architectural classification: Human, SystemDaemon, or ApiIntegrationBot.
+    /// </summary>
+    public required UserKindEnum UserKind { get; set; }
+
+    public bool IsSystemDaemon => UserKind == UserKindEnum.SystemDaemon;
+
     public bool IsActive { get; set; }
 
     /// <summary>
@@ -88,7 +95,7 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
                 : (EndDate.Value.Kind == DateTimeKind.Local ? EndDate.Value.ToUniversalTime() : DateTime.SpecifyKind(EndDate.Value, DateTimeKind.Utc)))
             : DateTime.MaxValue;
 
-        var payload = $"{Id}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}";
+        var payload = $"{Id}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}:{UserKind}";
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         return Convert.ToBase64String(hash);
@@ -117,7 +124,7 @@ public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity,
             return false;
         }
 
-        if (!IsActive)
+        if (UserKind != UserKindEnum.Human) { failureReason = "System daemon and bot accounts cannot log in."; return false; } if (!IsActive)
         {
             failureReason = "Account has been deactivated.";
             return false;

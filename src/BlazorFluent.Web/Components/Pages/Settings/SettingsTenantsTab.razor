@@ -201,6 +201,31 @@
                     </FluentStack>
                 </FluentStack>
 
+                @* Automated Background Processing Kill Switch Card *@
+                <FluentCard Style="margin-bottom: 16px; padding: 14px 18px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                        <div>
+                            <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">🤖 Automated Background Processing</FluentLabel>
+                            <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">
+                                Governs scheduled cadence alerts, recurring task triggers, and automated batch jobs for this tenant via dedicated system daemon (<code>@($"daemon@{_managingUsersTenant.Slug}.internal")</code>).
+                            </FluentLabel>
+                        </div>
+                        @if (IsRootAdmin || _canEditTenants)
+                        {
+                            <FluentSwitch Value="@_isDaemonActive"
+                                          ValueChanged="@ToggleDaemonStatusAsync"
+                                          Label="@(_isDaemonActive ? "Active" : "Suspended")" />
+                        }
+                        else
+                        {
+                            <FluentBadge Appearance="@(_isDaemonActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                                         Color="@(_isDaemonActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                                @(_isDaemonActive ? "Active" : "Suspended")
+                            </FluentBadge>
+                        }
+                    </FluentStack>
+                </FluentCard>
+
                 @* Add User Sub-Card *@
                 @if (_showAddUserForm)
                 {
@@ -338,7 +363,11 @@
                         <PropertyColumn Property="@(u => u.FullName)" Title="Name" Sortable="true" />
                         <PropertyColumn Property="@(u => u.Email)" Title="Email" Sortable="true" />
                         <TemplateColumn Title="Type" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.UserType))">
-                            @if (context.UserType == UserTypeEnum.CompanyUser)
+                            @if (context.UserKind == UserKindEnum.SystemDaemon)
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Outline" Style="background-color: #f3f2f1; color: #323130;">🤖 Daemon</FluentBadge>
+                            }
+                            else if (context.UserType == UserTypeEnum.CompanyUser)
                             {
                                 <FluentBadge Appearance="BadgeAppearance.Filled">Internal</FluentBadge>
                             }
@@ -361,14 +390,23 @@
                         </TemplateColumn>
                         <TemplateColumn Title="Actions">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                                <FluentButton Appearance="ButtonAppearance.Subtle"
-                                              Size="ButtonSize.Small"
-                                              IconStart="@(new Icons.Regular.Size16.Edit())"
-                                              Title="Edit User"
-                                              OnClick="@(() => StartEditUser(context))">
-                                    Edit
-                                </FluentButton>
-                        <EntityHistoryButton EntityName="UserEntity" EntityId="@context.Id.ToString()" Tooltip="View user change history" />
+                                @if (context.UserKind != UserKindEnum.SystemDaemon)
+                                {
+                                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                  Size="ButtonSize.Small"
+                                                  IconStart="@(new Icons.Regular.Size16.Edit())"
+                                                  Title="Edit User"
+                                                  OnClick="@(() => StartEditUser(context))">
+                                        Edit
+                                    </FluentButton>
+                                }
+                                else
+                                {
+                                    <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="font-size: 11px;">
+                                        🔒 Managed
+                                    </FluentBadge>
+                                }
+                                <EntityHistoryButton EntityName="UserEntity" EntityId="@context.Id.ToString()" Tooltip="View user change history" />
                             </FluentStack>
                         </TemplateColumn>
                     </FluentDataGrid>
@@ -1128,6 +1166,8 @@
         _editingUser = null;
     }
 
+    private bool _isDaemonActive = true;
+
     private async Task LoadTenantUsersAsync()
     {
         if (_managingUsersTenant is null) return;
@@ -1137,10 +1177,32 @@
         {
             var users = await TenantService.GetTenantUsersAsync(_managingUsersTenant.Slug);
             _tenantUsers = users.ToList();
+
+            var daemonRes = await TenantService.IsTenantDaemonActiveAsync(_managingUsersTenant.Id);
+            _isDaemonActive = daemonRes.Succeeded ? daemonRes.Value : true;
         }
         finally
         {
             _isLoadingUsers = false;
+        }
+    }
+
+    private async Task ToggleDaemonStatusAsync(bool isActive)
+    {
+        if (_managingUsersTenant is null) return;
+        if (!IsRootAdmin && !_canEditTenants) return;
+
+        var result = await TenantService.SetTenantDaemonActiveAsync(_managingUsersTenant.Id, isActive);
+        if (result.Succeeded)
+        {
+            _isDaemonActive = isActive;
+            _statusMessage = $"Automated background processing for '{_managingUsersTenant.Name}' is now {(isActive ? "Active" : "Suspended")}.";
+            _isError = false;
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update background processing status.";
+            _isError = true;
         }
     }
 

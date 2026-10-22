@@ -22,6 +22,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
             Email = "test@example.com",
             FullName = "Test User",
             UserType = UserTypeEnum.CompanyUser,
+            UserKind = UserKindEnum.Human,
             TimeZoneId = "UTC",
             StartDate = new DateTime(2026, 10, 19, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 23, 59, 59, DateTimeKind.Utc)
@@ -84,6 +85,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
             Email = "contractor@example.com",
             FullName = "Charlie Contractor",
             UserType = UserTypeEnum.ClientUser,
+            UserKind = UserKindEnum.Human,
             TimeZoneId = "UTC",
             IsActive = true,
             StartDate = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
@@ -115,6 +117,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
             Email = "sameday@example.com",
             FullName = "Same Day",
             UserType = UserTypeEnum.CompanyUser,
+            UserKind = UserKindEnum.Human,
             TimeZoneId = "UTC",
             StartDate = new DateTime(2026, 10, 19, 14, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2026, 10, 19, 9, 0, 0, DateTimeKind.Utc) // earlier time, same date

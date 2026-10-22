@@ -1,4 +1,5 @@
 using BlazorFluent.Core.Domain.Identity;
+using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,6 +19,12 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
 
         builder.Property(u => u.FullName)
             .HasMaxLength(200)
+            .IsRequired();
+
+        builder.Property(u => u.UserKind)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .HasDefaultValue(UserKindEnum.Human)
             .IsRequired();
 
         builder.Property(u => u.UserType)
@@ -57,6 +64,9 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasDatabaseName("IX_Users_Email")
             .HasFilter("\"IsDeleted\" = false")
             .IsUnique();
+
+        builder.HasIndex(u => new { u.UserKind, u.IsActive })
+            .HasDatabaseName("IX_Users_UserKind_IsActive");
 
 
     }

@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -57,7 +57,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Security Gate: Reject background system daemon identity logins
-        if (normalizedEmail == "system" || normalizedEmail == "system@daemon.local" || normalizedEmail.Contains("@daemon.local"))
+        if (normalizedEmail == "system" || normalizedEmail == "system@daemon.local" || normalizedEmail.Contains("@daemon.local") || normalizedEmail.StartsWith("daemon@") || normalizedEmail.EndsWith(".internal") || SystemIdentityUtility.IsSystemDaemon(normalizedEmail))
         {
             await auditService.LogSecurityEventAsync(
                 "SecurityViolationSystemLoginAttempt",
@@ -81,6 +81,17 @@ public class InternalAuthenticationService : IInternalAuthenticationService
                 ct);
 
             return Result<AuthUserResult>.Failure("Your account is not provisioned in this system.");
+        }
+
+        if (user.UserKind != UserKindEnum.Human)
+        {
+            await auditService.LogSecurityEventAsync(
+                "SecurityViolationSystemLoginAttempt",
+                AuditSeverityEnum.Critical,
+                $"Illicit login attempt blocked for non-human account kind '{user.UserKind}' ('{email}').",
+                ct);
+
+            return Result<AuthUserResult>.Failure("System daemon and bot accounts are non-interactive identities and cannot log in.");
         }
 
         var secretKey = _configuration["Security:IntegritySecret"];
@@ -123,13 +134,13 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var dbTenants = await dbContext.Tenants
             .AsNoTracking()
-            .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
+            .Where(t => t.IsActive && t.Slug != _rootAdminService.RootTenantSlug)
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
         var rootTenant = await dbContext.Tenants
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Slug == IRootAdminService.DefaultTenantSlug, ct);
+            .FirstOrDefaultAsync(t => t.Slug == _rootAdminService.RootTenantSlug, ct);
 
         var nowUtc = DateTime.UtcNow;
         var userMemberships = await dbContext.TenantUsers
@@ -260,13 +271,13 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var dbTenants = await dbContext.Tenants
             .AsNoTracking()
-            .Where(t => t.IsActive && t.Slug != IRootAdminService.DefaultTenantSlug)
+            .Where(t => t.IsActive && t.Slug != _rootAdminService.RootTenantSlug)
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
 
         var rootTenant = await dbContext.Tenants
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Slug == IRootAdminService.DefaultTenantSlug, ct);
+            .FirstOrDefaultAsync(t => t.Slug == _rootAdminService.RootTenantSlug, ct);
 
         var userMemberships = await dbContext.TenantUsers
             .AsNoTracking()
@@ -291,7 +302,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
     /// Regular users receive tenants derived strictly from active, date-valid records in tenancy.tenant_users.
     /// Zero tenant assumption: if a user belongs to multiple tenants, resolvedTenantId is Guid.Empty until explicitly selected.
     /// </summary>
-    private static (List<TenantInfo> AllowedTenants, Guid ResolvedTenantId, string ResolvedTenantName, string ResolvedTenantSlug) ResolveUserTenants(
+    private (List<TenantInfo> AllowedTenants, Guid ResolvedTenantId, string ResolvedTenantName, string ResolvedTenantSlug) ResolveUserTenants(
         UserEntity user,
         bool isHost,
         List<TenantEntity> activeTenants,
@@ -304,7 +315,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         string resolvedTenantName = string.Empty;
 
         // If user is a verified root admin and root tenant exists and user has root tenant membership
-        var hasRootMembership = userMemberships.Any(m => m.TenantId == IRootAdminService.RootTenantId || m.Tenant?.Slug == IRootAdminService.RootTenantSlug);
+        var hasRootMembership = userMemberships.Any(m => m.TenantId == _rootAdminService.RootTenantId || m.Tenant?.Slug == _rootAdminService.RootTenantSlug);
         if (isHost && rootTenant is not null && hasRootMembership)
         {
             allowedTenants.Add(new TenantInfo(rootTenant.Id, rootTenant.Slug, rootTenant.Name, rootTenant.IsActive));
@@ -312,7 +323,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         // Add customer tenants where user has explicit, active TenantUserEntity membership
         var customerMemberships = userMemberships
-            .Where(m => m.Tenant != null && m.Tenant.IsActive && m.Tenant.Id != IRootAdminService.RootTenantId && m.Tenant.Slug != IRootAdminService.RootTenantSlug)
+            .Where(m => m.Tenant != null && m.Tenant.IsActive && m.Tenant.Id != _rootAdminService.RootTenantId && m.Tenant.Slug != _rootAdminService.RootTenantSlug)
             .Select(m => new TenantInfo(m.Tenant!.Id, m.Tenant.Slug, m.Tenant.Name, m.Tenant.IsActive))
             .DistinctBy(t => t.Id);
 

@@ -16,10 +16,10 @@ public static class SystemIdentityUtility
     /// <summary>
     /// Sequential / static UUID reserved for host platform background daemons, migrations, and system tasks.
     /// </summary>
-    public static readonly Guid SystemDaemonTenantId = IRootAdminService.RootTenantId;
-    public static readonly Guid RootTenantId = IRootAdminService.RootTenantId;
-    public const string RootTenantSlug = IRootAdminService.RootTenantSlug;
-    public const string RootTenantName = IRootAdminService.RootTenantName;
+    public static readonly Guid SystemDaemonTenantId = IRootAdminService.DefaultRootTenantId;
+    public static readonly Guid RootTenantId = IRootAdminService.DefaultRootTenantId;
+    public const string RootTenantSlug = IRootAdminService.DefaultTenantSlug;
+    public const string RootTenantName = "System Administration";
 
     /// <summary>
     /// Evaluates whether the caller is a verified human tenant user (authenticated, non-daemon, and bound to an active tenant).

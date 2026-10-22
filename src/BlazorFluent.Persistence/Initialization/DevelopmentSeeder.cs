@@ -41,13 +41,14 @@ public static class DevelopmentSeeder
 
         var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
         var adminEmails = rootAdminService.GetRootAdminEmails();
-        var primaryAdminEmail = adminEmails.Count > 0 ? adminEmails[0].Trim().ToLowerInvariant() : "admin@local";
+        if (adminEmails.Count == 0) throw new InvalidOperationException("Zero-Trust Security Violation: No root administrator emails configured for development seeding.");
+        var primaryAdminEmail = adminEmails[0].Trim().ToLowerInvariant();
 
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-        tenantContext.SetTenant(IRootAdminService.RootTenantId, IRootAdminService.RootTenantSlug, IRootAdminService.RootTenantName);
+        tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
 
         var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.RestoreUserContext("root-seeder-bootstrap", primaryAdminEmail, "System Administrator", isRootAdmin: true);
+        currentUser?.SetSystemDaemon("DevelopmentSeeder", $"daemon@{rootAdminService.RootTenantSlug.ToLowerInvariant()}.internal");
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var changesMade = false;
@@ -94,6 +95,7 @@ public static class DevelopmentSeeder
                         Email = adminEmail,
                         FullName = string.IsNullOrWhiteSpace(seedOptions.AdminFullName) ? "Configured Dev Admin" : seedOptions.AdminFullName,
                         UserType = UserTypeEnum.CompanyUser,
+                        UserKind = UserKindEnum.Human,
                         IsActive = true,
                         StartDate = DateTime.UtcNow.AddDays(-30),
                         EndDate = DateTime.UtcNow.AddYears(1),
@@ -125,7 +127,7 @@ public static class DevelopmentSeeder
         // 2. DevLogin users seeding from DevLoginOptions
         if (devLoginOptions != null && devLoginOptions.Enabled && devLoginOptions.Users.Count > 0)
         {
-            var defaultTenantSlug = seedOptions?.TenantSlug ?? InitialDatabaseSeeder.DefaultTenantSlug;
+            var defaultTenantSlug = seedOptions?.TenantSlug ?? rootAdminService.RootTenantSlug;
             var targetTenant = await dbContext.Tenants
                 .FirstOrDefaultAsync(t => t.Slug == defaultTenantSlug, cancellationToken);
 
@@ -146,6 +148,7 @@ public static class DevelopmentSeeder
                         Email = email,
                         FullName = string.IsNullOrWhiteSpace(devUser.Label) ? email : devUser.Label,
                         UserType = UserTypeEnum.CompanyUser,
+                        UserKind = UserKindEnum.Human,
                         IsActive = true,
                         StartDate = DateTime.UtcNow.AddDays(-30),
                         EndDate = DateTime.UtcNow.AddYears(1),

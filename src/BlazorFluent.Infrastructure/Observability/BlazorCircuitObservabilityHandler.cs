@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using BlazorFluent.Core.Contracts;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.Extensions.Logging;
@@ -28,8 +31,12 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
     {
         _openedAt = _dateTimeProvider.Now;
         _logger.LogInformation(
-            "Blazor Circuit opened: CircuitId={CircuitId}, TenantId={TenantId}, UserId={UserId}",
-            circuit.Id, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"), (_currentUser.IsAuthenticated ? _currentUser.UserId : "anonymous"));
+            "Blazor Circuit opened: CircuitId={CircuitId}, HasActiveTenant={HasActiveTenant}, TenantId={TenantId}, IsAuthenticated={IsAuthenticated}, UserId={UserId}",
+            circuit.Id,
+            _tenantContext.HasActiveTenant,
+            _tenantContext.HasActiveTenant ? _tenantContext.TenantId : (Guid?)null,
+            _currentUser.IsAuthenticated,
+            _currentUser.IsAuthenticated ? _currentUser.UserId : (string?)null);
 
         return base.OnCircuitOpenedAsync(circuit, cancellationToken);
     }
@@ -37,8 +44,10 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
     public override Task OnConnectionUpAsync(Circuit circuit, CancellationToken cancellationToken)
     {
         _logger.LogDebug(
-            "Blazor Circuit connection up: CircuitId={CircuitId}, TenantId={TenantId}",
-            circuit.Id, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"));
+            "Blazor Circuit connection up: CircuitId={CircuitId}, HasActiveTenant={HasActiveTenant}, TenantId={TenantId}",
+            circuit.Id,
+            _tenantContext.HasActiveTenant,
+            _tenantContext.HasActiveTenant ? _tenantContext.TenantId : (Guid?)null);
 
         return base.OnConnectionUpAsync(circuit, cancellationToken);
     }
@@ -46,8 +55,10 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
     public override Task OnConnectionDownAsync(Circuit circuit, CancellationToken cancellationToken)
     {
         _logger.LogWarning(
-            "Blazor Circuit connection lost (network drop or tab backgrounded): CircuitId={CircuitId}, TenantId={TenantId}",
-            circuit.Id, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"));
+            "Blazor Circuit connection lost (network drop or tab backgrounded): CircuitId={CircuitId}, HasActiveTenant={HasActiveTenant}, TenantId={TenantId}",
+            circuit.Id,
+            _tenantContext.HasActiveTenant,
+            _tenantContext.HasActiveTenant ? _tenantContext.TenantId : (Guid?)null);
 
         return base.OnConnectionDownAsync(circuit, cancellationToken);
     }
@@ -56,8 +67,13 @@ public sealed class BlazorCircuitObservabilityHandler : CircuitHandler
     {
         var duration = _dateTimeProvider.Now - _openedAt;
         _logger.LogInformation(
-            "Blazor Circuit closed: CircuitId={CircuitId}, Duration={Duration}, TenantId={TenantId}, UserId={UserId}",
-            circuit.Id, duration, (_tenantContext.HasActiveTenant ? _tenantContext.TenantId.ToString() : "uninitialized"), (_currentUser.IsAuthenticated ? _currentUser.UserId : "anonymous"));
+            "Blazor Circuit closed: CircuitId={CircuitId}, Duration={Duration}, HasActiveTenant={HasActiveTenant}, TenantId={TenantId}, IsAuthenticated={IsAuthenticated}, UserId={UserId}",
+            circuit.Id,
+            duration,
+            _tenantContext.HasActiveTenant,
+            _tenantContext.HasActiveTenant ? _tenantContext.TenantId : (Guid?)null,
+            _currentUser.IsAuthenticated,
+            _currentUser.IsAuthenticated ? _currentUser.UserId : (string?)null);
 
         return base.OnCircuitClosedAsync(circuit, cancellationToken);
     }

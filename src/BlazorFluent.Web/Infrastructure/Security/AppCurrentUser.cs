@@ -6,7 +6,7 @@ namespace BlazorFluent.Infrastructure.Security;
 
 /// <summary>
 /// Scoped circuit implementation of <see cref="ICurrentUser"/>.
-/// Supports dynamic updates on login, impersonation, and tenant switching.
+/// Exposes unified access to both identity and active tenant context with 4 mutually-exclusive security states.
 /// </summary>
 public class AppCurrentUser : ICurrentUser
 {
@@ -24,15 +24,57 @@ public class AppCurrentUser : ICurrentUser
 
     public bool IsAuthenticated { get; set; } = false;
 
+    public ITenantContext TenantContext => _tenantContext;
+    public Guid TenantId => _tenantContext.TenantId;
+    public string TenantSlug => _tenantContext.TenantSlug;
+
     /// <summary>
-    /// Unified Zero-Trust Guardrail: True if and only if the caller is an authenticated human user (!IsSystemDaemon)
-    /// AND has an active non-empty tenant initialized in ITenantContext (HasActiveTenant).
+    /// 1. True if and only if caller is an authenticated human user in an active, non-Root customer tenant.
+    /// Used for all customer workspace operations (Programs, Projects, Tasks, Workflows, Calendar, KnowledgeBase).
     /// </summary>
-    public bool IsAuthenticatedTenantUser =>
+    public bool IsAuthenticated_RegularTenant_User =>
         IsAuthenticated &&
         !IsSystemDaemon &&
         _tenantContext.HasActiveTenant &&
+        !_tenantContext.IsRootTenant &&
         !string.IsNullOrWhiteSpace(_userId);
+
+    /// <summary>
+    /// 2. True if and only if caller is an authenticated human root administrator in the active Root Tenant.
+    /// Used strictly for platform administration and tenant catalog management.
+    /// </summary>
+    public bool IsAuthenticated_RootTenant_User =>
+        IsAuthenticated &&
+        !IsSystemDaemon &&
+        IsRootAdmin &&
+        _tenantContext.HasActiveTenant &&
+        _tenantContext.IsRootTenant;
+
+    /// <summary>
+    /// 3. True if and only if caller is an authenticated background daemon operating in an active customer tenant.
+    /// Used strictly for single-tenant background batch data processing.
+    /// </summary>
+    public bool IsAuthenticated_RegularTenant_Daemon =>
+        IsAuthenticated &&
+        IsSystemDaemon &&
+        _tenantContext.HasActiveTenant &&
+        !_tenantContext.IsRootTenant;
+
+    /// <summary>
+    /// 4. True if and only if caller is an authenticated background daemon operating in the active Root Tenant.
+    /// Used strictly for platform startup bootstrap and system-wide maintenance jobs.
+    /// </summary>
+    public bool IsAuthenticated_RootTenant_Daemon =>
+        IsAuthenticated &&
+        IsSystemDaemon &&
+        _tenantContext.HasActiveTenant &&
+        _tenantContext.IsRootTenant;
+
+    /// <summary>
+    /// Level 1 UI Router Guard: True if and only if caller is an authenticated human user in a regular tenant OR the root tenant.
+    /// Daemons are strictly excluded (always false).
+    /// </summary>
+    public bool IsAuthenticatedTenantUser => IsAuthenticated_RegularTenant_User || IsAuthenticated_RootTenant_User;
 
     public string Email
     {
@@ -70,8 +112,9 @@ public class AppCurrentUser : ICurrentUser
     /// Has no setter or mutable backing field.
     /// </summary>
     public bool IsRootAdmin =>
-        IsAuthenticatedTenantUser &&
+        IsAuthenticated &&
         !IsImpersonated &&
+        !IsSystemDaemon &&
         !string.IsNullOrWhiteSpace(_email) &&
         _rootAdminService.IsRootAdmin(_email) &&
         _tenantContext.IsRootTenant;

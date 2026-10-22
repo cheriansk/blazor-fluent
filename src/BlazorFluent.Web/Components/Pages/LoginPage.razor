@@ -318,14 +318,13 @@
         try
         {
             var user = verified.User;
-            var isRootTenant = tenantId == IRootAdminService.RootTenantId || string.Equals(tenantSlug, IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase);
+            var isRootTenant = tenantId == RootAdminService.RootTenantId || string.Equals(tenantSlug, RootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase);
 
             TenantContext.Initialize(
                 tenantId: tenantId,
                 tenantName: tenantName,
                 userType: user.UserType,
                 allowedTenants: verified.AllowedTenants,
-                isHost: false,
                 tenantSlug: tenantSlug);
 
             // 1. Establish authenticated state on circuit immediately upon verified credentials

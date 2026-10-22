@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
@@ -6,6 +6,7 @@ using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -107,25 +108,62 @@ public class BatchJobQueueListener : BackgroundService
                 isHost: tenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            if (currentUser != null)
+            var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);
+
+            // Lookup tenant-scoped system daemon account
+            var daemonUser = await dbContext.TenantUsers
+                .AsNoTracking()
+                .Where(tu => tu.TenantId == tenantId && tu.User.UserKind == UserKindEnum.SystemDaemon && !tu.IsDeleted)
+                .Select(tu => tu.User)
+                .FirstOrDefaultAsync(stoppingToken);
+
+            if (isCron)
             {
-                var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);
-                if (isCron)
+                // Dedicated Per-Tenant Automated Background Processing Kill Switch Check
+                if (daemonUser != null && !daemonUser.IsActive)
                 {
-                    var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
-                        ? jobEvent.SenderUserEmail 
-                        : _jobsOptions.Value.CronServiceAccountEmail;
+                    _logger.LogInformation(
+                        "Tenant '{TenantId}' daemon account ('{DaemonEmail}') is suspended. Gracefully skipping automated batch job '{JobName}'.",
+                        tenantId, daemonUser.Email, jobName);
 
-                    if (string.IsNullOrWhiteSpace(cronEmail))
+                    if (auditService != null)
                     {
-                        throw new InvalidOperationException($"Zero-Trust Security Violation: Job '{jobName}' has no sender email and Jobs:CronServiceAccountEmail is not configured.");
+                        await auditService.LogSecurityEventAsync(
+                            "BatchJobSkippedDaemonSuspended",
+                            AuditSeverityEnum.Information,
+                            $"Automated batch job '{jobName}' skipped because tenant '{tenantId}' daemon account is suspended.",
+                            stoppingToken);
                     }
-
-                    currentUser.SetSystemDaemon($"BatchJob:{jobName}", cronEmail);
+                    return;
                 }
-                else
+
+                if (currentUser != null)
                 {
-                    // User-triggered event: Restore initiating user context
+                    if (daemonUser != null)
+                    {
+                        currentUser.RestoreUserContext(daemonUser.Id.ToString(), daemonUser.Email, daemonUser.FullName, isRootAdmin: false);
+                        currentUser.SetSystemDaemon($"BatchJob:{jobName}", daemonUser.Email);
+                    }
+                    else
+                    {
+                        var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
+                            ? jobEvent.SenderUserEmail 
+                            : _jobsOptions.Value.CronServiceAccountEmail;
+
+                        if (string.IsNullOrWhiteSpace(cronEmail))
+                        {
+                            throw new InvalidOperationException($"Zero-Trust Security Violation: Job '{jobName}' has no sender email and Jobs:CronServiceAccountEmail is not configured.");
+                        }
+
+                        currentUser.SetSystemDaemon($"BatchJob:{jobName}", cronEmail);
+                    }
+                }
+            }
+            else
+            {
+                // User-triggered event: Restore initiating user context
+                if (currentUser != null)
+                {
                     var userEmail = jobEvent.SenderUserEmail;
                     if (string.IsNullOrWhiteSpace(userEmail))
                     {

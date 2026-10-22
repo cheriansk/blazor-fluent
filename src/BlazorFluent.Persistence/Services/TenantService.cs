@@ -60,7 +60,7 @@ public class TenantService : ITenantService
             {
                 return (IReadOnlyList<TenantEntity>)await _dbContext.Tenants
                     .AsNoTracking()
-                    .Where(t => t.Slug != IRootAdminService.RootTenantSlug && t.Slug != "default")
+                    .Where(t => t.Slug != _rootAdminService.RootTenantSlug && t.Slug != "default")
                     .OrderBy(t => t.Name)
                     .ToListAsync(token);
             },
@@ -83,7 +83,7 @@ public class TenantService : ITenantService
         if (string.IsNullOrWhiteSpace(slug))
             return Result<TenantEntity>.Failure("Slug is required.");
 
-        if (string.Equals(slug.Trim(), IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) ||
+        if (string.Equals(slug.Trim(), _rootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(slug.Trim(), "default", StringComparison.OrdinalIgnoreCase))
             return Result<TenantEntity>.Failure("The root slug is reserved for internal system administration.");
 
@@ -145,6 +145,41 @@ public class TenantService : ITenantService
         };
 
         _dbContext.Tenants.Add(tenant);
+
+        var secretKey = _configuration["Security:IntegritySecret"];
+        var daemonEmail = $"daemon@{tenant.Slug.ToLowerInvariant()}.internal";
+        var daemonUser = new UserEntity
+        {
+            Id = Guid.NewGuid(),
+            Email = daemonEmail,
+            FullName = $"{tenant.Name} Daemon",
+            UserType = UserTypeEnum.CompanyUser,
+            UserKind = UserKindEnum.SystemDaemon,
+            IsActive = true,
+            StartDate = DateTime.UtcNow.AddYears(-1),
+            EndDate = DateTime.UtcNow.AddYears(50),
+            TimeZoneId = "UTC"
+        };
+        if (!string.IsNullOrWhiteSpace(secretKey) && !secretKey.StartsWith("__SET_VIA_"))
+        {
+            daemonUser.RowSignature = daemonUser.ComputeIntegritySignature(secretKey);
+        }
+        _dbContext.Users.Add(daemonUser);
+
+        var tenantDaemonMembership = new TenantUserEntity
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenant.Id,
+            UserEntityId = daemonUser.Id,
+            Role = TenantRoleEnum.TenantAdmin,
+            IsActive = true
+        };
+        if (!string.IsNullOrWhiteSpace(secretKey) && !secretKey.StartsWith("__SET_VIA_"))
+        {
+            tenantDaemonMembership.RowSignature = tenantDaemonMembership.ComputeIntegritySignature(secretKey);
+        }
+        _dbContext.TenantUsers.Add(tenantDaemonMembership);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         // Evict global tenant directory cache across all auto-scaled instances
@@ -227,7 +262,7 @@ public class TenantService : ITenantService
 
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
-        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
+        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local") || normalizedEmail.StartsWith("daemon@") || normalizedEmail.EndsWith(".internal"))
             return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
 
         var tenant = await _dbContext.Tenants
@@ -284,6 +319,7 @@ public class TenantService : ITenantService
             Email = normalizedEmail,
             FullName = fullName.Trim(),
             UserType = userType,
+            UserKind = UserKindEnum.Human,
             IsActive = isActive,
             StartDate = startDate.ToUniversalTime(),
             EndDate = endDate.ToUniversalTime(),
@@ -346,7 +382,7 @@ public class TenantService : ITenantService
 
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
-        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local"))
+        if (normalizedEmail == "system" || normalizedEmail.Contains("daemon.local") || normalizedEmail.StartsWith("daemon@") || normalizedEmail.EndsWith(".internal"))
             return Result<UserEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
 
         var tenant = await _dbContext.Tenants
@@ -367,6 +403,9 @@ public class TenantService : ITenantService
 
         if (user is null)
             return Result<UserEntity>.Failure($"User was not found in tenant '{tenantSlug}'.");
+
+        if (user.UserKind == UserKindEnum.SystemDaemon)
+            return Result<UserEntity>.Failure("System daemon accounts cannot be modified through the tenant user directory.");
 
         var internalDomains = tenant.GetInternalDomains();
         var externalDomains = tenant.GetExternalDomains();
@@ -453,6 +492,12 @@ public class TenantService : ITenantService
         {
             return Result<TenantUserEntity>.Failure($"Tenant '{tenantSlug}' was not found.");
         }
+
+        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+        if (user?.UserKind == UserKindEnum.SystemDaemon)
+        {
+            return Result<TenantUserEntity>.Failure("System daemon account roles are permanently locked to TenantAdmin and cannot be modified.");
+        }
         var tenantUser = await _dbContext.TenantUsers
             .AsTracking()
             .Where(tu => tu.TenantId == tenant.Id && tu.UserEntityId == userId && !tu.IsDeleted)
@@ -487,7 +532,7 @@ public class TenantService : ITenantService
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
 
-        if (string.Equals(tenant.Slug, IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(tenant.Slug, _rootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
             return Result.Failure("The default system root anchor tenant cannot be deactivated or modified.");
 
         tenant.IsActive = isActive;
@@ -527,7 +572,7 @@ public class TenantService : ITenantService
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
         if (tenant is null) return Result.Failure("Tenant not found.");
 
-        if (string.Equals(tenant.Slug, IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(tenant.Slug, _rootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || string.Equals(tenant.Slug, "default", StringComparison.OrdinalIgnoreCase))
             return Result.Failure("The default system root anchor tenant cannot be modified.");
 
         tenant.StartDate = startDate;
@@ -777,5 +822,84 @@ public class TenantService : ITenantService
             cancellationToken);
 
         return Result<string>.Success(newLicenseKey);
+    }
+
+    public async Task<UserEntity?> GetTenantDaemonUserAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        // Zero Trust: Caller must be RootAdmin or active in the target tenant
+        if (!_currentUser.IsRootAdmin && _tenantContext.TenantId != tenantId)
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to query daemon for tenant '{TenantId}' outside active context.", _currentUser.UserId, tenantId);
+            return null;
+        }
+
+        var daemonMembership = await _dbContext.TenantUsers
+            .AsNoTracking()
+            .Include(tu => tu.User)
+            .FirstOrDefaultAsync(tu => tu.TenantId == tenantId && tu.User.UserKind == UserKindEnum.SystemDaemon && !tu.IsDeleted, cancellationToken);
+
+        return daemonMembership?.User;
+    }
+
+    public async Task<Result<bool>> IsTenantDaemonActiveAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var daemonUser = await GetTenantDaemonUserAsync(tenantId, cancellationToken);
+        if (daemonUser == null)
+        {
+            return Result<bool>.Failure("Tenant daemon user not found.");
+        }
+        return Result<bool>.Success(daemonUser.IsActive);
+    }
+
+    public async Task<Result> SetTenantDaemonActiveAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        // Root tenant daemon can only be modified by RootAdmin
+        if (tenantId == _rootAdminService.RootTenantId && !_currentUser.IsRootAdmin)
+        {
+            return Result.Failure("Access Denied: Only designated root super-administrators can modify root daemon status.");
+        }
+
+        // For client tenants: caller must be RootAdmin or TenantAdmin of that tenant
+        if (!_currentUser.IsRootAdmin && (_tenantContext.TenantId != tenantId || !_currentUser.IsInRole("TenantAdmin")))
+        {
+            return Result.Failure("Access Denied: Tenant administrator privileges required.");
+        }
+
+        var daemonMembership = await _dbContext.TenantUsers
+            .AsTracking()
+            .Include(tu => tu.User)
+            .FirstOrDefaultAsync(tu => tu.TenantId == tenantId && tu.User.UserKind == UserKindEnum.SystemDaemon && !tu.IsDeleted, cancellationToken);
+
+        if (daemonMembership?.User == null)
+        {
+            return Result.Failure("Tenant daemon user not found.");
+        }
+
+        var user = daemonMembership.User;
+        if (user.IsActive == isActive)
+        {
+            return Result.Success();
+        }
+
+        user.IsActive = isActive;
+        daemonMembership.IsActive = isActive;
+
+        var integrityKey = _configuration["Security:IntegritySecret"];
+        if (!string.IsNullOrWhiteSpace(integrityKey) && !integrityKey.StartsWith("__SET_VIA_"))
+        {
+            user.RowSignature = user.ComputeIntegritySignature(integrityKey);
+            daemonMembership.RowSignature = daemonMembership.ComputeIntegritySignature(integrityKey);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Tenant '{TenantId}' daemon user '{Email}' active state updated to: {IsActive}", tenantId, user.Email, isActive);
+
+        await _auditService.LogUserActivityAsync(
+            $"Updated background automation status for tenant '{tenantId}' to {(isActive ? "Active" : "Suspended")}",
+            $"Daemon: {user.Email}, IsActive: {isActive}",
+            cancellationToken);
+
+        return Result.Success();
     }
 }

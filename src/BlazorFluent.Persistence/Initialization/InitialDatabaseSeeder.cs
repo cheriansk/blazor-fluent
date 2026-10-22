@@ -18,8 +18,8 @@ namespace BlazorFluent.Persistence.Initialization;
 /// </summary>
 public static class InitialDatabaseSeeder
 {
-    public const string DefaultTenantSlug = IRootAdminService.RootTenantSlug;
-    public const string DefaultTenantName = IRootAdminService.RootTenantName;
+    // Default tenant slug resolved via IRootAdminService instance
+    // Default tenant name resolved via IRootAdminService instance
 
     public static async Task SeedAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
@@ -46,20 +46,20 @@ public static class InitialDatabaseSeeder
 
         // Initialize tenant and user context for startup seeding under Root Admin identity in Root Tenant
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-        tenantContext.SetTenant(IRootAdminService.RootTenantId, IRootAdminService.RootTenantSlug, IRootAdminService.RootTenantName);
+        tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
 
         var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.RestoreUserContext("root-seeder-bootstrap", primaryAdminEmail, "System Administrator", isRootAdmin: true);
+        currentUser?.SetSystemDaemon("InitialDatabaseSeeder", $"daemon@{rootAdminService.RootTenantSlug.ToLowerInvariant()}.internal");
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // 1. Ensure internal root anchor Root Tenant exists
         var defaultTenant = await dbContext.Tenants
-            .FirstOrDefaultAsync(t => t.Id == IRootAdminService.RootTenantId || t.Slug == DefaultTenantSlug, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == rootAdminService.RootTenantId || t.Slug == rootAdminService.RootTenantSlug, cancellationToken);
 
         if (defaultTenant is null)
         {
-            logger.LogInformation("Provisioning internal root anchor tenant ('{Slug}', ID: {Id})...", DefaultTenantSlug, IRootAdminService.RootTenantId);
+            logger.LogInformation("Provisioning internal root anchor tenant ('{Slug}', ID: {Id})...", rootAdminService.RootTenantSlug, rootAdminService.RootTenantId);
 
             // Derive internal domains strictly from configured admin emails
             var adminDomains = adminEmails
@@ -75,11 +75,11 @@ public static class InitialDatabaseSeeder
 
             defaultTenant = new TenantEntity
             {
-                Id = IRootAdminService.RootTenantId,
-                Slug = DefaultTenantSlug,
-                Name = DefaultTenantName,
+                Id = rootAdminService.RootTenantId,
+                Slug = rootAdminService.RootTenantSlug,
+                Name = rootAdminService.RootTenantName,
                 InternalEmailDomains = string.Join(";", adminDomains),
-                ExternalEmailDomains = "@client.com",
+                ExternalEmailDomains = null,
                 IsActive = true,
                 StartDate = DateTime.UtcNow.AddYears(-1),
                 EndDate = DateTime.UtcNow.AddYears(20)
@@ -122,6 +122,7 @@ public static class InitialDatabaseSeeder
                     Email = normalizedEmail,
                     FullName = $"Root Administrator {index}",
                     UserType = UserTypeEnum.CompanyUser,
+                    UserKind = UserKindEnum.Human,
                     IsActive = true,
                     StartDate = DateTime.UtcNow.AddYears(-1),
                     EndDate = DateTime.UtcNow.AddYears(20),
@@ -167,6 +168,124 @@ public static class InitialDatabaseSeeder
             }
 
             index++;
+        }
+
+        // 2b. Seed Root Tenant Daemon (daemon@default.internal) and client tenant daemons
+        var rootDaemonEmail = "daemon@default.internal";
+        var existingRootDaemon = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.Email == rootDaemonEmail && !u.IsDeleted, cancellationToken);
+
+        if (existingRootDaemon is null)
+        {
+            logger.LogInformation("Seeding Root System Daemon with email '{Email}'...", rootDaemonEmail);
+
+            var rootDaemon = new UserEntity
+            {
+                Id = Guid.NewGuid(),
+                Email = rootDaemonEmail,
+                FullName = "Root System Daemon",
+                UserType = UserTypeEnum.CompanyUser,
+                UserKind = UserKindEnum.SystemDaemon,
+                IsActive = true,
+                StartDate = DateTime.UtcNow.AddYears(-1),
+                EndDate = DateTime.UtcNow.AddYears(50),
+                TimeZoneId = "UTC"
+            };
+
+            rootDaemon.RowSignature = rootDaemon.ComputeIntegritySignature(integrityKey);
+            dbContext.Users.Add(rootDaemon);
+
+            var daemonTenantUser = new TenantUserEntity
+            {
+                Id = Guid.NewGuid(),
+                TenantId = defaultTenant.Id,
+                UserEntityId = rootDaemon.Id,
+                Role = TenantRoleEnum.TenantAdmin,
+                IsActive = true,
+            };
+            daemonTenantUser.RowSignature = daemonTenantUser.ComputeIntegritySignature(integrityKey);
+            dbContext.TenantUsers.Add(daemonTenantUser);
+
+            changesMade = true;
+        }
+        else
+        {
+            if (existingRootDaemon.UserKind != UserKindEnum.SystemDaemon)
+            {
+                existingRootDaemon.UserKind = UserKindEnum.SystemDaemon;
+                existingRootDaemon.RowSignature = existingRootDaemon.ComputeIntegritySignature(integrityKey);
+                changesMade = true;
+            }
+
+            var hasMembership = await dbContext.TenantUsers
+                .AnyAsync(tu => tu.TenantId == defaultTenant.Id && tu.UserEntityId == existingRootDaemon.Id && !tu.IsDeleted, cancellationToken);
+
+            if (!hasMembership)
+            {
+                var daemonTenantUser = new TenantUserEntity
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = defaultTenant.Id,
+                    UserEntityId = existingRootDaemon.Id,
+                    Role = TenantRoleEnum.TenantAdmin,
+                    IsActive = true,
+                };
+                daemonTenantUser.RowSignature = daemonTenantUser.ComputeIntegritySignature(integrityKey);
+                dbContext.TenantUsers.Add(daemonTenantUser);
+                changesMade = true;
+            }
+        }
+
+        // Seed tenant-scoped daemons for all other active tenants
+        var allOtherTenants = await dbContext.Tenants
+            .Where(t => t.Id != defaultTenant.Id && !t.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        foreach (var tenant in allOtherTenants)
+        {
+            var tenantDaemonEmail = $"daemon@{tenant.Slug.ToLowerInvariant()}.internal";
+            var existingTenantDaemon = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.Email == tenantDaemonEmail && !u.IsDeleted, cancellationToken);
+
+            if (existingTenantDaemon is null)
+            {
+                logger.LogInformation("Seeding Tenant System Daemon for '{Slug}' with email '{Email}'...", tenant.Slug, tenantDaemonEmail);
+
+                var daemon = new UserEntity
+                {
+                    Id = Guid.NewGuid(),
+                    Email = tenantDaemonEmail,
+                    FullName = $"{tenant.Name} Daemon",
+                    UserType = UserTypeEnum.CompanyUser,
+                    UserKind = UserKindEnum.SystemDaemon,
+                    IsActive = true,
+                    StartDate = DateTime.UtcNow.AddYears(-1),
+                    EndDate = DateTime.UtcNow.AddYears(50),
+                    TimeZoneId = "UTC"
+                };
+
+                daemon.RowSignature = daemon.ComputeIntegritySignature(integrityKey);
+                dbContext.Users.Add(daemon);
+
+                var daemonMembership = new TenantUserEntity
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenant.Id,
+                    UserEntityId = daemon.Id,
+                    Role = TenantRoleEnum.TenantAdmin,
+                    IsActive = true,
+                };
+                daemonMembership.RowSignature = daemonMembership.ComputeIntegritySignature(integrityKey);
+                dbContext.TenantUsers.Add(daemonMembership);
+
+                changesMade = true;
+            }
+            else if (existingTenantDaemon.UserKind != UserKindEnum.SystemDaemon)
+            {
+                existingTenantDaemon.UserKind = UserKindEnum.SystemDaemon;
+                existingTenantDaemon.RowSignature = existingTenantDaemon.ComputeIntegritySignature(integrityKey);
+                changesMade = true;
+            }
         }
 
         // 3. Self-healing signature synchronization strictly restricted to Development mode.

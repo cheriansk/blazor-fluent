@@ -363,7 +363,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && tenantId == IRootAdminService.RootTenantId) return true;
+        if (_currentUser.IsAuthenticated_RootTenant_User && tenantId == _currentUser.TenantId) return true;
 
         if (await IsTenantAdminAsync(tenantId, userId, ct)) return true;
 
@@ -415,7 +415,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && tenantId == IRootAdminService.RootTenantId) return true;
+        if (_currentUser.IsAuthenticated_RootTenant_User && tenantId == _currentUser.TenantId) return true;
 
         return await IsTenantAdminAsync(tenantId, userId, ct);
 
@@ -427,7 +427,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     {
 
-        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && (string.Equals(tenantId.Trim(), IRootAdminService.RootTenantSlug, StringComparison.OrdinalIgnoreCase) || (Guid.TryParse(tenantId.Trim(), out var gt) && gt == IRootAdminService.RootTenantId))) return true;
+        if (_currentUser.IsAuthenticated_RootTenant_User && (string.Equals(tenantId.Trim(), _currentUser.TenantSlug, StringComparison.OrdinalIgnoreCase) || (Guid.TryParse(tenantId.Trim(), out var gt) && gt == _currentUser.TenantId))) return true;
 
         return await IsTenantAdminAsync(tenantId, userId, ct);
 
@@ -499,7 +499,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-        if (_currentUser.IsRootAdmin && _tenantContext.IsRootTenant && tenantId == IRootAdminService.RootTenantId)
+        if (_currentUser.IsAuthenticated_RootTenant_User && tenantId == _currentUser.TenantId)
 
         {
 

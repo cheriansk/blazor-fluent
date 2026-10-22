@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 using BlazorFluent.Core.Dtos.Response;
@@ -20,4 +20,7 @@ public interface ITenantService
     Task<Result<ProjectEntity>> CreateTenantProjectAsync(string tenantSlug, string name, string shortCode, string? location, DateTime? startDate, DateTime? endDate, string? scopeSummary, ProjectStatusEnum status, Guid? programId = null, CancellationToken cancellationToken = default);
     Task<Result<ProjectEntity>> UpdateTenantProjectAsync(string tenantSlug, Guid projectId, string name, string shortCode, string? location, DateTime? startDate, DateTime? endDate, string? scopeSummary, ProjectStatusEnum status, Guid? programId = null, CancellationToken cancellationToken = default);
     Task<Result<string>> RegenerateTenantLicenseKeyAsync(string tenantSlug, CancellationToken cancellationToken = default);
+    Task<Result<bool>> IsTenantDaemonActiveAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<Result> SetTenantDaemonActiveAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default);
+    Task<UserEntity?> GetTenantDaemonUserAsync(Guid tenantId, CancellationToken cancellationToken = default);
 }

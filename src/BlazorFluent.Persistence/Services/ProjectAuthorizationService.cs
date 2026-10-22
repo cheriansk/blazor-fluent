@@ -41,21 +41,21 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<ProjectRoleEnum?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
     {
-        if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || _tenantContext.IsRootTenant)
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return null;
         return await _hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, _currentUser.UserId, ct);
     }
 
     public async Task<bool> CanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
-        if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || _tenantContext.IsRootTenant)
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return false;
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
     public async Task<bool> CanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, CancellationToken ct = default)
     {
-        if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || _tenantContext.IsRootTenant)
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return false;
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
@@ -92,10 +92,10 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
-        if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || _tenantContext.IsRootTenant)
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return [];
 
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _currentUser.TenantId;
         var userId = _currentUser.UserId;
         var hasGuid = Guid.TryParse(userId, out var userGuid);
         var normalizedUser = userId.Trim().ToLowerInvariant();
@@ -129,7 +129,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<ProjectUserRoleEntity>> GetProjectMembersAsync(Guid projectId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _currentUser.TenantId;
 
         return await _dbContext.ProjectUserRoles
             .AsNoTracking()
@@ -166,7 +166,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             }
         }
 
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _currentUser.TenantId;
 
         if (!Guid.TryParse(userId, out var userEntityId))
         {
@@ -230,7 +230,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             return Result.Failure("Only Project Admins, parent Program Admins, or Tenant Admins can revoke project roles.");
         }
 
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _currentUser.TenantId;
         var hasGuid = Guid.TryParse(userId, out var userGuid);
         var normalizedUser = userId.Trim().ToLowerInvariant();
 

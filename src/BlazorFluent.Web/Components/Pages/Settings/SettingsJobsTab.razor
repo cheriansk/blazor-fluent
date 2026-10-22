@@ -8,6 +8,7 @@
 @inject IJobManagerService JobManagerService
 @inject AppDbContext DbContext
 @inject ITenantContext TenantContext
+@inject IRootAdminService RootAdmin
 @inject ICurrentUser CurrentUser
 @inject IDateTimeProvider DateTimeProvider
 @inject IUserTimeZoneService TimeZoneService
@@ -279,7 +280,7 @@
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(
                     t.Slug,
-                    t.Slug == IRootAdminService.DefaultTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
+                    t.Slug == RootAdmin.RootTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
                 .ToListAsync();
 
             _availableTenants = dbTenants;

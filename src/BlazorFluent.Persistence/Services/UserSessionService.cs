@@ -40,7 +40,9 @@ public class UserSessionService : IUserSessionService
         // Security Gate: Reject persistent session creation for background system daemons
         if (string.Equals(userId, "system", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(userEmail, "system@daemon.local", StringComparison.OrdinalIgnoreCase) ||
-            userEmail?.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase) == true)
+            userEmail?.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase) == true ||
+            SystemIdentityUtility.IsSystemDaemon(userId) ||
+            SystemIdentityUtility.IsSystemDaemon(userEmail))
         {
             _logger.LogCritical("SECURITY ALERT: Blocked illicit attempt to create persistent user session for system daemon '{UserId}' ({UserEmail}).", userId, userEmail);
             throw new InvalidOperationException("System daemon service identities are non-interactive and cannot possess persistent user sessions.");

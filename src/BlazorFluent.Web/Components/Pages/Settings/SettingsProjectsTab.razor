@@ -388,7 +388,7 @@
                                             {
                                                 <FluentSelect TOption="UserEntity"
                                                               TValue="string"
-                                                              Items="@_tenantUsers"
+                                                              Items="@_tenantUsers.Where(u => u.UserKind == UserKindEnum.Human)"
                                                               OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserTypeEnum.CompanyUser ? "Internal Staff" : "External Client")}]")"
                                                               OptionValue="@(u => u.Id.ToString())"
                                                               Value="@_selectedTenantUserId"
@@ -513,6 +513,12 @@
                                     <TemplateColumn Title="Member" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserName))">
                                         <div>
                                             <strong>@context.UserName</strong>
+                                            @if (BlazorFluent.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(context.UserEmail))
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Outline" Style="background-color: #f3f2f1; color: #323130; margin-left: 6px;">
+                                                    🤖 System Daemon
+                                                </FluentBadge>
+                                            }
                                             <div style="font-size: 11px; color: var(--neutral-foreground-hint, #666);">@context.UserId</div>
                                         </div>
                                     </TemplateColumn>
@@ -555,18 +561,27 @@
                                     </TemplateColumn>
                                     <TemplateColumn Title="Actions">
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
-                                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditAssignment(context))">
-                                                Edit
-                                            </FluentButton>
-                                            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
-                                                Revoke
-                                            </FluentButton>
-                                            <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View role history" />
-                                            @if (CurrentUser.IsRootAdmin && context.UserId != CurrentUser.UserId)
+                                            @if (BlazorFluent.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(context.UserEmail))
                                             {
-                                                <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.PersonCircle())" OnClick="@(() => PromptImpersonation(context))">
-                                                    Impersonate
+                                                <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="font-size: 11px;">
+                                                    🔒 Locked Daemon
+                                                </FluentBadge>
+                                            }
+                                            else
+                                            {
+                                                <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditAssignment(context))">
+                                                    Edit
                                                 </FluentButton>
+                                                <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
+                                                    Revoke
+                                                </FluentButton>
+                                                <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View role history" />
+                                                @if (CurrentUser.IsRootAdmin && context.UserId != CurrentUser.UserId)
+                                                {
+                                                    <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size16.PersonCircle())" OnClick="@(() => PromptImpersonation(context))">
+                                                        Impersonate
+                                                    </FluentButton>
+                                                }
                                             }
                                         </FluentStack>
                                     </TemplateColumn>

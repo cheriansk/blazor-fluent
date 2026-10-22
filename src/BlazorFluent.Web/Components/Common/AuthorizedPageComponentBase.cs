@@ -78,24 +78,17 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
     {
         IsEvaluating = true;
 
-        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user (!IsSystemDaemon && HasActiveTenant && IsAuthenticated).
-        if (!CurrentUser.IsAuthenticatedTenantUser)
+        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user in an active customer tenant workspace.
+        if (!CurrentUser.IsAuthenticated_RegularTenant_User)
         {
             CanVisit = false;
             CanEdit = false;
             CurrentRole = null;
             IsEvaluating = false;
-            NavigationManager.NavigateTo("/login", forceLoad: false);
-            return;
-        }
-
-        // Strict Sovereignty Rule: Workspace pages are never accessible in the Root Tenant.
-        if (TenantContext.IsRootTenant)
-        {
-            CanVisit = false;
-            CanEdit = false;
-            CurrentRole = null;
-            IsEvaluating = false;
+            if (!CurrentUser.IsAuthenticated)
+            {
+                NavigationManager.NavigateTo("/login", forceLoad: false);
+            }
             return;
         }
 

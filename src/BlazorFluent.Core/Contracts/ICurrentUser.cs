@@ -37,11 +37,49 @@ public interface ICurrentUser
     bool IsSystemDaemon { get; }
 
     /// <summary>
-    /// Unified Zero-Trust Guardrail: True if and only if the caller is an authenticated human user (!IsSystemDaemon)
-    /// AND has an active non-empty tenant initialized in ITenantContext (HasActiveTenant).
-    /// SystemDaemons always return false.
+    /// Direct access to the active TenantContext for this circuit or execution scope.
     /// </summary>
-    bool IsAuthenticatedTenantUser { get; }
+    ITenantContext TenantContext { get; }
+
+    /// <summary>
+    /// Direct access to the active TenantId. Throws SecurityException if accessed when !HasActiveTenant.
+    /// </summary>
+    Guid TenantId => TenantContext.TenantId;
+
+    /// <summary>
+    /// Direct access to the active TenantSlug. Throws SecurityException if accessed when !HasActiveTenant.
+    /// </summary>
+    string TenantSlug => TenantContext.TenantSlug;
+
+    /// <summary>
+    /// 1. True if and only if caller is an authenticated human user in an active, non-Root customer tenant.
+    /// Used for all customer workspace operations (Programs, Projects, Tasks, Workflows, Calendar, KnowledgeBase).
+    /// </summary>
+    bool IsAuthenticated_RegularTenant_User { get; }
+
+    /// <summary>
+    /// 2. True if and only if caller is an authenticated human root administrator in the active Root Tenant.
+    /// Used strictly for platform administration and tenant catalog management.
+    /// </summary>
+    bool IsAuthenticated_RootTenant_User { get; }
+
+    /// <summary>
+    /// 3. True if and only if caller is an authenticated background daemon operating in an active customer tenant.
+    /// Used strictly for single-tenant background batch data processing.
+    /// </summary>
+    bool IsAuthenticated_RegularTenant_Daemon { get; }
+
+    /// <summary>
+    /// 4. True if and only if caller is an authenticated background daemon operating in the active Root Tenant.
+    /// Used strictly for platform startup bootstrap and system-wide maintenance jobs.
+    /// </summary>
+    bool IsAuthenticated_RootTenant_Daemon { get; }
+
+    /// <summary>
+    /// Level 1 UI Router Guard: True if and only if caller is an authenticated human user in a regular tenant OR the root tenant.
+    /// Daemons are strictly excluded (always false).
+    /// </summary>
+    bool IsAuthenticatedTenantUser => IsAuthenticated_RegularTenant_User || IsAuthenticated_RootTenant_User;
 
     /// <summary>
     /// Configures the current scoped context as an internal background system daemon.
@@ -94,8 +132,24 @@ public class DefaultCurrentUser : ICurrentUser
     public bool IsRootAdmin => _restoredIsRootAdmin;
     public bool IsSystemDaemon => _isSystemDaemon;
 
-    public bool IsAuthenticatedTenantUser =>
-        IsAuthenticated && !_isSystemDaemon && (_tenantContext?.HasActiveTenant ?? false);
+    public ITenantContext TenantContext => _tenantContext ?? throw new InvalidOperationException("ITenantContext is not available on DefaultCurrentUser.");
+
+    public Guid TenantId => TenantContext.TenantId;
+    public string TenantSlug => TenantContext.TenantSlug;
+
+    public bool IsAuthenticated_RegularTenant_User =>
+        IsAuthenticated && !_isSystemDaemon && (_tenantContext?.HasActiveTenant == true) && !_tenantContext.IsRootTenant;
+
+    public bool IsAuthenticated_RootTenant_User =>
+        IsAuthenticated && !_isSystemDaemon && _restoredIsRootAdmin && (_tenantContext?.HasActiveTenant == true) && _tenantContext.IsRootTenant;
+
+    public bool IsAuthenticated_RegularTenant_Daemon =>
+        IsAuthenticated && _isSystemDaemon && (_tenantContext?.HasActiveTenant == true) && !_tenantContext.IsRootTenant;
+
+    public bool IsAuthenticated_RootTenant_Daemon =>
+        IsAuthenticated && _isSystemDaemon && (_tenantContext?.HasActiveTenant == true) && _tenantContext.IsRootTenant;
+
+    public bool IsAuthenticatedTenantUser => IsAuthenticated_RegularTenant_User || IsAuthenticated_RootTenant_User;
 
     public void SetSystemDaemon(string daemonName, string? initiatingUserEmail = null)
     {
