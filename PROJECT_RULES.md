@@ -69,13 +69,22 @@ BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs comp
 1. **Default `NoTracking` Behavior**: `AppDbContext` is configured with `options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)` globally in `PersistenceExtensions.cs`. All LINQ queries execute with no tracking by default for maximum read performance and minimal memory footprint.
 2. **Explicit `.AsTracking()` for Entity Mutations**: Any domain service method that retrieves an existing entity to modify its properties and call `SaveChangesAsync()` MUST chain `.AsTracking()` onto the query (e.g. `_dbContext.Users.AsTracking().FirstOrDefaultAsync(...)`).
 
-### 1.5 Entity Naming Convention
+### 1.5 Entity Architectural Standards & Roslyn Analyzer Governance (TG007 - TG012)
 
-Every domain class and abstract base class in `BlazorFluent.Core` **must end with `Entity`**.
+Every domain entity and abstract entity base class in `BlazorFluent.Core` **must strictly follow the solution entity laws**, enforced automatically at compile time via Roslyn Analyzer rules in `TemplateGuard.Analyzers`:
+
+| Rule Code | Law & Requirement | Allowed Approach & Enforcement |
+|-----------|-------------------|--------------------------------|
+| **`TG007`** | **Entity Naming Law** | Every domain entity class and entity base class must end with the `Entity` suffix (e.g. `TaskEntity`, `TenantEntity`). Enforced on all types inheriting `BaseEntity` or declared in domain namespaces. |
+| **`TG008`** | **Inheritance & Marker Interfaces Law** | (1) Must inherit `BaseEntity` (directly or via `AuditableEntity` / `TenantAuditableEntity`);<br/>(2) Must implement tenancy boundary: `ITenantEntity` (tenant-scoped) or `IGlobalEntity` (host-wide);<br/>(3) Must implement exactly ONE deletion lifecycle marker: `ISoftDeletableEntity`, `IHardDeletableEntity`, or `IImmutableEntity`;<br/>(4) If implementing `IProjectScopedEntity`, MUST also implement `ITenantEntity`. |
+| **`TG009`** | **Companion Validator Law** | Every concrete domain entity must declare a companion validator class in `BlazorFluent.Core` implementing `AbstractValidator<TEntity>` (e.g. `class TaskEntityValidator : AbstractValidator<TaskEntity>`). |
+| **`TG010`** | **Companion EF Core Configuration Law** | Every concrete domain entity mapped in the database must declare a companion configuration class in `BlazorFluent.Persistence` implementing `IEntityTypeConfiguration<TEntity>` (e.g. `class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>`). |
+| **`TG011`** | **Strict Prohibition of `DateOnly`** | Domain entities must never declare properties of type `DateOnly` or `DateOnly?`. All temporal fields must be declared as UTC `DateTime`. |
+| **`TG012`** | **Relational Normalization & Navigation Law** | Domain entities must persist foreign keys (`Guid`) only. Never persist mutable user attributes (`UserEmail`, `UserName`, `AuthorEmail`, `AuthorName`); convenience forwarders must be decorated with `[NotMapped]`. |
 
 | ✅ Correct | ❌ Wrong |
 |-----------|---------|
-| `ProductEntity` | `Product` |
+| `TaskEntity` | `Task` |
 | `TenantAuditableEntity` | `TenantAuditable` |
 | `UserSessionEntity` | `UserSession` |
 
@@ -102,6 +111,7 @@ When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step de
 | **Soft Deletion** | `ISoftDeletableEntity` | `DbContext.Remove()` becomes soft delete; filtered by `QueryFilters.SoftDelete` |
 | **Project Workspace Scoping** | `IProjectScopedEntity` | Write operations guarded by `ProjectSecurityInterceptor` against user role |
 | **Effective Dating (Active Date Ranges)** | `IEffectiveDatedEntity` | Adds `StartDate`/`EndDate?`; interceptor enforces `EndDate >= StartDate`; LINQ `query.WhereActive()` |
+| **Scheduled Work & Delivery Tracking** | `IScheduledWorkEntity` | Inherits `IEffectiveDatedEntity`; declares `DueDate`, `RevisedDueDate?`, `ActualStartDate?`, `ActualEndDate?`, `ScheduleVarianceDays`. Interceptor auto-stamps actuals on status transitions and enforces dual-gate role governance on baseline schedule adjustments |
 | **Revision / Version Tracking** | `IVersionedEntity` | Adds `VerNum` and `SetVersionNumber(newVer)`. Interceptor validates `VerNum >= 1`. Versions are explicitly controlled via domain logic, not blind auto-increments |
 | **Skip Audit Diff Logging** | `IAuditExemptEntity` | Prevents recursive diff logging in `audit.AuditRecords` |
 | **Skip Mandatory Validation** | `IValidationExemptEntity` | Explicitly exempts internal logging/system tables from mandatory `IValidator<TEntity>` checks |
@@ -118,10 +128,16 @@ When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step de
 
 ### 1.3 DataListTypes Enum Standard
 
-All shared domain enums live in `BlazorFluent.Core/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
+All shared domain enums live in `BlazorFluent.Shared/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
 
 | Standard | Rule & Implementation |
 |---|---|
+| **`*Enum` Suffix Law** | All enums in `BlazorFluent.Shared.DataListTypes` **MUST** end with the `Enum` suffix (e.g. `WorkflowPhaseEnum`, `ContractTierEnum`, `DependencyNodeTypeEnum`, `JobTriggerSourceEnum`) for immediate cognitive recognition in code review. Suffixes `Lst`/`List` (misleading collection indicator) and `Dtl`/`Detail` (misleading DTO/entity indicator) are strictly prohibited. Enforced at compile-time by Roslyn Analyzer rule **`TG006`**. |
+| **Enum Taxonomy Law (`TG014`)** | Every enum in `BlazorFluent.Shared.DataListTypes` must be explicitly decorated with either `[LifecycleEnum]` (state machine / progression lifecycle) or `[ClassificationEnum]` (descriptive attribute, category, or role). Enforced at compile-time by Roslyn Analyzer rule **`TG014`**. |
+| **Category-Scoped Lifecycle Transition Law (`TG015`)** | Every enum decorated with `[LifecycleEnum]` must declare companion definitions containing an `AllowedTransitions` dictionary, scoped by Category where multiple entity workflows share an enum (e.g. `AllowedTransitions[Categories.Task]` vs `AllowedTransitions[Categories.Risk]`). State mutations must execute through entity domain transition methods (`entity.TransitionTo()`, `task.StartWork()`, `task.Complete()`). Enforced at compile-time by Roslyn Analyzer rule **`TG015`**. |
+| **Mandatory Extension Method Law (`TG013`)** | Direct calls to `Enum.TryParse`, `Enum.Parse`, `Enum.GetValues`, or `Enum.GetNames` are strictly prohibited across all code. All enum parsing, conversion, and metadata lookups must use `DataListExtensions` methods (`.ToEnum<T>()`, `.TryToEnum<T>()`, `.ToEnumOrNull<T>()`, `.GetDisplayName()`, `.GetCode()`, `.ToInt()`). Enforced at compile-time by Roslyn Analyzer rule **`TG013`**. |
+| **Multi-Category Membership** | `[DataListCategory]` supports `AllowMultiple = true`. Enums shared across multiple entity subtypes (e.g. `Open` and `Closed` shared by Tasks, SubTasks, and Risks) declare multiple category tags using strongly-typed companion constants (e.g. `[DataListCategory(Categories.Task)]`). |
+| **Strongly-Typed `<DataListSelect>` UI Standard** | Never author raw `<FluentSelect>` with manual `.ToString()` / `v.ToEnum(...)` for domain enums. Use `<DataListSelect TEnum="..." TValue="..." Label="..." @bind-Value="..." />`. When passed `Category="..."` or `CurrentState="..."`, it automatically filters dropdown choices to valid moves in the transition matrix. |
 | **Clean Code Identifiers** | Enum entries use alphanumeric codes with zero spaces or symbols (e.g. `ClientUser`, `CompanyUser`, `Admin`). This code is used in logic and database persistence. |
 | **Mandatory Display & Optional Description** | Every enum member, Category, and Filter declares `[Display(Name = "...", Description = "...")]` with mandatory `Name` and optional `Description`. Never use display names for logic comparisons. Retrieve via `.GetDisplayName()` and `.GetDescription()`. |
 | **Companion Definition Classes** | Enums define structured companion classes in the same file (e.g. `{EnumName}Definitions.Categories`, `{EnumName}Definitions.Filters`) declaring `const string` codes with `[Display]`. |
@@ -154,7 +170,7 @@ The Task Management subsystem implements project-scoped task tracking, Jira-styl
 
 1. **Entity Models & Scoping**:
    - `UserTaskEntity` inherits `TenantAuditableEntity`, implementing `IProjectScopedEntity` and `ISoftDeletableEntity`. It stores `Title`, `Description`, `Priority` (`TaskPriority`), `Status` (`TaskStatus`), `DueDate`, `AssigneeEmails` (semicolon-separated), `Labels` (comma-separated), `IsClosed`, `ClosedAtUtc`, and child `Comments`.
-   - `TaskCommentEntity` inherits `TenantAuditableEntity`, capturing discussion threads with `AuthorUserId`, `AuthorName`, `AuthorEmail`, and `CommentText`.
+   - `UserTaskCommentEntity` inherits `TenantAuditableEntity`, capturing discussion threads with `AuthorUserEntityId` (FK to `UserEntity`), `CommentText`, and `[NotMapped]` convenience forwarders (`AuthorUserId`, `AuthorName`, `AuthorEmail`).
    - Both entities use PostgreSQL schema `tasks` (`tasks.Tasks`, `tasks.TaskComments`) and implement Tier 2 single-entity validators (`UserTaskEntityValidator`, `TaskCommentEntityValidator`).
 2. **Reusable Generic Swimlane Component**:
    - `<FluentSwimlaneBoardComp<TItem>>` (`Components/Common/FluentSwimlaneBoardComp.razor`) provides a generic multi-column kanban/swimlane view configured via `SwimlaneColumn<TItem>` definitions.
@@ -182,13 +198,42 @@ The File Ingestion & Batch Processing subsystem implements enterprise-grade, asy
    - Once all files in the batch are persisted to `imports.ImportFiles`, `FileImportBatchJobEvent(ImportId, ProjectId, TenantId)` is emitted.
 4. **Generic Batch Worker & 2-Phase Ingestion**:
    - `GenericFileImportBatchJobHandler` listens for `FileImportBatchJobEvent`, retrieves all files for `ImportId`, and coordinates two discrete phases per file via auto-discovered handlers:
-     1. **Validate & Stage (`IFileStager`)**: Decrypts stream, parses payload, strictly validates invariants (fail-closed), and inserts valid records into the feature staging table (e.g. `staging.StagedTasks`) tagged with `ImportId`. If validation fails, status becomes `ValidationFailed`, error diagnostics are recorded, and staging halts.
-     2. **Domain Promotion (`IFileProcessor`)**: Commits staged records into live domain entities (e.g. `tasks.Tasks`, `tasks.TaskComments`). On completion, status transitions to `Completed`.
-5. **Streamlined Feature Packaging (`BlazorFluent.Jobs/FileImports/<Feature>/`)**:
-   - Each import feature (e.g. `Tasks`) is completely self-contained within its own folder containing strictly **2 classes**:
-     - `*ValidateAndStage.cs`: Implements `IFileStager`, embedding its internal parsing models and fail-closed validation rules.
-     - `*Process.cs`: Implements `IFileProcessor`, reading from staging and committing to domain entities.
+     1. **Validate & Stage (`ICanonicalBatchStager`)**: `GenericTabularJsonBatchStager` decrypts the stream, parses the payload against declarative `FileTemplateConfig` rules (fail-closed), and inserts 1,000-row canonical JSON chunks (`PayloadJson` as `jsonb`) into the universal staging table (`staging.StagedImports` / `StagedImportEntity`) tagged with `ImportId`. Multi-sheet workbooks iterate across all configured sheets in `config.Sheets`, fail-closed if unknown worksheets exist, and chunk rows per-sheet with `SheetName` and independent `ChunkIndex` sequences. If validation fails, status becomes `ValidationFailed`, error diagnostics are recorded, and staging halts with 0 rows staged.
+     2. **Domain Promotion (`IEngineClient.ProcessStagedBatchAsync`)**: Compresses staged JSON chunks from `staging.StagedImports`, processes them through the transform engine strictly in sheet declaration order followed by `ChunkIndex`, and atomically commits live domain entities (e.g. `TaskEntity` linked via `ISourceTrackedEntity.SourceRowId`). On completion, status transitions to `Completed`.
+5. **Zero-Migration Declarative Extensibility (`config/file-templates/*.json`)**:
+   - Each import format is defined declaratively via `FileTemplateConfig` (`JsonFileTemplateConfigRepository`) and staged into the universal `staging.StagedImports` table (`StagedImportEntity`), requiring zero per-feature staging tables and zero database migrations.
+
+
+
    - Handlers are auto-discovered and registered in DI via assembly scanning (`JobsExtensions.cs`). Adding a new filetype requires zero DI modifications and zero runner changes.
+
+### 1.8 Temporal & Date/Time Architecture: Strict Prohibition of `DateOnly`
+
+| Standard | Rule & Architectural Law |
+|---|---|
+| **`DateOnly` is Strictly Prohibited** | Never use `DateOnly` in entities, DTOs, domain services, background jobs, or UI models. `DateOnly` lacks timezone offsets, making it ambiguous across global multi-tenant timezones and causing premature expiration bugs in background workers. |
+| **Mandatory UTC `DateTime` Storage** | All dates and timestamps MUST be declared as `DateTime` and stored in UTC (`DateTimeKind.Utc` / PostgreSQL `timestamptz`). |
+| **Business / Effective Date Comparisons (`.Date`)** | For business validity windows, effective dates, task due dates, and user access windows (`StartDate`, `EndDate`, `DueDate`, `ResolveByUtc`), rules engines, batch jobs, and validation logic **must compare only the date portion** (`.Date` in memory, or half-open interval `< nextDay && >= targetDate` in LINQ). An entity ending today remains active throughout the entire calendar day. |
+| **Operational & Forensic Timestamps** | Exact time-of-day (`HH:mm:ss`) is reserved for operational telemetry (`Created`, `Updated`, `DeletedAtUtc`, `StartedAtUtc`, `CompletedAtUtc`, `LastActivityAtUtc`). |
+| **UI Localization** | The server emits UTC; UI components convert to user-local timezone using `IUserTimeZoneService` (`FormatDate` with `"yyyy-MM-dd"` for business dates, `FormatDateTime` with `"yyyy-MM-dd HH:mm:ss"` for audit timestamps). |
+
+### 1.9 Entity Deletion Taxonomy: Primary Nodes, RAID Work Items & Universal Dependency Architecture
+
+| Architectural Standard | Rule & Implementation |
+|---|---|
+| **Primary Entities are Soft-Deletable** | All core domain nodes (TaskEntity, ProjectCalendarEntity, ProgramCalendarEntity, ProgramEntity, ProjectEntity, UserEntity, TenantEntity) must implement ISoftDeletableEntity. Calling _context.Remove() marks IsDeleted = true, DeletedAtUtc, and DeletedBy via AuditableEntityInterceptor, preserving full historical traceability and query filtering via QueryFilters.SoftDelete. |
+| **Universal Enterprise Dependency Intermediate Table (WorkDependencyEntity)** | All dependencies across the enterprise (intra-project, cross-project, cross-program, task-to-task, gate-to-gate, task-to-gate, and manual external vendor dependencies) are consolidated into a single unified table 	asks.WorkDependencies modeled by WorkDependencyEntity : BaseTaskEntity. Each row represents an atomic pair B -> A (B depends on A) with a 3-type endpoint discriminator (CalendarGate, TaskItem, ManualDependency), zero-trust soft-ID snapshot caching (DependsOnSnapshotTitle, DependsOnSnapshotStatus, DependsOnSnapshotDueDate), and proactive schedule conflict detection (IsScheduleConflict). |
+| **Concrete RAID Log Items are Soft-Deletable** | The 4 enterprise RAID log items (R=RiskEntity, A=AssumptionEntity, I=IssueEntity, D=WorkDependencyEntity) are concrete accountable work items inheriting from BaseTaskEntity and implement ISoftDeletableEntity with full lifecycle states (Closed, InProgress), assignees, and audit tracking. |
+| **Multi-Tier Audit Retention for Universal Dependencies** | Forensic traceability is preserved across two audit layers: (1) **Level 2 Entity Change Ledger**: AuditableEntityInterceptor automatically captures all property mutations into udit.AuditRecords; (2) **Level 3 User Activity Log**: Domain services (UserTaskService, ProjectMilestoneService) explicitly emit human-readable audit events via IAuditService.LogUserActivityAsync capturing project, task/milestone names, dependency types, and deadlines upon creation, promotion, or deletion. |
+### 1.10 Relational Normalization & `[NotMapped]` Navigation Law
+
+| Architectural Standard | Rule & Implementation |
+|---|---|
+| **Minimal Persisted Data Copying (3NF)** | Domain entities must persist **only foreign keys (`Guid`)** when referencing related entities (such as `UserEntity`, `ProjectEntity`, `ProgramEntity`, `TaskEntity`). Never persist duplicate copies of mutable attributes (`UserName`, `UserEmail`, `UserType`, `AuthorName`, `AuthorEmail`, `Title`, `Name`) across consuming tables. Updating a related entity (e.g. editing a user's `FullName` or `Email` in `UserEntity`) must be 100% contained within that entity and immediately reflected everywhere via relational joins. |
+| **Unlimited `[NotMapped]` Convenience Properties** | Entities may declare any number of `[NotMapped]` read-only computed properties that forward directly to their EF Core navigation properties (e.g. `[NotMapped] public string UserName => !string.IsNullOrWhiteSpace(User?.FullName) ? User.FullName : (User?.Email ?? string.Empty);`). This preserves ergonomic UI binding and DTO projection without database column duplication. |
+| **EF Core `.Include(...)` & SQL Filter Discipline** | Because `[NotMapped]` properties exist only in C# memory and cannot be translated to SQL by EF Core: (1) Queries returning entities that expose `[NotMapped]` navigation forwarders must `.Include(...)` the underlying navigation property (e.g. `.Include(r => r.User)`); (2) All LINQ `Where`, `OrderBy`, and `Select` clauses executed against `AppDbContext` must reference the persisted foreign key (`r.UserEntityId`) or the navigation property (`r.User!.Email`, `r.User!.FullName`). |
+| **Tier 2 Validator Discipline** | Tier 2 Entity Validators (`IValidator<TEntity>`) execute inside `EntityValidationInterceptor` prior to database persistence, when navigation properties may not be loaded in memory. Validators must validate the persisted `Guid` foreign key (`RuleFor(x => x.UserEntityId).NotEmpty()`) and must **never** validate `[NotMapped]` navigation forwarders. |
+| **Forensic Point-in-Time Exception** | Immutable point-in-time forensic ledgers (`IImmutableEntity` such as `AuditRecordEntity` and `EventPublishTrackerEntity`) and ephemeral circuit session logs (`UserSessionEntity`) are explicitly exempt and must snapshot point-in-time identity strings (`UserEmail`, `IpAddress`) so historical audit logs remain immutable even if a user changes their email years later. |
 
 ---
 
@@ -196,11 +241,20 @@ The File Ingestion & Batch Processing subsystem implements enterprise-grade, asy
 
 | Rule | Description |
 |------|-------------|
+| **Zero Tenant Assumption Law** | `TenantId` is never defaulted or assumed. There is no `DefaultTenantId` on `UserEntity`. For interactive user sessions, tenant scope is resolved exclusively from the authenticated selection, verified strictly against active, cryptographically sealed `TenantUserEntity` records (`tenancy.tenant_users`). For services and background operations, `TenantId` must be explicitly supplied via `ITenantContext`. |
+| **Guid TenantId Relational Integrity Law** | `TenantId` across all entities, relational foreign keys, database indexes, background jobs, and context interfaces is strictly sequential UUIDv7 `Guid`. `TenantEntity.Slug` is exclusively reserved for human-facing vanity URLs and routing; it is strictly prohibited as a relational foreign key. |
 | **Fail-closed guard** | Every EF Core entity must implement either `ITenantEntity` (tenant-scoped) or `IGlobalEntity` (host-wide). Unlabeled entities cause a startup exception. |
-| **Automatic query filters** | EF Core 10 named query filters (`QueryFilters.Tenant`, `QueryFilters.SoftDelete`) are applied automatically in `AppDbContext.OnModelCreating`. Never bypass filters without explicit `IgnoreQueryFilters()`. |
+| **Automatic query filters** | EF Core 10 named query filters (`QueryFilters.Tenant`, `QueryFilters.SoftDelete`) are applied automatically in `AppDbContext.OnModelCreating`. Never bypass filters without explicit `IgnoreQueryFilters()`. Native 16-byte UUID comparison (`e.TenantId == _tenantContext.TenantId.Value`) ensures maximum B-Tree index seek performance in PostgreSQL. |
 | **TenantId immutability** | `AuditableEntityInterceptor` blocks any attempt to change `TenantId` after initial creation. |
 | **Cache isolation** | All cached values use tenant-prefixed keys: `t:{tenantId}:{key}`. Eviction uses `tenant:{tenantId}` tags. |
 | **Host-only queries** | Only host-level admin operations may use `IgnoreQueryFilters()`. Scope these queries clearly and audit them. |
+| **Separation of Administrative Duties** | • **App Admin**: Exclusively appoints / modifies / revokes `TenantAdmin` privileges; cannot manage regular tenant users and has zero automatic access to tenant business data.<br/>• **Tenant Admin**: Sole owner of the Tenant User Roster (`TenantMember`); cannot appoint other Tenant Admins.<br/>• **Program & Project Admin**: Pick users strictly from the Tenant User Roster for program and project assignments. |
+| **Zero Cross-Tenant Directory Leakage** | In multi-tenant environments with 1,000+ users, Project and Program Admins must NEVER query the global user directory. They discover and select users strictly from active members in `tenancy.tenant_users` for their tenant. |
+| **App Admin Business Data Isolation** | App Admins (Root Admins) have zero blind bypass on tenant business data (Projects, Tasks, Calendars, RAID, Workflows) and cannot view or edit project resources unless explicitly granted an assigned role. |
+| **Cryptographic HMAC Sealing on ANY Change** | All role and membership entities (`TenantUserEntity`, `ProgramUserRoleEntity`, `ProjectUserRoleEntity`, `UserEntity`) implement `IHmacSignableEntity`. `AuditableEntityInterceptor` recalculates `RowSignature` on every insert or update using `Security:IntegritySecret`. Direct SQL tampering results in immediate fail-closed denial and high-severity security alerts. |
+| **Tenant-Scoped System Daemon Law** | Automated background processing (batch jobs, scheduled notifications, cadence monitors) executes strictly under a dedicated, tenant-scoped `UserEntity` (`daemon@{tenant.Slug}.internal`, `UserKind = UserKindEnum.SystemDaemon`). System daemons possess sequential UUIDv7 `Id`, satisfy relational foreign keys (e.g. `AuthorUserEntityId`), and enforce standard EF Core tenant query filters. |
+| **Dedicated Per-Tenant Background Automation Kill Switch Law** | Each tenant's background processing can be suspended or resumed independently by updating the tenant daemon's `IsActive` flag. When inactive, background workers gracefully skip execution and log informational audit records without failing or raising false-positive error alarms. Root Tenant daemon cannot be deactivated by tenant admins. |
+| **Zero Non-Interactive Login Law** | Accounts with `UserKind != UserKindEnum.Human` (such as `SystemDaemon` and `ApiIntegrationBot`) are non-interactive service identities. Interactive credential verification and session creation are strictly barred and emit critical security alerts on illicit login attempts. |
 
 ---
 

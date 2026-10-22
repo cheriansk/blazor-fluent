@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Knowledge</span> &bull; <b>KnowledgeArticleReviewerEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">KnowledgeArticleReviewerEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Knowledge</span>
+<span class="badge badge-tenant">DbSet: ArticleReviewers</span>
+<a class="badge badge-base" href="BaseEntity.html">Base: BaseEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-global" title="Host-wide entity; bypasses tenant query filter">[Global Scope]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Represents an assigned reviewer for a knowledge article. Extends , implements as a dependent child record governed by the parent article's query filter.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (3)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">Article <span class="fk-pill">NAV</span></td><td><a href="KnowledgeArticleEntity.html" class="code-type">KnowledgeArticleEntity?</a></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">HasApproved </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">ApprovedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (1)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="KnowledgeArticleEntity.html"><b>KnowledgeArticleEntity</b></a></td><td>Knowledge</td><td><code>Reviewers</code></td><td>Collection (1:N)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

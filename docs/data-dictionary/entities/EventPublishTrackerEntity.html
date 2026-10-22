@@ -1,0 +1,39 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Events</span> &bull; <b>EventPublishTrackerEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">EventPublishTrackerEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Events</span>
+<span class="badge badge-tenant">DbSet: EventPublishTrackers</span>
+<a class="badge badge-base" href="AuditableEntity.html">Base: AuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-base" title="Exempt from property diff logging">[Audit Exempt]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Persistent ledger record capturing an event publication: who emitted it (source class and method), acting user, payload JSON, and aggregate status. Implements for tenancy scoping,  to prevent recursive auditing,</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (0)</div>
+<p style="color:#605e5c;">No declared public properties (inherits all members from base class).</p>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (1)</div>
+<table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
+<tr><td><a href="../razor-pages.html#screen-SettingsEventsTab.razor"><b>SettingsEventsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Id</span> <span class="badge-field">TenantId</span></td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

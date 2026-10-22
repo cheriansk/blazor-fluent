@@ -1,0 +1,73 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Tenancy</span> &bull; <b>ProjectEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">ProjectEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Tenancy</span>
+<span class="badge badge-tenant">DbSet: Projects</span>
+<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">A project is always scoped to exactly one tenant. Implements via . Implements — projects are soft-deleted, not physically removed.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (10)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">Description </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">Location </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">TentativeStartDate </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">TentativeEndDate </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">ScopeSummary </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">IsActive </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">TeamsWebhookUrl </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Dedicated Microsoft Teams incoming webhook URL for project-specific notifications and daily task digests. If null or empty, falls back to the system-wide default Teams webhook.</td></tr>
+<tr><td class="prop-name">IsDeleted </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (8)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="ProjectCalendarEntity.html"><b>ProjectCalendarEntity</b></a></td><td>Calendar</td><td><code>Project</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="ProjectCalendarEntity.html"><b>ProjectCalendarEntity</b></a></td><td>Calendar</td><td><code>ProjectId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="ImportFileEntity.html"><b>ImportFileEntity</b></a></td><td>Imports</td><td><code>ProjectId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="KnowledgeArticleEntity.html"><b>KnowledgeArticleEntity</b></a></td><td>Knowledge</td><td><code>Project</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="KnowledgeArticleEntity.html"><b>KnowledgeArticleEntity</b></a></td><td>Knowledge</td><td><code>ProjectId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="NotificationEntity.html"><b>NotificationEntity</b></a></td><td>Notifications</td><td><code>ProjectId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="BaseTaskEntity.html"><b>BaseTaskEntity</b></a></td><td>Tasks</td><td><code>ProjectId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="ProjectUserRoleEntity.html"><b>ProjectUserRoleEntity</b></a></td><td>Tenancy</td><td><code>Project</code></td><td>Navigation (1:1)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (15)</div>
+<table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
+<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">Description</span> <span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectAccessDeniedCardComp.razor"><b>ProjectAccessDeniedCardComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectAuthorizeViewComp.razor"><b>ProjectAuthorizeViewComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-FileImportPage.razor"><b>FileImportPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Imports</td><td><code>/imports</code></td><td><span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-TenantAndProjectSwitcherComp.razor"><b>TenantAndProjectSwitcherComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-HomePage.razor"><b>HomePage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/</code></td><td><span class="badge-field">Description</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsPage.razor"><b>SettingsPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Settings</td><td><code>/settings</code></td><td><span class="badge-field">TenantId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Location</span> <span class="badge-field">TentativeStartDate</span> <span class="badge-field">TentativeEndDate</span> <span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsProjectsTab.razor"><b>SettingsProjectsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Location</span> <span class="badge-field">TentativeStartDate</span> <span class="badge-field">TentativeEndDate</span> <span class="badge-field">ScopeSummary</span> <span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsTenantsTab.razor"><b>SettingsTenantsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span> <span class="badge-field">CreatedBy</span> <span class="badge-field">Updated</span> <span class="badge-field">UpdatedBy</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsUserCalendarTab.razor"><b>SettingsUserCalendarTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">TenantId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectRoleManagementPage.razor"><b>ProjectRoleManagementPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/tenancy/project-roles</code></td><td><span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectsDashboardPage.razor"><b>ProjectsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/tenancy/projects</code></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectTasksBoardPage.razor"><b>ProjectTasksBoardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/projects/{ProjectId:guid}/tasks</code></td><td><span class="badge-field">Description</span> <span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">IsActive</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

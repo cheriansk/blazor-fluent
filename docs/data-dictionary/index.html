@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>BlazorFluent Data Dictionary</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body style="overflow: hidden;">
+    <header class="top-header">
+        <div class="brand">
+            <span class="brand-badge">Enterprise Edition</span>
+            <span>BlazorFluent Data Dictionary</span>
+        </div>
+        <nav class="nav-tabs">
+            <a href="overview.html" target="contentFrame" class="nav-tab active" onclick="switchNav(this)">📊 Data Model</a>
+            <a href="hierarchy.html" target="contentFrame" class="nav-tab" onclick="switchNav(this)">🌳 Entity Hierarchy</a>
+            <a href="razor-pages.html" target="contentFrame" class="nav-tab" onclick="switchNav(this)">🖥️ Razor Screens</a>
+            <a href="placeholders/services.html" target="contentFrame" class="nav-tab" onclick="switchNav(this)">⚙️ Classes & Services (Phase 3)</a>
+        </nav>
+    </header>
+
+    <div class="portal-container">
+        <iframe src="sidebar.html" class="sidebar-pane" name="sidebarFrame" id="sidebarFrame"></iframe>
+        <iframe src="overview.html" class="content-pane" name="contentFrame" id="contentFrame"></iframe>
+    </div>
+
+    <script>
+    function switchNav(el) {
+        document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+        el.classList.add('active');
+    }
+    </script>
+</body>
+</html>

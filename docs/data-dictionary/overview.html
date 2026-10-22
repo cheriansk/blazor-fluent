@@ -1,0 +1,121 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="styles.css"></head><body>
+<div class="page-container">
+<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorFluent Monolith</div></div></div>
+<div class="stat-grid">
+<div class="stat-card"><div class="stat-val">40</div><div class="stat-lbl">Domain Entities</div></div>
+<div class="stat-card"><div class="stat-val">11</div><div class="stat-lbl">Subsystems</div></div>
+<div class="stat-card"><div class="stat-val">36</div><div class="stat-lbl">AppDbContext DbSets</div></div>
+<div class="stat-card"><div class="stat-val">61</div><div class="stat-lbl">Razor Screens</div></div>
+<div class="stat-card"><div class="stat-val">22</div><div class="stat-lbl">Entities in UI</div></div>
+<div class="stat-card"><div class="stat-val">405</div><div class="stat-lbl">Field Bindings</div></div>
+</div>
+<div class="card">
+<div class="card-title">The 3-Tier Enterprise Entity Framework</div>
+<div class="desc-box">
+<p>BlazorFluent applies strict zero-trust multi-tenancy, soft deletion, and row-level auditing through a standardized three-tier inheritance model:</p>
+<ul style="margin: 8px 0 12px 20px;">
+<li><b>Tier 1 &mdash; Architectural Markers (<code>IMarkerEntity</code>)</b>: Interface gates driving EF Core query filters and interceptors (<code>ITenantEntity</code>, <code>ISoftDeletableEntity</code>, <code>IAuditableEntity</code>, <code>IProjectScopedEntity</code>).</li>
+<li><b>Tier 2 &mdash; Reusable Base Classes</b>: Sequential UUIDv7 primary keys (<code>BaseEntity</code>), audit timestamps (<code>AuditableEntity</code>), tenant write barriers (<code>TenantAuditableEntity</code>), and work item baselines (<code>BaseTaskEntity</code>).</li>
+</ul>
+<a href="hierarchy.html" class="nav-tab active" style="display: inline-block; background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: 600;">🌳 Explore Collapsible Entity Hierarchy Tree &rarr;</a>
+</div></div>
+<div class="card">
+<div class="card-title">🖥️ UI Screen & Field Binding Integration (Presentation Layer Parity)</div>
+<div class="desc-box">
+<p>BlazorFluent indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>
+<ul style="margin: 8px 0 12px 20px;">
+<li><b>61 Screens Cataloged</b>: Across routed pages, modal dialogs, drawers, and multi-tenant settings tabs.</li>
+<li><b>22 Entities Active in UI</b>: Every entity page documents its screens and exact property bindings (forms, data grids, and audit buttons).</li>
+<li><b>405 Property Usages Tracked</b>: Full traceability between schema properties and presentation components.</li>
+</ul>
+<a href="razor-pages.html" class="nav-tab active" style="display: inline-block; background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: 600;">Browse All Razor Screens &rarr;</a>
+</div></div>
+<div class="card"><div class="card-title">Domain Subsystems & Bounded Contexts</div>
+<div class="subsystem-grid">
+<div class="subsystem-card">
+<h3><span>Auditing</span><span class="badge-count">1</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/AuditRecordEntity.html">AuditRecordEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Base</span><span class="badge-count">3</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/AuditableEntity.html">AuditableEntity</a>
+<a class="entity-tag" href="entities/BaseEntity.html">BaseEntity</a>
+<a class="entity-tag" href="entities/TenantAuditableEntity.html">TenantAuditableEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Calendar</span><span class="badge-count">4</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/BaseCalendarEntity.html">BaseCalendarEntity</a>
+<a class="entity-tag" href="entities/ProgramCalendarEntity.html">ProgramCalendarEntity</a>
+<a class="entity-tag" href="entities/ProjectCalendarEntity.html">ProjectCalendarEntity</a>
+<a class="entity-tag" href="entities/UserCalendarEntity.html">UserCalendarEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Events</span><span class="badge-count">2</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/EventConsumptionTrackerEntity.html">EventConsumptionTrackerEntity</a>
+<a class="entity-tag" href="entities/EventPublishTrackerEntity.html">EventPublishTrackerEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Identity</span><span class="badge-count">3</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/ImpersonationGrantEntity.html">ImpersonationGrantEntity</a>
+<a class="entity-tag" href="entities/UserEntity.html">UserEntity</a>
+<a class="entity-tag" href="entities/UserSessionEntity.html">UserSessionEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Imports</span><span class="badge-count">3</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/ImportFileEntity.html">ImportFileEntity</a>
+<a class="entity-tag" href="entities/StagedImportEntity.html">StagedImportEntity</a>
+<a class="entity-tag" href="entities/StagedTaskEntity.html">StagedTaskEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Jobs</span><span class="badge-count">1</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/JobExecutionEntity.html">JobExecutionEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Knowledge</span><span class="badge-count">2</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/KnowledgeArticleEntity.html">KnowledgeArticleEntity</a>
+<a class="entity-tag" href="entities/KnowledgeArticleReviewerEntity.html">KnowledgeArticleReviewerEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Notifications</span><span class="badge-count">1</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/NotificationEntity.html">NotificationEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Tasks</span><span class="badge-count">12</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/AssumptionEntity.html">AssumptionEntity</a>
+<a class="entity-tag" href="entities/BaseTaskEntity.html">BaseTaskEntity</a>
+<a class="entity-tag" href="entities/BlockerDependencyEntity.html">BlockerDependencyEntity</a>
+<a class="entity-tag" href="entities/IssueEntity.html">IssueEntity</a>
+<a class="entity-tag" href="entities/RiskEntity.html">RiskEntity</a>
+<a class="entity-tag" href="entities/SubTaskEntity.html">SubTaskEntity</a>
+<a class="entity-tag" href="entities/TaskDependencyEntity.html">TaskDependencyEntity</a>
+<a class="entity-tag" href="entities/TaskEntity.html">TaskEntity</a>
+<a class="entity-tag" href="entities/TaskLinkEntity.html">TaskLinkEntity</a>
+<a class="entity-tag" href="entities/UserTaskCommentEntity.html">UserTaskCommentEntity</a>
+<a class="entity-tag" href="entities/WorkflowEntity.html">WorkflowEntity</a>
+<a class="entity-tag" href="entities/WorkItemCommentEntity.html">WorkItemCommentEntity</a>
+</div></div>
+<div class="subsystem-card">
+<h3><span>Tenancy</span><span class="badge-count">8</span></h3>
+<div class="entity-tag-list">
+<a class="entity-tag" href="entities/MilestoneDependencyEntity.html">MilestoneDependencyEntity</a>
+<a class="entity-tag" href="entities/ProgramEntity.html">ProgramEntity</a>
+<a class="entity-tag" href="entities/ProgramUserRoleEntity.html">ProgramUserRoleEntity</a>
+<a class="entity-tag" href="entities/ProjectEntity.html">ProjectEntity</a>
+<a class="entity-tag" href="entities/ProjectMilestoneEntity.html">ProjectMilestoneEntity</a>
+<a class="entity-tag" href="entities/ProjectUserRoleEntity.html">ProjectUserRoleEntity</a>
+<a class="entity-tag" href="entities/TenantEntity.html">TenantEntity</a>
+<a class="entity-tag" href="entities/TenantUserEntity.html">TenantUserEntity</a>
+</div></div>
+</div></div>
+</div></body></html>
+

@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Imports</span> &bull; <b>StagedImportEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">StagedImportEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Imports</span>
+<span class="badge badge-tenant">DbSet: StagedImports</span>
+<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Universal staging table ('staging.StagedImports') storing normalized, high-density canonical JSON chunks for ALL file import formats (Excel, CSV, TSV, space-delimited, XML, JSON). Eliminates the need for per-file-type staging tables and database migrations.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (4)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">RowCount </td><td><span class="code-type">int</span></td><td>No</td><td>Number of rows contained within this JSON chunk (typically up to 1,000).</td></tr>
+<tr><td class="prop-name">IsProcessed </td><td><span class="code-type">bool</span></td><td>No</td><td>Explicit flag indicating whether this JSON chunk has been processed and committed to live domain tables.</td></tr>
+<tr><td class="prop-name">ProcessedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>Timestamp when Cloud API processing completed for this chunk.</td></tr>
+<tr><td class="prop-name">ErrorMessage </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Diagnostic error message if processing failed.</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

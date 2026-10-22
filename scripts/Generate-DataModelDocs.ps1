@@ -551,6 +551,56 @@ tr:hover td { background: #fdfdfd; }
 .badge-component { background: #605e5c; }
 .badge-drawer { background: #d83b01; }
 .badge-popup { background: #498205; }
+
+/* Entity Hierarchy Tree & Slide-Over Drawer */
+.hierarchy-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: #fff; padding: 12px 16px; border: 1px solid var(--border); border-radius: 4px; }
+.btn-action { background: var(--bg-main); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-primary); transition: all 0.2s; }
+.btn-action:hover { background: #e1dfdd; border-color: #c8c6c4; }
+.btn-action.primary { background: var(--primary); color: #fff; border-color: var(--primary-dark); }
+.btn-action.primary:hover { background: var(--primary-dark); }
+
+.tree-container { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 24px; overflow-x: auto; min-height: 600px; }
+.tree-root { list-style: none; padding-left: 0; margin: 0; }
+.tree-branch { list-style: none; padding-left: 28px; position: relative; margin: 4px 0; }
+.tree-branch::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; border-left: 2px dashed #edebe9; }
+.tree-node-wrap { display: flex; align-items: center; gap: 8px; margin: 6px 0; position: relative; }
+.tree-node-wrap::before { content: ""; position: absolute; left: -18px; top: 50%; width: 14px; border-top: 2px dashed #edebe9; }
+
+.toggle-btn { width: 22px; height: 22px; border-radius: 4px; border: 1px solid #c8c6c4; background: #faf9f8; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.15s; flex-shrink: 0; padding: 0; color: #605e5c; }
+.toggle-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary-dark); }
+.toggle-btn .chevron-icon { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(0deg); }
+.toggle-btn.collapsed .chevron-icon { transform: rotate(-90deg); }
+.toggle-spacer { width: 22px; height: 22px; flex-shrink: 0; }
+
+.tree-card { display: inline-flex; flex-direction: column; background: #ffffff; border: 1.5px solid #e1dfdd; border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all 0.2s ease-in-out; box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.06); min-width: 260px; max-width: 480px; }
+.tree-card:hover { border-color: var(--primary); box-shadow: 0 3.2px 7.2px 0 rgba(0,120,212,0.18); transform: translateY(-1px); }
+.tree-card.root-card { border-left: 4px solid var(--primary); background: #faf9f8; }
+.tree-card.base-card { border-left: 4px solid #5c2d91; }
+.tree-card.tenant-card { border-left: 4px solid #004578; }
+.tree-card.domain-card { border-left: 4px solid #107c10; }
+
+.tree-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tree-entity-name { font-size: 14px; font-weight: 700; color: #201f1e; font-family: Consolas, monospace; }
+.tree-subsystem-pill { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px; background: #edebe9; color: #605e5c; text-transform: uppercase; }
+
+.tree-card-extends { font-size: 11px; color: #605e5c; margin-top: 3px; font-family: Consolas, monospace; }
+.tree-card-extends strong { color: #a4262c; }
+.tree-card-ancestors { font-size: 10px; color: #8a8886; margin-top: 2px; font-family: Consolas, monospace; }
+
+.tree-children { transition: all 0.2s ease; margin: 0; }
+.tree-children.collapsed { display: none; }
+
+/* Slide-Over Drawer */
+.drawer-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+.slide-drawer { position: fixed; top: 0; right: -750px; width: 700px; max-width: 85vw; height: 100vh; background: #fff; box-shadow: -4px 0 16px rgba(0,0,0,0.25); z-index: 1001; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+.slide-drawer.open { right: 0; }
+.drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #002050; color: #fff; border-bottom: 2px solid var(--primary); }
+.drawer-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.drawer-close { background: transparent; border: none; color: #fff; font-size: 20px; font-weight: 700; cursor: pointer; padding: 2px 8px; border-radius: 4px; line-height: 1; }
+.drawer-close:hover { background: rgba(255,255,255,0.2); }
+.drawer-body { flex: 1; overflow: hidden; background: #f3f2f1; }
+.drawer-iframe { width: 100%; height: 100%; border: none; background: #fff; }
 '@
 
     Set-Content -Path (Join-Path $resolvedOutputDir "styles.css") -Value $css -Encoding UTF8
@@ -669,8 +719,9 @@ function setActive(el) {
     [void]$ovHtml.AppendLine('<ul style="margin: 8px 0 12px 20px;">')
     [void]$ovHtml.AppendLine('<li><b>Tier 1 &mdash; Architectural Markers (<code>IMarkerEntity</code>)</b>: Interface gates driving EF Core query filters and interceptors (<code>ITenantEntity</code>, <code>ISoftDeletableEntity</code>, <code>IAuditableEntity</code>, <code>IProjectScopedEntity</code>).</li>')
     [void]$ovHtml.AppendLine('<li><b>Tier 2 &mdash; Reusable Base Classes</b>: Sequential UUIDv7 primary keys (<code>BaseEntity</code>), audit timestamps (<code>AuditableEntity</code>), tenant write barriers (<code>TenantAuditableEntity</code>), and work item baselines (<code>BaseTaskEntity</code>).</li>')
-    [void]$ovHtml.AppendLine('<li><b>Tier 3 &mdash; Domain Entities</b>: Strongly-typed entity records partitioned across isolated bounded contexts and PostgreSQL schemas.</li>')
-    [void]$ovHtml.AppendLine('</ul></div></div>')
+    [void]$ovHtml.AppendLine('</ul>')
+    [void]$ovHtml.AppendLine('<a href="hierarchy.html" class="nav-tab active" style="display: inline-block; background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: 600;">🌳 Explore Collapsible Entity Hierarchy Tree &rarr;</a>')
+    [void]$ovHtml.AppendLine('</div></div>')
 
     # UI Screen Integration Card
     [void]$ovHtml.AppendLine('<div class="card">')
@@ -777,6 +828,236 @@ function filterScreens() {
 '@)
 
     Set-Content -Path (Join-Path $resolvedOutputDir "razor-pages.html") -Value $rpHtml.ToString() -Encoding UTF8
+
+    # 5.4 HIERARCHY.HTML (Collapsible Entity Inheritance Tree & Slide-Over Drawer)
+    Write-Host "Building Collapsible Entity Hierarchy diagram in '$(Join-Path $resolvedOutputDir 'hierarchy.html')'..." -ForegroundColor Cyan
+    
+    $nonInterfaces = $typeDict.Values | Where-Object { -not $_.IsInterface }
+    
+    $childMap = @{}
+    foreach ($e in $nonInterfaces) {
+        $parent = $e.BaseClass
+        if (-not $parent) { $parent = "ROOT" }
+        if (-not $childMap.ContainsKey($parent)) { $childMap[$parent] = [System.Collections.Generic.List[string]]::new() }
+        $childMap[$parent].Add($e.Name)
+    }
+
+    function Render-HierarchyBranch($name, $childMap, $typeDict, $depth) {
+        $e = $typeDict[$name]
+        $children = if ($childMap.ContainsKey($name)) { $childMap[$name] | Sort-Object } else { @() }
+        $hasChildren = ($children.Count -gt 0)
+
+        $ancestors = [System.Collections.Generic.List[string]]::new()
+        $curr = $e.BaseClass
+        while ($curr -and $typeDict.ContainsKey($curr)) {
+            $ancestors.Add($curr)
+            $curr = $typeDict[$curr].BaseClass
+        }
+
+        $cardClass = "tree-card"
+        if ($name -eq "BaseEntity") { $cardClass += " root-card" }
+        elseif ($name -in @("AuditableEntity", "TenantAuditableEntity", "BaseTaskEntity", "BaseCalendarEntity")) { $cardClass += " base-card" }
+        elseif ($e.AllMarkers.Contains("ITenantEntity")) { $cardClass += " tenant-card" }
+        else { $cardClass += " domain-card" }
+
+        # Default expansion: Top tiers open (BaseEntity, AuditableEntity, TenantAuditableEntity)
+        $isCollapsed = ($depth -gt 2) -or ($depth -eq 2 -and $name -ne "TenantAuditableEntity" -and $hasChildren)
+        $childClass = if ($isCollapsed) { "tree-children collapsed" } else { "tree-children" }
+        $btnClass = if ($isCollapsed) { "toggle-btn collapsed" } else { "toggle-btn" }
+
+        $sb = [System.Text.StringBuilder]::new()
+        [void]$sb.AppendLine("<li class=`"tree-branch`" data-entity=`"$name`">")
+        [void]$sb.AppendLine("<div class=`"tree-node-wrap`">")
+
+        if ($hasChildren) {
+            $chevronSvg = '<svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg>'
+            [void]$sb.AppendLine("<button class=`"$btnClass`" onclick=`"toggleNode(this, event)`" title=`"Expand/Collapse $($children.Count) child classes`" aria-label=`"Expand or collapse $name child classes`">$chevronSvg</button>")
+        } else {
+            [void]$sb.AppendLine("<div class=`"toggle-spacer`"></div>")
+        }
+
+        $searchMeta = "$name $($e.Subsystem) $($e.BaseClass) $($ancestors -join ' ')".ToLower()
+        [void]$sb.AppendLine("<div class=`"$cardClass`" onclick=`"openDetailDrawer('$name')`" data-search=`"$searchMeta`" title=`"Click to view $name details in slide-over drawer`">")
+        [void]$sb.AppendLine("<div class=`"tree-card-header`">")
+        [void]$sb.AppendLine("<span class=`"tree-entity-name`">$name</span>")
+        if ($e.Subsystem) {
+            [void]$sb.AppendLine("<span class=`"tree-subsystem-pill`">$($e.Subsystem)</span>")
+        }
+        [void]$sb.AppendLine("</div>")
+
+        if ($e.BaseClass) {
+            [void]$sb.AppendLine("<div class=`"tree-card-extends`">extends <strong>$($e.BaseClass)</strong></div>")
+            if ($ancestors.Count -gt 1) {
+                $ancestorLine = ($ancestors | Select-Object -Skip 1) -join " &rarr; "
+                [void]$sb.AppendLine("<div class=`"tree-card-ancestors`">&rarr; $ancestorLine</div>")
+            }
+        }
+
+        [void]$sb.AppendLine("</div>")
+        [void]$sb.AppendLine("</div>")
+
+        if ($hasChildren) {
+            [void]$sb.AppendLine("<ul class=`"$childClass`">")
+            foreach ($child in $children) {
+                [void]$sb.Append((Render-HierarchyBranch $child $childMap $typeDict ($depth + 1)))
+            }
+            [void]$sb.AppendLine("</ul>")
+        }
+
+        [void]$sb.AppendLine("</li>")
+        return $sb.ToString()
+    }
+
+    $hierHtml = [System.Text.StringBuilder]::new()
+    [void]$hierHtml.AppendLine('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Entity Hierarchy Diagram</title><link rel="stylesheet" href="styles.css"></head><body>')
+    [void]$hierHtml.AppendLine('<div class="page-container" style="max-width: 100%; padding: 20px 30px;">')
+    [void]$hierHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">🌳 Entity Hierarchy &amp; Inheritance Architecture</h1><div class="breadcrumb">Clean Architecture Inheritance Tree &bull; Click any entity card to inspect details</div></div></div>')
+
+    # Toolbar
+    [void]$hierHtml.AppendLine('<div class="hierarchy-toolbar">')
+    [void]$hierHtml.AppendLine('<div style="display: flex; align-items: center; gap: 10px; flex: 1; max-width: 450px;">')
+    [void]$hierHtml.AppendLine('<input type="text" id="treeSearch" class="search-input" placeholder="Search entity, base class, or subsystem..." onkeyup="filterTree()" style="width: 100%;">')
+    [void]$hierHtml.AppendLine('</div>')
+    [void]$hierHtml.AppendLine('<div style="display: flex; align-items: center; gap: 8px;">')
+    [void]$hierHtml.AppendLine('<button class="btn-action primary" onclick="expandAll()">Expand All</button>')
+    [void]$hierHtml.AppendLine('<button class="btn-action" onclick="collapseAll()">Collapse All</button>')
+    [void]$hierHtml.AppendLine('<button class="btn-action" onclick="resetView()">Reset View</button>')
+    [void]$hierHtml.AppendLine('</div>')
+    [void]$hierHtml.AppendLine('<div style="display: flex; align-items: center; gap: 12px; font-size: 11px;">')
+    [void]$hierHtml.AppendLine('<span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #faf9f8; border: 1.5px solid var(--primary); border-left: 3px solid var(--primary); border-radius: 2px;"></span> Root Base</span>')
+    [void]$hierHtml.AppendLine('<span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #fff; border: 1.5px solid #e1dfdd; border-left: 3px solid #5c2d91; border-radius: 2px;"></span> Framework Base</span>')
+    [void]$hierHtml.AppendLine('<span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #fff; border: 1.5px solid #e1dfdd; border-left: 3px solid #004578; border-radius: 2px;"></span> Tenant Isolated</span>')
+    [void]$hierHtml.AppendLine('<span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #fff; border: 1.5px solid #e1dfdd; border-left: 3px solid #107c10; border-radius: 2px;"></span> Domain Entity</span>')
+    [void]$hierHtml.AppendLine('</div>')
+    [void]$hierHtml.AppendLine('</div>')
+
+    # Tree container
+    [void]$hierHtml.AppendLine('<div class="tree-container">')
+    [void]$hierHtml.AppendLine('<ul class="tree-root">')
+    [void]$hierHtml.Append((Render-HierarchyBranch "BaseEntity" $childMap $typeDict 0))
+    [void]$hierHtml.AppendLine('</ul>')
+    [void]$hierHtml.AppendLine('</div>')
+
+    # Slide-over drawer & backdrop
+    [void]$hierHtml.AppendLine('<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDetailDrawer()"></div>')
+    [void]$hierHtml.AppendLine('<aside class="slide-drawer" id="slideDrawer">')
+    [void]$hierHtml.AppendLine('<div class="drawer-header">')
+    [void]$hierHtml.AppendLine('<div class="drawer-title"><span>📋</span> <span id="drawerTitle">Entity Details</span></div>')
+    [void]$hierHtml.AppendLine('<button class="drawer-close" onclick="closeDetailDrawer()" title="Close details panel">&times;</button>')
+    [void]$hierHtml.AppendLine('</div>')
+    [void]$hierHtml.AppendLine('<div class="drawer-body">')
+    [void]$hierHtml.AppendLine('<iframe id="drawerIframe" class="drawer-iframe" src="about:blank"></iframe>')
+    [void]$hierHtml.AppendLine('</div>')
+    [void]$hierHtml.AppendLine('</aside>')
+
+    # JavaScript logic
+    [void]$hierHtml.AppendLine(@'
+<script>
+function toggleNode(btn, e) {
+    if (e) { e.stopPropagation(); }
+    var branch = btn.closest('.tree-branch');
+    if (!branch) return;
+    var childList = branch.querySelector(':scope > ul.tree-children');
+    if (childList) {
+        var isCollapsed = childList.classList.toggle('collapsed');
+        btn.classList.toggle('collapsed', isCollapsed);
+    }
+}
+
+function openDetailDrawer(entityName) {
+    document.getElementById('drawerTitle').textContent = entityName + ' Details';
+    document.getElementById('drawerIframe').src = 'entities/' + entityName + '.html';
+    document.getElementById('slideDrawer').classList.add('open');
+    document.getElementById('drawerBackdrop').classList.add('open');
+}
+
+function closeDetailDrawer() {
+    document.getElementById('slideDrawer').classList.remove('open');
+    document.getElementById('drawerBackdrop').classList.remove('open');
+    document.getElementById('drawerIframe').src = 'about:blank';
+}
+
+function expandAll() {
+    document.querySelectorAll('.tree-children').forEach(function(el) {
+        el.classList.remove('collapsed');
+    });
+    document.querySelectorAll('.toggle-btn').forEach(function(btn) {
+        btn.classList.remove('collapsed');
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.tree-children').forEach(function(el) {
+        el.classList.add('collapsed');
+    });
+    document.querySelectorAll('.toggle-btn').forEach(function(btn) {
+        btn.classList.add('collapsed');
+    });
+}
+
+function resetView() {
+    collapseAll();
+    ['BaseEntity', 'AuditableEntity', 'TenantAuditableEntity'].forEach(function(name) {
+        var branch = document.querySelector('[data-entity="' + name + '"]');
+        if (branch) {
+            var ul = branch.querySelector(':scope > ul.tree-children');
+            if (ul) ul.classList.remove('collapsed');
+            var btn = branch.querySelector(':scope > .tree-node-wrap > .toggle-btn');
+            if (btn) btn.classList.remove('collapsed');
+        }
+    });
+}
+
+function filterTree() {
+    var q = document.getElementById('treeSearch').value.toLowerCase().trim();
+    var allCards = document.querySelectorAll('.tree-card');
+    if (!q) {
+        allCards.forEach(function(c) {
+            c.style.opacity = '1';
+            c.style.borderWidth = '1.5px';
+        });
+        return;
+    }
+    allCards.forEach(function(c) {
+        var meta = c.getAttribute('data-search') || '';
+        var match = meta.indexOf(q) !== -1;
+        if (match) {
+            c.style.opacity = '1';
+            c.style.borderWidth = '2.5px';
+            c.style.borderColor = 'var(--primary)';
+            var curr = c.closest('.tree-branch');
+            while (curr) {
+                var parentUl = curr.closest('ul.tree-children');
+                if (parentUl) {
+                    parentUl.classList.remove('collapsed');
+                    var parentBranch = parentUl.closest('.tree-branch');
+                    if (parentBranch) {
+                        var toggleBtn = parentBranch.querySelector(':scope > .tree-node-wrap > .toggle-btn');
+                        if (toggleBtn) toggleBtn.classList.remove('collapsed');
+                    }
+                    curr = parentBranch;
+                } else {
+                    curr = null;
+                }
+            }
+        } else {
+            c.style.opacity = '0.35';
+            c.style.borderWidth = '1px';
+            c.style.borderColor = '#edebe9';
+        }
+    });
+}
+
+window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDetailDrawer();
+    }
+});
+</script>
+</div></body></html>
+'@)
+
+    Set-Content -Path (Join-Path $resolvedOutputDir "hierarchy.html") -Value $hierHtml.ToString() -Encoding UTF8
 
     $servicesPlaceholder = @'
 <!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
@@ -935,6 +1216,7 @@ function filterScreens() {
         </div>
         <nav class="nav-tabs">
             <a href="overview.html" target="contentFrame" class="nav-tab active" onclick="switchNav(this)">📊 Data Model</a>
+            <a href="hierarchy.html" target="contentFrame" class="nav-tab" onclick="switchNav(this)">🌳 Entity Hierarchy</a>
             <a href="razor-pages.html" target="contentFrame" class="nav-tab" onclick="switchNav(this)">🖥️ Razor Screens</a>
             <a href="placeholders/services.html" target="contentFrame" class="nav-tab" onclick="switchNav(this)">⚙️ Classes & Services (Phase 3)</a>
         </nav>

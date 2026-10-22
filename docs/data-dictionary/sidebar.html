@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="styles.css"></head><body style="background:#fff;">
+<div class="search-box-wrap"><input type="text" id="entitySearch" class="search-input" placeholder="Filter entities..." onkeyup="filterEntities()"></div>
+<div class="sidebar-nav" id="sidebarNav">
+<div class="subsystem-group" data-group="Auditing">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>🔍 Auditing</span><span class="badge-count">1</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/AuditRecordEntity.html" target="contentFrame" onclick="setActive(this)" data-name="auditrecordentity">AuditRecordEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Base">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>📦 Base</span><span class="badge-count">3</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/AuditableEntity.html" target="contentFrame" onclick="setActive(this)" data-name="auditableentity">AuditableEntity</a>
+<a class="entity-link" href="entities/BaseEntity.html" target="contentFrame" onclick="setActive(this)" data-name="baseentity">BaseEntity</a>
+<a class="entity-link" href="entities/TenantAuditableEntity.html" target="contentFrame" onclick="setActive(this)" data-name="tenantauditableentity">TenantAuditableEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Calendar">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>📅 Calendar</span><span class="badge-count">4</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/BaseCalendarEntity.html" target="contentFrame" onclick="setActive(this)" data-name="basecalendarentity">BaseCalendarEntity</a>
+<a class="entity-link" href="entities/ProgramCalendarEntity.html" target="contentFrame" onclick="setActive(this)" data-name="programcalendarentity">ProgramCalendarEntity</a>
+<a class="entity-link" href="entities/ProjectCalendarEntity.html" target="contentFrame" onclick="setActive(this)" data-name="projectcalendarentity">ProjectCalendarEntity</a>
+<a class="entity-link" href="entities/UserCalendarEntity.html" target="contentFrame" onclick="setActive(this)" data-name="usercalendarentity">UserCalendarEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Events">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>⚡ Events</span><span class="badge-count">2</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/EventConsumptionTrackerEntity.html" target="contentFrame" onclick="setActive(this)" data-name="eventconsumptiontrackerentity">EventConsumptionTrackerEntity</a>
+<a class="entity-link" href="entities/EventPublishTrackerEntity.html" target="contentFrame" onclick="setActive(this)" data-name="eventpublishtrackerentity">EventPublishTrackerEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Identity">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>🔐 Identity</span><span class="badge-count">3</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/ImpersonationGrantEntity.html" target="contentFrame" onclick="setActive(this)" data-name="impersonationgrantentity">ImpersonationGrantEntity</a>
+<a class="entity-link" href="entities/UserEntity.html" target="contentFrame" onclick="setActive(this)" data-name="userentity">UserEntity</a>
+<a class="entity-link" href="entities/UserSessionEntity.html" target="contentFrame" onclick="setActive(this)" data-name="usersessionentity">UserSessionEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Imports">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>📦 Imports</span><span class="badge-count">3</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/ImportFileEntity.html" target="contentFrame" onclick="setActive(this)" data-name="importfileentity">ImportFileEntity</a>
+<a class="entity-link" href="entities/StagedImportEntity.html" target="contentFrame" onclick="setActive(this)" data-name="stagedimportentity">StagedImportEntity</a>
+<a class="entity-link" href="entities/StagedTaskEntity.html" target="contentFrame" onclick="setActive(this)" data-name="stagedtaskentity">StagedTaskEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Jobs">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>⏱️ Jobs</span><span class="badge-count">1</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/JobExecutionEntity.html" target="contentFrame" onclick="setActive(this)" data-name="jobexecutionentity">JobExecutionEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Knowledge">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>📚 Knowledge</span><span class="badge-count">2</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/KnowledgeArticleEntity.html" target="contentFrame" onclick="setActive(this)" data-name="knowledgearticleentity">KnowledgeArticleEntity</a>
+<a class="entity-link" href="entities/KnowledgeArticleReviewerEntity.html" target="contentFrame" onclick="setActive(this)" data-name="knowledgearticlereviewerentity">KnowledgeArticleReviewerEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Notifications">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>🔔 Notifications</span><span class="badge-count">1</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/NotificationEntity.html" target="contentFrame" onclick="setActive(this)" data-name="notificationentity">NotificationEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Tasks">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>📋 Tasks</span><span class="badge-count">12</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/AssumptionEntity.html" target="contentFrame" onclick="setActive(this)" data-name="assumptionentity">AssumptionEntity</a>
+<a class="entity-link" href="entities/BaseTaskEntity.html" target="contentFrame" onclick="setActive(this)" data-name="basetaskentity">BaseTaskEntity</a>
+<a class="entity-link" href="entities/BlockerDependencyEntity.html" target="contentFrame" onclick="setActive(this)" data-name="blockerdependencyentity">BlockerDependencyEntity</a>
+<a class="entity-link" href="entities/IssueEntity.html" target="contentFrame" onclick="setActive(this)" data-name="issueentity">IssueEntity</a>
+<a class="entity-link" href="entities/RiskEntity.html" target="contentFrame" onclick="setActive(this)" data-name="riskentity">RiskEntity</a>
+<a class="entity-link" href="entities/SubTaskEntity.html" target="contentFrame" onclick="setActive(this)" data-name="subtaskentity">SubTaskEntity</a>
+<a class="entity-link" href="entities/TaskDependencyEntity.html" target="contentFrame" onclick="setActive(this)" data-name="taskdependencyentity">TaskDependencyEntity</a>
+<a class="entity-link" href="entities/TaskEntity.html" target="contentFrame" onclick="setActive(this)" data-name="taskentity">TaskEntity</a>
+<a class="entity-link" href="entities/TaskLinkEntity.html" target="contentFrame" onclick="setActive(this)" data-name="tasklinkentity">TaskLinkEntity</a>
+<a class="entity-link" href="entities/UserTaskCommentEntity.html" target="contentFrame" onclick="setActive(this)" data-name="usertaskcommententity">UserTaskCommentEntity</a>
+<a class="entity-link" href="entities/WorkflowEntity.html" target="contentFrame" onclick="setActive(this)" data-name="workflowentity">WorkflowEntity</a>
+<a class="entity-link" href="entities/WorkItemCommentEntity.html" target="contentFrame" onclick="setActive(this)" data-name="workitemcommententity">WorkItemCommentEntity</a>
+</div></div>
+<div class="subsystem-group" data-group="Tenancy">
+<div class="subsystem-header" onclick="toggleGroup(this)"><span>🏛️ Tenancy</span><span class="badge-count">8</span></div>
+<div class="subsystem-items">
+<a class="entity-link" href="entities/MilestoneDependencyEntity.html" target="contentFrame" onclick="setActive(this)" data-name="milestonedependencyentity">MilestoneDependencyEntity</a>
+<a class="entity-link" href="entities/ProgramEntity.html" target="contentFrame" onclick="setActive(this)" data-name="programentity">ProgramEntity</a>
+<a class="entity-link" href="entities/ProgramUserRoleEntity.html" target="contentFrame" onclick="setActive(this)" data-name="programuserroleentity">ProgramUserRoleEntity</a>
+<a class="entity-link" href="entities/ProjectEntity.html" target="contentFrame" onclick="setActive(this)" data-name="projectentity">ProjectEntity</a>
+<a class="entity-link" href="entities/ProjectMilestoneEntity.html" target="contentFrame" onclick="setActive(this)" data-name="projectmilestoneentity">ProjectMilestoneEntity</a>
+<a class="entity-link" href="entities/ProjectUserRoleEntity.html" target="contentFrame" onclick="setActive(this)" data-name="projectuserroleentity">ProjectUserRoleEntity</a>
+<a class="entity-link" href="entities/TenantEntity.html" target="contentFrame" onclick="setActive(this)" data-name="tenantentity">TenantEntity</a>
+<a class="entity-link" href="entities/TenantUserEntity.html" target="contentFrame" onclick="setActive(this)" data-name="tenantuserentity">TenantUserEntity</a>
+</div></div>
+</div>
+<script>
+function filterEntities() {
+    var q = document.getElementById('entitySearch').value.toLowerCase();
+    var links = document.querySelectorAll('.entity-link');
+    links.forEach(function(l) {
+        var name = l.getAttribute('data-name');
+        if (!q || name.indexOf(q) !== -1) {
+            l.style.display = 'block';
+        } else {
+            l.style.display = 'none';
+        }
+    });
+    // Hide empty groups
+    document.querySelectorAll('.subsystem-group').forEach(function(g) {
+        var visible = g.querySelectorAll('.entity-link[style="display: block;"], .entity-link:not([style*="display"])');
+        if (!q) {
+            g.style.display = 'block';
+        } else {
+            var any = false;
+            g.querySelectorAll('.entity-link').forEach(function(l) { if (l.style.display !== 'none') any = true; });
+            g.style.display = any ? 'block' : 'none';
+        }
+    });
+}
+function toggleGroup(el) {
+    var items = el.nextElementSibling;
+    items.style.display = (items.style.display === 'none') ? 'block' : 'none';
+}
+function setActive(el) {
+    document.querySelectorAll('.entity-link').forEach(function(l) { l.classList.remove('active'); });
+    el.classList.add('active');
+}
+</script>
+</body></html>
+

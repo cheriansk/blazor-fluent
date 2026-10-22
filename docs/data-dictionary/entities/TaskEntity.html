@@ -1,0 +1,69 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Tasks</span> &bull; <b>TaskEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">TaskEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Tasks</span>
+<span class="badge badge-tenant">DbSet: Tasks</span>
+<a class="badge badge-base" href="BaseTaskEntity.html">Base: BaseTaskEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
+<span class="badge badge-date" title="Temporal validity via StartDate / EndDate">[Effective Dated]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Standard work item / task. Inherits from . Can act as a standalone task or as a sequential step in a . Can have one or more children delegated to team members.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (8)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">MilestoneId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td>Optional foreign key to a project milestone. Null indicates an ad-hoc task.</td></tr>
+<tr><td class="prop-name">WorkflowId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td>Optional foreign key referencing the governing workflow pipeline (null for standalone tasks).</td></tr>
+<tr><td class="prop-name">WorkflowStepOrder </td><td><span class="code-type">int?</span></td><td>Yes</td><td>1-based sequential execution index within the workflow (null for standalone tasks).</td></tr>
+<tr><td class="prop-name">Workflow <span class="fk-pill">NAV</span></td><td><a href="WorkflowEntity.html" class="code-type">WorkflowEntity?</a></td><td>Yes</td><td>Governing workflow pipeline.</td></tr>
+<tr><td class="prop-name">SubTasks <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<SubTaskEntity></span></td><td>No</td><td>Collection of child subtasks directly governed by this task.</td></tr>
+<tr><td class="prop-name">OutgoingLinks <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<TaskLinkEntity></span></td><td>No</td><td>Collection of outgoing dependency links where this task is the source.</td></tr>
+<tr><td class="prop-name">IncomingLinks <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<TaskLinkEntity></span></td><td>No</td><td>Collection of incoming dependency links where this task is the target.</td></tr>
+<tr><td class="prop-name">Comments <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<UserTaskCommentEntity></span></td><td>No</td><td>Discussion comments thread.</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (7)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="BlockerDependencyEntity.html"><b>BlockerDependencyEntity</b></a></td><td>Tasks</td><td><code>SourceTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="BlockerDependencyEntity.html"><b>BlockerDependencyEntity</b></a></td><td>Tasks</td><td><code>TargetTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="SubTaskEntity.html"><b>SubTaskEntity</b></a></td><td>Tasks</td><td><code>ParentTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="TaskLinkEntity.html"><b>TaskLinkEntity</b></a></td><td>Tasks</td><td><code>SourceTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="TaskLinkEntity.html"><b>TaskLinkEntity</b></a></td><td>Tasks</td><td><code>TargetTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="UserTaskCommentEntity.html"><b>UserTaskCommentEntity</b></a></td><td>Tasks</td><td><code>Task</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="WorkflowEntity.html"><b>WorkflowEntity</b></a></td><td>Tasks</td><td><code>Steps</code></td><td>Collection (1:N)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (12)</div>
+<table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
+<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">WorkflowStepOrder</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Description</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-FluentCalendarScheduleComp.razor"><b>FluentCalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Description</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-TaskDependencyLinkModal.razor"><b>TaskDependencyLinkModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">AssigneeEmails</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowStepperComp.razor"><b>WorkflowStepperComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">WorkflowStepOrder</span> <span class="badge-field">Workflow</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">UserId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-NavMenuComp.razor"><b>NavMenuComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">TenantId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-HomePage.razor"><b>HomePage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/</code></td><td><span class="badge-field">Description</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsNotificationsTab.razor"><b>SettingsNotificationsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">ProgramId</span> <span class="badge-field">UserId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsProjectsTab.razor"><b>SettingsProjectsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">ProgramId</span> <span class="badge-field">UserId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsTenantsTab.razor"><b>SettingsTenantsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">UserId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span> <span class="badge-field">CreatedBy</span> <span class="badge-field">Updated</span> <span class="badge-field">UpdatedBy</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectTasksBoardPage.razor"><b>ProjectTasksBoardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/projects/{ProjectId:guid}/tasks</code></td><td><span class="badge-field">MilestoneId</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Comments</span> <span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">ReporterEmail</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Labels</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+
