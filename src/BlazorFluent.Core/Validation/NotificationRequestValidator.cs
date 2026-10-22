@@ -1,4 +1,4 @@
-using BlazorFluent.Shared.DataListTypes;
+﻿using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Dtos;
 using FluentValidation;
 
@@ -18,6 +18,6 @@ public class SendNotificationReqDtoValidator : AbstractValidator<SendNotificatio
 
         RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("UserId is required when sending personal notifications.")
-            .When(x => x.Category == NotificationCategory.Personal);
+            .When(x => x.Category == NotificationCategoryEnum.Personal);
     }
 }

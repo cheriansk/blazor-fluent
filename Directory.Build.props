@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <!--
       NuGet CVE Auditing (NuGet 6.8+, built into .NET 8+ SDK).
@@ -58,7 +58,4 @@
     <Using Include="BlazorFluent.Shared.Extensions" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.UI.Templates' And '$(MSBuildProjectName)' != 'BlazorFluent.Api' And '$(MSBuildProjectName)' != 'BlazorFluent.AppHost' And '$(MSBuildProjectName)' != 'BlazorFluent.ServiceDefaults' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
-    <Using Include="BlazorFluent.Shared.DataListTypes.TaskStatus" Alias="TaskStatus" />
-  </ItemGroup>
 </Project>

@@ -3,21 +3,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
-public enum UserType
+[ClassificationEnum]
+public enum UserTypeEnum
 {
     /// <summary>Client / external user. Strictly bound to a single tenant. Cannot switch.</summary>
     [Display(Name = "Client User", Description = "External client user bound to single tenant")]
-    [DataListCategory(UserTypeDefinitions.Categories.External)]
+    [DataListCategory(UserTypeEnumDefinitions.Categories.External)]
     ClientUser = 1,
 
     /// <summary>Internal company staff. May be member of multiple tenants and switch freely.</summary>
     [Display(Name = "Company User", Description = "Internal company staff member")]
-    [DataListCategory(UserTypeDefinitions.Categories.Internal)]
-    [DataListFilterCriterias(UserTypeDefinitions.Filters.HostOnly, UserTypeDefinitions.Filters.SuperAdmin)]
+    [DataListCategory(UserTypeEnumDefinitions.Categories.Internal)]
+    [DataListFilterCriterias(UserTypeEnumDefinitions.Filters.HostOnly, UserTypeEnumDefinitions.Filters.SuperAdmin)]
     CompanyUser = 2
 }
 
-public static class UserTypeDefinitions
+public static class UserTypeEnumDefinitions
 {
     public static class Categories
     {
@@ -38,4 +39,7 @@ public static class UserTypeDefinitions
     }
 }
 
-public record TenantInfo(string Id, string Name, bool IsActive);
+public record TenantInfo(Guid Id, string Slug, string Name, bool IsActive)
+{
+    public TenantInfo(Guid id, string name, bool isActive) : this(id, string.Empty, name, isActive) { }
+}

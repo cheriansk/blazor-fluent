@@ -14,13 +14,12 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(i => i.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(i => i.Title)
             .HasMaxLength(200)
@@ -30,9 +29,10 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
             .HasMaxLength(10000)
             .IsRequired(false);
 
-        builder.Property(i => i.Severity)
-            .IsRequired()
-            .HasConversion<int>();
+        builder.Ignore(i => i.Severity);
+
+        builder.Property(i => i.MilestoneId)
+            .IsRequired(false);
 
         builder.Property(i => i.RootCause)
             .HasMaxLength(5000)
@@ -63,7 +63,16 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.Property(i => i.DueDate)
             .IsRequired();
 
+        builder.Property(i => i.RevisedDueDate)
+            .IsRequired(false);
+
         builder.Property(i => i.EndDate)
+            .IsRequired(false);
+
+        builder.Property(i => i.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(i => i.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(i => i.ReporterEmail)
@@ -121,7 +130,7 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.HasIndex(i => new { i.TenantId, i.ProjectId })
             .HasDatabaseName("IX_Issues_TenantId_ProjectId");
 
-        builder.HasIndex(i => new { i.TenantId, i.Level, i.Severity, i.Status })
-            .HasDatabaseName("IX_Issues_Tenant_Level_Severity_Status");
+        builder.HasIndex(i => new { i.TenantId, i.Level, i.Priority, i.Status })
+            .HasDatabaseName("IX_Issues_Tenant_Level_Priority_Status");
     }
 }

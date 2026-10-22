@@ -14,11 +14,11 @@ public class AssumptionRollupProvider : IWorkItemRollupProvider
         _context = context;
     }
 
-    public TaskItemType ItemType => TaskItemType.Assumption;
+    public TaskItemTypeEnum ItemType => TaskItemTypeEnum.Assumption;
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
-        string tenantId,
-        TaskLevel level,
+        Guid tenantId,
+        TaskLevelEnum level,
         Guid? scopeId,
         string? userId,
         DateTime startUtc,
@@ -29,15 +29,15 @@ public class AssumptionRollupProvider : IWorkItemRollupProvider
             .AsNoTracking()
             .Where(a => a.TenantId == tenantId && !a.IsDeleted && a.DueDate >= startUtc && a.DueDate <= endUtc);
 
-        if (level == TaskLevel.Program && scopeId.HasValue)
+        if (level == TaskLevelEnum.Program && scopeId.HasValue)
         {
             query = query.Where(a => a.ProgramId == scopeId.Value);
         }
-        else if (level == TaskLevel.Project && scopeId.HasValue)
+        else if (level == TaskLevelEnum.Project && scopeId.HasValue)
         {
             query = query.Where(a => a.ProjectId == scopeId.Value);
         }
-        else if (level == TaskLevel.User && !string.IsNullOrWhiteSpace(userId))
+        else if (level == TaskLevelEnum.User && !string.IsNullOrWhiteSpace(userId))
         {
             query = query.Where(a => a.UserId == userId || a.AssigneeEmails.Contains(userId) || a.WatcherEmails.Contains(userId));
         }

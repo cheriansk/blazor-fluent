@@ -57,11 +57,12 @@ public class ImportFileService : IImportFileService
 
         try
         {
-            var tenantId = _tenantContext.TenantId;
-            if (string.IsNullOrWhiteSpace(tenantId))
+            if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty)
             {
                 return Result<Guid>.Failure("No active tenant context found for file upload.");
             }
+            var tenantGuid = _tenantContext.TenantId;
+            var tenantKey = tenantGuid.ToString();
 
             if (request.Files.Count == 0)
             {
@@ -69,7 +70,7 @@ public class ImportFileService : IImportFileService
             }
 
             var importId = Guid.CreateVersion7();
-            var batchFolder = _blobStorageService.BuildBatchFolderPath(tenantId, request.ProjectId, importId);
+            var batchFolder = _blobStorageService.BuildBatchFolderPath(tenantKey, request.ProjectId, importId);
             var importFiles = new List<ImportFileEntity>(request.Files.Count);
 
             // 1. Process and upload each file in the batch into the batch folder
@@ -108,11 +109,11 @@ public class ImportFileService : IImportFileService
                 }
 
                 // Client-side AES-256-GCM encryption with tenant-derived key
-                using var encryptedStream = await _encryptionService.EncryptStreamAsync(streamToProcess, tenantId, ct);
+                using var encryptedStream = await _encryptionService.EncryptStreamAsync(streamToProcess, tenantKey, ct);
                 bufferStream?.Dispose();
 
                 // Store in batch folder: tenants/{tenantId}/projects/{projectId}/imports/{year}/{month}/batch-{importId}/{fileId}.bin
-                var itemStoragePath = _blobStorageService.BuildBatchItemStoragePath(tenantId, request.ProjectId, importId, fileId, extension);
+                var itemStoragePath = _blobStorageService.BuildBatchItemStoragePath(tenantKey, request.ProjectId, importId, fileId, extension);
                 var blobUri = await _blobStorageService.UploadBlobAsync(itemStoragePath, encryptedStream, "application/octet-stream", ct);
                 uploadedBlobPaths.Add(blobUri);
 
@@ -120,7 +121,7 @@ public class ImportFileService : IImportFileService
                 {
                     Id = fileId,
                     ImportId = importId,
-                    TenantId = tenantId,
+                    TenantId = tenantGuid,
                     ProjectId = request.ProjectId,
                     StorageFolder = batchFolder,
                     StepStage = "Uploaded",
@@ -131,7 +132,7 @@ public class ImportFileService : IImportFileService
                     FileSizeBytes = item.FileSizeBytes,
                     Sha256Checksum = checksum,
                     FileType = item.FileType,
-                    Status = ImportStatus.Uploaded,
+                    Status = ImportStatusEnum.Uploaded,
                     TotalRowsCount = 0,
                     ValidRowsCount = 0,
                     ErrorRowsCount = 0
@@ -143,7 +144,7 @@ public class ImportFileService : IImportFileService
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Batch {ImportId} with {FileCount} file(s) uploaded and encrypted for Tenant {TenantId}, Project {ProjectId}",
-                importId, importFiles.Count, tenantId, request.ProjectId);
+                importId, importFiles.Count, tenantGuid, request.ProjectId);
 
             // 3. Enqueue generic batch event
             var correlationId = Guid.CreateVersion7().ToString("N")[..12];
@@ -154,7 +155,7 @@ public class ImportFileService : IImportFileService
             var batchEvent = new FileImportBatchJobEvent(
                 ImportId: importId,
                 ProjectId: request.ProjectId,
-                TenantId: tenantId,
+                TenantId: tenantGuid,
                 CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
@@ -166,7 +167,7 @@ public class ImportFileService : IImportFileService
             await SendNotificationAsync(
                 title: "Batch Upload Succeeded",
                 message: $"{importFiles.Count} file(s) uploaded and encrypted in batch '{importId:N}'. Queued for background validation and staging.",
-                severity: NotificationSeverity.Info,
+                severity: NotificationSeverityEnum.Info,
                 projectId: request.ProjectId,
                 ct: ct);
 
@@ -192,7 +193,7 @@ public class ImportFileService : IImportFileService
             await SendNotificationAsync(
                 title: "Batch Upload Failed",
                 message: $"Failed to upload batch files: {ex.Message}",
-                severity: NotificationSeverity.Error,
+                severity: NotificationSeverityEnum.Error,
                 projectId: request.ProjectId,
                 ct: ct);
 
@@ -223,7 +224,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportHistoryAsync(Guid projectId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         return await _context.ImportFiles
             .AsNoTracking()
@@ -251,7 +252,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid projectId, Guid importId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         return await _context.ImportFiles
             .AsNoTracking()
@@ -279,7 +280,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var file = await _context.ImportFiles
             .AsNoTracking()
@@ -321,7 +322,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<Result<bool>> DeleteImportFileAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var file = await _context.ImportFiles.FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
         if (file == null)
@@ -334,7 +335,7 @@ public class ImportFileService : IImportFileService
         file.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
         // Clean up staged tasks for this file directly via SQL without materializing entities into memory
-        await _context.StagedTasks
+        await _context.StagedImports
             .Where(s => s.TenantId == tenantId && s.ProjectId == projectId && s.ImportFileId == importFileId)
             .ExecuteDeleteAsync(ct);
 
@@ -342,7 +343,7 @@ public class ImportFileService : IImportFileService
         return Result<bool>.Success(true);
     }
 
-    private async Task SendNotificationAsync(string title, string message, NotificationSeverity severity, Guid projectId, CancellationToken ct)
+    private async Task SendNotificationAsync(string title, string message, NotificationSeverityEnum severity, Guid projectId, CancellationToken ct)
     {
         try
         {
@@ -351,14 +352,14 @@ public class ImportFileService : IImportFileService
 
             var request = new SendNotificationReqDto
             {
-                Category = NotificationCategory.Generic,
+                Category = NotificationCategoryEnum.Generic,
                 Severity = severity,
                 Title = title,
                 Message = message,
                 ProjectId = projectId,
                 UserId = userId,
                 LinkUrl = "/imports",
-                Channels = NotificationChannels.InApp
+                Channels = NotificationChannelsEnum.InApp
             };
 
             await _notificationService.SendAsync(request, ct);

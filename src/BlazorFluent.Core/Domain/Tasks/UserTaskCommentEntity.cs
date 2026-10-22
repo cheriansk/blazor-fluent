@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Core.Domain.Identity;
 using BlazorFluent.Core.Domain.Tenancy;
 
 namespace BlazorFluent.Core.Domain.Tasks;
@@ -6,50 +8,53 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// <summary>
 /// Chronological Jira-style discussion comment attached to a parent task.
 /// Maintained within tenant and project scope with audit dates and soft-deletion support.
+/// Enforces 3NF relational normalization by persisting only <see cref="AuthorUserEntityId"/>
+/// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="AuthorUser"/>.
 /// </summary>
 public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
 {
     /// <summary>
-    /// Foreign key to the parent <see cref="UserTaskEntity"/>.
+    /// Foreign key to the parent <see cref="TaskEntity"/>.
     /// </summary>
-    public Guid TaskId { get; set; }
+    public required Guid TaskId { get; set; }
 
     /// <summary>
     /// ID of the project to which this task comment belongs.
     /// Guarded by ProjectSecurityInterceptor and compound query scoping.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
-    /// User identifier of the comment author.
+    /// Foreign key to the author <see cref="UserEntity"/>.
     /// </summary>
-    public string AuthorUserId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Display name of the author at the time of posting.
-    /// </summary>
-    public string AuthorName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Email of the author for display and avatar resolution.
-    /// </summary>
-    public string AuthorEmail { get; set; } = string.Empty;
+    public required Guid AuthorUserEntityId { get; set; }
 
     /// <summary>
     /// Body text of the comment (Markdown or plain text).
     /// </summary>
-    public string CommentText { get; set; } = string.Empty;
+    public required string CommentText { get; set; }
 
     /// <summary>
     /// Exact UTC timestamp when the comment was posted.
     /// </summary>
-    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public required DateTime CreatedAtUtc { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public string? DeletedBy { get; set; }
 
-    // --- Navigation Property ---
-    public UserTaskEntity? Task { get; set; }
+    // --- Navigation Properties ---
+    public TaskEntity? Task { get; set; }
+    public UserEntity? AuthorUser { get; set; }
+
+    // --- [NotMapped] Navigation Forwarders ---
+    [NotMapped]
+    public string AuthorUserId => AuthorUserEntityId.ToString();
+
+    [NotMapped]
+    public string AuthorEmail => AuthorUser?.Email ?? string.Empty;
+
+    [NotMapped]
+    public string AuthorName => !string.IsNullOrWhiteSpace(AuthorUser?.FullName) ? AuthorUser.FullName : (AuthorUser?.Email ?? "System");
 }

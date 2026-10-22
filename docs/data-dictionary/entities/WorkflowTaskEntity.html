@@ -1,0 +1,50 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Tasks</span> &bull; <b>WorkflowTaskEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">WorkflowTaskEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Tasks</span>
+<span class="badge badge-tenant">DbSet: WorkflowTasks</span>
+<a class="badge badge-base" href="BaseTaskEntity.html">Base: BaseTaskEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-date" title="Temporal validity via StartDate / EndDate">[Effective Dated]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Enterprise workflow container entity orchestrating sequential, stage-gated step completion. Can exist at Tenant, Program, or Project organizational level. Governed by a constant Workflow Owner who maintains overarching delivery accountability. Governs an ordered collection of steps, where each step is a genuine  and can have child items delegated to team members. Inherits from .</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (2)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">CurrentStepId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td>Unique identifier of the currently active step (TaskEntity). Null if the workflow is completed, cancelled, or not yet started.</td></tr>
+<tr><td class="prop-name">Steps <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<TaskEntity></span></td><td>No</td><td>Ordered collection of sequential steps governed by this workflow, where each step is a genuine .</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (3)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>WorkflowTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>WorkflowTaskId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="WorkflowStepEntity.html"><b>WorkflowStepEntity</b></a></td><td>Tasks</td><td><code>WorkflowTask</code></td><td>Navigation (1:1)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (4)</div>
+<table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
+<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">Steps</span> <span class="badge-field">Description</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowStepperComp.razor"><b>WorkflowStepperComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">CurrentStepId</span> <span class="badge-field">Steps</span> <span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">UserId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectTasksBoardPage.razor"><b>ProjectTasksBoardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/projects/{ProjectId:guid}/tasks</code></td><td><span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">ReporterEmail</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Labels</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">Steps</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

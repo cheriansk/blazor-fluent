@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Jobs;
@@ -6,34 +6,42 @@ namespace BlazorFluent.Core.Domain.Jobs;
 /// <summary>
 /// Persistent record of a background batch job execution.
 /// Stored in PostgreSQL with execution duration, attempt count, and error diagnostics.
-/// Implements <see cref="IGlobalEntity"/> (host-wide visibility) and <see cref="IAuditExemptEntity"/> (prevents recursive auditing).
+/// <para>
+/// <b>Architectural Tenancy Rationale:</b> Implements <see cref="IGlobalEntity"/> (opting out of EF Core's automatic
+/// <c>QueryFilters.Tenant</c>) to allow platform-wide telemetry, cross-tenant operational oversight, and execution by
+/// unauthenticated system daemons (e.g. maintenance jobs with <c>TenantId = "HOST"</c> or <c>"default"</c>).
+/// Multi-tenant isolation for tenant users is strictly enforced at the application boundary via <c>IJobManagerService</c>.
+/// </para>
+/// <para>
+/// Implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing loops, and <see cref="IImmutableEntity"/> to enforce ledger integrity.
+/// </para>
 /// </summary>
-public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity, IValidationExemptEntity
+public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEntity, IImmutableEntity
 {
-    /// <summary>Correlation identifier linking all chained batch steps in the same pipeline.</summary>
-    public string? CorrelationId { get; set; }
+    /// <summary>Mandatory correlation identifier linking all chained batch steps in the same pipeline.</summary>
+    public required string CorrelationId { get; set; }
 
     /// <summary>Identifier of the predecessor job execution that triggered this step (if chained).</summary>
     public Guid? ParentExecutionId { get; set; }
 
     /// <summary>Name or type of the background batch job.</summary>
-    public string JobName { get; set; } = string.Empty;
+    public required string JobName { get; set; }
 
-    /// <summary>Originating tenant identifier, or null/host for system jobs.</summary>
-    public string? TenantId { get; set; }
+    /// <summary>Originating tenant identifier, or 'HOST' for platform-wide system jobs.</summary>
+    public required Guid TenantId { get; set; }
 
-    /// <summary>How the job was initiated: 'Cron', 'Manual', 'Event', 'Manual Retry'.</summary>
-    public string TriggerSource { get; set; } = "Cron";
+    /// <summary>Strongly-typed trigger mechanism that initiated the execution.</summary>
+    public required JobTriggerSourceEnum TriggerSource { get; set; }
 
 
     /// <summary>Current lifecycle status.</summary>
-    public JobStatus Status { get; set; } = JobStatus.Queued;
+    public required JobStatusEnum Status { get; set; }
 
     /// <summary>Current attempt number (1 to MaxRetries).</summary>
-    public int AttemptCount { get; set; } = 1;
+    public required int AttemptCount { get; set; }
 
     /// <summary>Maximum number of attempts before permanent failure.</summary>
-    public int MaxRetries { get; set; } = 3;
+    public required int MaxRetries { get; set; }
 
     /// <summary>Optional serialized payload or parameters passed to the job.</summary>
     public string? PayloadJson { get; set; }
@@ -42,7 +50,7 @@ public class JobExecutionEntity : AuditableEntity, IGlobalEntity, IAuditExemptEn
     public string? ErrorMessage { get; set; }
 
     /// <summary>Timestamp when the job execution began.</summary>
-    public DateTime StartedAt { get; set; }
+    public required DateTime StartedAt { get; set; }
 
     /// <summary>Timestamp when the job execution finished (succeeded or fatally failed).</summary>
     public DateTime? CompletedAt { get; set; }

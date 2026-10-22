@@ -28,7 +28,7 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetProgramCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         Guid programId,
         DateTime startUtc,
         DateTime endUtc,
@@ -38,7 +38,7 @@ public class CalendarService : ICalendarService
         var directEntries = await _context.ProgramCalendars
             .AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.ProgramId == programId && !c.IsDeleted &&
-                        c.StartUtc <= endUtc && c.EndUtc >= startUtc)
+                        c.StartDate <= endUtc && c.EndDate >= startUtc)
             .ToListAsync(ct);
 
         var directDtos = directEntries.Select(c => new CalendarItemDto
@@ -46,22 +46,22 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
-            StartUtc = c.StartUtc,
-            EndUtc = c.EndUtc,
-            IsAllDay = c.IsAllDay,
+            StartUtc = c.StartDate,
+            EndUtc = c.EndDate ?? c.StartDate,
+            IsAllDay = true,
             ItemCategory = c.EntryType.ToString(),
             PriorityOrCriticality = "Normal",
             Status = c.Status.ToString(),
-            OwnerOrAssignee = c.OrganizerEmail,
+            OwnerOrAssignee = string.Empty,
             ColorHex = "#0078d4",
             BadgeIcon = "Calendar",
             ScopeId = c.ProgramId,
-            Level = TaskLevel.Program
+            Level = TaskLevelEnum.Program
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
         var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevel.Program, programId, null, startUtc, endUtc, ct));
+            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.Program, programId, null, startUtc, endUtc, ct));
 
         var rollupResults = await Task.WhenAll(rollupTasks);
         var combinedRollups = rollupResults.SelectMany(r => r).ToList();
@@ -73,7 +73,7 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetProjectCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         Guid projectId,
         DateTime startUtc,
         DateTime endUtc,
@@ -83,7 +83,7 @@ public class CalendarService : ICalendarService
         var directEntries = await _context.ProjectCalendars
             .AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && !c.IsDeleted &&
-                        c.StartUtc <= endUtc && c.EndUtc >= startUtc)
+                        c.StartDate <= endUtc && c.EndDate >= startUtc)
             .ToListAsync(ct);
 
         var directDtos = directEntries.Select(c => new CalendarItemDto
@@ -91,22 +91,22 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
-            StartUtc = c.StartUtc,
-            EndUtc = c.EndUtc,
-            IsAllDay = c.IsAllDay,
+            StartUtc = c.StartDate,
+            EndUtc = c.EndDate ?? c.StartDate,
+            IsAllDay = true,
             ItemCategory = c.EntryType.ToString(),
             PriorityOrCriticality = "Normal",
             Status = c.Status.ToString(),
-            OwnerOrAssignee = c.OrganizerEmail,
+            OwnerOrAssignee = string.Empty,
             ColorHex = "#107c41",
             BadgeIcon = "Calendar",
             ScopeId = c.ProjectId,
-            Level = TaskLevel.Project
+            Level = TaskLevelEnum.Project
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
         var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevel.Project, projectId, null, startUtc, endUtc, ct));
+            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.Project, projectId, null, startUtc, endUtc, ct));
 
         var rollupResults = await Task.WhenAll(rollupTasks);
         var combinedRollups = rollupResults.SelectMany(r => r).ToList();
@@ -118,17 +118,18 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<IReadOnlyList<CalendarItemDto>> GetUserCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         string userId,
         DateTime startUtc,
         DateTime endUtc,
         CancellationToken ct = default)
     {
         // 1. Direct user calendar entries
+        Guid.TryParse(userId, out var userGuid);
         var directEntries = await _context.UserCalendars
             .AsNoTracking()
-            .Where(c => c.TenantId == tenantId && c.UserId == userId && !c.IsDeleted &&
-                        c.StartUtc <= endUtc && c.EndUtc >= startUtc)
+            .Where(c => c.TenantId == tenantId && c.UserId == userGuid && !c.IsDeleted &&
+                        c.StartDate <= endUtc && c.EndDate >= startUtc)
             .ToListAsync(ct);
 
         var directDtos = directEntries.Select(c => new CalendarItemDto
@@ -136,21 +137,21 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
-            StartUtc = c.StartUtc,
-            EndUtc = c.EndUtc,
-            IsAllDay = c.IsAllDay,
+            StartUtc = c.StartDate,
+            EndUtc = c.EndDate ?? c.StartDate,
+            IsAllDay = true,
             ItemCategory = c.EntryType.ToString(),
             PriorityOrCriticality = "Normal",
             Status = c.Status.ToString(),
-            OwnerOrAssignee = c.OrganizerEmail,
+            OwnerOrAssignee = string.Empty,
             ColorHex = "#8764b8",
             BadgeIcon = "Calendar",
-            Level = TaskLevel.User
+            Level = TaskLevelEnum.User
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
         var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevel.User, null, userId, startUtc, endUtc, ct));
+            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.User, null, userId, startUtc, endUtc, ct));
 
         var rollupResults = await Task.WhenAll(rollupTasks);
         var combinedRollups = rollupResults.SelectMany(r => r).ToList();
@@ -206,11 +207,11 @@ public class CalendarService : ICalendarService
         }
     }
 
-    public async Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevel level, CancellationToken ct = default)
+    public async Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevelEnum level, CancellationToken ct = default)
     {
         try
         {
-            if (level == TaskLevel.Program)
+            if (level == TaskLevelEnum.Program)
             {
                 var entry = await _context.ProgramCalendars.FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");
@@ -218,7 +219,7 @@ public class CalendarService : ICalendarService
                 entry.DeletedAtUtc = DateTime.UtcNow;
                 entry.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
             }
-            else if (level == TaskLevel.Project)
+            else if (level == TaskLevelEnum.Project)
             {
                 var entry = await _context.ProjectCalendars.FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");
@@ -226,7 +227,7 @@ public class CalendarService : ICalendarService
                 entry.DeletedAtUtc = DateTime.UtcNow;
                 entry.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
             }
-            else if (level == TaskLevel.User)
+            else if (level == TaskLevelEnum.User)
             {
                 var entry = await _context.UserCalendars.FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");

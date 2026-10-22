@@ -21,7 +21,22 @@ public class ProjectEntityValidator : AbstractValidator<ProjectEntity>
         RuleFor(x => x.TenantId)
             .NotEmpty().WithMessage("Project TenantId is mandatory.");
 
-        RuleFor(x => x.TenantEntityId)
-            .NotEmpty().WithMessage("Project TenantEntityId foreign key must not be empty.");
+        RuleFor(x => x.DueDate)
+            .GreaterThanOrEqualTo(x => x.StartDate)
+            .WithMessage("Project due date cannot precede start date.");
+
+        When(x => x.EndDate.HasValue, () =>
+        {
+            RuleFor(x => x.EndDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .WithMessage("Project target end date cannot precede start date.");
+        });
+
+        When(x => x.RevisedDueDate.HasValue, () =>
+        {
+            RuleFor(x => x.RevisedDueDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .WithMessage("Project revised due date cannot precede start date.");
+        });
     }
 }

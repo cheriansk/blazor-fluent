@@ -3,7 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
-public enum AuditEventType
+[ClassificationEnum]
+public enum AuditEventTypeEnum
 {
     [Display(Name = "Entity Change", Description = "Database entity insertion, update, or deletion")]
     [DataListCategory(AuditDefinitions.Categories.Data)]
@@ -26,7 +27,8 @@ public enum AuditEventType
     Exception = 5
 }
 
-public enum AuditSeverity
+[ClassificationEnum]
+public enum AuditSeverityEnum
 {
     [Display(Name = "Information", Description = "Normal operational event")]
     [DataListCategory(AuditDefinitions.Categories.Severity)]
@@ -45,7 +47,8 @@ public enum AuditSeverity
     Critical = 4
 }
 
-public enum EntityOperation
+[ClassificationEnum]
+public enum EntityOperationEnum
 {
     [Display(Name = "Insert", Description = "New record creation")]
     [DataListCategory(AuditDefinitions.Categories.Crud)]

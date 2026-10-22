@@ -28,7 +28,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -48,7 +48,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -66,7 +66,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -86,7 +86,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -104,7 +104,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -122,7 +122,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for entity '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -142,7 +142,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for bulk update on '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 
@@ -160,7 +160,7 @@ public static class AuditedQueryableExtensions
 
         await auditService.LogSecurityEventAsync(
             "QueryFilterBypass",
-            AuditSeverity.Warning,
+            AuditSeverityEnum.Warning,
             $"Query filters bypassed for bulk delete on '{typeof(T).Name}'. Justification: {justification}",
             cancellationToken);
 

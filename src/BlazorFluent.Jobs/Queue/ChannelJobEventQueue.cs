@@ -1,4 +1,4 @@
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
@@ -50,15 +50,15 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                 var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
                 if (tenantContext != null)
                 {
-                    var targetTenantId = !string.IsNullOrWhiteSpace(jobEvent.TenantId)
+                    var targetTenantId = jobEvent.TenantId != Guid.Empty
                         ? jobEvent.TenantId
-                        : IRootAdminService.DefaultTenantSlug;
+                        : BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId;
                     tenantContext.Initialize(
                         tenantId: targetTenantId,
-                        tenantName: targetTenantId,
-                        userType: UserType.CompanyUser,
+                        tenantName: targetTenantId.ToString(),
+                        userType: UserTypeEnum.CompanyUser,
                         allowedTenants: [],
-                        isHost: false);
+                        isHost: targetTenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
                 }
 
                 var jobName = !string.IsNullOrWhiteSpace(jobEvent.JobName)

@@ -12,14 +12,14 @@ public interface IWorkItemRollupProvider
     /// <summary>
     /// Type of work item handled by this provider.
     /// </summary>
-    TaskItemType ItemType { get; }
+    TaskItemTypeEnum ItemType { get; }
 
     /// <summary>
     /// Queries the dedicated subtype table and yields unified CalendarItemDto instances for the specified window.
     /// </summary>
     Task<IReadOnlyList<CalendarItemDto>> GetCalendarRollupItemsAsync(
-        string tenantId,
-        TaskLevel level,
+        Guid tenantId,
+        TaskLevelEnum level,
         Guid? scopeId,
         string? userId,
         DateTime startUtc,

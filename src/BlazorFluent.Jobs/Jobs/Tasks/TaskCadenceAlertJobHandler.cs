@@ -41,7 +41,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
         // 1. Fetch active tasks for the scoped tenant
         var activeTasks = await _dbContext.Tasks
-            .Where(t => t.Status != TaskStatus.Closed && t.Status != TaskStatus.Cancelled)
+            .Where(t => t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
 
@@ -54,8 +54,8 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
         var taskLookup = activeTasks.ToDictionary(t => t.Id);
 
         // 2. Fetch blocking dependencies
-        var blockingDependencies = await _dbContext.TaskDependencies
-            .Where(d => d.DependencyType == TaskDependencyType.Blocks)
+        var blockingDependencies = await _dbContext.WorkDependencies
+            .Where(d => d.DependencyType == TaskDependencyTypeEnum.Blocks && d.Status != TaskStatusEnum.Closed && d.Status != TaskStatusEnum.Cancelled && !d.IsDeleted)
             .ToListAsync(cancellationToken);
 
         // 3. User email to ID lookup for in-app notification routing (global non-deleted users)
@@ -111,27 +111,29 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
         // 5. Evaluate blocking dependencies
         foreach (var dep in blockingDependencies)
         {
-            if (!taskLookup.TryGetValue(dep.DependsOnTaskId, out var blockerTask) ||
-                !taskLookup.TryGetValue(dep.TaskId, out var blockedTask))
+            if (!dep.DependsOnItemId.HasValue || !dep.DependentItemId.HasValue) continue;
+
+            if (!taskLookup.TryGetValue(dep.DependsOnItemId.Value, out var blockerTask) ||
+                !taskLookup.TryGetValue(dep.DependentItemId.Value, out var blockedTask))
             {
-                continue; // Either blocker or blocked task is already closed/cancelled or not found
+                continue; // Either blocker or blocked task is already closed/cancelled or not found in active tasks
             }
 
             var blockerAssignees = blockerTask.GetParsedAssigneeEmails();
             var targetDueDays = (blockedTask.DueDate.Date - today).Days;
 
             // Check if blocker deadline is approaching or breached
-            var isDepOverdue = dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date < today;
-            var isDepDueToday = dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date == today;
+            var isDepOverdue = dep.DueDate.Date < today;
+            var isDepDueToday = dep.DueDate.Date == today;
             var isTargetUrgent = targetDueDays <= 3; // Blocked task is due soon!
 
-            if (isDepOverdue || isDepDueToday || isTargetUrgent)
+            if (isDepOverdue || isDepDueToday || isTargetUrgent || dep.IsScheduleConflict)
             {
                 foreach (var email in blockerAssignees)
                 {
                     var normEmail = email.Trim().ToLowerInvariant();
                     if (!blockerAlertsByAssignee.ContainsKey(normEmail)) blockerAlertsByAssignee[normEmail] = new();
-                    blockerAlertsByAssignee[normEmail].Add((blockerTask, blockedTask, dep.ResolveByUtc));
+                    blockerAlertsByAssignee[normEmail].Add((blockerTask, blockedTask, dep.DueDate));
                 }
             }
         }
@@ -150,14 +152,14 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
             await _notificationService.SendAsync(new SendNotificationReqDto
             {
-                Category = NotificationCategory.Personal,
-                Severity = NotificationSeverity.Error,
+                Category = NotificationCategoryEnum.Personal,
+                Severity = NotificationSeverityEnum.Error,
                 Title = $"🚨 Overdue Task Alert ({tasks.Count} item{(tasks.Count > 1 ? "s" : "")})",
                 Message = message,
                 ProjectId = firstProject,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             }, cancellationToken);
 
             alertsDispatched++;
@@ -175,14 +177,14 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
             await _notificationService.SendAsync(new SendNotificationReqDto
             {
-                Category = NotificationCategory.Personal,
-                Severity = NotificationSeverity.Warning,
+                Category = NotificationCategoryEnum.Personal,
+                Severity = NotificationSeverityEnum.Warning,
                 Title = $"⏰ Tasks Due Today ({tasks.Count})",
                 Message = message,
                 ProjectId = firstProject,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             }, cancellationToken);
 
             alertsDispatched++;
@@ -204,14 +206,14 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
             await _notificationService.SendAsync(new SendNotificationReqDto
             {
-                Category = NotificationCategory.Personal,
-                Severity = NotificationSeverity.Info,
+                Category = NotificationCategoryEnum.Personal,
+                Severity = NotificationSeverityEnum.Info,
                 Title = $"📅 Upcoming Deadlines ({items.Count} items)",
                 Message = sb.ToString(),
                 ProjectId = firstProject,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             }, cancellationToken);
 
             alertsDispatched++;
@@ -233,14 +235,14 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
 
             await _notificationService.SendAsync(new SendNotificationReqDto
             {
-                Category = NotificationCategory.Personal,
-                Severity = NotificationSeverity.Warning,
+                Category = NotificationCategoryEnum.Personal,
+                Severity = NotificationSeverityEnum.Warning,
                 Title = $"⛔ Blocker Resolution Alert ({items.Count} blocking item{(items.Count > 1 ? "s" : "")})",
                 Message = sb.ToString(),
                 ProjectId = firstProject,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             }, cancellationToken);
 
             alertsDispatched++;

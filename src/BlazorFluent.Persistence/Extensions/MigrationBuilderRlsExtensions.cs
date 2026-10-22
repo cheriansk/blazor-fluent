@@ -77,7 +77,6 @@ END $$;");
     /// </summary>
     public static MigrationBuilder ApplyAllTenantRowLevelSecurity(this MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.EnableTenantRowLevelSecurity("catalog", "Products");
         migrationBuilder.EnableTenantRowLevelSecurity("tenancy", "Projects");
         migrationBuilder.EnableTenantRowLevelSecurity("tenancy", "ProjectUserRoles");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "AuditRecords");
@@ -89,7 +88,7 @@ END $$;");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "EventConsumptionTrackers");
         migrationBuilder.EnableTenantRowLevelSecurity("identity", "UserSessions");
         migrationBuilder.EnableTenantRowLevelSecurity("imports", "ImportFiles");
-        migrationBuilder.EnableTenantRowLevelSecurity("staging", "StagedTasks");
+        migrationBuilder.EnableTenantRowLevelSecurity("staging", "StagedImports");
 
         return migrationBuilder;
     }
@@ -99,7 +98,6 @@ END $$;");
     /// </summary>
     public static MigrationBuilder RevertAllTenantRowLevelSecurity(this MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DisableTenantRowLevelSecurity("catalog", "Products");
         migrationBuilder.DisableTenantRowLevelSecurity("tenancy", "Projects");
         migrationBuilder.DisableTenantRowLevelSecurity("tenancy", "ProjectUserRoles");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "AuditRecords");
@@ -111,7 +109,7 @@ END $$;");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "EventConsumptionTrackers");
         migrationBuilder.DisableTenantRowLevelSecurity("identity", "UserSessions");
         migrationBuilder.DisableTenantRowLevelSecurity("imports", "ImportFiles");
-        migrationBuilder.DisableTenantRowLevelSecurity("staging", "StagedTasks");
+        migrationBuilder.DisableTenantRowLevelSecurity("staging", "StagedImports");
 
         return migrationBuilder;
     }
@@ -133,17 +131,17 @@ BEGIN
     END IF;
 
     -- Grant schema usage
-    GRANT USAGE ON SCHEMA public, app, tenancy, catalog, identity, imports, staging TO {appRole};
+    GRANT USAGE ON SCHEMA public, app, tenancy, identity, imports, staging TO {appRole};
 
     -- Grant CRUD on existing tables
-    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, app, tenancy, catalog, identity, imports, staging TO {appRole};
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, app, tenancy, identity, imports, staging TO {appRole};
 
     -- Grant sequence usage
-    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, app, tenancy, catalog, identity, imports, staging TO {appRole};
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, app, tenancy, identity, imports, staging TO {appRole};
 
     -- Ensure future tables and sequences inherit permissions
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, catalog, identity, imports, staging GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {appRole};
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, catalog, identity, imports, staging GRANT USAGE, SELECT ON SEQUENCES TO {appRole};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, identity, imports, staging GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {appRole};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, identity, imports, staging GRANT USAGE, SELECT ON SEQUENCES TO {appRole};
 END $$;");
 
         return migrationBuilder;

@@ -28,11 +28,7 @@ public class TenantAuthDelegatingHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.TenantId;
-        if (string.IsNullOrWhiteSpace(tenantId))
-        {
-            throw new InvalidOperationException("Zero-Trust Security Violation: Cannot invoke Cloud ProcessAPI without an established TenantId context.");
-        }
+        var tenantId = _tenantContext.RequiredTenantId;
 
         // Mint ephemeral S2S token signed with this tenant's license key
         var token = _tokenService.GenerateS2SToken(tenantId);
@@ -43,7 +39,7 @@ public class TenantAuthDelegatingHandler : DelegatingHandler
         // Attach tenant identity header for upstream routing
         if (!request.Headers.Contains("X-Tenant-Id"))
         {
-            request.Headers.Add("X-Tenant-Id", tenantId);
+            request.Headers.Add("X-Tenant-Id", tenantId.ToString());
         }
 
         // Forward distributed CorrelationId

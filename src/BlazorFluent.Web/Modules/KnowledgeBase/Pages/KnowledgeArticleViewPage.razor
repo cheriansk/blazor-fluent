@@ -1,8 +1,8 @@
-@page "/knowledge/{Id:guid}"
+﻿@page "/knowledge/{Id:guid}"
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Shared.DataListTypes
-@attribute [RequiredClearance(ProjectRole.ReadOnly)]
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Dtos
@@ -64,13 +64,13 @@
                     }
 
                     <!-- Status Badge -->
-                    @if (_article.Status == KnowledgeArticleStatus.Approved)
+                    @if (_article.Status == KnowledgeArticleStatusEnum.Approved)
                     {
                         <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #15803d; color: #ffffff;">
                             ✓ APPROVED
                         </span>
                     }
-                    else if (_article.Status == KnowledgeArticleStatus.PendingReview)
+                    else if (_article.Status == KnowledgeArticleStatusEnum.PendingReview)
                     {
                         <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #d97706; color: #ffffff;">
                             ⏳ PENDING REVIEW/APPROVAL
@@ -111,7 +111,7 @@
 
                 <!-- Approval Status Section -->
                 <div>
-                    @if (_article.Status == KnowledgeArticleStatus.Approved)
+                    @if (_article.Status == KnowledgeArticleStatusEnum.Approved)
                     {
                         <span style="color: var(--neutral-foreground-hint); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Approved By</span>
                         <strong style="color: #15803d;">@_article.ApprovedByUserName</strong>
@@ -174,7 +174,7 @@
 
     private bool CanApprove =>
         _article != null &&
-        _article.Status == KnowledgeArticleStatus.PendingReview &&
+        _article.Status == KnowledgeArticleStatusEnum.PendingReview &&
         (_article.Reviewers.Any(r => r.UserId == CurrentUser.UserId && !r.HasApproved) ||
          CurrentUser.IsRootAdmin);
 

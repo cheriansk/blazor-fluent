@@ -75,3 +75,84 @@ In `Program.cs`, container validation is enabled across all environments (`Valid
   ```
 - **Nullability**: Nullable reference types are enabled (`<Nullable>enable</Nullable>`). Avoid null-forgiving operators (`!`) unless operating on EF Core generated keys.
 - **Pattern Matching & Expressions**: Prefer modern switch expressions and pattern matching for domain state transitions.
+
+---
+
+## 🏷️ 5. DataList Enum Naming & Governance Law (`*Enum` Suffix)
+
+To maximize cognitive readability and eliminate ambiguity during mental code parsing, all enumeration types must follow strict naming rules:
+
+1. **The `*Enum` Suffix Law**:
+   - All newly created enumeration types in `BlazorFluent.Shared.DataListTypes` must be explicitly suffixed with **`Enum`** (e.g., `WorkflowPhaseEnum`, `ContractTierEnum`, `DeliverableStatusEnum`).
+   - In code review, seeing `WorkflowPhaseEnum.Draft` instantly signals to the brain that the identifier is an enum, without confusing it with a class, record, or interface.
+
+2. **Prohibited Suffixes**:
+   - **`Lst` / `List` is strictly prohibited**: In .NET, `Lst` or `List` signifies a collection (`List<T>`). An enum is a scalar discrete value, never a collection.
+   - **`Dtl` / `Detail` is strictly prohibited**: In enterprise architecture, `Dtl` signifies a detail entity, table, or master-detail DTO (e.g. `InvoiceDtl`).
+
+3. **Legacy Grandfathering**:
+   - The 38 pre-existing core enums (e.g., `ProjectRole`, `TaskStatus`, `AuditEventType`, `AuditSeverity`) are grandfathered to preserve database schema stability, EF Core mappings, and existing unit tests.
+
+4. **Compile-Time Governance (`TG006`)**:
+   - Enforced by the `TemplateGuard.Analyzers` Roslyn package rule **`TG006`**:
+     ```
+     Error TG006: Enum 'DeliverableStatus' in namespace 'BlazorFluent.Shared.DataListTypes' 
+     does not end with 'Enum' (e.g. 'DeliverableStatusEnum'). For cognitive readability, 
+     all new enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.
+     ```
+   - Any new enum lacking the `*Enum` suffix fails `dotnet build` with an analyzer compilation error.
+
+---
+
+## ⏰ 6. Temporal & Date/Time Architecture Law: Prohibition of `DateOnly`
+
+1. **The `DateOnly` Prohibition**:
+   - `DateOnly` is **strictly forbidden** in all domain entities, DTOs, API contracts, background jobs, and UI models.
+   - **The Timezone Flaw**: A civil date like `2026-10-24` begins and ends at different absolute instants across the globe. At `2026-10-24 23:00:00 UTC`, a user in New York is at `7:00 PM` (still working), while Tokyo is already on `Oct 25`. Storing as `DateOnly` causes background jobs to prematurely expire tasks or revoke user access while users in western timezones still have hours remaining in their workday.
+   - Furthermore, `DateOnly` cannot support hourly calendar appointments (`BaseCalendarEntity`) or exact SLA cutoff times.
+
+2. **The Dual Temporal Classification**:
+   - **Class A: Business & Effective Dates** (`StartDate`, `EndDate`, `DueDate`, `ResolveByUtc`):
+     - Stored as `DateTime` (UTC).
+     - Compared by `.Date` across rules engines, batch handlers, and validators.
+     - Displayed in UI using `Format="yyyy-MM-dd"`.
+   - **Class B: Operational & Forensic Timestamps** (`Created`, `Updated`, `DeletedAtUtc`, `StartedAtUtc`, `CompletedAtUtc`, `LastActivityAtUtc`):
+     - Stored as `DateTime` (UTC).
+     - Compared with full timestamp precision.
+     - Displayed in UI using `Format="yyyy-MM-dd HH:mm:ss"` via `IUserTimeZoneService`.
+
+3. **Database & LINQ Query Standard**:
+   - Always map to PostgreSQL `timestamp with time zone` (`timestamptz`).
+   - In LINQ queries, use half-open range bounds to preserve B-tree index scans:
+     ```csharp
+     var targetDate = (asOfUtc ?? DateTime.UtcNow).Date;
+     var nextDay = targetDate.AddDays(1);
+     return query.Where(e => e.StartDate < nextDay && (e.EndDate == null || e.EndDate >= targetDate));
+     ```
+
+
+---
+
+## 🔗 7. Relational Normalization (3NF) & `[NotMapped]` Navigation Law
+
+1. **Minimal Persisted Data Copying (Single Source of Truth)**:
+   - Consuming domain entities (`TenantUserEntity`, `ProjectUserRoleEntity`, `ProgramUserRoleEntity`, `KnowledgeArticleEntity`, `KnowledgeArticleReviewerEntity`, `UserTaskCommentEntity`, etc.) must persist **only foreign keys (`Guid`)** to related entities.
+   - Never persist redundant copies of mutable attributes (`UserName`, `UserEmail`, `UserType`, `AuthorName`, `AuthorEmail`, `Title`) on consuming tables. Updating a user's `FullName` or `Email` in `UserEntity` must be contained strictly within `identity.Users` with zero cross-table synchronization.
+
+2. **Unlimited `[NotMapped]` Convenience Properties**:
+   - Entities may define any number of `[NotMapped]` computed properties that delegate to their EF Core navigation property for UI data binding and DTO projection:
+     ```csharp
+     [NotMapped]
+     public string UserId => UserEntityId.ToString();
+
+     [NotMapped]
+     public string UserEmail => User?.Email ?? string.Empty;
+
+     [NotMapped]
+     public string UserName => !string.IsNullOrWhiteSpace(User?.FullName) ? User.FullName : (User?.Email ?? string.Empty);
+     ```
+
+3. **EF Core Query & Validator Discipline**:
+   - **Never use `[NotMapped]` properties in SQL `Where` or `OrderBy` clauses**: Filter and sort using the persisted foreign key (`r.UserEntityId`) or navigation property (`r.User!.Email`, `r.User!.FullName`), and chain `.Include(r => r.User)` when reading entities for UI/DTO consumption.
+   - **Validate Persisted FKs Only**: Tier 2 `AbstractValidator<TEntity>` classes must validate `RuleFor(x => x.UserEntityId).NotEmpty()` rather than `[NotMapped]` properties.
+   - **Forensic Ledger Exemption**: Only immutable point-in-time forensic logs (`AuditRecordEntity`, `EventPublishTrackerEntity`) and ephemeral circuit sessions (`UserSessionEntity`) snapshot point-in-time strings.

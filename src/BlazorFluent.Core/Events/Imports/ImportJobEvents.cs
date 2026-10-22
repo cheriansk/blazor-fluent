@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Core.Events.Imports;
 
@@ -8,9 +8,9 @@ namespace BlazorFluent.Core.Events.Imports;
 /// </summary>
 public record FileImportedJobEvent(
     Guid ImportFileId,
-    ImportFileType FileType,
+    ImportFileTypeEnum FileType,
     Guid ProjectId,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,
@@ -27,7 +27,7 @@ public record FileValidationResultJobEvent(
     int TotalRows,
     int ValidRows,
     int ErrorRows,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,
@@ -43,7 +43,7 @@ public record FileStagingCompletedJobEvent(
     bool IsSuccess,
     int StagedCount,
     string? ErrorMessage,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,
@@ -58,7 +58,7 @@ public record FileStagingCompletedJobEvent(
 public record FileImportBatchJobEvent(
     Guid ImportId,
     Guid ProjectId,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,
@@ -74,7 +74,7 @@ public record FileProcessingCompletedJobEvent(
     bool IsSuccess,
     int ProcessedCount,
     string? ErrorMessage,
-    string TenantId,
+    Guid TenantId,
     string CorrelationId,
     string SenderOrigin,
     string SenderUserId,

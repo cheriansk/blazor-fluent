@@ -1,6 +1,5 @@
-﻿@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
-@using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Identity
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
@@ -202,6 +201,31 @@
                     </FluentStack>
                 </FluentStack>
 
+                @* Automated Background Processing Kill Switch Card *@
+                <FluentCard Style="margin-bottom: 16px; padding: 14px 18px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                        <div>
+                            <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">🤖 Automated Background Processing</FluentLabel>
+                            <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">
+                                Governs scheduled cadence alerts, recurring task triggers, and automated batch jobs for this tenant via dedicated system daemon (<code>@($"daemon@{_managingUsersTenant.Slug}.internal")</code>).
+                            </FluentLabel>
+                        </div>
+                        @if (IsRootAdmin || _canEditTenants)
+                        {
+                            <FluentSwitch Value="@_isDaemonActive"
+                                          ValueChanged="@ToggleDaemonStatusAsync"
+                                          Label="@(_isDaemonActive ? "Active" : "Suspended")" />
+                        }
+                        else
+                        {
+                            <FluentBadge Appearance="@(_isDaemonActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                                         Color="@(_isDaemonActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                                @(_isDaemonActive ? "Active" : "Suspended")
+                            </FluentBadge>
+                        }
+                    </FluentStack>
+                </FluentCard>
+
                 @* Add User Sub-Card *@
                 @if (_showAddUserForm)
                 {
@@ -339,7 +363,11 @@
                         <PropertyColumn Property="@(u => u.FullName)" Title="Name" Sortable="true" />
                         <PropertyColumn Property="@(u => u.Email)" Title="Email" Sortable="true" />
                         <TemplateColumn Title="Type" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.UserType))">
-                            @if (context.UserType == UserType.CompanyUser)
+                            @if (context.UserKind == UserKindEnum.SystemDaemon)
+                            {
+                                <FluentBadge Appearance="BadgeAppearance.Outline" Style="background-color: #f3f2f1; color: #323130;">🤖 Daemon</FluentBadge>
+                            }
+                            else if (context.UserType == UserTypeEnum.CompanyUser)
                             {
                                 <FluentBadge Appearance="BadgeAppearance.Filled">Internal</FluentBadge>
                             }
@@ -348,11 +376,11 @@
                                 <FluentBadge Appearance="BadgeAppearance.Tint">External</FluentBadge>
                             }
                         </TemplateColumn>
-                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.StartDateUtc))">
-                            @TimeZoneService.FormatDate(context.StartDateUtc)
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.StartDate))">
+                            @TimeZoneService.FormatDate(context.StartDate)
                         </TemplateColumn>
-                        <TemplateColumn Title="End Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.EndDateUtc))">
-                            @TimeZoneService.FormatDate(context.EndDateUtc)
+                        <TemplateColumn Title="End Date" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.EndDate))">
+                            @TimeZoneService.FormatDate(context.EndDate)
                         </TemplateColumn>
                         <TemplateColumn Title="Status" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.IsActive))">
                             <FluentBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
@@ -362,14 +390,23 @@
                         </TemplateColumn>
                         <TemplateColumn Title="Actions">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                                <FluentButton Appearance="ButtonAppearance.Subtle"
-                                              Size="ButtonSize.Small"
-                                              IconStart="@(new Icons.Regular.Size16.Edit())"
-                                              Title="Edit User"
-                                              OnClick="@(() => StartEditUser(context))">
-                                    Edit
-                                </FluentButton>
-                        <EntityHistoryButton EntityName="UserEntity" EntityId="@context.Id.ToString()" Tooltip="View user change history" />
+                                @if (context.UserKind != UserKindEnum.SystemDaemon)
+                                {
+                                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                                  Size="ButtonSize.Small"
+                                                  IconStart="@(new Icons.Regular.Size16.Edit())"
+                                                  Title="Edit User"
+                                                  OnClick="@(() => StartEditUser(context))">
+                                        Edit
+                                    </FluentButton>
+                                }
+                                else
+                                {
+                                    <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="font-size: 11px;">
+                                        🔒 Managed
+                                    </FluentBadge>
+                                }
+                                <EntityHistoryButton EntityName="UserEntity" EntityId="@context.Id.ToString()" Tooltip="View user change history" />
                             </FluentStack>
                         </TemplateColumn>
                     </FluentDataGrid>
@@ -418,17 +455,7 @@
                                 <FluentDatePicker Label="Start Date" @bind-Value="_progStartDate" Style="flex: 1;" />
                                 <FluentDatePicker Label="Target Completion Date" @bind-Value="_progEndDate" Style="flex: 1;" />
                                 <div style="flex: 1;">
-                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
-                                    <FluentSelect TOption="string" TValue="string"
-                                                  Value="@_progStatus.ToString()"
-                                                  ValueChanged="@(val => _progStatus = Enum.TryParse<ProgramStatus>(val, out var res) ? res : ProgramStatus.Active)"
-                                                  Style="width: 100%;">
-                                        <FluentOption Value="@nameof(ProgramStatus.Planning)">Planning</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatus.Active)">Active</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatus.AtRisk)">At Risk</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatus.OnHold)">On Hold</FluentOption>
-                                        <FluentOption Value="@nameof(ProgramStatus.Completed)">Completed</FluentOption>
-                                    </FluentSelect>
+                                    <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_progStatus" Style="width: 100%;" />
                                 </div>
                             </FluentStack>
 
@@ -484,28 +511,28 @@
                         <TemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
                             @switch (context.Status)
                             {
-                                case ProgramStatus.Active:
+                                case ProgramStatusEnum.Active:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                                     break;
-                                case ProgramStatus.Planning:
+                                case ProgramStatusEnum.Planning:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">Planning</FluentBadge>
                                     break;
-                                case ProgramStatus.AtRisk:
+                                case ProgramStatusEnum.AtRisk:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">At Risk</FluentBadge>
                                     break;
-                                case ProgramStatus.OnHold:
+                                case ProgramStatusEnum.OnHold:
                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">On Hold</FluentBadge>
                                     break;
-                                case ProgramStatus.Completed:
+                                case ProgramStatusEnum.Completed:
                                     <FluentBadge Appearance="BadgeAppearance.Tint">Completed</FluentBadge>
                                     break;
                             }
                         </TemplateColumn>
-                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDateUtc))">
-                            @(context.StartDateUtc?.ToString("yyyy-MM-dd") ?? "—")
+                        <TemplateColumn Title="Start Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDate))">
+                            @(context.StartDate.ToString("yyyy-MM-dd"))
                         </TemplateColumn>
-                        <TemplateColumn Title="Target Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.TargetEndDateUtc))">
-                            @(context.TargetEndDateUtc?.ToString("yyyy-MM-dd") ?? "—")
+                        <TemplateColumn Title="Target Date" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.EndDate ?? p.DueDate))">
+                            @((context.EndDate ?? context.DueDate).ToString("yyyy-MM-dd"))
                         </TemplateColumn>
                         <TemplateColumn Title="Actions">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
@@ -554,16 +581,7 @@
                                     <FluentTextInput Label="Task Title" @bind-Value="_newTenantTaskTitle" Placeholder="e.g. Annual Compliance Certification" Style="flex: 2;" />
                                     <FluentTextInput Label="Description" @bind-Value="_newTenantTaskDesc" Placeholder="Deliverable details..." Style="flex: 2;" />
                                     <div style="flex: 1;">
-                                        <FluentLabel Typo="Typography.Caption">Priority</FluentLabel>
-                                        <FluentSelect TOption="string" TValue="string"
-                                                      Value="@_newTenantTaskPriority.ToString()"
-                                                      ValueChanged="@(v => _newTenantTaskPriority = Enum.TryParse<TaskPriority>(v, out var p) ? p : TaskPriority.Medium)"
-                                                      Style="width: 100%;">
-                                            <FluentOption Value="@nameof(TaskPriority.Low)">Low</FluentOption>
-                                            <FluentOption Value="@nameof(TaskPriority.Medium)">Medium</FluentOption>
-                                            <FluentOption Value="@nameof(TaskPriority.High)">High</FluentOption>
-                                            <FluentOption Value="@nameof(TaskPriority.Urgent)">Urgent</FluentOption>
-                                        </FluentSelect>
+                                        <DataListSelect TEnum="TaskPriorityEnum" TValue="TaskPriorityEnum" Label="Priority" @bind-Value="_newTenantTaskPriority" Style="width: 100%;" />
                                     </div>
                                     <FluentDatePicker Label="Due Date" @bind-Value="_newTenantTaskDueDate" Style="flex: 1;" />
                                     <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantTaskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantTaskTitle)">
@@ -588,13 +606,13 @@
                                     <PropertyColumn Property="@(t => t.Title)" Title="Task Title" Sortable="true" />
                                     <TemplateColumn Title="Priority" SortBy="@(GridSort<TaskEntity>.ByAscending(t => t.Priority))">
                                         <FluentBadge Appearance="BadgeAppearance.Filled"
-                                                     Color="@(context.Priority == TaskPriority.Urgent ? BadgeColor.Danger : context.Priority == TaskPriority.High ? BadgeColor.Warning : BadgeColor.Subtle)">
+                                                     Color="@(context.Priority == TaskPriorityEnum.Urgent ? BadgeColor.Danger : context.Priority == TaskPriorityEnum.High ? BadgeColor.Warning : BadgeColor.Subtle)">
                                             @context.Priority
                                         </FluentBadge>
                                     </TemplateColumn>
                                     <TemplateColumn Title="Status" SortBy="@(GridSort<TaskEntity>.ByAscending(t => t.Status))">
                                         <FluentBadge Appearance="BadgeAppearance.Tint"
-                                                     Color="@(context.Status == TaskStatus.Closed ? BadgeColor.Success : BadgeColor.Informative)">
+                                                     Color="@(context.Status == TaskStatusEnum.Closed ? BadgeColor.Success : BadgeColor.Informative)">
                                             @context.Status
                                         </FluentBadge>
                                     </TemplateColumn>
@@ -604,9 +622,9 @@
                                     <PropertyColumn Property="@(t => t.CreatedBy)" Title="Owner" />
                                     <TemplateColumn Title="Actions">
                                         <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small"
-                                                      IconStart="@(context.Status == TaskStatus.Closed ? new Icons.Regular.Size16.ArrowUndo() : new Icons.Regular.Size16.Checkmark())"
+                                                      IconStart="@(context.Status == TaskStatusEnum.Closed ? new Icons.Regular.Size16.ArrowUndo() : new Icons.Regular.Size16.Checkmark())"
                                                       OnClick="@(() => ToggleTenantTaskStatusAsync(context))">
-                                            @(context.Status == TaskStatus.Closed ? "Reopen" : "Close")
+                                            @(context.Status == TaskStatusEnum.Closed ? "Reopen" : "Close")
                                         </FluentButton>
                                     </TemplateColumn>
                                 </FluentDataGrid>
@@ -622,27 +640,10 @@
                                     <FluentTextInput Label="Risk Title" @bind-Value="_newTenantRiskTitle" Placeholder="e.g. Regulatory Data Residency Non-Compliance" Style="flex: 2;" />
                                     <FluentTextInput Label="Description" @bind-Value="_newTenantRiskDesc" Placeholder="Impact assessment..." Style="flex: 2;" />
                                     <div style="flex: 1;">
-                                        <FluentLabel Typo="Typography.Caption">Probability</FluentLabel>
-                                        <FluentSelect TOption="string" TValue="string"
-                                                      Value="@_newTenantRiskProb.ToString()"
-                                                      ValueChanged="@(v => _newTenantRiskProb = Enum.TryParse<RiskProbability>(v, out var p) ? p : RiskProbability.Medium)"
-                                                      Style="width: 100%;">
-                                            <FluentOption Value="@nameof(RiskProbability.Low)">Low</FluentOption>
-                                            <FluentOption Value="@nameof(RiskProbability.Medium)">Medium</FluentOption>
-                                            <FluentOption Value="@nameof(RiskProbability.High)">High</FluentOption>
-                                        </FluentSelect>
+                                        <DataListSelect TEnum="RiskProbabilityEnum" TValue="RiskProbabilityEnum" Label="Probability" @bind-Value="_newTenantRiskProb" Style="width: 100%;" />
                                     </div>
                                     <div style="flex: 1;">
-                                        <FluentLabel Typo="Typography.Caption">Impact</FluentLabel>
-                                        <FluentSelect TOption="string" TValue="string"
-                                                      Value="@_newTenantRiskImpact.ToString()"
-                                                      ValueChanged="@(v => _newTenantRiskImpact = Enum.TryParse<RiskImpact>(v, out var p) ? p : RiskImpact.Medium)"
-                                                      Style="width: 100%;">
-                                            <FluentOption Value="@nameof(RiskImpact.Low)">Low</FluentOption>
-                                            <FluentOption Value="@nameof(RiskImpact.Medium)">Medium</FluentOption>
-                                            <FluentOption Value="@nameof(RiskImpact.High)">High</FluentOption>
-                                            <FluentOption Value="@nameof(RiskImpact.Critical)">Critical</FluentOption>
-                                        </FluentSelect>
+                                        <DataListSelect TEnum="RiskImpactEnum" TValue="RiskImpactEnum" Label="Impact" @bind-Value="_newTenantRiskImpact" Style="width: 100%;" />
                                     </div>
                                     <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantRiskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantRiskTitle)">
                                         Add Risk
@@ -678,7 +679,7 @@
                                     </TemplateColumn>
                                     <TemplateColumn Title="Status" SortBy="@(GridSort<RiskEntity>.ByAscending(r => r.RiskStatus))">
                                         <FluentBadge Appearance="BadgeAppearance.Tint"
-                                                     Color="@(context.RiskStatus == RiskStatus.Closed ? BadgeColor.Success : context.RiskStatus == RiskStatus.Realized ? BadgeColor.Danger : BadgeColor.Informative)">
+                                                     Color="@(context.RiskStatus == RiskStatusEnum.Closed ? BadgeColor.Success : context.RiskStatus == RiskStatusEnum.Realized ? BadgeColor.Danger : BadgeColor.Informative)">
                                             @context.RiskStatus
                                         </FluentBadge>
                                     </TemplateColumn>
@@ -844,7 +845,7 @@
     // Add user form inputs
     private string _userFullName = string.Empty;
     private string _userEmail = string.Empty;
-    private UserType? _detectedUserType;
+    private UserTypeEnum? _detectedUserType;
     private string? _userDomainError;
     private DateTime? _userStartDate = DateTime.UtcNow.Date;
     private DateTime? _userEndDate = DateTime.UtcNow.Date.AddYears(1);
@@ -854,7 +855,7 @@
     private UserEntity? _editingUser;
     private string _editUserFullName = string.Empty;
     private string _editUserEmail = string.Empty;
-    private UserType? _editDetectedUserType;
+    private UserTypeEnum? _editDetectedUserType;
     private string? _editUserDomainError;
     private DateTime? _editUserStartDate;
     private DateTime? _editUserEndDate;
@@ -864,9 +865,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var tenantId = TenantContext.TenantId;
-        var userId = CurrentUser.UserId ?? string.Empty;
-        _canEditTenants = IsRootAdmin || (!string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(userId) && await HierarchyAuth.CanEditTenantSettingsAsync(tenantId, userId));
+        var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : string.Empty;
+        _canEditTenants = IsRootAdmin || (TenantContext.HasActiveTenant && !string.IsNullOrWhiteSpace(userId) && await HierarchyAuth.CanEditTenantSettingsAsync(TenantContext.TenantId, userId));
         await LoadTenantsAsync();
     }
 
@@ -1166,6 +1166,8 @@
         _editingUser = null;
     }
 
+    private bool _isDaemonActive = true;
+
     private async Task LoadTenantUsersAsync()
     {
         if (_managingUsersTenant is null) return;
@@ -1175,10 +1177,32 @@
         {
             var users = await TenantService.GetTenantUsersAsync(_managingUsersTenant.Slug);
             _tenantUsers = users.ToList();
+
+            var daemonRes = await TenantService.IsTenantDaemonActiveAsync(_managingUsersTenant.Id);
+            _isDaemonActive = daemonRes.Succeeded ? daemonRes.Value : true;
         }
         finally
         {
             _isLoadingUsers = false;
+        }
+    }
+
+    private async Task ToggleDaemonStatusAsync(bool isActive)
+    {
+        if (_managingUsersTenant is null) return;
+        if (!IsRootAdmin && !_canEditTenants) return;
+
+        var result = await TenantService.SetTenantDaemonActiveAsync(_managingUsersTenant.Id, isActive);
+        if (result.Succeeded)
+        {
+            _isDaemonActive = isActive;
+            _statusMessage = $"Automated background processing for '{_managingUsersTenant.Name}' is now {(isActive ? "Active" : "Suspended")}.";
+            _isError = false;
+        }
+        else
+        {
+            _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update background processing status.";
+            _isError = true;
         }
     }
 
@@ -1198,12 +1222,12 @@
 
         if (internalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            _detectedUserType = UserType.CompanyUser;
+            _detectedUserType = UserTypeEnum.CompanyUser;
             _userDomainError = null;
         }
         else if (externalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            _detectedUserType = UserType.ClientUser;
+            _detectedUserType = UserTypeEnum.ClientUser;
             _userDomainError = null;
         }
         else
@@ -1217,8 +1241,8 @@
     {
         return _detectedUserType switch
         {
-            UserType.CompanyUser => "Internal Staff (CompanyUser)",
-            UserType.ClientUser => "External Client (ClientUser)",
+            UserTypeEnum.CompanyUser => "Internal Staff (CompanyUser)",
+            UserTypeEnum.ClientUser => "External Client (ClientUser)",
             _ => "(Enter email matching configured domain)"
         };
     }
@@ -1270,8 +1294,8 @@
         _editUserEmail = user.Email;
         _editDetectedUserType = user.UserType;
         _editUserDomainError = null;
-        _editUserStartDate = user.StartDateUtc.ToLocalTime().Date;
-        _editUserEndDate = user.EndDateUtc.ToLocalTime().Date;
+        _editUserStartDate = user.StartDate.ToLocalTime().Date;
+        _editUserEndDate = user.EndDate?.ToLocalTime().Date;
         _editUserIsActive = user.IsActive;
     }
 
@@ -1291,12 +1315,12 @@
 
         if (internalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            _editDetectedUserType = UserType.CompanyUser;
+            _editDetectedUserType = UserTypeEnum.CompanyUser;
             _editUserDomainError = null;
         }
         else if (externalDomains.Any(d => normalizedEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
         {
-            _editDetectedUserType = UserType.ClientUser;
+            _editDetectedUserType = UserTypeEnum.ClientUser;
             _editUserDomainError = null;
         }
         else
@@ -1310,8 +1334,8 @@
     {
         return _editDetectedUserType switch
         {
-            UserType.CompanyUser => "Internal Staff (CompanyUser)",
-            UserType.ClientUser => "External Client (ClientUser)",
+            UserTypeEnum.CompanyUser => "Internal Staff (CompanyUser)",
+            UserTypeEnum.ClientUser => "External Client (ClientUser)",
             _ => "(Enter email matching configured domain)"
         };
     }
@@ -1363,7 +1387,7 @@
     private string _progCode = string.Empty;
     private string _progName = string.Empty;
     private string _progDescription = string.Empty;
-    private ProgramStatus _progStatus = ProgramStatus.Active;
+    private ProgramStatusEnum _progStatus = ProgramStatusEnum.Active;
     private DateTime? _progStartDate;
     private DateTime? _progEndDate;
     private string _programSearchText = string.Empty;
@@ -1429,7 +1453,7 @@
         _progCode = string.Empty;
         _progName = string.Empty;
         _progDescription = string.Empty;
-        _progStatus = ProgramStatus.Active;
+        _progStatus = ProgramStatusEnum.Active;
         _progStartDate = DateTime.UtcNow.Date;
         _progEndDate = DateTime.UtcNow.Date.AddMonths(12);
         _showAddProgramForm = true;
@@ -1442,8 +1466,8 @@
         _progName = program.Name;
         _progDescription = program.Description;
         _progStatus = program.Status;
-        _progStartDate = program.StartDateUtc;
-        _progEndDate = program.TargetEndDateUtc;
+        _progStartDate = program.StartDate;
+        _progEndDate = program.EndDate ?? program.DueDate;
         _showAddProgramForm = true;
     }
 
@@ -1520,14 +1544,14 @@
     // Quick Add Task Form
     private string _newTenantTaskTitle = string.Empty;
     private string _newTenantTaskDesc = string.Empty;
-    private TaskPriority _newTenantTaskPriority = TaskPriority.Medium;
+    private TaskPriorityEnum _newTenantTaskPriority = TaskPriorityEnum.Medium;
     private DateTime? _newTenantTaskDueDate;
 
     // Quick Add Risk Form
     private string _newTenantRiskTitle = string.Empty;
     private string _newTenantRiskDesc = string.Empty;
-    private RiskProbability _newTenantRiskProb = RiskProbability.Medium;
-    private RiskImpact _newTenantRiskImpact = RiskImpact.Medium;
+    private RiskProbabilityEnum _newTenantRiskProb = RiskProbabilityEnum.Medium;
+    private RiskImpactEnum _newTenantRiskImpact = RiskImpactEnum.Medium;
 
     private async Task OpenTenantTasksManagement(TenantEntity tenant)
     {
@@ -1552,12 +1576,12 @@
         {
             var tenantIdStr = _managingTasksTenant.Id.ToString();
             _tenantTasks = await DbContext.Tasks
-                .Where(t => t.TenantId == tenantIdStr && t.Level == TaskLevel.Tenant && !t.IsDeleted)
+                .Where(t => t.TenantId.ToString() == tenantIdStr && t.Level == TaskLevelEnum.Tenant && !t.IsDeleted)
                 .OrderByDescending(t => t.Created)
                 .ToListAsync();
 
             _tenantRisks = await DbContext.Risks
-                .Where(r => r.TenantId == tenantIdStr && r.Level == TaskLevel.Tenant && !r.IsDeleted)
+                .Where(r => r.TenantId.ToString() == tenantIdStr && r.Level == TaskLevelEnum.Tenant && !r.IsDeleted)
                 .OrderByDescending(r => r.Created)
                 .ToListAsync();
         }
@@ -1579,12 +1603,12 @@
         {
             var task = new TaskEntity
             {
-                TenantId = _managingTasksTenant.Id.ToString(),
-                Level = TaskLevel.Tenant,
+                TenantId = _managingTasksTenant.Id,
+                Level = TaskLevelEnum.Tenant,
                 Title = _newTenantTaskTitle.Trim(),
                 Description = _newTenantTaskDesc?.Trim() ?? string.Empty,
                 Priority = _newTenantTaskPriority,
-                Status = TaskStatus.Open,
+                Status = TaskStatusEnum.Open,
                 DueDate = _newTenantTaskDueDate ?? DateTime.UtcNow.AddDays(7),
                 StartDate = DateTime.UtcNow,
                 CreatedBy = CurrentUser.Email ?? "system"
@@ -1612,17 +1636,18 @@
         {
             var risk = new RiskEntity
             {
-                TenantId = _managingTasksTenant.Id.ToString(),
-                Level = TaskLevel.Tenant,
+                TenantId = _managingTasksTenant.Id,
+                Level = TaskLevelEnum.Tenant,
                 Title = _newTenantRiskTitle.Trim(),
                 Description = _newTenantRiskDesc?.Trim() ?? string.Empty,
                 Probability = _newTenantRiskProb,
                 Impact = _newTenantRiskImpact,
-                RiskStatus = RiskStatus.Identified,
-                Priority = TaskPriority.High,
+                RiskStatus = RiskStatusEnum.Identified,
+                Priority = TaskPriorityEnum.High,
                 StartDate = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddDays(14),
-                CreatedBy = CurrentUser.Email ?? "system"
+                CreatedBy = CurrentUser.Email ?? "system",
+                Status = TaskStatusEnum.Pending
             };
             DbContext.Risks.Add(risk);
             await DbContext.SaveChangesAsync();
@@ -1641,8 +1666,8 @@
 
     private async Task ToggleTenantTaskStatusAsync(TaskEntity task)
     {
-        task.Status = task.Status == TaskStatus.Closed ? TaskStatus.Open : TaskStatus.Closed;
-        if (task.Status == TaskStatus.Closed) task.EndDate = DateTime.UtcNow;
+        task.Status = task.Status == TaskStatusEnum.Closed ? TaskStatusEnum.Open : TaskStatusEnum.Closed;
+        if (task.Status == TaskStatusEnum.Closed) task.EndDate = DateTime.UtcNow;
         else task.EndDate = null;
         task.UpdatedBy = CurrentUser.Email ?? "system";
         task.Updated = DateTime.UtcNow;

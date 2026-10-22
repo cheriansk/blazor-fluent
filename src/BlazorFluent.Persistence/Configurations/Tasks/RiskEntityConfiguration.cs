@@ -14,13 +14,12 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(r => r.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(r => r.Title)
             .HasMaxLength(200)
@@ -68,7 +67,16 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.Property(r => r.DueDate)
             .IsRequired();
 
+        builder.Property(r => r.RevisedDueDate)
+            .IsRequired(false);
+
         builder.Property(r => r.EndDate)
+            .IsRequired(false);
+
+        builder.Property(r => r.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(r => r.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(r => r.ReporterEmail)
@@ -95,6 +103,9 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
             .IsRequired(false);
 
         builder.Property(r => r.ProjectId)
+            .IsRequired(false);
+
+        builder.Property(r => r.MilestoneId)
             .IsRequired(false);
 
         builder.Property(r => r.UserId)

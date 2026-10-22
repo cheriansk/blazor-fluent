@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -49,7 +49,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         if (decryptedStream.CanSeek)
             decryptedStream.Position = 0;
 
-        file.Status = ImportStatus.Validating;
+        file.Status = ImportStatusEnum.Validating;
         file.StepStage = "Validate";
         await _dbContext.SaveChangesAsync(ct);
 
@@ -58,213 +58,316 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         var chunkSize = config.ChunkSize > 0 ? config.ChunkSize : 1000;
 
         var isExcel = IsExcelFormat(file, config);
-        var targetSheetName = config.Sheets.FirstOrDefault()?.Name ?? "Default";
+        var xmlSettings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
 
-        // Build column rule lookup and dynamic self-describing headerMap (alias -> columnName)
-        var effectiveColumns = config.Sheets.FirstOrDefault()?.Columns is { Count: > 0 } sheetCols
-            ? sheetCols
-            : config.Columns;
+        ZipArchive? archive = null;
+        List<ExcelSheetMetadata> discoveredExcelSheets = [];
+        Dictionary<string, ExcelSheetMetadata> discoveredExcelSheetMap = new(StringComparer.OrdinalIgnoreCase);
+        XDocument? relsDoc = null;
+        List<string> sharedStrings = [];
 
-        var columnRules = effectiveColumns.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
-        var uniqueKeys = config.Sheets.FirstOrDefault()?.UniqueKeys is { Count: > 0 } sKeys
-            ? sKeys
-            : config.UniqueKeys;
-
-        var seenUniqueCompositeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var headerMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var columnToAlias = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        int aliasCounter = 1;
-        foreach (var col in effectiveColumns)
-        {
-            var alias = !string.IsNullOrWhiteSpace(col.Alias) ? col.Alias! : $"c{aliasCounter++}";
-            while (headerMap.ContainsKey(alias))
-            {
-                alias = $"c{aliasCounter++}";
-            }
-            headerMap[alias] = col.Name;
-            columnToAlias[col.Name] = alias;
-        }
-
-        var stagedRows = new List<StagedRowDto>();
-        int totalRowsRead = 0;
+        List<SheetProcessingPlan> sheetPlans = [];
 
         try
         {
-            var rawRows = isExcel
-                ? ReadExcelRows(decryptedStream, targetSheetName, errors)
-                : ReadDelimitedRows(decryptedStream, targetSheetName, config.Format, errors);
-
-            IReadOnlyList<string>? discoveredHeaders = null;
-
-            foreach (var (rowIndex, rowCells, headers) in rawRows)
+            if (isExcel)
             {
-                ct.ThrowIfCancellationRequested();
-
-                if (discoveredHeaders == null)
-                {
-                    discoveredHeaders = headers;
-
-                    // Ensure all discovered headers have an alias in headerMap (zero-maintenance dynamic aliasing)
-                    foreach (var header in discoveredHeaders)
-                    {
-                        if (!columnToAlias.ContainsKey(header))
-                        {
-                            var alias = $"c{aliasCounter++}";
-                            while (headerMap.ContainsKey(alias))
-                            {
-                                alias = $"c{aliasCounter++}";
-                            }
-                            headerMap[alias] = header;
-                            columnToAlias[header] = alias;
-                        }
-                    }
-
-                    // Check required headers exist
-                    foreach (var reqCol in effectiveColumns.Where(c => c.Required))
-                    {
-                        if (!discoveredHeaders.Any(h => string.Equals(h, reqCol.Name, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            errors.Add(new FileValidationError(
-                                targetSheetName,
-                                1,
-                                reqCol.Name,
-                                $"Required header column '{reqCol.Name}' is missing from sheet '{targetSheetName}'."));
-                        }
-                    }
-
-                    if (errors.Count > 0)
-                        break;
-                }
-
-                totalRowsRead++;
-                ValidateRow(rowIndex, targetSheetName, rowCells, columnRules, uniqueKeys, seenUniqueCompositeKeys, errors);
-
-                if (errors.Count >= maxErrors)
-                {
-                    _logger.LogWarning("Fail-fast error threshold ({MaxErrors}) reached for FileId={FileId}. Halting validation.", maxErrors, file.Id);
-                    break;
-                }
+                archive = new ZipArchive(decryptedStream, ZipArchiveMode.Read, leaveOpen: true);
+                var (sheets, rels, strings) = LoadExcelWorkbookMetadata(archive, xmlSettings, errors);
+                discoveredExcelSheets = sheets;
+                discoveredExcelSheetMap = sheets.ToDictionary(s => s.Name, s => s, StringComparer.OrdinalIgnoreCase);
+                relsDoc = rels;
+                sharedStrings = strings;
 
                 if (errors.Count == 0)
                 {
-                    var compactData = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var kvp in rowCells)
+                    if (config.Sheets is { Count: > 0 })
                     {
-                        var val = kvp.Value?.Trim();
-                        if (config.OmitNullValues && string.IsNullOrEmpty(val))
-                            continue;
+                        // 1. Fail-Closed on Unknown Sheets: Reject file if workbook contains unauthorized worksheets
+                        var configuredSheetNames = new HashSet<string>(config.Sheets.Select(s => s.Name), StringComparer.OrdinalIgnoreCase);
+                        foreach (var discovered in discoveredExcelSheets)
+                        {
+                            if (!configuredSheetNames.Contains(discovered.Name))
+                            {
+                                errors.Add(new FileValidationError(
+                                    discovered.Name,
+                                    0,
+                                    "Sheet",
+                                    $"Excel workbook contains unauthorized/unknown worksheet '{discovered.Name}'. Rejected under fail-closed multi-sheet policy. Allowed sheets: [{string.Join(", ", config.Sheets.Select(s => $"'{s.Name}'"))}]."));
+                            }
+                        }
 
-                        var aliasKey = columnToAlias.TryGetValue(kvp.Key, out var mappedAlias) ? mappedAlias : kvp.Key;
-                        compactData[aliasKey] = val;
+                        // 2. Fail-Closed on Missing Required Sheets
+                        foreach (var sheetCfg in config.Sheets)
+                        {
+                            if (sheetCfg.Required && !discoveredExcelSheetMap.ContainsKey(sheetCfg.Name))
+                            {
+                                var foundNames = string.Join(", ", discoveredExcelSheets.Select(s => $"'{s.Name}'"));
+                                errors.Add(new FileValidationError(
+                                    sheetCfg.Name,
+                                    0,
+                                    "Sheet",
+                                    $"Required worksheet '{sheetCfg.Name}' was not found in the Excel workbook. Found: [{foundNames}]."));
+                            }
+                        }
+
+                        // 3. Plan sheets in declaration order from config.Sheets
+                        sheetPlans = config.Sheets
+                            .Where(s => discoveredExcelSheetMap.ContainsKey(s.Name))
+                            .Select(s => new SheetProcessingPlan(
+                                s.Name,
+                                s.Columns is { Count: > 0 } sc ? sc : config.Columns,
+                                s.UniqueKeys is { Count: > 0 } sk ? sk : config.UniqueKeys))
+                            .ToList();
                     }
-
-                    stagedRows.Add(new StagedRowDto(
-                        Id: Guid.CreateVersion7(),
-                        Idx: rowIndex,
-                        D: compactData));
+                    else
+                    {
+                        // Fallback: Dynamic staging using workbook sheets with global template column rules
+                        sheetPlans = discoveredExcelSheets
+                            .Select(s => new SheetProcessingPlan(s.Name, config.Columns, config.UniqueKeys))
+                            .ToList();
+                    }
                 }
             }
+            else
+            {
+                var targetSheetName = config.Sheets.FirstOrDefault()?.Name ?? "Default";
+                var effectiveColumns = config.Sheets.FirstOrDefault()?.Columns is { Count: > 0 } sheetCols
+                    ? sheetCols
+                    : config.Columns;
+                var uniqueKeys = config.Sheets.FirstOrDefault()?.UniqueKeys is { Count: > 0 } sKeys
+                    ? sKeys
+                    : config.UniqueKeys;
+
+                sheetPlans = [new SheetProcessingPlan(targetSheetName, effectiveColumns, uniqueKeys)];
+            }
+
+            var stagedChunksToPersist = new List<(string SheetName, int ChunkIndex, int TotalChunks, int RowCount, bool IsLastChunk, Dictionary<string, string> HeaderMap, StagedRowDto[] Rows)>();
+            int totalRowsRead = 0;
+
+            if (errors.Count == 0)
+            {
+                foreach (var plan in sheetPlans)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    var columnRules = plan.Columns.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+                    var seenUniqueCompositeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var headerMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    var columnToAlias = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                    int aliasCounter = 1;
+                    foreach (var col in plan.Columns)
+                    {
+                        var alias = !string.IsNullOrWhiteSpace(col.Alias) ? col.Alias! : $"c{aliasCounter++}";
+                        while (headerMap.ContainsKey(alias))
+                        {
+                            alias = $"c{aliasCounter++}";
+                        }
+                        headerMap[alias] = col.Name;
+                        columnToAlias[col.Name] = alias;
+                    }
+
+                    var rawRows = isExcel
+                        ? ReadExcelSheetRows(archive!, discoveredExcelSheetMap[plan.SheetName], relsDoc, sharedStrings, xmlSettings, plan.SheetName, errors)
+                        : ReadDelimitedRows(decryptedStream, plan.SheetName, config.Format, errors);
+
+                    var sheetStagedRows = new List<StagedRowDto>();
+                    IReadOnlyList<string>? discoveredHeaders = null;
+
+                    foreach (var (rowIndex, rowCells, headers) in rawRows)
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+                        if (discoveredHeaders == null)
+                        {
+                            discoveredHeaders = headers;
+
+                            // Ensure all discovered headers have an alias in headerMap (zero-maintenance dynamic aliasing)
+                            foreach (var header in discoveredHeaders)
+                            {
+                                if (!columnToAlias.ContainsKey(header))
+                                {
+                                    var alias = $"c{aliasCounter++}";
+                                    while (headerMap.ContainsKey(alias))
+                                    {
+                                        alias = $"c{aliasCounter++}";
+                                    }
+                                    headerMap[alias] = header;
+                                    columnToAlias[header] = alias;
+                                }
+                            }
+
+                            // Check required headers exist
+                            foreach (var reqCol in plan.Columns.Where(c => c.Required))
+                            {
+                                if (!discoveredHeaders.Any(h => string.Equals(h, reqCol.Name, StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    errors.Add(new FileValidationError(
+                                        plan.SheetName,
+                                        1,
+                                        reqCol.Name,
+                                        $"Required header column '{reqCol.Name}' is missing from sheet '{plan.SheetName}'."));
+                                }
+                            }
+
+                            if (errors.Count > 0)
+                                break;
+                        }
+
+                        totalRowsRead++;
+                        ValidateRow(rowIndex, plan.SheetName, rowCells, columnRules, plan.UniqueKeys, seenUniqueCompositeKeys, errors);
+
+                        if (errors.Count >= maxErrors)
+                        {
+                            _logger.LogWarning("Fail-fast error threshold ({MaxErrors}) reached for FileId={FileId}. Halting validation.", maxErrors, file.Id);
+                            break;
+                        }
+
+                        if (errors.Count == 0)
+                        {
+                            var compactData = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+                            foreach (var kvp in rowCells)
+                            {
+                                var val = kvp.Value?.Trim();
+                                if (config.OmitNullValues && string.IsNullOrEmpty(val))
+                                    continue;
+
+                                var aliasKey = columnToAlias.TryGetValue(kvp.Key, out var mappedAlias) ? mappedAlias : kvp.Key;
+                                compactData[aliasKey] = val;
+                            }
+
+                            sheetStagedRows.Add(new StagedRowDto(
+                                Id: Guid.CreateVersion7(),
+                                Idx: rowIndex,
+                                D: compactData));
+                        }
+                    }
+
+                    if (errors.Count >= maxErrors)
+                        break;
+
+                    // Chunk rows per sheet (ChunkIndex 1..N scoped to this sheet)
+                    if (sheetStagedRows.Count > 0)
+                    {
+                        var chunks = sheetStagedRows.Chunk(chunkSize).ToList();
+                        int sheetTotalChunks = chunks.Count;
+
+                        for (int i = 0; i < sheetTotalChunks; i++)
+                        {
+                            int chunkIndex = i + 1;
+                            bool isLastChunk = chunkIndex == sheetTotalChunks;
+                            stagedChunksToPersist.Add((plan.SheetName, chunkIndex, sheetTotalChunks, chunks[i].Length, isLastChunk, new Dictionary<string, string>(headerMap), chunks[i]));
+                        }
+                    }
+                }
+            }
+
+            if (errors.Count == 0 && stagedChunksToPersist.Count == 0)
+            {
+                errors.Add(new FileValidationError("Workbook", 0, "Rows", "The imported file contains no data rows to stage across any worksheet."));
+            }
+
+            // All-or-Nothing Fail-Closed Policy: If any error exists, abort and stage 0 chunks
+            if (errors.Count > 0)
+            {
+                file.Status = ImportStatusEnum.ValidationFailed;
+                file.StepStage = "ValidationFailed";
+                file.TotalRowsCount = totalRowsRead;
+                file.ValidRowsCount = 0;
+                file.ErrorRowsCount = errors.Count;
+                file.ValidationErrorsJson = JsonSerializer.Serialize(errors, JsonDefaults.StandardOptions);
+                file.ErrorMessage = $"Validation failed with {errors.Count} error(s). All-or-nothing policy aborted staging.";
+                file.ProcessedAtUtc = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync(ct);
+
+                return Result<int>.Failure(file.ErrorMessage);
+            }
+
+            // Stage into 'staging.StagedImports' in chunks of ChunkSize (1,000 rows default)
+            file.Status = ImportStatusEnum.Staging;
+            file.StepStage = "Stage";
+            await _dbContext.SaveChangesAsync(ct);
+
+            // Remove any prior uncommitted staged chunks for idempotency
+            var existingChunks = await _dbContext.StagedImports
+                .Where(s => s.ImportFileId == file.Id)
+                .ToListAsync(ct);
+            if (existingChunks.Count > 0)
+            {
+                _dbContext.StagedImports.RemoveRange(existingChunks);
+                await _dbContext.SaveChangesAsync(ct);
+            }
+
+            foreach (var chunk in stagedChunksToPersist)
+            {
+                var payload = new CanonicalStagedChunkPayload(
+                    ImportId: file.ImportId,
+                    ImportFileId: file.Id,
+                    FileType: config.FileType,
+                    SheetName: chunk.SheetName,
+                    ChunkIndex: chunk.ChunkIndex,
+                    TotalChunks: chunk.TotalChunks,
+                    RowCount: chunk.RowCount,
+                    IsLastChunk: chunk.IsLastChunk,
+                    HeaderMap: chunk.HeaderMap,
+                    Rows: chunk.Rows);
+
+                var payloadJson = JsonSerializer.Serialize(payload, JsonDefaults.StandardOptions);
+
+                var stagedEntity = new StagedImportEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    TenantId = file.TenantId,
+                    ProjectId = file.ProjectId,
+                    ImportId = file.ImportId,
+                    ImportFileId = file.Id,
+                    FileType = config.FileType,
+                    OriginalFileName = file.OriginalFileName,
+                    SheetName = chunk.SheetName,
+                    ChunkIndex = chunk.ChunkIndex,
+                    TotalChunks = chunk.TotalChunks,
+                    RowCount = chunk.RowCount,
+                    IsProcessed = false,
+                    Status = "Staged",
+                    PayloadJson = payloadJson
+                };
+
+                _dbContext.StagedImports.Add(stagedEntity);
+            }
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            int totalStagedRows = stagedChunksToPersist.Sum(c => c.RowCount);
+            file.Status = ImportStatusEnum.StagingSuccess;
+            file.StepStage = "Staged";
+            file.TotalRowsCount = totalStagedRows;
+            file.ValidRowsCount = totalStagedRows;
+            file.ErrorRowsCount = 0;
+            file.ErrorMessage = null;
+            await _dbContext.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "Successfully staged {RowCount} rows across {ChunkCount} canonical JSON chunk(s) into staging.StagedImports for FileId={FileId}.",
+                totalStagedRows, stagedChunksToPersist.Count, file.Id);
+
+            return Result<int>.Success(totalStagedRows);
         }
         catch (Exception ex)
         {
-            errors.Add(new FileValidationError(targetSheetName, 0, "Parser", $"Failed to parse file stream: {ex.Message}"));
-        }
-
-        if (errors.Count == 0 && stagedRows.Count == 0)
-        {
-            errors.Add(new FileValidationError(targetSheetName, 0, "Rows", "The imported file contains no data rows to stage."));
-        }
-
-        // All-or-Nothing Fail-Closed Policy: If any error exists, abort and stage 0 chunks
-        if (errors.Count > 0)
-        {
-            file.Status = ImportStatus.ValidationFailed;
+            _logger.LogError(ex, "Unexpected failure during validation and staging for FileId={FileId}.", file.Id);
+            file.Status = ImportStatusEnum.ValidationFailed;
             file.StepStage = "ValidationFailed";
-            file.TotalRowsCount = totalRowsRead;
-            file.ValidRowsCount = 0;
-            file.ErrorRowsCount = errors.Count;
-            file.ValidationErrorsJson = JsonSerializer.Serialize(errors, JsonDefaults.StandardOptions);
-            file.ErrorMessage = $"Validation failed with {errors.Count} error(s). All-or-nothing policy aborted staging.";
+            file.ErrorMessage = $"Staging failure: {ex.Message}";
             file.ProcessedAtUtc = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync(ct);
 
             return Result<int>.Failure(file.ErrorMessage);
         }
-
-        // Stage into 'staging.StagedImports' in chunks of ChunkSize (1,000 rows default)
-        file.Status = ImportStatus.Staging;
-        file.StepStage = "Stage";
-        await _dbContext.SaveChangesAsync(ct);
-
-        // Remove any prior uncommitted staged chunks for idempotency
-        var existingChunks = await _dbContext.StagedImports
-            .Where(s => s.ImportFileId == file.Id)
-            .ToListAsync(ct);
-        if (existingChunks.Count > 0)
+        finally
         {
-            _dbContext.StagedImports.RemoveRange(existingChunks);
-            await _dbContext.SaveChangesAsync(ct);
+            archive?.Dispose();
         }
-
-        var chunks = stagedRows.Chunk(chunkSize).ToList();
-        var totalChunks = chunks.Count;
-
-        for (int i = 0; i < totalChunks; i++)
-        {
-            var chunkRows = chunks[i];
-            var chunkIndex = i + 1;
-            var isLastChunk = chunkIndex == totalChunks;
-
-            var payload = new CanonicalStagedChunkPayload(
-                ImportId: file.ImportId,
-                ImportFileId: file.Id,
-                FileType: config.FileType,
-                SheetName: targetSheetName,
-                ChunkIndex: chunkIndex,
-                TotalChunks: totalChunks,
-                RowCount: chunkRows.Length,
-                IsLastChunk: isLastChunk,
-                HeaderMap: headerMap,
-                Rows: chunkRows);
-
-            var payloadJson = JsonSerializer.Serialize(payload, JsonDefaults.StandardOptions);
-
-            var stagedEntity = new StagedImportEntity
-            {
-                Id = Guid.CreateVersion7(),
-                TenantId = file.TenantId,
-                ProjectId = file.ProjectId,
-                ImportId = file.ImportId,
-                ImportFileId = file.Id,
-                FileType = config.FileType,
-                OriginalFileName = file.OriginalFileName,
-                SheetName = targetSheetName,
-                ChunkIndex = chunkIndex,
-                TotalChunks = totalChunks,
-                RowCount = chunkRows.Length,
-                IsProcessed = false,
-                Status = "Staged",
-                PayloadJson = payloadJson
-            };
-
-            _dbContext.StagedImports.Add(stagedEntity);
-            await _dbContext.SaveChangesAsync(ct);
-        }
-
-        file.Status = ImportStatus.StagingSuccess;
-        file.StepStage = "Staged";
-        file.TotalRowsCount = stagedRows.Count;
-        file.ValidRowsCount = stagedRows.Count;
-        file.ErrorRowsCount = 0;
-        file.ErrorMessage = null;
-        await _dbContext.SaveChangesAsync(ct);
-
-        _logger.LogInformation(
-            "Successfully staged {RowCount} rows across {ChunkCount} canonical JSON chunk(s) into staging.StagedImports for FileId={FileId}.",
-            stagedRows.Count, totalChunks, file.Id);
-
-        return Result<int>.Success(stagedRows.Count);
     }
 
     private static bool IsExcelFormat(ImportFileEntity file, FileTemplateConfig config)
@@ -274,7 +377,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         if (string.Equals(config.Format.Type, "delimited", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        return file.FileType == ImportFileType.TaskExcel ||
+        return file.FileType == ImportFileTypeEnum.TaskExcel ||
                file.OriginalFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -501,21 +604,17 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         return result;
     }
 
-    private static IEnumerable<(int RowIndex, Dictionary<string, string?> Cells, IReadOnlyList<string> Headers)> ReadExcelRows(
-        Stream stream,
-        string targetSheetName,
+    private static (List<ExcelSheetMetadata> Sheets, XDocument? RelsDoc, List<string> SharedStrings) LoadExcelWorkbookMetadata(
+        ZipArchive archive,
+        XmlReaderSettings xmlSettings,
         List<FileValidationError> errors)
     {
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
-
         var workbookEntry = archive.GetEntry("xl/workbook.xml");
         if (workbookEntry == null)
         {
-            errors.Add(new FileValidationError(targetSheetName, 0, "Workbook", "Invalid .xlsx archive: missing xl/workbook.xml."));
-            yield break;
+            errors.Add(new FileValidationError("Workbook", 0, "Workbook", "Invalid .xlsx archive: missing xl/workbook.xml."));
+            return ([], null, []);
         }
-
-        var xmlSettings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
 
         XDocument workbookDoc;
         using (var wbStream = workbookEntry.Open())
@@ -525,37 +624,51 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         }
 
         var sheets = workbookDoc.Descendants(SpreadsheetNs + "sheet")
-            .Select(s => new
-            {
-                Name = s.Attribute("name")?.Value ?? string.Empty,
-                RelId = s.Attribute(RelationshipsNs + "id")?.Value ?? string.Empty
-            })
+            .Select(s => new ExcelSheetMetadata(
+                s.Attribute("name")?.Value ?? string.Empty,
+                s.Attribute(RelationshipsNs + "id")?.Value ?? string.Empty))
             .ToList();
 
-        var matchedSheet = sheets.FirstOrDefault(s => string.Equals(s.Name, targetSheetName, StringComparison.OrdinalIgnoreCase))
-            ?? (string.Equals(targetSheetName, "Default", StringComparison.OrdinalIgnoreCase) ? sheets.FirstOrDefault() : null);
-
-        if (matchedSheet == null)
-        {
-            var foundNames = string.Join(", ", sheets.Select(s => $"'{s.Name}'"));
-            errors.Add(new FileValidationError(
-                targetSheetName,
-                0,
-                "Sheet",
-                $"Required worksheet '{targetSheetName}' was not found in the Excel workbook. Found: [{foundNames}]."));
-            yield break;
-        }
-
-        // Resolve worksheet path
-        string sheetPath = "xl/worksheets/sheet1.xml";
+        XDocument? relsDoc = null;
         var relsEntry = archive.GetEntry("xl/_rels/workbook.xml.rels");
         if (relsEntry != null)
         {
             using var relsStream = relsEntry.Open();
             using var relsReader = XmlReader.Create(relsStream, xmlSettings);
-            var relsDoc = XDocument.Load(relsReader);
+            relsDoc = XDocument.Load(relsReader);
+        }
+
+        var sharedStrings = new List<string>();
+        var sharedStringsEntry = archive.GetEntry("xl/sharedStrings.xml");
+        if (sharedStringsEntry != null)
+        {
+            using var ssStream = sharedStringsEntry.Open();
+            using var ssReader = XmlReader.Create(ssStream, xmlSettings);
+            var ssDoc = XDocument.Load(ssReader);
+            foreach (var si in ssDoc.Descendants(SpreadsheetNs + "si"))
+            {
+                var text = string.Concat(si.Descendants(SpreadsheetNs + "t").Select(t => t.Value));
+                sharedStrings.Add(text);
+            }
+        }
+
+        return (sheets, relsDoc, sharedStrings);
+    }
+
+    private static IEnumerable<(int RowIndex, Dictionary<string, string?> Cells, IReadOnlyList<string> Headers)> ReadExcelSheetRows(
+        ZipArchive archive,
+        ExcelSheetMetadata sheetMeta,
+        XDocument? relsDoc,
+        IReadOnlyList<string> sharedStrings,
+        XmlReaderSettings xmlSettings,
+        string targetSheetName,
+        List<FileValidationError> errors)
+    {
+        string sheetPath = "xl/worksheets/sheet1.xml";
+        if (relsDoc != null)
+        {
             var relTarget = relsDoc.Descendants(PackageRelationshipsNs + "Relationship")
-                .FirstOrDefault(r => r.Attribute("Id")?.Value == matchedSheet.RelId)?
+                .FirstOrDefault(r => r.Attribute("Id")?.Value == sheetMeta.RelId)?
                 .Attribute("Target")?.Value;
 
             if (!string.IsNullOrWhiteSpace(relTarget))
@@ -571,22 +684,6 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             yield break;
         }
 
-        // Load shared strings table
-        var sharedStrings = new List<string>();
-        var sharedStringsEntry = archive.GetEntry("xl/sharedStrings.xml");
-        if (sharedStringsEntry != null)
-        {
-            using var ssStream = sharedStringsEntry.Open();
-            using var ssReader = XmlReader.Create(ssStream, xmlSettings);
-            var ssDoc = XDocument.Load(ssReader);
-            foreach (var si in ssDoc.Descendants(SpreadsheetNs + "si"))
-            {
-                var text = string.Concat(si.Descendants(SpreadsheetNs + "t").Select(t => t.Value));
-                sharedStrings.Add(text);
-            }
-        }
-
-        // Stream rows forward-only via XmlReader
         using var wsStream = sheetEntry.Open();
         using var wsReader = XmlReader.Create(wsStream, xmlSettings);
 
@@ -675,4 +772,11 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         }
         return colIndex - 1;
     }
+
+    private sealed record SheetProcessingPlan(
+        string SheetName,
+        IReadOnlyList<ColumnTemplateConfig> Columns,
+        IReadOnlyList<string> UniqueKeys);
+
+    private sealed record ExcelSheetMetadata(string Name, string RelId);
 }

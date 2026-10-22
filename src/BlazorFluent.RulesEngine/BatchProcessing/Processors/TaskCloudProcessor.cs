@@ -13,8 +13,8 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
 {
     private static readonly string[] SupportedTypes =
     [
-        nameof(ImportFileType.TaskCsv),
-        nameof(ImportFileType.TaskExcel)
+        nameof(ImportFileTypeEnum.TaskCsv),
+        nameof(ImportFileTypeEnum.TaskExcel)
     ];
 
     public override IReadOnlyCollection<string> SupportedFileTypes => SupportedTypes;
@@ -149,12 +149,12 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
     {
         if (string.IsNullOrWhiteSpace(statusRaw))
         {
-            return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.Open);
+            return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open);
         }
 
-        if (Enum.TryParse<BlazorFluent.Shared.DataListTypes.TaskStatus>(statusRaw, ignoreCase: true, out var parsed))
+        if (statusRaw.TryToEnum<BlazorFluent.Shared.DataListTypes.TaskStatusEnum>(out var parsed))
         {
-            return parsed.ToString();
+            return parsed.GetCode();
         }
 
         switch (statusRaw.Replace(" ", "", StringComparison.Ordinal).ToUpperInvariant())
@@ -162,20 +162,20 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
             case "TODO":
             case "NEW":
             case "OPEN":
-                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.Open);
+                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open);
             case "INPROGRESS":
             case "ACTIVE":
-                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.InProgress);
+                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.InProgress);
             case "DONE":
             case "COMPLETED":
             case "CLOSED":
-                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.Closed);
+                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Closed);
             case "PAUSED":
             case "ONHOLD":
-                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.Paused);
+                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Paused);
             case "CANCELLED":
             case "CANCELED":
-                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.Cancelled);
+                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Cancelled);
             default:
                 errors.Add(new FileValidationError(
                     SheetName: sheetName,
@@ -183,7 +183,7 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
                     ColumnName: "Status",
                     ErrorMessage: $"Status '{statusRaw}' is not a recognized task status.",
                     AttemptedValue: statusRaw));
-                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatus.Open);
+                return nameof(BlazorFluent.Shared.DataListTypes.TaskStatusEnum.Open);
         }
     }
 
@@ -191,17 +191,17 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
     {
         if (string.IsNullOrWhiteSpace(priorityRaw))
         {
-            return nameof(TaskPriority.Medium);
+            return nameof(TaskPriorityEnum.Medium);
         }
 
-        if (Enum.TryParse<TaskPriority>(priorityRaw, ignoreCase: true, out var parsed))
+        if (priorityRaw.TryToEnum<TaskPriorityEnum>(out var parsed))
         {
-            return parsed.ToString();
+            return parsed.GetCode();
         }
 
         if (string.Equals(priorityRaw, "Critical", StringComparison.OrdinalIgnoreCase))
         {
-            return nameof(TaskPriority.Urgent);
+            return nameof(TaskPriorityEnum.Urgent);
         }
 
         errors.Add(new FileValidationError(
@@ -210,6 +210,6 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
             ColumnName: "Priority",
             ErrorMessage: $"Priority '{priorityRaw}' is not a valid TaskPriority (Low, Medium, High, Urgent).",
             AttemptedValue: priorityRaw));
-        return nameof(TaskPriority.Medium);
+        return nameof(TaskPriorityEnum.Medium);
     }
 }

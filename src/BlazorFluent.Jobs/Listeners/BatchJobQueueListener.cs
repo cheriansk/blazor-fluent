@@ -6,6 +6,7 @@ using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -70,9 +71,9 @@ public class BatchJobQueueListener : BackgroundService
 
     private async Task ProcessJobEventAsync(IJobEvent jobEvent, CancellationToken stoppingToken)
     {
-        if (string.IsNullOrWhiteSpace(jobEvent.TenantId))
+        if (jobEvent.TenantId == Guid.Empty)
         {
-            _logger.LogError("Zero-Trust Security Violation: Batch job event {EventId} missing required TenantId. Aborting job execution (Fail-Closed).", jobEvent.EventId);
+            _logger.LogCritical("Zero-Trust Security Violation: Batch job event {EventId} missing required TenantId. Aborting job execution (Fail-Closed).", jobEvent.EventId);
             return;
         }
 
@@ -101,31 +102,68 @@ public class BatchJobQueueListener : BackgroundService
 
             tenantContext.Initialize(
                 tenantId: tenantId,
-                tenantName: tenantId,
-                userType: UserType.CompanyUser,
+                tenantName: tenantId.ToString(),
+                userType: UserTypeEnum.CompanyUser,
                 allowedTenants: [],
-                isHost: false);
+                isHost: tenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-            if (currentUser != null)
+            var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);
+
+            // Lookup tenant-scoped system daemon account
+            var daemonUser = await dbContext.TenantUsers
+                .AsNoTracking()
+                .Where(tu => tu.TenantId == tenantId && tu.User.UserKind == UserKindEnum.SystemDaemon && !tu.IsDeleted)
+                .Select(tu => tu.User)
+                .FirstOrDefaultAsync(stoppingToken);
+
+            if (isCron)
             {
-                var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);
-                if (isCron)
+                // Dedicated Per-Tenant Automated Background Processing Kill Switch Check
+                if (daemonUser != null && !daemonUser.IsActive)
                 {
-                    var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
-                        ? jobEvent.SenderUserEmail 
-                        : _jobsOptions.Value.CronServiceAccountEmail;
+                    _logger.LogInformation(
+                        "Tenant '{TenantId}' daemon account ('{DaemonEmail}') is suspended. Gracefully skipping automated batch job '{JobName}'.",
+                        tenantId, daemonUser.Email, jobName);
 
-                    if (string.IsNullOrWhiteSpace(cronEmail))
+                    if (auditService != null)
                     {
-                        throw new InvalidOperationException($"Zero-Trust Security Violation: Job '{jobName}' has no sender email and Jobs:CronServiceAccountEmail is not configured.");
+                        await auditService.LogSecurityEventAsync(
+                            "BatchJobSkippedDaemonSuspended",
+                            AuditSeverityEnum.Information,
+                            $"Automated batch job '{jobName}' skipped because tenant '{tenantId}' daemon account is suspended.",
+                            stoppingToken);
                     }
-
-                    currentUser.SetSystemDaemon($"BatchJob:{jobName}", cronEmail);
+                    return;
                 }
-                else
+
+                if (currentUser != null)
                 {
-                    // User-triggered event: Restore initiating user context
+                    if (daemonUser != null)
+                    {
+                        currentUser.RestoreUserContext(daemonUser.Id.ToString(), daemonUser.Email, daemonUser.FullName, isRootAdmin: false);
+                        currentUser.SetSystemDaemon($"BatchJob:{jobName}", daemonUser.Email);
+                    }
+                    else
+                    {
+                        var cronEmail = !string.IsNullOrWhiteSpace(jobEvent.SenderUserEmail) 
+                            ? jobEvent.SenderUserEmail 
+                            : _jobsOptions.Value.CronServiceAccountEmail;
+
+                        if (string.IsNullOrWhiteSpace(cronEmail))
+                        {
+                            throw new InvalidOperationException($"Zero-Trust Security Violation: Job '{jobName}' has no sender email and Jobs:CronServiceAccountEmail is not configured.");
+                        }
+
+                        currentUser.SetSystemDaemon($"BatchJob:{jobName}", cronEmail);
+                    }
+                }
+            }
+            else
+            {
+                // User-triggered event: Restore initiating user context
+                if (currentUser != null)
+                {
                     var userEmail = jobEvent.SenderUserEmail;
                     if (string.IsNullOrWhiteSpace(userEmail))
                     {
@@ -147,11 +185,11 @@ public class BatchJobQueueListener : BackgroundService
             {
                 Id = Guid.CreateVersion7(),
                 JobName = jobName,
-                TenantId = jobEvent.TenantId,
-                TriggerSource = jobEvent.TriggerSource,
-                CorrelationId = jobEvent.CorrelationId,
+                TenantId = jobEvent.TenantId ,
+                TriggerSource = JobTriggerSourceExtensions.ParseTriggerSource(jobEvent.TriggerSource),
+                CorrelationId = !string.IsNullOrWhiteSpace(jobEvent.CorrelationId) ? jobEvent.CorrelationId : Guid.CreateVersion7().ToString("N")[..12],
                 ParentExecutionId = jobEvent.ParentExecutionId,
-                Status = JobStatus.Running,
+                Status = JobStatusEnum.Running,
                 AttemptCount = 1,
                 MaxRetries = MaxRetries,
                 StartedAt = DateTime.UtcNow
@@ -169,7 +207,7 @@ public class BatchJobQueueListener : BackgroundService
                 _logger.LogWarning("No IBatchJobHandler registered for event type {EventType}. Marking job {EventId} as failed.",
                     eventType.Name, jobEvent.EventId);
 
-                execution.Status = JobStatus.Failed;
+                execution.Status = JobStatusEnum.Failed;
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"No IBatchJobHandler registered for {eventType.Name}.";
                 await dbContext.SaveChangesAsync(stoppingToken);
@@ -196,7 +234,7 @@ public class BatchJobQueueListener : BackgroundService
             if (method == null)
             {
                 _logger.LogError("HandleAsync method not found on handler {HandlerType}.", handlerType.Name);
-                execution.Status = JobStatus.Failed;
+                execution.Status = JobStatusEnum.Failed;
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"HandleAsync not found on {handlerType.Name}.";
                 await dbContext.SaveChangesAsync(stoppingToken);
@@ -225,7 +263,7 @@ public class BatchJobQueueListener : BackgroundService
                     if (attempt > 1)
                     {
                         execution.AttemptCount = attempt;
-                        execution.Status = JobStatus.Retrying;
+                        execution.Status = JobStatusEnum.Retrying;
                         await dbContext.SaveChangesAsync(stoppingToken);
                     }
 
@@ -234,7 +272,7 @@ public class BatchJobQueueListener : BackgroundService
 
                     // Succeeded!
                     stopwatch.Stop();
-                    execution.Status = JobStatus.Succeeded;
+                    execution.Status = JobStatusEnum.Succeeded;
                     execution.CompletedAt = DateTime.UtcNow;
                     execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
                     execution.ErrorMessage = null;
@@ -272,7 +310,7 @@ public class BatchJobQueueListener : BackgroundService
                         jobName, jobEvent.EventId, jobEvent.CorrelationId, attempt, MaxRetries, backoffDelay.TotalMilliseconds);
 
                     execution.AttemptCount = attempt;
-                    execution.Status = JobStatus.Retrying;
+                    execution.Status = JobStatusEnum.Retrying;
                     execution.ErrorMessage = $"Attempt {attempt}/{MaxRetries} failed: {ex.Message}";
                     await dbContext.SaveChangesAsync(stoppingToken);
 
@@ -287,7 +325,7 @@ public class BatchJobQueueListener : BackgroundService
 
             // All attempts exhausted: Flag as Failed
             stopwatch.Stop();
-            execution.Status = JobStatus.Failed;
+            execution.Status = JobStatusEnum.Failed;
             execution.CompletedAt = DateTime.UtcNow;
             execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
             execution.ErrorMessage = lastException?.ToString() ?? "Unknown batch job failure.";
@@ -308,7 +346,7 @@ public class BatchJobQueueListener : BackgroundService
             {
                 await auditService.LogSecurityEventAsync(
                     $"Background batch job '{jobName}' failed after {MaxRetries} attempts",
-                    AuditSeverity.Error,
+                    AuditSeverityEnum.Error,
                     $"JobId: {jobEvent.EventId}, CorrelationId: {jobEvent.CorrelationId}, Error: {lastException?.Message}",
                     stoppingToken);
             }

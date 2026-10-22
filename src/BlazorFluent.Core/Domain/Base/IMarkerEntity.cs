@@ -19,10 +19,19 @@ public interface IAuditableEntity : IMarkerEntity
     DateTime Updated { get; set; }
     string UpdatedBy { get; set; }
 }
+/// <summary>
+/// Exempts an entity from Level 2 before/after property diff logging in audit.AuditRecords.
+/// Applied to AuditRecordEntity and JobExecutionEntity to prevent infinite recursive audit loops.
+/// </summary>
+public interface IAuditExemptEntity : IMarkerEntity { }
 
 /// <summary>
 /// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
 /// AppDbContext enforces at startup that every entity implements either ITenantEntity or IGlobalEntity (fail-closed guard).
+/// <para>
+/// <b>Note:</b> Entities like <c>JobExecutionEntity</c> retain a <c>TenantId</c> column for auditability and service-layer filtering,
+/// while implementing <see cref="IGlobalEntity"/> to allow system-wide daemon execution and centralized platform observability.
+/// </para>
 /// </summary>
 public interface IGlobalEntity : IMarkerEntity { }
 
@@ -33,13 +42,13 @@ public interface IGlobalEntity : IMarkerEntity { }
 /// </summary>
 public interface ITenantEntity : IMarkerEntity
 {
-    string TenantId { get; set; }
+    Guid TenantId { get; set; }
 }
 
 /// <summary>
 /// Scopes an entity to a specific project workspace.
 /// ProjectSecurityInterceptor intercepts write operations (Insert/Update/Delete) on this entity,
-/// validating the user's ProjectRole against required write permissions.
+/// validating the user's ProjectRoleEnum against required write permissions.
 /// </summary>
 public interface IProjectScopedEntity : ITenantEntity
 {
@@ -59,12 +68,28 @@ public interface ISoftDeletableEntity : IMarkerEntity
     string? DeletedBy { get; set; }
 }
 
+/// <summary>
+/// Marks an entity as hard-deletable. When DbContext.Remove() is invoked,
+/// a physical SQL DELETE is generated and executed in the database.
+/// Used for ephemeral staging tables and graph link/edge records.
+/// Mutually exclusive with <see cref="ISoftDeletableEntity"/> and <see cref="IImmutableEntity"/>.
+/// </summary>
+public interface IHardDeletableEntity : IMarkerEntity
+{
+}
 
 /// <summary>
-/// Exempts an entity from Level 2 before/after property diff logging in audit.AuditRecords.
-/// Applied to AuditRecordEntity and JobExecutionEntity to prevent infinite recursive audit loops.
+/// Marks an entity as strictly immutable and append-only (WORM: Write-Once, Read-Many).
+/// Calling DbContext.Remove() or mutating this entity triggers an immediate exception.
+/// Used for forensic audit records, event ledgers, and background job receipts.
+/// Mutually exclusive with <see cref="ISoftDeletableEntity"/> and <see cref="IHardDeletableEntity"/>.
 /// </summary>
-public interface IAuditExemptEntity : IMarkerEntity { }
+public interface IImmutableEntity : IMarkerEntity
+{
+}
+
+
+
 
 /// <summary>
 /// Enforces effective dating (temporal validity) on database records.
@@ -95,9 +120,3 @@ public interface IVersionedEntity : IMarkerEntity
     void SetVersionNumber(int newVersion);
 }
 
-/// <summary>
-/// Explicitly exempts an internal system or infrastructure entity (e.g. AuditRecordEntity, JobExecutionEntity)
-/// from mandatory fail-closed entity validator enforcement.
-/// Non-exempt entities MUST have an IValidator<TEntity> registered in DI or the application will fail at startup.
-/// </summary>
-public interface IValidationExemptEntity : IMarkerEntity { }

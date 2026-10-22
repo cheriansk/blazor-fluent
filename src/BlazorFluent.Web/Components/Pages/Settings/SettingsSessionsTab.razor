@@ -242,7 +242,7 @@
                 query = query.Where(s =>
                     (s.UserEmail != null && s.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     (s.UserId != null && s.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (s.TenantId != null && s.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (s.TenantId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     (s.IpAddress != null && s.IpAddress.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     (s.UserAgent != null && s.UserAgent.Contains(term, StringComparison.OrdinalIgnoreCase)));
             }
@@ -300,7 +300,7 @@
     {
         if (!CurrentUser.IsRootAdmin) return;
 
-        var adminId = CurrentUser.Email ?? CurrentUser.UserId ?? "admin";
+        var adminId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "admin";
         try
         {
             var count = await SessionService.RevokeStaleSessionsAsync(TimeSpan.FromMinutes(30), adminId);
@@ -308,7 +308,7 @@
             {
                 await AuditService.LogSecurityEventAsync(
                     "StaleSessionsRevoked",
-                    AuditSeverity.Warning,
+                    AuditSeverityEnum.Warning,
                     $"Admin '{adminId}' revoked {count} stale session(s) older than 30 minutes.");
 
                 _statusMessage = $"Successfully cleaned up {count} stale session(s).";
@@ -334,13 +334,13 @@
     {
         if (!CurrentUser.IsRootAdmin) return;
 
-        var adminId = CurrentUser.UserId ?? "admin";
+        var adminId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "admin";
         var success = await SessionService.RevokeSessionAsync(sessionId, adminId);
         if (success)
         {
             await AuditService.LogSecurityEventAsync(
                 "SessionRevokedByAdmin",
-                AuditSeverity.Warning,
+                AuditSeverityEnum.Warning,
                 $"Admin '{CurrentUser.Email}' revoked active session '{sessionId}' for user '{userEmail}'.");
 
             _statusMessage = $"Successfully revoked session for '{userEmail}'. Real-time invalidation broadcast.";

@@ -7,18 +7,18 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Not tenant-scoped itself — lives in host/admin context.
 /// Implements IEffectiveDatedEntity for subscription/contract validity.
 /// </summary>
-public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity
+public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity
 {
     /// <summary>Short, URL-safe slug used to resolve tenants (e.g., from subdomain or header). Immutable after creation.</summary>
-    public string Slug { get; set; } = string.Empty;
+    public required string Slug { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     /// <summary>Semicolon-separated domain suffixes for internal staff (up to 5, e.g. "@microsoft.com;@msft.com"). Immutable after creation.</summary>
-    public string InternalEmailDomains { get; set; } = string.Empty;
+    public string? InternalEmailDomains { get; set; }
 
     /// <summary>Semicolon-separated domain suffixes for client/external users (up to 5, e.g. "@salesforce.com"). Immutable after creation.</summary>
-    public string ExternalEmailDomains { get; set; } = string.Empty;
+    public string? ExternalEmailDomains { get; set; }
 
     /// <summary>Backward-compatible helper returning the primary internal domain.</summary>
     public string InternalEmailDomain => GetInternalDomains().FirstOrDefault() ?? string.Empty;
@@ -51,10 +51,10 @@ public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntit
     }
 
     /// <summary>Operational status switch. Setting to false immediately deactivates the tenant. Required.</summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 
     /// <summary>Contract or subscription start date. Required.</summary>
-    public DateTime StartDate { get; set; } = DateTime.UtcNow;
+    public required DateTime StartDate { get; set; }
 
     /// <summary>Contract or subscription end date. Optional.</summary>
     public DateTime? EndDate { get; set; }
@@ -67,4 +67,9 @@ public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntit
 
     /// <summary>Navigation: all user memberships in this tenant.</summary>
     public ICollection<TenantUserEntity> TenantUsers { get; set; } = new List<TenantUserEntity>();
+
+    // --- ISoftDeletableEntity ---
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+    public string? DeletedBy { get; set; }
 }

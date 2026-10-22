@@ -1,9 +1,12 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Core.Dtos.Response;
+using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
-using BlazorFluent.Jobs.Jobs.Catalog;
+using BlazorFluent.Jobs.Jobs.Audit;
+using BlazorFluent.Jobs.Jobs.Tasks;
 using BlazorFluent.Persistence.Context;
+using BlazorFluent.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -42,12 +45,8 @@ public class JobManagerService : IJobManagerService
     {
         var query = _dbContext.JobExecutions.AsNoTracking();
 
-        // Zero Trust: Non-host users can only see background jobs for their active tenant
-        if (!_tenantContext.IsHost)
-        {
-            var activeTenant = _tenantContext.TenantId ?? string.Empty;
-            query = query.Where(j => j.TenantId == activeTenant);
-        }
+        var activeTenant = _tenantContext.TenantId;
+        query = query.Where(j => j.TenantId == activeTenant);
 
         return await query
             .OrderByDescending(j => j.StartedAt)
@@ -60,59 +59,88 @@ public class JobManagerService : IJobManagerService
         if (string.IsNullOrWhiteSpace(jobName))
             return Result.Failure("JobName is required.");
 
-        // Least Privilege: Non-host users can only trigger jobs for their own active tenant
-        var targetTenantId = _tenantContext.IsHost
-            ? tenantId
-            : _tenantContext.TenantId;
-
-        if (!_tenantContext.IsHost && string.IsNullOrWhiteSpace(targetTenantId))
+        // Zero Trust / Least Privilege: Enforce strict tenant isolation
+        if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty)
         {
             return Result.Failure("Cannot trigger job: active tenant context is missing.");
         }
+
+        // Fail-closed: Users can only trigger background jobs for their active tenant
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            Guid requestedId = Guid.Empty;
+            if (!Guid.TryParse(tenantId, out requestedId))
+            {
+                requestedId = await _dbContext.Tenants
+                    .AsNoTracking()
+                    .Where(t => t.Slug == tenantId)
+                    .Select(t => t.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
+            if (requestedId != _tenantContext.TenantId)
+            {
+                _logger.LogWarning("Security Violation: User '{UserId}' in tenant '{ActiveTenant}' attempted to trigger job for foreign tenant '{TargetTenant}'",
+                    _currentUser.UserId, _tenantContext.TenantId, tenantId);
+                return Result.Failure("Access Denied: You cannot trigger background jobs for another tenant.");
+            }
+        }
+
+        Guid targetTenantId = _tenantContext.TenantId;
 
         if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.Email))
         {
             return Result.Failure("Authentication and active user email are required to manually trigger background jobs.");
         }
 
-        _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId ?? "Host");
+        _logger.LogInformation("Manually triggering job {JobName} for tenant {TenantId}", jobName, targetTenantId);
 
         var senderOrigin = $"Button:Run{jobName}";
-        var senderUserId = _currentUser.UserId ?? _currentUser.Email;
+        var senderUserId = _currentUser.UserId;
         var senderUserEmail = _currentUser.Email;
         var correlationId = Guid.CreateVersion7().ToString("N")[..12];
 
         // Map known job names to their respective typed event triggers
-        if (jobName.Equals("CatalogSyncJob", StringComparison.OrdinalIgnoreCase) ||
-            jobName.Equals("CatalogSyncJobEvent", StringComparison.OrdinalIgnoreCase))
+        BaseJobEvent? jobEvent = jobName switch
         {
-            var jobEvent = new CatalogSyncJobEvent(
+            nameof(TaskCadenceAlertJobEvent) or "TaskCadenceAlertJob" => new TaskCadenceAlertJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
                 CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
-                SenderUserEmail: senderUserEmail);
+                SenderUserEmail: senderUserEmail),
 
-            await _queue.EnqueueAsync(jobEvent, cancellationToken);
-        }
-        else
-        {
-            // Generic catalog sync fallback for demo purposes
-            var jobEvent = new CatalogSyncJobEvent(
+            nameof(DailyTaskSummaryJobEvent) or "DailyTaskSummaryJob" => new DailyTaskSummaryJobEvent(
                 TriggerSource: senderOrigin,
                 TenantId: targetTenantId,
                 CorrelationId: correlationId,
                 SenderOrigin: senderOrigin,
                 SenderUserId: senderUserId,
-                SenderUserEmail: senderUserEmail);
+                SenderUserEmail: senderUserEmail),
 
-            await _queue.EnqueueAsync(jobEvent, cancellationToken);
+            nameof(AuditPurgeJobEvent) or "AuditPurgeJob" => new AuditPurgeJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: targetTenantId,
+                CorrelationId: correlationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: senderUserId,
+                SenderUserEmail: senderUserEmail),
+
+            _ => null
+        };
+
+        if (jobEvent is null)
+        {
+            _logger.LogWarning("Cannot trigger unknown job type: '{JobName}'", jobName);
+            return Result.Failure($"Unknown job type: '{jobName}'. Supported jobs are: TaskCadenceAlertJob, DailyTaskSummaryJob, AuditPurgeJob.");
         }
+
+        await _queue.EnqueueAsync(jobEvent, cancellationToken);
 
         await _auditService.LogUserActivityAsync(
             $"Triggered background job '{jobName}' manually",
-            $"TenantId: {tenantId ?? "Host"}",
+            $"TenantId: {targetTenantId}",
             cancellationToken);
 
         return Result.Success();
@@ -128,7 +156,7 @@ public class JobManagerService : IJobManagerService
         }
 
         // Zero Trust: Non-host users can only retry jobs for their active tenant
-        if (!_tenantContext.IsHost && execution.TenantId != (_tenantContext.TenantId ?? string.Empty))
+        if (execution.TenantId != _tenantContext.TenantId)
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to retry job execution {ExecutionId} in tenant '{JobTenant}' outside active tenant '{ActiveTenant}'",
                 _currentUser.UserId, executionId, execution.TenantId, _tenantContext.TenantId);
@@ -144,22 +172,52 @@ public class JobManagerService : IJobManagerService
             execution.JobName, executionId);
 
         var senderOrigin = $"Button:Retry{execution.JobName}";
-        var retryUserId = _currentUser.UserId ?? _currentUser.Email;
+        var retryUserId = _currentUser.UserId;
         var retryUserEmail = _currentUser.Email;
-        var retryEvent = new CatalogSyncJobEvent(
-            TriggerSource: senderOrigin,
-            TenantId: execution.TenantId,
-            CorrelationId: execution.CorrelationId,
-            SenderOrigin: senderOrigin,
-            SenderUserId: retryUserId,
-            SenderUserEmail: retryUserEmail,
-            ParentExecutionId: execution.Id);
+
+        BaseJobEvent? retryEvent = execution.JobName switch
+        {
+            nameof(TaskCadenceAlertJobEvent) or "TaskCadenceAlertJob" => new TaskCadenceAlertJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: execution.TenantId,
+                CorrelationId: execution.CorrelationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: retryUserId,
+                SenderUserEmail: retryUserEmail,
+                ParentExecutionId: execution.Id),
+
+            nameof(DailyTaskSummaryJobEvent) or "DailyTaskSummaryJob" => new DailyTaskSummaryJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: execution.TenantId,
+                CorrelationId: execution.CorrelationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: retryUserId,
+                SenderUserEmail: retryUserEmail,
+                ParentExecutionId: execution.Id),
+
+            nameof(AuditPurgeJobEvent) or "AuditPurgeJob" => new AuditPurgeJobEvent(
+                TriggerSource: senderOrigin,
+                TenantId: execution.TenantId,
+                CorrelationId: execution.CorrelationId,
+                SenderOrigin: senderOrigin,
+                SenderUserId: retryUserId,
+                SenderUserEmail: retryUserEmail,
+                ParentExecutionId: execution.Id),
+
+            _ => null
+        };
+
+        if (retryEvent is null)
+        {
+            _logger.LogWarning("Cannot retry job execution {ExecutionId}: unsupported job name '{JobName}'", executionId, execution.JobName);
+            return Result.Failure($"Cannot retry job: unsupported job name '{execution.JobName}'.");
+        }
 
         await _queue.EnqueueAsync(retryEvent, cancellationToken);
 
         await _auditService.LogUserActivityAsync(
             $"Initiated manual retry for background job '{execution.JobName}'",
-            $"PreviousExecutionId: {executionId}, CorrelationId: {execution.CorrelationId}, TenantId: {execution.TenantId ?? "Host"}",
+            $"PreviousExecutionId: {executionId}, CorrelationId: {execution.CorrelationId}, TenantId: {execution.TenantId}",
             cancellationToken);
 
         return Result.Success();

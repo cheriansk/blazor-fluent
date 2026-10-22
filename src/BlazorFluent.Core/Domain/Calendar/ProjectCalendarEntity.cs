@@ -19,7 +19,13 @@ public class ProjectCalendarEntity : BaseCalendarEntity
     /// </summary>
     public Guid? ProgramId { get; set; }
 
+    /// <summary>
+    /// Optional foreign key to parent program calendar entry for program-to-project gate rollup.
+    /// </summary>
+    public Guid? ParentProgramCalendarId { get; set; }
+
     // --- Navigation Properties ---
     public ProjectEntity? Project { get; set; }
     public ProgramEntity? Program { get; set; }
+    public ProgramCalendarEntity? ParentProgramCalendar { get; set; }
 }

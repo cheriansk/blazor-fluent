@@ -1,7 +1,6 @@
-﻿@using BlazorFluent.Core.Contracts
+@using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @inject IProjectAuthorizationService ProjectAuth
-@inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 
 @if (_isEvaluating)
@@ -17,7 +16,7 @@
 }
 else if (_isAuthorized)
 {
-    @Authorized?.Invoke(_userRole ?? ProjectRole.ReadOnly)
+    @Authorized?.Invoke(_userRole ?? ProjectRoleEnum.ReadOnly)
 }
 else
 {
@@ -29,25 +28,30 @@ else
 
 @code {
     [Parameter] public Guid ProjectId { get; set; }
-    [Parameter] public ProjectRole MinimumRole { get; set; } = ProjectRole.ReadOnly;
-    [Parameter] public RenderFragment<ProjectRole>? Authorized { get; set; }
-    [Parameter] public RenderFragment<ProjectRole?>? NotAuthorized { get; set; }
+    [Parameter] public ProjectRoleEnum MinimumRole { get; set; } = ProjectRoleEnum.ReadOnly;
+    [Parameter] public RenderFragment<ProjectRoleEnum>? Authorized { get; set; }
+    [Parameter] public RenderFragment<ProjectRoleEnum?>? NotAuthorized { get; set; }
     [Parameter] public RenderFragment? LoadingContent { get; set; }
 
     private bool _isEvaluating = true;
     private bool _isAuthorized;
-    private ProjectRole? _userRole;
+    private ProjectRoleEnum? _userRole;
 
     protected override async Task OnParametersSetAsync()
     {
         _isEvaluating = true;
 
-        if (CurrentUser.IsRootAdmin)
+        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user in a customer tenant workspace.
+        // SystemDaemons and Root Tenant contexts have zero access to project workspaces.
+        if (!CurrentUser.IsAuthenticated_RegularTenant_User)
         {
-            _userRole = ProjectRole.Admin;
-            _isAuthorized = true;
+            _userRole = null;
+            _isAuthorized = false;
+            _isEvaluating = false;
+            return;
         }
-        else if (ProjectId == Guid.Empty)
+
+        if (ProjectId == Guid.Empty)
         {
             var authorized = await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumRole);
             _isAuthorized = authorized.Count > 0;

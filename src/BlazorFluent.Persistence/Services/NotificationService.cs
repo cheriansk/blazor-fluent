@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Notifications;
 using BlazorFluent.Core.Dtos;
@@ -85,7 +85,7 @@ public class NotificationService : INotifyService
     /// </para>
     /// <para>
     /// This implementation explicitly copies over the caller's active tenant properties (including TenantId, 
-    /// TenantName, UserType, AllowedTenants, and IsHost). This ensures that EF Core's global query filters 
+    /// TenantName, UserTypeEnum, AllowedTenants, and IsHost). This ensures that EF Core's global query filters 
     /// remain intact and continue to isolate notification data strictly to the correct tenant.
     /// </para>
     /// </remarks>
@@ -97,7 +97,7 @@ public class NotificationService : INotifyService
         scopedUser?.SetSystemDaemon("NotificationService");
 
         var scopedTenant = scope.ServiceProvider.GetService<ITenantContext>();
-        if (scopedTenant != null && !string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        if (scopedTenant != null && _tenantContext.HasActiveTenant)
         {
             scopedTenant.Initialize(
                 _tenantContext.TenantId,
@@ -115,13 +115,13 @@ public class NotificationService : INotifyService
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var tenantId = _tenantContext.TenantId ?? "default";
+        var tenantId = _tenantContext.TenantId;
 
         var notification = new NotificationEntity
         {
             TenantId = tenantId,
             ProjectId = request.ProjectId,
-            UserId = request.Category == NotificationCategory.Personal ? request.UserId : null,
+            UserId = request.Category == NotificationCategoryEnum.Personal ? request.UserId : null,
             Category = request.Category,
             Severity = request.Severity,
             Title = request.Title,
@@ -135,7 +135,7 @@ public class NotificationService : INotifyService
         await db.SaveChangesAsync(ct);
 
         // 1. Teams Dispatch (if requested and configured)
-        if ((request.Channels & NotificationChannels.Teams) != 0)
+        if ((request.Channels & NotificationChannelsEnum.Teams) != 0)
         {
             var webhookUrl = ResolveTeamsWebhook(request.ProjectId);
             if (!string.IsNullOrWhiteSpace(webhookUrl))
@@ -150,7 +150,7 @@ public class NotificationService : INotifyService
         }
 
         // 2. Email Dispatch (if requested and configured)
-        if ((request.Channels & NotificationChannels.Email) != 0)
+        if ((request.Channels & NotificationChannelsEnum.Email) != 0)
         {
             var recipientMailbox = ResolveProjectMailbox(request.ProjectId);
             if (!string.IsNullOrWhiteSpace(recipientMailbox))
@@ -179,8 +179,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -192,13 +192,13 @@ public class NotificationService : INotifyService
             .Where(n => !n.IsDeleted);
 
         // 1. Tenant filtering (all allowed tenants by default, or specific if provided)
-        if (!string.IsNullOrWhiteSpace(filter.TenantId))
+        if (filter.TenantId.HasValue)
         {
-            if (!isHost && !allowedTenants.Contains(filter.TenantId))
+            if (!isHost && !allowedTenants.Contains(filter.TenantId.Value))
             {
                 return [];
             }
-            query = query.Where(n => n.TenantId == filter.TenantId);
+            query = query.Where(n => n.TenantId == filter.TenantId.Value);
         }
         else if (!isHost)
         {
@@ -214,21 +214,21 @@ public class NotificationService : INotifyService
         // 3. Category & Personal Privacy filtering
         var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
-        if (filter.Category == NotificationCategory.Personal)
+        if (filter.Category == NotificationCategoryEnum.Personal)
         {
             if (string.IsNullOrWhiteSpace(currentUserId)) return [];
-            query = query.Where(n => n.Category == NotificationCategory.Personal && n.UserId == currentUserId);
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId);
         }
-        else if (filter.Category == NotificationCategory.Generic)
+        else if (filter.Category == NotificationCategoryEnum.Generic)
         {
-            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Generic && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
         }
         else
         {
             query = query.Where(n =>
-                (n.Category == NotificationCategory.Personal && n.UserId == currentUserId) ||
-                (n.Category == NotificationCategory.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                (n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId) ||
+                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             );
         }
 
@@ -283,8 +283,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -302,7 +302,7 @@ public class NotificationService : INotifyService
         var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
         var genericCount = await baseQuery
-            .Where(n => n.Category == NotificationCategory.Generic
+            .Where(n => n.Category == NotificationCategoryEnum.Generic
                 && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             .CountWithAuditedBypassAsync(auditService, "Counting unread generic notifications across authorized tenants.", ct);
@@ -311,7 +311,7 @@ public class NotificationService : INotifyService
         if (!string.IsNullOrWhiteSpace(currentUserId))
         {
             personalCount = await baseQuery
-                .Where(n => n.Category == NotificationCategory.Personal
+                .Where(n => n.Category == NotificationCategoryEnum.Personal
                     && n.UserId == currentUserId
                     && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
                 .CountWithAuditedBypassAsync(auditService, "Counting unread personal notifications across authorized tenants.", ct);
@@ -331,8 +331,8 @@ public class NotificationService : INotifyService
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -353,7 +353,7 @@ public class NotificationService : INotifyService
         }
 
         // Privacy check: Personal notification can only be read by recipient
-        if (notification.Category == NotificationCategory.Personal && notification.UserId != currentUserId)
+        if (notification.Category == NotificationCategoryEnum.Personal && notification.UserId != currentUserId)
         {
             _logger.LogWarning("Security violation: User '{UserId}' attempted to mark personal notification '{NotificationId}' belonging to '{Owner}' as read.",
                 currentUserId, notificationId, notification.UserId);
@@ -376,15 +376,15 @@ public class NotificationService : INotifyService
         return true;
     }
 
-    public async Task<int> MarkAllAsReadAsync(NotificationCategory? category = null, string? tenantId = null, CancellationToken ct = default)
+    public async Task<int> MarkAllAsReadAsync(NotificationCategoryEnum? category = null, string? tenantId = null, CancellationToken ct = default)
     {
         using var scope = CreateScopedContext();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var currentUserId = _currentUser.UserId;
-        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(_tenantContext.TenantId))
+        var allowedTenants = _tenantContext.AllowedTenants.Select(t => t.Id).ToHashSet();
+        if (_tenantContext.HasActiveTenant)
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
@@ -393,10 +393,10 @@ public class NotificationService : INotifyService
         var query = db.Notifications
             .Where(n => !n.IsDeleted && !n.IsRead);
 
-        if (!string.IsNullOrWhiteSpace(tenantId))
+        if (!string.IsNullOrWhiteSpace(tenantId) && Guid.TryParse(tenantId, out var targetTenantId))
         {
-            if (!isHost && !allowedTenants.Contains(tenantId)) return 0;
-            query = query.Where(n => n.TenantId == tenantId);
+            if (!isHost && !allowedTenants.Contains(targetTenantId)) return 0;
+            query = query.Where(n => n.TenantId == targetTenantId);
         }
         else if (!isHost)
         {
@@ -405,21 +405,21 @@ public class NotificationService : INotifyService
 
         var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
 
-        if (category == NotificationCategory.Personal)
+        if (category == NotificationCategoryEnum.Personal)
         {
             if (string.IsNullOrWhiteSpace(currentUserId)) return 0;
-            query = query.Where(n => n.Category == NotificationCategory.Personal && n.UserId == currentUserId);
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId);
         }
-        else if (category == NotificationCategory.Generic)
+        else if (category == NotificationCategoryEnum.Generic)
         {
-            query = query.Where(n => n.Category == NotificationCategory.Generic && n.UserId == null
+            query = query.Where(n => n.Category == NotificationCategoryEnum.Generic && n.UserId == null
                 && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
         }
         else
         {
             query = query.Where(n =>
-                (n.Category == NotificationCategory.Personal && n.UserId == currentUserId) ||
-                (n.Category == NotificationCategory.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                (n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId) ||
+                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
             );
         }
 
@@ -442,7 +442,7 @@ public class NotificationService : INotifyService
         IAuditService auditService,
         bool isHost,
         string? currentUserId,
-        IReadOnlyCollection<string> allowedTenants,
+        IReadOnlyCollection<Guid> allowedTenants,
         CancellationToken ct = default)
     {
         if (isHost)
@@ -461,14 +461,14 @@ public class NotificationService : INotifyService
 
         var userRoles = await db.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => allowedTenants.Contains(r.TenantId) && r.UserId == currentUserId && !r.IsDeleted)
+            .Where(r => allowedTenants.Contains(r.TenantId) && (r.UserEntityId.ToString() == currentUserId || r.User!.Email == currentUserId) && !r.IsDeleted)
             .ToListWithAuditedBypassAsync(
                 auditService,
                 "Resolving user project memberships across permitted tenant partition.",
                 ct);
 
         return userRoles
-            .Where(r => r.Role.Satisfies(ProjectRole.ReadOnly))
+            .Where(r => r.Role.Satisfies(ProjectRoleEnum.ReadOnly))
             .Select(r => r.ProjectId)
             .Distinct()
             .ToList();

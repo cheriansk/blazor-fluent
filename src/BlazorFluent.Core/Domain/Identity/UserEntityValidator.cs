@@ -20,8 +20,14 @@ public class UserEntityValidator : AbstractValidator<UserEntity>
             .NotEmpty().WithMessage("User full name is required.")
             .MaximumLength(200).WithMessage("User full name cannot exceed 200 characters.");
 
+        RuleFor(x => x.TimeZoneId)
+            .NotEmpty().WithMessage("Time zone ID is required.");
+
+        RuleFor(x => x.StartDate)
+            .NotEmpty().WithMessage("User account access StartDate is required.");
+
         RuleFor(x => x)
-            .Must(x => x.EndDateUtc >= x.StartDateUtc)
-            .WithMessage("User account access EndDateUtc cannot precede StartDateUtc.");
+            .Must(x => !x.EndDate.HasValue || x.EndDate.Value.Date >= x.StartDate.Date)
+            .WithMessage("User account access EndDate cannot precede StartDate.");
     }
 }

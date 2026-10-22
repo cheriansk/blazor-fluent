@@ -90,17 +90,7 @@
                     <FluentDatePicker Label="Start Date" @bind-Value="_programFormStartDate" Style="flex: 1;" />
                     <FluentDatePicker Label="Target Completion Date" @bind-Value="_programFormTargetEndDate" Style="flex: 1;" />
                     <div style="flex: 1;">
-                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
-                        <FluentSelect TOption="string" TValue="string"
-                                      Value="@_programFormStatus.ToString()"
-                                      ValueChanged="@(v => _programFormStatus = Enum.TryParse<ProgramStatus>(v, out var ps) ? ps : ProgramStatus.Active)"
-                                      Style="width: 100%;">
-                            <FluentOption Value="@nameof(ProgramStatus.Planning)">Planning</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.Active)">Active</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.AtRisk)">At Risk</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.OnHold)">On Hold</FluentOption>
-                            <FluentOption Value="@nameof(ProgramStatus.Completed)">Completed</FluentOption>
-                        </FluentSelect>
+                        <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_programFormStatus" Style="width: 100%;" />
                     </div>
                 </FluentStack>
 
@@ -158,26 +148,26 @@
                 <TemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
                     @switch (context.Status)
                     {
-                        case ProgramStatus.Active:
+                        case ProgramStatusEnum.Active:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                             break;
-                        case ProgramStatus.Planning:
+                        case ProgramStatusEnum.Planning:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">Planning</FluentBadge>
                             break;
-                        case ProgramStatus.AtRisk:
+                        case ProgramStatusEnum.AtRisk:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">At Risk</FluentBadge>
                             break;
-                        case ProgramStatus.OnHold:
+                        case ProgramStatusEnum.OnHold:
                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">On Hold</FluentBadge>
                             break;
-                        case ProgramStatus.Completed:
+                        case ProgramStatusEnum.Completed:
                             <FluentBadge Appearance="BadgeAppearance.Tint">Completed</FluentBadge>
                             break;
                     }
                 </TemplateColumn>
-                <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDateUtc))">
+                <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDate))">
                     <span style="font-size: 12px;">
-                        @TimeZoneService.FormatDate(context.StartDateUtc) ~ @TimeZoneService.FormatDate(context.TargetEndDateUtc)
+                        @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
                     </span>
                 </TemplateColumn>
                 <TemplateColumn Title="Projects">
@@ -245,13 +235,13 @@
                                         <div style="margin-top: 6px;">
                                             @switch (_healthSummary.Health)
                                             {
-                                                case ProgramHealthRating.OnTrack:
+                                                case ProgramHealthRatingEnum.OnTrack:
                                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success" Style="font-size: 14px; padding: 4px 10px;">🟢 Healthy (On Track)</FluentBadge>
                                                     break;
-                                                case ProgramHealthRating.AtRisk:
+                                                case ProgramHealthRatingEnum.AtRisk:
                                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Style="font-size: 14px; padding: 4px 10px;">🟡 At Risk</FluentBadge>
                                                     break;
-                                                case ProgramHealthRating.Critical:
+                                                case ProgramHealthRatingEnum.Critical:
                                                     <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger" Style="font-size: 14px; padding: 4px 10px;">🔴 Critical</FluentBadge>
                                                     break;
                                             }
@@ -349,16 +339,7 @@
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
                                         <FluentTextInput Label="Location" @bind-Value="_projLocation" Style="flex: 2;" Placeholder="e.g. Headquarters / Remote" />
                                         <div style="flex: 1;">
-                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
-                                            <FluentSelect TOption="string" TValue="string"
-                                                          Value="@_projStatus.ToString()"
-                                                          ValueChanged="@(val => _projStatus = Enum.TryParse<ProjectStatus>(val, out var res) ? res : ProjectStatus.New)"
-                                                          Style="width: 100%;">
-                                                <FluentOption Value="@nameof(ProjectStatus.New)">New</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatus.Active)">Active</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatus.OnHold)">OnHold</FluentOption>
-                                                <FluentOption Value="@nameof(ProjectStatus.Done)">Done</FluentOption>
-                                            </FluentSelect>
+                                            <DataListSelect TEnum="ProjectStatusEnum" TValue="ProjectStatusEnum" Label="Status" @bind-Value="_projStatus" Style="width: 100%;" />
                                         </div>
                                     </FluentStack>
 
@@ -404,23 +385,23 @@
                                 <TemplateColumn Title="Status">
                                     @switch (context.Status)
                                     {
-                                        case ProjectStatus.Active:
+                                        case ProjectStatusEnum.Active:
                                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</FluentBadge>
                                             break;
-                                        case ProjectStatus.New:
+                                        case ProjectStatusEnum.New:
                                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</FluentBadge>
                                             break;
-                                        case ProjectStatus.OnHold:
+                                        case ProjectStatusEnum.OnHold:
                                             <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</FluentBadge>
                                             break;
-                                        case ProjectStatus.Done:
+                                        case ProjectStatusEnum.Done:
                                             <FluentBadge Appearance="BadgeAppearance.Tint">Done</FluentBadge>
                                             break;
                                     }
                                 </TemplateColumn>
                                 <TemplateColumn Title="Timeline">
                                     <span style="font-size: 12px;">
-                                        @TimeZoneService.FormatDate(context.TentativeStartDate) ~ @TimeZoneService.FormatDate(context.TentativeEndDate)
+                                        @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
                                     </span>
                                 </TemplateColumn>
                                 <TemplateColumn Title="Actions">
@@ -536,11 +517,15 @@
                                 else
                                 {
                                     <FluentDataGrid Items="@_programBlockers.AsQueryable()" ResizableColumns="true">
-                                        <TemplateColumn Title="Dependent Task (Blocked)">
-                                            <strong>@context.SourceTask?.Title</strong>
+                                        <TemplateColumn Title="Dependent Item (Blocked)">
+                                            <strong>@context.Title</strong>
                                         </TemplateColumn>
-                                        <TemplateColumn Title="Prerequisite Task (Blocking)">
-                                            <strong>@context.TargetTask?.Title</strong>
+                                        <TemplateColumn Title="Prerequisite Item (Blocking)">
+                                            <strong>@(context.DependsOnSnapshotTitle ?? "Prerequisite Item")</strong>
+                                            @if (context.IsScheduleConflict)
+                                            {
+                                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Style="margin-left: 6px;">Schedule Conflict</FluentBadge>
+                                            }
                                         </TemplateColumn>
                                         <PropertyColumn Property="@(b => b.Criticality)" Title="Criticality" />
                                         <TemplateColumn Title="Status">
@@ -601,7 +586,7 @@
     private List<RiskEntity> _programRisks = [];
     private List<AssumptionEntity> _programAssumptions = [];
     private List<IssueEntity> _programIssues = [];
-    private List<BlockerDependencyEntity> _programBlockers = [];
+    private List<WorkDependencyEntity> _programBlockers = [];
 
     // Add / Edit Program Form
     private bool _showProgramModal = false;
@@ -611,14 +596,14 @@
     private string _programFormDescription = string.Empty;
     private DateTime? _programFormStartDate;
     private DateTime? _programFormTargetEndDate;
-    private ProgramStatus _programFormStatus = ProgramStatus.Active;
+    private ProgramStatusEnum _programFormStatus = ProgramStatusEnum.Active;
 
     // Add Project Modal under selected program
     private bool _showAddProjectModal = false;
     private string _projName = string.Empty;
     private string _projShortCode = string.Empty;
     private string _projLocation = string.Empty;
-    private ProjectStatus _projStatus = ProjectStatus.New;
+    private ProjectStatusEnum _projStatus = ProjectStatusEnum.New;
     private DateTime? _projStartDate;
     private DateTime? _projEndDate;
     private string _projScopeSummary = string.Empty;
@@ -673,18 +658,18 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != "default")
+                .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
 
-            if (_availableTenants.Count == 0 && !string.IsNullOrWhiteSpace(TenantContext.TenantId))
+            if (_availableTenants.Count == 0 && TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty)
             {
-                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId, TenantContext.TenantName));
+                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId.ToString(), TenantContext.TenantName ?? string.Empty));
             }
         }
 
-        var defaultSlug = !string.IsNullOrWhiteSpace(TenantContext.TenantId) ? TenantContext.TenantId : _availableTenants.FirstOrDefault()?.Id;
+        var defaultSlug = TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty ? TenantContext.TenantId.ToString() : _availableTenants.FirstOrDefault()?.Id;
         if (!string.IsNullOrWhiteSpace(defaultSlug))
         {
             await OnTenantSelectedAsync(defaultSlug);
@@ -716,7 +701,7 @@
         _isLoading = true;
         try
         {
-            var userId = CurrentUser.UserId ?? string.Empty;
+            var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : string.Empty;
             _isTenantAdmin = await HierarchyAuth.IsTenantAdminAsync(_selectedTenantId, userId);
             var accessible = await HierarchyAuth.GetAccessibleProgramIdsAsync(_selectedTenantId, userId);
             _accessibleProgramIds = accessible.ToHashSet();
@@ -779,7 +764,8 @@
         {
             var start = DateTime.UtcNow.Date.AddMonths(-2);
             var end = DateTime.UtcNow.Date.AddMonths(10);
-            _programCalendarItems = await CalendarService.GetProgramCalendarAsync(_selectedTenantId, _selectedProgram.Id, start, end);
+            var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
+            _programCalendarItems = await CalendarService.GetProgramCalendarAsync(tenantGuid, _selectedProgram.Id, start, end);
         }
         catch (Exception ex)
         {
@@ -795,31 +781,30 @@
     private async Task LoadProgramRaidAsync()
     {
         if (_selectedProgram == null || string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
         try
         {
             _programRisks = await DbContext.Risks
                 .AsNoTracking()
-                .Where(r => r.TenantId == _selectedTenantId && r.ProgramId == _selectedProgram.Id && !r.IsDeleted)
+                .Where(r => r.TenantId == tenantGuid && r.ProgramId == _selectedProgram.Id && !r.IsDeleted)
                 .OrderByDescending(r => r.Created)
                 .ToListAsync();
 
             _programAssumptions = await DbContext.Assumptions
                 .AsNoTracking()
-                .Where(a => a.TenantId == _selectedTenantId && a.ProgramId == _selectedProgram.Id && !a.IsDeleted)
+                .Where(a => a.TenantId == tenantGuid && a.ProgramId == _selectedProgram.Id && !a.IsDeleted)
                 .OrderByDescending(a => a.Created)
                 .ToListAsync();
 
             _programIssues = await DbContext.Issues
                 .AsNoTracking()
-                .Where(i => i.TenantId == _selectedTenantId && i.ProgramId == _selectedProgram.Id && !i.IsDeleted)
+                .Where(i => i.TenantId == tenantGuid && i.ProgramId == _selectedProgram.Id && !i.IsDeleted)
                 .OrderByDescending(i => i.Created)
                 .ToListAsync();
 
-            _programBlockers = await DbContext.BlockerDependencies
+            _programBlockers = await DbContext.WorkDependencies
                 .AsNoTracking()
-                .Include(b => b.SourceTask)
-                .Include(b => b.TargetTask)
-                .Where(b => b.TenantId == _selectedTenantId && b.ProgramId == _selectedProgram.Id && !b.IsDeleted)
+                .Where(b => b.TenantId == tenantGuid && b.ProgramId == _selectedProgram.Id && !b.IsDeleted)
                 .OrderByDescending(b => b.Created)
                 .ToListAsync();
         }
@@ -885,7 +870,7 @@
         _programFormDescription = string.Empty;
         _programFormStartDate = DateTime.UtcNow.Date;
         _programFormTargetEndDate = DateTime.UtcNow.Date.AddMonths(12);
-        _programFormStatus = ProgramStatus.Active;
+        _programFormStatus = ProgramStatusEnum.Active;
         _showProgramModal = true;
         UnsavedChanges.RegisterChange("Settings > Programs", "Creating new program");
     }
@@ -896,8 +881,8 @@
         _programFormCode = program.Code;
         _programFormName = program.Name;
         _programFormDescription = program.Description;
-        _programFormStartDate = program.StartDateUtc;
-        _programFormTargetEndDate = program.TargetEndDateUtc;
+        _programFormStartDate = program.StartDate;
+        _programFormTargetEndDate = program.EndDate ?? program.DueDate;
         _programFormStatus = program.Status;
         _showProgramModal = true;
         UnsavedChanges.RegisterChange("Settings > Programs", $"Editing program '{program.Name}'");
@@ -975,7 +960,7 @@
         _projName = string.Empty;
         _projShortCode = string.Empty;
         _projLocation = string.Empty;
-        _projStatus = ProjectStatus.New;
+        _projStatus = ProjectStatusEnum.New;
         _projStartDate = DateTime.UtcNow.Date;
         _projEndDate = DateTime.UtcNow.Date.AddMonths(6);
         _projScopeSummary = string.Empty;

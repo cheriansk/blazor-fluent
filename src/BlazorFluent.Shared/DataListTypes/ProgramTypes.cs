@@ -1,3 +1,4 @@
+using BlazorFluent.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
@@ -5,7 +6,8 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// <summary>
 /// Lifecycle status of an enterprise program.
 /// </summary>
-public enum ProgramStatus
+[LifecycleEnum]
+public enum ProgramStatusEnum
 {
     [Display(Name = "Planning", Description = "Program scope and roadmap being defined")]
     Planning = 1,
@@ -23,10 +25,24 @@ public enum ProgramStatus
     Completed = 5
 }
 
+public static class ProgramStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<ProgramStatusEnum, IReadOnlySet<ProgramStatusEnum>> AllowedTransitions =
+        new Dictionary<ProgramStatusEnum, IReadOnlySet<ProgramStatusEnum>>
+        {
+            [ProgramStatusEnum.Planning] = new HashSet<ProgramStatusEnum> { ProgramStatusEnum.Active, ProgramStatusEnum.OnHold, ProgramStatusEnum.Completed },
+            [ProgramStatusEnum.Active] = new HashSet<ProgramStatusEnum> { ProgramStatusEnum.AtRisk, ProgramStatusEnum.OnHold, ProgramStatusEnum.Completed },
+            [ProgramStatusEnum.AtRisk] = new HashSet<ProgramStatusEnum> { ProgramStatusEnum.Active, ProgramStatusEnum.OnHold, ProgramStatusEnum.Completed },
+            [ProgramStatusEnum.OnHold] = new HashSet<ProgramStatusEnum> { ProgramStatusEnum.Active, ProgramStatusEnum.Completed },
+            [ProgramStatusEnum.Completed] = new HashSet<ProgramStatusEnum> { ProgramStatusEnum.Active }
+        };
+}
+
 /// <summary>
 /// Tenant-level organizational role for a user within a client tenant.
 /// </summary>
-public enum TenantRole
+[ClassificationEnum]
+public enum TenantRoleEnum
 {
     [Display(Name = "Tenant Admin", Description = "Full administrative control over tenant settings, programs, projects, and users")]
     TenantAdmin = 1,
@@ -38,7 +54,8 @@ public enum TenantRole
 /// <summary>
 /// Program-level governance role for a user within a specific program.
 /// </summary>
-public enum ProgramRole
+[ClassificationEnum]
+public enum ProgramRoleEnum
 {
     [Display(Name = "ReadOnly Team", Description = "View-only visibility into program delivery scorecard and member projects")]
     ReadOnly = 10,
@@ -49,36 +66,27 @@ public enum ProgramRole
     [Display(Name = "Lead Team", Description = "Program delivery design, sprint alignment, and release planning")]
     Lead = 30,
 
-    [Display(Name = "ElevatedLead Team", Description = "Cross-project architecture, security review, and risk governance")]
+    [Display(Name = "ElevatedLead Team", Description = "Program architect role: cross-project dependencies, technical governance")]
     ElevatedLead = 40,
 
-    [Display(Name = "PMO Team", Description = "Program Management Office: program financials, contracts, and cross-project dependencies")]
+    [Display(Name = "PMO Team", Description = "Program Management Office: portfolio metrics, schedule governance, milestone tracking")]
     PMO = 50,
 
-    [Display(Name = "Admin Team", Description = "Full governance and administrative control over the program")]
-    Admin = 100,
-
-    // Backward-compatibility aliases
-    ProgramAdmin = Admin,
-    ProgramMember = ReadOnly
+    [Display(Name = "Admin Team", Description = "Full administrative control over program lifecycle, projects, and role assignments")]
+    Admin = 100
 }
 
 public static class ProgramRoleExtensions
 {
-    public static bool CanWrite(this ProgramRole role) =>
-        (int)role >= (int)ProgramRole.Contribute;
-
-    public static bool CanManageAccess(this ProgramRole role) =>
-        (int)role >= (int)ProgramRole.Admin;
-
-    public static bool Satisfies(this ProgramRole role, ProgramRole requiredRole) =>
+    public static bool Satisfies(this ProgramRoleEnum role, ProgramRoleEnum requiredRole) =>
         (int)role >= (int)requiredRole;
 }
 
 /// <summary>
 /// Real-time health rating of a program rolled up from member projects.
 /// </summary>
-public enum ProgramHealthRating
+[ClassificationEnum]
+public enum ProgramHealthRatingEnum
 {
     [Display(Name = "On Track", Description = "Member projects progressing on schedule without critical blockers")]
     OnTrack = 1,
@@ -98,8 +106,8 @@ public class ProgramHealthSummaryDto
     public Guid ProgramId { get; set; }
     public string ProgramName { get; set; } = string.Empty;
     public string ProgramCode { get; set; } = string.Empty;
-    public ProgramStatus Status { get; set; }
-    public ProgramHealthRating Health { get; set; } = ProgramHealthRating.OnTrack;
+    public ProgramStatusEnum Status { get; set; }
+    public ProgramHealthRatingEnum Health { get; set; } = ProgramHealthRatingEnum.OnTrack;
     public int TotalProjects { get; set; }
     public int ActiveProjects { get; set; }
     public int ProjectsAtRisk { get; set; }
@@ -128,7 +136,7 @@ public class CrossProjectDependencyDto
     public Guid TargetTaskId { get; set; }
     public string TargetTaskTitle { get; set; } = string.Empty;
     public string TargetAssigneeEmails { get; set; } = string.Empty;
-    public TaskDependencyType DependencyType { get; set; }
+    public TaskDependencyTypeEnum DependencyType { get; set; }
     public DateTime? ResolveByUtc { get; set; }
     public bool IsResolved { get; set; }
     public bool IsOverdue => !IsResolved && ResolveByUtc.HasValue && ResolveByUtc.Value.Date < DateTime.UtcNow.Date;

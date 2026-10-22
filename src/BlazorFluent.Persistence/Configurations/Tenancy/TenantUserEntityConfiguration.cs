@@ -13,19 +13,10 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
         builder.HasKey(u => u.Id);
 
         builder.Property(u => u.TenantId)
-            .IsRequired()
-            .HasMaxLength(100);
+            .IsRequired();
 
-        builder.Property(u => u.UserId)
-            .IsRequired()
-            .HasMaxLength(150);
-
-        builder.Property(u => u.UserEmail)
-            .IsRequired()
-            .HasMaxLength(255);
-
-        builder.Property(u => u.UserName)
-            .HasMaxLength(200);
+        builder.Property(u => u.UserEntityId)
+            .IsRequired();
 
         builder.Property(u => u.Role)
             .IsRequired()
@@ -34,13 +25,17 @@ public class TenantUserEntityConfiguration : IEntityTypeConfiguration<TenantUser
         builder.Property(u => u.IsActive)
             .IsRequired();
 
+        builder.Property(u => u.RowSignature)
+            .HasMaxLength(128)
+            .IsRequired(false);
+
         builder.HasIndex(u => u.TenantId);
-        builder.HasIndex(u => new { u.TenantId, u.UserId }).IsUnique().HasFilter("\"IsDeleted\" = false");
+        builder.HasIndex(u => new { u.TenantId, u.UserEntityId }).IsUnique().HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(u => new { u.TenantId, u.Role });
 
         builder.HasOne(u => u.Tenant)
             .WithMany(t => t.TenantUsers)
-            .HasForeignKey(u => u.TenantEntityId)
+            .HasForeignKey(u => u.TenantId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(u => u.User)

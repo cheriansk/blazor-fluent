@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
-#region ImportFileType Definitions
+#region ImportFileTypeEnum Definitions
 
-public static class ImportFileTypeDefinitions
+public static class ImportFileTypeEnumDefinitions
 {
     public static class Categories
     {
@@ -39,48 +39,40 @@ public static class ImportFileTypeDefinitions
 /// <summary>
 /// Supported import file formats for data ingestion.
 /// </summary>
-public enum ImportFileType
+[ClassificationEnum]
+public enum ImportFileTypeEnum
 {
     [Display(Name = "Project Tasks (Excel .xlsx)", Description = "Project tasks workbook with Tasks and Comments sheets.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Spreadsheet)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
     TaskExcel = 1,
 
     [Display(Name = "Project Tasks (JSON .json)", Description = "Project tasks JSON structured document.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Hierarchical)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
     TaskJson = 2,
 
     [Display(Name = "Project Tasks (XML .xml)", Description = "Project tasks XML document.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Hierarchical)]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
     TaskXml = 3,
 
     [Display(Name = "Project Tasks (CSV .csv)", Description = "Project tasks comma-delimited plain text file.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Text)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
-    TaskCsv = 4,
-
-    [Display(Name = "Catalog Products (Excel .xlsx)", Description = "Catalog products workbook with Items and Inventory.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Spreadsheet)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Tabular)]
-    ProductExcel = 5,
-
-    [Display(Name = "Catalog Products (JSON .json)", Description = "Catalog products JSON document.")]
-    [DataListCategory(ImportFileTypeDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeDefinitions.Filters.Hierarchical)]
-    ProductJson = 6
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Text)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
+    TaskCsv = 4
 }
 
 #endregion
 
-#region ImportStatus Definitions
+#region ImportStatusEnum Definitions
 
 /// <summary>
 /// Processing lifecycle state of an imported file.
 /// Follows the linear 3-stage pipeline: Uploaded -> Validating -> Staging -> Processing -> Completed.
 /// </summary>
-public enum ImportStatus
+[LifecycleEnum]
+public enum ImportStatusEnum
 {
     [Display(Name = "Uploaded", Description = "Raw file uploaded, encrypted, and stored in blob storage.")]
     Uploaded = 1,
@@ -111,6 +103,24 @@ public enum ImportStatus
 
     [Display(Name = "Processing Failed", Description = "Encountered an error while committing staged records to domain tables.")]
     ProcessingFailed = 10
+}
+
+public static class ImportStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>> AllowedTransitions =
+        new Dictionary<ImportStatusEnum, IReadOnlySet<ImportStatusEnum>>
+        {
+            [ImportStatusEnum.Uploaded] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
+            [ImportStatusEnum.Validating] = new HashSet<ImportStatusEnum> { ImportStatusEnum.ValidationSuccess, ImportStatusEnum.ValidationFailed },
+            [ImportStatusEnum.ValidationSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
+            [ImportStatusEnum.ValidationFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Validating },
+            [ImportStatusEnum.Staging] = new HashSet<ImportStatusEnum> { ImportStatusEnum.StagingSuccess, ImportStatusEnum.StagingFailed },
+            [ImportStatusEnum.StagingSuccess] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
+            [ImportStatusEnum.StagingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Staging },
+            [ImportStatusEnum.Processing] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Completed, ImportStatusEnum.ProcessingFailed },
+            [ImportStatusEnum.ProcessingFailed] = new HashSet<ImportStatusEnum> { ImportStatusEnum.Processing },
+            [ImportStatusEnum.Completed] = new HashSet<ImportStatusEnum>()
+        };
 }
 
 #endregion

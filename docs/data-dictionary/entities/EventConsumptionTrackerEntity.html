@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Events</span> &bull; <b>EventConsumptionTrackerEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">EventConsumptionTrackerEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Events</span>
+<span class="badge badge-tenant">DbSet: EventConsumptionTrackers</span>
+<a class="badge badge-base" href="AuditableEntity.html">Base: AuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-base" title="Exempt from property diff logging">[Audit Exempt]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Persistent ledger record capturing an individual consumer execution receipt: which handler class and method consumed it, when it ran, duration in ms, and diagnostics. Implements for tenancy scoping,  to prevent recursive auditing,</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (0)</div>
+<p style="color:#605e5c;">No declared public properties (inherits all members from base class).</p>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

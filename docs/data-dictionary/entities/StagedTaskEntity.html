@@ -1,0 +1,44 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Imports</span> &bull; <b>StagedTaskEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">StagedTaskEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Imports</span>
+<span class="badge badge-tenant">DbSet: StagedTasks</span>
+<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Intermediate staging entity representing an uncommitted project task parsed from an import file. Isolated per tenant and per project in schema 'staging.StagedTasks'. Validated rows are staged here before final transaction commit into 'tasks.Tasks'.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (6)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">RowIndex </td><td><span class="code-type">int</span></td><td>No</td><td>1-indexed row number within the source file.</td></tr>
+<tr><td class="prop-name">Description </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Parsed task description.</td></tr>
+<tr><td class="prop-name">DueDate </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>Parsed due date deadline.</td></tr>
+<tr><td class="prop-name">AssigneeEmails </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Semicolon-delimited list of assignee emails.</td></tr>
+<tr><td class="prop-name">Labels </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Comma-delimited list of task labels.</td></tr>
+<tr><td class="prop-name">ErrorMessage </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Specific cell or row error description if row failed validation.</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

@@ -23,7 +23,7 @@ public interface IWorkflowService
     /// Sets Step 1 to Active and assigns initial active ownership to Step 1's owner,
     /// while the designated Workflow Owner remains constant.
     /// </summary>
-    Task<WorkflowTaskEntity> CreateWorkflowAsync(CreateWorkflowReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> CreateWorkflowAsync(CreateWorkflowReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Completes the currently active step and advances the workflow to the subsequent step.
@@ -31,13 +31,13 @@ public interface IWorkflowService
     /// the constant Workflow Owner, or a Tenant/Root Admin.
     /// Fired notifications: Next step owner (Action Required alert), Workflow Owner and Watchers (Progress milestone alert).
     /// </summary>
-    Task<WorkflowTaskEntity> CompleteStepAsync(CompleteWorkflowStepReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> CompleteStepAsync(CompleteWorkflowStepReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Reassigns an active or pending step to a new designated step owner with mandatory audit logging.
     /// Zero Trust gate: Caller must be the current StepOwner, the constant Workflow Owner, or an Admin.
     /// </summary>
-    Task<WorkflowTaskEntity> ReassignStepAsync(ReassignWorkflowStepReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> ReassignStepAsync(ReassignWorkflowStepReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Delegates a child subtask under a workflow step to an individual team member.
@@ -55,42 +55,42 @@ public interface IWorkflowService
     /// Retrieves workflows filtered by scope (Tenant, Program, Project), status, and search query.
     /// Includes ordered steps and each step's delegated subtasks.
     /// </summary>
-    Task<IReadOnlyList<WorkflowTaskEntity>> GetWorkflowsAsync(WorkflowFilterDto filter, CancellationToken ct = default);
+    Task<IReadOnlyList<WorkflowEntity>> GetWorkflowsAsync(WorkflowFilterDto filter, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves all workflows associated with a given project, including ordered child steps and subtasks.
     /// </summary>
-    Task<IReadOnlyList<WorkflowTaskEntity>> GetProjectWorkflowsAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<WorkflowEntity>> GetProjectWorkflowsAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a single workflow by ID, including its ordered child steps and subtasks.
     /// </summary>
-    Task<WorkflowTaskEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default);
+    Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default);
 
     /// <summary>
     /// Updates workflow metadata (title, description, owner, due date, priority, watchers).
     /// Zero Trust gate: Caller must be the designated Admin for the workflow scope (Tenant, Program, Project).
     /// </summary>
-    Task<WorkflowTaskEntity> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Cancels a step within a workflow with a mandatory reason. Soft cancellation (not deleted).
     /// If the step was active, workflow transitions to Paused status for Admin review.
     /// Zero Trust gate: Caller must be the designated Admin for the workflow scope.
     /// </summary>
-    Task<WorkflowTaskEntity> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Resumes a paused workflow following step cancellation, activating the next sequential step or specified step.
     /// Zero Trust gate: Caller must be the designated Admin for the workflow scope.
     /// </summary>
-    Task<WorkflowTaskEntity> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Appends or inserts a task (existing or newly authored) into an in-flight workflow sequence.
     /// Zero Trust gate: Caller must be the designated Admin for the workflow scope.
     /// </summary>
-    Task<WorkflowTaskEntity> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default);
+    Task<WorkflowEntity> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves eligible existing tasks that match the specified scope and can be attached to a workflow.
@@ -101,5 +101,5 @@ public interface IWorkflowService
     /// <summary>
     /// Evaluates whether the current caller is authorized to design, edit, or cancel workflows at the given scope.
     /// </summary>
-    Task<bool> CanUserManageWorkflowAsync(TaskLevel level, Guid? programId, Guid? projectId, CancellationToken ct = default);
+    Task<bool> CanUserManageWorkflowAsync(TaskLevelEnum level, Guid? programId, Guid? projectId, CancellationToken ct = default);
 }

@@ -1,0 +1,43 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Identity</span> &bull; <b>ImpersonationGrantEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">ImpersonationGrantEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Identity</span>
+<span class="badge badge-tenant">DbSet: ImpersonationGrants</span>
+<a class="badge badge-base" href="AuditableEntity.html">Base: AuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-global" title="Host-wide entity; bypasses tenant query filter">[Global Scope]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Time-bound grant allowing a SuperAdmin/Host Operator to temporarily impersonate a target user for troubleshooting and permission verification. Implements so it exists across all tenants.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (5)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">IsRevoked </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">RevokedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">IsDeleted </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

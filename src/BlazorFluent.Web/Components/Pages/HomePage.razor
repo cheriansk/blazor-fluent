@@ -1,4 +1,4 @@
-@page "/"
+﻿@page "/"
 @attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Components.Common
@@ -7,7 +7,6 @@
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Persistence.Context
 @using BlazorFluent.Shared.DataListTypes
-@using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @using BlazorFluent.UI.Material.Components
@@ -396,7 +395,7 @@
             if (tasks.Count > 0)
             {
                 _totalTasksCount = tasks.Count;
-                _completedTasksCount = tasks.Count(t => t.Status == TaskStatus.Closed);
+                _completedTasksCount = tasks.Count(t => t.Status == TaskStatusEnum.Closed);
                 var rate = _totalTasksCount > 0 ? (double)_completedTasksCount / _totalTasksCount * 100 : 100;
                 _completionRateText = $"{rate:0.#}%";
 
@@ -404,12 +403,12 @@
                 {
                     Key = $"TSK-{t.Id.ToString()[..4].ToUpper()}",
                     Title = t.Title,
-                    Column = t.Status == TaskStatus.Closed ? "Done" : (t.Status == TaskStatus.InProgress ? "InProgress" : "ToDo"),
+                    Column = t.Status == TaskStatusEnum.Closed ? "Done" : (t.Status == TaskStatusEnum.InProgress ? "InProgress" : "ToDo"),
                     PriorityText = t.Priority.ToString(),
                     PriorityVariant = t.Priority switch
                     {
-                        TaskPriority.Urgent => MaterialStatusChip.ChipVariant.Error,
-                        TaskPriority.High => MaterialStatusChip.ChipVariant.Warning,
+                        TaskPriorityEnum.Urgent => MaterialStatusChip.ChipVariant.Error,
+                        TaskPriorityEnum.High => MaterialStatusChip.ChipVariant.Warning,
                         _ => MaterialStatusChip.ChipVariant.Neutral
                     },
                     Assignee = "Engineering Team"
@@ -441,8 +440,8 @@
                     BadgeText = a.Severity.ToString(),
                     BadgeVariant = a.Severity switch
                     {
-                        AuditSeverity.Critical => MaterialStatusChip.ChipVariant.Error,
-                        AuditSeverity.Warning => MaterialStatusChip.ChipVariant.Warning,
+                        AuditSeverityEnum.Critical => MaterialStatusChip.ChipVariant.Error,
+                        AuditSeverityEnum.Warning => MaterialStatusChip.ChipVariant.Warning,
                         _ => MaterialStatusChip.ChipVariant.Info
                     },
                     Icon = new Icons.Regular.Size20.CheckmarkCircle(),

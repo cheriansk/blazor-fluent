@@ -11,8 +11,11 @@ public static class EffectiveDatedExtensions
     /// Checks if the entity is active at a specified UTC point in time.
     /// Returns true if StartDate &lt;= asOfUtc AND (EndDate is null OR EndDate &gt;= asOfUtc).
     /// </summary>
-    public static bool IsActiveAt(this IEffectiveDatedEntity entity, DateTime asOfUtc) =>
-        entity.StartDate <= asOfUtc && (entity.EndDate == null || entity.EndDate >= asOfUtc);
+    public static bool IsActiveAt(this IEffectiveDatedEntity entity, DateTime asOfUtc)
+    {
+        var targetDate = asOfUtc.Date;
+        return entity.StartDate.Date <= targetDate && (entity.EndDate == null || entity.EndDate.Value.Date >= targetDate);
+    }
 
     /// <summary>
     /// Checks if the entity is currently active at DateTime.UtcNow.
@@ -27,7 +30,8 @@ public static class EffectiveDatedExtensions
     public static IQueryable<T> WhereActive<T>(this IQueryable<T> query, DateTime? asOfUtc = null)
         where T : class, IEffectiveDatedEntity
     {
-        var target = asOfUtc ?? DateTime.UtcNow;
-        return query.Where(e => e.StartDate <= target && (e.EndDate == null || e.EndDate >= target));
+        var targetDate = (asOfUtc ?? DateTime.UtcNow).Date;
+        var nextDay = targetDate.AddDays(1);
+        return query.Where(e => e.StartDate < nextDay && (e.EndDate == null || e.EndDate >= targetDate));
     }
 }

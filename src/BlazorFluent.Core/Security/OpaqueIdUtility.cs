@@ -24,7 +24,7 @@ public static class OpaqueIdUtility
     /// </summary>
     public static string GenerateTenantRefId()
     {
-        return $"tnt_{Guid.CreateVersion7().ToString("N")[..12]}";
+        return $"tnt_{RandomNumberGenerator.GetHexString(12).ToLowerInvariant()}";
     }
 
     /// <summary>

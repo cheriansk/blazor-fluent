@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Security.Cryptography;
 using BlazorFluent.RulesEngine.Analytics;
 using BlazorFluent.RulesEngine.BatchProcessing;
@@ -54,7 +54,7 @@ public static class ProcessEndpoints
 
                 FileConvertRespDto resp;
 
-                if (req.FileType == ImportFileType.TaskExcel)
+                if (req.FileType == ImportFileTypeEnum.TaskExcel)
                 {
                     var result = OpenXmlTabularParser.Parse(req.FileBytes, "Tasks", ["Title", "Status"]);
                     resp = new FileConvertRespDto(
@@ -289,7 +289,7 @@ public static class ProcessEndpoints
         })
         .WithName("EvaluateWorkflowTransition")
         .WithSummary("Evaluate state transition validity against state machine rules")
-        .RequireClearance(ProjectRole.Lead);
+        .RequireClearance(ProjectRoleEnum.Lead);
 
         // 6. Enterprise Calendar Schedule Endpoint
         group.MapPost("/calendar/schedule", (

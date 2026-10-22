@@ -10,14 +10,9 @@ namespace BlazorFluent.Core.Domain.Calendar;
 public class UserCalendarEntity : BaseCalendarEntity
 {
     /// <summary>
-    /// User identifier owning this personal calendar entry.
+    /// Foreign key identifier of the UserEntity owning this personal calendar entry.
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Optional foreign key to UserEntity.
-    /// </summary>
-    public Guid? UserEntityId { get; set; }
+    public Guid UserId { get; set; }
 
     // --- Navigation Property ---
     public UserEntity? User { get; set; }

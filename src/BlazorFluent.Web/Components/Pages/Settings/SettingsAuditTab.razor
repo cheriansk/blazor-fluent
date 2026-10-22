@@ -1,4 +1,4 @@
-﻿
+
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.Contracts.Common
 @using BlazorFluent.Core.Dtos.Response
@@ -10,6 +10,7 @@
 @inject IAuditService AuditService
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
+@inject IRootAdminService RootAdmin
 @inject AppDbContext DbContext
 @inject IUserTimeZoneService TimeZoneService
 @implements IDisposable
@@ -153,11 +154,11 @@
                 <FluentBadge>@context.EventType</FluentBadge>
             </TemplateColumn>
             <TemplateColumn Title="Severity" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Severity))">
-                @if (context.Severity == AuditSeverity.Critical || context.Severity == AuditSeverity.Error)
+                @if (context.Severity == AuditSeverityEnum.Critical || context.Severity == AuditSeverityEnum.Error)
                 {
                     <FluentBadge Color="BadgeColor.Severe">@context.Severity</FluentBadge>
                 }
-                else if (context.Severity == AuditSeverity.Warning)
+                else if (context.Severity == AuditSeverityEnum.Warning)
                 {
                     <FluentBadge Color="BadgeColor.Warning">@context.Severity</FluentBadge>
                 }
@@ -223,7 +224,7 @@
                 var term = _inGridSearchText.Trim();
                 query = query.Where(a =>
                     (a.Description != null && a.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (a.TenantId != null && a.TenantId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    a.TenantId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     (a.UserId != null && a.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     (a.UserEmail != null && a.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     a.EventType.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -251,7 +252,7 @@
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(
                     t.Slug,
-                    t.Slug == IRootAdminService.DefaultTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
+                    t.Slug == RootAdmin.RootTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
                 .ToListAsync();
 
             _availableTenants = dbTenants;
@@ -259,9 +260,9 @@
         else
         {
             _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive && t.Id != IRootAdminService.DefaultTenantSlug)
+                .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id, t.Name))
+                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
                 .ToList();
         }
 
@@ -287,12 +288,25 @@
 
             if (!string.IsNullOrWhiteSpace(_selectedTenantId))
             {
-                userQuery = userQuery.Where(u => u.DefaultTenantId == _selectedTenantId);
+                var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
+                var tenantUserIds = await DbContext.TenantUsers
+                    .AsNoTracking()
+                    .Where(tu => tu.TenantId == tenantGuid && !tu.IsDeleted)
+                    .Select(tu => tu.UserEntityId)
+                    .ToListAsync();
+
+                userQuery = userQuery.Where(u => tenantUserIds.Contains(u.Id));
             }
             else if (!CurrentUser.IsRootAdmin)
             {
-                var allowedSlugs = TenantContext.AllowedTenants.Select(t => t.Id).ToList();
-                userQuery = userQuery.Where(u => allowedSlugs.Contains(u.DefaultTenantId));
+                var allowedGuids = TenantContext.AllowedTenants.Select(t => t.Id).ToList();
+                var tenantUserIds = await DbContext.TenantUsers
+                    .AsNoTracking()
+                    .Where(tu => allowedGuids.Contains(tu.TenantId) && !tu.IsDeleted)
+                    .Select(tu => tu.UserEntityId)
+                    .ToListAsync();
+
+                userQuery = userQuery.Where(u => tenantUserIds.Contains(u.Id));
             }
 
             var dbUsers = await userQuery
@@ -335,7 +349,7 @@
         {
             if (!CurrentUser.IsRootAdmin && string.IsNullOrWhiteSpace(_filter.TenantId))
             {
-                _filter.AllowedTenantIds = TenantContext.AllowedTenants.Select(t => t.Id).ToList();
+                _filter.AllowedTenantIds = TenantContext.AllowedTenants.Select(t => t.Id.ToString()).ToList();
             }
             else
             {
@@ -355,10 +369,10 @@
         _selectedEventType = val;
         _filter.EventType = val switch
         {
-            "EntityChange" => AuditEventType.EntityChange,
-            "Security" => AuditEventType.Security,
-            "TenantSwitch" => AuditEventType.TenantSwitch,
-            "UserActivity" => AuditEventType.UserActivity,
+            "EntityChange" => AuditEventTypeEnum.EntityChange,
+            "Security" => AuditEventTypeEnum.Security,
+            "TenantSwitch" => AuditEventTypeEnum.TenantSwitch,
+            "UserActivity" => AuditEventTypeEnum.UserActivity,
             _ => null
         };
     }
@@ -368,10 +382,10 @@
         _selectedSeverity = val;
         _filter.Severity = val switch
         {
-            "Information" => AuditSeverity.Information,
-            "Warning" => AuditSeverity.Warning,
-            "Error" => AuditSeverity.Error,
-            "Critical" => AuditSeverity.Critical,
+            "Information" => AuditSeverityEnum.Information,
+            "Warning" => AuditSeverityEnum.Warning,
+            "Error" => AuditSeverityEnum.Error,
+            "Critical" => AuditSeverityEnum.Critical,
             _ => null
         };
     }

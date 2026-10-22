@@ -13,21 +13,21 @@ public interface ICalendarService
 {
     // --- Unified Rollup Streams ---
     Task<IReadOnlyList<CalendarItemDto>> GetProgramCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         Guid programId,
         DateTime startUtc,
         DateTime endUtc,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<CalendarItemDto>> GetProjectCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         Guid projectId,
         DateTime startUtc,
         DateTime endUtc,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<CalendarItemDto>> GetUserCalendarAsync(
-        string tenantId,
+        Guid tenantId,
         string userId,
         DateTime startUtc,
         DateTime endUtc,
@@ -38,5 +38,5 @@ public interface ICalendarService
     Task<Result<ProjectCalendarEntity>> CreateProjectCalendarEntryAsync(ProjectCalendarEntity entry, CancellationToken ct = default);
     Task<Result<UserCalendarEntity>> CreateUserCalendarEntryAsync(UserCalendarEntity entry, CancellationToken ct = default);
 
-    Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevel level, CancellationToken ct = default);
+    Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevelEnum level, CancellationToken ct = default);
 }

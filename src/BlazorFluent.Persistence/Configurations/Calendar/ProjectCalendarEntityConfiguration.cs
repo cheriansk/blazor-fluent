@@ -14,13 +14,15 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(c => c.ProjectId)
             .IsRequired();
 
         builder.Property(c => c.ProgramId)
+            .IsRequired(false);
+
+        builder.Property(c => c.ParentProgramCalendarId)
             .IsRequired(false);
 
         builder.Property(c => c.Title)
@@ -32,18 +34,11 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(c => c.StartUtc)
+        builder.Property(c => c.StartDate)
             .IsRequired();
 
-        builder.Property(c => c.EndUtc)
-            .IsRequired();
-
-        builder.Ignore(c => c.StartDate);
-        builder.Ignore(c => c.EndDate);
-
-        builder.Property(c => c.IsAllDay)
-            .IsRequired()
-            .HasDefaultValue(false);
+        builder.Property(c => c.EndDate)
+            .IsRequired(false);
 
         builder.Property(c => c.EntryType)
             .IsRequired()
@@ -52,20 +47,6 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.Property(c => c.Status)
             .IsRequired()
             .HasConversion<int>();
-
-        builder.Property(c => c.OrganizerEmail)
-            .HasMaxLength(256)
-            .IsRequired()
-            .HasDefaultValue(string.Empty);
-
-        builder.Property(c => c.ParticipantEmails)
-            .HasMaxLength(2000)
-            .IsRequired(false)
-            .HasDefaultValue(string.Empty);
-
-        builder.Property(c => c.LocationOrMeetingUrl)
-            .HasMaxLength(2000)
-            .IsRequired(false);
 
         builder.Property(c => c.AssociatedTaskId)
             .IsRequired(false);
@@ -93,6 +74,11 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
             .HasForeignKey(c => c.ProgramId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(c => c.ParentProgramCalendar)
+            .WithMany()
+            .HasForeignKey(c => c.ParentProgramCalendarId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Indexes
         builder.HasIndex(c => c.TenantId)
             .HasDatabaseName("IX_ProjectCalendars_TenantId");
@@ -100,7 +86,7 @@ public class ProjectCalendarEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.HasIndex(c => new { c.TenantId, c.ProjectId })
             .HasDatabaseName("IX_ProjectCalendars_Tenant_Project");
 
-        builder.HasIndex(c => new { c.ProjectId, c.StartUtc, c.EndUtc })
+        builder.HasIndex(c => new { c.ProjectId, c.StartDate, c.EndDate })
             .HasDatabaseName("IX_ProjectCalendars_Project_Start_End");
     }
 }

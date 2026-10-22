@@ -1,7 +1,6 @@
 using System.Reflection;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Domain.Auditing;
-using BlazorFluent.Core.Domain.Catalog;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Events;
 using BlazorFluent.Core.Domain.Identity;
@@ -16,6 +15,7 @@ using BlazorFluent.Persistence.Interceptors;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using BlazorFluent.Core.Filters;
 
 namespace BlazorFluent.Persistence.Context;
@@ -58,7 +58,6 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public ICurrentUser CurrentUser => _currentUser;
     public IServiceProvider? ServiceProvider => _serviceProvider;
 
-    public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<TenantEntity> Tenants => Set<TenantEntity>();
     public DbSet<ProgramEntity> Programs => Set<ProgramEntity>();
     public DbSet<ProgramUserRoleEntity> ProgramUserRoles => Set<ProgramUserRoleEntity>();
@@ -77,24 +76,18 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<RiskEntity> Risks => Set<RiskEntity>();
     public DbSet<AssumptionEntity> Assumptions => Set<AssumptionEntity>();
     public DbSet<IssueEntity> Issues => Set<IssueEntity>();
-    public DbSet<BlockerDependencyEntity> BlockerDependencies => Set<BlockerDependencyEntity>();
-    public DbSet<TaskLinkEntity> TaskLinks => Set<TaskLinkEntity>();
-    public DbSet<WorkItemCommentEntity> WorkItemComments => Set<WorkItemCommentEntity>();
+    public DbSet<WorkDependencyEntity> WorkDependencies => Set<WorkDependencyEntity>();
     public DbSet<ProgramCalendarEntity> ProgramCalendars => Set<ProgramCalendarEntity>();
     public DbSet<ProjectCalendarEntity> ProjectCalendars => Set<ProjectCalendarEntity>();
     public DbSet<UserCalendarEntity> UserCalendars => Set<UserCalendarEntity>();
     public DbSet<UserTaskCommentEntity> TaskComments => Set<UserTaskCommentEntity>();
-    public DbSet<ProjectMilestoneEntity> Milestones => Set<ProjectMilestoneEntity>();
-    public DbSet<MilestoneDependencyEntity> MilestoneDependencies => Set<MilestoneDependencyEntity>();
-    public DbSet<TaskDependencyEntity> TaskDependencies => Set<TaskDependencyEntity>();
     public DbSet<KnowledgeArticleEntity> KnowledgeArticles => Set<KnowledgeArticleEntity>();
-    public DbSet<WorkflowTaskEntity> WorkflowTasks => Set<WorkflowTaskEntity>();
-    public DbSet<WorkflowStepEntity> WorkflowSteps => Set<WorkflowStepEntity>();
+    public DbSet<WorkflowEntity> Workflows => Set<WorkflowEntity>();
     public DbSet<KnowledgeArticleReviewerEntity> ArticleReviewers => Set<KnowledgeArticleReviewerEntity>();
     public DbSet<EventPublishTrackerEntity> EventPublishTrackers => Set<EventPublishTrackerEntity>();
     public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();
     public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
-    public DbSet<StagedTaskEntity> StagedTasks => Set<StagedTaskEntity>();
+
     public DbSet<StagedImportEntity> StagedImports => Set<StagedImportEntity>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -131,7 +124,26 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
             var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
             var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
             var isSoftDeletable = typeof(ISoftDeletableEntity).IsAssignableFrom(clrType);
+            var isHardDeletable = typeof(IHardDeletableEntity).IsAssignableFrom(clrType);
+            var isImmutable = typeof(IImmutableEntity).IsAssignableFrom(clrType);
             var isProjectScoped = typeof(IProjectScopedEntity).IsAssignableFrom(clrType);
+
+            // Fail-closed Deletion Lifecycle Rule: every entity must implement exactly ONE deletion marker
+            var markerCount = (isSoftDeletable ? 1 : 0) + (isHardDeletable ? 1 : 0) + (isImmutable ? 1 : 0);
+            if (markerCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates the deletion lifecycle architecture! " +
+                    $"It must implement exactly one deletion marker interface: " +
+                    $"'{nameof(ISoftDeletableEntity)}', '{nameof(IHardDeletableEntity)}', or '{nameof(IImmutableEntity)}'.");
+            }
+            if (markerCount > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates the deletion lifecycle architecture! " +
+                    $"It implements multiple conflicting deletion markers. " +
+                    $"An entity must implement at most ONE of '{nameof(ISoftDeletableEntity)}', '{nameof(IHardDeletableEntity)}', or '{nameof(IImmutableEntity)}'.");
+            }
 
             // Fail-closed Global Whitelist Guard: Only approved platform tables may omit TenantId
             if (isGlobal && !WhitelistedGlobalEntities.Contains(clrType))
@@ -158,18 +170,16 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                     $"All project-level tables must be strictly partitioned by both TenantId and ProjectId.");
             }
 
-            // Fail-closed Validation Rule: every business entity must have a registered IValidator<TEntity>
-            // unless explicitly tagged with IValidationExemptEntity (e.g. AuditRecordEntity, JobExecutionEntity).
-            var isValidationExempt = typeof(IValidationExemptEntity).IsAssignableFrom(clrType);
-            if (!isValidationExempt && _serviceProvider is not null)
+            // Fail-closed Validation Rule: every entity must have a registered IValidator<TEntity>
+            if (_serviceProvider is not null)
             {
                 var validatorType = typeof(IValidator<>).MakeGenericType(clrType);
                 if (_serviceProvider.GetService(validatorType) is null)
                 {
                     throw new InvalidOperationException(
                         $"Entity '{clrType.Name}' violates the mandatory entity validation architecture! " +
-                        $"It does not implement '{nameof(IValidationExemptEntity)}' and lacks a registered 'IValidator<{clrType.Name}>' in DI. " +
-                        $"Every business entity must have a companion validator class or explicitly implement '{nameof(IValidationExemptEntity)}'.");
+                        $"It lacks a registered 'IValidator<{clrType.Name}>' in DI. " +
+                        $"Every business entity must have a companion validator class.");
                 }
             }
 
@@ -247,6 +257,23 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                         .IsRequired(false);
                 });
             }
+
+            // 4. Hard Immutability Barrier: Level, TenantId, ProgramId, ProjectId cannot be mutated once created
+            if (isTenant)
+            {
+                entityType.FindProperty(nameof(ITenantEntity.TenantId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+            }
+
+            if (typeof(BaseTaskEntity).IsAssignableFrom(clrType))
+            {
+                entityType.FindProperty(nameof(BaseTaskEntity.Level))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(BaseTaskEntity.ProgramId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(BaseTaskEntity.ProjectId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+            }
         }
     }
 
@@ -256,12 +283,12 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
         if (typeof(TEntity) == typeof(KnowledgeArticleEntity))
         {
             modelBuilder.Entity<KnowledgeArticleEntity>()
-                .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.IsGlobal || e.TenantId == _tenantContext.TenantId);
+                .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.HasActiveTenant && (e.IsGlobal || e.TenantId == _tenantContext.TenantId));
             return;
         }
 
         modelBuilder.Entity<TEntity>()
-            .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.IsHost || e.TenantId == _tenantContext.TenantId);
+            .HasQueryFilter(QueryFilters.Tenant, e => _tenantContext.HasActiveTenant && e.TenantId == _tenantContext.TenantId);
     }
 
     private void ConfigureNamedSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder)

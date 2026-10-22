@@ -1,4 +1,4 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Persistence.Context;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -71,9 +71,14 @@ public class TenantDbConnectionInterceptor : DbConnectionInterceptor
 
     private static void ConfigureCommand(DbCommand command, ITenantContext? tenantContext)
     {
-        var isHost = tenantContext?.IsHost == true ? "true" : "false";
-        // Fail-closed: unauthenticated / empty tenant defaults to empty string so RLS matches 0 rows
-        var tenantId = tenantContext?.IsHost == true ? string.Empty : (tenantContext?.TenantId ?? string.Empty);
+        if (tenantContext == null || !tenantContext.HasActiveTenant)
+        {
+            throw new System.Security.SecurityException(
+                "Zero-Trust Security Violation: PostgreSQL connection cannot be opened without an active tenant context.");
+        }
+
+        var isHost = tenantContext.IsRootTenant ? "true" : "false";
+        var tenantId = tenantContext.TenantId.ToString();
 
         command.CommandText = "SELECT set_config('app.is_host', @is_host, false), set_config('app.current_tenant_id', @current_tenant_id, false);";
 

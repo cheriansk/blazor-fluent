@@ -1,0 +1,50 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Imports</span> &bull; <b>ImportFileEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">ImportFileEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Imports</span>
+<span class="badge badge-tenant">DbSet: ImportFiles</span>
+<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Represents a raw uploaded file metadata record, strictly isolated per-tenant and per-project. Tracks the encrypted blob reference in Azure Blob Storage, processing lifecycle, row metrics, and forensic hash.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (11)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td>ID of the project workspace to which this file import belongs. Intercepted by ProjectSecurityInterceptor and QueryFilters.Tenant.</td></tr>
+<tr><td class="prop-name">FileSizeBytes </td><td><span class="code-type">long</span></td><td>No</td><td>Size of the raw file in bytes.</td></tr>
+<tr><td class="prop-name">TotalRowsCount </td><td><span class="code-type">int</span></td><td>No</td><td>Total number of data records/rows parsed from the file.</td></tr>
+<tr><td class="prop-name">ValidRowsCount </td><td><span class="code-type">int</span></td><td>No</td><td>Number of records that successfully passed schema and invariant validation.</td></tr>
+<tr><td class="prop-name">ErrorRowsCount </td><td><span class="code-type">int</span></td><td>No</td><td>Number of records that failed validation.</td></tr>
+<tr><td class="prop-name">ValidationErrorsJson </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Structured JSON array containing cell-level and row-level validation errors (if validation failed).</td></tr>
+<tr><td class="prop-name">ErrorMessage </td><td><span class="code-type">string?</span></td><td>Yes</td><td>Optional high-level error message or exception summary if processing failed.</td></tr>
+<tr><td class="prop-name">ProcessedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>Timestamp when staging or validation completed.</td></tr>
+<tr><td class="prop-name">IsDeleted </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

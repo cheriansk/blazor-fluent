@@ -1,3 +1,5 @@
+using BlazorFluent.Shared.DataListTypes;
+
 namespace BlazorFluent.Core.Domain.Tasks;
 
 /// <summary>
@@ -11,7 +13,7 @@ public class SubTaskEntity : BaseTaskEntity
     /// Foreign key to the governing parent <see cref="TaskEntity"/>.
     /// Required.
     /// </summary>
-    public Guid ParentTaskId { get; set; }
+    public required Guid ParentTaskId { get; set; }
 
     /// <summary>
     /// Relative display and execution order index within the parent task.
@@ -26,4 +28,7 @@ public class SubTaskEntity : BaseTaskEntity
     // --- Navigation Properties ---
     public TaskEntity? ParentTask { get; set; }
     public SubTaskEntity? BlockedBySubTask { get; set; }
+
+    /// <summary>Subtask category discriminator for transition validation.</summary>
+    public override string GetDefaultCategory() => TaskStatusEnumDefinitions.Categories.SubTask;
 }

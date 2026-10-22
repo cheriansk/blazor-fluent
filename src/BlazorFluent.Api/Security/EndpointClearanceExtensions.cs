@@ -12,12 +12,12 @@ using Microsoft.Extensions.Logging;
 namespace BlazorFluent.Api.Security;
 
 /// <summary>
-/// Endpoint filter extension enforcing hierarchical clearance tiers on Minimal API endpoints.
-/// Evaluates user claims and emits Zero-PII security audit logs on 403 Forbidden.
+/// Endpoint filter extension enforcing Level 3 Zero-Trust tenant user verification and hierarchical clearance tiers on Minimal API endpoints.
+/// Evaluates user claims and emits Zero-PII security audit logs on 401/403.
 /// </summary>
 public static class EndpointClearanceExtensions
 {
-    public static RouteHandlerBuilder RequireClearance(this RouteHandlerBuilder builder, ProjectRole minTier)
+    public static RouteHandlerBuilder RequireClearance(this RouteHandlerBuilder builder, ProjectRoleEnum minTier)
     {
         return builder.AddEndpointFilter(async (context, next) =>
         {
@@ -34,19 +34,19 @@ public static class EndpointClearanceExtensions
                 ?? user.FindFirstValue("sub")
                 ?? user.FindFirstValue("uid");
 
-            if (string.IsNullOrWhiteSpace(userId))
+            var tenantId = user.FindFirstValue("tenant_id")
+                ?? user.FindFirstValue("tid");
+
+            // Level 3 Guardrail: Must have both authenticated userId and active tenantId before evaluating roles
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(tenantId))
             {
+                logger.LogCritical(
+                    "CRITICAL SECURITY VIOLATION: API clearance check invoked without valid UserId or TenantId on route '{Route}'.",
+                    httpContext.Request.Path);
                 return Results.Unauthorized();
             }
 
-            // Root / Host Admin bypass
-            var isRoot = user.IsInRole("RootAdmin") || user.IsInRole("HostAdmin") || user.HasClaim("is_root", "true");
-            if (isRoot)
-            {
-                return await next(context);
-            }
-
-            // Extract role claims and find highest assigned clearance
+            // Extract role claims and find highest assigned clearance (no unconditional Root/Host bypass)
             var roleClaims = user.FindAll(ClaimTypes.Role)
                 .Concat(user.FindAll("project_role"))
                 .Concat(user.FindAll("clearance_tier"))
@@ -59,19 +59,18 @@ public static class EndpointClearanceExtensions
                 {
                     if (numericTier > highestTier) highestTier = numericTier;
                 }
-                else if (Enum.TryParse<ProjectRole>(r, ignoreCase: true, out var parsedRole))
+                else if (r.TryToEnum<ProjectRoleEnum>(out var parsedRole))
                 {
-                    if ((int)parsedRole > highestTier) highestTier = (int)parsedRole;
+                    if (parsedRole.ToInt() > highestTier) highestTier = parsedRole.ToInt();
                 }
             }
 
-            if (highestTier < (int)minTier)
+            if (highestTier < minTier.ToInt())
             {
-                var tenantId = user.FindFirstValue("tenant_id") ?? user.FindFirstValue("tid") ?? "unknown";
                 // Zero-PII Warning logging (strictly GUIDs, zero emails)
                 logger.LogWarning(
                     "AUDIT [Security]: API clearance denied. UserId='{UserId}', TenantId='{TenantId}', Route='{Route}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
-                    userId, tenantId, httpContext.Request.Path, (int)minTier, highestTier);
+                    userId, tenantId, httpContext.Request.Path, minTier.ToInt(), highestTier);
 
                 return Results.Forbid();
             }

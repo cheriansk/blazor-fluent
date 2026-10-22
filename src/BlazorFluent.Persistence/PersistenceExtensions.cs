@@ -9,6 +9,8 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using FluentValidation;
+using BlazorFluent.Persistence.Validation;
 
 namespace BlazorFluent.Persistence;
 
@@ -36,6 +38,9 @@ public static class PersistenceExtensions
         services.AddSingleton<AuditableEntityInterceptor>();
         services.AddSingleton<ProjectSecurityInterceptor>();
         services.AddSingleton<NoTrackingMutationGuardInterceptor>();
+
+        // 4b. Register DataProtectionKey entity validator for fail-closed Tier 2 entity validation
+        services.AddSingleton<IValidator<Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey>, DataProtectionKeyValidator>();
 
         // 5. Strict connection string loading and NpgsqlDataSource registration with connection pooling
         var connectionString = configuration.GetConnectionString("DefaultConnection");

@@ -9,4 +9,4 @@ public record ProjectInfoDto(
     Guid Id,
     string Name,
     string? ShortCode = null,
-    ProjectStatus Status = ProjectStatus.Active);
+    ProjectStatusEnum Status = ProjectStatusEnum.Active);

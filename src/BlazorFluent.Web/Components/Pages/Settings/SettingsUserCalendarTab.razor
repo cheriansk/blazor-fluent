@@ -62,11 +62,11 @@
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                         <FluentTextInput Label="Title *" @bind-Value="_newEventTitle" Placeholder="e.g. Sprint Review Prep, Focus Time" Style="width: 100%;" />
                         
-                        <FluentSelect TOption="CalendarEntryType" TValue="CalendarEntryType" Label="Category" @bind-Value="_newEntryType" Style="width: 100%;">
-                            <FluentOption Value="CalendarEntryType.General">General</FluentOption>
-                            <FluentOption Value="CalendarEntryType.WorkingSession">Working Focus Session</FluentOption>
-                            <FluentOption Value="CalendarEntryType.Planning">Planning</FluentOption>
-                            <FluentOption Value="CalendarEntryType.TimeOff">Planned Time Off</FluentOption>
+                        <FluentSelect TOption="CalendarEntryTypeEnum" TValue="CalendarEntryTypeEnum" Label="Category" @bind-Value="_newEntryType" Style="width: 100%;">
+                            <FluentOption Value="CalendarEntryTypeEnum.General">General</FluentOption>
+                            <FluentOption Value="CalendarEntryTypeEnum.WorkingSession">Working Focus Session</FluentOption>
+                            <FluentOption Value="CalendarEntryTypeEnum.Planning">Planning</FluentOption>
+                            <FluentOption Value="CalendarEntryTypeEnum.TimeOff">Planned Time Off</FluentOption>
                         </FluentSelect>
 
                         <FluentDatePicker Label="Date" @bind-Value="_newEventDate" Style="width: 100%;" />
@@ -140,7 +140,7 @@
     private string _newEventDescription = string.Empty;
     private string _newLocation = string.Empty;
     private DateTime? _newEventDate = DateTime.UtcNow.Date;
-    private CalendarEntryType _newEntryType = CalendarEntryType.General;
+    private CalendarEntryTypeEnum _newEntryType = CalendarEntryTypeEnum.General;
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,13 +152,10 @@
         _isLoading = true;
         try
         {
-            var tenantId = TenantContext.TenantId ?? string.Empty;
-            var userId = CurrentUser.Email ?? CurrentUser.UserId ?? string.Empty;
-
             var start = DateTime.UtcNow.Date.AddMonths(-2);
             var end = DateTime.UtcNow.Date.AddMonths(4);
 
-            _calendarItems = await CalendarService.GetUserCalendarAsync(tenantId, userId, start, end);
+            _calendarItems = await CalendarService.GetUserCalendarAsync(TenantContext.TenantId, CurrentUser.UserId, start, end);
         }
         catch (Exception ex)
         {
@@ -177,7 +174,7 @@
         _newEventDescription = string.Empty;
         _newLocation = string.Empty;
         _newEventDate = _selectedDate;
-        _newEntryType = CalendarEntryType.General;
+        _newEntryType = CalendarEntryTypeEnum.General;
         _showEventModal = true;
     }
 
@@ -205,23 +202,25 @@
         _isSaving = true;
         try
         {
-            var tenantId = TenantContext.TenantId ?? string.Empty;
-            var userId = CurrentUser.Email ?? CurrentUser.UserId ?? string.Empty;
+            var tenantId = TenantContext.TenantId;
+            Guid.TryParse(CurrentUser.UserId, out var userGuid);
             var eventDate = _newEventDate ?? DateTime.UtcNow.Date;
+
+            var baseDesc = _newEventDescription?.Trim() ?? string.Empty;
+            var description = !string.IsNullOrWhiteSpace(_newLocation)
+                ? (string.IsNullOrWhiteSpace(baseDesc) ? $"Location: {_newLocation.Trim()}" : $"{baseDesc}\nLocation: {_newLocation.Trim()}")
+                : baseDesc;
 
             var entry = new UserCalendarEntity
             {
                 TenantId = tenantId,
-                UserId = userId,
+                UserId = userGuid,
                 Title = _newEventTitle.Trim(),
-                Description = _newEventDescription?.Trim() ?? string.Empty,
-                StartUtc = eventDate,
-                EndUtc = eventDate.AddHours(1),
-                IsAllDay = false,
+                Description = description,
+                StartDate = eventDate,
+                EndDate = eventDate.AddHours(1),
                 EntryType = _newEntryType,
-                Status = CalendarEntryStatus.Confirmed,
-                OrganizerEmail = CurrentUser.Email ?? string.Empty,
-                LocationOrMeetingUrl = _newLocation
+                Status = CalendarEntryStatusEnum.Confirmed
             };
 
             var result = await CalendarService.CreateUserCalendarEntryAsync(entry);

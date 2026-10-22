@@ -3,7 +3,6 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Core.Events;
 using BlazorFluent.Jobs.Abstractions;
 using BlazorFluent.Jobs.Jobs.Audit;
-using BlazorFluent.Jobs.Jobs.Catalog;
 using BlazorFluent.Jobs.Jobs.Tasks;
 using BlazorFluent.Persistence.Context;
 using Cronos;
@@ -31,7 +30,7 @@ public class PeriodicBatchScheduler : BackgroundService
     private sealed record ScheduleEntry(
         string Name,
         CronExpression Cron,
-        Func<string, string, IJobEvent> EventFactory);
+        Func<Guid, string, IJobEvent> EventFactory);
 
     public PeriodicBatchScheduler(
         IJobEventQueue queue,
@@ -119,7 +118,7 @@ public class PeriodicBatchScheduler : BackgroundService
                         "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be configured when the periodic batch scheduler is running. Fallback identities are prohibited.");
                 }
 
-                List<string> activeTenants = [];
+                List<Guid> activeTenants = [];
                 try
                 {
                     using var scope = _scopeFactory.CreateScope();
@@ -127,7 +126,7 @@ public class PeriodicBatchScheduler : BackgroundService
                     activeTenants = await db.Tenants
                         .AsNoTracking()
                         .Where(t => t.IsActive)
-                        .Select(t => t.Slug)
+                        .Select(t => t.Id)
                         .ToListAsync(stoppingToken);
                 }
                 catch (Exception ex)
@@ -137,7 +136,7 @@ public class PeriodicBatchScheduler : BackgroundService
 
                 if (activeTenants.Count == 0)
                 {
-                    activeTenants.Add(IRootAdminService.DefaultTenantSlug);
+                    activeTenants.Add(BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
                 }
 
                 _logger.LogInformation(
@@ -164,21 +163,6 @@ public class PeriodicBatchScheduler : BackgroundService
     private List<ScheduleEntry> BuildSchedules()
     {
         var entries = new List<ScheduleEntry>();
-
-        var catalogCron = _configuration["Jobs:Schedules:CatalogSyncJob"] ?? "*/15 * * * *";
-        if (TryParseCron("CatalogSyncJob", catalogCron, out var parsedCatalog))
-        {
-            entries.Add(new ScheduleEntry(
-                "CatalogSyncJob",
-                parsedCatalog,
-                (tenantId, email) => new CatalogSyncJobEvent(
-                    TriggerSource: "Cron",
-                    TenantId: tenantId,
-                    CorrelationId: Guid.CreateVersion7().ToString("N")[..12],
-                    SenderOrigin: "CatalogSyncJob",
-                    SenderUserId: "cron:CatalogSyncJob",
-                    SenderUserEmail: email)));
-        }
 
         var auditPurgeCron = _configuration["Jobs:Schedules:AuditPurgeJob"] ?? "0 2 * * *";
         var retentionDays = int.TryParse(_configuration["Audit:RetentionDays"], out var days) ? days : 365;

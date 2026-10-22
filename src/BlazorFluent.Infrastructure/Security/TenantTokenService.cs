@@ -25,6 +25,16 @@ public class TenantTokenService : ITenantTokenService
         _correlationContext = correlationContext;
     }
 
+    public string GenerateS2SToken(Guid tenantId, string actorType = "BatchWorker")
+    {
+        if (tenantId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: Cannot mint an S2S token without an established TenantId.");
+        }
+
+        return GenerateS2SToken(tenantId.ToString(), actorType);
+    }
+
     public string GenerateS2SToken(string tenantId, string actorType = "BatchWorker")
     {
         if (string.IsNullOrWhiteSpace(tenantId))

@@ -28,6 +28,9 @@ public class TenantEntityValidator : AbstractValidator<TenantEntity>
             .NotEmpty().WithMessage("At least one External email domain is required.")
             .MaximumLength(500).WithMessage("External email domains cannot exceed 500 characters.");
 
+        RuleFor(x => x.StartDate)
+            .NotEmpty().WithMessage("Tenant subscription StartDate is required.");
+
         RuleFor(x => x)
             .Must(x =>
             {
@@ -54,7 +57,7 @@ public class TenantEntityValidator : AbstractValidator<TenantEntity>
             .WithMessage("Internal and External email domains must not overlap. No domain can exist in both lists.");
 
         RuleFor(x => x)
-            .Must(x => !x.EndDate.HasValue || x.EndDate.Value >= x.StartDate)
+            .Must(x => !x.EndDate.HasValue || x.EndDate.Value.Date >= x.StartDate.Date)
             .WithMessage("Tenant subscription EndDate cannot precede StartDate.");
     }
 }

@@ -6,7 +6,8 @@ namespace BlazorFluent.Shared.DataListTypes;
 /// <summary>
 /// Broad categorization of the notification scope.
 /// </summary>
-public enum NotificationCategory
+[ClassificationEnum]
+public enum NotificationCategoryEnum
 {
     /// <summary>
     /// Generic notification visible to all authorized project/tenant members.
@@ -26,7 +27,8 @@ public enum NotificationCategory
 /// <summary>
 /// Severity level indicating visual styling and alert priority.
 /// </summary>
-public enum NotificationSeverity
+[ClassificationEnum]
+public enum NotificationSeverityEnum
 {
     [Display(Name = "Information", Description = "Informational message")]
     [DataListCategory(NotificationDefinitions.Categories.Severity)]
@@ -49,7 +51,8 @@ public enum NotificationSeverity
 /// Bitmask channels for notification dispatch.
 /// </summary>
 [Flags]
-public enum NotificationChannels
+[ClassificationEnum]
+public enum NotificationChannelsEnum
 {
     [Display(Name = "None")]
     None = 0,

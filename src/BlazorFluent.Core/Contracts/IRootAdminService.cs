@@ -1,8 +1,11 @@
+using System;
+using System.Collections.Generic;
+
 namespace BlazorFluent.Core.Contracts;
 
 /// <summary>
-/// Service managing the system's root super-administrators.
-/// Loaded from configuration (semicolon-separated) with a strict maximum of 3 administrators.
+/// Service managing the system's root super-administrators and platform root tenant.
+/// Loaded from configuration/KeyVault with a strict maximum of 3 administrators.
 /// </summary>
 public interface IRootAdminService
 {
@@ -17,12 +20,28 @@ public interface IRootAdminService
     bool IsRootAdmin(string? email);
 
     /// <summary>
+    /// Unique identifier for the platform Root Tenant. Configured via Admin:RootTenantId or KeyVault.
+    /// </summary>
+    Guid RootTenantId { get; }
+
+    /// <summary>
+    /// Slug for the platform Root Tenant. Configured via Admin:RootTenantSlug or KeyVault.
+    /// </summary>
+    string RootTenantSlug { get; }
+
+    /// <summary>
+    /// Display name for the platform Root Tenant. Configured via Admin:RootTenantName or KeyVault.
+    /// </summary>
+    string RootTenantName { get; }
+
+    /// <summary>
     /// Maximum allowed root administrators in the system.
     /// </summary>
     public const int MaxRootAdminCount = 3;
 
-    /// <summary>
-    /// Reserved slug for the internal anchor default tenant.
-    /// </summary>
-    public const string DefaultTenantSlug = "default";
+    [Obsolete("Deprecated: Use IRootAdminService instance RootTenantSlug instead.")]
+    public const string DefaultTenantSlug = "root";
+
+    [Obsolete("Deprecated: Use IRootAdminService instance RootTenantId instead.")]
+    public static readonly Guid DefaultRootTenantId = new Guid("00000000-0000-0000-0000-000000000001");
 }

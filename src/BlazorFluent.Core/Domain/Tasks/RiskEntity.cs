@@ -1,4 +1,6 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Core.Domain.Base;
+using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.Extensions;
 
 namespace BlazorFluent.Core.Domain.Tasks;
 
@@ -6,18 +8,24 @@ namespace BlazorFluent.Core.Domain.Tasks;
 /// Formal enterprise risk entity ("R" of RAID).
 /// Quantitative probability and impact matrix with exposure score, mitigation, and contingency plans.
 /// Can be scoped to Tenant, Program, or Project levels.
+/// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class RiskEntity : BaseTaskEntity
+public class RiskEntity : BaseTaskEntity, IMilestoneLinkedEntity
 {
+    /// <summary>
+    /// Optional foreign key to a project or program milestone.
+    /// </summary>
+    public Guid? MilestoneId { get; set; }
+
     /// <summary>
     /// Financial, schedule, or operational impact rating (Low, Medium, High, Critical).
     /// </summary>
-    public RiskImpact Impact { get; set; } = RiskImpact.Medium;
+    public required RiskImpactEnum Impact { get; set; }
 
     /// <summary>
     /// Likelihood of risk realization (Low, Medium, High).
     /// </summary>
-    public RiskProbability Probability { get; set; } = RiskProbability.Medium;
+    public required RiskProbabilityEnum Probability { get; set; }
 
     /// <summary>
     /// Calculated risk exposure score (1 to 12).
@@ -27,15 +35,31 @@ public class RiskEntity : BaseTaskEntity
     /// <summary>
     /// Planned proactive mitigation actions to reduce probability or impact.
     /// </summary>
-    public string MitigationStrategy { get; set; } = string.Empty;
+    public string? MitigationStrategy { get; set; }
 
     /// <summary>
     /// Contingency actions to execute if the risk materializes into an active Issue.
     /// </summary>
-    public string ContingencyPlan { get; set; } = string.Empty;
+    public string? ContingencyPlan { get; set; }
 
     /// <summary>
     /// Governance lifecycle status of the risk.
     /// </summary>
-    public RiskStatus RiskStatus { get; set; } = RiskStatus.Identified;
+    public required RiskStatusEnum RiskStatus { get; set; }
+
+    /// <summary>Risk category discriminator for BaseTaskEntity transition validation.</summary>
+    public override string GetDefaultCategory() => TaskStatusEnumDefinitions.Categories.Risk;
+
+    /// <summary>
+    /// Executes a validated state transition for this risk's governance status.
+    /// </summary>
+    public virtual void TransitionRiskStatusTo(RiskStatusEnum nextStatus, DateTime utcNow, string reason = "")
+    {
+        if (RiskStatus == nextStatus) return;
+        if (!RiskStatus.CanTransitionTo(nextStatus))
+        {
+            throw new InvalidOperationException($"Cannot transition risk '{Title}' from {RiskStatus} to {nextStatus}.");
+        }
+        RiskStatus = nextStatus;
+    }
 }

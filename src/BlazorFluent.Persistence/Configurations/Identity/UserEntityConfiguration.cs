@@ -1,4 +1,5 @@
 using BlazorFluent.Core.Domain.Identity;
+using BlazorFluent.Shared.DataListTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,6 +21,12 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasMaxLength(200)
             .IsRequired();
 
+        builder.Property(u => u.UserKind)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .HasDefaultValue(UserKindEnum.Human)
+            .IsRequired();
+
         builder.Property(u => u.UserType)
             .IsRequired();
 
@@ -27,15 +34,12 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .IsRequired()
             .HasDefaultValue(true);
 
-        builder.Property(u => u.DefaultTenantId)
-            .HasMaxLength(256)
-            .IsRequired(false);
+        builder.Property(u => u.StartDate)
+            .IsRequired()
+            .HasColumnName("StartDateUtc");
 
-        builder.Property(u => u.StartDateUtc)
-            .IsRequired();
-
-        builder.Property(u => u.EndDateUtc)
-            .IsRequired();
+        builder.Property(u => u.EndDate)
+            .HasColumnName("EndDateUtc");
 
         builder.Property(u => u.RowSignature)
             .HasMaxLength(500)
@@ -61,7 +65,9 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
             .HasFilter("\"IsDeleted\" = false")
             .IsUnique();
 
-        builder.HasIndex(u => u.DefaultTenantId)
-            .HasDatabaseName("IX_Users_DefaultTenantId");
+        builder.HasIndex(u => new { u.UserKind, u.IsActive })
+            .HasDatabaseName("IX_Users_UserKind_IsActive");
+
+
     }
 }

@@ -40,7 +40,9 @@ public class UserSessionService : IUserSessionService
         // Security Gate: Reject persistent session creation for background system daemons
         if (string.Equals(userId, "system", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(userEmail, "system@daemon.local", StringComparison.OrdinalIgnoreCase) ||
-            userEmail?.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase) == true)
+            userEmail?.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase) == true ||
+            SystemIdentityUtility.IsSystemDaemon(userId) ||
+            SystemIdentityUtility.IsSystemDaemon(userEmail))
         {
             _logger.LogCritical("SECURITY ALERT: Blocked illicit attempt to create persistent user session for system daemon '{UserId}' ({UserEmail}).", userId, userEmail);
             throw new InvalidOperationException("System daemon service identities are non-interactive and cannot possess persistent user sessions.");
@@ -52,9 +54,9 @@ public class UserSessionService : IUserSessionService
             _currentUser.RestoreUserContext(userId, userEmail, userEmail);
         }
 
-        var tenantId = !string.IsNullOrWhiteSpace(_tenantContext.TenantId)
-            ? _tenantContext.TenantId
-            : SystemIdentityUtility.SystemTenantSlug;
+        var tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.RootTenantId;
+
+
 
         // Enforce strict single-active-session policy per user
         await RevokePreviousSessionsAsync(userId, null, ct);
@@ -95,7 +97,7 @@ public class UserSessionService : IUserSessionService
         }
 
         var revokedBy = _currentUser.IsAuthenticated 
-            ? (_currentUser.Email ?? _currentUser.UserId ?? $"Login:{userId}") 
+            ? (_currentUser.IsAuthenticated ? _currentUser.Email : $"Login:{userId}") 
             : $"Login:{userId}";
 
         var count = await query.ExecuteUpdateWithAuditedBypassAsync(

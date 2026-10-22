@@ -13,7 +13,6 @@ public class UserSessionEntityConfiguration : IEntityTypeConfiguration<UserSessi
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(s => s.UserId)

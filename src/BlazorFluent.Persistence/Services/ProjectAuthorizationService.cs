@@ -1,4 +1,5 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Utilities;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -10,14 +11,15 @@ using Microsoft.Extensions.Logging;
 namespace BlazorFluent.Persistence.Services;
 
 /// <summary>
-/// Implements project authorization and role management with direct real-time database queries
-/// and forensic security audit logging on unauthorized attempts.
+/// Implements project authorization and role management with direct real-time database queries,
+/// strict tenant roster gating, and forensic security audit logging on unauthorized attempts.
 /// </summary>
 public class ProjectAuthorizationService : IProjectAuthorizationService
 {
     private readonly AppDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
+    private readonly IHierarchyAuthorizationService _hierarchyAuth;
     private readonly IAuditService _auditService;
     private readonly ILogger<ProjectAuthorizationService> _logger;
 
@@ -25,86 +27,81 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         AppDbContext dbContext,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
+        IHierarchyAuthorizationService hierarchyAuth,
         IAuditService auditService,
         ILogger<ProjectAuthorizationService> logger)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
+        _hierarchyAuth = hierarchyAuth;
         _auditService = auditService;
         _logger = logger;
     }
 
-    public async Task<ProjectRole?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
+    public async Task<ProjectRoleEnum?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
     {
-        // Root Admin bypass
-        if (_currentUser.IsRootAdmin)
-        {
-            return ProjectRole.Admin;
-        }
-
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
-        var userId = _currentUser.UserId ?? "anonymous";
-        var roleEntity = await _dbContext.ProjectUserRoles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
-
-        return roleEntity?.Role;
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
+            return null;
+        return await _hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, _currentUser.UserId, ct);
     }
 
-    public async Task<bool> CanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    public async Task<bool> CanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
-        var role = await GetCurrentUserProjectRoleAsync(projectId, ct);
-        return role.HasValue && role.Value.Satisfies(minRole);
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
+            return false;
+        return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task<bool> CanEditAsync(Guid projectId, ProjectRole minRole = ProjectRole.Dev, CancellationToken ct = default)
+    public async Task<bool> CanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, CancellationToken ct = default)
     {
-        var role = await GetCurrentUserProjectRoleAsync(projectId, ct);
-        return role.HasValue && role.Value.Satisfies(minRole) && role.Value.CanWrite();
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
+            return false;
+        return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task EnsureCanVisitAsync(Guid projectId, ProjectRole minRole = ProjectRole.ReadOnly, string operation = "", CancellationToken ct = default)
+    public async Task EnsureCanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, string operation = "", CancellationToken ct = default)
     {
-        var canVisit = await CanVisitAsync(projectId, minRole, ct);
-        if (canVisit) return;
-
-        var userId = _currentUser.UserId ?? "anonymous";
-        _logger.LogWarning("Security Violation: User '{UserId}' attempted unauthorized read on project '{ProjectId}'. Required role: '{MinRole}'. Operation: '{Operation}'",
-            userId, projectId, minRole, operation);
-
-        await _auditService.LogSecurityEventAsync(
-            "ProjectVisitDenied",
-            AuditSeverity.Warning,
-            $"Access Denied: User '{userId}' attempted unauthorized visit on project '{projectId}' for operation '{operation}'. Required role: '{minRole}'.",
-            ct);
-
-        throw new UnauthorizedAccessException($"Access Denied: You do not have permission to view project '{projectId}'. Required minimum role: '{minRole}'.");
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task EnsureCanEditAsync(Guid projectId, ProjectRole minRole = ProjectRole.Dev, string operation = "", CancellationToken ct = default)
+    public async Task EnsureCanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, string operation = "", CancellationToken ct = default)
     {
-        var canEdit = await CanEditAsync(projectId, minRole, ct);
-        if (canEdit) return;
-
-        var userId = _currentUser.UserId ?? "anonymous";
-        _logger.LogWarning("Security Violation: User '{UserId}' attempted unauthorized write on project '{ProjectId}'. Required role: '{MinRole}'. Operation: '{Operation}'",
-            userId, projectId, minRole, operation);
-
-        await _auditService.LogSecurityEventAsync(
-            "ProjectMutationDenied",
-            AuditSeverity.Critical,
-            $"Access Denied: User '{userId}' attempted unauthorized mutation on project '{projectId}' for operation '{operation}'. Required role: '{minRole}'.",
-            ct);
-
-        throw new UnauthorizedAccessException($"Access Denied: You do not have permission to modify project '{projectId}'. Required minimum role: '{minRole}'.");
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
-    public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRole minRole = ProjectRole.ReadOnly, CancellationToken ct = default)
+    public async Task<bool> HasClearanceAsync(Guid projectId, ProjectRoleEnum minimumRole, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minimumRole, _currentUser.UserId, ct);
+    }
 
-        if (_currentUser.IsRootAdmin)
+    public async Task EnsureCanContributeAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
+    {
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Contribute, _currentUser.UserId, ct);
+    }
+
+    public async Task EnsureCanManageWorkflowAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
+    {
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Admin, _currentUser.UserId, ct);
+    }
+
+    public async Task EnsureCanManageAccessAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
+    {
+        await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Admin, _currentUser.UserId, ct);
+    }
+
+    public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
+    {
+        if (!_currentUser.IsAuthenticated_RegularTenant_User)
+            return [];
+
+        var tenantId = _currentUser.TenantId;
+        var userId = _currentUser.UserId;
+        var hasGuid = Guid.TryParse(userId, out var userGuid);
+        var normalizedUser = userId.Trim().ToLowerInvariant();
+
+        // If Tenant Admin, all projects in the tenant meet any clearance requirement
+        if (await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct))
         {
             return await _dbContext.Projects
                 .AsNoTracking()
@@ -113,10 +110,11 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
                 .ToListAsync(ct);
         }
 
-        var userId = _currentUser.UserId ?? "anonymous";
         var userRoles = await _dbContext.ProjectUserRoles
             .AsNoTracking()
-            .Where(r => r.TenantId == tenantId && r.UserId == userId && !r.IsDeleted)
+            .Where(r => r.TenantId == tenantId &&
+                        ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                        !r.IsDeleted)
             .ToListAsync(ct);
 
         return userRoles
@@ -126,14 +124,18 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             .ToList();
     }
 
+    public Task<IReadOnlyList<Guid>> GetAccessibleProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
+        => GetAuthorizedProjectIdsAsync(minRole, ct);
+
     public async Task<IReadOnlyList<ProjectUserRoleEntity>> GetProjectMembersAsync(Guid projectId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _currentUser.TenantId;
 
         return await _dbContext.ProjectUserRoles
             .AsNoTracking()
+            .Include(r => r.User)
             .Where(r => r.TenantId == tenantId && r.ProjectId == projectId && !r.IsDeleted)
-            .OrderBy(r => r.UserName)
+            .OrderBy(r => r.User!.FullName)
             .ToListAsync(ct);
     }
 
@@ -142,29 +144,61 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         string userId,
         string userEmail,
         string userName,
-        UserType userType,
-        ProjectRole role,
+        UserTypeEnum userType,
+        ProjectRoleEnum role,
         CancellationToken ct = default)
     {
-        // Only ProjectAdmin, TenantAdmin, or Root Admin can manage access
-        var callerRole = await GetCurrentUserProjectRoleAsync(projectId, ct);
-        if (!_currentUser.IsRootAdmin && (callerRole is null || !callerRole.Value.CanManageAccess()))
+        // Separation of duties: Appointing Project Admin requires CanManageProjectAdminsAsync
+        if (role == ProjectRoleEnum.Admin)
         {
-            return Result.Failure("Only Project Admins or Tenant Admins can assign or change project roles.");
+            var canManageAdmins = await _hierarchyAuth.CanManageProjectAdminsAsync(projectId, _currentUser.UserId, ct);
+            if (!canManageAdmins)
+            {
+                return Result.Failure("Only Project Admins, parent Program Admins, or Tenant Admins can assign or change Project Admin privileges.");
+            }
+        }
+        else
+        {
+            var callerRole = await GetCurrentUserProjectRoleAsync(projectId, ct);
+            if (callerRole is null || !callerRole.Value.CanManageAccess())
+            {
+                return Result.Failure("Only Project Admins, parent Program Admins, or Tenant Admins can assign or change project roles.");
+            }
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _currentUser.TenantId;
+
+        if (!Guid.TryParse(userId, out var userEntityId))
+        {
+            var resolvedUser = await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == userEmail.Trim().ToLower() && !u.IsDeleted, ct);
+
+            if (resolvedUser is null)
+            {
+                return Result.Failure($"User '{userEmail}' could not be resolved in the user directory.");
+            }
+
+            userEntityId = resolvedUser.Id;
+        }
+
+        // Strict Tenant Roster Gate: Target user must be an active member of this tenant's roster
+        var inTenantRoster = await _dbContext.TenantUsers
+            .AsNoTracking()
+            .AnyAsync(tu => tu.TenantId == tenantId && tu.UserEntityId == userEntityId && tu.IsActive && !tu.IsDeleted, ct);
+
+        if (!inTenantRoster)
+        {
+            return Result.Failure($"Zero-Trust Boundary Violation: User '{userEmail}' is not an active member of tenant '{tenantId}'. Tenant Admins must first add the user to the tenant roster.");
+        }
 
         var existing = await _dbContext.ProjectUserRoles
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserEntityId == userEntityId && !r.IsDeleted, ct);
 
         if (existing is not null)
         {
             existing.Role = role;
-            existing.UserEmail = userEmail;
-            existing.UserName = userName;
-            existing.UserType = userType;
         }
         else
         {
@@ -172,10 +206,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             {
                 TenantId = tenantId,
                 ProjectId = projectId,
-                UserId = userId,
-                UserEmail = userEmail,
-                UserName = userName,
-                UserType = userType,
+                UserEntityId = userEntityId,
                 Role = role
             };
             _dbContext.ProjectUserRoles.Add(assignment);
@@ -185,7 +216,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         await _auditService.LogUserActivityAsync(
             "AssignProjectRole",
-            $"Role '{role}' assigned to user '{userName}' ({userId}) on project '{projectId}'.",
+            $"Role '{role}' assigned to user '{userName}' ({userEntityId}) on project '{projectId}'.",
             ct);
 
         return Result.Success();
@@ -194,16 +225,22 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
     public async Task<Result> RevokeUserRoleAsync(Guid projectId, string userId, CancellationToken ct = default)
     {
         var callerRole = await GetCurrentUserProjectRoleAsync(projectId, ct);
-        if (!_currentUser.IsRootAdmin && (callerRole is null || !callerRole.Value.CanManageAccess()))
+        if (callerRole is null || !callerRole.Value.CanManageAccess())
         {
-            return Result.Failure("Only Project Admins or Tenant Admins can revoke project roles.");
+            return Result.Failure("Only Project Admins, parent Program Admins, or Tenant Admins can revoke project roles.");
         }
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _currentUser.TenantId;
+        var hasGuid = Guid.TryParse(userId, out var userGuid);
+        var normalizedUser = userId.Trim().ToLowerInvariant();
 
         var existing = await _dbContext.ProjectUserRoles
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.ProjectId == projectId && r.UserId == userId && !r.IsDeleted, ct);
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId &&
+                                      r.ProjectId == projectId &&
+                                      ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                                      !r.IsDeleted, ct);
 
         if (existing is null)
         {

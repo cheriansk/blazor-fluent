@@ -30,5 +30,5 @@ public interface INotifyService
     /// <summary>
     /// Marks all notifications matching optional category and tenant as read for the active user.
     /// </summary>
-    Task<int> MarkAllAsReadAsync(NotificationCategory? category = null, string? tenantId = null, CancellationToken ct = default);
+    Task<int> MarkAllAsReadAsync(NotificationCategoryEnum? category = null, string? tenantId = null, CancellationToken ct = default);
 }

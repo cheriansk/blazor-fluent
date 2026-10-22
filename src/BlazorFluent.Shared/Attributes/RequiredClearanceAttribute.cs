@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using BlazorFluent.Shared.DataListTypes;
 
 namespace BlazorFluent.Shared.Attributes;
@@ -14,29 +14,29 @@ public sealed class RequiredClearanceAttribute : Attribute
     /// <summary>
     /// Minimum clearance tier required to visit and view this resource.
     /// </summary>
-    public ProjectRole ViewTier { get; }
+    public ProjectRoleEnum ViewTier { get; }
 
     /// <summary>
     /// Minimum clearance tier required to edit, mutate, or submit actions on this resource.
     /// </summary>
-    public ProjectRole EditTier { get; }
+    public ProjectRoleEnum EditTier { get; }
 
     /// <summary>
     /// Single-tier declaration:
     /// Resource is viewable by minTier and above.
     /// Resource is editable by Contribute (20) and above (or minTier if higher).
     /// </summary>
-    public RequiredClearanceAttribute(ProjectRole minTier)
+    public RequiredClearanceAttribute(ProjectRoleEnum minTier)
     {
         ViewTier = minTier;
-        EditTier = (int)minTier < (int)ProjectRole.Contribute ? ProjectRole.Contribute : minTier;
+        EditTier = (int)minTier < (int)ProjectRoleEnum.Contribute ? ProjectRoleEnum.Contribute : minTier;
     }
 
     /// <summary>
     /// Dual-tier declaration:
     /// Explicitly decouples view tier from edit tier (e.g. viewable by Lead, editable only by PMO).
     /// </summary>
-    public RequiredClearanceAttribute(ProjectRole viewTier, ProjectRole editTier)
+    public RequiredClearanceAttribute(ProjectRoleEnum viewTier, ProjectRoleEnum editTier)
     {
         ViewTier = viewTier;
         EditTier = editTier;

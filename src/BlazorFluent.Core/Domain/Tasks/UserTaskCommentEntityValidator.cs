@@ -3,7 +3,7 @@ using FluentValidation;
 namespace BlazorFluent.Core.Domain.Tasks;
 
 /// <summary>
-/// Tier 2 Entity Invariant Validator for TaskCommentEntity.
+/// Tier 2 Entity Invariant Validator for <see cref="UserTaskCommentEntity"/>.
 /// Validates pure in-memory comment constraints before database persistence.
 /// Executed automatically by EntityValidationInterceptor during SaveChangesAsync.
 /// </summary>
@@ -21,10 +21,7 @@ public class UserTaskCommentEntityValidator : AbstractValidator<UserTaskCommentE
         RuleFor(x => x.ProjectId)
             .NotEmpty().WithMessage("Comment ProjectId is mandatory.");
 
-        RuleFor(x => x.AuthorName)
-            .MaximumLength(200).WithMessage("Author name cannot exceed 200 characters.");
-
-        RuleFor(x => x.AuthorEmail)
-            .MaximumLength(256).WithMessage("Author email cannot exceed 256 characters.");
+        RuleFor(x => x.AuthorUserEntityId)
+            .NotEmpty().WithMessage("Comment AuthorUserEntityId is mandatory.");
     }
 }

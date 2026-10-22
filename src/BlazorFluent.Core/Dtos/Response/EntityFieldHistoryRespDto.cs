@@ -1,4 +1,4 @@
-﻿namespace BlazorFluent.Core.Dtos.Response;
+namespace BlazorFluent.Core.Dtos.Response;
 
 using BlazorFluent.Shared.DataListTypes;
 
@@ -15,8 +15,8 @@ public record EntityFieldHistoryRespDto
     public string? NewValue { get; init; }
     public string UserId { get; init; } = string.Empty;
     public string UserEmail { get; init; } = string.Empty;
-    public UserType? UserType { get; init; }
-    public EntityOperation Operation { get; init; }
+    public UserTypeEnum? UserType { get; init; }
+    public EntityOperationEnum Operation { get; init; }
     public DateTime Timestamp { get; init; }
     public string? Description { get; init; }
 }

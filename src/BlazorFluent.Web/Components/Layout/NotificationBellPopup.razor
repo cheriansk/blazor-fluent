@@ -51,8 +51,8 @@
             @* Tabs (General vs Personal) *@
             <div style="display: flex; border-bottom: 1px solid var(--neutral-stroke-subtle, #f0f0f0); background: var(--neutral-layer-2, #fafafa);">
                 <button type="button"
-                        style="flex: 1; padding: 8px 12px; border: none; background: @(_activeCategory == NotificationCategory.Generic ? "var(--neutral-layer-1, #ffffff)" : "transparent"); font-weight: @(_activeCategory == NotificationCategory.Generic ? "600" : "normal"); border-bottom: @(_activeCategory == NotificationCategory.Generic ? "2px solid var(--accent-fill-rest, #0078d4)" : "2px solid transparent"); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;"
-                        @onclick="() => SetCategory(NotificationCategory.Generic)">
+                        style="flex: 1; padding: 8px 12px; border: none; background: @(_activeCategory == NotificationCategoryEnum.Generic ? "var(--neutral-layer-1, #ffffff)" : "transparent"); font-weight: @(_activeCategory == NotificationCategoryEnum.Generic ? "600" : "normal"); border-bottom: @(_activeCategory == NotificationCategoryEnum.Generic ? "2px solid var(--accent-fill-rest, #0078d4)" : "2px solid transparent"); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;"
+                        @onclick="() => SetCategory(NotificationCategoryEnum.Generic)">
                     <span>General</span>
                     @if (_unreadCounts.GenericUnread > 0)
                     {
@@ -62,8 +62,8 @@
                     }
                 </button>
                 <button type="button"
-                        style="flex: 1; padding: 8px 12px; border: none; background: @(_activeCategory == NotificationCategory.Personal ? "var(--neutral-layer-1, #ffffff)" : "transparent"); font-weight: @(_activeCategory == NotificationCategory.Personal ? "600" : "normal"); border-bottom: @(_activeCategory == NotificationCategory.Personal ? "2px solid var(--accent-fill-rest, #0078d4)" : "2px solid transparent"); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;"
-                        @onclick="() => SetCategory(NotificationCategory.Personal)">
+                        style="flex: 1; padding: 8px 12px; border: none; background: @(_activeCategory == NotificationCategoryEnum.Personal ? "var(--neutral-layer-1, #ffffff)" : "transparent"); font-weight: @(_activeCategory == NotificationCategoryEnum.Personal ? "600" : "normal"); border-bottom: @(_activeCategory == NotificationCategoryEnum.Personal ? "2px solid var(--accent-fill-rest, #0078d4)" : "2px solid transparent"); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;"
+                        @onclick="() => SetCategory(NotificationCategoryEnum.Personal)">
                     <span>Personal</span>
                     @if (_unreadCounts.PersonalUnread > 0)
                     {
@@ -113,13 +113,13 @@
                                     <div style="margin-top: 2px;">
                                         @switch (notification.Severity)
                                         {
-                                            case NotificationSeverity.Success:
+                                            case NotificationSeverityEnum.Success:
                                                 <FluentIcon Value="@(new Icons.Regular.Size20.CheckmarkCircle())" Color="Color.Success" />
                                                 break;
-                                            case NotificationSeverity.Warning:
+                                            case NotificationSeverityEnum.Warning:
                                                 <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" Color="Color.Warning" />
                                                 break;
-                                            case NotificationSeverity.Error:
+                                            case NotificationSeverityEnum.Error:
                                                 <FluentIcon Value="@(new Icons.Regular.Size20.DismissCircle())" Color="Color.Error" />
                                                 break;
                                             default:
@@ -191,7 +191,7 @@
     private bool _isOpen;
     private bool _isLoading;
     private bool _onlyUnread;
-    private NotificationCategory _activeCategory = NotificationCategory.Generic;
+    private NotificationCategoryEnum _activeCategory = NotificationCategoryEnum.Generic;
     private UnreadNotificationCountsRespDto _unreadCounts = new();
     private List<NotificationEntity> _notifications = new();
 
@@ -212,7 +212,7 @@
         }
     }
 
-    private async Task SetCategory(NotificationCategory category)
+    private async Task SetCategory(NotificationCategoryEnum category)
     {
         if (_activeCategory == category) return;
         _activeCategory = category;
@@ -272,7 +272,7 @@
     }
 
     private int GetActiveTabUnreadCount() =>
-        _activeCategory == NotificationCategory.Personal
+        _activeCategory == NotificationCategoryEnum.Personal
             ? _unreadCounts.PersonalUnread
             : _unreadCounts.GenericUnread;
 

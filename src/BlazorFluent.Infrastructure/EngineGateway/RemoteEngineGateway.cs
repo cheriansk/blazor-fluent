@@ -38,21 +38,19 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
 
     public async Task<Result<TResp>> CallApiAsync<TReq, TResp>(string route, TReq request, CancellationToken ct = default)
     {
-        try { 
-            var tenantId = _tenantContext.TenantId ?? _configuration["Tenant:TenantId"];
-            if (string.IsNullOrWhiteSpace(tenantId))
-            {
-                throw new InvalidOperationException("Zero-Trust Security Violation: Cannot invoke Cloud ProcessAPI without an active TenantId context.");
-            }
+        try
+        {
+            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantIdStr = tenantId.ToString();
 
-            var licenseKey = _configuration[$"Tenants:{tenantId}:LicenseKey"];
+            var licenseKey = _configuration[$"Tenants:{tenantIdStr}:LicenseKey"];
             if (string.IsNullOrWhiteSpace(licenseKey))
             {
-                _logger.LogError("Zero-Trust Security Violation: No dedicated license key configured for tenant '{TenantId}'. Shared fallback is strictly prohibited.", tenantId);
-                throw new InvalidOperationException($"Zero-Trust Security Violation: No dedicated license key configured for tenant '{tenantId}'.");
+                _logger.LogError("Zero-Trust Security Violation: No dedicated license key configured for tenant '{TenantId}'. Shared fallback is strictly prohibited.", tenantIdStr);
+                throw new InvalidOperationException($"Zero-Trust Security Violation: No dedicated license key configured for tenant '{tenantIdStr}'.");
             }
 
-            var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(licenseKey, tenantId);
+            var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(licenseKey, tenantIdStr);
 
             // 1. Encrypt outbound request payload with AES-256-GCM AEAD
             var envelope = PayloadEncryptionUtility.EncryptPayload(request, encryptionKey);

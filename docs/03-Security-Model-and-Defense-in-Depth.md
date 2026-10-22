@@ -11,44 +11,45 @@ BlazorFluent implements a strict **Fail-Closed Zero-Trust** security architectur
 
 ```mermaid
 flowchart TD
-    Req([Inbound Client Request]) --> L1
+    Req([Inbound Client Request / Blazor Circuit]) --> L1
     
-    subgraph L1 ["Layer 1: Edge & HTTP Security"]
-        L1a["Strict Content-Security-Policy (CSP)"]
-        L1b["HSTS, Anti-Clickjacking, Antiforgery"]
-        L1c["HTML Input Sanitization (Ganss.Xss)"]
+    subgraph L1 ["Layer 1: Compile-Time Governance & Edge HTTP Security"]
+        L1a["Roslyn Analyzer TG005 (Compile-Time @page Attribute Enforcement)"]
+        L1b["Strict Content-Security-Policy (Cryptographic Nonces, Zero Unsafe-Inline)"]
+        L1c["HSTS, Anti-Clickjacking, Antiforgery Tokens, Ganss.Xss Sanitization"]
     end
     
     L1 --> L2
     subgraph L2 ["Layer 2: Identity & Centralized Auth Gateway"]
-        L2a["Multi-IdP Federation (Entra ID, OIDC, Local Dev)"]
-        L2b["HMAC-SHA256 Cryptographic Tokens"]
-        L2c["Azure Key Vault Secret Storage"]
+        L2a["Multi-IdP Federation (Entra ID, OIDC, Local Dev Mode)"]
+        L2b["HMAC-SHA256 Cryptographic Tokens & Anti-Tamper User Seals"]
+        L2c["ABAC Perimeter Gate: IsActive, Temporal Window, Mandatory Role Assignment"]
     end
     
     L2 --> L3
-    subgraph L3 ["Layer 3: UI-Level Compile-Time Page Contracts"]
-        L3a["AuthorizedPageComponentBase"]
-        L3b["MinimumVisitRole Guard (Access Denied Card)"]
-        L3c["MinimumEditRole Guard (Read-Only Mode)"]
+    subgraph L3 ["Layer 3: UI Presentation Layer (Blazor Circuit)"]
+        L3a["AuthorizeRouteView & AuthorizedPageComponentBase"]
+        L3b["Dual-Tier Route Clearance: @attribute [RequiredClearance(viewTier, editTier)]"]
+        L3c["Ambient Clearance Gates (<ClearanceGate>) & ProjectAccessDeniedCardComp"]
     end
     
     L3 --> L4
-    subgraph L4 ["Layer 4: Service-Level Write & Read Authorization"]
-        L4a["EnsureCanVisitAsync & EnsureCanEditAsync"]
-        L4b["Forensic Security Audit Alerting"]
-        L4c["Query Scoping (.WhereAuthorizedProject)"]
+    subgraph L4 ["Layer 4: API Transport & Domain Service Clearance"]
+        L4a["Minimal API Endpoint Filters: .RequireClearance(minTier)"]
+        L4b["Service Mutation Guards: EnsureHasProjectClearanceAsync"]
+        L4c["Zero-PII Security Audit Forensic Alerting (Opaque GUIDs)"]
     end
     
     L4 --> L5
-    subgraph L5 ["Layer 5: PostgreSQL Native Row-Level Security (RLS)"]
-        L5a["TenantDbConnectionInterceptor"]
-        L5b["SET LOCAL app.current_tenant_id = '<tenant_id>'"]
-        L5c["PostgreSQL Database Engine Physical Policy Enforcement"]
+    subgraph L5 ["Layer 5: PostgreSQL Native Row-Level Security & Persistence"]
+        L5a["TenantDbConnectionInterceptor (SET LOCAL app.current_tenant_id)"]
+        L5b["PostgreSQL Database Engine Physical Policy Enforcement"]
+        L5c["EF Core Global Query Filters & AuditableEntityInterceptor Write Barrier"]
     end
     
     L5 --> DB[(PostgreSQL Database)]
 ```
+
 
 ---
 
@@ -120,6 +121,26 @@ sequenceDiagram
 2. **Authenticated Encryption (AEAD)**: AES-256-GCM detects any ciphertext tampering or bit-flipping prior to decryption.
 3. **Streaming Hardware Acceleration**: Employs Intel AES-NI / ARM Crypto instructions for minimal CPU overhead.
 
+### 3.1 Field-Level Zero-Knowledge Entity Encryption (`IEncryptedPayloadEntity`) & Lineage (`ISourceTrackedEntity`)
+
+For domain entities that hold sensitive business data or intellectual property (e.g. `BaseTaskEntity`), the system adheres to the **Interface Segregation Principle (ISP)** by separating encryption from data lineage:
+- **`ISourceTrackedEntity`**: Defines `Guid? SourceRowId` for end-to-end audit lineage linking back to raw ingested records in `staging.StagedImports`.
+- **`IEncryptedPayloadEntity`**: Defines `bool IsEncryptedAtRest` and `byte[]? EncryptedPayloadBytes` for zero-knowledge field protection.
+
+#### ⚠️ Cryptographic & Architectural Specification
+> [!NOTE]
+> The system exclusively uses standard, NIST-approved **AES-256-GCM** with 12-byte nonces and 16-byte authentication tags. The contract `IEncryptedPayloadEntity` protects confidential business payloads, intellectual property, and trade secrets within zero-knowledge database storage.
+
+#### Decision Matrix: When to Use vs. When NOT to Use
+
+| Dimension | ✅ When to Use `IEncryptedPayloadEntity` | ❌ When NOT to Use `IEncryptedPayloadEntity` |
+| :--- | :--- | :--- |
+| **Data Sensitivity** | High-value intellectual property, sensitive task deliverables, executive commentary, or trade secrets. | Standard operational data, timestamps, statuses, assignees, or non-confidential descriptions. |
+| **Database Protection** | Organizations requiring zero-knowledge storage where DBAs or storage snapshots cannot view cleartext. | Systems where PostgreSQL transparent disk encryption (TDE) and TLS in transit are sufficient. |
+| **Queryability** | Data does **not** need to be searched, filtered, indexed, or sorted in SQL queries (`WHERE`, `ORDER BY`). | Fields that must be queried, aggregated, or indexed (e.g., `Status`, `DueDate`, `TenantId`, `Priority`). |
+| **Data Lineage** | Entities requiring batch file provenance should also implement `ISourceTrackedEntity` (`SourceRowId`). | Interactive entities created directly by users do not need `ISourceTrackedEntity`. |
+| **Latency Tolerance** | Screen views that can tolerate the roundtrip to `/api/v1/transforms/decrypt-proprietary` for in-memory decryption. | High-frequency operational dashboards, real-time telemetry, or high-throughput batch list views. |
+
 ---
 
 ## 🔑 4. Centralized Authentication Gateway & Multi-IdP Support
@@ -174,7 +195,57 @@ flowchart TD
 
 ## 🚦 5. Hierarchical Team Clearance & Zero-Trust Governance
 
-BlazorFluent enforces authorization through a pure **Zero-Trust Hierarchical Team Clearance Model** with compile-time route verification, ambient component gating, and service mutation guards:
+### 5.1 Authorization Paradigm: Hybrid HRBAC + ReBAC + ABAC
+
+A frequent architectural question is: **"Is BlazorFluent using RBAC (Role-Based Access Control)?"**
+
+**Answer**: The platform does **not** rely on simple/flat RBAC. Instead, it implements a modern **Zero-Trust Hybrid Authorization Model** integrating three complementary industry standards:
+
+1. **Hierarchical RBAC (HRBAC)**: Permissions are modeled as directional, cumulative numeric tiers (`ReadOnly = 10` up to `Admin = 100`). Clearance is evaluated as `(int)userTier >= (int)requiredTier`. Any tier equal to or above the requirement automatically satisfies the gate, allowing intermediate roles (e.g. `ElevatedLead = 40`) to be inserted without breaking existing gates.
+2. **Relationship-Based Access Control (ReBAC)**: Permissions are never global; they are strictly scoped within the structural container graph (`Tenant &rarr; Program &rarr; Project`). Relationships determine inherited access: holding any role on a parent Program automatically establishes a baseline `ReadOnly (10)` clearance across all member child projects (**Program ReadOnly Floor Rule**).
+3. **Attribute-Based Access Control (ABAC)**: Contextual, environmental, and cryptographic attributes are evaluated before any role clearance is granted. Even an Admin user is denied if their account is deactivated (`IsActive == false`), their temporal date window has expired (`now > EndDateUtc`), their database record fails HMAC-SHA256 anti-tamper verification, or they attempt cross-tenant mutation.
+
+#### End-to-End Decision Flow
+
+```mermaid
+flowchart TD
+    Req["Incoming Request\n(Razor Page Route, Minimal API, or Service Mutation)"] --> Gate1{"1. ABAC Perimeter Gate\n(Account State & Context)"}
+    
+    Gate1 -- "Inactive, Expired,\nTampered, or 0 Roles" --> Deny1["🚨 DENY: 401/302 Eviction\nRedirect to /auth-error\n(Circuit Terminated)"]
+    Gate1 -- "Active & Valid" --> Gate2{"2. ReBAC Container Gate\n(Tenancy & Hierarchy Scoping)"}
+    
+    Gate2 -- "Cross-Tenant\nMismatch" --> Deny2["🚨 DENY: 403 Forbidden\nEF Core Global Query Filter\nWrite Barrier Throws SecurityException"]
+    Gate2 -- "Valid Tenant" --> ResolveRole["Resolve Effective Role:\n1. Explicit ProjectUserRole?\n2. Parent ProgramUserRole (Floor = ReadOnly 10)?\n3. RootAdmin bypass?"]
+    
+    ResolveRole --> Gate3{"3. HRBAC Clearance Gate\n(Numeric Rank Comparison)"}
+    
+    Gate3 -- "EffectiveTier < RequiredTier\n(e.g., ReadOnly 10 < Lead 30)" --> Deny3["🚨 DENY: 403 Forbidden\nZero-PII Warning Audit Log\n(UserId, TenantId, ProjectId, RequiredTier, ActualTier)"]
+    Gate3 -- "EffectiveTier >= RequiredTier\n(e.g., Lead 30 >= Contribute 20)" --> Allow["✅ ALLOW: Granted\nRender Page / Execute Minimal API / Commit Entity"]
+
+    classDef deny fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    classDef allow fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef gate fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    
+    class Deny1,Deny2,Deny3 deny;
+    class Allow allow;
+    class Gate1,Gate2,Gate3,ResolveRole gate;
+```
+
+#### Traditional Flat RBAC vs. Our Hybrid Architecture
+
+| Dimension | Traditional Flat RBAC | Our Hybrid Architecture (`HRBAC + ReBAC + ABAC`) |
+| :--- | :--- | :--- |
+| **Role Representation** | Flat string arrays (e.g. `roles: ["Developer", "QA"]`). | **Spaced numeric tiers** (`ReadOnly=10`, `Contribute=20`, `Lead=30`, `ElevatedLead=40`, `PMO=50`, `Admin=100`). |
+| **Permission Checks** | Equality matching (`User.IsInRole("Developer")`). Broken if new intermediate roles are introduced. | **Cumulative threshold evaluation** (`(int)userRole >= (int)requiredRole`). New intermediate roles (e.g., `ElevatedLead = 40`) seamlessly fit into the hierarchy. |
+| **Structural Scoping (ReBAC)** | Roles are usually global across the whole application. | **Graph container hierarchy**: Roles exist strictly within `Tenant &rarr; Program &rarr; Project`. Maximum 1 active role per user per container (enforced by DB unique indexes). |
+| **Cross-Container Inheritance** | None. Roles must be manually duplicated on every single resource. | **Program ReadOnly Floor Rule**: Membership on a parent Program establishes baseline `ReadOnly (10)` access to all child projects; explicit project roles elevate permissions. |
+| **Environmental Context (ABAC)** | None. If user has the role string, access is granted indefinitely. | **Contextual Gates**: Gated by `StartDateUtc <= now <= EndDateUtc`, `IsActive == true`, HMAC-SHA256 database row tamper seal, and mandatory $\ge 1$ role assignment. |
+| **Route Decoupling** | Single monolithic attribute (`[Authorize(Roles = "...")]`). | **Dual-Tier Clearance**: `@attribute [RequiredClearance(viewTier: Lead, editTier: PMO)]` separating read visibility from write mutations on the same screen. |
+| **Audit & Forensics** | Standard exception or generic log (often leaking emails/names). | **Zero-PII Forensic Security Logs**: Logs strictly opaque GUIDs (`UserId`, `TenantId`, `ProjectId`), operation route, and numeric tiers (`RequiredTier`, `ActualTier`). |
+
+### 5.2 The 5-Layer Defense-in-Depth Implementation
+
+BlazorFluent enforces authorization through compile-time route verification, ambient component gating, API filters, service mutation guards, and persistence write barriers:
 
 ```mermaid
 flowchart TD
@@ -212,7 +283,7 @@ flowchart TD
     end
 ```
 
-### Symmetrical Cumulative Tiers (Program & Project)
+### 5.3 Symmetrical Cumulative Tiers (Program & Project)
 Both scopes share identical spaced numeric rankings:
 
 | Numeric Tier | Project Role (`ProjectRole`) | Program Role (`ProgramRole`) | UI Display Label | Cumulative Capability |
@@ -224,7 +295,7 @@ Both scopes share identical spaced numeric rankings:
 | **50** | `PMO` | `PMO` | PMO Team | Financials, contract milestones, batch jobs, executive review |
 | **100**| `Admin` | `Admin` | Admin Team | Full administrative, membership, and security management |
 
-### The "ReadOnly Floor" Program Resolution Rule
+### 5.4 The "ReadOnly Floor" Program Resolution Rule
 ```mermaid
 flowchart TD
     Req["User Requests Project Resource (ProjectId)"] --> CheckExplicit["Check Explicit ProjectUserRole"]
@@ -241,7 +312,7 @@ flowchart TD
     Eval -->|False| LogDenial["Log Zero-PII Security Warning & Deny Access"]
 ```
 
-### Strict Zero-PII Security Audit Logging
+### 5.5 Strict Zero-PII Security Audit Logging
 Whenever a user with insufficient privileges attempts to access a restricted resource, the system logs a **Warning-level Security Audit Record** without personal names or email addresses:
 
 ```json
@@ -260,7 +331,161 @@ Whenever a user with insufficient privileges attempts to access a restricted res
 }
 ```
 
+### 5.6 Dual-Tier Clearance & Route Decoupling (`viewTier` vs `editTier`)
+
+Enterprise UIs frequently require different privilege levels for viewing a screen versus performing mutating actions on it. Rather than forcing developers to author duplicate pages or complex conditional UI blocks, BlazorFluent provides decoupled dual-tier route attributes:
+
+```razor
+@attribute [RequiredClearance(viewTier: ProjectRole.Lead, editTier: ProjectRole.PMO)]
+```
+
+* **Read Inspection Gate (`viewTier = Lead (30)`)**: Any user with `(int)role >= 30` (`Lead`, `ElevatedLead`, `PMO`, `Admin`) passes the presentation gate. `AuthorizedPageComponentBase` initializes the page and sets `CanVisit = true`.
+* **Mutation Gate (`editTier = PMO (50)`)**: Only users with `(int)role >= 50` (`PMO`, `Admin`) receive `CanEdit = true`. All submission buttons, form inputs, and launch modals remain enabled for them.
+* **Read-Only Degradation**: For users holding `Lead` (30) or `ElevatedLead` (40), `CanVisit` is `true` but `CanEdit` is `false`. Mutation controls are conditionally disabled or hidden, and backend services reject unauthorized submissions.
+* **Strict Lockout (403)**: For users holding `ReadOnly` (10) or `Contribute` (20), `CanVisit` evaluates to `false`. The page never renders child components, and `ProjectAccessDeniedCardComp` is displayed.
+
+### 5.7 Minimal API Transport Clearance Gate & Workflow State Transitions
+
+In addition to Blazor circuit protection, HTTP endpoints exposed by `BlazorFluent.Web` (such as workflow lifecycle progression, transition triggers, and batch exports) enforce transport-level clearance:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client / Browser Fetch
+    participant EP as EndpointClearanceExtensions (.RequireClearance)
+    participant Auth as JWT Authentication Handler
+    participant Svc as IWorkflowService (Domain Logic)
+    participant DB as AppDbContext & PostgreSQL RLS
+
+    User->>EP: POST /api/v1/workflows/transitions { projectId, workflowId, transition }
+    EP->>Auth: Extract Claims (UserId, TenantId, ProjectRole)
+    alt Missing Token or Inactive Account
+        Auth-->>User: 401 Unauthorized / Redirect to Login
+    else Clearance < Required Tier (e.g. Contribute 20 < Lead 30)
+        EP->>EP: Log Zero-PII Forensic Security Warning
+        EP-->>User: 403 Forbidden Response
+    else Clearance >= Required Tier (e.g. Lead 30 >= Lead 30)
+        EP->>Svc: Invoke Transition Endpoint Handler
+        Svc->>Svc: Execute Transition State Machine
+        Svc->>DB: Persist Workflow Progression
+        DB-->>Svc: Commit Succeeded
+        Svc-->>User: 200 OK (Updated WorkflowStateDto)
+    end
+```
+
+Minimal API routes declare required clearance tiers fluently on route groups or single endpoints:
+
+```csharp
+app.MapPost("/api/v1/workflows/transitions", async (WorkflowTransitionDto dto, IWorkflowService service) =>
+{
+    var result = await service.ExecuteTransitionAsync(dto);
+    return Results.Ok(result);
+})
+.RequireClearance(ProjectRole.Lead);
+```
+
+### 5.8 Compile-Time Route Governance (Roslyn Analyzer `TG005`)
+
+Human error is the leading cause of authorization bypasses. In a fast-moving codebase, developers may accidentally add a new Razor page (`@page "/new-feature"`) and forget to apply `@attribute [Authorize]` or `@attribute [RequiredClearance]`.
+
+To eliminate this vulnerability at compile time, the `TemplateGuard.Analyzers` Roslyn package enforces rule **`TG005`**:
+
+```
+Error TG005: Page 'NewFeaturePage.razor' declares route '@page "/new-feature"' 
+without declaring an explicit authorization attribute ([Authorize], [RequiredClearance], or [AllowAnonymous]).
+```
+
+* **Default-Deny Build Law**: If any Razor file declaring `@page` lacks an explicit security attribute, `dotnet build` fails with an analyzer compilation error.
+* **Strict AllowAnonymous Allowlist**: The analyzer restricts `@attribute [AllowAnonymous]` strictly to four public landing routes:
+  1. `LoginPage.razor` (`/login`)
+  2. `ErrorPage.razor` (`/Error`)
+  3. `AuthErrorPage.razor` (`/auth-error`)
+  4. `NotFoundPage.razor` (`/not-found`)
+* **Zero Runtime Leaks**: Because route governance is enforced by the compiler's Abstract Syntax Tree (AST), unauthorized routes can never be deployed to staging or production environments.
+
+### 5.9 Master Page Inventory & Security Classification
+
+Every application page in `BlazorFluent.Web` adheres strictly to compile-time route governance:
+
+| Page Component | Route | Security Classification | Required Attribute | Effective Clearance |
+| :--- | :--- | :--- | :--- | :--- |
+| `LoginPage.razor` | `/login` | Public Authentication | `@attribute [AllowAnonymous]` | Public (Unauthenticated) |
+| `ErrorPage.razor` | `/Error` | Public Error Display | `@attribute [AllowAnonymous]` | Public (Unauthenticated) |
+| `AuthErrorPage.razor` | `/auth-error` | Public Security Eviction | `@attribute [AllowAnonymous]` | Public (Unauthenticated) |
+| `NotFoundPage.razor` | `/not-found` | Public 404 Display | `@attribute [AllowAnonymous]` | Public (Unauthenticated) |
+| `HomePage.razor` | `/` | Authenticated Landing | `@attribute [Authorize]` | Any Active Assigned User ($\ge 1$ role) |
+| `SettingsPage.razor` | `/settings` | Authenticated Self-Service | `@attribute [Authorize]` | Any Active Assigned User ($\ge 1$ role) |
+| `ProjectTasksBoardPage.razor` | `/projects/{id}/tasks` | Universal Project Board | `@attribute [RequiredClearance(ProjectRole.ReadOnly)]` | ReadOnly (10) view / Contribute (20) edit |
+| `ProjectsDashboardPage.razor` | `/tenancy/projects` | Universal Project List | `@attribute [RequiredClearance(ProjectRole.ReadOnly)]` | ReadOnly (10) view / Contribute (20) edit |
+| `CatalogDashboardPage.razor` | `/catalog` | Universal Catalog View | `@attribute [RequiredClearance(ProjectRole.ReadOnly)]` | ReadOnly (10) view / Contribute (20) edit |
+| `KnowledgeArticlesListPage.razor`| `/knowledge` | Universal Knowledge View | `@attribute [RequiredClearance(ProjectRole.ReadOnly)]` | ReadOnly (10) view / Contribute (20) edit |
+| `KnowledgeArticleViewPage.razor` | `/knowledge/{id}` | Universal Article View | `@attribute [RequiredClearance(ProjectRole.ReadOnly)]` | ReadOnly (10) view / Contribute (20) edit |
+| `KnowledgeArticleEditPage.razor` | `/knowledge/{id}/edit` | Contributor Write Area | `@attribute [RequiredClearance(ProjectRole.Contribute)]` | Contribute (20) or higher |
+| `WorkflowsDashboardPage.razor` | `/workflows` | Lead Governance (Pipelines) | `@attribute [RequiredClearance(ProjectRole.Lead)]` | Lead (30) or higher |
+| `FileImportPage.razor` | `/imports` | Lead Ingestion Area | `@attribute [RequiredClearance(ProjectRole.Lead)]` | Lead (30) or higher |
+| `EventTrackerDashboardPage.razor`| `/events` | Elevated Lead Monitoring | `@attribute [RequiredClearance(ProjectRole.ElevatedLead)]`| ElevatedLead (40) or higher |
+| `JobsDashboardPage.razor` | `/jobs` | PMO Executive Governance | `@attribute [RequiredClearance(ProjectRole.PMO)]` | PMO (50) or higher |
+| `ProjectRoleManagementPage.razor`| `/tenancy/project-roles` | Project Admin Management | `@attribute [RequiredClearance(ProjectRole.Admin)]` | Admin (100) |
+| `TenantManagementPage.razor` | `/tenants` | Host Admin Platform | `@attribute [Authorize(Policy = AuthorizationPolicies.HostAdminOnly)]` | Root / Host Administrator |
+| `ActiveSessionsDashboardPage.razor`| `/admin/sessions` | Host Admin Security | `@attribute [Authorize(Policy = AuthorizationPolicies.HostAdminOnly)]` | Root / Host Administrator |
+
+### 5.8 Separation of Duties & Zero-Trust Delegated Administration Matrix
+
+To maintain strict data segregation and prevent accidental cross-tenant data leaks in enterprise multi-tenant deployments, BlazorFluent enforces an absolute separation of administrative duties across all four organizational tiers (**App Admin -> Tenant Admin -> Program Admin -> Project Admin**):
+
+```mermaid
+graph TD
+    AppAdmin["App Admin (Platform Operator)"] -->|Exclusively Appoints / Modifies / Revokes<br/>HMAC Sealed + Level 3 Audit| TA["Tenant Admin (Tenant Owner)"]
+    
+    TA -->|Sole Owner & Manager of<br/>Tenant User Roster| Roster["Tenant User Roster<br/>(tenancy.tenant_users: Role = TenantMember)"]
+    
+    TA -->|Appoints / Oversees| ProgAdmin["Program Admin"]
+    TA -->|Appoints / Oversees| ProjAdmin["Project Admin"]
+    
+    ProgAdmin -->|Picks users strictly from Roster| ProgRole["Program Governance Roles<br/>(tenancy.program_user_roles)"]
+    ProjAdmin -->|Picks users strictly from Roster| ProjRole["Project Execution Roles<br/>(tenancy.project_user_roles)"]
+
+    subgraph BlockedByZeroTrust["Zero-Trust Boundaries (BLOCKED)"]
+        TA -.->|Cannot Appoint| TA
+        AppAdmin -.->|Zero Business Data Access| ProjRole
+        AppAdmin -.->|Cannot Browse / Manage| Roster
+    end
+
+    style AppAdmin fill:#d32f2f,stroke:#b71c1c,stroke-width:2px,color:#fff
+    style TA fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    style Roster fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    style ProgAdmin fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    style ProjAdmin fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+```
+
+#### Detailed Responsibility Boundaries:
+
+| Role | Permitted Responsibilities | Strictly Prohibited / Blocked Actions |
+| :--- | :--- | :--- |
+| **App Admin (Platform Operator)** | • Provision and deactivate client tenants<br/>• Configure platform-wide infrastructure, Key Vault & health diagnostics<br/>• **Exclusively appoint, modify, or revoke Tenant Admins**<br/>• Inspect platform audit logs and queue health | • **Cannot browse or view tenant business data** (Tasks, Sprints, Calendars, RAID, Workflows)<br/>• **Cannot manage regular tenant users** (belongs solely to Tenant Admin)<br/>• Cannot manage project-level roles unless explicitly granted a project role |
+| **Tenant Admin (Tenant Owner)** | • **Full ownership of Tenant User Roster** (Add, edit, deactivate `TenantMember` users)<br/>• Configure tenant settings, branding, and integrations<br/>• Appoint and revoke Program Admins and Project Admins<br/>• Overarching governance across all programs and projects in their tenant | • **Cannot appoint or elevate users to Tenant Admin** (strictly App Admin)<br/>• Cannot view or query data from other client tenants |
+| **Program Admin** | • Appoint other Program Admins within the same program<br/>• Appoint Project Admins within child projects under the program<br/>• Manage program delivery gates, calendars, and cross-project RAID logs | • Cannot manage the Tenant User Roster<br/>• Cannot assign roles outside their assigned program |
+| **Project Admin** | • Appoint Project Admins and team members within their project<br/>• Manage project tasks, workflows, and sprint delivery | • Cannot add users to the Tenant Roster (can only pick existing roster members)<br/>• Cannot assign roles in other projects |
+
+#### Multi-Tenant User Discovery & Project Assignment Gate:
+In multi-tenant scenarios with 1,000+ users across dozens of tenants, searching the global user directory is prohibited to prevent cross-tenant customer staff and PII leakage. Project and Program Admins discover and select users **strictly from their own tenant's roster**:
+```csharp
+var tenantMembers = await _dbContext.TenantUsers
+    .AsNoTracking()
+    .Include(tu => tu.User)
+    .Where(tu => tu.TenantId == currentTenant && tu.IsActive && !tu.IsDeleted)
+    .OrderBy(tu => tu.User!.FullName)
+    .ToListAsync(ct);
+```
+
+#### Cryptographic HMAC-SHA256 Anti-Tampering Sealing on ANY Change:
+All role and membership entities (`TenantUserEntity`, `ProgramUserRoleEntity`, `ProjectUserRoleEntity`, `UserEntity`) implement `IHmacSignableEntity`. Whenever a record is added, updated, or deactivated:
+- `AuditableEntityInterceptor` automatically recalculates `RowSignature` using `Security:IntegritySecret` (stored in Key Vault / User Secrets, never in PostgreSQL).
+- Direct SQL modifications (e.g. `UPDATE tenancy.tenant_users SET role = 1 ...`) invalidate the signature.
+- `HierarchyAuthorizationService` verifies the HMAC signature during authorization checks. Tampering results in **immediate fail-closed denial** and a **High-Severity Security Alert**.
+
 ---
+
 
 ## ⚡ 6. Real-Time Circuit Monitoring & Remote Session Kill-Switch
 

@@ -24,8 +24,22 @@ public class ProgramEntityValidator : AbstractValidator<ProgramEntity>
         RuleFor(x => x.Description)
             .MaximumLength(2000).WithMessage("Program description cannot exceed 2,000 characters.");
 
-        RuleFor(x => x)
-            .Must(x => !x.TargetEndDateUtc.HasValue || !x.StartDateUtc.HasValue || x.TargetEndDateUtc.Value >= x.StartDateUtc.Value)
-            .WithMessage("Program target end date cannot precede start date.");
+        RuleFor(x => x.DueDate)
+            .GreaterThanOrEqualTo(x => x.StartDate)
+            .WithMessage("Program due date cannot precede start date.");
+
+        When(x => x.EndDate.HasValue, () =>
+        {
+            RuleFor(x => x.EndDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .WithMessage("Program target end date cannot precede start date.");
+        });
+
+        When(x => x.RevisedDueDate.HasValue, () =>
+        {
+            RuleFor(x => x.RevisedDueDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .WithMessage("Program revised due date cannot precede start date.");
+        });
     }
 }

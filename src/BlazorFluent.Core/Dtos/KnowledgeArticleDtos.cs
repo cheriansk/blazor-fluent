@@ -8,7 +8,7 @@ public record KnowledgeArticleListDto(
     string Snippet,
     List<string> Labels,
     bool IsGlobal,
-    KnowledgeArticleStatus Status,
+    KnowledgeArticleStatusEnum Status,
     string AuthorUserName,
     string AuthorUserEmail,
     DateTime CreatedAtUtc,
@@ -33,7 +33,7 @@ public record KnowledgeArticleDetailDto(
     string Content,
     List<string> Labels,
     bool IsGlobal,
-    KnowledgeArticleStatus Status,
+    KnowledgeArticleStatusEnum Status,
     Guid? ProjectId,
     string? ProjectName,
     string AuthorUserId,
@@ -52,7 +52,7 @@ public record CreateArticleDto
 {
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
-    public KnowledgeArticleScope? Scope { get; set; } // Nullable: no default selected!
+    public KnowledgeArticleScopeEnum? Scope { get; set; } // Nullable: no default selected!
     public List<string> Labels { get; set; } = new(); // Starts empty: no automatic labels!
     public Guid? ProjectId { get; set; }
     public List<string> ReviewerUserIds { get; set; } = new();
@@ -63,7 +63,7 @@ public record UpdateArticleDto
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
-    public KnowledgeArticleScope? Scope { get; set; }
+    public KnowledgeArticleScopeEnum? Scope { get; set; }
     public List<string> Labels { get; set; } = new();
     public Guid? ProjectId { get; set; }
     public List<string> ReviewerUserIds { get; set; } = new();

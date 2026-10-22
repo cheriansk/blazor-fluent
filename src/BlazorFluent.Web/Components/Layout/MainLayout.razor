@@ -72,7 +72,7 @@
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
             <AppErrorBoundaryComp>
-                @if (CurrentUser.IsAuthenticated && !CurrentUser.IsRootAdmin && string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+                @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)
                 {
                     <div style="padding: 40px; max-width: 800px; margin: 40px auto;">
                         <FluentCard Style="border-left: 4px solid var(--error); padding: 24px;">
@@ -120,14 +120,14 @@
 </div>
 
 @code {
-    private bool HasActiveTenantSession => CurrentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(TenantContext.TenantId);
+    private bool HasActiveTenantSession => CurrentUser.IsAuthenticatedTenantUser;
 
     private bool IsAnonymousPage
     {
         get
         {
             var uri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLowerInvariant();
-            return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("not-found");
+            return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("error") || uri.StartsWith("not-found");
         }
     }
 
@@ -197,14 +197,16 @@
 
                         // Prefer the intra-session active tenant if still permitted in allowed tenants
                         var resolvedTenantId = verified.ResolvedTenantId;
+                        var resolvedTenantSlug = verified.ResolvedTenantSlug;
                         var resolvedTenantName = verified.ResolvedTenantName;
 
                         if (!string.IsNullOrWhiteSpace(data.ActiveTenantId))
                         {
-                            var activeMatch = verified.AllowedTenants.FirstOrDefault(t => t.Id == data.ActiveTenantId);
+                            var activeMatch = verified.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == data.ActiveTenantId || t.Slug == data.ActiveTenantId);
                             if (activeMatch != null)
                             {
                                 resolvedTenantId = activeMatch.Id;
+                                resolvedTenantSlug = activeMatch.Slug;
                                 resolvedTenantName = activeMatch.Name;
                             }
                         }
@@ -214,7 +216,7 @@
                             tenantName: resolvedTenantName,
                             userType: user.UserType,
                             allowedTenants: verified.AllowedTenants,
-                            isHost: isHost);
+                            tenantSlug: resolvedTenantSlug);
 
                         if (data.ActiveProjectId.HasValue)
                         {
@@ -264,35 +266,10 @@
                 NavigationManager.NavigateTo("/login");
             }
         }
-        else if (string.IsNullOrWhiteSpace(TenantContext.TenantId) && !IsAnonymousPage)
+        else if ((!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty) && !IsAnonymousPage)
         {
-            // Edge case: Authenticated but tenant missing -> try resolving from user's default
-            try
-            {
-                var userId = CurrentUser.UserId;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    var user = await DbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-                    if (user != null)
-                    {
-                        var isHost = CurrentUser.IsRootAdmin;
-                        var tenantId = (user.DefaultTenantId != null && user.DefaultTenantId != IRootAdminService.DefaultTenantSlug)
-                            ? user.DefaultTenantId
-                            : "";
-                        var activeTenant = !string.IsNullOrEmpty(tenantId)
-                            ? await DbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId && t.Slug != IRootAdminService.DefaultTenantSlug)
-                            : null;
-                        var name = activeTenant?.Name ?? (isHost ? "System Root Administration" : "Organization");
-                        var allowed = !string.IsNullOrEmpty(tenantId) ? [new TenantInfo(tenantId, name, isHost)] : new List<TenantInfo>();
-                        TenantContext.Initialize(tenantId, name, user.UserType, allowed, isHost);
-                        StateHasChanged();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to resolve tenant for authenticated user.");
-            }
+            // Zero Trust: Authenticated but tenant missing -> redirect to login/tenant selection
+            NavigationManager.NavigateTo("/login", replace: true);
         }
     }
 
@@ -303,7 +280,7 @@
             var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
             if (result.Success && result.Value != null)
             {
-                var adminOrSelf = CurrentUser.UserId ?? "user";
+                var adminOrSelf = CurrentUser.IsAuthenticated ? CurrentUser.UserId : (result.Value.UserId ?? "user");
                 await SessionService.RevokeSessionAsync(result.Value.SessionId, adminOrSelf);
             }
             await SessionStorage.DeleteAsync("app_session");

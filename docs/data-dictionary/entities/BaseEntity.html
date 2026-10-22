@@ -1,0 +1,39 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Base</span> &bull; <b>BaseEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">BaseEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Base</span>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK ROOT ENTITY DO NOT MODIFY without architectural review. Declares the sequential UUIDv7 primary key (Guid.CreateVersion7()) for all database entities. Sequential UUIDv7 ensures optimal B-Tree index clustering and high insert throughput in PostgreSQL.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (5)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">Created </td><td><span class="code-type">DateTime</span></td><td>No</td><td>Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.</td></tr>
+<tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td>User identifier or system actor who created the record.</td></tr>
+<tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
+<tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
+<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

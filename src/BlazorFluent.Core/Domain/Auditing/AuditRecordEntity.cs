@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 
 namespace BlazorFluent.Core.Domain.Auditing;
@@ -8,12 +8,12 @@ namespace BlazorFluent.Core.Domain.Auditing;
 /// Captures property-level entity diffs, tenant-switching events, security milestones, and user activities.
 /// Implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing of audit log entries.
 /// </summary>
-public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IValidationExemptEntity
+public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
 {
     /// <summary>
     /// The tenant scope for this audit record. Multi-tenant queries automatically row-filter by this value.
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public required Guid TenantId { get; set; }
 
     /// <summary>ID of the user who performed the operation, or 'system' for background workers.</summary>
     public string? UserId { get; set; }
@@ -22,22 +22,22 @@ public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEnt
     public string? UserEmail { get; set; }
 
     /// <summary>Capacity of the acting user at the time of the action (CompanyUser vs ClientUser).</summary>
-    public UserType? UserType { get; set; }
+    public UserTypeEnum? UserType { get; set; }
 
     /// <summary>High-level classification of the audit event.</summary>
-    public AuditEventType EventType { get; set; }
+    public required AuditEventTypeEnum EventType { get; set; }
 
     /// <summary>Severity classification.</summary>
-    public AuditSeverity Severity { get; set; } = AuditSeverity.Information;
+    public required AuditSeverityEnum Severity { get; set; }
 
-    /// <summary>Name of the entity modified (e.g. 'ProductEntity', 'ProjectEntity'), if applicable.</summary>
+    /// <summary>Name of the entity modified (e.g. 'TaskEntity', 'ProjectEntity'), if applicable.</summary>
     public string? EntityName { get; set; }
 
     /// <summary>Primary key of the modified entity as a string, if applicable.</summary>
     public string? EntityId { get; set; }
 
     /// <summary>Database operation performed (Insert, Update, Delete), if applicable.</summary>
-    public EntityOperation? Operation { get; set; }
+    public EntityOperationEnum? Operation { get; set; }
 
     /// <summary>
     /// Detailed property-level diff serialized as JSON.

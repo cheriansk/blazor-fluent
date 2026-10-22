@@ -21,7 +21,7 @@ public interface IProgramService
         string description,
         DateTime? startDateUtc,
         DateTime? targetEndDateUtc,
-        ProgramStatus status = ProgramStatus.Active,
+        ProgramStatusEnum status = ProgramStatusEnum.Active,
         CancellationToken ct = default);
 
     Task<Result<ProgramEntity>> UpdateProgramAsync(
@@ -31,7 +31,7 @@ public interface IProgramService
         string description,
         DateTime? startDateUtc,
         DateTime? targetEndDateUtc,
-        ProgramStatus status,
+        ProgramStatusEnum status,
         bool isActive,
         CancellationToken ct = default);
 

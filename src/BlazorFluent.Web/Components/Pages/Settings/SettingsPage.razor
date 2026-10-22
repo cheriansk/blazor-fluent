@@ -139,10 +139,10 @@
         }
         else
         {
-            var tenantId = TenantContext.TenantId;
-            var userId = CurrentUser.UserId;
-            if (!string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(userId))
+            if (TenantContext.HasActiveTenant && CurrentUser.IsAuthenticated)
             {
+                var tenantId = TenantContext.TenantId;
+                var userId = CurrentUser.UserId;
                 _canViewTenantTab = await HierarchyAuth.CanViewTenantSettingsAsync(tenantId, userId);
                 var accessiblePrograms = await HierarchyAuth.GetAccessibleProgramIdsAsync(tenantId, userId);
                 _canViewProgramTab = _canViewTenantTab || accessiblePrograms.Count > 0;

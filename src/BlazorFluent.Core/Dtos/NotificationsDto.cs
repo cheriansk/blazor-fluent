@@ -9,12 +9,12 @@ public record SendNotificationReqDto
 {
     public Guid ProjectId { get; init; } = Guid.Empty;
     public string? UserId { get; init; }
-    public NotificationCategory Category { get; init; } = NotificationCategory.Generic;
-    public NotificationSeverity Severity { get; init; } = NotificationSeverity.Info;
+    public NotificationCategoryEnum Category { get; init; } = NotificationCategoryEnum.Generic;
+    public NotificationSeverityEnum Severity { get; init; } = NotificationSeverityEnum.Info;
     public string Title { get; init; } = string.Empty;
     public string Message { get; init; } = string.Empty;
     public string? LinkUrl { get; init; }
-    public NotificationChannels Channels { get; init; } = NotificationChannels.InApp;
+    public NotificationChannelsEnum Channels { get; init; } = NotificationChannelsEnum.InApp;
     public string? MetadataJson { get; init; }
 }
 
@@ -23,11 +23,11 @@ public record SendNotificationReqDto
 /// </summary>
 public record NotificationFilterReqDto
 {
-    public NotificationCategory? Category { get; init; } = NotificationCategory.Generic;
+    public NotificationCategoryEnum? Category { get; init; } = NotificationCategoryEnum.Generic;
     public bool OnlyUnread { get; init; }
     public bool? IsRead { get; init; }
-    public NotificationSeverity? Severity { get; init; }
-    public string? TenantId { get; init; }
+    public NotificationSeverityEnum? Severity { get; init; }
+    public Guid? TenantId { get; init; }
     public Guid? ProjectId { get; init; }
     public DateTime? FromDateUtc { get; init; }
     public DateTime? ToDateUtc { get; init; }

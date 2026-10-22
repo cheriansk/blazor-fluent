@@ -10,7 +10,7 @@ namespace BlazorFluent.Core.Dtos.Imports;
 public class UploadFileRequest
 {
     public Guid ProjectId { get; set; }
-    public ImportFileType FileType { get; set; } = ImportFileType.TaskExcel;
+    public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.TaskExcel;
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = "application/octet-stream";
     public long FileSizeBytes { get; set; }
@@ -25,7 +25,7 @@ public class UploadBatchFileItem
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = "application/octet-stream";
     public long FileSizeBytes { get; set; }
-    public ImportFileType FileType { get; set; } = ImportFileType.TaskExcel;
+    public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.TaskExcel;
     public Stream? ContentStream { get; set; }
 }
 
@@ -47,8 +47,8 @@ public record ImportFileSummaryDto(
     Guid ProjectId,
     string OriginalFileName,
     string StorageFolder,
-    ImportFileType FileType,
-    ImportStatus Status,
+    ImportFileTypeEnum FileType,
+    ImportStatusEnum Status,
     string StepStage,
     long FileSizeBytes,
     int TotalRowsCount,
@@ -69,7 +69,7 @@ public record ImportBatchSummaryDto(
     int TotalFilesCount,
     int CompletedFilesCount,
     int FailedFilesCount,
-    ImportStatus OverallStatus,
+    ImportStatusEnum OverallStatus,
     DateTime Created,
     string? CreatedBy);
 
@@ -81,8 +81,8 @@ public record ImportFileDetailsDto(
     Guid ProjectId,
     string OriginalFileName,
     string BlobUri,
-    ImportFileType FileType,
-    ImportStatus Status,
+    ImportFileTypeEnum FileType,
+    ImportStatusEnum Status,
     long FileSizeBytes,
     int TotalRowsCount,
     int ValidRowsCount,

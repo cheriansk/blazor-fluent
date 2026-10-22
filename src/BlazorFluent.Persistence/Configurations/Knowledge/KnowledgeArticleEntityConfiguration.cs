@@ -13,7 +13,6 @@ public class KnowledgeArticleEntityConfiguration : IEntityTypeConfiguration<Know
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(a => a.Title)
@@ -39,28 +38,10 @@ public class KnowledgeArticleEntityConfiguration : IEntityTypeConfiguration<Know
         builder.Property(a => a.ProjectId)
             .IsRequired(true);
 
-        builder.Property(a => a.AuthorUserId)
-            .HasMaxLength(256)
+        builder.Property(a => a.AuthorUserEntityId)
             .IsRequired();
 
-        builder.Property(a => a.AuthorUserEmail)
-            .HasMaxLength(256)
-            .IsRequired();
-
-        builder.Property(a => a.AuthorUserName)
-            .HasMaxLength(256)
-            .IsRequired();
-
-        builder.Property(a => a.ApprovedByUserId)
-            .HasMaxLength(256)
-            .IsRequired(false);
-
-        builder.Property(a => a.ApprovedByUserEmail)
-            .HasMaxLength(256)
-            .IsRequired(false);
-
-        builder.Property(a => a.ApprovedByUserName)
-            .HasMaxLength(256)
+        builder.Property(a => a.ApprovedByUserEntityId)
             .IsRequired(false);
 
         builder.Property(a => a.ApprovedAtUtc)
@@ -86,6 +67,19 @@ public class KnowledgeArticleEntityConfiguration : IEntityTypeConfiguration<Know
             .WithMany()
             .HasForeignKey(a => a.ProjectId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Author relationship
+        builder.HasOne(a => a.AuthorUser)
+            .WithMany()
+            .HasForeignKey(a => a.AuthorUserEntityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Approver relationship
+        builder.HasOne(a => a.ApprovedByUser)
+            .WithMany()
+            .HasForeignKey(a => a.ApprovedByUserEntityId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes
         builder.HasIndex(a => a.TenantId)
@@ -116,16 +110,7 @@ public class KnowledgeArticleReviewerEntityConfiguration : IEntityTypeConfigurat
         builder.Property(r => r.ArticleId)
             .IsRequired();
 
-        builder.Property(r => r.UserId)
-            .HasMaxLength(256)
-            .IsRequired();
-
-        builder.Property(r => r.UserEmail)
-            .HasMaxLength(256)
-            .IsRequired();
-
-        builder.Property(r => r.UserName)
-            .HasMaxLength(256)
+        builder.Property(r => r.UserEntityId)
             .IsRequired();
 
         builder.Property(r => r.HasApproved)
@@ -135,10 +120,15 @@ public class KnowledgeArticleReviewerEntityConfiguration : IEntityTypeConfigurat
         builder.Property(r => r.ApprovedAtUtc)
             .IsRequired(false);
 
+        builder.HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserEntityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(r => r.ArticleId)
             .HasDatabaseName("IX_KnowledgeArticleReviewers_ArticleId");
 
-        builder.HasIndex(r => r.UserId)
-            .HasDatabaseName("IX_KnowledgeArticleReviewers_UserId");
+        builder.HasIndex(r => r.UserEntityId)
+            .HasDatabaseName("IX_KnowledgeArticleReviewers_UserEntityId");
     }
 }

@@ -36,7 +36,7 @@
 </FluentCard>
 
 @code {
-    [Parameter] public ProjectRole RequiredRole { get; set; } = ProjectRole.ReadOnly;
-    [Parameter] public ProjectRole? CurrentRole { get; set; }
+    [Parameter] public ProjectRoleEnum RequiredRole { get; set; } = ProjectRoleEnum.ReadOnly;
+    [Parameter] public ProjectRoleEnum? CurrentRole { get; set; }
     [Parameter] public string? CustomMessage { get; set; }
 }

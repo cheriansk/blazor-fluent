@@ -1,4 +1,7 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
+using System.Text;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Domain.Identity;
 
@@ -8,43 +11,31 @@ namespace BlazorFluent.Core.Domain.Tenancy;
 /// Represents the role assigned to a user within a specific project under a tenant.
 /// Scoped to a tenant via <see cref="TenantAuditableEntity"/> and a project via <see cref="IProjectScopedEntity"/>.
 /// Implements <see cref="ISoftDeletableEntity"/> so revoked roles preserve historical audit trails.
+/// Enforces 3NF relational normalization by persisting only <see cref="ProjectId"/> and <see cref="UserEntityId"/>
+/// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
+/// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
-public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IValidationExemptEntity
+public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IHmacSignableEntity
 {
     /// <summary>
     /// ID of the project to which this role assignment belongs.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
-    /// Primary identifier of the user (corresponds to <see cref="BlazorFluent.Core.Contracts.ICurrentUser.UserId"/>).
+    /// Foreign key to <see cref="UserEntity"/>.
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// User's email address at the time of assignment for display and audit.
-    /// </summary>
-    public string UserEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// User's full name at the time of assignment.
-    /// </summary>
-    public string UserName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// User type classification (CompanyUser or ClientUser).
-    /// </summary>
-    public UserType UserType { get; set; } = UserType.CompanyUser;
+    public required Guid UserEntityId { get; set; }
 
     /// <summary>
     /// The assigned project role (ReadOnly, QA, Dev, Admin).
     /// </summary>
-    public ProjectRole Role { get; set; } = ProjectRole.ReadOnly;
+    public required ProjectRoleEnum Role { get; set; }
 
     /// <summary>
-    /// Optional foreign key to <see cref="UserEntity"/> if tracked locally in the database.
+    /// Cryptographic HMAC-SHA256 signature sealing project role state against direct database tampering.
     /// </summary>
-    public Guid? UserEntityId { get; set; }
+    public string? RowSignature { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
@@ -54,4 +45,40 @@ public class ProjectUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity
     // --- Navigation Properties ---
     public ProjectEntity? Project { get; set; }
     public UserEntity? User { get; set; }
+
+    // --- [NotMapped] Navigation Forwarders ---
+    [NotMapped]
+    public string UserId => UserEntityId.ToString();
+
+    [NotMapped]
+    public string UserEmail => User?.Email ?? string.Empty;
+
+    [NotMapped]
+    public string UserName => !string.IsNullOrWhiteSpace(User?.FullName) ? User.FullName : (User?.Email ?? string.Empty);
+
+    [NotMapped]
+    public UserTypeEnum UserType => User?.UserType ?? UserTypeEnum.ClientUser;
+
+    /// <summary>
+    /// Computes the HMAC-SHA256 signature for this project role's security properties.
+    /// </summary>
+    public string ComputeIntegritySignature(string secretKey)
+    {
+        var payload = $"{Id}:{TenantId}:{ProjectId}:{UserEntityId}:{(int)Role}";
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+        return Convert.ToBase64String(hash);
+    }
+
+    /// <summary>
+    /// Validates whether the row's stored signature matches the expected HMAC in constant time.
+    /// </summary>
+    public bool VerifyIntegritySignature(string secretKey)
+    {
+        if (string.IsNullOrWhiteSpace(RowSignature)) return false;
+        var expected = ComputeIntegritySignature(secretKey);
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(RowSignature),
+            Encoding.UTF8.GetBytes(expected));
+    }
 }

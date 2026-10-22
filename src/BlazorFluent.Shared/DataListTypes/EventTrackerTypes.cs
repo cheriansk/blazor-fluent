@@ -3,7 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlazorFluent.Shared.DataListTypes;
 
-public enum EventTrackerStatus
+[LifecycleEnum]
+public enum EventTrackerStatusEnum
 {
     [Display(Name = "Published", Description = "Event has been dispatched and is awaiting processing")]
     [DataListCategory(EventTrackerDefinitions.Categories.Lifecycle)]
@@ -26,7 +27,8 @@ public enum EventTrackerStatus
     Failed = 5
 }
 
-public enum EventConsumptionStatus
+[LifecycleEnum]
+public enum EventConsumptionStatusEnum
 {
     [Display(Name = "Running", Description = "Consumer is actively executing")]
     [DataListCategory(EventTrackerDefinitions.Categories.Execution)]
@@ -43,6 +45,31 @@ public enum EventConsumptionStatus
     [Display(Name = "Retrying", Description = "Consumer failed and is awaiting a scheduled retry attempt")]
     [DataListCategory(EventTrackerDefinitions.Categories.Execution)]
     Retrying = 4
+}
+
+public static class EventTrackerStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<EventTrackerStatusEnum, IReadOnlySet<EventTrackerStatusEnum>> AllowedTransitions =
+        new Dictionary<EventTrackerStatusEnum, IReadOnlySet<EventTrackerStatusEnum>>
+        {
+            [EventTrackerStatusEnum.Published] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.InProgress, EventTrackerStatusEnum.Failed },
+            [EventTrackerStatusEnum.InProgress] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.Completed, EventTrackerStatusEnum.PartiallyFailed, EventTrackerStatusEnum.Failed },
+            [EventTrackerStatusEnum.Completed] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.Published },
+            [EventTrackerStatusEnum.PartiallyFailed] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.InProgress, EventTrackerStatusEnum.Failed },
+            [EventTrackerStatusEnum.Failed] = new HashSet<EventTrackerStatusEnum> { EventTrackerStatusEnum.InProgress }
+        };
+}
+
+public static class EventConsumptionStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<EventConsumptionStatusEnum, IReadOnlySet<EventConsumptionStatusEnum>> AllowedTransitions =
+        new Dictionary<EventConsumptionStatusEnum, IReadOnlySet<EventConsumptionStatusEnum>>
+        {
+            [EventConsumptionStatusEnum.Running] = new HashSet<EventConsumptionStatusEnum> { EventConsumptionStatusEnum.Succeeded, EventConsumptionStatusEnum.Failed, EventConsumptionStatusEnum.Retrying },
+            [EventConsumptionStatusEnum.Retrying] = new HashSet<EventConsumptionStatusEnum> { EventConsumptionStatusEnum.Running, EventConsumptionStatusEnum.Failed },
+            [EventConsumptionStatusEnum.Failed] = new HashSet<EventConsumptionStatusEnum> { EventConsumptionStatusEnum.Retrying },
+            [EventConsumptionStatusEnum.Succeeded] = new HashSet<EventConsumptionStatusEnum>()
+        };
 }
 
 public static class EventTrackerDefinitions

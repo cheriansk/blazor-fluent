@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Domain.Tenancy;
@@ -43,7 +43,7 @@ public class ProgramService : IProgramService
         if (string.IsNullOrWhiteSpace(tenantSlug)) return [];
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         // Zero Trust Gate: User must have access to tenant
         if (!await _hierarchyAuth.CanAccessTenantAsync(normalizedSlug, userId, ct))
@@ -56,9 +56,12 @@ public class ProgramService : IProgramService
         // Get list of accessible program IDs (Tenant Admin sees all, Program Admin sees only assigned)
         var accessibleProgramIds = await _hierarchyAuth.GetAccessibleProgramIdsAsync(normalizedSlug, userId, ct);
 
+        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
+        if (tenant == null) return [];
+
         return await _context.Programs
             .AsNoTracking()
-            .Where(p => p.TenantId.ToLower() == normalizedSlug &&
+            .Where(p => p.TenantId == tenant.Id &&
                         accessibleProgramIds.Contains(p.Id) &&
                         !p.IsDeleted)
             .Include(p => p.Projects.Where(pr => !pr.IsDeleted))
@@ -70,7 +73,7 @@ public class ProgramService : IProgramService
     {
         if (programId == Guid.Empty) return Result<ProgramEntity>.Failure("Invalid Program ID.");
 
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         if (!await _hierarchyAuth.CanAccessProgramAsync(programId, userId, ct))
         {
@@ -95,7 +98,7 @@ public class ProgramService : IProgramService
         string description,
         DateTime? startDateUtc,
         DateTime? targetEndDateUtc,
-        ProgramStatus status = ProgramStatus.Active,
+        ProgramStatusEnum status = ProgramStatusEnum.Active,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(tenantSlug)) return Result<ProgramEntity>.Failure("Tenant slug is required.");
@@ -103,7 +106,7 @@ public class ProgramService : IProgramService
         if (string.IsNullOrWhiteSpace(code)) return Result<ProgramEntity>.Failure("Program code is required.");
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         // Zero Trust Gate: Creating programs requires Tenant Admin or Root Admin
         if (!await _hierarchyAuth.IsTenantAdminAsync(normalizedSlug, userId, ct))
@@ -122,7 +125,7 @@ public class ProgramService : IProgramService
 
         // Check unique code
         var codeExists = await _context.Programs
-            .AnyAsync(p => p.TenantId.ToLower() == normalizedSlug &&
+            .AnyAsync(p => p.TenantId == tenant.Id &&
                            p.Code.ToLower() == code.Trim().ToLower() &&
                            !p.IsDeleted, ct);
 
@@ -132,13 +135,13 @@ public class ProgramService : IProgramService
         var program = new ProgramEntity
         {
             Id = Guid.CreateVersion7(),
-            TenantId = normalizedSlug,
-            TenantEntityId = tenant.Id,
+            TenantId = tenant.Id,
             Name = name.Trim(),
             Code = code.Trim().ToUpperInvariant(),
-            Description = description?.Trim() ?? string.Empty,
-            StartDateUtc = startDateUtc,
-            TargetEndDateUtc = targetEndDateUtc,
+            Description = description?.Trim(),
+            StartDate = startDateUtc ?? DateTime.UtcNow,
+            DueDate = targetEndDateUtc ?? (startDateUtc ?? DateTime.UtcNow).AddMonths(3),
+            EndDate = targetEndDateUtc,
             Status = status,
             IsActive = true
         };
@@ -161,7 +164,7 @@ public class ProgramService : IProgramService
         string description,
         DateTime? startDateUtc,
         DateTime? targetEndDateUtc,
-        ProgramStatus status,
+        ProgramStatusEnum status,
         bool isActive,
         CancellationToken ct = default)
     {
@@ -169,7 +172,7 @@ public class ProgramService : IProgramService
         if (string.IsNullOrWhiteSpace(name)) return Result<ProgramEntity>.Failure("Program name is required.");
         if (string.IsNullOrWhiteSpace(code)) return Result<ProgramEntity>.Failure("Program code is required.");
 
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
 
         // Zero Trust Gate: Must be Program Admin or Tenant Admin
         if (!await _hierarchyAuth.IsProgramAdminAsync(programId, userId, ct))
@@ -218,7 +221,7 @@ public class ProgramService : IProgramService
     {
         if (programId == Guid.Empty) return [];
 
-        var userId = _currentUser.UserId ?? string.Empty;
+        var userId = _currentUser.UserId;
         if (!await _hierarchyAuth.CanAccessProgramAsync(programId, userId, ct)) return [];
 
         return await _context.Projects
@@ -246,68 +249,81 @@ public class ProgramService : IProgramService
             .Where(t => projectIds.Contains(t.ProjectId))
             .ToListAsync(ct);
 
-        var dependencies = await _context.TaskDependencies
+        var dependencies = await _context.WorkDependencies
             .AsNoTracking()
-            .Where(d => projectIds.Contains(d.ProjectId) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value)))
+            .Where(d => ((d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value))) && !d.IsDeleted)
             .ToListAsync(ct);
 
         var projectLookup = program.Projects.ToDictionary(pr => pr.Id, pr => pr.Name);
 
         var totalTasks = tasks.Count;
-        var completedTasks = tasks.Count(t => t.Status is TaskStatus.Closed or TaskStatus.Cancelled);
-        var openTasks = tasks.Count(t => t.Status is TaskStatus.Open or TaskStatus.InProgress);
-        var overdueTasks = tasks.Count(t => t.Status is not TaskStatus.Closed &&
-                                            t.Status is not TaskStatus.Cancelled &&
+        var completedTasks = tasks.Count(t => t.Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled);
+        var openTasks = tasks.Count(t => t.Status is TaskStatusEnum.Open or TaskStatusEnum.InProgress);
+        var overdueTasks = tasks.Count(t => t.Status is not TaskStatusEnum.Closed &&
+                                            t.Status is not TaskStatusEnum.Cancelled &&
                                             t.DueDate.Date < DateTime.UtcNow.Date);
 
         // Identify Cross-Project Dependencies
         var crossProjectDeps = new List<CrossProjectDependencyDto>();
         var riskReasons = new List<string>();
 
-        foreach (var dep in dependencies.Where(d => d.IsCrossProject))
+        foreach (var dep in dependencies.Where(d => d.DependsOnProjectId.HasValue && d.ProjectId != d.DependsOnProjectId.Value))
         {
-            var sourceTask = tasks.FirstOrDefault(t => t.Id == dep.TaskId);
-            var targetTask = tasks.FirstOrDefault(t => t.Id == dep.DependsOnTaskId);
+            var sourceTask = tasks.FirstOrDefault(t => t.Id == dep.DependentItemId);
+            var targetTask = tasks.FirstOrDefault(t => t.Id == dep.DependsOnItemId);
 
-            var sourceProjectName = sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName) ? sName : "External Project";
-            var targetProjectName = dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName) ? tName : "External Project";
+            string sourceProjectName = "External Project";
+            if (sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName))
+            {
+                sourceProjectName = sName;
+            }
+            else if (dep.ProjectId.HasValue && projectLookup.TryGetValue(dep.ProjectId.Value, out var sProj))
+            {
+                sourceProjectName = sProj;
+            }
 
-            var isResolved = targetTask?.Status is TaskStatus.Closed or TaskStatus.Cancelled;
-            var isOverdue = !isResolved && dep.ResolveByUtc.HasValue && dep.ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
+            string targetProjectName = "External Project";
+            if (dep.DependsOnProjectId.HasValue && projectLookup.TryGetValue(dep.DependsOnProjectId.Value, out var tName))
+            {
+                targetProjectName = tName;
+            }
+
+            var isResolved = dep.IsResolved || (targetTask?.Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled);
+            var isOverdue = !isResolved && dep.DueDate.Date < DateTime.UtcNow.Date;
 
             crossProjectDeps.Add(new CrossProjectDependencyDto
             {
                 DependencyId = dep.Id,
-                SourceProjectId = dep.ProjectId,
+                SourceProjectId = dep.ProjectId ?? Guid.Empty,
                 SourceProjectName = sourceProjectName,
-                SourceTaskId = dep.TaskId,
-                SourceTaskTitle = sourceTask?.Title ?? "Task",
+                SourceTaskId = dep.DependentItemId ?? Guid.Empty,
+                SourceTaskTitle = sourceTask?.Title ?? dep.Title,
                 TargetProjectId = dep.DependsOnProjectId ?? Guid.Empty,
                 TargetProjectName = targetProjectName,
-                TargetTaskId = dep.DependsOnTaskId,
-                TargetTaskTitle = targetTask?.Title ?? "Prerequisite Task",
+                TargetTaskId = dep.DependsOnItemId ?? Guid.Empty,
+                TargetTaskTitle = targetTask?.Title ?? dep.DependsOnSnapshotTitle ?? "Prerequisite Item",
                 TargetAssigneeEmails = targetTask?.AssigneeEmails ?? string.Empty,
                 DependencyType = dep.DependencyType,
-                ResolveByUtc = dep.ResolveByUtc,
+                ResolveByUtc = dep.DueDate,
                 IsResolved = isResolved
             });
 
-            if (isOverdue && dep.DependencyType == TaskDependencyType.Blocks)
+            if (isOverdue && dep.DependencyType == TaskDependencyTypeEnum.Blocks)
             {
-                riskReasons.Add($"Cross-project blocker overdue: '{sourceTask?.Title}' in [{sourceProjectName}] is blocked by '{targetTask?.Title}' in [{targetProjectName}].");
+                riskReasons.Add($"Cross-project blocker overdue: '{sourceTask?.Title ?? dep.Title}' in [{sourceProjectName}] is blocked by '{targetTask?.Title ?? dep.DependsOnSnapshotTitle ?? "Prerequisite"}' in [{targetProjectName}].");
             }
         }
 
-        var activeCrossProjectBlockers = crossProjectDeps.Count(d => !d.IsResolved && d.DependencyType == TaskDependencyType.Blocks);
+        var activeCrossProjectBlockers = crossProjectDeps.Count(d => !d.IsResolved && d.DependencyType == TaskDependencyTypeEnum.Blocks);
 
-        var healthRating = ProgramHealthRating.OnTrack;
+        var healthRating = ProgramHealthRatingEnum.OnTrack;
         if (riskReasons.Count > 0 || overdueTasks > 5)
         {
-            healthRating = ProgramHealthRating.Critical;
+            healthRating = ProgramHealthRatingEnum.Critical;
         }
         else if (activeCrossProjectBlockers > 0 || overdueTasks > 0)
         {
-            healthRating = ProgramHealthRating.AtRisk;
+            healthRating = ProgramHealthRatingEnum.AtRisk;
             if (activeCrossProjectBlockers > 0)
                 riskReasons.Add($"{activeCrossProjectBlockers} active cross-project blocking dependency(ies) currently unresolved.");
         }
@@ -321,7 +337,7 @@ public class ProgramService : IProgramService
             Health = healthRating,
             TotalProjects = program.Projects.Count,
             ActiveProjects = program.Projects.Count(pr => pr.IsActive),
-            ProjectsAtRisk = healthRating == ProgramHealthRating.Critical ? 1 : 0,
+            ProjectsAtRisk = healthRating == ProgramHealthRatingEnum.Critical ? 1 : 0,
             TotalTasks = totalTasks,
             CompletedTasks = completedTasks,
             OpenTasks = openTasks,

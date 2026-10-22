@@ -23,7 +23,7 @@ else if (FallbackContent != null)
     /// Razor compiler fails with an error if this parameter is omitted.
     /// </summary>
     [Parameter, EditorRequired]
-    public ProjectRole MinTier { get; set; }
+    public ProjectRoleEnum MinTier { get; set; }
 
     /// <summary>
     /// ID of the project scope. If omitted or Guid.Empty, uses active ProjectContext.ProjectId.
@@ -50,9 +50,11 @@ else if (FallbackContent != null)
     {
         _isEvaluating = true;
 
-        if (CurrentUser.IsRootAdmin)
+        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user in a customer tenant workspace.
+        // SystemDaemons and Root Tenant contexts have zero access to project workspaces.
+        if (!CurrentUser.IsAuthenticated_RegularTenant_User)
         {
-            _hasAccess = true;
+            _hasAccess = false;
             _isEvaluating = false;
             return;
         }

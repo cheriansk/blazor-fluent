@@ -1,0 +1,48 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Tasks</span> &bull; <b>TaskLinkEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">TaskLinkEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Tasks</span>
+<span class="badge badge-tenant">DbSet: TaskLinks</span>
+<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Explicit directional association linking two tasks. When LinkType is BlockedBy, maintains a foreign key to the generated BlockerDependencyEntity.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (7)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">BlockerDependencyId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td>Foreign key to the auto-generated BlockerDependencyEntity when LinkType is BlockedBy.</td></tr>
+<tr><td class="prop-name">IsDeleted </td><td><span class="code-type">bool</span></td><td>No</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">DeletedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">SourceTask <span class="fk-pill">NAV</span></td><td><a href="TaskEntity.html" class="code-type">TaskEntity?</a></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">TargetTask <span class="fk-pill">NAV</span></td><td><a href="TaskEntity.html" class="code-type">TaskEntity?</a></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">BlockerDependency <span class="fk-pill">NAV</span></td><td><a href="BlockerDependencyEntity.html" class="code-type">BlockerDependencyEntity?</a></td><td>Yes</td><td>-</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (2)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>OutgoingLinks</code></td><td>Collection (1:N)</td></tr>
+<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>IncomingLinks</code></td><td>Collection (1:N)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

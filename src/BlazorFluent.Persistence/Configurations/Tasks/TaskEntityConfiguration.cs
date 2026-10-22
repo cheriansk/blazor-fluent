@@ -10,18 +10,22 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 {
     public void Configure(EntityTypeBuilder<TaskEntity> builder)
     {
-        builder.ToTable("Tasks", EntitySchemas.tasks.ToString());
+        builder.ToTable("Tasks", EntitySchemas.tasks.ToString(), t =>
+        {
+            t.HasCheckConstraint(
+                "CK_Tasks_WorkflowId_WorkflowStepOrder",
+                "(\"WorkflowId\" IS NULL AND \"WorkflowStepOrder\" IS NULL) OR (\"WorkflowId\" IS NOT NULL AND \"WorkflowStepOrder\" IS NOT NULL AND \"WorkflowStepOrder\" > 0)");
+        });
 
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(t => t.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(t => t.Title)
             .HasMaxLength(200)
@@ -45,7 +49,16 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
         builder.Property(t => t.DueDate)
             .IsRequired();
 
+        builder.Property(t => t.RevisedDueDate)
+            .IsRequired(false);
+
         builder.Property(t => t.EndDate)
+            .IsRequired(false);
+
+        builder.Property(t => t.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(t => t.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(t => t.ReporterEmail)
@@ -72,13 +85,19 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .IsRequired(false);
 
         builder.Property(t => t.ProjectId)
-            .IsRequired(false);
+            .IsRequired();
 
         builder.Property(t => t.UserId)
             .HasMaxLength(256)
             .IsRequired(false);
 
         builder.Property(t => t.MilestoneId)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowId)
+            .IsRequired(false);
+
+        builder.Property(t => t.WorkflowStepOrder)
             .IsRequired(false);
 
         // Soft delete properties
@@ -93,26 +112,6 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasMaxLength(256)
             .IsRequired(false);
 
-        builder.Property(t => t.WorkflowTaskId)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepOrder)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepStatus)
-            .IsRequired(false)
-            .HasConversion<int>();
-
-        builder.Property(t => t.WorkflowStepCompletionNotes)
-            .HasMaxLength(2000)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepActivatedAtUtc)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepCompletedAtUtc)
-            .IsRequired(false);
-
         // Relationships
         builder.HasOne<ProjectEntity>()
             .WithMany()
@@ -124,29 +123,14 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasForeignKey(t => t.ProgramId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<ProjectMilestoneEntity>()
-            .WithMany()
-            .HasForeignKey(t => t.MilestoneId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(t => t.WorkflowTask)
+        builder.HasOne(t => t.Workflow)
             .WithMany(w => w.Steps)
-            .HasForeignKey(t => t.WorkflowTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(t => t.WorkflowId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(t => t.SubTasks)
             .WithOne(s => s.ParentTask)
             .HasForeignKey(s => s.ParentTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(t => t.OutgoingLinks)
-            .WithOne(l => l.SourceTask)
-            .HasForeignKey(l => l.SourceTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(t => t.IncomingLinks)
-            .WithOne(l => l.TargetTask)
-            .HasForeignKey(l => l.TargetTaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Targeted High-Performance Compound Indexes
@@ -165,11 +149,11 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
         builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
             .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
 
-        builder.HasIndex(t => new { t.TenantId, t.WorkflowTaskId, t.WorkflowStepOrder })
-            .HasDatabaseName("IX_Tasks_TenantId_WorkflowTaskId_StepOrder");
-
         builder.HasIndex(t => t.MilestoneId)
             .HasDatabaseName("IX_Tasks_MilestoneId");
+
+        builder.HasIndex(t => new { t.TenantId, t.WorkflowId, t.WorkflowStepOrder })
+            .HasDatabaseName("IX_Tasks_TenantId_WorkflowId_StepOrder");
 
         // Hook for downstream entity mapping customizations
         OnConfigureCustom(builder);

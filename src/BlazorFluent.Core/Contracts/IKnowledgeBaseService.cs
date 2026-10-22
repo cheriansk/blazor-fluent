@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Dtos;
 
 namespace BlazorFluent.Core.Contracts;
@@ -7,7 +7,7 @@ public interface IKnowledgeBaseService
 {
     Task<List<KnowledgeArticleListDto>> GetArticlesAsync(
         string? searchTerm = null,
-        KnowledgeArticleStatus? status = null,
+        KnowledgeArticleStatusEnum? status = null,
         string? labelFilter = null,
         bool? isGlobalOnly = null,
         CancellationToken cancellationToken = default);
@@ -27,4 +27,4 @@ public interface IKnowledgeBaseService
     Task<List<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default);
 }
 
-public record UserDto(string Id, string Email, string FullName, UserType UserType);
+public record UserDto(string Id, string Email, string FullName, UserTypeEnum UserType);

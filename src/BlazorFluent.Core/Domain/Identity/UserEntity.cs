@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
@@ -14,25 +14,34 @@ namespace BlazorFluent.Core.Domain.Identity;
 /// allowing company users to participate in multiple tenants and projects.
 /// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
-public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
+public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IHmacSignableEntity
 {
-    public string Email { get; set; } = string.Empty;
+    public required string Email { get; set; }
 
-    public string FullName { get; set; } = string.Empty;
+    public required string FullName { get; set; }
 
-    public UserType UserType { get; set; } = UserType.CompanyUser;
-
-    public bool IsActive { get; set; } = true;
+    public required UserTypeEnum UserType { get; set; }
 
     /// <summary>
-    /// Effective start date for user access window.
+    /// Architectural classification: Human, SystemDaemon, or ApiIntegrationBot.
     /// </summary>
-    public DateTime StartDateUtc { get; set; } = DateTime.UtcNow;
+    public required UserKindEnum UserKind { get; set; }
+
+    public bool IsSystemDaemon => UserKind == UserKindEnum.SystemDaemon;
+
+    public bool IsActive { get; set; }
 
     /// <summary>
-    /// Expiration date for user access window.
+    /// Effective start date for user access window (UTC).
+    /// Part of <see cref="IEffectiveDatedEntity"/>.
     /// </summary>
-    public DateTime EndDateUtc { get; set; } = DateTime.UtcNow.AddYears(1);
+    public required DateTime StartDate { get; set; }
+
+    /// <summary>
+    /// Expiration date for user access window (UTC).
+    /// Part of <see cref="IEffectiveDatedEntity"/>.
+    /// </summary>
+    public DateTime? EndDate { get; set; }
 
     /// <summary>
     /// Cryptographic HMAC-SHA256 signature sealing user state against direct database tampering.
@@ -40,15 +49,10 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     public string? RowSignature { get; set; }
 
     /// <summary>
-    /// Default or home tenant ID for this user.
-    /// </summary>
-    public string? DefaultTenantId { get; set; }
-
-    /// <summary>
     /// User's preferred timezone identifier (e.g., 'Eastern Standard Time', 'UTC').
     /// Used for presentation-layer date/time formatting.
     /// </summary>
-    public string TimeZoneId { get; set; } = "UTC";
+    public required string TimeZoneId { get; set; }
 
     /// <summary>
     /// Embedded EF Core 10 ComplexType value object for user physical address.
@@ -81,15 +85,17 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
     /// </summary>
     public string ComputeIntegritySignature(string secretKey)
     {
-        var startUtc = StartDateUtc.Kind == DateTimeKind.Utc
-            ? StartDateUtc
-            : (StartDateUtc.Kind == DateTimeKind.Local ? StartDateUtc.ToUniversalTime() : DateTime.SpecifyKind(StartDateUtc, DateTimeKind.Utc));
+        var startUtc = StartDate.Kind == DateTimeKind.Utc
+            ? StartDate
+            : (StartDate.Kind == DateTimeKind.Local ? StartDate.ToUniversalTime() : DateTime.SpecifyKind(StartDate, DateTimeKind.Utc));
 
-        var endUtc = EndDateUtc.Kind == DateTimeKind.Utc
-            ? EndDateUtc
-            : (EndDateUtc.Kind == DateTimeKind.Local ? EndDateUtc.ToUniversalTime() : DateTime.SpecifyKind(EndDateUtc, DateTimeKind.Utc));
+        var endUtc = EndDate.HasValue
+            ? (EndDate.Value.Kind == DateTimeKind.Utc
+                ? EndDate.Value
+                : (EndDate.Value.Kind == DateTimeKind.Local ? EndDate.Value.ToUniversalTime() : DateTime.SpecifyKind(EndDate.Value, DateTimeKind.Utc)))
+            : DateTime.MaxValue;
 
-        var payload = $"{Id}:{DefaultTenantId ?? ""}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}";
+        var payload = $"{Id}:{Email.ToLowerInvariant()}:{IsActive}:{startUtc:yyyy-MM-ddTHH:mm:ssZ}:{endUtc:yyyy-MM-ddTHH:mm:ssZ}:{UserKind}";
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         return Convert.ToBase64String(hash);
@@ -118,21 +124,23 @@ public class UserEntity : AuditableEntity, IGlobalEntity, ISoftDeletableEntity
             return false;
         }
 
-        if (!IsActive)
+        if (UserKind != UserKindEnum.Human) { failureReason = "System daemon and bot accounts cannot log in."; return false; } if (!IsActive)
         {
             failureReason = "Account has been deactivated.";
             return false;
         }
 
-        if (nowUtc < StartDateUtc)
+        var todayUtc = nowUtc.Date;
+
+        if (todayUtc < StartDate.Date)
         {
-            failureReason = $"Account access has not started yet (Active from: {StartDateUtc:yyyy-MM-dd}).";
+            failureReason = $"Account access has not started yet (Active from: {StartDate:yyyy-MM-dd}).";
             return false;
         }
 
-        if (nowUtc > EndDateUtc)
+        if (EndDate.HasValue && todayUtc > EndDate.Value.Date)
         {
-            failureReason = $"Account access expired on {EndDateUtc:yyyy-MM-dd}.";
+            failureReason = $"Account access expired on {EndDate.Value:yyyy-MM-dd}.";
             return false;
         }
 

@@ -31,15 +31,15 @@
                     <!-- Relationship Type Selector -->
                     <div>
                         <label class="fluent-label">Relationship Type</label>
-                        <FluentSelect TOption="TaskDependencyType" 
-                                      TValue="TaskDependencyType"
+                        <FluentSelect TOption="TaskDependencyTypeEnum" 
+                                      TValue="TaskDependencyTypeEnum"
                                       @bind-Value="_selectedLinkType"
                                       Style="width: 100%;">
-                            <FluentOption Value="TaskDependencyType.BlockedBy">🛑 Blocked By (Requires Resolution SLA & Details)</FluentOption>
-                            <FluentOption Value="TaskDependencyType.RelatesTo">🔗 Relates To (Associative Link)</FluentOption>
+                            <FluentOption Value="TaskDependencyTypeEnum.BlockedBy">🛑 Blocked By (Requires Resolution SLA & Details)</FluentOption>
+                            <FluentOption Value="TaskDependencyTypeEnum.RelatesTo">🔗 Relates To (Associative Link)</FluentOption>
                         </FluentSelect>
                         <span class="field-hint">
-                            @if (_selectedLinkType == TaskDependencyType.BlockedBy)
+                            @if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
                             {
                                 <span>This task cannot proceed until the target prerequisite task is resolved. Automatically generates an accountable Blocker Contract.</span>
                             }
@@ -65,7 +65,7 @@
                         </FluentSelect>
                     </div>
 
-                    @if (_selectedLinkType == TaskDependencyType.BlockedBy)
+                    @if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
                     {
                         <!-- Resolve SLA Due Date -->
                         <div>
@@ -77,14 +77,14 @@
                         <!-- Dependency Criticality -->
                         <div>
                             <label class="fluent-label">Criticality Rating *</label>
-                            <FluentSelect TOption="DependencyCriticality" 
-                                          TValue="DependencyCriticality"
+                            <FluentSelect TOption="DependencyCriticalityEnum" 
+                                          TValue="DependencyCriticalityEnum"
                                           @bind-Value="_criticality"
                                           Style="width: 100%;">
-                                <FluentOption Value="DependencyCriticality.Low">Low - Minor cosmetic or non-blocking</FluentOption>
-                                <FluentOption Value="DependencyCriticality.Medium">Medium - Standard execution milestone dependency</FluentOption>
-                                <FluentOption Value="DependencyCriticality.High">High - Critical path risk, immediate attention</FluentOption>
-                                <FluentOption Value="DependencyCriticality.Critical">Critical - Hard blocker halting active work stream</FluentOption>
+                                <FluentOption Value="DependencyCriticalityEnum.Low">Low - Minor cosmetic or non-blocking</FluentOption>
+                                <FluentOption Value="DependencyCriticalityEnum.Medium">Medium - Standard execution milestone dependency</FluentOption>
+                                <FluentOption Value="DependencyCriticalityEnum.High">High - Critical path risk, immediate attention</FluentOption>
+                                <FluentOption Value="DependencyCriticalityEnum.Critical">Critical - Hard blocker halting active work stream</FluentOption>
                             </FluentSelect>
                         </div>
 
@@ -196,10 +196,10 @@
     [Parameter] public EventCallback OnLinkCreated { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
-    private TaskDependencyType _selectedLinkType = TaskDependencyType.BlockedBy;
+    private TaskDependencyTypeEnum _selectedLinkType = TaskDependencyTypeEnum.BlockedBy;
     private Guid _selectedTargetTaskId = Guid.Empty;
     private DateTime? _resolveDueDate = DateTime.UtcNow.AddDays(7);
-    private DependencyCriticality _criticality = DependencyCriticality.High;
+    private DependencyCriticalityEnum _criticality = DependencyCriticalityEnum.High;
     private string _impactDetails = string.Empty;
     private string _watcherEmails = string.Empty;
     private bool _isSubmitting;
@@ -222,7 +222,7 @@
             return;
         }
 
-        if (_selectedLinkType == TaskDependencyType.BlockedBy)
+        if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
         {
             if (string.IsNullOrWhiteSpace(_impactDetails))
             {
@@ -240,7 +240,7 @@
         _isSubmitting = true;
         try
         {
-            if (_selectedLinkType == TaskDependencyType.BlockedBy)
+            if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
             {
                 var result = await UserTaskService.CreateBlockedByLinkAsync(
                     SourceTaskId,
@@ -267,7 +267,7 @@
                     Guid.Empty,
                     SourceTaskId,
                     _selectedTargetTaskId,
-                    TaskDependencyType.RelatesTo);
+                    TaskDependencyTypeEnum.RelatesTo);
 
                 if (result.IsSuccess)
                 {

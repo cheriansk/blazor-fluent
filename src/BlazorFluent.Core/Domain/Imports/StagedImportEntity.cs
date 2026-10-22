@@ -7,47 +7,47 @@ namespace BlazorFluent.Core.Domain.Imports;
 /// for ALL file import formats (Excel, CSV, TSV, space-delimited, XML, JSON).
 /// Eliminates the need for per-file-type staging tables and database migrations.
 /// </summary>
-public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity
+public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity
 {
     /// <summary>
     /// Shared batch identifier grouping all files uploaded together in the same session.
     /// </summary>
-    public Guid ImportId { get; set; }
+    public required Guid ImportId { get; set; }
 
     /// <summary>
     /// Foreign key link to the parent ImportFileEntity.
     /// </summary>
-    public Guid ImportFileId { get; set; }
+    public required Guid ImportFileId { get; set; }
 
     /// <summary>
     /// ID of the project workspace.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 
     /// <summary>
     /// Logical file template type (e.g., 'TaskExcel', 'TaskCsv', 'InvoiceXml').
     /// </summary>
-    public string FileType { get; set; } = string.Empty;
+    public required string FileType { get; set; }
 
     /// <summary>
     /// Original file name uploaded by the user.
     /// </summary>
-    public string OriginalFileName { get; set; } = string.Empty;
+    public required string OriginalFileName { get; set; }
 
     /// <summary>
     /// Originating worksheet or root section name.
     /// </summary>
-    public string SheetName { get; set; } = "Default";
+    public required string SheetName { get; set; }
 
     /// <summary>
     /// 1-based chunk index within the staged file.
     /// </summary>
-    public int ChunkIndex { get; set; } = 1;
+    public required int ChunkIndex { get; set; }
 
     /// <summary>
     /// Total number of chunks generated for this file.
     /// </summary>
-    public int TotalChunks { get; set; } = 1;
+    public required int TotalChunks { get; set; }
 
     /// <summary>
     /// Number of rows contained within this JSON chunk (typically up to 1,000).
@@ -62,7 +62,7 @@ public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity
     /// <summary>
     /// Lifecycle status of the staged chunk: 'Staged', 'Processing', 'Processed', or 'Failed'.
     /// </summary>
-    public string Status { get; set; } = "Staged";
+    public required string Status { get; set; }
 
     /// <summary>
     /// Timestamp when Cloud API processing completed for this chunk.
@@ -77,5 +77,5 @@ public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity
     /// <summary>
     /// High-density canonical JSON payload (CanonicalStagedChunkPayload) stored as PostgreSQL jsonb.
     /// </summary>
-    public string PayloadJson { get; set; } = string.Empty;
+    public required string PayloadJson { get; set; }
 }

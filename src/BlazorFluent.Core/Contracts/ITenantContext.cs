@@ -1,4 +1,8 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Dtos.Response;
 using Microsoft.Extensions.Logging;
 
@@ -6,20 +10,44 @@ namespace BlazorFluent.Core.Contracts;
 
 public interface ITenantContext
 {
-    /// <summary>The active tenant ID for the current scope/circuit. Null only before initialization.</summary>
-    string? TenantId { get; }
-
-    /// <summary>The active tenant's display name.</summary>
-    string? TenantName { get; }
-
-    /// <summary>Identifies whether this user is a company employee or a client.</summary>
-    UserType UserType { get; }
+    /// <summary>
+    /// Indicates whether an active tenant session has been established.
+    /// Returns false only prior to authentication (e.g. login gate, public health probes).
+    /// </summary>
+    bool HasActiveTenant { get; }
 
     /// <summary>
-    /// True for host/superadmin: bypasses all tenant query filters.
-    /// A host user can see all tenants' data. Never set this for a client user.
+    /// Indicates whether the active tenant is the Root Tenant (00000000-0000-0000-0000-000000000001).
     /// </summary>
-    bool IsHost { get; }
+    bool IsRootTenant { get; }
+
+    /// <summary>
+    /// The active tenant sequential UUIDv7 identifier for the current scope/circuit.
+    /// Strictly throws a SecurityException if accessed before initialization (!HasActiveTenant).
+    /// Guaranteed non-nullable sequential Guid in all authenticated contexts.
+    /// </summary>
+    Guid TenantId { get; }
+
+    /// <summary>
+    /// Backward-compatible alias to TenantId.
+    /// </summary>
+    [Obsolete("Deprecated: Use non-nullable ITenantContext.TenantId or ICurrentUser.TenantId instead.")]
+    Guid RequiredTenantId => TenantId;
+
+    /// <summary>The active tenant's human-friendly vanity URL slug (e.g. 'root' or 'acme').</summary>
+    string TenantSlug { get; }
+
+    /// <summary>The active tenant's display name.</summary>
+    string TenantName { get; }
+
+    /// <summary>Identifies whether this user is a company employee or a client.</summary>
+    UserTypeEnum UserType { get; }
+
+    /// <summary>
+    /// Backward-compatible alias for Root Tenant context.
+    /// </summary>
+    [Obsolete("Deprecated: Use ITenantContext.IsRootTenant or ICurrentUser.IsAuthenticated_RootTenant_User instead.")]
+    bool IsHost => IsRootTenant;
 
     /// <summary>The complete list of tenants this user is authorized to access.</summary>
     IReadOnlyList<TenantInfo> AllowedTenants { get; }
@@ -30,14 +58,27 @@ public interface ITenantContext
     /// <summary>
     /// Called once at the start of a session to populate context from authenticated claims.
     /// </summary>
-    void Initialize(string? tenantId, string? tenantName, UserType userType,
-        IEnumerable<TenantInfo> allowedTenants, bool isHost = false);
+    void SetTenant(Guid tenantId, string tenantSlug, string tenantName);
+
+    void Initialize(Guid tenantId, string tenantName, UserTypeEnum userType,
+        IEnumerable<TenantInfo> allowedTenants, string tenantSlug);
 
     /// <summary>
-    /// Switches the active tenant. Company users may switch to any of their AllowedTenants.
-    /// Client users are strictly prohibited and this will always return a security failure.
+    /// Backward-compatible overload.
     /// </summary>
-    Result SwitchTenant(string newTenantId);
+    [Obsolete("Deprecated: Use non-nullable Initialize(Guid, string, UserTypeEnum, IEnumerable<TenantInfo>, string) instead.")]
+    void Initialize(Guid? tenantId, string? tenantName, UserTypeEnum userType,
+        IEnumerable<TenantInfo> allowedTenants, bool isHost = false, string? tenantSlug = null);
+
+    /// <summary>
+    /// Switches the active tenant by its Guid primary key.
+    /// </summary>
+    Result SwitchTenant(Guid newTenantId);
+
+    /// <summary>
+    /// Switches the active tenant by Guid string or vanity slug.
+    /// </summary>
+    Result SwitchTenant(string newTenantIdOrSlug);
 
     /// <summary>
     /// Resets the tenant context to an uninitialized state (e.g., on sign out).
@@ -52,58 +93,118 @@ public interface ITenantContext
 /// </summary>
 public sealed class TenantContext : ITenantContext
 {
+    private readonly IRootAdminService? _rootAdminService;
     private readonly ILogger<TenantContext> _logger;
-    private string? _tenantId;
+    private Guid? _tenantId;
+    private string? _tenantSlug;
     private string? _tenantName;
-    private UserType _userType;
-    private bool _isHost;
+    private UserTypeEnum _userType;
     private List<TenantInfo> _allowedTenants = new();
 
-    public TenantContext(ILogger<TenantContext>? logger = null)
+    public TenantContext(IRootAdminService? rootAdminService = null, ILogger<TenantContext>? logger = null)
     {
+        _rootAdminService = rootAdminService;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantContext>.Instance;
     }
 
-    public string? TenantId => _tenantId;
-    public string? TenantName => _tenantName;
-    public UserType UserType => _userType;
-    public bool IsHost => _isHost;
+    public bool HasActiveTenant => _tenantId.HasValue && _tenantId.Value != Guid.Empty;
+
+    public bool IsRootTenant => HasActiveTenant && (
+        _rootAdminService != null
+            ? _tenantId.Value == _rootAdminService.RootTenantId
+            : (_tenantId.Value == IRootAdminService.DefaultRootTenantId || string.Equals(_tenantSlug, IRootAdminService.DefaultTenantSlug, StringComparison.OrdinalIgnoreCase)));
+
+    public Guid TenantId => HasActiveTenant
+        ? _tenantId!.Value
+        : throw SecurityViolation("TenantId");
+
+    [Obsolete("Deprecated: Use non-nullable TenantId instead.")]
+    public Guid RequiredTenantId => TenantId;
+
+    public string TenantSlug => HasActiveTenant
+        ? (_tenantSlug ?? string.Empty)
+        : throw SecurityViolation("TenantSlug");
+
+    public string TenantName => HasActiveTenant
+        ? (_tenantName ?? string.Empty)
+        : throw SecurityViolation("TenantName");
+
+    public UserTypeEnum UserType => _userType;
+
+    [Obsolete("Deprecated: Use IsRootTenant instead.")]
+    public bool IsHost => IsRootTenant;
+
     public IReadOnlyList<TenantInfo> AllowedTenants => _allowedTenants.AsReadOnly();
 
     /// <summary>
     /// Only company users may switch tenants. This is enforced at data level too.
     /// </summary>
-    public bool CanSwitchTenant => _userType == UserType.CompanyUser;
+    public bool CanSwitchTenant => _userType == UserTypeEnum.CompanyUser;
+
+    private SecurityException SecurityViolation(string memberName)
+    {
+        _logger.LogCritical("CRITICAL ZERO-TRUST SECURITY VIOLATION: '{MemberName}' accessed on ITenantContext before an active tenant was established.", memberName);
+        return new SecurityException($"Zero-Trust Security Violation: '{memberName}' cannot be accessed without an active tenant session.");
+    }
 
     public void Initialize(
-        string? tenantId,
-        string? tenantName,
-        UserType userType,
+        Guid tenantId,
+        string tenantName,
+        UserTypeEnum userType,
         IEnumerable<TenantInfo> allowedTenants,
-        bool isHost = false)
+        string tenantSlug)
     {
+        if (tenantId == Guid.Empty)
+        {
+            _logger.LogCritical("CRITICAL SECURITY VIOLATION: Attempted to initialize ITenantContext with Guid.Empty.");
+            throw new SecurityException("Zero-Trust Security Violation: Cannot initialize tenant context with an empty TenantId.");
+        }
+
         _tenantId = tenantId;
+        _tenantSlug = tenantSlug;
         _tenantName = tenantName;
         _userType = userType;
-        _isHost = isHost;
         _allowedTenants = new List<TenantInfo>(allowedTenants);
 
         _logger.LogInformation(
-            "Tenant context initialized: TenantId={TenantId}, TenantName={TenantName}, UserType={UserType}, IsHost={IsHost}, AllowedCount={AllowedCount}",
-            _tenantId, _tenantName, _userType, _isHost, _allowedTenants.Count);
+            "Tenant context initialized: TenantId={TenantId}, TenantSlug={TenantSlug}, TenantName={TenantName}, UserType={UserType}, IsRootTenant={IsRootTenant}, AllowedCount={AllowedCount}",
+            _tenantId, _tenantSlug, _tenantName, _userType, IsRootTenant, _allowedTenants.Count);
+    }
+
+    public void SetTenant(Guid tenantId, string tenantSlug, string tenantName)
+    {
+        Initialize(tenantId, tenantName, UserTypeEnum.CompanyUser, [new TenantInfo(tenantId, tenantSlug, tenantName, true)], false, tenantSlug);
+    }
+
+    [Obsolete("Deprecated: Use non-nullable Initialize(Guid, string, UserTypeEnum, IEnumerable<TenantInfo>, string) instead.")]
+    public void Initialize(
+        Guid? tenantId,
+        string? tenantName,
+        UserTypeEnum userType,
+        IEnumerable<TenantInfo> allowedTenants,
+        bool isHost = false,
+        string? tenantSlug = null)
+    {
+        if (!tenantId.HasValue || tenantId.Value == Guid.Empty)
+        {
+            _logger.LogCritical("CRITICAL SECURITY VIOLATION: Attempted to initialize ITenantContext with null or empty TenantId.");
+            throw new SecurityException("Zero-Trust Security Violation: Cannot initialize tenant context with null or empty TenantId.");
+        }
+
+        Initialize(tenantId.Value, tenantName ?? string.Empty, userType, allowedTenants, tenantSlug ?? string.Empty);
     }
 
     /// <summary>
-    /// Switches the active tenant with fail-closed security:
+    /// Switches the active tenant with fail-closed security by Guid:
     /// 1. ClientUsers are hard-blocked — no exceptions.
     /// 2. The requested tenant must be in the user's AllowedTenants list.
     /// 3. The target tenant must be active.
     /// </summary>
-    public Result SwitchTenant(string newTenantId)
+    public Result SwitchTenant(Guid newTenantId)
     {
-        if (_userType == UserType.ClientUser || string.Equals(newTenantId, "default", StringComparison.OrdinalIgnoreCase))
+        if (_userType == UserTypeEnum.ClientUser || newTenantId == Guid.Empty)
         {
-            _logger.LogWarning("Security violation: Attempted unauthorized tenant switch to {TargetTenantId}", newTenantId);
+            _logger.LogCritical("CRITICAL SECURITY VIOLATION: Unauthorized tenant switch attempt to {TargetTenantId} by UserType {UserType}", newTenantId, _userType);
             return Result.Failure("Access denied.");
         }
 
@@ -111,8 +212,8 @@ public sealed class TenantContext : ITenantContext
 
         if (target is null)
         {
-            _logger.LogWarning(
-                "Security violation: User attempted unauthorized switch to tenant {TargetTenantId}. CurrentTenant={CurrentTenantId}",
+            _logger.LogCritical(
+                "CRITICAL SECURITY VIOLATION: User attempted unauthorized switch to tenant {TargetTenantId} outside their AllowedTenants. CurrentTenant={CurrentTenantId}",
                 newTenantId, _tenantId);
             return Result.Failure("Access denied.");
         }
@@ -125,6 +226,7 @@ public sealed class TenantContext : ITenantContext
 
         var oldTenantId = _tenantId;
         _tenantId = target.Id;
+        _tenantSlug = target.Slug;
         _tenantName = target.Name;
 
         _logger.LogInformation(
@@ -134,12 +236,36 @@ public sealed class TenantContext : ITenantContext
         return Result.Success();
     }
 
+    /// <summary>
+    /// Switches the active tenant by Guid string or vanity slug.
+    /// </summary>
+    public Result SwitchTenant(string newTenantIdOrSlug)
+    {
+        if (string.IsNullOrWhiteSpace(newTenantIdOrSlug))
+        {
+            return Result.Failure("Access denied.");
+        }
+
+        if (Guid.TryParse(newTenantIdOrSlug, out var parsedGuid))
+        {
+            return SwitchTenant(parsedGuid);
+        }
+
+        var matchBySlug = _allowedTenants.FirstOrDefault(t => string.Equals(t.Slug, newTenantIdOrSlug, StringComparison.OrdinalIgnoreCase));
+        if (matchBySlug is not null)
+        {
+            return SwitchTenant(matchBySlug.Id);
+        }
+
+        return Result.Failure("Access denied.");
+    }
+
     public void Reset()
     {
         _tenantId = null;
+        _tenantSlug = null;
         _tenantName = null;
-        _userType = UserType.CompanyUser;
-        _isHost = false;
+        _userType = UserTypeEnum.CompanyUser;
         _allowedTenants.Clear();
         _logger.LogInformation("Tenant context reset.");
     }

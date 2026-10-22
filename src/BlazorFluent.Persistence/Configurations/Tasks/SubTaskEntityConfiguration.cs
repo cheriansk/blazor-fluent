@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -14,13 +14,12 @@ public class SubTaskEntityConfiguration : IEntityTypeConfiguration<SubTaskEntity
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(s => s.Level)
             .IsRequired()
             .HasConversion<int>()
-            .HasDefaultValue(TaskLevel.Project);
+            .HasDefaultValue(TaskLevelEnum.Project);
 
         builder.Property(s => s.ParentTaskId)
             .IsRequired();
@@ -54,7 +53,16 @@ public class SubTaskEntityConfiguration : IEntityTypeConfiguration<SubTaskEntity
         builder.Property(s => s.DueDate)
             .IsRequired();
 
+        builder.Property(s => s.RevisedDueDate)
+            .IsRequired(false);
+
         builder.Property(s => s.EndDate)
+            .IsRequired(false);
+
+        builder.Property(s => s.ActualStartDate)
+            .IsRequired(false);
+
+        builder.Property(s => s.ActualEndDate)
             .IsRequired(false);
 
         builder.Property(s => s.ReporterEmail)

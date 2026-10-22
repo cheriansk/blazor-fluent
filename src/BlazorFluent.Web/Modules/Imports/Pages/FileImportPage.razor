@@ -1,5 +1,5 @@
 @page "/imports"
-@attribute [RequiredClearance(ProjectRole.Lead)]
+@attribute [RequiredClearance(ProjectRoleEnum.Lead)]
 @attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("file-upload")]
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
@@ -106,7 +106,7 @@
                                     </FluentStack>
 
                                     <!-- Per-file Combined Format & Target Type Selector -->
-                                    <FluentSelect TOption="DataListItem<ImportFileType>" TValue="string"
+                                    <FluentSelect TOption="DataListItem<ImportFileTypeEnum>" TValue="string"
                                                   Items="@_fileTypeOptions"
                                                   OptionText="@(i => i.DisplayName)"
                                                   OptionValue="@(i => i.Code)"
@@ -183,34 +183,34 @@
                             <TemplateColumn Title="Status" Width="140px">
                                 @switch (context.Status)
                                 {
-                                    case ImportStatus.Uploaded:
+                                    case ImportStatusEnum.Uploaded:
                                         <FluentBadge Color="BadgeColor.Informative">Uploaded</FluentBadge>
                                         break;
-                                    case ImportStatus.Validating:
+                                    case ImportStatusEnum.Validating:
                                         <FluentBadge Color="BadgeColor.Brand">Validating</FluentBadge>
                                         break;
-                                    case ImportStatus.ValidationSuccess:
+                                    case ImportStatusEnum.ValidationSuccess:
                                         <FluentBadge Color="BadgeColor.Brand">Validated</FluentBadge>
                                         break;
-                                    case ImportStatus.ValidationFailed:
+                                    case ImportStatusEnum.ValidationFailed:
                                         <FluentBadge Color="BadgeColor.Severe">Validation Failed</FluentBadge>
                                         break;
-                                    case ImportStatus.Staging:
+                                    case ImportStatusEnum.Staging:
                                         <FluentBadge Color="BadgeColor.Brand">Staging</FluentBadge>
                                         break;
-                                    case ImportStatus.StagingSuccess:
+                                    case ImportStatusEnum.StagingSuccess:
                                         <FluentBadge Color="BadgeColor.Brand">Staged</FluentBadge>
                                         break;
-                                    case ImportStatus.StagingFailed:
+                                    case ImportStatusEnum.StagingFailed:
                                         <FluentBadge Color="BadgeColor.Severe">Staging Failed</FluentBadge>
                                         break;
-                                    case ImportStatus.Processing:
+                                    case ImportStatusEnum.Processing:
                                         <FluentBadge Color="BadgeColor.Brand">Processing</FluentBadge>
                                         break;
-                                    case ImportStatus.Completed:
+                                    case ImportStatusEnum.Completed:
                                         <FluentBadge Color="BadgeColor.Success">Completed</FluentBadge>
                                         break;
-                                    case ImportStatus.ProcessingFailed:
+                                    case ImportStatusEnum.ProcessingFailed:
                                         <FluentBadge Color="BadgeColor.Severe">Processing Failed</FluentBadge>
                                         break;
                                     default:
@@ -226,7 +226,7 @@
                             </TemplateColumn>
                             <TemplateColumn Title="Actions" Width="130px">
                                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
-                                    @if (context.Status is ImportStatus.ValidationFailed or ImportStatus.StagingFailed or ImportStatus.ProcessingFailed)
+                                    @if (context.Status is ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed or ImportStatusEnum.ProcessingFailed)
                                     {
                                         <FluentButton Appearance="ButtonAppearance.Subtle"
                                                       IconStart="@(new Icons.Regular.Size16.ErrorCircle())"
@@ -265,7 +265,7 @@
     private List<ProjectEntity> _availableProjects = new();
     private ProjectEntity? _currentProject;
 
-    private IReadOnlyList<DataListItem<ImportFileType>> _fileTypeOptions = Array.Empty<DataListItem<ImportFileType>>();
+    private IReadOnlyList<DataListItem<ImportFileTypeEnum>> _fileTypeOptions = Array.Empty<DataListItem<ImportFileTypeEnum>>();
     private readonly List<PendingUploadItem> _pendingFiles = new();
 
     private bool _isUploading;
@@ -282,12 +282,12 @@
         public IBrowserFile File { get; set; } = default!;
         public string FileName => File.Name;
         public long Size => File.Size;
-        public ImportFileType SelectedFileType { get; set; } = ImportFileType.TaskExcel;
+        public ImportFileTypeEnum SelectedFileType { get; set; } = ImportFileTypeEnum.TaskExcel;
     }
 
     protected override async Task OnInitializedAsync()
     {
-        _fileTypeOptions = DataListExtensions.GetDataListItems<ImportFileType>();
+        _fileTypeOptions = DataListExtensions.GetDataListItems<ImportFileTypeEnum>();
 
         await LoadProjectsAsync();
         await RefreshHistoryAsync();
@@ -324,11 +324,11 @@
             var ext = Path.GetExtension(file.Name).ToLowerInvariant();
             var detectedType = ext switch
             {
-                ".xlsx" or ".xls" => ImportFileType.TaskExcel,
-                ".json" => ImportFileType.TaskJson,
-                ".xml" => ImportFileType.TaskXml,
-                ".csv" or ".txt" or ".tsv" => ImportFileType.TaskCsv,
-                _ => ImportFileType.TaskExcel
+                ".xlsx" or ".xls" => ImportFileTypeEnum.TaskExcel,
+                ".json" => ImportFileTypeEnum.TaskJson,
+                ".xml" => ImportFileTypeEnum.TaskXml,
+                ".csv" or ".txt" or ".tsv" => ImportFileTypeEnum.TaskCsv,
+                _ => ImportFileTypeEnum.TaskExcel
             };
 
             _pendingFiles.Add(new PendingUploadItem
@@ -341,7 +341,7 @@
 
     private void OnItemFileTypeChanged(PendingUploadItem item, string? newCode)
     {
-        if (Enum.TryParse<ImportFileType>(newCode, out var fileType))
+        if (newCode.TryToEnum<ImportFileTypeEnum>(out var fileType))
         {
             item.SelectedFileType = fileType;
         }

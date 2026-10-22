@@ -32,9 +32,9 @@ public class TeamsNotificationSender : ITeamsNotificationSender
         {
             var themeColor = notification.Severity switch
             {
-                NotificationSeverity.Success => "107C41", // Green
-                NotificationSeverity.Warning => "D83B01", // Orange
-                NotificationSeverity.Error => "A80000",   // Red
+                NotificationSeverityEnum.Success => "107C41", // Green
+                NotificationSeverityEnum.Warning => "D83B01", // Orange
+                NotificationSeverityEnum.Error => "A80000",   // Red
                 _ => "0076D7"                            // Blue (Info)
             };
 

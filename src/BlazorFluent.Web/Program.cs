@@ -48,21 +48,22 @@ try
         options.ValidateOnBuild = true;
     });
 
-    // Azure Key Vault configuration source for production environments
+    // Azure Key Vault configuration source for any environment when KeyVault:Uri is specified
+    var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+    if (!string.IsNullOrWhiteSpace(keyVaultUri))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUri),
+            new DefaultAzureCredential());
+        Log.Information("Azure Key Vault configuration source registered: {Uri}", keyVaultUri);
+    }
+    else if (builder.Environment.IsProduction())
+    {
+        Log.Warning("KeyVault:Uri not configured — checking environment and secret providers for production secrets.");
+    }
+
     if (builder.Environment.IsProduction())
     {
-        var keyVaultUri = builder.Configuration["KeyVault:Uri"];
-        if (!string.IsNullOrWhiteSpace(keyVaultUri))
-        {
-            builder.Configuration.AddAzureKeyVault(
-                new Uri(keyVaultUri),
-                new DefaultAzureCredential());
-            Log.Information("Azure Key Vault configuration source registered: {Uri}", keyVaultUri);
-        }
-        else
-        {
-            Log.Warning("KeyVault:Uri not configured — checking environment and secret providers for production secrets.");
-        }
 
         // Production Security Startup Gate: Fail-closed on missing or placeholder secrets
         var dbConn = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -345,6 +346,9 @@ try
             Log.Information("Applying EF Core database migrations in Development...");
             using var scope = app.Services.CreateScope();
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            var rootAdminService = scope.ServiceProvider.GetRequiredService<BlazorFluent.Core.Contracts.IRootAdminService>();
+            var tenantContext = scope.ServiceProvider.GetRequiredService<BlazorFluent.Core.Contracts.ITenantContext>();
+            tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
             var bootstrapEmail = app.Configuration["Security:SystemBootstrapEmail"];
             if (string.IsNullOrWhiteSpace(bootstrapEmail))
             {
@@ -446,7 +450,7 @@ try
             diagnosticContext.Set("Host", httpContext.Request.Host.Value);
 
             var tenantContext = httpContext.RequestServices.GetService<ITenantContext>();
-            if (!string.IsNullOrWhiteSpace(tenantContext?.TenantId))
+            if (tenantContext?.HasActiveTenant == true)
             {
                 diagnosticContext.Set("TenantId", tenantContext.TenantId);
             }

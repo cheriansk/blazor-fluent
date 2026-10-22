@@ -29,7 +29,6 @@ public class ImpersonationGrantEntityConfiguration : IEntityTypeConfiguration<Im
             .IsRequired();
 
         builder.Property(g => g.TargetTenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(g => g.StartedAtUtc)

@@ -1,7 +1,6 @@
 ﻿@namespace BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
-@using TaskStatus = BlazorFluent.Shared.DataListTypes.TaskStatus
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Core.Dtos
@@ -29,15 +28,15 @@
             <div class="wizard-form-grid">
                 @* Scoping Level *@
                 <div class="form-half-width">
-                    <FluentSelect TOption="TaskLevel"
-                                  TValue="TaskLevel"
+                    <FluentSelect TOption="TaskLevelEnum"
+                                  TValue="TaskLevelEnum"
                                   @bind-Value="_initialState.Level"
                                   Label="Workflow Scoping Level *"
                                   Disabled="@IsEditMode"
                                   Style="width: 100%;">
-                        <FluentOption Value="@TaskLevel.Tenant">🏢 Tenant Level (Executive Governance)</FluentOption>
-                        <FluentOption Value="@TaskLevel.Program">📁 Program Level (Multi-Project Initiative)</FluentOption>
-                        <FluentOption Value="@TaskLevel.Project">📋 Project Level (Team Delivery)</FluentOption>
+                        <FluentOption Value="@TaskLevelEnum.Tenant">🏢 Tenant Level (Executive Governance)</FluentOption>
+                        <FluentOption Value="@TaskLevelEnum.Program">📁 Program Level (Multi-Project Initiative)</FluentOption>
+                        <FluentOption Value="@TaskLevelEnum.Project">📋 Project Level (Team Delivery)</FluentOption>
                     </FluentSelect>
                     @if (IsEditMode)
                     {
@@ -47,7 +46,7 @@
 
                 @* Context Selector (Program or Project) *@
                 <div class="form-half-width">
-                    @if (_initialState.Level == TaskLevel.Program)
+                    @if (_initialState.Level == TaskLevelEnum.Program)
                     {
                         <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Program *</label>
                         <FluentSelect TOption="ProgramEntity"
@@ -65,7 +64,7 @@
                             <span class="field-error-text">@progErr</span>
                         }
                     }
-                    else if (_initialState.Level == TaskLevel.Project)
+                    else if (_initialState.Level == TaskLevelEnum.Project)
                     {
                         <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Project *</label>
                         <FluentSelect TOption="ProjectEntity"
@@ -106,15 +105,15 @@
 
                 @* Priority *@
                 <div class="form-half-width">
-                    <FluentSelect TOption="TaskPriority"
-                                  TValue="TaskPriority"
+                    <FluentSelect TOption="TaskPriorityEnum"
+                                  TValue="TaskPriorityEnum"
                                   @bind-Value="_initialState.Priority"
                                   Label="Priority"
                                   Style="width: 100%;">
-                        <FluentOption Value="@TaskPriority.Low">Low</FluentOption>
-                        <FluentOption Value="@TaskPriority.Medium">Medium</FluentOption>
-                        <FluentOption Value="@TaskPriority.High">High</FluentOption>
-                        <FluentOption Value="@TaskPriority.Urgent">Urgent</FluentOption>
+                        <FluentOption Value="@TaskPriorityEnum.Low">Low</FluentOption>
+                        <FluentOption Value="@TaskPriorityEnum.Medium">Medium</FluentOption>
+                        <FluentOption Value="@TaskPriorityEnum.High">High</FluentOption>
+                        <FluentOption Value="@TaskPriorityEnum.Urgent">Urgent</FluentOption>
                     </FluentSelect>
                 </div>
 
@@ -293,8 +292,8 @@
                                     @if (IsEditMode && WorkflowToEdit != null)
                                     {
                                         var existingEntity = WorkflowToEdit.Steps.FirstOrDefault(s => s.Id == step.ExistingTaskId);
-                                        var isCancelled = existingEntity?.WorkflowStepStatus == WorkflowStepStatus.Cancelled;
-                                        var isCompleted = existingEntity?.WorkflowStepStatus == WorkflowStepStatus.Completed;
+                                        var isCancelled = existingEntity?.Status == TaskStatusEnum.Cancelled;
+                                        var isCompleted = existingEntity?.Status == TaskStatusEnum.Closed;
 
                                         @if (isCancelled)
                                         {
@@ -421,11 +420,11 @@
                             <strong>Level:</strong>
                             <span class="scope-pill scope-@_initialState.Level.ToString().ToLowerInvariant()">@_initialState.Level</span>
                         </span>
-                        @if (_initialState.Level == TaskLevel.Program && _selectedProgram != null)
+                        @if (_initialState.Level == TaskLevelEnum.Program && _selectedProgram != null)
                         {
                             <span class="review-pill"><strong>Program:</strong> @_selectedProgram.Name</span>
                         }
-                        @if (_initialState.Level == TaskLevel.Project && _selectedProject != null)
+                        @if (_initialState.Level == TaskLevelEnum.Project && _selectedProject != null)
                         {
                             <span class="review-pill"><strong>Project:</strong> @_selectedProject.Name</span>
                         }
@@ -890,16 +889,16 @@
     public Guid? ProjectId { get; set; }
 
     [Parameter]
-    public TaskLevel DefaultLevel { get; set; } = TaskLevel.Project;
+    public TaskLevelEnum DefaultLevel { get; set; } = TaskLevelEnum.Project;
 
     [Parameter]
-    public WorkflowTaskEntity? WorkflowToEdit { get; set; }
+    public WorkflowEntity? WorkflowToEdit { get; set; }
 
     [Parameter]
-    public EventCallback<WorkflowTaskEntity> OnWorkflowCreated { get; set; }
+    public EventCallback<WorkflowEntity> OnWorkflowCreated { get; set; }
 
     [Parameter]
-    public EventCallback<WorkflowTaskEntity> OnWorkflowUpdated { get; set; }
+    public EventCallback<WorkflowEntity> OnWorkflowUpdated { get; set; }
 
     private bool IsEditMode => WorkflowToEdit != null;
 
@@ -941,9 +940,9 @@
 
     private async Task LoadScopingEntitiesAsync()
     {
-        var tenantId = TenantContext.TenantId;
-        if (!string.IsNullOrWhiteSpace(tenantId))
+        if (TenantContext.HasActiveTenant)
         {
+            var tenantId = TenantContext.TenantId;
             _availablePrograms = await DbContext.Programs
                 .AsNoTracking()
                 .Where(p => p.TenantId == tenantId && p.IsActive)
@@ -993,7 +992,7 @@
         _wizardModal?.Context?.MarkDirty();
     }
 
-    private void PopulateFromExistingWorkflow(WorkflowTaskEntity wf)
+    private void PopulateFromExistingWorkflow(WorkflowEntity wf)
     {
         _initialState = new CreateWorkflowReqDto
         {
@@ -1043,7 +1042,7 @@
             Level = DefaultLevel,
             ProjectId = ProjectId,
             WorkflowOwnerEmail = CurrentUser.Email ?? "orchestrator@company.local",
-            Priority = TaskPriority.Medium,
+            Priority = TaskPriorityEnum.Medium,
             DueDate = DateTime.UtcNow.AddDays(14),
             Steps = new List<CreateWorkflowStepDto>
             {
@@ -1077,7 +1076,7 @@
         if (_availablePrograms.Count > 0)
         {
             _selectedProgram = _availablePrograms.FirstOrDefault();
-            if (_initialState.Level == TaskLevel.Program)
+            if (_initialState.Level == TaskLevelEnum.Program)
             {
                 _initialState.ProgramId = _selectedProgram?.Id;
             }
@@ -1159,13 +1158,13 @@
             return Task.FromResult(false);
         }
 
-        if (_initialState.Level == TaskLevel.Program && (!_initialState.ProgramId.HasValue || _initialState.ProgramId == Guid.Empty))
+        if (_initialState.Level == TaskLevelEnum.Program && (!_initialState.ProgramId.HasValue || _initialState.ProgramId == Guid.Empty))
         {
             _stepErrors["ProgramId"] = "Please select a target Program.";
             return Task.FromResult(false);
         }
 
-        if (_initialState.Level == TaskLevel.Project && (!_initialState.ProjectId.HasValue || _initialState.ProjectId == Guid.Empty))
+        if (_initialState.Level == TaskLevelEnum.Project && (!_initialState.ProjectId.HasValue || _initialState.ProjectId == Guid.Empty))
         {
             _stepErrors["ProjectId"] = "Please select a target Project.";
             return Task.FromResult(false);

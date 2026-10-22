@@ -57,7 +57,7 @@ public class UnitOfWork : IUnitOfWork
                 var errorId = await _auditService.LogExceptionAsync(
                     ex,
                     $"Database Transaction [{operationName}]",
-                    AuditSeverity.Error,
+                    AuditSeverityEnum.Error,
                     cancellationToken);
 
                 return Result<T>.Failure($"An unexpected error occurred during '{operationName}'. Reference: {errorId}");

@@ -1,5 +1,5 @@
 @page "/tenancy/project-roles"
-@attribute [RequiredClearance(ProjectRole.Admin)]
+@attribute [RequiredClearance(ProjectRoleEnum.Admin)]
 @rendermode InteractiveServer
 @using BlazorFluent.Shared.Attributes
 @using BlazorFluent.Core.Contracts
@@ -92,7 +92,7 @@
                         <FluentSelect TOption="UserEntity"
                                       TValue="string"
                                       Items="@_tenantUsers"
-                                      OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserType.CompanyUser ? "Internal Staff" : "External Client")}]")"
+                                      OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserTypeEnum.CompanyUser ? "Internal Staff" : "External Client")}]")"
                                       OptionValue="@(u => u.Id.ToString())"
                                       Value="@_selectedTenantUserId"
                                       ValueChanged="@OnTenantUserSelected"
@@ -106,7 +106,7 @@
                                 <span>Member: <strong>@_formUserName</strong></span>
                                 <span>Email: <code>@_formEmail</code></span>
                                 <span>Type:
-                                    @if (_formUserType == UserType.CompanyUser)
+                                    @if (_formUserType == UserTypeEnum.CompanyUser)
                                     {
                                         <FluentBadge Appearance="BadgeAppearance.Filled">Internal Staff</FluentBadge>
                                     }
@@ -129,14 +129,14 @@
                         <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Project Role</FluentLabel>
                         <FluentSelect TOption="string" TValue="string"
                                       Value="@_formRole.ToString()"
-                                      ValueChanged="@(val => _formRole = Enum.TryParse<ProjectRole>(val, out var res) ? res : ProjectRole.ReadOnly)"
+                                      ValueChanged="@(val => _formRole = val.ToEnum(ProjectRoleEnum.ReadOnly))"
                                       Style="width: 100%;">
-                            <FluentOption Value="@nameof(ProjectRole.ReadOnly)">👁️ ReadOnly</FluentOption>
-                            <FluentOption Value="@nameof(ProjectRole.Contribute)">💻 Contribute</FluentOption>
-                            <FluentOption Value="@nameof(ProjectRole.Lead)">⭐ Lead</FluentOption>
-                            <FluentOption Value="@nameof(ProjectRole.ElevatedLead)">🛡️ ElevatedLead</FluentOption>
-                            <FluentOption Value="@nameof(ProjectRole.PMO)">📊 PMO</FluentOption>
-                            <FluentOption Value="@nameof(ProjectRole.Admin)">👑 Admin</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRoleEnum.ReadOnly)">👁️ ReadOnly</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRoleEnum.Contribute)">💻 Contribute</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRoleEnum.Lead)">⭐ Lead</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRoleEnum.ElevatedLead)">🛡️ ElevatedLead</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRoleEnum.PMO)">📊 PMO</FluentOption>
+                            <FluentOption Value="@nameof(ProjectRoleEnum.Admin)">👑 Admin</FluentOption>
                         </FluentSelect>
                     </div>
 
@@ -240,7 +240,7 @@
                 </TemplateColumn>
                 <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
                 <TemplateColumn Title="Type" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserType))">
-                    @if (context.UserType == UserType.CompanyUser)
+                    @if (context.UserType == UserTypeEnum.CompanyUser)
                     {
                         <FluentBadge Appearance="BadgeAppearance.Filled">Company</FluentBadge>
                     }
@@ -252,22 +252,22 @@
                 <TemplateColumn Title="Role" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.Role))">
                     @switch (context.Role)
                     {
-                        case ProjectRole.Admin:
+                        case ProjectRoleEnum.Admin:
                             <FluentBadge Appearance="BadgeAppearance.Filled">👑 Admin</FluentBadge>
                             break;
-                        case ProjectRole.PMO:
+                        case ProjectRoleEnum.PMO:
                             <FluentBadge Appearance="BadgeAppearance.Tint">📊 PMO</FluentBadge>
                             break;
-                        case ProjectRole.ElevatedLead:
+                        case ProjectRoleEnum.ElevatedLead:
                             <FluentBadge Appearance="BadgeAppearance.Tint">🛡️ ElevatedLead</FluentBadge>
                             break;
-                        case ProjectRole.Lead:
+                        case ProjectRoleEnum.Lead:
                             <FluentBadge Appearance="BadgeAppearance.Tint">⭐ Lead</FluentBadge>
                             break;
-                        case ProjectRole.Contribute:
+                        case ProjectRoleEnum.Contribute:
                             <FluentBadge Appearance="BadgeAppearance.Tint">💻 Contribute</FluentBadge>
                             break;
-                        case ProjectRole.ReadOnly:
+                        case ProjectRoleEnum.ReadOnly:
                             <FluentBadge Appearance="BadgeAppearance.Tint">👁️ ReadOnly</FluentBadge>
                             break;
                         default:
@@ -345,8 +345,8 @@
     private string _formUserId = string.Empty;
     private string _formUserName = string.Empty;
     private string _formEmail = string.Empty;
-    private UserType _formUserType = UserType.CompanyUser;
-    private ProjectRole _formRole = ProjectRole.ReadOnly;
+    private UserTypeEnum _formUserType = UserTypeEnum.CompanyUser;
+    private ProjectRoleEnum _formRole = ProjectRoleEnum.ReadOnly;
 
     protected override async Task OnInitializedAsync()
     {
@@ -362,12 +362,15 @@
     {
         try
         {
-            var tenantId = TenantContext.TenantId ?? "default";
-            _tenantUsers = await DbContext.Users
+            var tenantId = TenantContext.TenantId;
+            var tenantMembers = await DbContext.TenantUsers
                 .AsNoTracking()
-                .Where(u => (u.DefaultTenantId == tenantId || (tenantId == "default" && string.IsNullOrEmpty(u.DefaultTenantId))) && !u.IsDeleted && u.IsActive)
-                .OrderBy(u => u.FullName)
+                .Include(tu => tu.User)
+                .Where(tu => tu.TenantId == tenantId && tu.IsActive && !tu.IsDeleted && tu.User != null && !tu.User.IsDeleted && tu.User.IsActive)
+                .OrderBy(tu => tu.User!.FullName)
                 .ToListAsync();
+
+            _tenantUsers = tenantMembers.Select(tu => tu.User!).ToList();
         }
         catch
         {
@@ -411,26 +414,21 @@
             else
             {
                 // Fallback demo projects if database has not been seeded yet
-                _projects = new List<ProjectEntity>
-                {
-                    new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Alpha Customer Portal", TenantId = TenantContext.TenantId ?? "" },
-                    new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Beta Analytics Service", TenantId = TenantContext.TenantId ?? "" },
-                    new() { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Gamma Mobile Gateway", TenantId = TenantContext.TenantId ?? "" }
-                };
+                _projects = new List<ProjectEntity>();
             }
 
             _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Notice: Using local project list ({ex.Message}).";
+          /*  _statusMessage = $"Notice: Using local project list ({ex.Message}).";
             _isError = false;
             _projects = new List<ProjectEntity>
             {
                 new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Alpha Customer Portal", TenantId = TenantContext.TenantId ?? "" },
                 new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Beta Analytics Service", TenantId = TenantContext.TenantId ?? "" }
             };
-            _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();
+              _selectedProjectId = _projects.FirstOrDefault()?.Id.ToString();*/
         }
     }
 
@@ -475,9 +473,9 @@
             _formUserId = string.Empty;
             _formUserName = string.Empty;
             _formEmail = string.Empty;
-            _formUserType = UserType.CompanyUser;
+            _formUserType = UserTypeEnum.CompanyUser;
         }
-        _formRole = ProjectRole.Contribute;
+        _formRole = ProjectRoleEnum.Contribute;
         _showAssignModal = true;
     }
 
@@ -594,7 +592,7 @@
         {
             if (CurrentUser is AppCurrentUser appUser)
             {
-                var adminId = appUser.UserId ?? string.Empty;
+                var adminId = appUser.IsAuthenticated ? appUser.UserId : string.Empty;
                 appUser.SetImpersonation(_impersonateTargetUserId, _impersonateTargetEmail, _impersonateTargetName, adminId);
             }
 

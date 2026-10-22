@@ -1,0 +1,39 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Tasks</span> &bull; <b>UserTaskEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">UserTaskEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Tasks</span>
+<a class="badge badge-base" href="TaskEntity.html">Base: TaskEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
+<span class="badge badge-date" title="Temporal validity via StartDate / EndDate">[Effective Dated]</span>
+</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (0)</div>
+<p style="color:#605e5c;">No declared public properties (inherits all members from base class).</p>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (1)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="UserTaskCommentEntity.html"><b>UserTaskCommentEntity</b></a></td><td>Tasks</td><td><code>Task</code></td><td>Navigation (1:1)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

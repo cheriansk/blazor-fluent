@@ -16,6 +16,7 @@
 7. [Recipe 7: Downstream Extension with TemplateGuard (`.Custom.cs`)](#recipe-7-downstream-extension-with-templateguard-customcs)
 8. [Recipe 8: Onboard a New Tenant & Rotate License Keys](#recipe-8-onboard-a-new-tenant--rotate-license-keys)
 9. [Recipe 9: Author a Dedicated Background Job for `BlazorFluent.Worker`](#recipe-9-author-a-dedicated-background-job-for-blazorfluentworker)
+10. [Recipe 10: Add a DataList Enum with Display Metadata (`*Enum` Suffix Law)](#recipe-10-add-a-datalist-enum-with-display-metadata-enum-suffix-law)
 
 ---
 
@@ -427,4 +428,89 @@ public class InvoiceBatchJobHandler : IBatchJobHandler<InvoiceBatchJobEvent>
 ### Step 3: Deployment
 - The job handler is **automatically discovered and registered** by `JobsExtensions.AddBackgroundJobs()`.
 - Runs seamlessly inside `BlazorFluent.Web` (when `Jobs:EnableHostedListener = true`) or inside `BlazorFluent.Worker` (in distributed mode) with **zero code duplication**.
+
+---
+
+## Recipe 10: Add a DataList Enum with Display Metadata (`*Enum` Suffix Law)
+
+### Step 1: Define Enum with Mandatory `*Enum` Suffix
+All newly created enums belong in `src/BlazorFluent.Shared/DataListTypes/`. Every new enum must end with the **`Enum`** suffix to satisfy Roslyn rule **`TG006`** and provide cognitive clarity:
+
+```csharp
+namespace BlazorFluent.Shared.DataListTypes;
+
+public enum DeliverableStatusEnum
+{
+    [Display(Name = "Draft", Description = "Deliverable is currently in authoring phase")]
+    [DataListCategory(DeliverableDefinitions.Categories.Lifecycle)]
+    Draft = 1,
+
+    [Display(Name = "Under Review", Description = "Awaiting formal stakeholder sign-off")]
+    [DataListCategory(DeliverableDefinitions.Categories.Lifecycle)]
+    UnderReview = 2,
+
+    [Display(Name = "Approved", Description = "Officially accepted by the project lead")]
+    [DataListCategory(DeliverableDefinitions.Categories.Milestone)]
+    Approved = 3,
+
+    [Display(Name = "Rejected", Description = "Returned to contributor for revisions")]
+    [DataListCategory(DeliverableDefinitions.Categories.Milestone)]
+    Rejected = 4
+}
+```
+
+### Step 2: Define Companion Category Constants
+Define structured category metadata in the companion definition class:
+
+```csharp
+public static class DeliverableDefinitions
+{
+    public static class Categories
+    {
+        [Display(Name = "Lifecycle", Description = "Standard workflow progression stages")]
+        public const string Lifecycle = "Lifecycle";
+
+        [Display(Name = "Milestone", Description = "Key delivery milestone decisions")]
+        public const string Milestone = "Milestone";
+    }
+}
+```
+
+### Step 3: Bind to Fluent UI V5 `<FluentSelect>`
+Bind to UI dropdowns using cached reflection helper `DataListExtensions.GetDataListItems<TEnum>()`:
+
+```razor
+@using BlazorFluent.Shared.DataListTypes
+
+<FluentSelect TOption="Option<string>"
+              Items="@_statusOptions"
+              OptionText="@(o => o.Text)"
+              OptionValue="@(o => o.Value)"
+              @bind-Value="_selectedStatus"
+              Label="Deliverable Status" />
+
+@code {
+    private string _selectedStatus = nameof(DeliverableStatusEnum.Draft);
+    private List<Option<string>> _statusOptions = [];
+
+    protected override void OnInitialized()
+    {
+        _statusOptions = DataListExtensions.GetDataListItems<DeliverableStatusEnum>()
+            .Select(item => new Option<string>
+            {
+                Text = item.DisplayName,
+                Value = item.Code
+            })
+            .ToList();
+    }
+}
+```
+
+### Step 4: Verification Checklist
+- [ ] Enum ends with **`Enum`** suffix (e.g. `DeliverableStatusEnum`).
+- [ ] Does **NOT** use misleading abbreviations like `Dtl` or `Lst`.
+- [ ] Every member declares `[Display(Name = "...", Description = "...")]`.
+- [ ] Decorated with `[DataListCategory(...)]`.
+- [ ] Roslyn analyzer rule **`TG006`** passes cleanly without compilation errors.
+
 

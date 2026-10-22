@@ -1,4 +1,5 @@
-using System.Security.Cryptography;
+using System;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
 using FluentAssertions;
 using Xunit;
@@ -7,20 +8,23 @@ namespace BlazorFluent.Core.Tests.Security;
 
 public class UserEntityHmacSealTests
 {
-    private const string SecretKey = "test_cryptographic_secret_key_minimum_32_bytes_long!";
+    private const string SecretKey = "test_hmac_secret_key_minimum_length_required_32_bytes!!";
 
     [Fact]
-    public void ComputeIntegritySignature_ValidUser_GeneratesConsistentSignature()
+    public void ComputeIntegritySignature_DeterministicPayload_ProducesConsistentSignature()
     {
         // Arrange
         var user = new UserEntity
         {
             Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            DefaultTenantId = "tenant_alpha",
             Email = "alice@example.com",
+            FullName = "Alice Admin",
+            UserType = UserTypeEnum.CompanyUser,
+            UserKind = UserKindEnum.Human,
+            TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
 
         // Act
@@ -39,11 +43,14 @@ public class UserEntityHmacSealTests
         var user = new UserEntity
         {
             Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            DefaultTenantId = "tenant_beta",
             Email = "bob@example.com",
+            FullName = "Bob Developer",
+            UserType = UserTypeEnum.CompanyUser,
+            UserKind = UserKindEnum.Human,
+            TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
         user.RowSignature = user.ComputeIntegritySignature(SecretKey);
 
@@ -55,27 +62,28 @@ public class UserEntityHmacSealTests
     }
 
     [Theory]
-    [InlineData("eve@attacker.com", true, "tenant_beta")] // Tampered email
-    [InlineData("bob@example.com", false, "tenant_beta")] // Tampered active status
-    [InlineData("bob@example.com", true, "tenant_malicious")] // Tampered tenant
-    public void VerifyIntegritySignature_TamperedProperties_ReturnsFalse(string modifiedEmail, bool modifiedActive, string modifiedTenant)
+    [InlineData("eve@attacker.com", true)] // Tampered email
+    [InlineData("bob@example.com", false)] // Tampered active status
+    public void VerifyIntegritySignature_TamperedProperties_ReturnsFalse(string modifiedEmail, bool modifiedActive)
     {
         // Arrange
         var user = new UserEntity
         {
             Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
-            DefaultTenantId = "tenant_beta",
             Email = "bob@example.com",
+            FullName = "Bob Developer",
+            UserType = UserTypeEnum.CompanyUser,
+            UserKind = UserKindEnum.Human,
+            TimeZoneId = "UTC",
             IsActive = true,
-            StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDateUtc = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
         user.RowSignature = user.ComputeIntegritySignature(SecretKey);
 
         // Tamper with properties
         user.Email = modifiedEmail;
         user.IsActive = modifiedActive;
-        user.DefaultTenantId = modifiedTenant;
 
         // Act
         var isValid = user.VerifyIntegritySignature(SecretKey);

@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Contracts;
+﻿using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.Contracts.Engine.Client;
 using BlazorFluent.Shared.Contracts.Engine.Transforms;
 using BlazorFluent.Shared.DataListTypes;
@@ -21,6 +21,7 @@ public partial class UserTaskService : IUserTaskService
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
     private readonly IProjectAuthorizationService _projectAuth;
+    private readonly IAuditService _auditService;
     private readonly ILogger<UserTaskService> _logger;
     private readonly IEngineClient? _engineClient;
 
@@ -30,6 +31,7 @@ public partial class UserTaskService : IUserTaskService
         ITenantContext tenantContext,
         INotifyService notificationService,
         IProjectAuthorizationService projectAuth,
+        IAuditService auditService,
         ILogger<UserTaskService> logger,
         IEngineClient? engineClient = null)
     {
@@ -38,6 +40,7 @@ public partial class UserTaskService : IUserTaskService
         _tenantContext = tenantContext;
         _notificationService = notificationService;
         _projectAuth = projectAuth;
+        _auditService = auditService;
         _logger = logger;
         _engineClient = engineClient;
     }
@@ -46,7 +49,7 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProject", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var tasks = await _context.Tasks
             .AsNoTracking()
@@ -63,7 +66,7 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskById", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
         var task = await _context.Tasks
             .AsNoTracking()
@@ -137,9 +140,9 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CreateTask", ct: ct);
 
-            if (string.IsNullOrWhiteSpace(task.TenantId))
+            if (task.TenantId == Guid.Empty)
             {
-                task.TenantId = _tenantContext.TenantId ?? string.Empty;
+                task.TenantId = _tenantContext.TenantId;
             }
 
             // Automatically stamp creator as reporter
@@ -173,7 +176,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             // 1. Compound database lookup: Task MUST match TenantId, ProjectId, and Id to eliminate IDOR
             var task = await _context.Tasks
@@ -221,7 +224,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "CloseTask", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -229,29 +232,32 @@ public partial class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = TaskStatus.Closed;
+            task.Status = TaskStatusEnum.Closed;
             task.EndDate = DateTime.UtcNow;
 
-            // Automated Lifecycle Integrity: auto-resolve any BlockerDependency contracts where this task was blocking other tasks
-            var blockers = await _context.BlockerDependencies
+            // Automated Lifecycle Integrity: auto-resolve any WorkDependency contracts where this task was blocking other tasks
+            var blockers = await _context.WorkDependencies
                 .AsTracking()
-                .Where(b => b.TenantId == tenantId && b.TargetTaskId == taskId && !b.IsDeleted && b.Status != TaskStatus.Closed)
+                .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status != TaskStatusEnum.Closed)
                 .ToListAsync(ct);
 
             foreach (var blocker in blockers)
             {
-                blocker.Status = TaskStatus.Closed;
+                blocker.Status = TaskStatusEnum.Closed;
                 blocker.EndDate = DateTime.UtcNow;
 
-                var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.SourceTaskId, ct);
-                if (sourceTask != null)
+                if (blocker.DependentItemId.HasValue)
                 {
-                    var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
-                    foreach (var recipient in recipients)
+                    var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.DependentItemId.Value, ct);
+                    if (sourceTask != null)
                     {
-                        await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
-                            $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
-                            NotificationSeverity.Info, sourceTask.ProjectId, ct);
+                        var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
+                        foreach (var recipient in recipients)
+                        {
+                            await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
+                                $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
+                                NotificationSeverityEnum.Info, sourceTask.ProjectId, ct);
+                        }
                     }
                 }
             }
@@ -272,7 +278,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "ReopenTask", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -280,29 +286,32 @@ public partial class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = TaskStatus.Open;
+            task.Status = TaskStatusEnum.Open;
             task.EndDate = null;
 
-            // Automated Lifecycle Integrity: auto-reopen any BlockerDependency contracts where this task was blocking other tasks
-            var blockers = await _context.BlockerDependencies
+            // Automated Lifecycle Integrity: auto-reopen any WorkDependency contracts where this task was blocking other tasks
+            var blockers = await _context.WorkDependencies
                 .AsTracking()
-                .Where(b => b.TenantId == tenantId && b.TargetTaskId == taskId && !b.IsDeleted && b.Status == TaskStatus.Closed)
+                .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status == TaskStatusEnum.Closed)
                 .ToListAsync(ct);
 
             foreach (var blocker in blockers)
             {
-                blocker.Status = TaskStatus.Open;
+                blocker.Status = TaskStatusEnum.Open;
                 blocker.EndDate = null;
 
-                var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.SourceTaskId, ct);
-                if (sourceTask != null)
+                if (blocker.DependentItemId.HasValue)
                 {
-                    var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
-                    foreach (var recipient in recipients)
+                    var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.DependentItemId.Value, ct);
+                    if (sourceTask != null)
                     {
-                        await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
-                            $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
-                            NotificationSeverity.Warning, sourceTask.ProjectId, ct);
+                        var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
+                        foreach (var recipient in recipients)
+                        {
+                            await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
+                                $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
+                                NotificationSeverityEnum.Warning, sourceTask.ProjectId, ct);
+                        }
                     }
                 }
             }
@@ -323,7 +332,7 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "CancelTask", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -331,7 +340,7 @@ public partial class UserTaskService : IUserTaskService
 
             if (task is null) return Result<bool>.Failure("Task not found.");
 
-            task.Status = TaskStatus.Cancelled;
+            task.Status = TaskStatusEnum.Cancelled;
 
             await _context.SaveChangesAsync(ct);
             _logger.LogInformation("Task '{Title}' ({Id}) marked Cancelled in project {ProjectId}", task.Title, task.Id, projectId);
@@ -355,7 +364,7 @@ public partial class UserTaskService : IUserTaskService
 
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "AddComment", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             var task = await _context.Tasks
                 .AsTracking()
@@ -373,9 +382,9 @@ public partial class UserTaskService : IUserTaskService
                 TaskId = taskId,
                 ProjectId = projectId,
                 TenantId = task.TenantId,
-                AuthorUserId = _currentUser.UserId ?? _currentUser.Email,
-                AuthorName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : _currentUser.Email,
-                AuthorEmail = _currentUser.Email,
+                AuthorUserEntityId = Guid.TryParse(_currentUser.UserId, out var parsedUserGuid) ? parsedUserGuid : (await _context.Users.AsNoTracking().Where(u => u.Email.ToLower() == _currentUser.Email.ToLower() && !u.IsDeleted).Select(u => u.Id).FirstOrDefaultAsync(ct)),
+
+
                 CommentText = commentText.Trim(),
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -397,9 +406,9 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetComments", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
-        return await _context.TaskComments
+        return await _context.TaskComments.Include(c => c.AuthorUser)
             .AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && c.TaskId == taskId && !c.IsDeleted)
             .OrderBy(c => c.CreatedAtUtc)
@@ -410,47 +419,51 @@ public partial class UserTaskService : IUserTaskService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskDependencies", ct: ct);
 
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
 
-        var dependencies = await _context.TaskDependencies
+        var dependencies = await _context.WorkDependencies
             .AsNoTracking()
-            .Where(d => d.TenantId == tenantId && d.ProjectId == projectId && d.TaskId == taskId)
+            .Where(d => d.TenantId == tenantId &&
+                        d.ProjectId == projectId &&
+                        d.DependentType == DependencyNodeTypeEnum.TaskItem &&
+                        d.DependentItemId == taskId &&
+                        !d.IsDeleted)
             .ToListAsync(ct);
 
         if (dependencies.Count == 0) return Array.Empty<TaskDependencyItemDto>();
 
-        var dependsOnIds = dependencies.Select(d => d.DependsOnTaskId).Distinct().ToList();
-        var targetTasks = await _context.Tasks
-            .AsNoTracking()
-            .Where(t => t.TenantId == tenantId && t.ProjectId == projectId && dependsOnIds.Contains(t.Id))
-            .ToDictionaryAsync(t => t.Id, ct);
-
-        var result = new List<TaskDependencyItemDto>();
-        foreach (var dep in dependencies)
+        return dependencies.Select(dep => new TaskDependencyItemDto
         {
-            targetTasks.TryGetValue(dep.DependsOnTaskId, out var targetTask);
-            result.Add(new TaskDependencyItemDto
-            {
-                DependencyId = dep.Id,
-                TaskId = dep.TaskId,
-                DependsOnTaskId = dep.DependsOnTaskId,
-                DependsOnTaskTitle = targetTask?.Title ?? "Unknown Task",
-                DependsOnTaskStatus = targetTask?.Status ?? TaskStatus.Open,
-                DependsOnAssigneeEmails = targetTask?.AssigneeEmails ?? string.Empty,
-                DependsOnDueDate = targetTask?.DueDate,
-                DependencyType = dep.DependencyType,
-                ResolveByUtc = dep.ResolveByUtc
-            });
-        }
-
-        return result;
+            DependencyId = dep.Id,
+            DependentType = dep.DependentType,
+            DependentItemId = dep.DependentItemId,
+            DependentLevel = dep.Level,
+            ProjectId = dep.ProjectId,
+            ProgramId = dep.ProgramId,
+            DependsOnType = dep.DependsOnType,
+            DependsOnItemId = dep.DependsOnItemId,
+            DependsOnLevel = dep.DependsOnLevel,
+            DependsOnProjectId = dep.DependsOnProjectId,
+            DependsOnProgramId = dep.DependsOnProgramId,
+            DependsOnTitle = dep.DependsOnSnapshotTitle ?? "Prerequisite Item",
+            DependsOnStatus = dep.DependsOnSnapshotStatus ?? "Open",
+            DependsOnDueDate = dep.DependsOnSnapshotDueDate ?? dep.DueDate,
+            DependsOnAssigneeEmails = dep.AssigneeEmails ?? string.Empty,
+            Title = dep.Title,
+            ImpactDetails = dep.Description ?? string.Empty,
+            DependencyType = dep.DependencyType,
+            Criticality = dep.Priority,
+            Status = dep.Status,
+            ResolveByUtc = dep.DueDate,
+            IsScheduleConflict = dep.IsScheduleConflict
+        }).ToList();
     }
 
     public async Task<Result<bool>> AddTaskDependencyAsync(
         Guid projectId,
         Guid taskId,
         Guid dependsOnTaskId,
-        TaskDependencyType dependencyType = TaskDependencyType.Blocks,
+        TaskDependencyTypeEnum dependencyType = TaskDependencyTypeEnum.Blocks,
         DateTime? resolveByUtc = null,
         string? notes = null,
         CancellationToken ct = default)
@@ -464,7 +477,7 @@ public partial class UserTaskService : IUserTaskService
 
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "AddTaskDependency", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             var task = await _context.Tasks
                 .AsNoTracking()
@@ -474,30 +487,67 @@ public partial class UserTaskService : IUserTaskService
 
             var dependsOnTask = await _context.Tasks
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.ProjectId == projectId && t.Id == dependsOnTaskId, ct);
+                .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == dependsOnTaskId, ct);
 
-            if (dependsOnTask == null) return Result<bool>.Failure("Prerequisite task not found in the project.");
+            if (dependsOnTask == null) return Result<bool>.Failure("Prerequisite task not found.");
 
-            var exists = await _context.TaskDependencies
-                .AnyAsync(d => d.TenantId == tenantId && d.ProjectId == projectId && d.TaskId == taskId && d.DependsOnTaskId == dependsOnTaskId, ct);
+            if (dependsOnTask.ProjectId != projectId)
+            {
+                await _projectAuth.EnsureCanVisitAsync(dependsOnTask.ProjectId, operation: "LinkCrossProjectDependency", ct: ct);
+            }
+
+            var exists = await _context.WorkDependencies
+                .AnyAsync(d => d.TenantId == tenantId &&
+                               d.DependentType == DependencyNodeTypeEnum.TaskItem &&
+                               d.DependentItemId == taskId &&
+                               d.DependsOnType == DependencyNodeTypeEnum.TaskItem &&
+                               d.DependsOnItemId == dependsOnTaskId &&
+                               !d.IsDeleted, ct);
 
             if (exists) return Result<bool>.Failure("This dependency link already exists.");
 
-            var link = new TaskDependencyEntity
+            var isConflict = dependsOnTask.DueDate.Date > task.DueDate.Date;
+
+            var link = new WorkDependencyEntity
             {
                 TenantId = tenantId,
+                Level = TaskLevelEnum.Project,
                 ProjectId = projectId,
-                TaskId = taskId,
-                DependsOnTaskId = dependsOnTaskId,
+                ProgramId = task.ProgramId,
+                DependentType = DependencyNodeTypeEnum.TaskItem,
+                DependentItemId = taskId,
+                DependsOnType = DependencyNodeTypeEnum.TaskItem,
+                DependsOnItemId = dependsOnTaskId,
+                DependsOnLevel = TaskLevelEnum.Project,
+                DependsOnProjectId = dependsOnTask.ProjectId,
+                DependsOnProgramId = dependsOnTask.ProgramId,
+                DependsOnSnapshotTitle = dependsOnTask.Title,
+                DependsOnSnapshotStatus = dependsOnTask.Status.ToString(),
+                DependsOnSnapshotDueDate = dependsOnTask.DueDate,
+                IsScheduleConflict = isConflict,
                 DependencyType = dependencyType,
-                ResolveByUtc = resolveByUtc,
-                Notes = notes
+                Title = $"Task Dependency: '{task.Title}' depends on '{dependsOnTask.Title}'",
+                Description = notes ?? $"Prerequisite task dependency on '{dependsOnTask.Title}'",
+                Priority = task.Priority,
+                Status = dependsOnTask.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open,
+                StartDate = DateTime.UtcNow,
+                DueDate = resolveByUtc ?? dependsOnTask.DueDate,
+                EndDate = dependsOnTask.IsClosed ? DateTime.UtcNow : null,
+                ReporterEmail = _currentUser.Email ?? task.ReporterEmail,
+                AssigneeEmails = dependsOnTask.AssigneeEmails,
+                WatcherEmails = task.WatcherEmails ?? string.Empty
             };
 
-            _context.TaskDependencies.Add(link);
+            _context.WorkDependencies.Add(link);
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Task dependency created: Task {TaskId} -> {DependsOnId} ({Type})", taskId, dependsOnTaskId, dependencyType);
+
+            await _auditService.LogUserActivityAsync(
+                $"Established task dependency: Task '{task.Title}' {dependencyType} Prerequisite '{dependsOnTask.Title}'",
+                $"ProjectId: {projectId}, TaskId: {taskId}, DependsOnTaskId: {dependsOnTaskId}, Type: {dependencyType}, Conflict: {isConflict}",
+                ct);
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -513,18 +563,27 @@ public partial class UserTaskService : IUserTaskService
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "RemoveTaskDependency", ct: ct);
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
-            var link = await _context.TaskDependencies
+            var link = await _context.WorkDependencies
                 .AsTracking()
-                .FirstOrDefaultAsync(d => d.TenantId == tenantId && d.ProjectId == projectId && d.Id == dependencyId, ct);
+                .FirstOrDefaultAsync(d => d.TenantId == tenantId && d.ProjectId == projectId && d.Id == dependencyId && !d.IsDeleted, ct);
 
             if (link == null) return Result<bool>.Failure("Dependency not found.");
 
-            _context.TaskDependencies.Remove(link);
+            link.IsDeleted = true;
+            link.DeletedAtUtc = DateTime.UtcNow;
+            link.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
+
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Task dependency {DependencyId} removed in project {ProjectId}", dependencyId, projectId);
+
+            await _auditService.LogUserActivityAsync(
+                $"Removed task dependency link ({link.DependencyType}) for Task {link.DependentItemId} and Prerequisite {link.DependsOnItemId}",
+                $"ProjectId: {projectId}, DependencyId: {dependencyId}, DependentItemId: {link.DependentItemId}, DependsOnItemId: {link.DependsOnItemId}",
+                ct);
+
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -560,14 +619,14 @@ public partial class UserTaskService : IUserTaskService
 
                 var request = new SendNotificationReqDto
                 {
-                    Category = NotificationCategory.Personal,
-                    Severity = task.Priority == TaskPriority.Urgent ? NotificationSeverity.Warning : NotificationSeverity.Info,
+                    Category = NotificationCategoryEnum.Personal,
+                    Severity = task.Priority == TaskPriorityEnum.Urgent ? NotificationSeverityEnum.Warning : NotificationSeverityEnum.Info,
                     Title = title,
                     Message = message,
                     ProjectId = task.ProjectId,
                     UserId = targetUserId,
                     LinkUrl = linkUrl,
-                    Channels = NotificationChannels.InApp | NotificationChannels.Email
+                    Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
                 };
 
                 await _notificationService.SendAsync(request, ct);
@@ -583,7 +642,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<SubTaskEntity>> GetSubTasksByTaskIdAsync(Guid taskId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
+        var tenantId = _tenantContext.TenantId;
         return await _context.SubTasks
             .AsNoTracking()
             .Where(s => s.TenantId == tenantId && s.ParentTaskId == taskId && !s.IsDeleted)
@@ -596,7 +655,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
             var parentTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == subTask.ParentTaskId, ct);
             if (parentTask == null) return Result<SubTaskEntity>.Failure("Parent task does not exist.");
 
@@ -629,7 +688,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
             var subTask = await _context.SubTasks.AsTracking()
                 .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Id == updated.Id, ct);
             if (subTask == null) return Result<SubTaskEntity>.Failure("Subtask not found.");
@@ -662,7 +721,7 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
             var subTask = await _context.SubTasks.AsTracking()
                 .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Id == subTaskId, ct);
             if (subTask == null) return Result<bool>.Failure("Subtask not found.");
@@ -688,23 +747,23 @@ public partial class UserTaskService : IUserTaskService
 
     // --- Blocker Dependency & Link Operations ---
 
-    public async Task<IReadOnlyList<TaskLinkEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<WorkDependencyEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.TenantId ?? string.Empty;
-        return await _context.TaskLinks
+        var tenantId = _tenantContext.TenantId;
+        return await _context.WorkDependencies
             .AsNoTracking()
-            .Include(l => l.SourceTask)
-            .Include(l => l.TargetTask)
-            .Include(l => l.BlockerDependency)
-            .Where(l => l.TenantId == tenantId && (l.SourceTaskId == taskId || l.TargetTaskId == taskId) && !l.IsDeleted)
+            .Where(d => d.TenantId == tenantId &&
+                        ((d.DependentType == DependencyNodeTypeEnum.TaskItem && d.DependentItemId == taskId) ||
+                         (d.DependsOnType == DependencyNodeTypeEnum.TaskItem && d.DependsOnItemId == taskId)) &&
+                        !d.IsDeleted)
             .ToListAsync(ct);
     }
 
-    public async Task<Result<TaskLinkEntity>> CreateBlockedByLinkAsync(
+    public async Task<Result<WorkDependencyEntity>> CreateBlockedByLinkAsync(
         Guid sourceTaskId,
         Guid targetTaskId,
         DateTime resolveDueDate,
-        DependencyCriticality criticality,
+        DependencyCriticalityEnum criticality,
         string impactDetails,
         string? watcherEmails = null,
         CancellationToken ct = default)
@@ -713,59 +772,78 @@ public partial class UserTaskService : IUserTaskService
         {
             if (sourceTaskId == targetTaskId)
             {
-                return Result<TaskLinkEntity>.Failure("A task cannot block itself.");
+                return Result<WorkDependencyEntity>.Failure("A task cannot block itself.");
             }
 
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
+            var tenantId = _tenantContext.TenantId;
 
             var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == sourceTaskId, ct);
-            if (sourceTask == null) return Result<TaskLinkEntity>.Failure("Source task not found.");
+            if (sourceTask == null) return Result<WorkDependencyEntity>.Failure("Source task not found.");
 
             var targetTask = await _context.Tasks.FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == targetTaskId, ct);
-            if (targetTask == null) return Result<TaskLinkEntity>.Failure("Target task (prerequisite) not found.");
+            if (targetTask == null) return Result<WorkDependencyEntity>.Failure("Target task (prerequisite) not found.");
 
-            var existingLink = await _context.TaskLinks.FirstOrDefaultAsync(l =>
-                l.TenantId == tenantId && l.SourceTaskId == sourceTaskId && l.TargetTaskId == targetTaskId && !l.IsDeleted, ct);
+            if (sourceTask.ProjectId != targetTask.ProjectId)
+            {
+                await _projectAuth.EnsureCanVisitAsync(targetTask.ProjectId, operation: "LinkCrossProjectBlocker", ct: ct);
+            }
+
+            var existingLink = await _context.WorkDependencies.FirstOrDefaultAsync(l =>
+                l.TenantId == tenantId &&
+                l.DependentType == DependencyNodeTypeEnum.TaskItem &&
+                l.DependentItemId == sourceTaskId &&
+                l.DependsOnType == DependencyNodeTypeEnum.TaskItem &&
+                l.DependsOnItemId == targetTaskId &&
+                !l.IsDeleted, ct);
 
             if (existingLink != null)
             {
-                return Result<TaskLinkEntity>.Failure("A link between these two tasks already exists.");
+                return Result<WorkDependencyEntity>.Failure("A link between these two tasks already exists.");
             }
 
-            var blocker = new BlockerDependencyEntity
+            var isConflict = targetTask.DueDate.Date > sourceTask.DueDate.Date;
+
+            var blocker = new WorkDependencyEntity
             {
                 TenantId = tenantId,
                 Level = sourceTask.Level,
-                SourceTaskId = sourceTaskId,
-                TargetTaskId = targetTaskId,
+                ProjectId = sourceTask.ProjectId,
+                ProgramId = sourceTask.ProgramId,
+                DependentType = DependencyNodeTypeEnum.TaskItem,
+                DependentItemId = sourceTaskId,
+                DependsOnType = DependencyNodeTypeEnum.TaskItem,
+                DependsOnItemId = targetTaskId,
+                DependsOnLevel = targetTask.Level,
+                DependsOnProjectId = targetTask.ProjectId,
+                DependsOnProgramId = targetTask.ProgramId,
+                DependsOnSnapshotTitle = targetTask.Title,
+                DependsOnSnapshotStatus = targetTask.Status.ToString(),
+                DependsOnSnapshotDueDate = targetTask.DueDate,
+                IsScheduleConflict = isConflict,
                 Title = $"Blocker: '{sourceTask.Title}' blocked by '{targetTask.Title}'",
-                Description = $"Dependency contract. Prerequisite: '{targetTask.Title}'. Dependent: '{sourceTask.Title}'.",
-                ImpactDetails = impactDetails,
+                Description = string.IsNullOrWhiteSpace(impactDetails)
+                    ? $"Dependency contract. Prerequisite: '{targetTask.Title}'. Dependent: '{sourceTask.Title}'."
+                    : impactDetails,
+                Priority = criticality switch
+                {
+                    DependencyCriticalityEnum.Low => TaskPriorityEnum.Low,
+                    DependencyCriticalityEnum.Medium => TaskPriorityEnum.Medium,
+                    DependencyCriticalityEnum.High => TaskPriorityEnum.High,
+                    DependencyCriticalityEnum.Critical => TaskPriorityEnum.Urgent,
+                    _ => TaskPriorityEnum.Medium
+                },
                 Criticality = criticality,
-                Priority = criticality == DependencyCriticality.Critical ? TaskPriority.Urgent : TaskPriority.High,
-                Status = targetTask.IsClosed ? TaskStatus.Closed : TaskStatus.Open,
+                Status = targetTask.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open,
                 StartDate = DateTime.UtcNow,
                 DueDate = resolveDueDate,
                 EndDate = targetTask.IsClosed ? DateTime.UtcNow : null,
                 ReporterEmail = _currentUser.Email ?? sourceTask.ReporterEmail,
                 AssigneeEmails = targetTask.AssigneeEmails ?? targetTask.ReporterEmail,
                 WatcherEmails = watcherEmails ?? string.Empty,
-                ProgramId = sourceTask.ProgramId,
-                ProjectId = sourceTask.ProjectId
+                DependencyType = TaskDependencyTypeEnum.BlockedBy
             };
 
-            await _context.BlockerDependencies.AddAsync(blocker, ct);
-
-            var link = new TaskLinkEntity
-            {
-                TenantId = tenantId,
-                SourceTaskId = sourceTaskId,
-                TargetTaskId = targetTaskId,
-                LinkType = TaskDependencyType.BlockedBy,
-                BlockerDependency = blocker
-            };
-
-            await _context.TaskLinks.AddAsync(link, ct);
+            await _context.WorkDependencies.AddAsync(blocker, ct);
             await _context.SaveChangesAsync(ct);
 
             // Notify prerequisite assignee about the new blocker SLA
@@ -774,15 +852,15 @@ public partial class UserTaskService : IUserTaskService
             {
                 await SendBlockerAlertAsync(email, $"New Blocker Dependency Assigned: '{targetTask.Title}'",
                     $"Your task '{targetTask.Title}' is blocking '{sourceTask.Title}'. Resolve SLA: {resolveDueDate:yyyy-MM-dd}. Criticality: {criticality}.",
-                    NotificationSeverity.Warning, targetTask.ProjectId, ct);
+                    NotificationSeverityEnum.Warning, targetTask.ProjectId, ct);
             }
 
-            return Result<TaskLinkEntity>.Success(link);
+            return Result<WorkDependencyEntity>.Success(blocker);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create blocked-by link from {Source} to {Target}", sourceTaskId, targetTaskId);
-            return Result<TaskLinkEntity>.Failure($"Failed to create blocker link: {ex.Message}");
+            return Result<WorkDependencyEntity>.Failure($"Failed to create blocker link: {ex.Message}");
         }
     }
 
@@ -790,23 +868,15 @@ public partial class UserTaskService : IUserTaskService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? string.Empty;
-            var link = await _context.TaskLinks.AsTracking()
-                .Include(l => l.BlockerDependency)
-                .FirstOrDefaultAsync(l => l.TenantId == tenantId && l.Id == linkId, ct);
+            var tenantId = _tenantContext.TenantId;
+            var link = await _context.WorkDependencies.AsTracking()
+                .FirstOrDefaultAsync(l => l.TenantId == tenantId && l.Id == linkId && !l.IsDeleted, ct);
 
             if (link == null) return Result<bool>.Failure("Link not found.");
 
             link.IsDeleted = true;
             link.DeletedAtUtc = DateTime.UtcNow;
             link.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
-
-            if (link.BlockerDependency != null)
-            {
-                link.BlockerDependency.IsDeleted = true;
-                link.BlockerDependency.DeletedAtUtc = DateTime.UtcNow;
-                link.BlockerDependency.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
-            }
 
             await _context.SaveChangesAsync(ct);
             return Result<bool>.Success(true);
@@ -818,7 +888,61 @@ public partial class UserTaskService : IUserTaskService
         }
     }
 
-    private async Task SendBlockerAlertAsync(string email, string title, string message, NotificationSeverity severity, Guid projectId, CancellationToken ct)
+    public async Task<Result<WorkDependencyEntity>> PromoteManualDependencyAsync(
+        Guid dependencyId,
+        DependencyNodeTypeEnum targetType,
+        Guid targetItemId,
+        Guid? targetProjectId,
+        Guid? targetProgramId,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var tenantId = _tenantContext.TenantId;
+            var dep = await _context.WorkDependencies.AsTracking()
+                .FirstOrDefaultAsync(d => d.TenantId == tenantId && d.Id == dependencyId && !d.IsDeleted, ct);
+
+            if (dep == null) return Result<WorkDependencyEntity>.Failure("Dependency not found.");
+
+            dep.DependsOnType = targetType;
+            dep.DependsOnItemId = targetItemId;
+            dep.DependsOnProjectId = targetProjectId;
+            dep.DependsOnProgramId = targetProgramId;
+
+            if (targetType == DependencyNodeTypeEnum.TaskItem)
+            {
+                var task = await _context.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.TenantId == tenantId && t.Id == targetItemId, ct);
+                if (task != null)
+                {
+                    dep.DependsOnSnapshotTitle = task.Title;
+                    dep.DependsOnSnapshotStatus = task.Status.ToString();
+                    dep.DependsOnSnapshotDueDate = task.DueDate;
+                    dep.IsScheduleConflict = task.DueDate.Date > dep.DueDate.Date;
+                }
+            }
+            else if (targetType == DependencyNodeTypeEnum.CalendarGate)
+            {
+                var cal = await _context.ProjectCalendars.AsNoTracking().FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Id == targetItemId, ct);
+                if (cal != null)
+                {
+                    dep.DependsOnSnapshotTitle = cal.Title;
+                    dep.DependsOnSnapshotStatus = cal.Status.ToString();
+                    dep.DependsOnSnapshotDueDate = cal.EndDate ?? cal.StartDate;
+                    dep.IsScheduleConflict = (cal.EndDate ?? cal.StartDate).Date > dep.DueDate.Date;
+                }
+            }
+
+            await _context.SaveChangesAsync(ct);
+            return Result<WorkDependencyEntity>.Success(dep);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to promote manual dependency {Id}", dependencyId);
+            return Result<WorkDependencyEntity>.Failure($"Failed to promote dependency: {ex.Message}");
+        }
+    }
+
+    private async Task SendBlockerAlertAsync(string email, string title, string message, NotificationSeverityEnum severity, Guid projectId, CancellationToken ct)
     {
         try
         {
@@ -828,13 +952,13 @@ public partial class UserTaskService : IUserTaskService
 
             var request = new SendNotificationReqDto
             {
-                Category = NotificationCategory.Personal,
+                Category = NotificationCategoryEnum.Personal,
                 Severity = severity,
                 Title = title,
                 Message = message,
                 ProjectId = projectId,
                 UserId = userId,
-                Channels = NotificationChannels.InApp | NotificationChannels.Email
+                Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
             };
 
             await _notificationService.SendAsync(request, ct);

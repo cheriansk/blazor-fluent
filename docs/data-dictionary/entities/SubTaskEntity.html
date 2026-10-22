@@ -1,0 +1,52 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Tasks</span> &bull; <b>SubTaskEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">SubTaskEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Tasks</span>
+<span class="badge badge-tenant">DbSet: SubTasks</span>
+<a class="badge badge-base" href="BaseTaskEntity.html">Base: BaseTaskEntity</a>
+</div></div></div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-date" title="Temporal validity via StartDate / EndDate">[Effective Dated]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Child subtask strictly governed under a parent . Invariant: Maximum hierarchy depth is 1 (a subtask cannot have a subtask). Invariant: Intra-task blockers can only reference sibling subtasks under the same ParentTaskId.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (4)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">OrderIndex </td><td><span class="code-type">int</span></td><td>No</td><td>Relative display and execution order index within the parent task.</td></tr>
+<tr><td class="prop-name">BlockedBySubTaskId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td>Optional intra-task blocker reference pointing to a sibling subtask under the same parent task.</td></tr>
+<tr><td class="prop-name">ParentTask <span class="fk-pill">NAV</span></td><td><a href="TaskEntity.html" class="code-type">TaskEntity?</a></td><td>Yes</td><td>-</td></tr>
+<tr><td class="prop-name">BlockedBySubTask <span class="fk-pill">NAV</span></td><td><a href="SubTaskEntity.html" class="code-type">SubTaskEntity?</a></td><td>Yes</td><td>-</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (2)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="SubTaskEntity.html"><b>SubTaskEntity</b></a></td><td>Tasks</td><td><code>BlockedBySubTask</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>SubTasks</code></td><td>Collection (1:N)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (5)</div>
+<table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
+<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">OrderIndex</span> <span class="badge-field">Description</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-FluentCalendarScheduleComp.razor"><b>FluentCalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Description</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowStepperComp.razor"><b>WorkflowStepperComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">OrderIndex</span> <span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">UserId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectTasksBoardPage.razor"><b>ProjectTasksBoardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/projects/{ProjectId:guid}/tasks</code></td><td><span class="badge-field">BlockedBySubTaskId</span> <span class="badge-field">Description</span> <span class="badge-field">EndDate</span> <span class="badge-field">ReporterEmail</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Labels</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">AssigneeEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

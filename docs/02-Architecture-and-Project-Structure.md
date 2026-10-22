@@ -88,7 +88,7 @@ The solution is divided into distinct, cohesive architectural domains:
   - Domain entities (`TenantEntity`, `ProjectEntity`, `WorkflowEntity`, `TaskEntity`, `AuditRecordEntity`).
   - Core interfaces (`ITenantService`, `IProjectService`, `IWorkflowService`, `IFileIngestionService`).
   - Cryptographic utilities: `OpaqueIdUtility` for 256-bit license keys, tenant reference IDs (`tnt_...`), and salted HMAC GUID masking.
-  - Universal batch staging contracts: `IProprietaryEncryptedEntity` (`SourceRowId`, `IsEncryptedAtRest`, `EncryptedPayloadBytes`) and `StagedImportEntity` (universal `staging.StagedImports` with `jsonb` payloads and `IsProcessed` lifecycle flags).
+  - Universal batch staging & encryption contracts: `ISourceTrackedEntity` (deterministic `SourceRowId` linking to raw staged records in `staging.StagedImports`), `IEncryptedPayloadEntity` (protects confidential business payloads at rest via AES-256-GCM `EncryptedPayloadBytes`), and `StagedImportEntity` (universal `staging.StagedImports` with `jsonb` payloads and `IsProcessed` lifecycle flags).
   - FluentValidation rules (`TaskValidator`, `WorkflowValidator`, `StagedImportEntityValidator`).
 - **Dependencies**: `BlazorFluent.Shared`, `FluentValidation`.
 

@@ -13,7 +13,6 @@ public class StagedImportEntityConfiguration : IEntityTypeConfiguration<StagedIm
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.TenantId)
-            .HasMaxLength(256)
             .IsRequired();
 
         builder.Property(e => e.ProjectId)
