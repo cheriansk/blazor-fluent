@@ -556,7 +556,7 @@ internal class AuditService : IAuditService
 
                 ? _currentUser.Email 
 
-                : $"system+audit@{SystemIdentityUtility.SystemTenantSlug}.internal";
+                : SystemIdentityUtility.FormatInternalDaemonEmail("ForensicAuditLogger");
 
             currentUser?.SetSystemDaemon("ForensicAuditLogger", auditEmail);
 

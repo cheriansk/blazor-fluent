@@ -6,7 +6,7 @@ namespace BlazorFluent.Jobs.Jobs.Audit;
 /// <summary>
 /// Triggers the nightly forensic audit log purge.
 /// Deletes audit.AuditRecords older than the configured retention window.
-/// Defaults to SystemIdentityUtility.SystemDaemonTenantId for host-level cross-tenant maintenance.
+/// Defaults to Root Tenant for host-level cross-tenant maintenance.
 /// </summary>
 public record AuditPurgeJobEvent(
     string TriggerSource,
@@ -19,7 +19,7 @@ public record AuditPurgeJobEvent(
     Guid? ParentExecutionId = null)
     : BaseJobEvent(
         TriggerSource,
-        TenantId != Guid.Empty ? TenantId : SystemIdentityUtility.SystemDaemonTenantId,
+        TenantId != Guid.Empty ? TenantId : SystemIdentityUtility.Current.RootTenantId,
         CorrelationId,
         SenderOrigin,
         SenderUserId,

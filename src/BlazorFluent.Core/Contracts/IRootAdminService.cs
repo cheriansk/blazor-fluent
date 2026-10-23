@@ -5,7 +5,7 @@ namespace BlazorFluent.Core.Contracts;
 
 /// <summary>
 /// Service managing the system's root super-administrators and platform root tenant.
-/// Loaded from configuration/KeyVault with a strict maximum of 3 administrators.
+/// Loaded dynamically from configuration/KeyVault with a strict maximum of 3 administrators.
 /// </summary>
 public interface IRootAdminService
 {
@@ -38,10 +38,4 @@ public interface IRootAdminService
     /// Maximum allowed root administrators in the system.
     /// </summary>
     public const int MaxRootAdminCount = 3;
-
-    [Obsolete("Deprecated: Use IRootAdminService instance RootTenantSlug instead.")]
-    public const string DefaultTenantSlug = "root";
-
-    [Obsolete("Deprecated: Use IRootAdminService instance RootTenantId instead.")]
-    public static readonly Guid DefaultRootTenantId = new Guid("00000000-0000-0000-0000-000000000001");
 }

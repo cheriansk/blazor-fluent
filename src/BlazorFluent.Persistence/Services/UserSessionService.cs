@@ -38,10 +38,7 @@ public class UserSessionService : IUserSessionService
         CancellationToken ct = default)
     {
         // Security Gate: Reject persistent session creation for background system daemons
-        if (string.Equals(userId, "system", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(userEmail, "system@daemon.local", StringComparison.OrdinalIgnoreCase) ||
-            userEmail?.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase) == true ||
-            SystemIdentityUtility.IsSystemDaemon(userId) ||
+        if (SystemIdentityUtility.IsSystemDaemon(userId) ||
             SystemIdentityUtility.IsSystemDaemon(userEmail))
         {
             _logger.LogCritical("SECURITY ALERT: Blocked illicit attempt to create persistent user session for system daemon '{UserId}' ({UserEmail}).", userId, userEmail);
@@ -54,7 +51,7 @@ public class UserSessionService : IUserSessionService
             _currentUser.RestoreUserContext(userId, userEmail, userEmail);
         }
 
-        var tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.RootTenantId;
+        var tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
 
 
 

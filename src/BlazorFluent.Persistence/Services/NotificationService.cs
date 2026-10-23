@@ -104,7 +104,8 @@ public class NotificationService : INotifyService
                 _tenantContext.TenantName,
                 _tenantContext.UserType,
                 _tenantContext.AllowedTenants,
-                _tenantContext.IsHost);
+                _tenantContext.TenantSlug,
+                _tenantContext.IsRootTenant);
         }
 
         return scope;
@@ -185,7 +186,7 @@ public class NotificationService : INotifyService
             allowedTenants.Add(_tenantContext.TenantId);
         }
 
-        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
+        var isHost = _tenantContext.IsRootTenant || _currentUser.IsRootAdmin;
 
         var query = db.Notifications
             .AsNoTracking()
@@ -288,7 +289,7 @@ public class NotificationService : INotifyService
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
-        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
+        var isHost = _tenantContext.IsRootTenant || _currentUser.IsRootAdmin;
 
         var baseQuery = db.Notifications
             .AsNoTracking()
@@ -336,7 +337,7 @@ public class NotificationService : INotifyService
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
-        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
+        var isHost = _tenantContext.IsRootTenant || _currentUser.IsRootAdmin;
 
         var notification = await db.Notifications
             .AsTracking()
@@ -388,7 +389,7 @@ public class NotificationService : INotifyService
         {
             allowedTenants.Add(_tenantContext.TenantId);
         }
-        var isHost = _tenantContext.IsHost || _currentUser.IsRootAdmin;
+        var isHost = _tenantContext.IsRootTenant || _currentUser.IsRootAdmin;
 
         var query = db.Notifications
             .Where(n => !n.IsDeleted && !n.IsRead);

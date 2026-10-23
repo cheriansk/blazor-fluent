@@ -24,7 +24,8 @@ public static class InitialDatabaseSeeder
     public static async Task SeedAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         using var scope = serviceProvider.CreateScope();
-        var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
+        var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
+        var systemIdentity = scope.ServiceProvider.GetRequiredService<ISystemIdentity>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var hostEnvironment = scope.ServiceProvider.GetService<IHostEnvironment>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(InitialDatabaseSeeder));
@@ -49,7 +50,7 @@ public static class InitialDatabaseSeeder
         tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
 
         var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.SetSystemDaemon("InitialDatabaseSeeder", $"daemon@{rootAdminService.RootTenantSlug.ToLowerInvariant()}.internal");
+        currentUser?.SetSystemDaemon("InitialDatabaseSeeder", systemIdentity.DaemonEmailFor(rootAdminService.RootTenantSlug));
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -170,8 +171,8 @@ public static class InitialDatabaseSeeder
             index++;
         }
 
-        // 2b. Seed Root Tenant Daemon (daemon@default.internal) and client tenant daemons
-        var rootDaemonEmail = "daemon@default.internal";
+        // 2b. Seed Root Tenant Daemon and client tenant daemons
+        var rootDaemonEmail = systemIdentity.DaemonEmailFor(rootAdminService.RootTenantSlug);
         var existingRootDaemon = await dbContext.Users
             .FirstOrDefaultAsync(u => u.Email == rootDaemonEmail && !u.IsDeleted, cancellationToken);
 
@@ -243,7 +244,7 @@ public static class InitialDatabaseSeeder
 
         foreach (var tenant in allOtherTenants)
         {
-            var tenantDaemonEmail = $"daemon@{tenant.Slug.ToLowerInvariant()}.internal";
+            var tenantDaemonEmail = systemIdentity.DaemonEmailFor(tenant.Slug);
             var existingTenantDaemon = await dbContext.Users
                 .FirstOrDefaultAsync(u => u.Email == tenantDaemonEmail && !u.IsDeleted, cancellationToken);
 
@@ -366,7 +367,7 @@ public static class InitialDatabaseSeeder
                 {
                     return (IReadOnlyList<TenantEntity>)await dbContext.Tenants
                         .AsNoTracking()
-                        .Where(t => t.Slug != rootAdminService.RootTenantSlug && t.Slug != "default" && !t.IsDeleted)
+                        .Where(t => t.Slug != rootAdminService.RootTenantSlug && !t.IsDeleted)
                         .OrderBy(t => t.Name)
                         .ToListAsync(token);
                 },

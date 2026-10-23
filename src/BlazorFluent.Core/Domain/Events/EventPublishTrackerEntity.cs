@@ -67,14 +67,13 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
     public string GetEffectiveSender()
     {
         if (!string.IsNullOrWhiteSpace(UserEmail) &&
-            !UserEmail.Equals("system@daemon.local", StringComparison.OrdinalIgnoreCase) &&
-            !UserEmail.Contains("@daemon.local", StringComparison.OrdinalIgnoreCase))
+            !BlazorFluent.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(UserEmail))
         {
             return UserEmail;
         }
 
         if (!string.IsNullOrWhiteSpace(UserId) &&
-            !UserId.Equals("system", StringComparison.OrdinalIgnoreCase) &&
+            !BlazorFluent.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(UserId) &&
             !UserId.StartsWith("ChannelJob:", StringComparison.OrdinalIgnoreCase) &&
             !UserId.StartsWith("SystemDaemon", StringComparison.OrdinalIgnoreCase))
         {

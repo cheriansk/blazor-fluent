@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace BlazorFluent.Api.Auth;
 
@@ -14,34 +19,34 @@ public class InMemoryEntitlementsRepository : IEntitlementsRepository
 {
     private readonly ConcurrentDictionary<string, EntitlementUser> _users = new(StringComparer.OrdinalIgnoreCase);
 
-    public InMemoryEntitlementsRepository()
+    public InMemoryEntitlementsRepository(IConfiguration? configuration = null)
     {
-        // Seed default developer and client pilot entitlements
-        var seedUsers = new[]
+        // Pre-authorize configured root administrators without hardcoded user records
+        if (configuration != null)
         {
-            new EntitlementUser
-            {
-                Email = "admin@company.com",
-                TenantId = "TENANT-ROOT-001",
-                StartDate = DateTime.UtcNow.AddMonths(-1),
-                EndDate = DateTime.UtcNow.AddYears(5),
-                IsActive = true,
-                Roles = ["Admin", "SuperAdmin"]
-            },
-            new EntitlementUser
-            {
-                Email = "analyst@clientcorp.com",
-                TenantId = "TENANT-CLIENT-002",
-                StartDate = DateTime.UtcNow.AddMonths(-1),
-                EndDate = DateTime.UtcNow.AddYears(1),
-                IsActive = true,
-                Roles = ["User", "ProjectManager"]
-            }
-        };
+            var rawAdmins = configuration["Admin:RootAdmins"];
+            var rootTenantId = configuration["Admin:RootTenantId"] ?? string.Empty;
 
-        foreach (var u in seedUsers)
-        {
-            _users[u.Email] = u;
+            if (!string.IsNullOrWhiteSpace(rawAdmins))
+            {
+                var adminEmails = rawAdmins
+                    .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(e => e.ToLowerInvariant())
+                    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var email in adminEmails)
+                {
+                    _users[email] = new EntitlementUser
+                    {
+                        Email = email,
+                        TenantId = rootTenantId,
+                        StartDate = DateTime.UtcNow.AddMonths(-1),
+                        EndDate = DateTime.UtcNow.AddYears(10),
+                        IsActive = true,
+                        Roles = ["Admin", "SuperAdmin"]
+                    };
+                }
+            }
         }
     }
 

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TenantInfo = BlazorFluent.Core.Contracts.TenantInfo;
 
 namespace BlazorFluent.Persistence.Services;
 
@@ -28,17 +29,20 @@ public class InternalAuthenticationService : IInternalAuthenticationService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
     private readonly IRootAdminService _rootAdminService;
+    private readonly ISystemIdentity _systemIdentity;
     private readonly ILogger<InternalAuthenticationService> _logger;
 
     public InternalAuthenticationService(
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
         IRootAdminService rootAdminService,
+        ISystemIdentity systemIdentity,
         ILogger<InternalAuthenticationService> logger)
     {
         _scopeFactory = scopeFactory;
         _configuration = configuration;
         _rootAdminService = rootAdminService;
+        _systemIdentity = systemIdentity;
         _logger = logger;
     }
 
@@ -55,13 +59,13 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         using var scope = _scopeFactory.CreateScope();
         var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-        SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, normalizedEmail, "VerifyLogin");
+        SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, _systemIdentity, normalizedEmail, "VerifyLogin");
 
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Security Gate: Reject background system daemon identity logins
-        if (normalizedEmail == "system" || normalizedEmail == "system@daemon.local" || normalizedEmail.Contains("@daemon.local") || normalizedEmail.StartsWith("daemon@") || normalizedEmail.EndsWith(".internal") || SystemIdentityUtility.IsSystemDaemon(normalizedEmail))
+        if (_systemIdentity.IsSystemDaemon(normalizedEmail))
         {
             await auditService.LogSecurityEventAsync(
                 "SecurityViolationSystemLoginAttempt",
@@ -173,7 +177,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         using var scope = _scopeFactory.CreateScope();
         var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-        SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, userId, "RehydrateSession");
+        SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, _systemIdentity, userId, "RehydrateSession");
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();

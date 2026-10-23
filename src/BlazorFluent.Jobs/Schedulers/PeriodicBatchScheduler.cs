@@ -136,7 +136,7 @@ public class PeriodicBatchScheduler : BackgroundService
 
                 if (activeTenants.Count == 0)
                 {
-                    activeTenants.Add(BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
+                    activeTenants.Add(BlazorFluent.Core.Utilities.SystemIdentityUtility.Current.RootTenantId);
                 }
 
                 _logger.LogInformation(

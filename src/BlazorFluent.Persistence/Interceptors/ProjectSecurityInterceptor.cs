@@ -1,4 +1,8 @@
-﻿using BlazorFluent.Core.Contracts;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Base;
 using BlazorFluent.Core.Security;
@@ -15,26 +19,19 @@ namespace BlazorFluent.Persistence.Interceptors;
 /// Fail-closed EF Core SaveChangesInterceptor that enforces per-project RBAC write gates
 /// directly at the database persistence boundary.
 /// Any attempt to add, modify, or delete an <see cref="IProjectScopedEntity"/> without
-/// at least <see cref="ProjectRoleEnum.Contribute"/> or <see cref="ProjectRoleEnum.Contribute"/> permissions
-/// immediately aborts the transaction.
+/// at least <see cref="ProjectRoleEnum.Contribute"/> permissions immediately aborts the transaction.
 /// </summary>
 public class ProjectSecurityInterceptor : SaveChangesInterceptor
 {
-    private readonly ICurrentUser _currentUser;
-    private readonly ITenantContext _tenantContext;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ProjectSecurityInterceptor> _logger;
 
     public ProjectSecurityInterceptor(
-        ICurrentUser currentUser,
-        ITenantContext tenantContext,
         IServiceScopeFactory scopeFactory,
         ILogger<ProjectSecurityInterceptor> logger)
     {
-        _currentUser = currentUser;
-        _tenantContext = tenantContext;
-        _scopeFactory = scopeFactory;
-        _logger = logger;
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public override InterceptionResult<int> SavingChanges(
@@ -58,11 +55,13 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
     {
         if (context is null) return;
 
+        var currentUser = (context as AppDbContext)?.CurrentUser ?? new DefaultCurrentUser();
+
         // Verified internal background system daemons bypass per-project user gates.
         // App Admins (Root Admins) are subject to project zero-trust boundaries and cannot write business data unless granted a project role.
-        if (_currentUser.IsSystemDaemon ||
-            SystemIdentityUtility.IsSystemDaemon(_currentUser.UserId) ||
-            SystemIdentityUtility.IsSystemDaemon(_currentUser.Email))
+        if (currentUser.IsSystemDaemon ||
+            SystemIdentityUtility.IsSystemDaemon(currentUser.UserId) ||
+            SystemIdentityUtility.IsSystemDaemon(currentUser.Email))
         {
             return;
         }
@@ -74,8 +73,8 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
 
         if (scopedEntries.Count == 0) return;
 
-        var userId = _currentUser.UserId;
-        if (string.IsNullOrWhiteSpace(userId) || !_currentUser.IsAuthenticated)
+        var userId = currentUser.UserId;
+        if (string.IsNullOrWhiteSpace(userId) || !currentUser.IsAuthenticated)
         {
             _logger.LogCritical(
                 "SECURITY INTERCEPTOR VIOLATION: Unauthenticated user attempted to mutate {Count} project-scoped entities.",
@@ -100,28 +99,25 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
                     userId, projectId, role?.ToString() ?? "None");
 
                 throw new UnauthorizedAccessException(
-                    $"Fail-Closed Security Interceptor: User '{userId}' does not have write permissions for project '{projectId}'. Database write blocked.");
+                    $"Fail-Closed Security Interceptor: User '{userId}' does not have write permissions for project '{projectId}'. Database write aborted.");
             }
         }
     }
 
     private ProjectRoleEnum? ResolveRoleForProject(string userId, Guid projectId)
     {
-        // Isolated scope query avoids DbContext concurrency collisions
-        using var scope = _scopeFactory.CreateScope();
-        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.SetSystemDaemon("ProjectSecurityInterceptor");
-        var isolatedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var hierarchyAuth = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
+            if (hierarchyAuth is null) return null;
 
-        var hasGuid = Guid.TryParse(userId, out var userGuid);
-        var normalizedUser = userId.Trim().ToLowerInvariant();
-
-        var roleEntity = isolatedDb.ProjectUserRoles
-            .AsNoTracking()
-            .FirstOrDefault(r => r.ProjectId == projectId &&
-                                 ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-                                 !r.IsDeleted);
-
-        return roleEntity?.Role;
+            return hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, userId).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to resolve project role for user '{UserId}' on project '{ProjectId}' in ProjectSecurityInterceptor.", userId, projectId);
+            return null;
+        }
     }
 }

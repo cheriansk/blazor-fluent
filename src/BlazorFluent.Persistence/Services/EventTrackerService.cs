@@ -150,7 +150,7 @@ public class EventTrackerService : IEventTrackerService
 
             {
 
-                tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.RootTenantId;
+                tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
 
             }
 
@@ -174,7 +174,7 @@ public class EventTrackerService : IEventTrackerService
 
 
 
-                tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.RootTenantId;
+                tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
 
             }
 
@@ -380,7 +380,7 @@ public class EventTrackerService : IEventTrackerService
 
 
 
-            var tenantId = parent?.TenantId ?? (_tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.RootTenantId);
+            var tenantId = parent?.TenantId ?? (_tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId);
 
             var correlationId = parent?.CorrelationId ?? eventId.ToString("N")[..12];
 
@@ -632,7 +632,7 @@ public class EventTrackerService : IEventTrackerService
 
         // Enforce tenant boundary unless user is host
 
-        if (!_tenantContext.IsHost)
+        if (!_tenantContext.IsRootTenant)
 
         {
 
@@ -828,7 +828,7 @@ public class EventTrackerService : IEventTrackerService
 
 
 
-        if (!_tenantContext.IsHost)
+        if (!_tenantContext.IsRootTenant)
 
         {
 

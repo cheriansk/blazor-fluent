@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Domain.Jobs;
+using BlazorFluent.Core.Domain.Jobs;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
@@ -38,7 +38,7 @@ public class JobExecutionEntityValidatorTests
         {
             Id = Guid.CreateVersion7(),
             JobName = "DatabaseVacuumJob",
-            TenantId = BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId,
+            TenantId = Guid.CreateVersion7(),
             CorrelationId = "corr_system_999",
             TriggerSource = JobTriggerSourceEnum.Cron,
             Status = JobStatusEnum.Succeeded,

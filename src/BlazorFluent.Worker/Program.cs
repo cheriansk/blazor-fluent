@@ -56,7 +56,8 @@ try
     var enableScheduler = builder.Configuration.GetValue<bool>("Jobs:EnableScheduler", true);
     builder.Services.AddBackgroundJobs(enableListener: enableListener, enableScheduler: enableScheduler);
 
-    var host = builder.Build();
+    var host = builder.Build();
+    BlazorFluent.Core.Utilities.SystemIdentityUtility.SetCurrent(host.Services.GetRequiredService<BlazorFluent.Core.Contracts.ISystemIdentity>());
 
     Log.Information("BlazorFluent.Worker host built successfully. Starting background listener (Listener={EnableListener}, Scheduler={EnableScheduler})...",
         enableListener, enableScheduler);

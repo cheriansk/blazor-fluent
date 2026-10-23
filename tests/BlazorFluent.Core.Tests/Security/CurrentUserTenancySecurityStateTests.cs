@@ -4,6 +4,7 @@ using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Xunit;
+using TenantInfo = BlazorFluent.Core.Contracts.TenantInfo;
 
 namespace BlazorFluent.Core.Tests.Security;
 
@@ -28,7 +29,7 @@ public class CurrentUserTenancySecurityStateTests
     {
         var tenantContext = new TenantContext();
         var tenantId = Guid.NewGuid();
-        tenantContext.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "acme");
+        tenantContext.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "acme", isRootTenant: false);
 
         var user = new DefaultCurrentUser(tenantContext);
         user.RestoreUserContext("user-123", "alice@acme.com", "Alice Acme", isRootAdmin: false);
@@ -47,8 +48,8 @@ public class CurrentUserTenancySecurityStateTests
     public void DefaultCurrentUser_AuthenticatedInRootTenant_RootAdminUser_IsAuthenticated_RootTenant_User_IsTrue()
     {
         var tenantContext = new TenantContext();
-        var rootTenantId = IRootAdminService.DefaultRootTenantId;
-        tenantContext.Initialize(rootTenantId, "Root System", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "root");
+        var rootTenantId = Guid.NewGuid();
+        tenantContext.Initialize(rootTenantId, "Root System", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "root", isRootTenant: true);
 
         var user = new DefaultCurrentUser(tenantContext);
         user.RestoreUserContext("admin-001", "superadmin@platform.internal", "Super Admin", isRootAdmin: true);
@@ -68,7 +69,7 @@ public class CurrentUserTenancySecurityStateTests
     {
         var tenantContext = new TenantContext();
         var tenantId = Guid.NewGuid();
-        tenantContext.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "acme");
+        tenantContext.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "acme", isRootTenant: false);
 
         var user = new DefaultCurrentUser(tenantContext);
         user.SetSystemDaemon("AcmeBatchProcessor");
@@ -87,8 +88,8 @@ public class CurrentUserTenancySecurityStateTests
     public void DefaultCurrentUser_BackgroundDaemonInRootTenant_IsAuthenticated_RootTenant_Daemon_IsTrue()
     {
         var tenantContext = new TenantContext();
-        var rootTenantId = IRootAdminService.DefaultRootTenantId;
-        tenantContext.Initialize(rootTenantId, "Root System", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "root");
+        var rootTenantId = Guid.NewGuid();
+        tenantContext.Initialize(rootTenantId, "Root System", UserTypeEnum.CompanyUser, new List<TenantInfo>(), "root", isRootTenant: true);
 
         var user = new DefaultCurrentUser(tenantContext);
         user.SetSystemDaemon("StartupMigration");
