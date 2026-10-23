@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Shared.DataListTypes;
+using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Auditing;
 using BlazorFluent.Core.Dtos.Response;
 
@@ -49,5 +49,11 @@ public interface IAuditService
         string entityId,
         string? propertyName = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Purges historical audit records older than the specified cutoff UTC timestamp via direct batch execution.
+    /// Restricted strictly to Root Super-Administrators.
+    /// </summary>
+    Task<int> PurgeAuditRecordsBeforeAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default);
 }
 

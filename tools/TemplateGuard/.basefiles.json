@@ -748,7 +748,9 @@
         "LogExceptionAsync",
         "IAuditService.LogExceptionAsync(Exception, string?, AuditSeverityEnum, CancellationToken)",
         "GetEntityHistoryAsync",
-        "IAuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)"
+        "IAuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)",
+        "PurgeAuditRecordsBeforeAsync",
+        "IAuditService.PurgeAuditRecordsBeforeAsync(DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "IAuditService.GetAuditTrailAsync(AuditTrailFilterReqDto, CancellationToken)": "17ae59b72ba36260816ed0c9753dda3fdce701590fbdec49b4e69aecca8e82d3",
@@ -756,7 +758,8 @@
         "IAuditService.LogSecurityEventAsync(string, AuditSeverityEnum, string?, CancellationToken)": "36b6085ec651fe2937324e561a37f8b68af75548ce6ddbae5cca32e873eec217",
         "IAuditService.LogUserActivityAsync(string, string?, CancellationToken)": "94ae96b0a316c2ce57c1da77a113f3cca952a199c882c37426f50d2645a865fe",
         "IAuditService.LogExceptionAsync(Exception, string?, AuditSeverityEnum, CancellationToken)": "dd7c0a9b90566b6ae2be3d0d9d34bd9171719eeacdc430f0185f8537b6aaa6b1",
-        "IAuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)": "3dd7b8a7856d2088f44fea9255da99ab3c3e918b02b727e308ed0b5a1a391044"
+        "IAuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)": "3dd7b8a7856d2088f44fea9255da99ab3c3e918b02b727e308ed0b5a1a391044",
+        "IAuditService.PurgeAuditRecordsBeforeAsync(DateTime, CancellationToken)": "74f1bac46b0969c0156d3aeca210f74b7ebb01b30d49895e668abc2c07e0d5cc"
       }
     },
     "Core/Contracts/ICalendarService.cs": {
@@ -1917,6 +1920,19 @@
         "IUnsavedChangesStateService.ResetAll()": "f9a37a0e794da9637f932f7eae5232f504199b7ed3528842b1a31e3395c56d26"
       }
     },
+    "Core/Contracts/IUserPreferencesService.cs": {
+      "RelativePath": "Core/Contracts/IUserPreferencesService.cs",
+      "KnownMembers": [
+        "GetUserTimeZoneAsync",
+        "IUserPreferencesService.GetUserTimeZoneAsync(Guid, CancellationToken)",
+        "SetUserTimeZoneAsync",
+        "IUserPreferencesService.SetUserTimeZoneAsync(Guid, string, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "IUserPreferencesService.GetUserTimeZoneAsync(Guid, CancellationToken)": "4da38db15578a55c2089e53c710ba391de181d2935745e93bebe2c1a83565b3d",
+        "IUserPreferencesService.SetUserTimeZoneAsync(Guid, string, CancellationToken)": "bcb329723b1a81e30a49cbd044f7fea2a180ee8cf6c3483373493f2b152e42ca"
+      }
+    },
     "Core/Contracts/IUserSessionService.cs": {
       "RelativePath": "Core/Contracts/IUserSessionService.cs",
       "KnownMembers": [
@@ -1950,6 +1966,8 @@
       "KnownMembers": [
         "GetTasksByProjectAsync",
         "IUserTaskService.GetTasksByProjectAsync(Guid, CancellationToken)",
+        "GetTasksByProjectStreamAsync",
+        "IUserTaskService.GetTasksByProjectStreamAsync(Guid, CancellationToken)",
         "GetTaskByIdAsync",
         "IUserTaskService.GetTaskByIdAsync(Guid, Guid, CancellationToken)",
         "CreateTaskAsync",
@@ -1991,6 +2009,7 @@
       ],
       "MemberSyntaxHashes": {
         "IUserTaskService.GetTasksByProjectAsync(Guid, CancellationToken)": "a2d5321998c2f50bd09ebeea9caa2486c95199c25bfe97e464ba7afe8375df14",
+        "IUserTaskService.GetTasksByProjectStreamAsync(Guid, CancellationToken)": "e6fc9835cdacf1cb2eae679171ecfb38da43b1c48ac4f26e9f3109f2c6c6af60",
         "IUserTaskService.GetTaskByIdAsync(Guid, Guid, CancellationToken)": "901d3efdbb9f25405e7dd9dfaf68686c476e7101e3c87feaa264ea79fec40143",
         "IUserTaskService.CreateTaskAsync(TaskEntity, CancellationToken)": "30160cb6a835cfbe272db4521e5b5ca2fad9b7b068ee714006da8931ba409a0a",
         "IUserTaskService.UpdateTaskAsync(TaskEntity, CancellationToken)": "004b6e5a7205a4233caa30eac79a00c5c10f38f62b2f2d205d92bbc08b0d815d",
@@ -8715,30 +8734,22 @@
       "KnownMembers": [
         "_logger",
         "BlazorCircuitObservabilityHandler._logger",
-        "_tenantContext",
-        "BlazorCircuitObservabilityHandler._tenantContext",
-        "_currentUser",
-        "BlazorCircuitObservabilityHandler._currentUser",
-        "_dateTimeProvider",
-        "BlazorCircuitObservabilityHandler._dateTimeProvider",
-        "_openedAt",
-        "BlazorCircuitObservabilityHandler._openedAt",
         ".ctor",
-        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E, ITenantContext, ICurrentUser, IDateTimeProvider)",
+        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E)",
         "OnCircuitOpenedAsync",
         "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)",
+        "OnCircuitClosedAsync",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)",
         "OnConnectionUpAsync",
         "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)",
         "OnConnectionDownAsync",
-        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)",
-        "OnCircuitClosedAsync",
-        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)"
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "0dc7fc4c4be6c58c35c9631c876f38aa396c55d6547df5cd130ef0a2d5ffbed3",
-        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "c7d2fac4013ea98fc43573ec37e701b4a102843fda4de47bd1dccc17c396e18a",
-        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "87d72093327cf499f687936173b7d1c4ab696008e82d09556ba3f6d2cede5078",
-        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "5d60bf43baf69c5afb051eaf0ea92472f6b87d152ce00975f9df1087168c21a7"
+        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "f8936f23d35665c177cb6e0c5421fe33b8db96357a61d5fb5bc82a74323e51f2",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "ed81a00f1804a10ff65ad52a485465516b63a6817f7099cdf2346c1e1447fd41",
+        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "43a0cf368190d4e3b8f11f5b85f99e63ec6914c275db3a002bc13a17953aa104",
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "6c5397442273dcf5a760e6863bc85bca160febf0eac16b4e3609b2a2ba3013f7"
       }
     },
     "Infrastructure/Security/CircuitSessionTracker.cs": {
@@ -8895,7 +8906,7 @@
         "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder, Action\u003CCspOptions\u003E?)"
       ],
       "MemberSyntaxHashes": {
-        "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder, Action\u003CCspOptions\u003E?)": "30525ff1b5ea1126d469b77029a5d8ee07277f4a2c971cb0629a55593d6c0e0e"
+        "SecurityHeadersExtensions.UseSecurityHeaders(IApplicationBuilder, Action\u003CCspOptions\u003E?)": "bd06ed214a90c47dd050b045a65bc24e2d1ec5500605514de6e074773b650cd2"
       }
     },
     "Infrastructure/Security/SettingsNavigationState.cs": {
@@ -8929,6 +8940,10 @@
         "TenantAesGcmEncryptionService.TagSizeBytes",
         "KeySizeBytes",
         "TenantAesGcmEncryptionService.KeySizeBytes",
+        "ChunkSizeBytes",
+        "TenantAesGcmEncryptionService.ChunkSizeBytes",
+        "ChunkedMagicHeader",
+        "TenantAesGcmEncryptionService.ChunkedMagicHeader",
         "_masterKey",
         "TenantAesGcmEncryptionService._masterKey",
         "_logger",
@@ -8942,11 +8957,13 @@
         "ComputeSha256ChecksumAsync",
         "TenantAesGcmEncryptionService.ComputeSha256ChecksumAsync(Stream, CancellationToken)",
         "DeriveTenantKey",
-        "TenantAesGcmEncryptionService.DeriveTenantKey(string)"
+        "TenantAesGcmEncryptionService.DeriveTenantKey(string)",
+        ".cctor",
+        "TenantAesGcmEncryptionService.TenantAesGcmEncryptionService()"
       ],
       "MemberSyntaxHashes": {
-        "TenantAesGcmEncryptionService.EncryptStreamAsync(Stream, string, CancellationToken)": "e3cf4a21dbf183559c968b891af706548db0a6ddef01d8de925940937e6e142f",
-        "TenantAesGcmEncryptionService.DecryptStreamAsync(Stream, string, CancellationToken)": "d4102a9561b1426ab5fd899f33e8f782341a81fbdd29decf24f27782822cfa77",
+        "TenantAesGcmEncryptionService.EncryptStreamAsync(Stream, string, CancellationToken)": "917d0a7bed0bc59a86c4175626e94daa61c5c3b14766ce590ed5f9540b409ef9",
+        "TenantAesGcmEncryptionService.DecryptStreamAsync(Stream, string, CancellationToken)": "40b683fcba5c617b2ba0cb6fcc2405e75b5709f1d49ded41419bd43ac243c1fd",
         "TenantAesGcmEncryptionService.ComputeSha256ChecksumAsync(Stream, CancellationToken)": "925f7347b29597290dd9d053cb244935eb75b8df4093dc9d3f5a6be8e6d20c74",
         "TenantAesGcmEncryptionService.DeriveTenantKey(string)": "38921b0e2351fd45b28e69750da083cea2042079921cade17a8fe73cc3a39c99"
       }
@@ -9258,8 +9275,6 @@
       "KnownMembers": [
         "GetConfigAsync",
         "IFileTemplateConfigRepository.GetConfigAsync(string, CancellationToken)",
-        "GetTemplate",
-        "IFileTemplateConfigRepository.GetTemplate(string)",
         "_logger",
         "JsonFileTemplateConfigRepository._logger",
         "_templatesDirectory",
@@ -9268,7 +9283,6 @@
         "JsonFileTemplateConfigRepository._cache",
         "CacheDuration",
         "JsonFileTemplateConfigRepository.CacheDuration",
-        "JsonFileTemplateConfigRepository.GetTemplate(string)",
         ".ctor",
         "JsonFileTemplateConfigRepository.JsonFileTemplateConfigRepository(ILogger\u003CJsonFileTemplateConfigRepository\u003E, string?)",
         "JsonFileTemplateConfigRepository.GetConfigAsync(string, CancellationToken)",
@@ -9279,8 +9293,6 @@
       ],
       "MemberSyntaxHashes": {
         "IFileTemplateConfigRepository.GetConfigAsync(string, CancellationToken)": "69841493dfaab747ec9bf653eff430155be7c8a3e44714de7fe322d10ec517f2",
-        "IFileTemplateConfigRepository.GetTemplate(string)": "bbb831b1ad48859db7844a6e7ef2588895e7f1dd1d8ec50d5362dfeaba7c2832",
-        "JsonFileTemplateConfigRepository.GetTemplate(string)": "552a49ae924eafd389e89ed8d16dbc86a3bc8eb443f3238a0da10a4f3afa042d",
         "JsonFileTemplateConfigRepository.GetConfigAsync(string, CancellationToken)": "9ddd8f580ec0e1c9fc4f75a3ba012eddaf9de2b7f710a292c49f6401f5cfa736",
         "JsonFileTemplateConfigRepository.CreateBuiltInTemplate(string)": "9b1631f228d703acda2f6aaea78e39b3890a6ab436e053d1b0068144240588b4"
       }
@@ -9310,8 +9322,8 @@
         "GenericFileImportBatchJobHandler.GenericFileImportBatchJobHandler(AppDbContext, ITenantEncryptionService, ITenantBlobStorageService, INotifyService, IJobEventPublisher, ILogger\u003CGenericFileImportBatchJobHandler\u003E, IFileTemplateConfigRepository?, ILocalBatchStagerResolver?, IEngineClient?)",
         "HandleAsync",
         "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)",
-        "OrderFilesByDependencies",
-        "GenericFileImportBatchJobHandler.OrderFilesByDependencies(List\u003CImportFileEntity\u003E)",
+        "OrderFilesByDependenciesAsync",
+        "GenericFileImportBatchJobHandler.OrderFilesByDependenciesAsync(List\u003CImportFileEntity\u003E, CancellationToken)",
         "ProcessSingleFileAsync",
         "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)",
         "ProcessHybridCanonicalPipelineAsync",
@@ -9320,9 +9332,9 @@
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "ed61701bb41436fa9f1b058f676723b07b19485ee996707db3f7101c966e15fa",
-        "GenericFileImportBatchJobHandler.OrderFilesByDependencies(List\u003CImportFileEntity\u003E)": "61ecb69b96d10ee39fe5fc2aa41c18db8ea97af3a635dc36188c4d819e45e647",
-        "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "ff17c8991ca0a012209a12e0e04b2d95f85756a21fcdf269c1d73b956cd518e2",
+        "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "6c714e10e18c093fb28b513210c5f828fdd0c3ca5561ee938b8d3cce883d1d36",
+        "GenericFileImportBatchJobHandler.OrderFilesByDependenciesAsync(List\u003CImportFileEntity\u003E, CancellationToken)": "ed056bc0d6ecc5decfc91818cdd792ba613e012d2c2beae493ab9b8fe58391a1",
+        "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "26c02aab8f142b613a67523212beddda52359372b09224c119ae0f1a7d9a4add",
         "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "2dcb4e06606c1095c1913c06f8ea921e2b002d68a7f07d9eaa047ba00c58c0a4",
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)": "f3915a11139c5410afa5e9e4b7f24daf5cb36fe68390d9e8d4355fce75328d26"
       }
@@ -10671,14 +10683,14 @@
         "RevertAllTenantRowLevelSecurity",
         "MigrationBuilderRlsExtensions.RevertAllTenantRowLevelSecurity(MigrationBuilder)",
         "CreateAppRoleAndGrantPermissions",
-        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string)"
+        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)"
       ],
       "MemberSyntaxHashes": {
         "MigrationBuilderRlsExtensions.EnableTenantRowLevelSecurity(MigrationBuilder, string, string, string, bool)": "f66545ba07860920845fbf7e2fbdfca754cb89d692b8402b51d1b570c432f224",
         "MigrationBuilderRlsExtensions.DisableTenantRowLevelSecurity(MigrationBuilder, string, string)": "d83c53912db15de923380e6de250007b48e6ca05770cc8e30038ff8ca4b2954e",
         "MigrationBuilderRlsExtensions.ApplyAllTenantRowLevelSecurity(MigrationBuilder)": "51bcd6c07cce00da5a8827335d686fc0328310faa628eef891fbd123d1052207",
         "MigrationBuilderRlsExtensions.RevertAllTenantRowLevelSecurity(MigrationBuilder)": "777bcfaef691fafb2d12629596efedbaa774111d1ddf112c4c4e732d98e97df7",
-        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string)": "3d656d23e5316e556eecc5de473f6979fdba97bb0632b085567308a476b37fe2"
+        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)": "c2ab36134715443ea1e8cb1e5d1e6b8f5401aafb4b7b627e2690f422bc492162"
       }
     },
     "Persistence/Extensions/QueryableExtensions.cs": {
@@ -10722,7 +10734,7 @@
         "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)": "6d26b3f2e8c67e79ca3202bd767ba104c7efaafb9a3e8f8ed031455882e96688"
+        "InitialDatabaseSeeder.SeedAsync(IServiceProvider, CancellationToken)": "3d1008ab8aa82b177e820772e1eef39d8c735cf2353e4dfbff0b6569402c7302"
       }
     },
     "Persistence/Interceptors/AuditableEntityInterceptor.cs": {
@@ -11281,7 +11293,7 @@
         "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "40340b7ce7547d206c9de8e04775e62ad0238044fab61b801f942d7608fae606"
+        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "dd115f2b23c058e97eefdd7fc5c23ec45f9ca49558e047511ebef0bea8dca6d5"
       }
     },
     "Persistence/Services/AuditService.cs": {
@@ -11314,7 +11326,9 @@
         "LogExceptionAsync",
         "AuditService.LogExceptionAsync(Exception, string?, AuditSeverityEnum, CancellationToken)",
         "GetEntityHistoryAsync",
-        "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)"
+        "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)",
+        "PurgeAuditRecordsBeforeAsync",
+        "AuditService.PurgeAuditRecordsBeforeAsync(DateTime, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "AuditService.LogTenantSwitchAsync(string, string, string?, CancellationToken)": "bb91284dbaf65dfe950be0a7df129eda1f3dc6ec5043a29a92acc026145464f2",
@@ -11323,7 +11337,8 @@
         "AuditService.SaveAuditRecordAsync(AuditRecordEntity, CancellationToken)": "e18634eb62f4ab1db9cef644e7f11b2c41eb358cc199b44bed6319e5924e2bbb",
         "AuditService.GetAuditTrailAsync(AuditTrailFilterReqDto, CancellationToken)": "ddfb7ded6a7b3ad26ce2771fd83395c63b7de8223e4eef22d42ce995f353be45",
         "AuditService.LogExceptionAsync(Exception, string?, AuditSeverityEnum, CancellationToken)": "f02264af69c22024e9ee0b969c4d0664fe5ebced58c10f205abc3b6c8ed75295",
-        "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)": "d54b0050b093df7c8008e654e6a733188e47fb14cf9362146963912913fc4a49"
+        "AuditService.GetEntityHistoryAsync(string, string, string?, CancellationToken)": "d54b0050b093df7c8008e654e6a733188e47fb14cf9362146963912913fc4a49",
+        "AuditService.PurgeAuditRecordsBeforeAsync(DateTime, CancellationToken)": "158b3389757844cb2cc80d9771519b12d78f54763093fbc89c336c258f64c543"
       }
     },
     "Persistence/Services/CalendarService.cs": {
@@ -11565,6 +11580,8 @@
     "Persistence/Services/InternalAuthenticationService.cs": {
       "RelativePath": "Persistence/Services/InternalAuthenticationService.cs",
       "KnownMembers": [
+        "GetUserByEmailCompiled",
+        "InternalAuthenticationService.GetUserByEmailCompiled",
         "_scopeFactory",
         "InternalAuthenticationService._scopeFactory",
         "_configuration",
@@ -11580,10 +11597,12 @@
         "VerifyAndRehydrateSessionAsync",
         "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)",
         "ResolveUserTenants",
-        "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E, TenantEntity?, List\u003CTenantUserEntity\u003E)"
+        "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E, TenantEntity?, List\u003CTenantUserEntity\u003E)",
+        ".cctor",
+        "InternalAuthenticationService.InternalAuthenticationService()"
       ],
       "MemberSyntaxHashes": {
-        "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "ff586849d71cd72313a9c018931a0f88a5136075bf6040983a3b7d93f0677dbf",
+        "InternalAuthenticationService.VerifyLoginCredentialsAsync(string, CancellationToken)": "c57eda7405827a411ade662d478bedd042382dfa09cbbc797fb8ef242d8179e6",
         "InternalAuthenticationService.VerifyAndRehydrateSessionAsync(string, Guid, CancellationToken)": "318d2058a74b15a0c5bf0b2718a2c2d4b2f82982e96e17b4fb00226c6284dd4d",
         "InternalAuthenticationService.ResolveUserTenants(UserEntity, bool, List\u003CTenantEntity\u003E, TenantEntity?, List\u003CTenantUserEntity\u003E)": "a3dfc4a94540b4c1b846b9477e7046d80d30fbc4681c214ed5c4a016e8b633c2"
       }
@@ -11899,7 +11918,7 @@
         "ProjectMilestoneService.CreateMilestoneAsync(ProjectCalendarEntity, CancellationToken)": "4b6d6be213d903a043c3f74a2ea94c21329d489ff3f07e5e4913c6d7b671b659",
         "ProjectMilestoneService.UpdateMilestoneAsync(ProjectCalendarEntity, CancellationToken)": "338752afcee9e6efa819d1a32f608bacc965d7265168ca1b0dedd2025969c574",
         "ProjectMilestoneService.CompleteMilestoneAsync(Guid, CancellationToken)": "42a17ceb1c66f7473546324392702a9073cdda4405740344456528b0af30dee9",
-        "ProjectMilestoneService.DeleteMilestoneAsync(Guid, CancellationToken)": "326baa49253037f629a3144c53d8aeb2b6d31ef5cfda82574d09c32448f373fd",
+        "ProjectMilestoneService.DeleteMilestoneAsync(Guid, CancellationToken)": "e0bdb7e1b790cd3354914d46c8e2f6f8c0285798773a6c9a9bf09cbe539b1dbb",
         "ProjectMilestoneService.GetMilestoneDependenciesAsync(Guid, CancellationToken)": "fd6a2959c31ee9c4892d9ea41e11cc5d68847024bffd48b9dadc3524ff07dc5b",
         "ProjectMilestoneService.AddMilestoneDependencyAsync(Guid, Guid, string?, CancellationToken)": "df65c7aa2220e65556d0e699be3468f9eba373f60c20c26b26033b4578483ca5",
         "ProjectMilestoneService.RemoveMilestoneDependencyAsync(Guid, CancellationToken)": "0f105e28beea1e48ea57b5128a3303898b412ab2253e6d9dd21b0db10860e554"
@@ -12055,9 +12074,33 @@
         "TenantHybridCacheService.BuildGlobalKey(string)": "06ff22dfaa07f8fd743eed8767d9d9b384d3a8097d16b54d5f30b0c70a03b064"
       }
     },
+    "Persistence/Services/TenantScopedServiceBase.cs": {
+      "RelativePath": "Persistence/Services/TenantScopedServiceBase.cs",
+      "KnownMembers": [
+        "TenantContext",
+        "TenantScopedServiceBase.TenantContext",
+        "CurrentUser",
+        "TenantScopedServiceBase.CurrentUser",
+        "Logger",
+        "TenantScopedServiceBase.Logger",
+        ".ctor",
+        "TenantScopedServiceBase.TenantScopedServiceBase(ITenantContext, ICurrentUser, ILogger)",
+        "TenantId",
+        "TenantScopedServiceBase.TenantId",
+        "get_TenantId",
+        "TenantScopedServiceBase.TenantId.get",
+        "RequireActiveTenant",
+        "TenantScopedServiceBase.RequireActiveTenant(string)"
+      ],
+      "MemberSyntaxHashes": {
+        "TenantScopedServiceBase.RequireActiveTenant(string)": "3fd560c3a6d5af4f913b4e0cb223708cbe18355946d143c3708ea496e7834907"
+      }
+    },
     "Persistence/Services/TenantService.cs": {
       "RelativePath": "Persistence/Services/TenantService.cs",
       "KnownMembers": [
+        "GetTenantByIdCompiled",
+        "TenantService.GetTenantByIdCompiled",
         "TenantsCacheKey",
         "TenantService.TenantsCacheKey",
         "_dbContext",
@@ -12108,7 +12151,9 @@
         "IsTenantDaemonActiveAsync",
         "TenantService.IsTenantDaemonActiveAsync(Guid, CancellationToken)",
         "SetTenantDaemonActiveAsync",
-        "TenantService.SetTenantDaemonActiveAsync(Guid, bool, CancellationToken)"
+        "TenantService.SetTenantDaemonActiveAsync(Guid, bool, CancellationToken)",
+        ".cctor",
+        "TenantService.TenantService()"
       ],
       "MemberSyntaxHashes": {
         "TenantService.GetAllTenantsAsync(CancellationToken)": "b9545eae171222d913d8cce8320a66baa8e1e37774d2f93d5f824a7dd973828f",
@@ -12183,6 +12228,25 @@
         "UnsavedChangesStateService.ResetAll()": "843875a6a5b7739948291e2942149018610dc6bd3dce88aaf1ce616d055dfd17"
       }
     },
+    "Persistence/Services/UserPreferencesService.cs": {
+      "RelativePath": "Persistence/Services/UserPreferencesService.cs",
+      "KnownMembers": [
+        "_dbContextFactory",
+        "UserPreferencesService._dbContextFactory",
+        "_logger",
+        "UserPreferencesService._logger",
+        ".ctor",
+        "UserPreferencesService.UserPreferencesService(IDbContextFactory\u003CAppDbContext\u003E, ILogger\u003CUserPreferencesService\u003E)",
+        "GetUserTimeZoneAsync",
+        "UserPreferencesService.GetUserTimeZoneAsync(Guid, CancellationToken)",
+        "SetUserTimeZoneAsync",
+        "UserPreferencesService.SetUserTimeZoneAsync(Guid, string, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "UserPreferencesService.GetUserTimeZoneAsync(Guid, CancellationToken)": "351bb6b4a34a2abdea3dc48df556cdc40adec3b1e6b354ebdf006af24b949b08",
+        "UserPreferencesService.SetUserTimeZoneAsync(Guid, string, CancellationToken)": "3edf90351ce78a10c01fa43c526865ca2f9349248ca9a9d6db7a09f2a8c7e463"
+      }
+    },
     "Persistence/Services/UserSessionService.cs": {
       "RelativePath": "Persistence/Services/UserSessionService.cs",
       "KnownMembers": [
@@ -12250,6 +12314,8 @@
         "UserTaskService.UserTaskService(AppDbContext, ICurrentUser, ITenantContext, INotifyService, IProjectAuthorizationService, IAuditService, ILogger\u003CUserTaskService\u003E, IEngineClient?)",
         "GetTasksByProjectAsync",
         "UserTaskService.GetTasksByProjectAsync(Guid, CancellationToken)",
+        "GetTasksByProjectStreamAsync",
+        "UserTaskService.GetTasksByProjectStreamAsync(Guid, CancellationToken)",
         "GetTaskByIdAsync",
         "UserTaskService.GetTaskByIdAsync(Guid, Guid, CancellationToken)",
         "HydrateEncryptedTasksInMemoryAsync",
@@ -12299,6 +12365,7 @@
         "UserTaskService.OnBeforeCreateTask(TaskEntity)": "00823047e43525dbfaa821322e2ffc9ef620b36dcab832e752d85b3bc0ea566d",
         "UserTaskService.OnAfterCreateTask(TaskEntity)": "fa9031bb760f6902e1f438ce73fc9e039e34cd88de96df309a602c396e67ed75",
         "UserTaskService.GetTasksByProjectAsync(Guid, CancellationToken)": "85d208d9ac90f2b082a7e618fd7ce4ed7bb8451bb3dc40e5727801fa85fd6b26",
+        "UserTaskService.GetTasksByProjectStreamAsync(Guid, CancellationToken)": "8322f663af31f924189aa8df186a294d27159a8e40c4fa4629de2cb00c33b950",
         "UserTaskService.GetTaskByIdAsync(Guid, Guid, CancellationToken)": "17f1a70ef211e446158b3109684013b6685278f002bfd8bff7156bfefd9e2a29",
         "UserTaskService.HydrateEncryptedTasksInMemoryAsync(IReadOnlyList\u003CTaskEntity\u003E, CancellationToken)": "2c6e7190fa42147a9982893c0134e8e885615c6ec2e6fcf4a39354a81fee91df",
         "UserTaskService.CreateTaskAsync(TaskEntity, CancellationToken)": "98edd694a0f862e23db595f639291ab13ed578e7a44c67c9039aa43cbda07a94",
@@ -12792,11 +12859,14 @@
         "Normalize",
         "PaginationUtility.Normalize(int, int)",
         "CalculateTotalPages",
-        "PaginationUtility.CalculateTotalPages(int, int)"
+        "PaginationUtility.CalculateTotalPages(int, int)",
+        "NormalizeKeysetPageSize",
+        "PaginationUtility.NormalizeKeysetPageSize(int, int, int)"
       ],
       "MemberSyntaxHashes": {
         "PaginationUtility.Normalize(int, int)": "3a18c67ef7ac2a95ff86ed8a09a2b8a2b60abcbd34e6a652c10f6a7da6a6b75c",
-        "PaginationUtility.CalculateTotalPages(int, int)": "85f9365f3a74c9077b9782629872d70972bad14186bf59af868180cf7c97d360"
+        "PaginationUtility.CalculateTotalPages(int, int)": "85f9365f3a74c9077b9782629872d70972bad14186bf59af868180cf7c97d360",
+        "PaginationUtility.NormalizeKeysetPageSize(int, int, int)": "3ca9aba7ef181dcb7cf622b4c81a1ac4740a3a12506ddbcaa5b7fb792c284acf"
       }
     },
     "Shared/Common/Result.cs": {
@@ -17362,8 +17432,8 @@
       "KnownMembers": [
         "_sessionStorage",
         "UserTimeZoneService._sessionStorage",
-        "_dbContextFactory",
-        "UserTimeZoneService._dbContextFactory",
+        "_preferencesService",
+        "UserTimeZoneService._preferencesService",
         "_currentUser",
         "UserTimeZoneService._currentUser",
         "_logger",
@@ -17395,7 +17465,7 @@
         "get_AvailableTimeZones",
         "UserTimeZoneService.AvailableTimeZones.get",
         ".ctor",
-        "UserTimeZoneService.UserTimeZoneService(ProtectedSessionStorage, IDbContextFactory\u003CAppDbContext\u003E, ICurrentUser, ILogger\u003CUserTimeZoneService\u003E)",
+        "UserTimeZoneService.UserTimeZoneService(ProtectedSessionStorage, IUserPreferencesService, ICurrentUser, ILogger\u003CUserTimeZoneService\u003E)",
         "ApplyUserTimeZone",
         "UserTimeZoneService.ApplyUserTimeZone(string?)",
         "InitializeAsync",
@@ -17416,8 +17486,8 @@
       ],
       "MemberSyntaxHashes": {
         "UserTimeZoneService.ApplyUserTimeZone(string?)": "a3f74006bf0a597e7fb13108d452ffe4c66f6536f079b360a39374932c4225cb",
-        "UserTimeZoneService.InitializeAsync()": "c68ebeff252787a9bbafa84eaba8d83154af5fdea4bdc858943356352b16272a",
-        "UserTimeZoneService.SetTimeZoneAsync(string)": "9e5f24452bb085fc5e402f7d942482cce5c2c6a9e1961c9b953e5c26583baf28",
+        "UserTimeZoneService.InitializeAsync()": "abb5dc597f3e6e1b53a517a3b9e5a774041925d201354484b9fe44d61c4dd532",
+        "UserTimeZoneService.SetTimeZoneAsync(string)": "bb5b77776327df9052d010ff51d90f3763384298cbc6f1d1383d84d0e73817b4",
         "UserTimeZoneService.ToUserTime(DateTime?)": "27ae6b798d3b36d56b55b741a1c17d81b4b2f446c3fac4dab49cd5f93ef3a452",
         "UserTimeZoneService.ToUserTime(DateTime)": "e2869dd09f8ec6e0c53e7efed305c903faae7eb4dbee1b3be7abf44fae16bccc",
         "UserTimeZoneService.ToUtc(DateTime)": "bb9780079092043c1a6115c9a6cb60f00998a424acaed31a4d0d728026e286d6",

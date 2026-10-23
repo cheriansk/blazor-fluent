@@ -849,5 +849,22 @@ internal class AuditService : IAuditService
 
     }
 
+    public async Task<int> PurgeAuditRecordsBeforeAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
+    {
+        if (!_currentUser.IsRootAdmin)
+        {
+            throw new System.Security.SecurityException("Zero-Trust Security Violation: Purging audit records is strictly restricted to Root Super-Administrators.");
+        }
+
+        var deletedCount = await _dbContext.AuditRecords
+            .Where(r => r.Created < cutoffUtc)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        _logger.LogInformation("Purged {Count} audit records created before {Cutoff:yyyy-MM-dd HH:mm:ss} UTC by {Admin}.",
+            deletedCount, cutoffUtc, _currentUser.Email);
+
+        return deletedCount;
+    }
+
 }
 

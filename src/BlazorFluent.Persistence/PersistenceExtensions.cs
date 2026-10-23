@@ -74,6 +74,10 @@ public static class PersistenceExtensions
             options.UseNpgsql(dataSource, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null);
             })
             .AddInterceptors(zeroTrustInterceptor, connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard);
         };
@@ -171,6 +175,9 @@ public static class PersistenceExtensions
 
         // 25. ServiceNow-Style Sequential Workflow Engine
         services.TryAddScoped<IWorkflowService, WorkflowService>();
+
+        // 26. User Preferences & Presentation Settings Service
+        services.TryAddScoped<IUserPreferencesService, UserPreferencesService>();
 
         return services;
     }

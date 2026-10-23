@@ -1,8 +1,6 @@
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Infrastructure.Security;
-using BlazorFluent.Persistence.Context;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorFluent.Services;
@@ -14,7 +12,7 @@ namespace BlazorFluent.Services;
 public class UserTimeZoneService : IUserTimeZoneService
 {
     private readonly ProtectedSessionStorage _sessionStorage;
-    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
+    private readonly IUserPreferencesService _preferencesService;
     private readonly ICurrentUser _currentUser;
     private readonly ILogger<UserTimeZoneService> _logger;
 
@@ -31,12 +29,12 @@ public class UserTimeZoneService : IUserTimeZoneService
 
     public UserTimeZoneService(
         ProtectedSessionStorage sessionStorage,
-        IDbContextFactory<AppDbContext> dbContextFactory,
+        IUserPreferencesService preferencesService,
         ICurrentUser currentUser,
         ILogger<UserTimeZoneService> logger)
     {
         _sessionStorage = sessionStorage;
-        _dbContextFactory = dbContextFactory;
+        _preferencesService = preferencesService;
         _currentUser = currentUser;
         _logger = logger;
 
@@ -74,14 +72,13 @@ public class UserTimeZoneService : IUserTimeZoneService
                 return;
             }
 
-            // 2. If user is authenticated, query persisted UserEntity.TimeZoneId
+            // 2. If user is authenticated, query persisted UserEntity.TimeZoneId via domain preferences service
             if (_currentUser.IsAuthenticated && Guid.TryParse(_currentUser.UserId, out var userId))
             {
-                await using var db = await _dbContextFactory.CreateDbContextAsync();
-                var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-                if (user != null && !string.IsNullOrWhiteSpace(user.TimeZoneId))
+                var timeZoneId = await _preferencesService.GetUserTimeZoneAsync(userId);
+                if (!string.IsNullOrWhiteSpace(timeZoneId))
                 {
-                    ApplyTimeZone(user.TimeZoneId);
+                    ApplyTimeZone(timeZoneId);
                     _initialized = true;
                     OnChange?.Invoke();
                     return;
@@ -136,13 +133,7 @@ public class UserTimeZoneService : IUserTimeZoneService
         {
             try
             {
-                await using var db = await _dbContextFactory.CreateDbContextAsync();
-                var user = await db.Users.AsTracking().FirstOrDefaultAsync(u => u.Id == userId);
-                if (user != null)
-                {
-                    user.TimeZoneId = _timeZoneId;
-                    await db.SaveChangesAsync();
-                }
+                await _preferencesService.SetUserTimeZoneAsync(userId, _timeZoneId);
             }
             catch (Exception ex)
             {

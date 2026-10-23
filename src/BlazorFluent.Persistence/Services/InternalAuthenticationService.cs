@@ -21,6 +21,10 @@ namespace BlazorFluent.Persistence.Services;
 /// </summary>
 public class InternalAuthenticationService : IInternalAuthenticationService
 {
+    private static readonly Func<AppDbContext, string, Task<UserEntity?>> GetUserByEmailCompiled =
+        EF.CompileAsyncQuery((AppDbContext ctx, string email) =>
+            ctx.Users.AsNoTracking().FirstOrDefault(u => u.Email.ToLower() == email && !u.IsDeleted));
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
     private readonly IRootAdminService _rootAdminService;
@@ -68,9 +72,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("System daemon identities are non-interactive background workers and cannot log in.");
         }
 
-        var user = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && !u.IsDeleted, ct);
+        var user = await GetUserByEmailCompiled(dbContext, normalizedEmail);
 
         if (user is null)
         {

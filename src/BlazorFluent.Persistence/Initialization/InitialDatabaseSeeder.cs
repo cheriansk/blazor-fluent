@@ -355,5 +355,24 @@ public static class InitialDatabaseSeeder
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Root super-administrators and integrity signatures synchronized successfully.");
         }
+
+        // 4. Startup Cache Warming for high-frequency tenant directory
+        var cacheService = scope.ServiceProvider.GetService<ITenantCacheService>();
+        if (cacheService != null)
+        {
+            await cacheService.GetGlobalOrCreateAsync(
+                "tenants:all",
+                async token =>
+                {
+                    return (IReadOnlyList<TenantEntity>)await dbContext.Tenants
+                        .AsNoTracking()
+                        .Where(t => t.Slug != rootAdminService.RootTenantSlug && t.Slug != "default" && !t.IsDeleted)
+                        .OrderBy(t => t.Name)
+                        .ToListAsync(token);
+                },
+                expiration: TimeSpan.FromMinutes(60),
+                cancellationToken: cancellationToken);
+            logger.LogInformation("Startup cache warming: Tenant directory loaded into HybridCache.");
+        }
     }
 }

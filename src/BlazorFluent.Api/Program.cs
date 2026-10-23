@@ -180,6 +180,26 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
+
+    // Tenant-Level Partitioned Rate Limiter: prevents noisy neighbor issues across tenants
+    options.AddPolicy("api-tenant", httpContext =>
+    {
+        var tenantId = httpContext.Request.Headers["X-Tenant-Id"].FirstOrDefault()
+            ?? httpContext.User.FindFirst("tenant_id")?.Value
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous-tenant";
+
+        return RateLimitPartition.GetTokenBucketLimiter(
+            tenantId,
+            _ => new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = 200,
+                TokensPerPeriod = 50,
+                ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+                AutoReplenishment = true,
+                QueueLimit = 0
+            });
+    });
 });
 
 // 9. Add Health Checks
