@@ -39,7 +39,7 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
         var mockTenant = new Mock<ITenantContext>();
         mockTenant.Setup(t => t.TenantId).Returns(tenantId);
         mockTenant.Setup(t => t.HasActiveTenant).Returns(true);
-        mockTenant.Setup(t => t.IsHost).Returns(true);
+        mockTenant.Setup(t => t.IsRootTenant).Returns(true);
         var mockUser = new Mock<ICurrentUser>();
         mockUser.Setup(u => u.IsAuthenticated).Returns(true);
 

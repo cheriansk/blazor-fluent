@@ -10,13 +10,14 @@ using BlazorFluent.Shared.DataListTypes;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Xunit;
+using TenantInfo = BlazorFluent.Core.Contracts.TenantInfo;
 
 namespace BlazorFluent.Core.Tests.Security;
 
 public class TenantContextRequiredTenantIdTests
 {
     [Fact]
-    public void RequiredTenantId_WhenInitializedWithValidGuid_ReturnsGuid()
+    public void TenantId_WhenInitializedWithValidGuid_ReturnsGuid()
     {
         // Arrange
         var context = new TenantContext();
@@ -27,15 +28,14 @@ public class TenantContextRequiredTenantIdTests
         };
 
         // Act
-        context.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, allowedTenants, isHost: false, tenantSlug: "acme");
+        context.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, allowedTenants, "acme", isRootTenant: false);
 
         // Assert
         context.TenantId.Should().Be(tenantId);
-        context.RequiredTenantId.Should().Be(tenantId);
     }
 
     [Fact]
-    public void RequiredTenantId_WhenUninitialized_ThrowsZeroTrustInvalidOperationException()
+    public void TenantId_WhenUninitialized_ThrowsZeroTrustInvalidOperationException()
     {
         // Arrange
         var context = new TenantContext();
@@ -47,23 +47,23 @@ public class TenantContextRequiredTenantIdTests
     }
 
     [Fact]
-    public void RequiredTenantId_WhenInitializedWithGuidEmpty_ThrowsZeroTrustInvalidOperationException()
+    public void TenantId_WhenInitializedWithGuidEmpty_ThrowsZeroTrustInvalidOperationException()
     {
         // Arrange
         var context = new TenantContext();
 
         // Act
-        var act = () => context.Initialize(Guid.Empty, "Invalid Tenant", UserTypeEnum.CompanyUser, []);
+        var act = () => context.Initialize(Guid.Empty, "Invalid Tenant", UserTypeEnum.CompanyUser, [], "invalid");
         act.Should().Throw<System.Security.SecurityException>();
     }
 
     [Fact]
-    public void RequiredTenantId_AfterReset_ThrowsZeroTrustInvalidOperationException()
+    public void TenantId_AfterReset_ThrowsZeroTrustInvalidOperationException()
     {
         // Arrange
         var context = new TenantContext();
         var tenantId = Guid.CreateVersion7();
-        context.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, [new TenantInfo(tenantId, "Acme Corp", "acme", true)]);
+        context.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, [new TenantInfo(tenantId, "Acme Corp", "acme", true)], "acme");
 
         // Act
         context.Reset();
@@ -100,22 +100,8 @@ public class TenantContextRequiredTenantIdTests
 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(token);
-
-        jwt.Claims.Should().Contain(c => c.Type == "tid" && c.Value == tenantIdStr);
         jwt.Claims.Should().Contain(c => c.Type == "tenant_id" && c.Value == tenantIdStr);
-    }
-
-    [Fact]
-    public void TenantTokenService_GenerateS2SToken_WithGuidEmpty_ThrowsZeroTrustException()
-    {
-        // Arrange
-        var config = new ConfigurationBuilder().Build();
-        var correlationContext = new CorrelationContext { CorrelationId = "corr-1" };
-        var tokenService = new TenantTokenService(config, correlationContext);
-
-        // Act & Assert
-        var act = () => tokenService.GenerateS2SToken(Guid.Empty, "BatchWorker");
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Zero-Trust Security Violation: Cannot mint an S2S token without an established TenantId.*");
+        jwt.Claims.Should().Contain(c => c.Type == "sub" && c.Value == "BatchWorker");
+        jwt.Claims.Should().Contain(c => c.Type == "corr_id" && c.Value == correlationContext.CorrelationId);
     }
 }

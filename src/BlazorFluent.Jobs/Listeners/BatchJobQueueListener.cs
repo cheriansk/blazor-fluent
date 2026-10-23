@@ -105,7 +105,8 @@ public class BatchJobQueueListener : BackgroundService
                 tenantName: tenantId.ToString(),
                 userType: UserTypeEnum.CompanyUser,
                 allowedTenants: [],
-                isHost: tenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
+                tenantSlug: tenantId.ToString(),
+                isRootTenant: tenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.Current.RootTenantId);
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
             var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);

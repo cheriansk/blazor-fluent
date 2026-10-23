@@ -127,9 +127,9 @@ public static class DevelopmentSeeder
         // 2. DevLogin users seeding from DevLoginOptions
         if (devLoginOptions != null && devLoginOptions.Enabled && devLoginOptions.Users.Count > 0)
         {
-            var defaultTenantSlug = seedOptions?.TenantSlug ?? rootAdminService.RootTenantSlug;
+            var targetTenantSlug = seedOptions?.TenantSlug ?? rootAdminService.RootTenantSlug;
             var targetTenant = await dbContext.Tenants
-                .FirstOrDefaultAsync(t => t.Slug == defaultTenantSlug, cancellationToken);
+                .FirstOrDefaultAsync(t => t.Slug == targetTenantSlug, cancellationToken);
 
             foreach (var devUser in devLoginOptions.Users)
             {

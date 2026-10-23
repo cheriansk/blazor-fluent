@@ -207,6 +207,7 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+
 // 10. Middleware Pipeline
 app.UseHttpsRedirection();
 app.UseCors();

@@ -28,7 +28,7 @@ public class TenantAuthDelegatingHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _tenantContext.TenantId;
 
         // Mint ephemeral S2S token signed with this tenant's license key
         var token = _tokenService.GenerateS2SToken(tenantId);

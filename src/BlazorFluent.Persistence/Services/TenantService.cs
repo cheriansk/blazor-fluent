@@ -697,7 +697,7 @@ public class TenantService : ITenantService
             $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}, ProgramId: {programId}",
             cancellationToken);
 
-        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        if (_tenantContext.IsRootTenant && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             await _auditService.LogSecurityEventAsync(
                 "HostCrossTenantAction",
@@ -783,7 +783,7 @@ public class TenantService : ITenantService
             $"Tenant: {tenantSlug}, Status: {project.Status}, Location: {project.Location}",
             cancellationToken);
 
-        if (_tenantContext.IsHost && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        if (_tenantContext.IsRootTenant && !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
         {
             await _auditService.LogSecurityEventAsync(
                 "HostCrossTenantAction",

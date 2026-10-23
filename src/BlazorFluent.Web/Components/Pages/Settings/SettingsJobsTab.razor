@@ -338,7 +338,7 @@
             }
             else
             {
-                _executions = results.Where(e => e.TenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId || e.TenantId == Guid.Empty).ToList();
+                _executions = results.Where(e => e.TenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.Current.RootTenantId || e.TenantId == Guid.Empty).ToList();
             }
 
 

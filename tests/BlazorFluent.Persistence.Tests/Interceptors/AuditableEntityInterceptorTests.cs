@@ -47,7 +47,7 @@ public class AuditableEntityInterceptorTests : IDisposable
             mockTenant.Setup(t => t.HasActiveTenant).Returns(false);
             mockTenant.Setup(t => t.TenantId).Throws(new System.Security.SecurityException("No active tenant"));
         }
-        mockTenant.Setup(t => t.IsHost).Returns(isHost);
+        mockTenant.Setup(t => t.IsRootTenant).Returns(isHost);
 
         var mockUser = new Mock<ICurrentUser>();
         mockUser.Setup(u => u.UserId).Returns(userId);

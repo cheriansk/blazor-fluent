@@ -40,7 +40,7 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
     {
         try
         {
-            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantId = _tenantContext.TenantId;
             var tenantIdStr = tenantId.ToString();
 
             var licenseKey = _configuration[$"Tenants:{tenantIdStr}:LicenseKey"];

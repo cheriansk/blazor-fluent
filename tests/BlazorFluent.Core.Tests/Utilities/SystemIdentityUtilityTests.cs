@@ -1,14 +1,37 @@
-﻿using BlazorFluent.Core.Contracts;
+using System;
+using System.Collections.Generic;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Utilities;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using TenantInfo = BlazorFluent.Core.Contracts.TenantInfo;
 
 namespace BlazorFluent.Core.Tests.Utilities;
 
 public class SystemIdentityUtilityTests
 {
+    private readonly Mock<ISystemIdentity> _mockIdentity;
+    private readonly Guid _testRootId = Guid.NewGuid();
+
+    public SystemIdentityUtilityTests()
+    {
+        _mockIdentity = new Mock<ISystemIdentity>();
+        _mockIdentity.Setup(i => i.RootTenantId).Returns(_testRootId);
+        _mockIdentity.Setup(i => i.RootTenantSlug).Returns("root");
+        _mockIdentity.Setup(i => i.RootTenantName).Returns("System Host");
+        _mockIdentity.Setup(i => i.SystemDaemonEmailDomain).Returns("internal");
+        _mockIdentity.Setup(i => i.SystemDaemonLocalPart).Returns("system");
+        _mockIdentity.Setup(i => i.SystemActorName).Returns("system");
+        _mockIdentity.Setup(i => i.FormatInternalDaemonEmail(It.IsAny<string>()))
+            .Returns<string>(n => $"system+{n.ToLowerInvariant()}@root.internal");
+        _mockIdentity.Setup(i => i.IsSystemDaemon(It.IsAny<string?>()))
+            .Returns<string?>(s => !string.IsNullOrWhiteSpace(s) && (s.StartsWith("daemon:") || s.EndsWith(".internal")));
+
+        SystemIdentityUtility.SetCurrent(_mockIdentity.Object);
+    }
+
     [Fact]
     public void RequireAuthenticatedContext_UnauthenticatedUser_ThrowsInvalidOperationException()
     {
@@ -69,17 +92,17 @@ public class SystemIdentityUtilityTests
         var mockTenant = new Mock<ITenantContext>();
 
         // Act
-        SystemIdentityUtility.EstablishPreAuthContext(mockUser.Object, mockTenant.Object, "operator@test.com", "LoginVerify");
+        SystemIdentityUtility.EstablishPreAuthContext(mockUser.Object, mockTenant.Object, _mockIdentity.Object, "operator@test.com", "LoginVerify");
 
         // Assert
         mockUser.Verify(u => u.SetSystemDaemon("PreAuth:LoginVerify", "operator@test.com"), Times.Once);
         mockTenant.Verify(t => t.Initialize(
-            SystemIdentityUtility.SystemDaemonTenantId,
+            _testRootId,
             "System Host",
             UserTypeEnum.CompanyUser,
-            It.IsAny<TenantInfo[]>(),
-            true,
-            SystemIdentityUtility.SystemTenantSlug), Times.Once);
+            It.IsAny<IEnumerable<TenantInfo>>(),
+            "root",
+            true), Times.Once);
     }
 
     [Fact]

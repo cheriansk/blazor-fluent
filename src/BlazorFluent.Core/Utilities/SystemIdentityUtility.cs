@@ -6,20 +6,26 @@ using BlazorFluent.Shared.DataListTypes;
 namespace BlazorFluent.Core.Utilities;
 
 /// <summary>
-/// Central authority for system identity semantics, zero-trust validation, and pre-authentication context initialization.
-/// Prevents arbitrary magic fallback strings across domain, audit, and persistence layers.
+/// Central authority for zero-trust validation and ambient system identity context.
+/// Prevents magic fallback strings and hardcoded literals across domain, audit, and persistence layers.
 /// </summary>
 public static class SystemIdentityUtility
 {
-    public const string SystemTenantSlug = IRootAdminService.DefaultTenantSlug;
+    private static ISystemIdentity? _current;
 
     /// <summary>
-    /// Sequential / static UUID reserved for host platform background daemons, migrations, and system tasks.
+    /// Configures the ambient ISystemIdentity provider resolved at host startup.
     /// </summary>
-    public static readonly Guid SystemDaemonTenantId = IRootAdminService.DefaultRootTenantId;
-    public static readonly Guid RootTenantId = IRootAdminService.DefaultRootTenantId;
-    public const string RootTenantSlug = IRootAdminService.DefaultTenantSlug;
-    public const string RootTenantName = "System Administration";
+    public static void SetCurrent(ISystemIdentity systemIdentity)
+    {
+        _current = systemIdentity ?? throw new ArgumentNullException(nameof(systemIdentity));
+    }
+
+    /// <summary>
+    /// Gets the current ISystemIdentity authority. Fails fast if accessed before host startup.
+    /// </summary>
+    public static ISystemIdentity Current =>
+        _current ?? throw new InvalidOperationException("Zero-Trust Security Violation: Ambient ISystemIdentity has not been initialized.");
 
     /// <summary>
     /// Evaluates whether the caller is a verified human tenant user (authenticated, non-daemon, and bound to an active tenant).
@@ -105,47 +111,63 @@ public static class SystemIdentityUtility
 
     /// <summary>
     /// Explicitly initializes an authenticated scoped context for pre-authentication flows 
-    /// (e.g. login gate, password verification, seeders). 
-    /// Ensures 100% of subsequent operations operate under a valid, traceable daemon identity and system tenant.
+    /// (e.g. login gate, password verification, seeders) derived from the configured ISystemIdentity.
     /// </summary>
     public static void EstablishPreAuthContext(
         ICurrentUser currentUser, 
         ITenantContext tenantContext, 
+        ISystemIdentity systemIdentity,
         string attemptedEmail, 
         string operation = "VerifyLogin")
     {
         ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(tenantContext);
+        ArgumentNullException.ThrowIfNull(systemIdentity);
 
-        var normalizedEmail = string.IsNullOrWhiteSpace(attemptedEmail) ? $"preauth+{operation.ToLowerInvariant()}@system.internal" : attemptedEmail.Trim();
+        var normalizedEmail = string.IsNullOrWhiteSpace(attemptedEmail) 
+            ? $"preauth+{operation.ToLowerInvariant()}@{systemIdentity.RootTenantSlug}.{systemIdentity.SystemDaemonEmailDomain}" 
+            : attemptedEmail.Trim();
+
         currentUser.SetSystemDaemon($"PreAuth:{operation}", normalizedEmail);
         tenantContext.Initialize(
-            SystemDaemonTenantId, 
-            "System Host", 
+            systemIdentity.RootTenantId, 
+            systemIdentity.RootTenantName, 
             UserTypeEnum.CompanyUser, 
-            Array.Empty<TenantInfo>(), 
-            isHost: true,
-            tenantSlug: SystemTenantSlug);
+            Array.Empty<BlazorFluent.Core.Contracts.TenantInfo>(), 
+            systemIdentity.RootTenantSlug,
+            isRootTenant: true);
     }
 
     /// <summary>
-    /// Dynamically constructs an internal service identifier for scoped system daemons and workers,
-    /// scoped to the system tenant authority without hardcoding individual user emails.
+    /// Dynamically constructs an internal service identifier for scoped system daemons and workers.
     /// </summary>
-    public static string FormatInternalDaemonEmail(string daemonName) =>
-        $"system+{daemonName.ToLowerInvariant()}@{SystemTenantSlug}.internal";
+    public static string FormatInternalDaemonEmail(string daemonName)
+    {
+        if (_current != null)
+        {
+            return _current.FormatInternalDaemonEmail(daemonName);
+        }
+
+        return $"service+{daemonName.ToLowerInvariant()}@system.local";
+    }
 
     /// <summary>
     /// Determines whether a given user ID, email, or principal identifier represents an internal system daemon.
-    /// Recognizes standard daemon formats (e.g. "daemon:*", "system+*@*.internal", "*.internal").
     /// </summary>
     public static bool IsSystemDaemon(string? identity)
     {
         if (string.IsNullOrWhiteSpace(identity)) return false;
+
+        if (_current != null)
+        {
+            return _current.IsSystemDaemon(identity);
+        }
+
         var trimmed = identity.Trim();
         return trimmed.StartsWith("daemon:", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.StartsWith("daemon@", StringComparison.OrdinalIgnoreCase) ||
                trimmed.StartsWith("system+", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.EndsWith($"@{SystemTenantSlug}.internal", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.EndsWith(".internal", StringComparison.OrdinalIgnoreCase);
+               trimmed.EndsWith(".internal", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.EndsWith(".local", StringComparison.OrdinalIgnoreCase);
     }
 }

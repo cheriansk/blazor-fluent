@@ -39,7 +39,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetMilestonesByProject", ct: ct);
 
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _tenantContext.TenantId;
 
         return await _context.ProjectCalendars
             .AsNoTracking()
@@ -50,7 +50,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<ProjectCalendarEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _tenantContext.TenantId;
 
         var milestone = await _context.ProjectCalendars
             .AsNoTracking()
@@ -72,7 +72,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             if (milestone.TenantId == Guid.Empty)
             {
-                milestone.TenantId = _tenantContext.RequiredTenantId;
+                milestone.TenantId = _tenantContext.TenantId;
             }
 
             if (milestone.EndDate.HasValue && milestone.EndDate.Value.Date < milestone.StartDate.Date)
@@ -97,7 +97,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
     {
         try
         {
-            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantId = _tenantContext.TenantId;
 
             var milestone = await _context.ProjectCalendars
                 .AsTracking()
@@ -137,7 +137,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
     {
         try
         {
-            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantId = _tenantContext.TenantId;
 
             var milestone = await _context.ProjectCalendars
                 .AsTracking()
@@ -167,7 +167,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
     {
         try
         {
-            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantId = _tenantContext.TenantId;
 
             var milestone = await _context.ProjectCalendars
                 .AsTracking()
@@ -222,7 +222,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<IReadOnlyList<MilestoneDependencyItemDto>> GetMilestoneDependenciesAsync(Guid milestoneId, CancellationToken ct = default)
     {
-        var tenantId = _tenantContext.RequiredTenantId;
+        var tenantId = _tenantContext.TenantId;
 
         var milestone = await _context.ProjectCalendars
             .AsNoTracking()
@@ -282,7 +282,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 return Result<bool>.Failure("A milestone cannot depend on itself.");
             }
 
-            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantId = _tenantContext.TenantId;
 
             var milestone = await _context.ProjectCalendars
                 .AsNoTracking()
@@ -360,7 +360,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
     {
         try
         {
-            var tenantId = _tenantContext.RequiredTenantId;
+            var tenantId = _tenantContext.TenantId;
 
             var link = await _context.WorkDependencies
                 .AsTracking()

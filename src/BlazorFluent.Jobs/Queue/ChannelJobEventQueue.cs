@@ -52,13 +52,14 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
                 {
                     var targetTenantId = jobEvent.TenantId != Guid.Empty
                         ? jobEvent.TenantId
-                        : BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId;
+                        : BlazorFluent.Core.Utilities.SystemIdentityUtility.Current.RootTenantId;
                     tenantContext.Initialize(
                         tenantId: targetTenantId,
                         tenantName: targetTenantId.ToString(),
                         userType: UserTypeEnum.CompanyUser,
                         allowedTenants: [],
-                        isHost: targetTenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.SystemDaemonTenantId);
+                        tenantSlug: targetTenantId.ToString(),
+                        isRootTenant: targetTenantId == BlazorFluent.Core.Utilities.SystemIdentityUtility.Current.RootTenantId);
                 }
 
                 var jobName = !string.IsNullOrWhiteSpace(jobEvent.JobName)
