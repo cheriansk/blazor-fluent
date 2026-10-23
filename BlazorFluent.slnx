@@ -28,6 +28,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/BlazorFluent.Benchmarks/BlazorFluent.Benchmarks.csproj" />
     <Project Path="tests/BlazorFluent.Core.Tests/BlazorFluent.Core.Tests.csproj" />
+    <Project Path="tests/BlazorFluent.Infrastructure.Tests/BlazorFluent.Infrastructure.Tests.csproj" />
+    <Project Path="tests/BlazorFluent.Jobs.Tests/BlazorFluent.Jobs.Tests.csproj" />
     <Project Path="tests/BlazorFluent.Persistence.Tests/BlazorFluent.Persistence.Tests.csproj" />
+    <Project Path="tests/BlazorFluent.Web.Tests/BlazorFluent.Web.Tests.csproj" />
   </Folder>
 </Solution>

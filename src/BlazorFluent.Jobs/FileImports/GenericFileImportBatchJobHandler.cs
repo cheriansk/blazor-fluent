@@ -80,7 +80,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         }
 
         // Sort files topologically by DependsOn manifest order if template configs are available
-        var orderedFiles = OrderFilesByDependencies(files);
+        var orderedFiles = await OrderFilesByDependenciesAsync(files, cancellationToken);
 
         _logger.LogInformation("Batch {ImportId} contains {Count} file(s) to process for tenant {TenantId}.", jobEvent.ImportId, orderedFiles.Count, jobEvent.TenantId);
 
@@ -107,7 +107,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         _logger.LogInformation("Finished processing all {Count} files for Batch {ImportId}.", orderedFiles.Count, jobEvent.ImportId);
     }
 
-    private List<ImportFileEntity> OrderFilesByDependencies(List<ImportFileEntity> files)
+    private async Task<List<ImportFileEntity>> OrderFilesByDependenciesAsync(List<ImportFileEntity> files, CancellationToken ct)
     {
         if (_templateRepository == null || files.Count <= 1)
         {
@@ -118,12 +118,12 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         var visited = new HashSet<Guid>();
         var visiting = new HashSet<Guid>();
 
-        void Visit(ImportFileEntity file)
+        async Task Visit(ImportFileEntity file)
         {
             if (visited.Contains(file.Id)) return;
             if (!visiting.Add(file.Id)) return; // Guard against circular dependency in config
 
-            var template = _templateRepository.GetTemplate(file.FileType.ToString());
+            var template = await _templateRepository.GetConfigAsync(file.FileType.ToString(), ct);
             if (template?.DependsOn is { Count: > 0 })
             {
                 foreach (var depType in template.DependsOn)
@@ -132,7 +132,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                         string.Equals(f.FileType.ToString(), depType, StringComparison.OrdinalIgnoreCase));
                     foreach (var pred in predecessors)
                     {
-                        Visit(pred);
+                        await Visit(pred);
                     }
                 }
             }
@@ -144,7 +144,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         foreach (var file in files)
         {
-            Visit(file);
+            await Visit(file);
         }
 
         return result;
@@ -160,7 +160,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         try
         {
-            var templateConfig = _templateRepository?.GetTemplate(file.FileType.ToString());
+            var templateConfig = _templateRepository is null ? null : await _templateRepository.GetConfigAsync(file.FileType.ToString(), ct);
             if (templateConfig == null || _batchStagerResolver == null || _engineClient == null)
             {
                 var errorMsg = $"No declarative FileTemplateConfig or Canonical Batch Stager registered for file type '{file.FileType}'.";

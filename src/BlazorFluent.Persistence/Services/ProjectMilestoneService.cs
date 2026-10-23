@@ -192,24 +192,22 @@ public class ProjectMilestoneService : IProjectMilestoneService
             }
 
             // Remove dependencies where this milestone is either Dependent or Predecessor
-            var dependencies = await _context.WorkDependencies
-                .AsTracking()
+            var deletedCount = await _context.WorkDependencies
                 .Where(d => d.TenantId == tenantId &&
                             ((d.DependentType == DependencyNodeTypeEnum.CalendarGate && d.DependentItemId == milestoneId) ||
                              (d.DependsOnType == DependencyNodeTypeEnum.CalendarGate && d.DependsOnItemId == milestoneId)))
-                .ToListAsync(ct);
+                .ExecuteDeleteAsync(ct);
 
-            _context.WorkDependencies.RemoveRange(dependencies);
             milestone.IsDeleted = true;
             milestone.DeletedAtUtc = DateTime.UtcNow;
 
             await _context.SaveChangesAsync(ct);
 
-            if (dependencies.Count > 0)
+            if (deletedCount > 0)
             {
                 await _auditService.LogUserActivityAsync(
-                    $"Cascaded removal of {dependencies.Count} dependency link(s) due to deletion of milestone '{milestone.Title}'",
-                    $"ProjectId: {milestone.ProjectId}, MilestoneId: {milestoneId}, DependencyIds: [{string.Join(", ", dependencies.Select(d => d.Id))}]",
+                    $"Cascaded removal of {deletedCount} dependency link(s) due to deletion of milestone '{milestone.Title}'",
+                    $"ProjectId: {milestone.ProjectId}, MilestoneId: {milestoneId}",
                     ct);
             }
 

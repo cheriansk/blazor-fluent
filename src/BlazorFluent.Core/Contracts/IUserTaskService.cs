@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Domain.Tasks;
+using BlazorFluent.Core.Domain.Tasks;
 using BlazorFluent.Core.Dtos.Response;
 using BlazorFluent.Shared.DataListTypes;
 
@@ -13,6 +13,11 @@ public interface IUserTaskService
     /// Retrieves all active (non-deleted) tasks for a project, ordered by DueDate ascending.
     /// </summary>
     Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Streams tasks for a project as an asynchronous sequence for batch export and processing pipelines.
+    /// </summary>
+    IAsyncEnumerable<TaskEntity> GetTasksByProjectStreamAsync(Guid projectId, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a single task by ID within a specific project including its discussion comments.

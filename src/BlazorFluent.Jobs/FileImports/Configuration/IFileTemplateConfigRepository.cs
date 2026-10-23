@@ -12,7 +12,7 @@ namespace BlazorFluent.Jobs.FileImports.Configuration;
 public interface IFileTemplateConfigRepository
 {
     Task<FileTemplateConfig?> GetConfigAsync(string fileType, CancellationToken ct = default);
-    FileTemplateConfig? GetTemplate(string fileType);
+
 }
 
 public sealed class JsonFileTemplateConfigRepository : IFileTemplateConfigRepository
@@ -22,10 +22,6 @@ public sealed class JsonFileTemplateConfigRepository : IFileTemplateConfigReposi
     private readonly ConcurrentDictionary<string, (FileTemplateConfig Config, DateTime ExpiresAtUtc)> _cache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
-    public FileTemplateConfig? GetTemplate(string fileType)
-    {
-        return GetConfigAsync(fileType).GetAwaiter().GetResult();
-    }
 
     public JsonFileTemplateConfigRepository(
         ILogger<JsonFileTemplateConfigRepository> logger,

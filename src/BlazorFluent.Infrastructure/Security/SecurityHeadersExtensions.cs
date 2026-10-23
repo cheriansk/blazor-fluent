@@ -58,6 +58,28 @@ public static class SecurityHeadersExtensions
                 headers.Append("X-XSS-Protection", "1; mode=block");
             }
 
+            // 5b. Strict-Transport-Security (HSTS)
+            if (!headers.ContainsKey("Strict-Transport-Security"))
+            {
+                headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+            }
+
+            // 5c. Additional Defense-in-Depth Cross-Origin Headers
+            if (!headers.ContainsKey("X-Permitted-Cross-Domain-Policies"))
+            {
+                headers.Append("X-Permitted-Cross-Domain-Policies", "none");
+            }
+
+            if (!headers.ContainsKey("Cross-Origin-Opener-Policy"))
+            {
+                headers.Append("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+            }
+
+            if (!headers.ContainsKey("Cross-Origin-Embedder-Policy"))
+            {
+                headers.Append("Cross-Origin-Embedder-Policy", "credentialless");
+            }
+
             // 6. Content-Security-Policy: Strict Enterprise Policy (Zero 'unsafe-inline' scripts)
             var cspOptions = context.RequestServices.GetService<IOptions<CspOptions>>()?.Value ?? new CspOptions();
             if (configureCsp is not null)

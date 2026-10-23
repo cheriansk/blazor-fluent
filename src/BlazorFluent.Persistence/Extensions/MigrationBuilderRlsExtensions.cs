@@ -121,13 +121,17 @@ END $$;");
     public static MigrationBuilder CreateAppRoleAndGrantPermissions(
         this MigrationBuilder migrationBuilder,
         string appRole = "blazorfluent_app",
-        string appPassword = "blazorfluent_app_password")
+        string? appPassword = null)
     {
+        var resolvedPassword = Environment.GetEnvironmentVariable("POSTGRES_APP_PASSWORD") 
+            ?? appPassword 
+            ?? "blazorfluent_app_password";
+
         migrationBuilder.Sql($@"
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{appRole}') THEN
-        CREATE ROLE {appRole} WITH LOGIN PASSWORD '{appPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+        CREATE ROLE {appRole} WITH LOGIN PASSWORD '{resolvedPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
     END IF;
 
     -- Grant schema usage

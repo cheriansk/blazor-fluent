@@ -14,6 +14,10 @@ namespace BlazorFluent.Persistence.Services;
 
 public class TenantService : ITenantService
 {
+    private static readonly Func<AppDbContext, Guid, Task<TenantEntity?>> GetTenantByIdCompiled =
+        EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
+            ctx.Tenants.AsNoTracking().FirstOrDefault(t => t.Id == id && !t.IsDeleted));
+
     private const string TenantsCacheKey = "tenants:all";
     private readonly AppDbContext _dbContext;
     private readonly IAuditService _auditService;

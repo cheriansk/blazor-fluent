@@ -62,6 +62,28 @@ public partial class UserTaskService : IUserTaskService
         return tasks;
     }
 
+    public async IAsyncEnumerable<TaskEntity> GetTasksByProjectStreamAsync(
+        Guid projectId,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProjectStream", ct: ct);
+
+        var tenantId = _tenantContext.TenantId;
+
+        var stream = _context.Tasks
+            .AsNoTracking()
+            .Where(t => t.TenantId == tenantId && t.ProjectId == projectId)
+            .Include(t => t.Comments.Where(c => !c.IsDeleted && c.TenantId == tenantId && c.ProjectId == projectId))
+            .OrderBy(t => t.DueDate)
+            .AsAsyncEnumerable();
+
+        await foreach (var task in stream.WithCancellation(ct))
+        {
+            await HydrateEncryptedTasksInMemoryAsync([task], ct);
+            yield return task;
+        }
+    }
+
     public async Task<TaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskById", ct: ct);
