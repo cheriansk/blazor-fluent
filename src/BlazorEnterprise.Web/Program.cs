@@ -44,7 +44,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 
 
-using BlazorEnterprise.UI.Material.Extensions;
+using BlazorEnterprise.Shared.UI.Extensions;
 
 using Serilog;
 
@@ -274,7 +274,7 @@ try
 
     });
 
-    builder.Services.AddMaterialUI();
+    builder.Services.AddSharedUI();
 
     builder.Services.AddHttpContextAccessor();
 

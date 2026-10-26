@@ -33,8 +33,7 @@
 		<ProjectReference Include="..\BlazorEnterprise.Persistence\BlazorEnterprise.Persistence.csproj" />
 		<ProjectReference Include="..\BlazorEnterprise.Infrastructure\BlazorEnterprise.Infrastructure.csproj" />
 		<ProjectReference Include="..\BlazorEnterprise.Jobs\BlazorEnterprise.Jobs.csproj" />
-		<ProjectReference Include="..\BlazorEnterprise.UI.Material\BlazorEnterprise.UI.Material.csproj" />
-		<ProjectReference Include="..\BlazorEnterprise.UI.Templates\BlazorEnterprise.UI.Templates.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.Shared.UI\BlazorEnterprise.Shared.UI.csproj" />
 	</ItemGroup>
 
 </Project>

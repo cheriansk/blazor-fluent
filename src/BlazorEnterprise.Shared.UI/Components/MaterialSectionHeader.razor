@@ -1,12 +1,11 @@
-@namespace BlazorEnterprise.UI.Material.Components
-@using Microsoft.FluentUI.AspNetCore.Components
+@namespace BlazorEnterprise.Shared.UI.Components
 
-<div class="mat-section-header @Class" style="@Style">
+<div class="mat-section-header @Class">
     <div>
         <h2 class="mat-section-title">
-            @if (Icon is not null)
+            @if (IconFragment is not null)
             {
-                <FluentIcon Value="@Icon" Color="@IconColor" Width="22px" />
+                @IconFragment
             }
             @Title
         </h2>
@@ -26,9 +25,7 @@
 @code {
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
     [Parameter] public string Subtitle { get; set; } = string.Empty;
-    [Parameter] public Icon? Icon { get; set; }
-    [Parameter] public Color IconColor { get; set; } = Color.Primary;
+    [Parameter] public RenderFragment? IconFragment { get; set; }
     [Parameter] public RenderFragment? Actions { get; set; }
     [Parameter] public string Class { get; set; } = string.Empty;
-    [Parameter] public string Style { get; set; } = string.Empty;
 }

@@ -297,7 +297,7 @@ Write-Host "Scanning Razor screens and field usages across UI layer..." -Foregro
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $webPath = Join-Path $repoRoot "src\BlazorEnterprise.Web"
-$uiTemplatesPath = Join-Path $repoRoot "src\BlazorEnterprise.UI.Templates"
+$uiTemplatesPath = Join-Path $repoRoot "src\BlazorEnterprise.Shared.UI"
 
 $razorFiles = @()
 if (Test-Path $webPath) {

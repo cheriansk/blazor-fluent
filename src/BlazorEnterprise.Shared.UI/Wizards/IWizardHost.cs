@@ -1,4 +1,4 @@
-namespace BlazorEnterprise.UI.Templates.Wizards;
+namespace BlazorEnterprise.Shared.UI.Wizards;
 
 public interface IWizardHost
 {

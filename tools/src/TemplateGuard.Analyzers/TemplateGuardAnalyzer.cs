@@ -448,7 +448,7 @@ namespace TemplateGuard.Analyzers
         private static string? NormalizeToLayerRelativePath(string fullPath)
         {
             var normalized = fullPath.Replace('\\', '/');
-            var layers = new[] { "UI.Templates", "Core", "Persistence", "Infrastructure", "Jobs", "Web" };
+            var layers = new[] { "Shared.UI", "Core", "Persistence", "Infrastructure", "Jobs", "Web" };
             foreach (var layer in layers)
             {
                 var marker = "." + layer + "/";

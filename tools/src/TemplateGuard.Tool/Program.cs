@@ -30,7 +30,7 @@ public static class Program
                         !f.EndsWith(".Custom.cs", StringComparison.OrdinalIgnoreCase))
             .OrderBy(f => f);
 
-        var layers = new[] { "Shared", "Core", "Persistence", "Infrastructure", "Jobs", "Web", "UI.Templates", "RulesEngine", "Api", "ServiceDefaults", "AppHost" };
+        var layers = new[] { "Shared", "Core", "Persistence", "Infrastructure", "Jobs", "Web", "Shared.UI", "RulesEngine", "Api", "ServiceDefaults", "AppHost" };
 
         foreach (var file in csFiles)
         {

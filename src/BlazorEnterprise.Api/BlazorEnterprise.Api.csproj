@@ -28,4 +28,8 @@
     <Using Remove="BlazorEnterprise.Shared.DataListTypes.TaskStatus" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
+
 </Project>

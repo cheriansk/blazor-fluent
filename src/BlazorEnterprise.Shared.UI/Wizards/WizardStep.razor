@@ -1,4 +1,4 @@
-@namespace BlazorEnterprise.UI.Templates.Wizards
+@namespace BlazorEnterprise.Shared.UI.Wizards
 @implements IDisposable
 
 @if (IsCurrentStep)
@@ -17,7 +17,7 @@
     public string? Summary { get; set; }
 
     [Parameter]
-    public Icon? Icon { get; set; }
+    public RenderFragment? IconFragment { get; set; }
 
     [Parameter]
     public Func<Task<bool>>? OnValidateAsync { get; set; }

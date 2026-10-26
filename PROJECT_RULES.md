@@ -32,7 +32,7 @@ BlazorEnterprise.Persistence   → EF Core DbContext, configurations, intercepto
 BlazorEnterprise.Infrastructure→ S2S token services, outbound senders (email/Teams), security middleware, observability
 BlazorEnterprise.Jobs          → Background job handlers, schedulers, event queues (all batch logic resides here)
 BlazorEnterprise.Worker        → Thin background console host shell (executes queue listeners & schedulers; 0 batch logic)
-BlazorEnterprise.UI.Templates  → Reusable enterprise UI templates (Generic Fluent UI V5 Wizard RCL)
+BlazorEnterprise.Shared.UI      → Reusable enterprise UI components, icons, theme tokens, and wizard framework RCL
 BlazorEnterprise (Web)         → Razor components, pages, layouts, Program.cs composition root
 ```
 
@@ -42,8 +42,8 @@ BlazorEnterprise (Web)         → Razor components, pages, layouts, Program.cs 
 | **Persistence isolation** | `BlazorEnterprise.Persistence` contains 100% database persistence code. No HTTP clients, no SMTP, no file I/O. |
 | **Infrastructure isolation** | `BlazorEnterprise.Infrastructure` handles outbound integrations, S2S auth delegation, and browser interop services. Never references `Persistence`. |
 | **Worker shell isolation** | `BlazorEnterprise.Worker` is strictly an executable console host shell (~60 lines). Never author batch handlers or business logic directly in `BlazorEnterprise.Worker`. All batch logic must live in `BlazorEnterprise.Jobs`. |
-| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `UI.Templates` ← `Web`, All except `Web`/`UI.Templates` ← `Worker`. |
-| **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorEnterprise.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, `Jobs`, or `UI.Templates`. |
+| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `Shared.UI` ← `Web`, All except `Web`/`Shared.UI` ← `Worker`. |
+| **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorEnterprise.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, `Jobs`, or `Shared.UI`. |
 
 ### 1.2 Service Scope Lifetime & Captive Dependency Governance
 
@@ -652,11 +652,11 @@ BlazorEnterprise/
 
 ## 14. Enterprise UI Wizards & Sequential Workflows Governance
 
-### 14.1 Enterprise Wizards Framework (`BlazorEnterprise.UI.Templates`)
+### 14.1 Enterprise Wizards Framework (`BlazorEnterprise.Shared.UI`)
 
 | Architectural Requirement | Implementation Rule |
 |---------------------------|---------------------|
-| **Decoupled RCL Package** | Reusable wizard templates reside in `BlazorEnterprise.UI.Templates` (NuGet-ready Razor Class Library), keeping presentation patterns decoupled from specific business domain logic. |
+| **Decoupled RCL Package** | Reusable wizard templates reside in `BlazorEnterprise.Shared.UI` (NuGet-ready Razor Class Library), keeping presentation patterns decoupled from specific business domain logic. |
 | **Declarative Composition** | Developers compose multi-step wizards declaratively using `<FluentWizardModal TState="...">` and child `<WizardStep TState="...">` tags. |
 | **In-Memory State Preservation** | State is held in-memory via reference in generic `WizardContext<TState>` across all step transitions. Form inputs bind directly to state properties without intermediate database round-trips. |
 | **Accidental Dismissal Lock** | Backdrop clicks are locked from dismissing the modal. The cancel/close action evaluates `Context.IsDirty`; if dirty, a confirmation modal prompts before discarding user input. |

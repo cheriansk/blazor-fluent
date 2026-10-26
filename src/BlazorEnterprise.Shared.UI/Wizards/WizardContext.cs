@@ -1,4 +1,4 @@
-namespace BlazorEnterprise.UI.Templates.Wizards;
+namespace BlazorEnterprise.Shared.UI.Wizards;
 
 /// <summary>
 /// Generic in-memory state and lifecycle container for a wizard execution session.
@@ -66,11 +66,16 @@ public class WizardContext<TState>
     }
 
     /// <summary>
-    /// Records a step-level validation error message.
+    /// Sets a validation error for a specific step or field.
     /// </summary>
-    public void SetError(string stepKey, string errorMessage)
+    public void SetError(string key, string message)
     {
-        StepErrors[stepKey] = errorMessage;
+        StepErrors[key] = message;
         NotifyStateChanged();
     }
+
+    /// <summary>
+    /// Checks if a given step currently has errors.
+    /// </summary>
+    public bool HasError(string key) => StepErrors.ContainsKey(key);
 }

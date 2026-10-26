@@ -22,8 +22,7 @@
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/BlazorEnterprise.Shared/BlazorEnterprise.Shared.csproj" />
-    <Project Path="src/BlazorEnterprise.UI.Material/BlazorEnterprise.UI.Material.csproj" />
-    <Project Path="src/BlazorEnterprise.UI.Templates/BlazorEnterprise.UI.Templates.csproj" />
+    <Project Path="src/BlazorEnterprise.Shared.UI/BlazorEnterprise.Shared.UI.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BlazorEnterprise.Benchmarks/BlazorEnterprise.Benchmarks.csproj" />

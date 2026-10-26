@@ -1,10 +1,9 @@
-@namespace BlazorEnterprise.UI.Material.Components
-@using Microsoft.FluentUI.AspNetCore.Components
+@namespace BlazorEnterprise.Shared.UI.Components
 
-<span class="mat-chip @GetColorClass() @Class" style="@Style">
-    @if (Icon is not null)
+<span class="mat-chip @GetColorClass() @Class">
+    @if (IconFragment is not null)
     {
-        <FluentIcon Value="@Icon" Width="14px" />
+        @IconFragment
     }
     @Text
 </span>
@@ -22,9 +21,8 @@
 
     [Parameter, EditorRequired] public string Text { get; set; } = string.Empty;
     [Parameter] public ChipVariant Variant { get; set; } = ChipVariant.Primary;
-    [Parameter] public Icon? Icon { get; set; }
+    [Parameter] public RenderFragment? IconFragment { get; set; }
     [Parameter] public string Class { get; set; } = string.Empty;
-    [Parameter] public string Style { get; set; } = string.Empty;
 
     private string GetColorClass() => Variant switch
     {

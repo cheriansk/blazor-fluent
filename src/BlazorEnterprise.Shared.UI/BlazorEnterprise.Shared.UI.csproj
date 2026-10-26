@@ -4,16 +4,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>BlazorEnterprise.UI.Material</RootNamespace>
+    <RootNamespace>BlazorEnterprise.Shared.UI</RootNamespace>
     
-    <!-- NuGet Package Metadata for Multi-Repo Export -->
-    <PackageId>BlazorEnterprise.UI.Material</PackageId>
+    <!-- NuGet Package Metadata for Enterprise Distribution -->
+    <PackageId>BlazorEnterprise.Shared.UI</PackageId>
     <Version>1.0.0</Version>
-    <Authors>BlazorEnterprise Enterprise Architecture Team</Authors>
+    <Authors>BlazorEnterprise Architecture Team</Authors>
     <Company>BlazorEnterprise</Company>
-    <Product>BlazorEnterprise Material 3 Design Layer</Product>
-    <Description>Enterprise-grade Material Design 3 theme layer and reusable components built natively on Microsoft Fluent UI Blazor V5 with strict Content Security Policy (CSP) compliance.</Description>
-    <PackageTags>blazor;fluentui;material;material3;enterprise;components;v5;zero-trust;csp</PackageTags>
+    <Product>BlazorEnterprise Shared UI &amp; Component Library</Product>
+    <Description>Enterprise-grade shared Razor Class Library (RCL) housing native Material Design 3 components, icons, and reusable wizard framework with 100% strict CSP compliance.</Description>
+    <PackageTags>blazor;material;material3;enterprise;shared;ui;components;wizard;zero-trust;csp</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <WarningsAsErrors>CS0618</WarningsAsErrors>
   </PropertyGroup>
