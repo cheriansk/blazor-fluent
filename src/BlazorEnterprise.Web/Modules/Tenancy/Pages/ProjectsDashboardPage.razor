@@ -1,0 +1,15 @@
+@page "/tenancy/projects"
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Contracts
+@using Microsoft.AspNetCore.Authorization
+@inject ISettingsNavigationState SettingsNav
+
+@code {
+    protected override void OnInitialized()
+    {
+        SettingsNav.NavigateToTab("projects");
+    }
+}

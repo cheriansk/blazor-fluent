@@ -1,7 +1,7 @@
 # 08. Operational Scripts & Tooling
 
 > **Target Audience**: DevOps Engineers, Release Managers, Software Developers, and System Administrators.  
-> **Key Objective**: Exhaustive operational catalog detailing every automation and maintenance script in the BlazorFluent repository, including parameters, execution examples, and CI/CD integration.
+> **Key Objective**: Exhaustive operational catalog detailing every automation and maintenance script in the BlazorEnterprise repository, including parameters, execution examples, and CI/CD integration.
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 📋 1. Project Rebranding (`Rename-Project.ps1`)
 
-Automates changing `BlazorFluent` to your custom organization or product name (e.g. `AcmeCorp.Portal`).
+Automates changing `BlazorEnterprise` to your custom organization or product name (e.g. `AcmeCorp.Portal`).
 
 ### Syntax & Parameters:
 ```powershell
@@ -29,9 +29,9 @@ Automates changing `BlazorFluent` to your custom organization or product name (e
 ```
 
 ### What It Automates:
-1. **Directories**: Renames `src/BlazorFluent.*`, `tests/BlazorFluent.*`.
+1. **Directories**: Renames `src/BlazorEnterprise.*`, `tests/BlazorEnterprise.*`.
 2. **Project Files**: Renames `.csproj`, `.slnx`, and solution folders.
-3. **Namespaces & Code**: Replaces `namespace BlazorFluent.*` across all `.cs` and `.razor` files.
+3. **Namespaces & Code**: Replaces `namespace BlazorEnterprise.*` across all `.cs` and `.razor` files.
 4. **Configuration Keys**: Replaces connection strings, log prefixes, and assembly names in `appsettings.json` and `launchSettings.json`.
 5. **Clean Verification**: Preserves `.git`, `bin`, and `obj` exclusion boundaries.
 
@@ -111,4 +111,4 @@ For secure enterprise environments that prohibit loading assets from external CD
 pwsh scripts/Download-Quill.ps1
 ```
 
-Downloads pinned, hash-verified versions of Quill.js CSS and JavaScript bundles into `src/BlazorFluent.Web/wwwroot/lib/quill/`, enabling 100% offline rich-text editing.
+Downloads pinned, hash-verified versions of Quill.js CSS and JavaScript bundles into `src/BlazorEnterprise.Web/wwwroot/lib/quill/`, enabling 100% offline rich-text editing.

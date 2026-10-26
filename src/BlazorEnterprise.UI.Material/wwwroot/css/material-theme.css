@@ -1,0 +1,345 @@
+/* ==============================================================================
+   BlazorEnterprise.UI.Material: Material Design 3 Theme & Component Tokens
+   Strict Content Security Policy (PureStrict) Compliant - Zero unsafe-inline
+   ============================================================================== */
+
+:root {
+  /* Typography - Material System Font Stack (Strict font-src 'self' compliant) */
+  --mat-font-family: Roboto, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body-font: var(--mat-font-family);
+
+  /* Primary Palette - Enterprise Deep Blue / Indigo */
+  --mat-primary: #1976D2;
+  --mat-primary-hover: #1565C0;
+  --mat-primary-active: #0D47A1;
+  --mat-primary-container: #E3F2FD;
+  --mat-on-primary: #FFFFFF;
+  --mat-on-primary-container: #0D47A1;
+
+  /* Secondary & Surface Colors */
+  --mat-secondary: #455A64;
+  --mat-secondary-container: #ECEFF1;
+  --mat-on-secondary-container: #263238;
+  --mat-surface: #FFFFFF;
+  --mat-surface-variant: #F4F6F9;
+  --mat-background: #F8FAFC;
+  --mat-outline: rgba(0, 0, 0, 0.12);
+  --mat-outline-variant: rgba(0, 0, 0, 0.06);
+
+  /* Semantic Status Colors */
+  --mat-success: #2E7D32;
+  --mat-success-container: #E8F5E9;
+  --mat-on-success-container: #1B5E20;
+
+  --mat-warning: #ED6C02;
+  --mat-warning-container: #FFF3E0;
+  --mat-on-warning-container: #E65100;
+
+  --mat-error: #D32F2F;
+  --mat-error-container: #FFEBEE;
+  --mat-on-error-container: #B71C1C;
+
+  --mat-info: #0288D1;
+  --mat-info-container: #E1F5FE;
+  --mat-on-info-container: #01579B;
+
+  /* Material Design 3 Elevation Shadows (dp1 - dp4) */
+  --mat-elevation-0: none;
+  --mat-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  --mat-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  --mat-elevation-3: 0px 4px 12px 3px rgba(0, 0, 0, 0.08), 0px 1px 3px 0px rgba(0, 0, 0, 0.06);
+  --mat-elevation-4: 0px 6px 16px 4px rgba(0, 0, 0, 0.10), 0px 2px 4px 0px rgba(0, 0, 0, 0.08);
+
+  /* Border Radii */
+  --mat-radius-xs: 4px;
+  --mat-radius-sm: 8px;
+  --mat-radius-md: 12px;
+  --mat-radius-card: 16px;
+  --mat-radius-pill: 9999px;
+
+  /* Fluent UI v5 Design Token Bridges */
+  --accent-fill-rest: var(--mat-primary);
+  --accent-fill-hover: var(--mat-primary-hover);
+  --accent-fill-active: var(--mat-primary-active);
+  --layer-corner-radius: 16px;
+  --control-corner-radius: 8px;
+}
+
+/* Base Body Styles */
+body {
+  font-family: var(--mat-font-family);
+  background-color: var(--mat-background);
+  color: #1E293B;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==============================================================================
+   Fluent UI Web Component Global Styling Overrides
+   ============================================================================== */
+
+/* FluentCard: Elevated Material Surface */
+fluent-card {
+  background-color: var(--mat-surface);
+  border-radius: var(--mat-radius-card) !important;
+  box-shadow: var(--mat-elevation-1) !important;
+  border: 1px solid var(--mat-outline-variant) !important;
+  transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s ease;
+}
+
+fluent-card:hover {
+  box-shadow: var(--mat-elevation-2) !important;
+}
+
+/* FluentButton Accent: Material Filled Button */
+fluent-button[appearance="accent"] {
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 2px rgba(25, 118, 210, 0.25);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+fluent-button[appearance="accent"]:hover {
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.35);
+  transform: translateY(-1px);
+}
+
+/* FluentButton Subtle & Outline */
+fluent-button[appearance="stealth"],
+fluent-button[appearance="subtle"] {
+  border-radius: 20px !important;
+  font-weight: 500;
+}
+
+fluent-button[appearance="outline"] {
+  border-radius: 20px !important;
+  border-color: var(--mat-primary) !important;
+  color: var(--mat-primary) !important;
+}
+
+/* FluentBadge: Material Pill Badge */
+fluent-badge {
+  border-radius: var(--mat-radius-pill) !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.02em;
+}
+
+/* Input Fields: Material Rounded Inputs */
+fluent-text-field,
+fluent-select,
+fluent-number-field,
+fluent-text-area {
+  border-radius: var(--mat-radius-sm) !important;
+}
+
+/* Dialogs / Modals: Material 3 Modal Elevation */
+fluent-dialog {
+  border-radius: 24px !important;
+  box-shadow: var(--mat-elevation-4) !important;
+}
+
+/* ==============================================================================
+   Material 3 Reusable Component Styles
+   ============================================================================== */
+
+/* Material Metric KPI Card */
+.mat-metric-card {
+  background-color: var(--mat-surface);
+  border-radius: var(--mat-radius-card);
+  box-shadow: var(--mat-elevation-1);
+  border: 1px solid var(--mat-outline-variant);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mat-metric-card:hover {
+  box-shadow: var(--mat-elevation-3);
+  transform: translateY(-2px);
+}
+
+.mat-metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.mat-avatar-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mat-avatar-primary { background-color: var(--mat-primary-container); color: var(--mat-primary); }
+.mat-avatar-success { background-color: var(--mat-success-container); color: var(--mat-success); }
+.mat-avatar-warning { background-color: var(--mat-warning-container); color: var(--mat-warning); }
+.mat-avatar-info { background-color: var(--mat-info-container); color: var(--mat-info); }
+.mat-avatar-error { background-color: var(--mat-error-container); color: var(--mat-error); }
+
+.mat-metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.mat-metric-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748B;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mat-metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.2;
+}
+
+.mat-metric-bottom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+/* Material Trend & Status Chips */
+.mat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--mat-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.mat-chip-success {
+  background-color: var(--mat-success-container);
+  color: var(--mat-on-success-container);
+}
+
+.mat-chip-warning {
+  background-color: var(--mat-warning-container);
+  color: var(--mat-on-warning-container);
+}
+
+.mat-chip-error {
+  background-color: var(--mat-error-container);
+  color: var(--mat-on-error-container);
+}
+
+.mat-chip-info {
+  background-color: var(--mat-info-container);
+  color: var(--mat-on-info-container);
+}
+
+.mat-chip-neutral {
+  background-color: var(--mat-secondary-container);
+  color: var(--mat-on-secondary-container);
+}
+
+.mat-subtext {
+  color: #94A3B8;
+  font-size: 0.75rem;
+}
+
+/* Material Section Header */
+.mat-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--mat-outline-variant);
+}
+
+.mat-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mat-section-subtitle {
+  font-size: 0.875rem;
+  color: #64748B;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Material Kanban Task Card Container */
+.mat-kanban-card {
+  background: var(--mat-surface);
+  border-radius: var(--mat-radius-md);
+  box-shadow: var(--mat-elevation-1);
+  border: 1px solid var(--mat-outline-variant);
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.75rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.mat-kanban-card:hover {
+  box-shadow: var(--mat-elevation-2);
+  transform: translateY(-2px);
+}
+
+/* Material Activity Timeline Feed */
+.mat-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mat-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mat-radius-sm);
+  background-color: var(--mat-surface-variant);
+  transition: background-color 0.2s ease;
+}
+
+.mat-activity-item:hover {
+  background-color: #EDE8F5;
+}
+
+.mat-activity-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.mat-activity-content {
+  flex: 1;
+}
+
+.mat-activity-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1E293B;
+  margin: 0;
+}
+
+.mat-activity-time {
+  font-size: 0.75rem;
+  color: #64748B;
+  margin-top: 0.15rem;
+}

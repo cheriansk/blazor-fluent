@@ -2,19 +2,19 @@
 
 > **Target Audience**: Enterprise Architects, Principal Systems Engineers, SREs, and Platform Tech Leads.  
 > **Status**: Approved Architecture Blueprint & Implementation Roadmap.  
-> **Scope**: Decoupling asynchronous batch ingestion, scheduled tasks, and heavy CPU processing from the interactive Blazor Server web host into a scalable, distributed worker cluster (`BlazorFluent.Worker`) backed by an enterprise message broker.
+> **Scope**: Decoupling asynchronous batch ingestion, scheduled tasks, and heavy CPU processing from the interactive Blazor Server web host into a scalable, distributed worker cluster (`BlazorEnterprise.Worker`) backed by an enterprise message broker.
 
 ---
 
 ## Executive Summary
 
-The BlazorFluent core architecture currently provides in-process bounded queueing via `System.Threading.Channels` (`ChannelJobEventQueue`) and localized background execution via `IHostedService` in `BlazorFluent.Web`. While optimal for single-node deployments and developer velocity, enterprise multi-node deployments (e.g., Kubernetes clusters, Azure Container Apps, or multi-VM load-balanced pools) require:
+The BlazorEnterprise core architecture currently provides in-process bounded queueing via `System.Threading.Channels` (`ChannelJobEventQueue`) and localized background execution via `IHostedService` in `BlazorEnterprise.Web`. While optimal for single-node deployments and developer velocity, enterprise multi-node deployments (e.g., Kubernetes clusters, Azure Container Apps, or multi-VM load-balanced pools) require:
 1. **Independent Resource Scaling**: Heavy OpenXML parsing, SAX streaming, and cloud batch encryption must never starve Blazor Server SignalR circuits of CPU or RAM.
 2. **Guaranteed Delivery & Fault Tolerance**: Messages must survive web server restarts, pod evictions, and infrastructure failovers.
 3. **Strict Tenancy Isolation & Concurrency Control**: Multi-tenant security context must travel across the wire without data bleed, and concurrent workers must never double-process identical files.
 4. **Smart Error Governance**: Distinguishing transient network glitches from deterministic schema failures with automated Dead-Letter Queue (DLQ) routing and operator replay controls.
 
-This document outlines the blueprint to evolve BlazorFluent to a **Tier-1 Enterprise Distributed Architecture**.
+This document outlines the blueprint to evolve BlazorEnterprise to a **Tier-1 Enterprise Distributed Architecture**.
 
 ---
 
@@ -24,8 +24,8 @@ This document outlines the blueprint to evolve BlazorFluent to a **Tier-1 Enterp
 flowchart TD
     subgraph Clients["Presentation & Edge Tier"]
         Browser["User Browser (SignalR Circuit)"]
-        Web1["BlazorFluent.Web (Pod 1)"]
-        Web2["BlazorFluent.Web (Pod 2)"]
+        Web1["BlazorEnterprise.Web (Pod 1)"]
+        Web2["BlazorEnterprise.Web (Pod 2)"]
         Browser -->|WSS / HTTPS| Web1
         Browser -.->|WSS / HTTPS| Web2
     end
@@ -37,9 +37,9 @@ flowchart TD
     end
 
     subgraph Workers["Distributed Processing Cluster"]
-        Worker1["BlazorFluent.Worker (Replica 1)"]
-        Worker2["BlazorFluent.Worker (Replica 2)"]
-        Worker3["BlazorFluent.Worker (Replica N - HPA Auto-scaled)"]
+        Worker1["BlazorEnterprise.Worker (Replica 1)"]
+        Worker2["BlazorEnterprise.Worker (Replica 2)"]
+        Worker3["BlazorEnterprise.Worker (Replica N - HPA Auto-scaled)"]
     end
 
     subgraph DataTier["Data & Cloud Engine Tier"]
@@ -78,7 +78,7 @@ flowchart TD
 To preserve zero-dependency local development while enabling cloud scale, the messaging infrastructure is abstracted behind a clean contract with multiple pluggable drivers:
 
 ```csharp
-namespace BlazorFluent.Shared.Contracts.Messaging;
+namespace BlazorEnterprise.Shared.Contracts.Messaging;
 
 public interface IMessageBus
 {
@@ -100,7 +100,7 @@ public interface IMessageBus
    - Authenticates via Azure Managed Identity (zero stored secrets).
    - Built-in session FIFO processing and native Dead-Letter Queues.
 3. **`RabbitMqMessageBus` (On-Premise / Self-Hosted Enterprise)**:
-   - Uses Topic Exchanges (`blazorfluent.events.topic`) and durable fan-out queues.
+   - Uses Topic Exchanges (`blazorenterprise.events.topic`) and durable fan-out queues.
    - Consumer acknowledgment (`basic.ack`) with dead-letter exchange (`DLX`).
 
 ---
@@ -110,7 +110,7 @@ public interface IMessageBus
 In accordance with our zero-trust multi-tenancy requirements, every distributed job event must implement an immutable base contract. Tenant isolation is not an optional configuration—it is enforced by the compiler:
 
 ```csharp
-namespace BlazorFluent.Shared.Contracts.Messaging;
+namespace BlazorEnterprise.Shared.Contracts.Messaging;
 
 public abstract record BaseTenantJobEvent
 {
@@ -153,11 +153,11 @@ sequenceDiagram
 
 ---
 
-### Pillar 3: Dedicated Worker Host (`BlazorFluent.Worker`)
+### Pillar 3: Dedicated Worker Host (`BlazorEnterprise.Worker`)
 
 A dedicated .NET 10 console worker microservice (`Microsoft.NET.Sdk.Worker`) hosts the long-running batch ingestion and scheduled job processors:
 
-- **Resource Independence**: Interactive web users on `BlazorFluent.Web` maintain sub-50ms UI response times even when a 100,000-row Excel file is being processed.
+- **Resource Independence**: Interactive web users on `BlazorEnterprise.Web` maintain sub-50ms UI response times even when a 100,000-row Excel file is being processed.
 - **Independent Autoscaling**: Configure Kubernetes Horizontal Pod Autoscaler (HPA) or Azure Container Apps KEDA scaler based on Queue Depth (e.g. scale worker pods from 1 to 20 when queue length exceeds 50 messages).
 - **Graceful Shutdown**: Workers implement `IHostApplicationLifetime` to allow in-flight chunk transformations to finish before container termination.
 
@@ -219,7 +219,7 @@ gantt
     ChannelMessageBus (Local Dev Adapter)         :p2_2, after p2_1, 3d
     RabbitMQ & Azure Service Bus Adapters         :p2_3, after p2_2, 7d
     section Phase 3: Dedicated Worker
-    Create BlazorFluent.Worker Project            :p3_1, after p2_3, 4d
+    Create BlazorEnterprise.Worker Project            :p3_1, after p2_3, 4d
     Wire Aspire AppHost & Worker Orchestration    :p3_2, after p3_1, 3d
     CAS Concurrency & Distributed Lock Provider  :p3_3, after p3_2, 5d
     section Phase 4: Error & DLQ Governance
@@ -233,9 +233,9 @@ gantt
   - Enforce compile-time tenant stamping.
 - **Phase 2: Pluggable Message Bus Abstraction (Weeks 2-3)**:
   - Implement `IMessageBus` and `ChannelMessageBus`.
-  - Add optional `BlazorFluent.Infrastructure.Messaging.AzureServiceBus` and `RabbitMQ` packages.
-- **Phase 3: Standalone Worker Host (`BlazorFluent.Worker`) (Weeks 4-5)**:
-  - Scaffold `BlazorFluent.Worker` as an Aspire-orchestrated worker service.
+  - Add optional `BlazorEnterprise.Infrastructure.Messaging.AzureServiceBus` and `RabbitMQ` packages.
+- **Phase 3: Standalone Worker Host (`BlazorEnterprise.Worker`) (Weeks 4-5)**:
+  - Scaffold `BlazorEnterprise.Worker` as an Aspire-orchestrated worker service.
   - Implement CAS database state machine and Redis distributed locking.
 - **Phase 4: DLQ Governance & Admin Portal (Weeks 5-6)**:
   - Implement smart retry filter policy.
@@ -245,7 +245,7 @@ gantt
 
 ## 4. Conclusion & Enterprise Certification Matrix
 
-With the completion of this roadmap, BlazorFluent satisfies the requirements for Tier-1 Enterprise deployments:
+With the completion of this roadmap, BlazorEnterprise satisfies the requirements for Tier-1 Enterprise deployments:
 
 | Dimension | In-Process Channel (Current) | Distributed Worker Cluster (Blueprint) |
 | :--- | :--- | :--- |

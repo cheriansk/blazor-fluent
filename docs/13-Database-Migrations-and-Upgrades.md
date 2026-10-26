@@ -28,8 +28,8 @@
 ### 2.1 Generating a Migration
 ```bash
 dotnet ef migrations add AddUserPreferencesTable \
-    --project src/BlazorFluent.Persistence \
-    --startup-project src/BlazorFluent.Web \
+    --project src/BlazorEnterprise.Persistence \
+    --startup-project src/BlazorEnterprise.Web \
     --context AppDbContext \
     --output-dir Migrations
 ```
@@ -39,8 +39,8 @@ Production database updates are **never applied via automatic `context.Database.
 
 ```bash
 dotnet ef migrations script \
-    --project src/BlazorFluent.Persistence \
-    --startup-project src/BlazorFluent.Web \
+    --project src/BlazorEnterprise.Persistence \
+    --startup-project src/BlazorEnterprise.Web \
     --idempotent \
     --output migrations_release_v2.sql
 ```
@@ -83,20 +83,20 @@ If an issue is detected during staging verification:
 
 ```bash
 dotnet ef database update TargetMigrationName \
-    --project src/BlazorFluent.Persistence \
-    --startup-project src/BlazorFluent.Web
+    --project src/BlazorEnterprise.Persistence \
+    --startup-project src/BlazorEnterprise.Web
 ```
 
 ### 4.2 Removing Unapplied Migrations
 If a newly created migration has not been pushed or committed:
 ```bash
 dotnet ef migrations remove \
-    --project src/BlazorFluent.Persistence \
-    --startup-project src/BlazorFluent.Web
+    --project src/BlazorEnterprise.Persistence \
+    --startup-project src/BlazorEnterprise.Web
 ```
 
 ---
 
 *Related Documentation*:
-- [02. Architecture & Project Structure](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture-and-Project-Structure.md)
-- [12. Production Deployment & Operations](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/12-Production-Deployment-and-Operations.md)
+- [02. Architecture & Project Structure](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/02-Architecture-and-Project-Structure.md)
+- [12. Production Deployment & Operations](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/12-Production-Deployment-and-Operations.md)

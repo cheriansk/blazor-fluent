@@ -1,0 +1,1256 @@
+@namespace BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Dtos
+@inject IWorkflowService WorkflowService
+@inject ICurrentUser CurrentUser
+@inject INotifyService NotifyService
+@inject IHierarchyAuthorizationService HierarchyAuth
+
+<div class="workflow-stepper-card">
+    @* Workflow Header Summary *@
+    <div class="workflow-header">
+        <div class="workflow-header-title-section">
+            <div class="workflow-title-row">
+                <FluentIcon Value="@(new Icons.Filled.Size20.Flowchart())" Color="Color.Primary" />
+                <span class="workflow-title">@Workflow.Title</span>
+
+                @* Scoping Level Badge *@
+                <span class="scope-pill scope-@Workflow.Level.ToString().ToLowerInvariant()">
+                    @if (Workflow.Level == TaskLevelEnum.Tenant)
+                    {
+                        <span>🏢 Tenant Governance</span>
+                    }
+                    else if (Workflow.Level == TaskLevelEnum.Program)
+                    {
+                        <span>📁 Program Initiative</span>
+                    }
+                    else
+                    {
+                        <span>📋 Project Delivery</span>
+                    }
+                </span>
+
+                <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(Workflow.Priority)">
+                    @Workflow.Priority
+                </FluentBadge>
+
+                @if (Workflow.Status == TaskStatusEnum.Paused)
+                {
+                    <FluentBadge Appearance="@BadgeAppearance.Filled" BackgroundColor="var(--warning, #d83b01)">
+                        ⚠️ Paused (Attention Required)
+                    </FluentBadge>
+                }
+                else if (Workflow.Status == TaskStatusEnum.Closed || Workflow.CurrentStepId is null)
+                {
+                    <FluentBadge Appearance="@BadgeAppearance.Filled" BackgroundColor="var(--success, #107c41)">
+                        Completed
+                    </FluentBadge>
+                }
+                else
+                {
+                    <FluentBadge Appearance="@BadgeAppearance.Filled" BackgroundColor="var(--accent-fill-rest, #0078d4)">
+                        In Progress
+                    </FluentBadge>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Workflow.Description))
+            {
+                <div class="workflow-description">@Workflow.Description</div>
+            }
+
+            <div class="workflow-meta-row">
+                <span class="meta-item">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" Color="Color.Default" />
+                    <strong>Due:</strong>
+                    @if (Workflow.DueDate!=null)
+                    {
+                        <UserDateTime Value="@Workflow.DueDate" Format="yyyy-MM-dd" />
+                    }
+                    else
+                    {
+                        <span>No deadline</span>
+                    }
+                </span>
+
+                @* Constant Workflow Owner Badge *@
+                <span class="meta-item constant-owner-badge" title="Constant Workflow Owner orchestrates and drives delivery across all steps">
+                    <FluentIcon Value="@(new Icons.Filled.Size16.PersonStar())" Color="Color.Primary" />
+                    <strong>Workflow Owner:</strong>
+                    <span class="owner-email">@Workflow.WorkflowOwnerEmail</span>
+                </span>
+
+                @if (!string.IsNullOrWhiteSpace(Workflow.WatcherEmails))
+                {
+                    <span class="meta-item watchers-item">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Eye())" Color="Color.Default" />
+                        <strong>Watchers:</strong>
+                        <span class="watchers-text" title="@Workflow.WatcherEmails">@Workflow.WatcherEmails</span>
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (_canManage)
+        {
+            <div class="workflow-header-actions" style="display: flex; gap: 8px; align-items: flex-start;">
+                @if (Workflow.Status == TaskStatusEnum.Paused)
+                {
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  IconStart="@(new Icons.Filled.Size16.Play())"
+                                  OnClick="@PromptResumeWorkflowAsync">
+                        Resume Pipeline
+                    </FluentButton>
+                }
+                <FluentButton Appearance="ButtonAppearance.Outline"
+                              IconStart="@(new Icons.Regular.Size16.Edit())"
+                              OnClick="@(() => OnEditWorkflow.InvokeAsync(Workflow))">
+                    Edit Workflow
+                </FluentButton>
+            </div>
+        }
+    </div>
+
+    @if (Workflow.Status == TaskStatusEnum.Paused)
+    {
+        <div class="workflow-paused-banner" style="background: #fff4ce; border-left: 4px solid #ffb900; padding: 12px 16px; margin: 0 16px 12px 16px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <FluentIcon Value="@(new Icons.Filled.Size20.Warning())" Color="Color.Warning" />
+                <div>
+                    <strong style="color: #323130; font-size: 0.9rem;">Pipeline Paused — Attention Required</strong>
+                    <div style="color: #605e5c; font-size: 0.8rem; margin-top: 2px;">
+                        An active step was cancelled. Sequential execution is halted pending administrator review.
+                    </div>
+                </div>
+            </div>
+            @if (_canManage)
+            {
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              IconStart="@(new Icons.Filled.Size16.Play())"
+                              OnClick="@PromptResumeWorkflowAsync">
+                    Resume Next Step
+                </FluentButton>
+            }
+        </div>
+    }
+
+    @* Visual Stepper Pipeline Track *@
+    <div class="stepper-pipeline">
+        @{
+            var orderedSteps = Workflow.Steps.OrderBy(s => s.WorkflowStepOrder ?? 1).ToList();
+        }
+        @for (int i = 0; i < orderedSteps.Count; i++)
+        {
+            var step = orderedSteps[i];
+            var stepIndex = i;
+            var isCurrentActive = step.Status == TaskStatusEnum.InProgress;
+            var isCompleted = step.Status == TaskStatusEnum.Closed;
+            var isPending = step.Status == TaskStatusEnum.Pending;
+
+            <div class="pipeline-step-node @(isCurrentActive ? "step-active" : isCompleted ? "step-completed" : "step-pending")">
+                <div class="step-indicator">
+                    @if (isCompleted)
+                    {
+                        <div class="step-circle step-circle-completed" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) completed">
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Checkmark())" Color="Color.Default" />
+                        </div>
+                    }
+                    else if (step.Status == TaskStatusEnum.Cancelled)
+                    {
+                        <div class="step-circle step-circle-cancelled" style="background: #fde7e9; border-color: #d13438; color: #d13438;" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) cancelled">
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Dismiss())" Color="Color.Error" />
+                        </div>
+                    }
+                    else if (isCurrentActive)
+                    {
+                        <div class="step-circle step-circle-active" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) currently active">
+                            <span>@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="step-circle step-circle-pending" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) pending completion of previous steps">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.LockClosed())" Color="Color.Default" />
+                        </div>
+                    }
+
+                    @if (stepIndex < orderedSteps.Count - 1)
+                    {
+                        <div class="step-connector @(isCompleted ? "connector-completed" : "")"></div>
+                    }
+                </div>
+
+                <div class="step-content">
+                    <div class="step-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="step-name" style="@(step.Status == TaskStatusEnum.Cancelled ? "text-decoration: line-through; opacity: 0.7;" : "")">@step.Title</span>
+                            <span class="step-order-badge">Step #@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
+                        </div>
+                        <span class="step-status-tag status-@(step.Status.ToString().ToLowerInvariant())">
+                            @step.Status.ToString()
+                        </span>
+                    </div>
+
+                    <div class="step-owner-line">
+                        <FluentIcon Value="@(new Icons.Regular.Size12.Person())" Color="Color.Default" />
+                        <span>Step Owner: <strong>@(string.IsNullOrWhiteSpace(step.AssigneeEmails) ? "Unassigned" : step.AssigneeEmails)</strong></span>
+                        @if (step.DueDate!=null)
+                        {
+                            <span style="margin-left: 12px;">📅 Deadline: <UserDateTime Value="@step.DueDate" Format="yyyy-MM-dd" /></span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(step.Description))
+                    {
+                        <div class="step-instruction">@step.Description</div>
+                    }
+
+                    @* Subtasks Delegation Section *@
+                    <div class="step-subtasks-panel">
+                        <div class="subtasks-header-row">
+                            <span class="subtasks-label">
+                                <FluentIcon Value="@(new Icons.Regular.Size16.TaskListSquareLtr())" Color="Color.Default" />
+                                Subtasks Delegated to Team (@(step.SubTasks.Count(s => s.IsClosed))/@step.SubTasks.Count completed)
+                            </span>
+                            @if (isCurrentActive)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              IconStart="@(new Icons.Regular.Size12.Add())"
+                                              OnClick="@(() => PromptAddSubtask(step))"
+                                              Style="font-size: 0.75rem; padding: 2px 6px;">
+                                    Add Subtask
+                                </FluentButton>
+                            }
+                        </div>
+
+                        @if (step.SubTasks.Count > 0)
+                        {
+                            <div class="subtasks-list">
+                                @foreach (var sub in step.SubTasks.OrderBy(s => s.OrderIndex))
+                                {
+                                    <div class="subtask-row @(sub.IsClosed ? "subtask-closed" : "")">
+                                        <FluentCheckbox Value="@sub.IsClosed"
+                                                        ValueChanged="@((bool val) => ToggleSubtaskAsync(sub, val))"
+                                                        Disabled="@(!CanToggleSubtask(step, sub))" />
+                                        <span class="subtask-title">@sub.Title</span>
+                                        @if (!string.IsNullOrWhiteSpace(sub.AssigneeEmails))
+                                        {
+                                            <span class="subtask-assignee-pill" title="Assigned Team Member">
+                                                👤 @sub.AssigneeEmails
+                                            </span>
+                                        }
+                                        @if (sub.DueDate!=null)
+                                        {
+                                            <span class="subtask-date">
+                                                <UserDateTime Value="@sub.DueDate" Format="yyyy-MM-dd" />
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (isCompleted && step.EndDate.HasValue)
+                    {
+                        <div class="step-completion-note">
+                            <FluentIcon Value="@(new Icons.Regular.Size12.Comment())" Color="Color.Success" />
+                            <em>Completed on</em>
+                            <span class="step-completed-time">
+                                (<UserDateTime Value="@step.EndDate" Format="yyyy-MM-dd HH:mm" />)
+                            </span>
+                        </div>
+                    }
+
+                    @if (step.Status == TaskStatusEnum.Cancelled)
+                    {
+                        <div class="step-completion-note" style="background: #fde7e9; border-left: 3px solid #d13438; color: #a80000; margin-top: 8px;">
+                            <FluentIcon Value="@(new Icons.Filled.Size12.Dismiss())" Color="Color.Error" />
+                            <em>Step was cancelled by administrator.</em>
+                        </div>
+                    }
+
+                    @if (isCurrentActive)
+                    {
+                        <div class="step-actions">
+                            @{
+                                var isOwner = string.Equals(CurrentUser.Email, step.AssigneeEmails, StringComparison.OrdinalIgnoreCase);
+                                var isWfOwner = string.Equals(CurrentUser.Email, Workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase);
+                                var canAct = isOwner || isWfOwner || _isTenantAdmin || CurrentUser.IsRootAdmin;
+                            }
+                            @if (canAct)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Primary"
+                                              IconStart="@(new Icons.Filled.Size16.Checkmark())"
+                                              OnClick="@(() => PromptCompleteStep(step))">
+                                    Sign Off & Advance Step
+                                </FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Outline"
+                                              IconStart="@(new Icons.Regular.Size16.PersonSwap())"
+                                              OnClick="@(() => PromptReassignStep(step))">
+                                    Reassign Step Owner
+                                </FluentButton>
+                            }
+                            else
+                            {
+                                <div class="step-zero-trust-notice">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.ShieldKeyhole())" Color="Color.Warning" />
+                                    <span>Waiting for Step Owner <strong>@step.AssigneeEmails</strong> or Workflow Owner <strong>@Workflow.WorkflowOwnerEmail</strong> to sign off.</span>
+                                </div>
+                            }
+
+                            @if (_canManage)
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Subtle"
+                                              IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                              Style="color: var(--error, #d13438);"
+                                              OnClick="@(() => PromptCancelStep(step))">
+                                    Cancel Step
+                                </FluentButton>
+                            }
+                        </div>
+                    }
+                    else if (isPending && _canManage)
+                    {
+                        <div class="step-actions" style="margin-top: 8px;">
+                            <FluentButton Appearance="ButtonAppearance.Subtle"
+                                          IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                          Style="color: var(--error, #d13438); font-size: 0.8rem;"
+                                          OnClick="@(() => PromptCancelStep(step))">
+                                Cancel Pending Step
+                            </FluentButton>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* Complete Step Dialog Modal *@
+@if (_isCompleteModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelCompleteStep">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentLabel Typo="Typography.H6">Complete Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</FluentLabel>
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                  OnClick="@CancelCompleteStep" />
+                </FluentStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 12px;">
+                        @_errorMessage
+                    </FluentMessageBar>
+                }
+
+                <p class="modal-instruction">
+                    Signing off on this step marks it as completed and immediately activates the subsequent step
+                    in the pipeline. Any remaining open subtasks will be recorded as completed.
+                </p>
+
+                <FluentTextArea Label="Sign-Off Notes / Delivery Summary"
+                                @bind-Value="_completionNotes"
+                                Rows="4"
+                                Style="width: 100%;"
+                                Placeholder="Provide sign-off details, deliverable links, or verification results..." />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              OnClick="@CancelCompleteStep"
+                              Disabled="@_isSubmitting">
+                    Cancel
+                </FluentButton>
+                <FluentSpacer />
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              OnClick="@ConfirmCompleteStepAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <FluentSpinner Size="@SpinnerSize.Small" />
+                        <span>Submitting...</span>
+                    }
+                    else
+                    {
+                        <span>Confirm & Advance Workflow</span>
+                    }
+                </FluentButton>
+            </div>
+        </div>
+    </div>
+}
+
+@* Reassign Step Dialog Modal *@
+@if (_isReassignModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelReassignStep">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentLabel Typo="Typography.H6">Reassign Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</FluentLabel>
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                  OnClick="@CancelReassignStep" />
+                </FluentStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 12px;">
+                        @_errorMessage
+                    </FluentMessageBar>
+                }
+
+                <p class="modal-instruction">
+                    Reassigning delegates execution accountability for this step to a new Step Owner.
+                    The overarching Workflow Owner (@Workflow.WorkflowOwnerEmail) remains constant.
+                </p>
+
+                <FluentTextInput Label="New Step Owner Email"
+                                 @bind-Value="_reassignEmail"
+                                 Style="width: 100%; margin-bottom: 12px;"
+                                 Placeholder="engineer@company.local" />
+
+                <FluentTextArea Label="Reason for Reassignment"
+                                @bind-Value="_reassignReason"
+                                Rows="3"
+                                Style="width: 100%;"
+                                Placeholder="E.g. Handing off to domain specialist, PTO delegation..." />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              OnClick="@CancelReassignStep"
+                              Disabled="@_isSubmitting">
+                    Cancel
+                </FluentButton>
+                <FluentSpacer />
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              OnClick="@ConfirmReassignStepAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <FluentSpinner Size="@SpinnerSize.Small" />
+                        <span>Reassigning...</span>
+                    }
+                    else
+                    {
+                        <span>Reassign Step</span>
+                    }
+                </FluentButton>
+            </div>
+        </div>
+    </div>
+}
+
+@* Add Subtask Dialog Modal *@
+@if (_isAddSubtaskModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelAddSubtask">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentLabel Typo="Typography.H6">Add Subtask under Step #@(_targetStep.WorkflowStepOrder ?? 1)</FluentLabel>
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                  OnClick="@CancelAddSubtask" />
+                </FluentStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 12px;">
+                        @_errorMessage
+                    </FluentMessageBar>
+                }
+
+                <FluentTextInput Label="Subtask Title *"
+                                 @bind-Value="_newSubtaskTitle"
+                                 Style="width: 100%; margin-bottom: 12px;"
+                                 Placeholder="E.g. Perform penetration test on auth endpoint" />
+
+                <FluentTextInput Label="Assign to Team Member Email *"
+                                 @bind-Value="_newSubtaskAssignee"
+                                 Style="width: 100%; margin-bottom: 12px;"
+                                 Placeholder="developer@company.local" />
+
+                <FluentDatePicker Label="Subtask Due Date"
+                                  @bind-Value="_newSubtaskDueDate"
+                                  Style="width: 100%;" />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              OnClick="@CancelAddSubtask"
+                              Disabled="@_isSubmitting">
+                    Cancel
+                </FluentButton>
+                <FluentSpacer />
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              OnClick="@ConfirmAddSubtaskAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <FluentSpinner Size="@SpinnerSize.Small" />
+                        <span>Adding...</span>
+                    }
+                    else
+                    {
+                        <span>Add & Delegate Subtask</span>
+                    }
+                </FluentButton>
+            </div>
+        </div>
+    </div>
+}
+
+@* Cancel Step Dialog Modal *@
+@if (_isCancelModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelCancelStep">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentLabel Typo="Typography.H6">Cancel Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</FluentLabel>
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                  OnClick="@CancelCancelStep" />
+                </FluentStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 12px;">
+                        @_errorMessage
+                    </FluentMessageBar>
+                }
+
+                <p class="modal-instruction" style="color: #a80000;">
+                    Tasks added to a workflow cannot be permanently deleted. Instead, this step will be marked as Cancelled.
+                    @if (_targetStep.Status == TaskStatusEnum.InProgress)
+                    {
+                        <strong> Since this is the active step, the workflow will be paused until an administrator activates the next step.</strong>
+                    }
+                </p>
+
+                <FluentTextInput Label="Mandatory Cancellation Reason *"
+                                 @bind-Value="_cancelReason"
+                                 Placeholder="State reason for cancelling this step..."
+                                 Style="width: 100%;" />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              OnClick="@CancelCancelStep"
+                              Disabled="@_isSubmitting">
+                    Close
+                </FluentButton>
+                <FluentSpacer />
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              Style="background: var(--error, #d13438);"
+                              OnClick="@ConfirmCancelStepAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <FluentSpinner Size="@SpinnerSize.Small" />
+                        <span>Processing...</span>
+                    }
+                    else
+                    {
+                        <span>Confirm Step Cancellation</span>
+                    }
+                </FluentButton>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .workflow-stepper-card {
+        background: var(--neutral-layer-card-container, #ffffff);
+        border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .workflow-header-title-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--neutral-stroke-divider, #edebe9);
+        padding-bottom: 16px;
+    }
+
+    .workflow-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .workflow-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--neutral-foreground-rest, #242424);
+    }
+
+    .scope-pill {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .scope-tenant {
+        background: #f3e8fd;
+        color: #7b1fa2;
+    }
+
+    .scope-program {
+        background: #e1f5fe;
+        color: #0288d1;
+    }
+
+    .scope-project {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .workflow-description {
+        font-size: 0.9rem;
+        color: var(--neutral-foreground-hint, #616161);
+        line-height: 1.4;
+    }
+
+    .workflow-meta-row {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 0.825rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-top: 4px;
+    }
+
+    .meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .constant-owner-badge {
+        background: #eef4ff;
+        border: 1px solid #d0e1fd;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .owner-email {
+        color: var(--accent-fill-rest, #0078d4);
+        font-weight: 600;
+    }
+
+    .watchers-text {
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .stepper-pipeline {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 10px;
+    }
+
+    .pipeline-step-node {
+        display: flex;
+        gap: 16px;
+        position: relative;
+    }
+
+    .step-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 32px;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        z-index: 1;
+        transition: all 0.2s ease;
+    }
+
+    .step-circle-completed {
+        background: var(--success, #107c41);
+        color: white;
+    }
+
+    .step-circle-active {
+        background: var(--accent-fill-rest, #0078d4);
+        color: white;
+        box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.2);
+    }
+
+    .step-circle-pending {
+        background: var(--neutral-fill-secondary-rest, #edebe9);
+        color: var(--neutral-foreground-hint, #616161);
+    }
+
+    .step-connector {
+        flex: 1;
+        width: 2px;
+        min-height: 40px;
+        background: var(--neutral-stroke-divider, #edebe9);
+        margin: 4px 0;
+    }
+
+    .step-connector.connector-completed {
+        background: var(--success, #107c41);
+    }
+
+    .step-content {
+        flex: 1;
+        background: var(--neutral-fill-subtle-rest, #f9f9f9);
+        border: 1px solid var(--neutral-stroke-subtle, #f0f0f0);
+        border-radius: 6px;
+        padding: 12px 16px;
+    }
+
+    .step-active .step-content {
+        background: #f0f8ff;
+        border-color: #b3d8ff;
+    }
+
+    .step-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .step-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--neutral-foreground-rest, #242424);
+    }
+
+    .step-order-badge {
+        font-size: 0.75rem;
+        background: var(--neutral-fill-secondary-rest, #edebe9);
+        color: var(--neutral-foreground-hint, #616161);
+        padding: 1px 6px;
+        border-radius: 4px;
+    }
+
+    .step-status-tag {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-completed {
+        background: #e6f4ea;
+        color: #137333;
+    }
+
+    .status-active {
+        background: #e8f0fe;
+        color: #1a73e8;
+    }
+
+    .status-pending {
+        background: #f1f3f4;
+        color: #5f6368;
+    }
+
+    .step-owner-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-bottom: 6px;
+    }
+
+    .step-instruction {
+        font-size: 0.85rem;
+        color: var(--neutral-foreground-rest, #323130);
+        margin: 4px 0 8px 0;
+        line-height: 1.4;
+    }
+
+    /* Subtasks Panel */
+    .step-subtasks-panel {
+        background: #ffffff;
+        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin: 8px 0;
+    }
+
+    .subtasks-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-bottom: 6px;
+    }
+
+    .subtasks-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .subtasks-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .subtask-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.825rem;
+        padding: 2px 0;
+    }
+
+    .subtask-closed .subtask-title {
+        text-decoration: line-through;
+        color: var(--neutral-foreground-hint, #8a8886);
+    }
+
+    .subtask-title {
+        flex: 1;
+    }
+
+    .subtask-assignee-pill {
+        font-size: 0.725rem;
+        background: #f3f2f1;
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: #323130;
+    }
+
+    .subtask-date {
+        font-size: 0.725rem;
+        color: #707070;
+    }
+
+    .step-completion-note {
+        font-size: 0.85rem;
+        background: #f3fdf6;
+        border-left: 3px solid #107c41;
+        padding: 6px 10px;
+        border-radius: 0 4px 4px 0;
+        margin-top: 8px;
+        color: #242424;
+    }
+
+    .step-completed-time {
+        font-size: 0.75rem;
+        color: #616161;
+        margin-left: 4px;
+    }
+
+    .step-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        align-items: center;
+    }
+
+    .step-zero-trust-notice {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.825rem;
+        color: var(--neutral-foreground-hint, #616161);
+        background: #fff8e1;
+        padding: 4px 10px;
+        border-radius: 4px;
+        border: 1px solid #ffe082;
+    }
+
+    /* Modal Backdrop & Dialog */
+    .stepper-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(2px);
+    }
+
+    .stepper-modal-dialog {
+        background: var(--neutral-layer-card-container, #ffffff);
+        width: 90%;
+        max-width: 520px;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .stepper-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--neutral-stroke-divider, #edebe9);
+    }
+
+    .stepper-modal-body {
+        padding: 20px;
+    }
+
+    .modal-instruction {
+        font-size: 0.875rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-top: 0;
+        margin-bottom: 14px;
+        line-height: 1.4;
+    }
+
+    .stepper-modal-footer {
+        padding: 14px 20px;
+        background: var(--neutral-fill-secondary-rest, #f9f9f9);
+        border-top: 1px solid var(--neutral-stroke-divider, #edebe9);
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired]
+    public WorkflowEntity Workflow { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<WorkflowEntity> OnWorkflowUpdated { get; set; }
+
+    [Parameter]
+    public EventCallback<WorkflowEntity> OnEditWorkflow { get; set; }
+
+    private bool _isCompleteModalOpen;
+    private bool _isReassignModalOpen;
+    private bool _isAddSubtaskModalOpen;
+    private bool _isCancelModalOpen;
+
+    private TaskEntity? _targetStep;
+    private string _completionNotes = string.Empty;
+    private string _reassignEmail = string.Empty;
+    private string _reassignReason = string.Empty;
+    private string _cancelReason = string.Empty;
+
+    private string _newSubtaskTitle = string.Empty;
+    private string _newSubtaskAssignee = string.Empty;
+    private DateTime? _newSubtaskDueDate;
+
+    private string? _errorMessage;
+    private bool _isSubmitting;
+    private bool _isTenantAdmin;
+    private bool _canManage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Workflow != null && !string.IsNullOrWhiteSpace(CurrentUser.UserId))
+        {
+            _isTenantAdmin = await HierarchyAuth.IsTenantAdminAsync(Workflow.TenantId, CurrentUser.UserId);
+            _canManage = await WorkflowService.CanUserManageWorkflowAsync(Workflow.Level, Workflow.ProgramId, Workflow.ProjectId);
+        }
+        else
+        {
+            _isTenantAdmin = false;
+            _canManage = false;
+        }
+    }
+
+    private string GetPriorityColor(TaskPriorityEnum priority) => priority switch
+    {
+        TaskPriorityEnum.Urgent => "var(--error, #d13438)",
+        TaskPriorityEnum.High => "#d83b01",
+        TaskPriorityEnum.Medium => "#ffaa44",
+        _ => "var(--neutral-stroke-subtle, #8a8886)"
+    };
+
+    private bool CanToggleSubtask(TaskEntity step, SubTaskEntity sub)
+    {
+        if (_isTenantAdmin || CurrentUser.IsRootAdmin) return true;
+        if (string.Equals(CurrentUser.Email, Workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(CurrentUser.Email, step.AssigneeEmails, StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(CurrentUser.Email, sub.AssigneeEmails, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    private async Task ToggleSubtaskAsync(SubTaskEntity sub, bool isClosed)
+    {
+        try
+        {
+            var updated = await WorkflowService.ToggleSubTaskStatusAsync(new ToggleSubTaskStatusReqDto(sub.Id, isClosed));
+            sub.Status = updated.Status;
+            sub.EndDate = updated.EndDate;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+
+    private void PromptAddSubtask(TaskEntity step)
+    {
+        _targetStep = step;
+        _newSubtaskTitle = string.Empty;
+        _newSubtaskAssignee = string.Empty;
+        _newSubtaskDueDate = DateTime.UtcNow.AddDays(2);
+        _errorMessage = null;
+        _isAddSubtaskModalOpen = true;
+    }
+
+    private void CancelAddSubtask()
+    {
+        _isAddSubtaskModalOpen = false;
+        _targetStep = null;
+        _errorMessage = null;
+    }
+
+    private async Task ConfirmAddSubtaskAsync()
+    {
+        if (_targetStep is null) return;
+        if (string.IsNullOrWhiteSpace(_newSubtaskTitle))
+        {
+            _errorMessage = "Subtask title is required.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var req = new AddSubTaskToStepReqDto(
+                Workflow.Id,
+                _targetStep.Id,
+                _newSubtaskTitle.Trim(),
+                _newSubtaskAssignee.Trim(),
+                _newSubtaskDueDate
+            );
+
+            var created = await WorkflowService.AddSubTaskToStepAsync(req);
+            _targetStep.SubTasks.Add(created);
+            _isAddSubtaskModalOpen = false;
+            _targetStep = null;
+
+            await OnWorkflowUpdated.InvokeAsync(Workflow);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void PromptCompleteStep(TaskEntity step)
+    {
+        _targetStep = step;
+        _completionNotes = string.Empty;
+        _errorMessage = null;
+        _isCompleteModalOpen = true;
+    }
+
+    private void CancelCompleteStep()
+    {
+        _isCompleteModalOpen = false;
+        _targetStep = null;
+        _errorMessage = null;
+    }
+
+    private async Task ConfirmCompleteStepAsync()
+    {
+        if (_targetStep is null) return;
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var req = new CompleteWorkflowStepReqDto(
+                Workflow.Id,
+                _targetStep.Id,
+                _completionNotes
+            );
+
+            var updated = await WorkflowService.CompleteStepAsync(req);
+            _isCompleteModalOpen = false;
+            _targetStep = null;
+
+            await OnWorkflowUpdated.InvokeAsync(updated);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void PromptReassignStep(TaskEntity step)
+    {
+        _targetStep = step;
+        _reassignEmail = string.Empty;
+        _reassignReason = string.Empty;
+        _errorMessage = null;
+        _isReassignModalOpen = true;
+    }
+
+    private void CancelReassignStep()
+    {
+        _isReassignModalOpen = false;
+        _targetStep = null;
+        _errorMessage = null;
+    }
+
+    private async Task ConfirmReassignStepAsync()
+    {
+        if (_targetStep is null) return;
+
+        if (string.IsNullOrWhiteSpace(_reassignEmail) || !_reassignEmail.Contains('@'))
+        {
+            _errorMessage = "A valid new owner email address is required.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var req = new ReassignWorkflowStepReqDto(
+                Workflow.Id,
+                _targetStep.Id,
+                _reassignEmail.Trim(),
+                _reassignReason
+            );
+
+            var updated = await WorkflowService.ReassignStepAsync(req);
+            _isReassignModalOpen = false;
+            _targetStep = null;
+
+            await OnWorkflowUpdated.InvokeAsync(updated);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void PromptCancelStep(TaskEntity step)
+    {
+        _targetStep = step;
+        _cancelReason = string.Empty;
+        _errorMessage = null;
+        _isCancelModalOpen = true;
+    }
+
+    private void CancelCancelStep()
+    {
+        _isCancelModalOpen = false;
+        _targetStep = null;
+        _errorMessage = null;
+    }
+
+    private async Task ConfirmCancelStepAsync()
+    {
+        if (_targetStep is null) return;
+        if (string.IsNullOrWhiteSpace(_cancelReason))
+        {
+            _errorMessage = "A mandatory cancellation reason is required.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var req = new CancelWorkflowStepReqDto(
+                Workflow.Id,
+                _targetStep.Id,
+                _cancelReason.Trim()
+            );
+
+            var updated = await WorkflowService.CancelStepAsync(req);
+            _isCancelModalOpen = false;
+            _targetStep = null;
+
+            await OnWorkflowUpdated.InvokeAsync(updated);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task PromptResumeWorkflowAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var updated = await WorkflowService.ResumePausedWorkflowAsync(new ResumePausedWorkflowReqDto(Workflow.Id));
+            await OnWorkflowUpdated.InvokeAsync(updated);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

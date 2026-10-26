@@ -1,15 +1,15 @@
 # 11. API Reference & Integration Guide
 
 > **Target Audience**: Backend Engineers, Integration Developers, DevOps, and External Service Consumers.  
-> **Key Objective**: Comprehensive specification of all Minimal API endpoints in `BlazorFluent.Api`, authentication protocols, token exchange, payload contracts, rate limiting, and webhook HMAC verification.
+> **Key Objective**: Comprehensive specification of all Minimal API endpoints in `BlazorEnterprise.Api`, authentication protocols, token exchange, payload contracts, rate limiting, and webhook HMAC verification.
 
 ---
 
-## 🌐 1. Architectural Role of `BlazorFluent.Api`
+## 🌐 1. Architectural Role of `BlazorEnterprise.Api`
 
-The `BlazorFluent.Api` project functions as an **autonomous, stateless compute engine and API gateway**. In accordance with [ADR 001: Stateless API Gateway Pattern](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/adr/001-stateless-api-gateway-pattern.md), it:
-- Strictly references `BlazorFluent.Shared` and `BlazorFluent.RulesEngine`.
-- Has **zero dependencies** on `BlazorFluent.Persistence` or relational databases.
+The `BlazorEnterprise.Api` project functions as an **autonomous, stateless compute engine and API gateway**. In accordance with [ADR 001: Stateless API Gateway Pattern](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/adr/001-stateless-api-gateway-pattern.md), it:
+- Strictly references `BlazorEnterprise.Shared` and `BlazorEnterprise.RulesEngine`.
+- Has **zero dependencies** on `BlazorEnterprise.Persistence` or relational databases.
 - Offloads CPU-intensive computations (DAG cycle detection, schedule calculation, bulk CSV/Excel transformations, and proprietary payload encryption/decryption) away from Blazor Server SignalR circuits.
 
 ---
@@ -185,6 +185,6 @@ public static bool VerifyWebhookSignature(string payload, string signatureHeader
 ---
 
 *Related Documentation*:
-- [02. Architecture & Project Structure](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture-and-Project-Structure.md)
-- [03. Security Model & Defense-in-Depth](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model-and-Defense-in-Depth.md)
-- [ADR 001: Stateless API Gateway Pattern](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/adr/001-stateless-api-gateway-pattern.md)
+- [02. Architecture & Project Structure](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/02-Architecture-and-Project-Structure.md)
+- [03. Security Model & Defense-in-Depth](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/03-Security-Model-and-Defense-in-Depth.md)
+- [ADR 001: Stateless API Gateway Pattern](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/adr/001-stateless-api-gateway-pattern.md)

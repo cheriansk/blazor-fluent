@@ -75,11 +75,11 @@ namespace TemplateGuard.Analyzers
         public static readonly DiagnosticDescriptor RuleTg006 = new(
             id: "TG006",
             title: "DataList enum type name must end with 'Enum' suffix",
-            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all enums in BlazorEnterprise.Shared.DataListTypes must end with the 'Enum' suffix.",
             category: "Naming",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "All enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            description: "All enums in BlazorEnterprise.Shared.DataListTypes must end with the 'Enum' suffix.",
             helpLinkUri: HelpBaseUrl + "#tg006");
 
         public static readonly DiagnosticDescriptor RuleTg007 = new(
@@ -159,7 +159,7 @@ namespace TemplateGuard.Analyzers
             category: "Architecture",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "All enums in BlazorFluent.Shared.DataListTypes must declare their taxonomy category via [LifecycleEnum] or [ClassificationEnum].",
+            description: "All enums in BlazorEnterprise.Shared.DataListTypes must declare their taxonomy category via [LifecycleEnum] or [ClassificationEnum].",
             helpLinkUri: HelpBaseUrl + "#tg014");
 
         public static readonly DiagnosticDescriptor RuleTg015 = new(
@@ -224,10 +224,10 @@ namespace TemplateGuard.Analyzers
                 var assemblyName = compilation.AssemblyName ?? string.Empty;
 
                 bool isCoreAssembly = assemblyName.EndsWith(".Core", StringComparison.OrdinalIgnoreCase) ||
-                                      assemblyName.Equals("BlazorFluent.Core", StringComparison.OrdinalIgnoreCase);
+                                      assemblyName.Equals("BlazorEnterprise.Core", StringComparison.OrdinalIgnoreCase);
 
                 bool isPersistenceAssembly = assemblyName.EndsWith(".Persistence", StringComparison.OrdinalIgnoreCase) ||
-                                            assemblyName.Equals("BlazorFluent.Persistence", StringComparison.OrdinalIgnoreCase);
+                                            assemblyName.Equals("BlazorEnterprise.Persistence", StringComparison.OrdinalIgnoreCase);
 
                 var concreteEntitiesInSource = new ConcurrentBag<INamedTypeSymbol>();
                 var validatorTargetTypes = new ConcurrentBag<string>();
@@ -315,7 +315,7 @@ namespace TemplateGuard.Analyzers
                         foreach (var refAssembly in endCtx.Compilation.SourceModule.ReferencedAssemblySymbols)
                         {
                             if (refAssembly.Name.EndsWith(".Core", StringComparison.OrdinalIgnoreCase) ||
-                                refAssembly.Name.Equals("BlazorFluent.Core", StringComparison.OrdinalIgnoreCase))
+                                refAssembly.Name.Equals("BlazorEnterprise.Core", StringComparison.OrdinalIgnoreCase))
                             {
                                 CollectEntitiesFromNamespace(refAssembly.GlobalNamespace, allEntities);
                             }
@@ -325,7 +325,7 @@ namespace TemplateGuard.Analyzers
                         {
                             if (!entity.IsAbstract && InheritsFrom(entity, "BaseEntity") && !configurations.Contains(entity.Name))
                             {
-                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName("BlazorFluent.Persistence.Context.AppDbContext");
+                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName("BlazorEnterprise.Persistence.Context.AppDbContext");
                                 var location = appDbContextSymbol?.Locations.FirstOrDefault() ?? Location.None;
                                 endCtx.ReportDiagnostic(Diagnostic.Create(RuleTg010, location, entity.Name));
                             }
@@ -538,7 +538,7 @@ namespace TemplateGuard.Analyzers
             if (namedType.IsImplicitlyDeclared || namedType.Name.StartsWith("<")) return;
 
             var ns = namedType.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-            var isDomainNamespace = ns.Contains(".Core.Domain") || ns.StartsWith("BlazorFluent.Core.Domain");
+            var isDomainNamespace = ns.Contains(".Core.Domain") || ns.StartsWith("BlazorEnterprise.Core.Domain");
             var isValueObjectNamespace = ns.EndsWith(".ValueObjects") || ns.Contains(".ValueObjects.");
 
             // Exclude value objects (e.g. Address) and nested definitions/validators
@@ -781,7 +781,7 @@ namespace TemplateGuard.Analyzers
             if (filePath != null)
             {
                 if (filePath.EndsWith("/DataListExtensions.cs", StringComparison.OrdinalIgnoreCase) ||
-                    filePath.Contains("/BlazorFluent.Shared/Extensions/") ||
+                    filePath.Contains("/BlazorEnterprise.Shared/Extensions/") ||
                     filePath.Contains("/Migrations/") ||
                     filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
                 {

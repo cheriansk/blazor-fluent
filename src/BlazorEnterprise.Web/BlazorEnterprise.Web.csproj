@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>BlazorEnterprise</RootNamespace>
+		<AssemblyName>BlazorEnterprise.Web</AssemblyName>
+		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+		<NoWarn>$(NoWarn);EXTEXP0018</NoWarn>
+		<UseRazorSourceGenerator Condition="'$(DesignTimeBuild)' == 'true'">true</UseRazorSourceGenerator>
+		<WarningsAsErrors>CS0108;RZ10012;CS0618</WarningsAsErrors>
+		<UserSecretsId>dotnet-BlazorEnterprise.Web-7e9b21a4-9214-4a25-b42e-9d2a6b291d4e</UserSecretsId>
+	</PropertyGroup>
+
+	<!-- Package References preserved -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
+		<PackageReference Include="Blazored.FluentValidation" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
+		<PackageReference Include="Azure.Identity" />
+	</ItemGroup>
+
+	<!-- Clean peer project references under src/ -->
+	<ItemGroup>
+		<ProjectReference Include="..\BlazorEnterprise.Shared\BlazorEnterprise.Shared.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.Core\BlazorEnterprise.Core.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.Persistence\BlazorEnterprise.Persistence.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.Infrastructure\BlazorEnterprise.Infrastructure.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.Jobs\BlazorEnterprise.Jobs.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.UI.Material\BlazorEnterprise.UI.Material.csproj" />
+		<ProjectReference Include="..\BlazorEnterprise.UI.Templates\BlazorEnterprise.UI.Templates.csproj" />
+	</ItemGroup>
+
+</Project>

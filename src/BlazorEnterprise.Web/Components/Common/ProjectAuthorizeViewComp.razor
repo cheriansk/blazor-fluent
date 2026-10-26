@@ -1,0 +1,68 @@
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@inject IProjectAuthorizationService ProjectAuth
+@inject ICurrentUser CurrentUser
+
+@if (_isEvaluating)
+{
+    @if (LoadingContent is not null)
+    {
+        @LoadingContent
+    }
+    else
+    {
+        <FluentSpinner Style="margin: 12px auto;" />
+    }
+}
+else if (_isAuthorized)
+{
+    @Authorized?.Invoke(_userRole ?? ProjectRoleEnum.ReadOnly)
+}
+else
+{
+    @if (NotAuthorized is not null)
+    {
+        @NotAuthorized?.Invoke(_userRole)
+    }
+}
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    [Parameter] public ProjectRoleEnum MinimumRole { get; set; } = ProjectRoleEnum.ReadOnly;
+    [Parameter] public RenderFragment<ProjectRoleEnum>? Authorized { get; set; }
+    [Parameter] public RenderFragment<ProjectRoleEnum?>? NotAuthorized { get; set; }
+    [Parameter] public RenderFragment? LoadingContent { get; set; }
+
+    private bool _isEvaluating = true;
+    private bool _isAuthorized;
+    private ProjectRoleEnum? _userRole;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isEvaluating = true;
+
+        // Level 2 Zero-Trust Guardrail: Must be an authenticated human tenant user in a customer tenant workspace.
+        // SystemDaemons and Root Tenant contexts have zero access to project workspaces.
+        if (!CurrentUser.IsAuthenticated_RegularTenant_User)
+        {
+            _userRole = null;
+            _isAuthorized = false;
+            _isEvaluating = false;
+            return;
+        }
+
+        if (ProjectId == Guid.Empty)
+        {
+            var authorized = await ProjectAuth.GetAuthorizedProjectIdsAsync(MinimumRole);
+            _isAuthorized = authorized.Count > 0;
+            _userRole = _isAuthorized ? MinimumRole : null;
+        }
+        else
+        {
+            _userRole = await ProjectAuth.GetCurrentUserProjectRoleAsync(ProjectId);
+            _isAuthorized = _userRole.HasValue && _userRole.Value.Satisfies(MinimumRole);
+        }
+
+        _isEvaluating = false;
+    }
+}

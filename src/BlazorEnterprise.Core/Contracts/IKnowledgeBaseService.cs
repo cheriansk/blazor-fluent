@@ -1,0 +1,30 @@
+using BlazorEnterprise.Shared.DataListTypes;
+using BlazorEnterprise.Core.Dtos;
+
+namespace BlazorEnterprise.Core.Contracts;
+
+public interface IKnowledgeBaseService
+{
+    Task<List<KnowledgeArticleListDto>> GetArticlesAsync(
+        string? searchTerm = null,
+        KnowledgeArticleStatusEnum? status = null,
+        string? labelFilter = null,
+        bool? isGlobalOnly = null,
+        CancellationToken cancellationToken = default);
+
+    Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId, CancellationToken cancellationToken = default);
+
+    Task<Guid> CreateArticleAsync(CreateArticleDto dto, CancellationToken cancellationToken = default);
+
+    Task UpdateArticleAsync(UpdateArticleDto dto, CancellationToken cancellationToken = default);
+
+    Task<bool> ApproveArticleAsync(Guid articleId, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteArticleAsync(Guid articleId, CancellationToken cancellationToken = default);
+
+    Task<List<UserDto>> GetAvailableReviewersAsync(CancellationToken cancellationToken = default);
+
+    Task<List<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default);
+}
+
+public record UserDto(string Id, string Email, string FullName, UserTypeEnum UserType);

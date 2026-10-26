@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
     Generates an enterprise-grade HTML Data Dictionary portal and Markdown specification
-    for BlazorFluent, modeled after modern enterprise architecture data dictionary standards.
+    for BlazorEnterprise, modeled after modern enterprise architecture data dictionary standards.
 
 .DESCRIPTION
-    Scans the C# domain entity layer (src/BlazorFluent.Core/Domain) and AppDbContext.cs.
+    Scans the C# domain entity layer (src/BlazorEnterprise.Core/Domain) and AppDbContext.cs.
     Extracts entities, base classes, marker interfaces, properties, foreign keys, navigation
     properties, and C# XML doc comments. Generates a standalone, multi-page HTML portal
     in docs/data-dictionary/ with:
@@ -25,10 +25,10 @@
     Output path for the Markdown data model. Defaults to "docs/DATA_MODEL.md".
 
 .PARAMETER DomainPath
-    Path to Domain entities. Defaults to "src/BlazorFluent.Core/Domain".
+    Path to Domain entities. Defaults to "src/BlazorEnterprise.Core/Domain".
 
 .PARAMETER DbContextPath
-    Path to AppDbContext.cs. Defaults to "src/BlazorFluent.Persistence/Context/AppDbContext.cs".
+    Path to AppDbContext.cs. Defaults to "src/BlazorEnterprise.Persistence/Context/AppDbContext.cs".
 
 .EXAMPLE
     pwsh scripts/Generate-DataModelDocs.ps1
@@ -41,8 +41,8 @@ param(
     [string]$Format = "All",
     [string]$OutputDir = "docs/data-dictionary",
     [string]$MarkdownPath = "docs/DATA_MODEL.md",
-    [string]$DomainPath = "src/BlazorFluent.Core/Domain",
-    [string]$DbContextPath = "src/BlazorFluent.Persistence/Context/AppDbContext.cs"
+    [string]$DomainPath = "src/BlazorEnterprise.Core/Domain",
+    [string]$DbContextPath = "src/BlazorEnterprise.Persistence/Context/AppDbContext.cs"
 )
 
 Set-StrictMode -Off
@@ -296,8 +296,8 @@ Write-Host "Resolved $($typeDict.Count) total types across domain." -ForegroundC
 Write-Host "Scanning Razor screens and field usages across UI layer..." -ForegroundColor Cyan
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$webPath = Join-Path $repoRoot "src\BlazorFluent.Web"
-$uiTemplatesPath = Join-Path $repoRoot "src\BlazorFluent.UI.Templates"
+$webPath = Join-Path $repoRoot "src\BlazorEnterprise.Web"
+$uiTemplatesPath = Join-Path $repoRoot "src\BlazorEnterprise.UI.Templates"
 
 $razorFiles = @()
 if (Test-Path $webPath) {
@@ -359,7 +359,7 @@ foreach ($rf in $razorFiles) {
     # Title extraction
     $screenTitle = $rf.Name -replace '\.razor$', ''
     if ($rfContent -match '<PageTitle>(?<title>.*?)</PageTitle>') {
-        $rawTitle = $Matches['title'] -replace '&amp;', '&' -replace '\s*-\s*BlazorFluent.*$', '' -replace '\s*-\s*SAMPLE PAGE ONLY.*$', ''
+        $rawTitle = $Matches['title'] -replace '&amp;', '&' -replace '\s*-\s*BlazorEnterprise.*$', '' -replace '\s*-\s*SAMPLE PAGE ONLY.*$', ''
         if ($rawTitle.Trim().Length -gt 0) { $screenTitle = $rawTitle.Trim() }
     }
 
@@ -693,7 +693,7 @@ function setActive(el) {
     $ovHtml = [System.Text.StringBuilder]::new()
     [void]$ovHtml.AppendLine('<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="styles.css"></head><body>')
     [void]$ovHtml.AppendLine('<div class="page-container">')
-    [void]$ovHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorFluent Monolith</div></div></div>')
+    [void]$ovHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorEnterprise Monolith</div></div></div>')
 
     # Stat Cards
     $screensWithEntitiesCount = ($screens | Where-Object { $_.EntityUsages.Count -gt 0 }).Count
@@ -715,7 +715,7 @@ function setActive(el) {
     [void]$ovHtml.AppendLine('<div class="card">')
     [void]$ovHtml.AppendLine('<div class="card-title">The 3-Tier Enterprise Entity Framework</div>')
     [void]$ovHtml.AppendLine('<div class="desc-box">')
-    [void]$ovHtml.AppendLine('<p>BlazorFluent applies strict zero-trust multi-tenancy, soft deletion, and row-level auditing through a standardized three-tier inheritance model:</p>')
+    [void]$ovHtml.AppendLine('<p>BlazorEnterprise applies strict zero-trust multi-tenancy, soft deletion, and row-level auditing through a standardized three-tier inheritance model:</p>')
     [void]$ovHtml.AppendLine('<ul style="margin: 8px 0 12px 20px;">')
     [void]$ovHtml.AppendLine('<li><b>Tier 1 &mdash; Architectural Markers (<code>IMarkerEntity</code>)</b>: Interface gates driving EF Core query filters and interceptors (<code>ITenantEntity</code>, <code>ISoftDeletableEntity</code>, <code>IAuditableEntity</code>, <code>IProjectScopedEntity</code>).</li>')
     [void]$ovHtml.AppendLine('<li><b>Tier 2 &mdash; Reusable Base Classes</b>: Sequential UUIDv7 primary keys (<code>BaseEntity</code>), audit timestamps (<code>AuditableEntity</code>), tenant write barriers (<code>TenantAuditableEntity</code>), and work item baselines (<code>BaseTaskEntity</code>).</li>')
@@ -727,7 +727,7 @@ function setActive(el) {
     [void]$ovHtml.AppendLine('<div class="card">')
     [void]$ovHtml.AppendLine('<div class="card-title">🖥️ UI Screen & Field Binding Integration (Presentation Layer Parity)</div>')
     [void]$ovHtml.AppendLine('<div class="desc-box">')
-    [void]$ovHtml.AppendLine("<p>BlazorFluent indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>")
+    [void]$ovHtml.AppendLine("<p>BlazorEnterprise indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>")
     [void]$ovHtml.AppendLine('<ul style="margin: 8px 0 12px 20px;">')
     [void]$ovHtml.AppendLine("<li><b>$($screens.Count) Screens Cataloged</b>: Across routed pages, modal dialogs, drawers, and multi-tenant settings tabs.</li>")
     [void]$ovHtml.AppendLine("<li><b>$entitiesWithScreens Entities Active in UI</b>: Every entity page documents its screens and exact property bindings (forms, data grids, and audit buttons).</li>")
@@ -760,7 +760,7 @@ function setActive(el) {
     $rpHtml = [System.Text.StringBuilder]::new()
     [void]$rpHtml.AppendLine('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Razor Screens Dictionary</title><link rel="stylesheet" href="styles.css"></head><body>')
     [void]$rpHtml.AppendLine('<div class="page-container">')
-    [void]$rpHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Razor Screens & Component Catalog</h1><div class="breadcrumb">Presentation Layer Usage Matrix &bull; BlazorFluent</div></div></div>')
+    [void]$rpHtml.AppendLine('<div class="page-header"><div><h1 class="entity-title">Razor Screens & Component Catalog</h1><div class="breadcrumb">Presentation Layer Usage Matrix &bull; BlazorEnterprise</div></div></div>')
     
     # KPI Grid
     [void]$rpHtml.AppendLine('<div class="stat-grid">')
@@ -1205,14 +1205,14 @@ window.addEventListener('keydown', function(e) {
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>BlazorFluent Data Dictionary</title>
+    <title>BlazorEnterprise Data Dictionary</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body style="overflow: hidden;">
     <header class="top-header">
         <div class="brand">
             <span class="brand-badge">Enterprise Edition</span>
-            <span>BlazorFluent Data Dictionary</span>
+            <span>BlazorEnterprise Data Dictionary</span>
         </div>
         <nav class="nav-tabs">
             <a href="overview.html" target="contentFrame" class="nav-tab active" onclick="switchNav(this)">📊 Data Model</a>
@@ -1251,13 +1251,13 @@ if ($Format -eq "Markdown" -or $Format -eq "All") {
     [void]$doc.AppendLine("")
     [void]$doc.AppendLine("> [!NOTE]")
     [void]$doc.AppendLine("> **Automated Specification**: This document is generated from source code by `scripts/Generate-DataModelDocs.ps1`.")
-    [void]$doc.AppendLine("> An interactive HTML portal version is available at [`docs/data-dictionary/index.html`](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/data-dictionary/index.html).")
+    [void]$doc.AppendLine("> An interactive HTML portal version is available at [`docs/data-dictionary/index.html`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/data-dictionary/index.html).")
     [void]$doc.AppendLine("")
     [void]$doc.AppendLine("---")
     [void]$doc.AppendLine("")
     [void]$doc.AppendLine("## 1. Architectural Foundation: The 3-Tier Entity Model")
     [void]$doc.AppendLine("")
-    [void]$doc.AppendLine("BlazorFluent enforces strict zero-trust multi-tenancy and audit compliance via a 3-tier entity taxonomy:")
+    [void]$doc.AppendLine("BlazorEnterprise enforces strict zero-trust multi-tenancy and audit compliance via a 3-tier entity taxonomy:")
     [void]$doc.AppendLine("1. **Tier 1: Architectural Marker Interfaces (`IMarkerEntity`)**: Compile-time gates and EF Core interceptor drivers (`ITenantEntity`, `IGlobalEntity`, `ISoftDeletableEntity`, `IProjectScopedEntity`, `IAuditableEntity`, `IEffectiveDatedEntity`, `IVersionedEntity`).")
     [void]$doc.AppendLine("2. **Tier 2: Framework Base Classes**: Reusable abstractions encapsulating sequential UUIDv7 primary keys (`BaseEntity`), Level 1 audit properties (`AuditableEntity`), tenant isolation barriers (`TenantAuditableEntity`), work items (`BaseTaskEntity`), and temporal schedules (`BaseCalendarEntity`).")
     [void]$doc.AppendLine("3. **Tier 3: Domain Entities**: Strongly-typed business objects executing inside isolated database schemas and bounded contexts.")

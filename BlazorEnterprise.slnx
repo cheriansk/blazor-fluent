@@ -1,0 +1,36 @@
+<Solution>
+  <Folder Name="/src/">
+    <File Path="Scripts.txt" />
+    <Project Path="tools/src/TemplateGuard.Analyzers/TemplateGuard.Analyzers.csproj" />
+    <Project Path="tools/src/TemplateGuard.Tool/TemplateGuard.Tool.csproj" />
+  </Folder>
+  <Folder Name="/src/BackEnd/">
+    <Project Path="src/BlazorEnterprise.Api/BlazorEnterprise.Api.csproj" />
+    <Project Path="src/BlazorEnterprise.RulesEngine/BlazorEnterprise.RulesEngine.csproj" />
+  </Folder>
+  <Folder Name="/src/FrontEnd/">
+    <Project Path="src/BlazorEnterprise.Core/BlazorEnterprise.Core.csproj" />
+    <Project Path="src/BlazorEnterprise.Infrastructure/BlazorEnterprise.Infrastructure.csproj" />
+    <Project Path="src/BlazorEnterprise.Jobs/BlazorEnterprise.Jobs.csproj" />
+    <Project Path="src/BlazorEnterprise.Persistence/BlazorEnterprise.Persistence.csproj" />
+    <Project Path="src/BlazorEnterprise.Web/BlazorEnterprise.Web.csproj" />
+    <Project Path="src/BlazorEnterprise.Worker/BlazorEnterprise.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Orchestrator/">
+    <Project Path="src/BlazorEnterprise.AppHost/BlazorEnterprise.AppHost.csproj" />
+    <Project Path="src/BlazorEnterprise.ServiceDefaults/BlazorEnterprise.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/BlazorEnterprise.Shared/BlazorEnterprise.Shared.csproj" />
+    <Project Path="src/BlazorEnterprise.UI.Material/BlazorEnterprise.UI.Material.csproj" />
+    <Project Path="src/BlazorEnterprise.UI.Templates/BlazorEnterprise.UI.Templates.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BlazorEnterprise.Benchmarks/BlazorEnterprise.Benchmarks.csproj" />
+    <Project Path="tests/BlazorEnterprise.Core.Tests/BlazorEnterprise.Core.Tests.csproj" />
+    <Project Path="tests/BlazorEnterprise.Infrastructure.Tests/BlazorEnterprise.Infrastructure.Tests.csproj" />
+    <Project Path="tests/BlazorEnterprise.Jobs.Tests/BlazorEnterprise.Jobs.Tests.csproj" />
+    <Project Path="tests/BlazorEnterprise.Persistence.Tests/BlazorEnterprise.Persistence.Tests.csproj" />
+    <Project Path="tests/BlazorEnterprise.Web.Tests/BlazorEnterprise.Web.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,92 @@
+@inherits ErrorBoundaryBase
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IAuditService AuditService
+@inject ILogger<AppErrorBoundaryComp> Logger
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else if (ErrorContent is not null)
+{
+    @ErrorContent(CurrentException)
+}
+else
+{
+    <FluentCard Style="margin: 20px; border-left: 4px solid var(--error);">
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: center;">
+                <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
+                <div>
+                    <FluentLabel Typo="Typography.H5" Style="color: var(--error);">Something went wrong</FluentLabel>
+                    <FluentLabel Typo="Typography.Body">
+                        An unexpected error occurred while rendering this page. The technical details have been recorded.
+                    </FluentLabel>
+                </div>
+            </FluentStack>
+
+            <FluentMessageBar Intent="MessageBarIntent.Error" AllowDismiss="false">
+                <strong>Incident Reference:</strong> <code>@(_errorReferenceId ?? "Recording incident...")</code>
+            </FluentMessageBar>
+
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              IconStart="@(new Icons.Regular.Size16.ArrowCounterclockwise())"
+                              OnClick="@RecoverAndReload">
+                    Try Again
+                </FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Subtle"
+                              IconStart="@(new Icons.Regular.Size16.Home())"
+                              Href="/">
+                    Go to Home
+                </FluentButton>
+            </FluentStack>
+        </FluentStack>
+    </FluentCard>
+}
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private ITenantContext TenantContext { get; set; } = default!;
+    [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
+
+    private string? _errorReferenceId;
+
+    protected override async Task OnErrorAsync(Exception exception)
+    {
+        var currentUri = NavigationManager.Uri;
+        var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "none";
+        var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "anonymous";
+
+        try
+        {
+            _errorReferenceId = await AuditService.LogExceptionAsync(
+                exception,
+                $"Razor Page Rendering Error at URL: {currentUri} (Tenant: {tenantId}, User: {userId})",
+                AuditSeverityEnum.Critical);
+        }
+        catch (Exception logEx)
+        {
+            Logger.LogCritical(logEx, "Failed to log UI exception to AuditService. Original message: {Message}", exception.Message);
+            _errorReferenceId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        }
+
+        Logger.LogError(
+            exception,
+            "Razor Page Rendering Error: Incident='{IncidentRef}', URL='{CurrentUri}', Tenant='{TenantId}', User='{UserId}', ExceptionType='{ExceptionType}': {ErrorMessage}",
+            _errorReferenceId,
+            currentUri,
+            tenantId,
+            userId,
+            exception.GetType().FullName,
+            exception.Message);
+    }
+
+    private void RecoverAndReload()
+    {
+        _errorReferenceId = null;
+        Recover();
+    }
+}

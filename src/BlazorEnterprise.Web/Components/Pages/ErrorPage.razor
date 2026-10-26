@@ -1,0 +1,70 @@
+@page "/Error"
+@attribute [AllowAnonymous]
+@using System.Diagnostics
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IAuditService AuditService
+@inject ILogger<ErrorPage> Logger
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+
+<PageTitle>Unexpected Error</PageTitle>
+
+<FluentCard Style="max-width: 600px; margin: 80px auto; padding: 32px;">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: center;">
+            <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
+            <div>
+                <FluentLabel Typo="Typography.H4" Style="color: var(--error);">Something went wrong</FluentLabel>
+                <FluentLabel Typo="Typography.Body">
+                    An unexpected error occurred. Our team has been notified automatically.
+                </FluentLabel>
+            </div>
+        </FluentStack>
+
+        @if (_errorId is not null)
+        {
+            <FluentMessageBar Intent="MessageBarIntent.Error" AllowDismiss="false">
+                <strong>Incident Reference:</strong>&nbsp;<code>@_errorId</code> — quote this reference when contacting support.
+            </FluentMessageBar>
+        }
+
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+            <FluentButton Appearance="ButtonAppearance.Primary"
+                          IconStart="@(new Icons.Regular.Size16.Home())"
+                          Href="/">
+                Return to Home
+            </FluentButton>
+        </FluentStack>
+    </FluentStack>
+</FluentCard>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? _errorId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var exFeature = HttpContext?.Features
+            .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+
+        if (exFeature?.Error is { } ex)
+        {
+            try
+            {
+                _errorId = await AuditService.LogExceptionAsync(ex, "Unhandled HTTP Exception");
+            }
+            catch (Exception logEx)
+            {
+                Logger.LogCritical(logEx, "Failed to log exception from /Error page.");
+                _errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+            }
+        }
+        else
+        {
+            _errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        }
+    }
+}

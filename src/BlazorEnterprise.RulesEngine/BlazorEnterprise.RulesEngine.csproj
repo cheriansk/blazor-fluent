@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BlazorEnterprise.RulesEngine</RootNamespace>
+    <AssemblyName>BlazorEnterprise.RulesEngine</AssemblyName>
+    <Description>Proprietary calculation algorithms, OpenXML/CSV parsing engine, DAG cycle detection, and rollup formulas. 100% in-memory CPU execution with zero database dependencies.</Description>
+    <WarningsAsErrors>CS0108</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorEnterprise.Shared\BlazorEnterprise.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

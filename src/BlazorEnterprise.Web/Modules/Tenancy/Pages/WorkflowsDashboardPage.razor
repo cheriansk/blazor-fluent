@@ -1,0 +1,411 @@
+@page "/workflows"
+@attribute [RequiredClearance(ProjectRoleEnum.Lead)]
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Core.Dtos
+@using Microsoft.AspNetCore.Authorization
+@inject IWorkflowService WorkflowService
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject IProgramService ProgramService
+@inject ITenantService TenantService
+@inject NavigationManager Navigation
+
+<PageTitle>Enterprise Workflows — Delivery & Governance</PageTitle>
+
+<div class="workflows-page-container">
+    @* Page Header *@
+    <div class="workflows-page-header">
+        <div class="workflows-header-left">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4px">
+                <FluentLink Href="/">Home</FluentLink>
+                <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
+                <FluentLink>Governance</FluentLink>
+                <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
+                <FluentLink>Workflows</FluentLink>
+            </FluentStack>
+            <div class="workflows-header-title-row">
+                <FluentIcon Value="@(new Icons.Filled.Size24.Flowchart())" Color="Color.Default" />
+                <FluentLabel Typo="Typography.H3">Sequential Workflows</FluentLabel>
+            </div>
+            <p class="workflows-subtitle">
+                Stage-gated activities orchestrated by constant workflow owners, with discrete task steps and delegated team subtasks across Tenant, Program, and Project scopes.
+            </p>
+        </div>
+
+        @if (_canCreateWorkflow)
+        {
+            <div class="workflows-header-actions">
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              IconStart="@(new Icons.Regular.Size16.Add())"
+                              OnClick="@OpenCreateModal">
+                    New Workflow
+                </FluentButton>
+            </div>
+        }
+    </div>
+
+    @* KPI Summary Metric Cards *@
+    <div class="workflows-kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-blue">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Flowchart())" Color="Color.Default" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_activeWorkflowsCount</span>
+                <span class="kpi-label">Active Workflows</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-green">
+                <FluentIcon Value="@(new Icons.Filled.Size20.Checkmark())" Color="Color.Success" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_completedWorkflowsCount</span>
+                <span class="kpi-label">Completed Workflows</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-amber">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Clock())" Color="Color.Warning" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_activeStepsCount</span>
+                <span class="kpi-label">Steps Awaiting Sign-Off</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-purple">
+                <FluentIcon Value="@(new Icons.Regular.Size20.TaskListSquareLtr())" Color="Color.Default" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_totalDelegatedSubtasksCount</span>
+                <span class="kpi-label">Delegated Subtasks</span>
+            </div>
+        </div>
+    </div>
+
+    @* Filters Toolbar *@
+    <div class="workflows-filters-toolbar">
+        <div class="scope-tabs-bar">
+            <FluentButton Appearance="@(_selectedScope == "all" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          OnClick="@(() => SetScopeFilter("all"))">
+                All Scopes (@_allWorkflows.Count)
+            </FluentButton>
+            <FluentButton Appearance="@(_selectedScope == "tenant" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          IconStart="@(new Icons.Regular.Size16.Building())"
+                          OnClick="@(() => SetScopeFilter("tenant"))">
+                Tenant Governance (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Tenant))
+            </FluentButton>
+            <FluentButton Appearance="@(_selectedScope == "program" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          IconStart="@(new Icons.Regular.Size16.Folder())"
+                          OnClick="@(() => SetScopeFilter("program"))">
+                Program Strategic (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Program))
+            </FluentButton>
+            <FluentButton Appearance="@(_selectedScope == "project" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          IconStart="@(new Icons.Regular.Size16.TaskListSquareLtr())"
+                          OnClick="@(() => SetScopeFilter("project"))">
+                Project Delivery (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Project))
+            </FluentButton>
+        </div>
+
+        <div class="secondary-filters-row">
+            @* Program Switcher (Visible when Program scope selected) *@
+            @if (_selectedScope == "program" && _availablePrograms.Count > 0)
+            {
+                <div class="min-w-200">
+                    <FluentSelect TOption="ProgramEntity"
+                                  TValue="string"
+                                  Items="@_availablePrograms"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id.ToString())"
+                                  Value="@(_filterProgram?.Id.ToString())"
+                                  ValueChanged="OnProgramFilterChanged"
+                                  Placeholder="Filter by program..." />
+                </div>
+            }
+
+            @* Project Switcher (Visible when Project scope selected) *@
+            @if (_selectedScope == "project" && _availableProjects.Count > 0)
+            {
+                <div class="min-w-200">
+                    <FluentSelect TOption="ProjectEntity"
+                                  TValue="string"
+                                  Items="@_availableProjects"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id.ToString())"
+                                  Value="@(_filterProject?.Id.ToString())"
+                                  ValueChanged="OnProjectFilterChanged"
+                                  Placeholder="Filter by project..." />
+                </div>
+            }
+
+            @* Status Filter *@
+            <div class="min-w-140">
+                <FluentSelect TOption="string"
+                              TValue="string"
+                              Items="@_statusOptions"
+                              @bind-Value="_selectedStatusFilter"
+                              @bind-Value:after="ApplyFilters" />
+            </div>
+
+            @* Search Input *@
+            <div class="flex-1 min-w-200">
+                <FluentTextInput @bind-Value="_searchTerm"
+                                 @bind-Value:after="ApplyFilters"
+                                 Placeholder="Search by title, workflow owner, or instruction..."
+                                 Class="full-width">
+                    <StartTemplate>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" Color="Color.Primary" />
+                    </StartTemplate>
+                </FluentTextInput>
+            </div>
+        </div>
+    </div>
+
+    @* Workflow Stepper Feed *@
+    @if (_isLoading)
+    {
+        <div class="text-center p-5">
+            <FluentSpinner Size="@SpinnerSize.Medium" />
+            <p class="mt-3 text-hint">Loading workflows...</p>
+        </div>
+    }
+    else if (_filteredWorkflows.Count == 0)
+    {
+        <div class="empty-workflows-panel">
+            <FluentIcon Value="@(new Icons.Regular.Size32.Flowchart())" Color="Color.Primary" />
+            <FluentLabel Typo="Typography.H6" Class="mt-3">No Workflows Found</FluentLabel>
+            <p class="text-hint max-w-460 m-auto font-size-sm">
+                No workflows match the selected scope and criteria. Launch a new workflow to orchestrate stage-gated delivery with dedicated step owners and delegated subtasks.
+            </p>
+            @if (_canCreateWorkflow)
+            {
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              IconStart="@(new Icons.Regular.Size16.Add())"
+                              OnClick="@OpenCreateModal">
+                    Launch First Workflow
+                </FluentButton>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="workflows-list-feed">
+            @foreach (var wf in _filteredWorkflows)
+            {
+                <WorkflowStepperComp @key="wf.Id"
+                                     Workflow="@wf"
+                                     OnWorkflowUpdated="HandleWorkflowUpdated"
+                                     OnEditWorkflow="HandleEditWorkflow" />
+            }
+        </div>
+    }
+</div>
+
+@* Creation / Edit Wizard Modal *@
+<CreateWorkflowWizardModal IsOpen="@_isCreateModalOpen"
+                           IsOpenChanged="@(val => _isCreateModalOpen = val)"
+                           DefaultLevel="@GetDefaultCreateLevel()"
+                           ProjectId="@_filterProject?.Id"
+                           WorkflowToEdit="@_workflowToEdit"
+                           OnWorkflowCreated="HandleWorkflowCreated"
+                           OnWorkflowUpdated="HandleWorkflowUpdated" />
+
+
+
+@code {
+    private bool _isLoading = true;
+    private bool _isCreateModalOpen = false;
+
+    private List<WorkflowEntity> _allWorkflows = [];
+    private List<WorkflowEntity> _filteredWorkflows = [];
+
+    private List<ProgramEntity> _availablePrograms = [];
+    private List<ProjectEntity> _availableProjects = [];
+    private ProgramEntity? _filterProgram;
+    private ProjectEntity? _filterProject;
+
+    private string _selectedScope = "all";
+    private string _selectedStatusFilter = "Active";
+    private readonly List<string> _statusOptions = ["Active", "Completed", "All Statuses"];
+    private string _searchTerm = string.Empty;
+
+    // KPI Counters
+    private int _activeWorkflowsCount;
+    private int _completedWorkflowsCount;
+    private int _activeStepsCount;
+    private int _totalDelegatedSubtasksCount;
+
+    // RBAC and Editing
+    private bool _canCreateWorkflow;
+    private WorkflowEntity? _workflowToEdit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            if (TenantContext.HasActiveTenant)
+            {
+                var tenantId = TenantContext.TenantId;
+                _availablePrograms = (await ProgramService.GetProgramsAsync(TenantContext.TenantSlug))
+
+                    .Where(p => p.IsActive)
+                    .OrderBy(p => p.Name)
+                    .ToList();
+
+                _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug))
+
+                    .Where(p => p.IsActive && !p.IsDeleted)
+                    .OrderBy(p => p.Name)
+                    .ToList();
+
+                _allWorkflows = (await WorkflowService.GetWorkflowsAsync(new WorkflowFilterDto())).ToList();
+                ComputeKpis();
+                ApplyFilters();
+                await CheckCreatePermissionsAsync();
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CheckCreatePermissionsAsync()
+    {
+        var level = GetDefaultCreateLevel();
+        var progId = _selectedScope == "program" ? _filterProgram?.Id : null;
+        var projId = _selectedScope == "project" ? _filterProject?.Id : null;
+        _canCreateWorkflow = await WorkflowService.CanUserManageWorkflowAsync(level, progId, projId);
+    }
+
+    private void ComputeKpis()
+    {
+        _activeWorkflowsCount = _allWorkflows.Count(w => w.Status != TaskStatusEnum.Closed);
+        _completedWorkflowsCount = _allWorkflows.Count(w => w.Status == TaskStatusEnum.Closed);
+        _activeStepsCount = _allWorkflows.Sum(w => w.Steps.Count(s => s.Status == TaskStatusEnum.InProgress));
+        _totalDelegatedSubtasksCount = _allWorkflows.Sum(w => w.Steps.Sum(s => s.SubTasks.Count));
+    }
+
+    private async Task SetScopeFilter(string scope)
+    {
+        _selectedScope = scope;
+        ApplyFilters();
+        await CheckCreatePermissionsAsync();
+    }
+
+    private async Task OnProgramFilterChanged(string? programIdStr)
+    {
+        _filterProgram = Guid.TryParse(programIdStr, out var progId)
+            ? _availablePrograms.FirstOrDefault(p => p.Id == progId)
+            : null;
+        ApplyFilters();
+        await CheckCreatePermissionsAsync();
+    }
+
+    private async Task OnProjectFilterChanged(string? projectIdStr)
+    {
+        _filterProject = Guid.TryParse(projectIdStr, out var projId)
+            ? _availableProjects.FirstOrDefault(p => p.Id == projId)
+            : null;
+        ApplyFilters();
+        await CheckCreatePermissionsAsync();
+    }
+
+    private void ApplyFilters()
+    {
+        var result = _allWorkflows.AsEnumerable();
+
+        if (_selectedScope == "tenant")
+        {
+            result = result.Where(w => w.Level == TaskLevelEnum.Tenant);
+        }
+        else if (_selectedScope == "program")
+        {
+            result = result.Where(w => w.Level == TaskLevelEnum.Program);
+            if (_filterProgram is not null)
+            {
+                result = result.Where(w => w.ProgramId == _filterProgram.Id);
+            }
+        }
+        else if (_selectedScope == "project")
+        {
+            result = result.Where(w => w.Level == TaskLevelEnum.Project);
+            if (_filterProject is not null)
+            {
+                result = result.Where(w => w.ProjectId == _filterProject.Id);
+            }
+        }
+
+        if (_selectedStatusFilter == "Active")
+        {
+            result = result.Where(w => w.Status != TaskStatusEnum.Closed);
+        }
+        else if (_selectedStatusFilter == "Completed")
+        {
+            result = result.Where(w => w.Status == TaskStatusEnum.Closed);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            var term = _searchTerm.Trim().ToLowerInvariant();
+            result = result.Where(w => w.Title.ToLower().Contains(term) ||
+                                       w.WorkflowOwnerEmail.ToLower().Contains(term) ||
+                                       w.Steps.Any(s => s.Title.ToLower().Contains(term) || s.AssigneeEmails.ToLower().Contains(term)));
+        }
+
+        _filteredWorkflows = result.ToList();
+    }
+
+    private TaskLevelEnum GetDefaultCreateLevel() => _selectedScope switch
+    {
+        "tenant" => TaskLevelEnum.Tenant,
+        "program" => TaskLevelEnum.Program,
+        _ => TaskLevelEnum.Project
+    };
+
+    private void OpenCreateModal()
+    {
+        _workflowToEdit = null;
+        _isCreateModalOpen = true;
+    }
+
+    private void HandleEditWorkflow(WorkflowEntity wf)
+    {
+        _workflowToEdit = wf;
+        _isCreateModalOpen = true;
+    }
+
+    private void HandleWorkflowCreated(WorkflowEntity created)
+    {
+        _allWorkflows.Insert(0, created);
+        ComputeKpis();
+        ApplyFilters();
+    }
+
+    private void HandleWorkflowUpdated(WorkflowEntity updated)
+    {
+        var idx = _allWorkflows.FindIndex(w => w.Id == updated.Id);
+        if (idx >= 0)
+        {
+            _allWorkflows[idx] = updated;
+        }
+        ComputeKpis();
+        ApplyFilters();
+    }
+}

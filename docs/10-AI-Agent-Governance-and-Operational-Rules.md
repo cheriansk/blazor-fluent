@@ -3,7 +3,7 @@
 > **Target Audience**: AI Coding Assistants (Google Antigravity, GitHub Copilot, Cursor, Claude, etc.) and Prompt Engineers configuring AI developer agents.  
 > **Key Objective**: Establish immutable behavioral boundaries, command execution safety constraints, authority hierarchies, and plan-first protocols for autonomous or semi-autonomous AI coding assistants.
 >
-> *(Note: For human software engineering team standards, see [09. Coding Standards & Project Rules](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/09-Coding-Standards-and-Project-Rules.md) and [`PROJECT_RULES.md`](file:///c:/Users/cheri/source/repos/BlazorFluent/PROJECT_RULES.md)).*
+> *(Note: For human software engineering team standards, see [09. Coding Standards & Project Rules](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/09-Coding-Standards-and-Project-Rules.md) and [`PROJECT_RULES.md`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/PROJECT_RULES.md)).*
 
 ---
 
@@ -32,8 +32,8 @@ Every AI coding assistant operating within this repository must adhere to the fo
 
 1. **Adhere to the 11-Project Solution Topology**:
    - Never introduce circular dependencies.
-   - Never place UI components inside `BlazorFluent.Core`, `Persistence`, or `Infrastructure`.
-   - Never inject `DbContext` into Razor components directly; always route through domain contracts in `BlazorFluent.Core`.
+   - Never place UI components inside `BlazorEnterprise.Core`, `Persistence`, or `Infrastructure`.
+   - Never inject `DbContext` into Razor components directly; always route through domain contracts in `BlazorEnterprise.Core`.
 
 2. **Fluent UI Blazor V5 Compliance**:
    - The assistant must strictly author **Microsoft Fluent UI Blazor V5** syntax.
@@ -50,7 +50,7 @@ Every AI coding assistant operating within this repository must adhere to the fo
 ## 📜 3. Code Modification & Documentation Integrity
 
 1. **Preserve Comments & Docstrings**: Preserve all existing comments, copyright notices, and docstrings that are unrelated to the immediate edit.
-2. **Clickable File Links**: When referencing files, code symbols, classes, or interfaces in conversation or artifacts, always provide clickable markdown links formatted with forward slashes (e.g. `[CustomerService.cs](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Persistence/Services/CustomerService.cs)`).
+2. **Clickable File Links**: When referencing files, code symbols, classes, or interfaces in conversation or artifacts, always provide clickable markdown links formatted with forward slashes (e.g. `[CustomerService.cs](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Persistence/Services/CustomerService.cs)`).
 3. **Artifact Guidelines**:
    - Keep answers concise.
    - Point the user to the generated artifact and highlight only open questions or decisions.

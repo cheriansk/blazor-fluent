@@ -27,7 +27,7 @@ param(
     [int]$DatabasePort = 5432,
 
     [Parameter(Mandatory = $false)]
-    [string]$DatabaseName = "blazorfluent_dev",
+    [string]$DatabaseName = "blazorenterprise_dev",
 
     [Parameter(Mandatory = $false)]
     [string]$DatabaseUser = "postgres",
@@ -42,7 +42,7 @@ param(
     [string]$AuthIssuer = "https://localhost:7001",
 
     [Parameter(Mandatory = $false)]
-    [string]$AuthAudience = "blazorfluent-api",
+    [string]$AuthAudience = "blazorenterprise-api",
 
     [Parameter(Mandatory = $false)]
     [string]$AuthSigningKey,
@@ -60,7 +60,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host " [DEV SETUP] BlazorFluent Zero-Trust Local Environment Initializer" -ForegroundColor Cyan
+Write-Host " [DEV SETUP] BlazorEnterprise Zero-Trust Local Environment Initializer" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 
 # 1. Resolve Root Admin Email
@@ -101,7 +101,7 @@ if ([string]::IsNullOrWhiteSpace($AdminKeyVaultUsers)) {
 }
 
 # 4. Resolve or Generate Secure Cryptographic Keys & Dynamic Identities (Idempotent)
-$webDevJsonPath = "src/BlazorFluent.Web/appsettings.Development.json"
+$webDevJsonPath = "src/BlazorEnterprise.Web/appsettings.Development.json"
 $existingWebDevJson = $null
 if (Test-Path $webDevJsonPath) {
     try {
@@ -109,7 +109,7 @@ if (Test-Path $webDevJsonPath) {
     } catch {}
 }
 
-$apiDevJsonPath = "src/BlazorFluent.Api/appsettings.Development.json"
+$apiDevJsonPath = "src/BlazorEnterprise.Api/appsettings.Development.json"
 $existingApiDevJson = $null
 if (Test-Path $apiDevJsonPath) {
     try {
@@ -162,9 +162,9 @@ Write-Host "  Auth Issuer      : $AuthIssuer" -ForegroundColor Green
 Write-Host "  Auth Audience    : $AuthAudience" -ForegroundColor Green
 
 # 5. Target Projects & Clear Legacy User Secrets
-$webProject = "src/BlazorFluent.Web"
-$apiProject = "src/BlazorFluent.Api"
-$appHostProject = "src/BlazorFluent.AppHost"
+$webProject = "src/BlazorEnterprise.Web"
+$apiProject = "src/BlazorEnterprise.Api"
+$appHostProject = "src/BlazorEnterprise.AppHost"
 
 Write-Host "`nClearing any existing user secrets to ensure appsettings.Development.json takes precedence..." -ForegroundColor Cyan
 if (Test-Path $appHostProject) {
@@ -235,7 +235,7 @@ $webDevSettings = [ordered]@{
         LogLevel = @{
             Default = "Information"
             "Microsoft.AspNetCore" = "Warning"
-            "BlazorFluent.Components" = "Debug"
+            "BlazorEnterprise.Components" = "Debug"
         }
     }
 }

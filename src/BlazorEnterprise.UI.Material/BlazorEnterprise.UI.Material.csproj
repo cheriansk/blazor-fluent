@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BlazorEnterprise.UI.Material</RootNamespace>
+    
+    <!-- NuGet Package Metadata for Multi-Repo Export -->
+    <PackageId>BlazorEnterprise.UI.Material</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>BlazorEnterprise Enterprise Architecture Team</Authors>
+    <Company>BlazorEnterprise</Company>
+    <Product>BlazorEnterprise Material 3 Design Layer</Product>
+    <Description>Enterprise-grade Material Design 3 theme layer and reusable components built natively on Microsoft Fluent UI Blazor V5 with strict Content Security Policy (CSP) compliance.</Description>
+    <PackageTags>blazor;fluentui;material;material3;enterprise;components;v5;zero-trust;csp</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <WarningsAsErrors>CS0618</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorEnterprise.Shared\BlazorEnterprise.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="BlazorEnterprise.Shared.DataListTypes.TaskStatus" />
+  </ItemGroup>
+
+</Project>

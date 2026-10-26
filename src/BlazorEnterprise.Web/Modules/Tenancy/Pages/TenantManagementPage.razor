@@ -1,0 +1,22 @@
+@page "/tenants"
+@using BlazorEnterprise.Core.Security
+@attribute [Authorize(Policy = AuthorizationPolicies.HostAdminOnly)]
+@rendermode InteractiveServer
+@using BlazorEnterprise.Core.Contracts
+@using Microsoft.AspNetCore.Authorization
+@inject ISettingsNavigationState SettingsNav
+@inject ICurrentUser CurrentUser
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (!CurrentUser.IsRootAdmin)
+        {
+            NavigationManager.NavigateTo("/settings", replace: true);
+            return;
+        }
+
+        SettingsNav.NavigateToTab("tenants");
+    }
+}

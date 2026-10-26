@@ -1,7 +1,7 @@
 # 15. Configuration Reference Guide
 
 > **Target Audience**: Solution Architects, DevOps Engineers, and System Developers.  
-> **Key Objective**: Comprehensive dictionary of all configuration sections, keys, default values, and environment variable overrides across `BlazorFluent.Web` and `BlazorFluent.Api`.
+> **Key Objective**: Comprehensive dictionary of all configuration sections, keys, default values, and environment variable overrides across `BlazorEnterprise.Web` and `BlazorEnterprise.Api`.
 
 ---
 
@@ -23,8 +23,8 @@ ASP.NET Core resolves configuration keys using the following hierarchical preced
 
 | Configuration Key | Env Var Equivalent | Default / Example | Purpose |
 | :--- | :--- | :--- | :--- |
-| `ConnectionStrings:DefaultConnection` | `ConnectionStrings__DefaultConnection` | `Host=localhost;Database=blazorfluent;Username=...` | PostgreSQL connection string for `AppDbContext`. |
-| `POSTGRES_APP_PASSWORD` | `POSTGRES_APP_PASSWORD` | `<secure-password>` | Runtime application password for PostgreSQL Row Level Security role (`blazorfluent_app`). |
+| `ConnectionStrings:DefaultConnection` | `ConnectionStrings__DefaultConnection` | `Host=localhost;Database=blazorenterprise;Username=...` | PostgreSQL connection string for `AppDbContext`. |
+| `POSTGRES_APP_PASSWORD` | `POSTGRES_APP_PASSWORD` | `<secure-password>` | Runtime application password for PostgreSQL Row Level Security role (`blazorenterprise_app`). |
 
 ---
 
@@ -74,7 +74,7 @@ ASP.NET Core resolves configuration keys using the following hierarchical preced
 
 | Configuration Key | Env Var Equivalent | Default / Example | Purpose |
 | :--- | :--- | :--- | :--- |
-| `Engine:ApiBaseUrl` | `Engine__ApiBaseUrl` | `https://api.internal.example.com` | Base URL pointing to stateless `BlazorFluent.Api`. |
+| `Engine:ApiBaseUrl` | `Engine__ApiBaseUrl` | `https://api.internal.example.com` | Base URL pointing to stateless `BlazorEnterprise.Api`. |
 | `Engine:TimeoutSeconds` | `Engine__TimeoutSeconds` | `60` | HTTP client timeout for large batch transformations. |
 | `Engine:ApiKey` | `Engine__ApiKey` | `<service-api-key>` | Service authentication key for internal engine calls. |
 
@@ -86,19 +86,19 @@ To avoid committing sensitive credentials into source control, use .NET User Sec
 
 ```bash
 # Navigate to Web project
-cd src/BlazorFluent.Web
+cd src/BlazorEnterprise.Web
 
 # Initialize User Secrets
 dotnet user-secrets init
 
 # Set local database password and HMAC key
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=blazorfluent;Username=postgres;Password=local_dev_password"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=blazorenterprise;Username=postgres;Password=local_dev_password"
 dotnet user-secrets set "Security:IntegritySecret" "dev_super_secret_hmac_key_for_local_testing_only_32_chars"
 ```
 
 ---
 
 *Related Documentation*:
-- [01. Getting Started & Environment Setup](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/01-Getting-Started-and-Environment-Setup.md)
-- [11. API Reference & Integration](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/11-API-Reference-and-Integration.md)
-- [12. Production Deployment & Operations](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/12-Production-Deployment-and-Operations.md)
+- [01. Getting Started & Environment Setup](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/01-Getting-Started-and-Environment-Setup.md)
+- [11. API Reference & Integration](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/11-API-Reference-and-Integration.md)
+- [12. Production Deployment & Operations](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/12-Production-Deployment-and-Operations.md)

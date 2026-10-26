@@ -2,7 +2,7 @@
 
 ## 1. Overview & Threat Model
 
-BlazorFluent implements a strict **Defense-in-Depth Zero-Trust Architecture**. Every request, Blazor circuit, and background batch process operates under explicit identity, tenant scoping, and fail-closed permission checks.
+BlazorEnterprise implements a strict **Defense-in-Depth Zero-Trust Architecture**. Every request, Blazor circuit, and background batch process operates under explicit identity, tenant scoping, and fail-closed permission checks.
 
 ---
 

@@ -1,0 +1,34 @@
+using BlazorEnterprise.Shared.DataListTypes;
+using BlazorEnterprise.Core.Domain.Notifications;
+using BlazorEnterprise.Core.Dtos;
+
+namespace BlazorEnterprise.Core.Contracts;
+
+public interface INotifyService
+{
+    /// <summary>
+    /// Persists a notification to the database and dispatches across requested channels (Teams/Email)
+    /// if matching configuration is found.
+    /// </summary>
+    Task<NotificationEntity> SendAsync(SendNotificationReqDto request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves notifications for the active user, strictly honoring tenant, project, and personal privacy filters.
+    /// </summary>
+    Task<IReadOnlyList<NotificationEntity>> GetNotificationsAsync(NotificationFilterReqDto filter, CancellationToken ct = default);
+
+    /// <summary>
+    /// Computes aggregated unread counts for generic and personal categories.
+    /// </summary>
+    Task<UnreadNotificationCountsRespDto> GetUnreadCountsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Marks a specific notification as read, ensuring the caller is authorized.
+    /// </summary>
+    Task<bool> MarkAsReadAsync(Guid notificationId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Marks all notifications matching optional category and tenant as read for the active user.
+    /// </summary>
+    Task<int> MarkAllAsReadAsync(NotificationCategoryEnum? category = null, string? tenantId = null, CancellationToken ct = default);
+}
