@@ -7,6 +7,7 @@
     <RootNamespace>BlazorFluent.Api</RootNamespace>
     <AssemblyName>BlazorFluent.Api</AssemblyName>
     <WarningsAsErrors>CS0108</WarningsAsErrors>
+    <UserSecretsId>dotnet-BlazorFluent.Api-3a8f11bc-2d93-4c91-a831-7e492b6a9082</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,8 +3,8 @@
 @using BlazorFluent.Core.Domain.Identity
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
-@using BlazorFluent.Persistence.Context
-@using Microsoft.EntityFrameworkCore
+
+
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject ITenantService TenantService
 @inject IProgramService ProgramService
@@ -13,11 +13,11 @@
 @inject ICurrentUser CurrentUser
 @inject IUnsavedChangesStateService UnsavedChanges
 @inject IUserTimeZoneService TimeZoneService
-@inject AppDbContext DbContext
+@inject IUserTaskService TaskService
 @implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="full-width">
         <div>
             <FluentLabel Typo="Typography.H3">Tenant Directory</FluentLabel>
             <FluentLabel Typo="Typography.Body">Manage tenant contracts, email domains, and user directories.</FluentLabel>
@@ -47,34 +47,34 @@
         @* Step 1: Provision New Tenant Form *@
         @if (_showAddModal && !_showConfirmCreate)
         {
-            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
-                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Provision New Tenant</FluentLabel>
+            <FluentCard Class="mb-4 card-accent-border">
+                <FluentLabel Typo="Typography.H5" Class="mb-3">Provision New Tenant</FluentLabel>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
-                    <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Style="width: 100%;" />
+                    <FluentTextInput Label="Tenant Slug (Unique, URL-safe)" @bind-Value="_newSlug" Placeholder="e.g. acme-corp" Required="true" Class="full-width" />
                     
-                    <FluentTextInput Label="Display Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Style="width: 100%;" />
+                    <FluentTextInput Label="Display Name" @bind-Value="_newName" Placeholder="e.g. Acme Corporation" Required="true" Class="full-width" />
 
                     @* Internal Email Domains (1-5) *@
                     <div>
-                        <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 4px;">
-                            Internal Email Domains (@_newInternalDomains.Count/5) <span style="color: #d13438;">*</span>
+                        <FluentLabel Typo="Typography.Body" Class="font-weight-600 mb-1">
+                            Internal Email Domains (@_newInternalDomains.Count/5) <span class="text-danger">*</span>
                         </FluentLabel>
-                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-bottom: 6px;">
+                        <div class="font-size-sm text-hint mb-1">
                             Staff members whose email ends with any of these domains will be categorized as Internal Staff (CompanyUser).
                         </div>
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true" Style="margin-bottom: 8px;">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true" Class="mb-2">
                             @foreach (var domain in _newInternalDomains)
                             {
-                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand" Style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;">
+                                <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand" Class="badge-pill">
                                     @domain
-                                    <span @onclick="@(() => RemoveInternalDomain(domain))" style="cursor: pointer; font-weight: bold; margin-left: 4px;" title="Remove domain">✕</span>
+                                    <span @onclick="@(() => RemoveInternalDomain(domain))" class="cursor-pointer font-weight-700 ml-1" title="Remove domain">✕</span>
                                 </FluentBadge>
                             }
                         </FluentStack>
                         @if (_newInternalDomains.Count < 5)
                         {
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                                <FluentTextInput Placeholder="e.g. \"@microsoft.com" @bind-Value="_tempInternalDomain" Style="width: 260px;" />
+                                <FluentTextInput Placeholder="e.g. @@microsoft.com" @bind-Value="_tempInternalDomain" Class="w-260" />
                                 <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" OnClick="@AddInternalDomain">
                                     + Add Domain
                                 </FluentButton>
@@ -84,25 +84,25 @@
 
                     @* External Email Domains (1-5) *@
                     <div>
-                        <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 4px;">
-                            External Email Domains (@_newExternalDomains.Count/5) <span style="color: #d13438;">*</span>
+                        <FluentLabel Typo="Typography.Body" Class="font-weight-600 mb-1">
+                            External Email Domains (@_newExternalDomains.Count/5) <span class="text-danger">*</span>
                         </FluentLabel>
-                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-bottom: 6px;">
+                        <div class="font-size-sm text-hint mb-1">
                             Client users whose email ends with any of these domains will be categorized as External Clients (ClientUser). Must not overlap with Internal.
                         </div>
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true" Style="margin-bottom: 8px;">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true" Class="mb-2">
                             @foreach (var domain in _newExternalDomains)
                             {
-                                <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;">
+                                <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Class="badge-pill">
                                     @domain
-                                    <span @onclick="@(() => RemoveExternalDomain(domain))" style="cursor: pointer; font-weight: bold; margin-left: 4px;" title="Remove domain">✕</span>
+                                    <span @onclick="@(() => RemoveExternalDomain(domain))" class="cursor-pointer font-weight-700 ml-1" title="Remove domain">✕</span>
                                 </FluentBadge>
                             }
                         </FluentStack>
                         @if (_newExternalDomains.Count < 5)
                         {
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                                <FluentTextInput Placeholder="e.g. \" @salesforce.com" @bind-Value="_tempExternalDomain" Style="width: 260px;" />
+                                <FluentTextInput Placeholder="e.g. @@salesforce.com" @bind-Value="_tempExternalDomain" Class="w-260" />
                                 <FluentButton Appearance="ButtonAppearance.Outline" Size="ButtonSize.Small" OnClick="@AddExternalDomain">
                                     + Add Domain
                                 </FluentButton>
@@ -115,11 +115,11 @@
                         <FluentDatePicker Label="End Date" @bind-Value="_newEndDate" Required="true" />
                     </FluentStack>
 
-                    <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                    <div class="font-size-sm text-hint mt-1">
                         ⚠️ Note: Slug, Name, Internal Domains, and External Domains cannot be changed after creation.
                     </div>
 
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-2">
                         <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@PromptConfirmCreate">Review &amp; Confirm</FluentButton>
                         <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAdd">Cancel</FluentButton>
                     </FluentStack>
@@ -130,15 +130,15 @@
         @* Step 2: Mandatory Permanent Configuration Confirmation Modal *@
         @if (_showConfirmCreate)
         {
-            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #d83b01; background-color: #fff9f5;">
-                <FluentLabel Typo="Typography.H5" Style="color: #a80000; margin-bottom: 8px;">
+            <FluentCard Class="card-warning-box">
+                <FluentLabel Typo="Typography.H5" Class="text-danger mb-2">
                     ⚠️ Permanent Configuration Confirmation
                 </FluentLabel>
-                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
+                <FluentLabel Typo="Typography.Body" Class="mb-3">
                     Please confirm the following tenant details. <strong>None of this data can be edited later</strong>:
                 </FluentLabel>
 
-                <ul style="line-height: 1.8; margin-left: 16px; margin-bottom: 16px;">
+                <ul class="list-bulleted">
                     <li><strong>Slug:</strong> <code>@_newSlug.Trim().ToLowerInvariant()</code></li>
                     <li><strong>Display Name:</strong> <code>@_newName.Trim()</code></li>
                     <li><strong>Internal Domains:</strong> <code>@string.Join(", ", _newInternalDomains)</code> (Internal Staff)</li>
@@ -147,7 +147,7 @@
                 </ul>
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12">
-                    <FluentButton Appearance="ButtonAppearance.Primary" Style="background-color: #d83b01; border-color: #d83b01;" OnClick="@CreateTenantAsync">
+                    <FluentButton Appearance="ButtonAppearance.Primary" Class="btn-danger-confirm" OnClick="@CreateTenantAsync">
                         Confirm &amp; Provision Tenant
                     </FluentButton>
                     <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showConfirmCreate = false)">
@@ -160,9 +160,9 @@
         @* Edit Dates Modal (Slug, Name, and Domains are strictly locked) *@
         @if (_editingTenant is not null)
         {
-            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
-                <FluentLabel Typo="Typography.H5" Style="margin-bottom: 12px;">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Slug)</FluentLabel>
-                <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); margin-bottom: 12px;">
+            <FluentCard Class="mb-4 card-accent-border">
+                <FluentLabel Typo="Typography.H5" Class="mb-3">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Slug)</FluentLabel>
+                <div class="font-size-sm text-hint mb-3">
                     Slug (<code>@_editingTenant.Slug</code>), Internal Domains (<code>@_editingTenant.InternalEmailDomains</code>), and External Domains (<code>@_editingTenant.ExternalEmailDomains</code>) are permanent and cannot be modified.
                 </div>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
@@ -170,7 +170,7 @@
                         <FluentDatePicker Label="Start Date" @bind-Value="_editStartDate" Required="true" />
                         <FluentDatePicker Label="End Date" @bind-Value="_editEndDate" Required="true" />
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-2">
                         <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@SaveDatesAsync">Save Dates</FluentButton>
                         <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelEditDates">Cancel</FluentButton>
                     </FluentStack>
@@ -181,13 +181,13 @@
         @* Tenant User Management Panel *@
         @if (_managingUsersTenant is not null)
         {
-            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #107c41;">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+            <FluentCard Class="mb-4 card-success-border">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                     <div>
                         <FluentLabel Typo="Typography.H5">Users for @_managingUsersTenant.Name (@_managingUsersTenant.Slug)</FluentLabel>
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 4px; font-size: 13px;" Wrap="true">
-                            <span>Internal: @foreach(var d in _managingUsersTenant.GetInternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Filled" Style="margin-right: 4px;">@d</FluentBadge> }</span>
-                            <span>External: @foreach(var d in _managingUsersTenant.GetExternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Tint" Style="margin-right: 4px;">@d</FluentBadge> }</span>
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-1 font-size-sm" Wrap="true">
+                            <span>Internal: @foreach(var d in _managingUsersTenant.GetInternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Filled" Class="mr-1">@d</FluentBadge> }</span>
+                            <span>External: @foreach(var d in _managingUsersTenant.GetExternalDomains()) { <FluentBadge Appearance="BadgeAppearance.Tint" Class="mr-1">@d</FluentBadge> }</span>
                             <EntityHistoryButton EntityName="TenantEntity" EntityId="@_managingUsersTenant.Id.ToString()" PropertyName="InternalEmailDomains" Label="Domain History" IconOnly="false" Appearance="ButtonAppearance.Primary" />
                         </FluentStack>
                     </div>
@@ -202,11 +202,11 @@
                 </FluentStack>
 
                 @* Automated Background Processing Kill Switch Card *@
-                <FluentCard Style="margin-bottom: 16px; padding: 14px 18px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
+                <FluentCard Class="mb-4 p-3 card-accent-border">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
                         <div>
-                            <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">🤖 Automated Background Processing</FluentLabel>
-                            <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">
+                            <FluentLabel Typo="Typography.Body" Class="font-weight-600">🤖 Automated Background Processing</FluentLabel>
+                            <FluentLabel Typo="Typography.Caption" Class="text-hint">
                                 Governs scheduled cadence alerts, recurring task triggers, and automated batch jobs for this tenant via dedicated system daemon (<code>@($"daemon@{_managingUsersTenant.Slug}.internal")</code>).
                             </FluentLabel>
                         </div>
@@ -229,29 +229,29 @@
                 @* Add User Sub-Card *@
                 @if (_showAddUserForm)
                 {
-                    <FluentCard Style="margin-bottom: 16px; background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
-                        <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">Add User to @_managingUsersTenant.Name</FluentLabel>
+                    <FluentCard Class="mb-4 p-4">
+                        <FluentLabel Typo="Typography.H6" Class="mb-3">Add User to @_managingUsersTenant.Name</FluentLabel>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                            <FluentTextInput Label="Full Name" @bind-Value="_userFullName" Required="true" Style="width: 100%;" Placeholder="e.g. John Doe" />
+                            <FluentTextInput Label="Full Name" @bind-Value="_userFullName" Required="true" Class="full-width" Placeholder="e.g. John Doe" />
 
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                                <div style="flex: 2;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                <div class="flex-2">
                                     <FluentTextInput Label="Email Address"
                                                      Value="@_userEmail"
                                                      ValueChanged="@OnUserEmailChanged"
                                                      Placeholder="e.g. user@domain.com"
                                                      Required="true"
-                                                     Style="width: 100%;" />
+                                                     Class="full-width" />
                                 </div>
-                                <div style="flex: 1;">
-                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">User Type (Auto-derived)</FluentLabel>
-                                    <FluentTextInput Value="@GetUserTypeDisplay()" ReadOnly="true" Style="width: 100%;" />
+                                <div class="flex-1">
+                                    <FluentLabel Typo="Typography.Body" Class="mb-1">User Type (Auto-derived)</FluentLabel>
+                                    <FluentTextInput Value="@GetUserTypeDisplay()" ReadOnly="true" Class="full-width" />
                                 </div>
                             </FluentStack>
 
                             @if (!string.IsNullOrWhiteSpace(_userDomainError))
                             {
-                                <div style="font-size: 12px; color: #d13438;">
+                                <div class="font-size-sm text-danger">
                                     @_userDomainError
                                 </div>
                             }
@@ -259,12 +259,12 @@
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
                                 <FluentDatePicker Label="Start Date" @bind-Value="_userStartDate" Required="true" />
                                 <FluentDatePicker Label="End Date" @bind-Value="_userEndDate" Required="true" />
-                                <div style="display: flex; align-items: flex-end; padding-bottom: 6px;">
+                                <div class="d-flex align-end pb-1">
                                     <FluentSwitch @bind-Value="_userIsActive" Label="Active" />
                                 </div>
                             </FluentStack>
 
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-2">
                                 <FluentButton Appearance="ButtonAppearance.Primary"
                                               Disabled="@(!IsUserFormValid)"
                                               OnClick="@CreateTenantUserAsync">
@@ -281,31 +281,31 @@
                 @* Edit User Sub-Card *@
                 @if (_editingUser is not null)
                 {
-                    <FluentCard Style="margin-bottom: 16px; background-color: #f0f7ff; border: 1px solid #c7e0f4; padding: 16px;">
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    <FluentCard Class="card-blue-border">
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                             <FluentLabel Typo="Typography.H6">Edit User: @_editingUser.FullName</FluentLabel>
                     <EntityHistoryButton EntityName="UserEntity" EntityId="@_editingUser.Id.ToString()" Label="Field History" IconOnly="false" Appearance="ButtonAppearance.Subtle" />
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                            <FluentTextInput Label="Full Name" @bind-Value="_editUserFullName" Required="true" Style="width: 100%;" />
+                            <FluentTextInput Label="Full Name" @bind-Value="_editUserFullName" Required="true" Class="full-width" />
 
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                                <div style="flex: 2;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                <div class="flex-2">
                                     <FluentTextInput Label="Email Address"
                                                      Value="@_editUserEmail"
                                                      ValueChanged="@OnEditUserEmailChanged"
                                                      Required="true"
-                                                     Style="width: 100%;" />
+                                                     Class="full-width" />
                                 </div>
-                                <div style="flex: 1;">
-                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">User Type (Auto-derived)</FluentLabel>
-                                    <FluentTextInput Value="@GetEditUserTypeDisplay()" ReadOnly="true" Style="width: 100%;" />
+                                <div class="flex-1">
+                                    <FluentLabel Typo="Typography.Body" Class="mb-1">User Type (Auto-derived)</FluentLabel>
+                                    <FluentTextInput Value="@GetEditUserTypeDisplay()" ReadOnly="true" Class="full-width" />
                                 </div>
                             </FluentStack>
 
                             @if (!string.IsNullOrWhiteSpace(_editUserDomainError))
                             {
-                                <div style="font-size: 12px; color: #d13438;">
+                                <div class="font-size-sm text-danger">
                                     @_editUserDomainError
                                 </div>
                             }
@@ -313,12 +313,12 @@
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
                                 <FluentDatePicker Label="Start Date" @bind-Value="_editUserStartDate" Required="true" />
                                 <FluentDatePicker Label="End Date" @bind-Value="_editUserEndDate" Required="true" />
-                                <div style="display: flex; align-items: flex-end; padding-bottom: 6px;">
+                                <div class="d-flex align-end pb-1">
                                     <FluentSwitch @bind-Value="_editUserIsActive" Label="@(_editUserIsActive ? "Active" : "Inactive")" />
                                 </div>
                             </FluentStack>
 
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-2">
                                 <FluentButton Appearance="ButtonAppearance.Primary"
                                               Disabled="@(!IsEditUserFormValid)"
                                               OnClick="@SaveEditUserAsync">
@@ -333,39 +333,39 @@
                 }
 
                 @* Search & Filter Toolbar for Users *@
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px; margin-bottom: 8px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mt-3 mb-2">
                     <FluentTextInput Placeholder="Filter users by name or email..."
                                   @bind-Value="_userSearchText"
                                   @bind-Value:after="StateHasChanged"
-                                  Style="width: 320px;" >
+                                  Class="w-320" >
                     <StartTemplate>    
                         <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                     </StartTemplate>
                 </FluentTextInput>
-                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    <span class="font-size-sm text-hint">
                         Showing @FilteredTenantUsers.Count() of @_tenantUsers.Count users
                     </span>
                 </FluentStack>
 
                 @if (_isLoadingUsers)
                 {
-                    <FluentSpinner Style="margin: 20px auto;" />
+                    <FluentSpinner Class="m-auto" />
                 }
                 else if (!_tenantUsers.Any())
                 {
-                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-top: 8px;">
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Class="mt-2">
                         No users have been added to this tenant yet. Click &ldquo;Add User&rdquo; above to provision the first member.
                     </FluentMessageBar>
                 }
                 else
                 {
-                    <FluentDataGrid Items="@FilteredTenantUsers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 120px 100px 140px" Style="margin-top: 8px;">
+                    <FluentDataGrid Items="@FilteredTenantUsers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 120px 100px 140px" Class="mt-2">
                         <PropertyColumn Property="@(u => u.FullName)" Title="Name" Sortable="true" />
                         <PropertyColumn Property="@(u => u.Email)" Title="Email" Sortable="true" />
                         <TemplateColumn Title="Type" SortBy="@(GridSort<UserEntity>.ByAscending(u => u.UserType))">
                             @if (context.UserKind == UserKindEnum.SystemDaemon)
                             {
-                                <FluentBadge Appearance="BadgeAppearance.Outline" Style="background-color: #f3f2f1; color: #323130;">🤖 Daemon</FluentBadge>
+                                <FluentBadge Appearance="BadgeAppearance.Outline" Class="daemon-badge">🤖 Daemon</FluentBadge>
                             }
                             else if (context.UserType == UserTypeEnum.CompanyUser)
                             {
@@ -402,7 +402,7 @@
                                 }
                                 else
                                 {
-                                    <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="font-size: 11px;">
+                                    <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Class="font-size-xs">
                                         🔒 Managed
                                     </FluentBadge>
                                 }
@@ -417,11 +417,11 @@
         @* Tenant Program Management Panel *@
         @if (_managingProgramsTenant is not null)
         {
-            <FluentCard Style="margin-bottom: 20px; border-left: 4px solid #0078d4;">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+            <FluentCard Class="mb-4 card-accent-border">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                     <div>
                         <FluentLabel Typo="Typography.H5">Programs for @_managingProgramsTenant.Name (@_managingProgramsTenant.Slug)</FluentLabel>
-                        <div style="font-size: 13px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                        <div class="font-size-sm text-hint mt-1">
                             Manage enterprise programs and portfolios scoped to tenant <code>@_managingProgramsTenant.Slug</code>. (Projects are managed under each program in the Programs tab).
                         </div>
                     </div>
@@ -441,30 +441,30 @@
                 @* Add / Edit Program Sub-Card *@
                 @if (_showAddProgramForm)
                 {
-                    <FluentCard Style="margin-bottom: 16px; background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
-                        <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">
+                    <FluentCard Class="mb-4 p-4">
+                        <FluentLabel Typo="Typography.H6" Class="mb-3">
                             @(_editingProgram is not null ? $"Edit Program: {_editingProgram.Name}" : $"Add Program to {_managingProgramsTenant.Name}")
                         </FluentLabel>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                                <FluentTextInput Label="Program Code" @bind-Value="_progCode" Required="true" Style="flex: 1;" Placeholder="e.g. PRG-01" Disabled="@(_editingProgram is not null)" />
-                                <FluentTextInput Label="Program Name" @bind-Value="_progName" Required="true" Style="flex: 2;" Placeholder="e.g. Strategic Transformation" />
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                <FluentTextInput Label="Program Code" @bind-Value="_progCode" Required="true" Class="flex-1" Placeholder="e.g. PRG-01" Disabled="@(_editingProgram is not null)" />
+                                <FluentTextInput Label="Program Name" @bind-Value="_progName" Required="true" Class="flex-2" Placeholder="e.g. Strategic Transformation" />
                             </FluentStack>
 
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                                <FluentDatePicker Label="Start Date" @bind-Value="_progStartDate" Style="flex: 1;" />
-                                <FluentDatePicker Label="Target Completion Date" @bind-Value="_progEndDate" Style="flex: 1;" />
-                                <div style="flex: 1;">
-                                    <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_progStatus" Style="width: 100%;" />
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                <FluentDatePicker Label="Start Date" @bind-Value="_progStartDate" Class="flex-1" />
+                                <FluentDatePicker Label="Target Completion Date" @bind-Value="_progEndDate" Class="flex-1" />
+                                <div class="flex-1">
+                                    <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_progStatus" Class="full-width" />
                                 </div>
                             </FluentStack>
 
                             <div>
-                                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Strategic Scope / Description</FluentLabel>
-                                <FluentTextArea @bind-Value="_progDescription" Placeholder="Brief summary of program scope and governance deliverables..." Rows="3" Style="width: 100%;" />
+                                <FluentLabel Typo="Typography.Body" Class="mb-1">Strategic Scope / Description</FluentLabel>
+                                <FluentTextArea @bind-Value="_progDescription" Placeholder="Brief summary of program scope and governance deliverables..." Rows="3" Class="full-width" />
                             </div>
 
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-2">
                                 <FluentButton Appearance="ButtonAppearance.Primary"
                                               Disabled="@(!IsProgramFormValid)"
                                               OnClick="@SaveTenantProgramAsync">
@@ -479,33 +479,33 @@
                 }
 
                 @* Search & Filter Toolbar for Programs *@
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px; margin-bottom: 8px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mt-3 mb-2">
                     <FluentTextInput Placeholder="Filter programs by name, code..."
                                      @bind-Value="_programSearchText"
                                      @bind-Value:after="StateHasChanged"
-                                     Style="width: 320px;">
+                                     Class="w-320">
                         <StartTemplate>
                             <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                         </StartTemplate>
                     </FluentTextInput>
-                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                    <span class="font-size-sm text-hint">
                         Showing @FilteredTenantPrograms.Count() of @_tenantPrograms.Count programs
                     </span>
                 </FluentStack>
 
                 @if (_isLoadingPrograms)
                 {
-                    <FluentSpinner Style="margin: 20px auto;" />
+                    <FluentSpinner Class="m-auto" />
                 }
                 else if (!_tenantPrograms.Any())
                 {
-                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-top: 8px;">
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Class="mt-2">
                         No programs have been added to this tenant yet. Click &ldquo;Add Program&rdquo; above to create the first program.
                     </FluentMessageBar>
                 }
                 else
                 {
-                    <FluentDataGrid Items="@FilteredTenantPrograms" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 120px 140px" Style="margin-top: 8px;">
+                    <FluentDataGrid Items="@FilteredTenantPrograms" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 120px 140px" Class="mt-2">
                         <PropertyColumn Property="@(p => p.Code)" Title="Code" Sortable="true" />
                         <PropertyColumn Property="@(p => p.Name)" Title="Name" Sortable="true" />
                         <TemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
@@ -557,13 +557,13 @@
         @* Manage Tenant Tasks & Risks Card *@
         @if (_managingTasksTenant is not null)
         {
-            <FluentCard Style="margin-bottom: 24px; padding: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+            <FluentCard Class="mb-4 card-accent-border p-5">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-4">
                     <div>
                         <FluentLabel Typo="Typography.H5">
                             Executive Governance: Tasks & Risks for @_managingTasksTenant.Name
                         </FluentLabel>
-                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint, #666);">
+                        <FluentLabel Typo="Typography.Body" Class="text-hint">
                             Strategic-level execution tasks and corporate risk management for tenant '@_managingTasksTenant.Slug'.
                         </FluentLabel>
                     </div>
@@ -574,16 +574,16 @@
 
                 <FluentTabs @bind-ActiveTabId="_activeTenantWorkItemTab">
                     <FluentTab Id="tasks" Label="@($"Tenant Tasks ({_tenantTasks.Count})")">
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="margin-top: 12px;">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Class="mt-3">
                             @* Quick Add Task *@
-                            <FluentCard Style="padding: 12px; background-color: var(--neutral-layer-2, #fafafa);">
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: flex-end; width: 100%;">
-                                    <FluentTextInput Label="Task Title" @bind-Value="_newTenantTaskTitle" Placeholder="e.g. Annual Compliance Certification" Style="flex: 2;" />
-                                    <FluentTextInput Label="Description" @bind-Value="_newTenantTaskDesc" Placeholder="Deliverable details..." Style="flex: 2;" />
-                                    <div style="flex: 1;">
-                                        <DataListSelect TEnum="TaskPriorityEnum" TValue="TaskPriorityEnum" Label="Priority" @bind-Value="_newTenantTaskPriority" Style="width: 100%;" />
+                            <FluentCard Class="p-3">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Bottom" Class="full-width">
+                                    <FluentTextInput Label="Task Title" @bind-Value="_newTenantTaskTitle" Placeholder="e.g. Annual Compliance Certification" Class="flex-2" />
+                                    <FluentTextInput Label="Description" @bind-Value="_newTenantTaskDesc" Placeholder="Deliverable details..." Class="flex-2" />
+                                    <div class="flex-1">
+                                        <DataListSelect TEnum="TaskPriorityEnum" TValue="TaskPriorityEnum" Label="Priority" @bind-Value="_newTenantTaskPriority" Class="full-width" />
                                     </div>
-                                    <FluentDatePicker Label="Due Date" @bind-Value="_newTenantTaskDueDate" Style="flex: 1;" />
+                                    <FluentDatePicker Label="Due Date" @bind-Value="_newTenantTaskDueDate" Class="flex-1" />
                                     <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantTaskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantTaskTitle)">
                                         Add Task
                                     </FluentButton>
@@ -592,11 +592,11 @@
 
                             @if (_loadingTenantWorkItems)
                             {
-                                <FluentSpinner Style="margin: 20px auto;" />
+                                <FluentSpinner Class="m-auto" />
                             }
                             else if (_tenantTasks.Count == 0)
                             {
-                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint, #666); font-style: italic;">
+                                <FluentLabel Typo="Typography.Body" Class="text-hint font-style-italic">
                                     No tenant-level tasks registered yet.
                                 </FluentLabel>
                             }
@@ -633,17 +633,17 @@
                     </FluentTab>
 
                     <FluentTab Id="risks" Label="@($"Tenant Risks ({_tenantRisks.Count})")">
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="margin-top: 12px;">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Class="mt-3">
                             @* Quick Add Risk *@
-                            <FluentCard Style="padding: 12px; background-color: var(--neutral-layer-2, #fafafa);">
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: flex-end; width: 100%;">
-                                    <FluentTextInput Label="Risk Title" @bind-Value="_newTenantRiskTitle" Placeholder="e.g. Regulatory Data Residency Non-Compliance" Style="flex: 2;" />
-                                    <FluentTextInput Label="Description" @bind-Value="_newTenantRiskDesc" Placeholder="Impact assessment..." Style="flex: 2;" />
-                                    <div style="flex: 1;">
-                                        <DataListSelect TEnum="RiskProbabilityEnum" TValue="RiskProbabilityEnum" Label="Probability" @bind-Value="_newTenantRiskProb" Style="width: 100%;" />
+                            <FluentCard Class="p-3">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Bottom" Class="full-width">
+                                    <FluentTextInput Label="Risk Title" @bind-Value="_newTenantRiskTitle" Placeholder="e.g. Regulatory Data Residency Non-Compliance" Class="flex-2" />
+                                    <FluentTextInput Label="Description" @bind-Value="_newTenantRiskDesc" Placeholder="Impact assessment..." Class="flex-2" />
+                                    <div class="flex-1">
+                                        <DataListSelect TEnum="RiskProbabilityEnum" TValue="RiskProbabilityEnum" Label="Probability" @bind-Value="_newTenantRiskProb" Class="full-width" />
                                     </div>
-                                    <div style="flex: 1;">
-                                        <DataListSelect TEnum="RiskImpactEnum" TValue="RiskImpactEnum" Label="Impact" @bind-Value="_newTenantRiskImpact" Style="width: 100%;" />
+                                    <div class="flex-1">
+                                        <DataListSelect TEnum="RiskImpactEnum" TValue="RiskImpactEnum" Label="Impact" @bind-Value="_newTenantRiskImpact" Class="full-width" />
                                     </div>
                                     <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@CreateTenantRiskAsync" Disabled="@string.IsNullOrWhiteSpace(_newTenantRiskTitle)">
                                         Add Risk
@@ -653,11 +653,11 @@
 
                             @if (_loadingTenantWorkItems)
                             {
-                                <FluentSpinner Style="margin: 20px auto;" />
+                                <FluentSpinner Class="m-auto" />
                             }
                             else if (_tenantRisks.Count == 0)
                             {
-                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint, #666); font-style: italic;">
+                                <FluentLabel Typo="Typography.Body" Class="text-hint font-style-italic">
                                     No tenant-level risks registered yet.
                                 </FluentLabel>
                             }
@@ -693,16 +693,16 @@
         }
 
         @* Search & Filter Toolbar for Tenants *@
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-2">
             <FluentTextInput Placeholder="Filter tenants by name, code, slug, or domain..."
                           @bind-Value="_tenantSearchText"
                           @bind-Value:after="StateHasChanged"
-                          Style="width: 360px;" >
+                          Class="w-360" >
                     <StartTemplate>    
                         <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                     </StartTemplate>
                 </FluentTextInput>
-            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+            <span class="font-size-sm text-hint">
                 Showing @FilteredTenants.Count() of @_tenants.Count tenants
             </span>
         </FluentStack>
@@ -710,7 +710,7 @@
         @* Tenants Table *@
         @if (_isLoading)
         {
-            <FluentSpinner Style="margin: 30px auto;" />
+            <FluentSpinner Class="m-auto" />
         }
         else
         {
@@ -720,13 +720,13 @@
                 <TemplateColumn Title="Internal Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.InternalEmailDomains))">
                     @foreach (var d in context.GetInternalDomains())
                     {
-                        <FluentBadge Appearance="BadgeAppearance.Filled" Style="margin-right: 4px; font-size: 11px;">@d</FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Filled" Class="mr-1 font-size-xs">@d</FluentBadge>
                     }
                 </TemplateColumn>
                 <TemplateColumn Title="External Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.ExternalEmailDomains))">
                     @foreach (var d in context.GetExternalDomains())
                     {
-                        <FluentBadge Appearance="BadgeAppearance.Tint" Style="margin-right: 4px; font-size: 11px;">@d</FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Tint" Class="mr-1 font-size-xs">@d</FluentBadge>
                     }
                 </TemplateColumn>
                 <TemplateColumn Title="Status" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.IsActive))">
@@ -1574,16 +1574,8 @@
         _loadingTenantWorkItems = true;
         try
         {
-            var tenantIdStr = _managingTasksTenant.Id.ToString();
-            _tenantTasks = await DbContext.Tasks
-                .Where(t => t.TenantId.ToString() == tenantIdStr && t.Level == TaskLevelEnum.Tenant && !t.IsDeleted)
-                .OrderByDescending(t => t.Created)
-                .ToListAsync();
-
-            _tenantRisks = await DbContext.Risks
-                .Where(r => r.TenantId.ToString() == tenantIdStr && r.Level == TaskLevelEnum.Tenant && !r.IsDeleted)
-                .OrderByDescending(r => r.Created)
-                .ToListAsync();
+            _tenantTasks = (await TaskService.GetTenantTasksAsync(_managingTasksTenant.Id)).ToList();
+            _tenantRisks = (await TaskService.GetTenantRisksAsync(_managingTasksTenant.Id)).ToList();
         }
         catch (Exception ex)
         {
@@ -1613,8 +1605,13 @@
                 StartDate = DateTime.UtcNow,
                 CreatedBy = CurrentUser.Email ?? "system"
             };
-            DbContext.Tasks.Add(task);
-            await DbContext.SaveChangesAsync();
+            var taskResult = await TaskService.CreateTaskAsync(task);
+            if (!taskResult.IsSuccess)
+            {
+                _statusMessage = $"Error creating tenant task: {taskResult.Error}";
+                _isError = true;
+                return;
+            }
             _newTenantTaskTitle = string.Empty;
             _newTenantTaskDesc = string.Empty;
             _newTenantTaskDueDate = null;
@@ -1649,8 +1646,13 @@
                 CreatedBy = CurrentUser.Email ?? "system",
                 Status = TaskStatusEnum.Pending
             };
-            DbContext.Risks.Add(risk);
-            await DbContext.SaveChangesAsync();
+            var riskResult = await TaskService.CreateRiskAsync(risk);
+            if (!riskResult.IsSuccess)
+            {
+                _statusMessage = $"Error creating tenant risk: {riskResult.Error}";
+                _isError = true;
+                return;
+            }
             _newTenantRiskTitle = string.Empty;
             _newTenantRiskDesc = string.Empty;
             _statusMessage = "Tenant risk created successfully.";
@@ -1671,7 +1673,7 @@
         else task.EndDate = null;
         task.UpdatedBy = CurrentUser.Email ?? "system";
         task.Updated = DateTime.UtcNow;
-        await DbContext.SaveChangesAsync();
+        await TaskService.UpdateTaskAsync(task);
         _statusMessage = $"Task status updated to {task.Status}.";
         _isError = false;
     }

@@ -8,6 +8,7 @@
     <RootNamespace>BlazorFluent.AppHost</RootNamespace>
     <AssemblyName>BlazorFluent.AppHost</AssemblyName>
     <WarningsAsErrors>CS0108</WarningsAsErrors>
+    <UserSecretsId>dotnet-BlazorFluent.AppHost-5e1d8820-1a73-4c59-bf12-984400e2a391</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

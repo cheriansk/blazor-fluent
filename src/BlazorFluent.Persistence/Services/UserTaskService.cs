@@ -1,4 +1,4 @@
-﻿using BlazorFluent.Core.Contracts;
+using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.Contracts.Engine.Client;
 using BlazorFluent.Shared.Contracts.Engine.Transforms;
 using BlazorFluent.Shared.DataListTypes;
@@ -989,5 +989,56 @@ public partial class UserTaskService : IUserTaskService
         {
             _logger.LogWarning(ex, "Failed to send blocker alert to {Email}", email);
         }
+    }
+
+    public async Task<IReadOnlyList<TaskEntity>> GetTenantTasksAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        return await _context.Tasks
+            .AsNoTracking()
+            .Where(t => t.TenantId == tenantId && t.Level == TaskLevelEnum.Tenant && !t.IsDeleted)
+            .OrderByDescending(t => t.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<RiskEntity>> GetTenantRisksAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        return await _context.Risks
+            .AsNoTracking()
+            .Where(r => r.TenantId == tenantId && r.Level == TaskLevelEnum.Tenant && !r.IsDeleted)
+            .OrderByDescending(r => r.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Result<RiskEntity>> CreateRiskAsync(RiskEntity risk, CancellationToken ct = default)
+    {
+        try
+        {
+            _context.Risks.Add(risk);
+            await _context.SaveChangesAsync(ct);
+            return Result<RiskEntity>.Success(risk);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create risk: {Title}", risk.Title);
+            return Result<RiskEntity>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<IReadOnlyList<TaskEntity>> GetRecentTasksAsync(int limit = 30, CancellationToken ct = default)
+    {
+        return await _context.Tasks
+            .AsNoTracking()
+            .Where(t => !t.IsDeleted)
+            .OrderByDescending(t => t.Created)
+            .Take(limit)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<WorkDependencyEntity>> GetProjectWorkDependenciesAsync(Guid projectId, CancellationToken ct = default)
+    {
+        return await _context.WorkDependencies
+            .AsNoTracking()
+            .Where(d => d.ProjectId == projectId && !d.IsDeleted)
+            .ToListAsync(ct);
     }
 }

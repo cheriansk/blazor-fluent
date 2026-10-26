@@ -2,11 +2,9 @@
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Jobs
-@using BlazorFluent.Persistence.Context
-@using Microsoft.EntityFrameworkCore
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject IJobManagerService JobManagerService
-@inject AppDbContext DbContext
+@inject ITenantService TenantService
 @inject ITenantContext TenantContext
 @inject IRootAdminService RootAdmin
 @inject ICurrentUser CurrentUser
@@ -15,10 +13,10 @@
 @implements IDisposable
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="full-width">
         <div>
             <FluentLabel Typo="Typography.H4">Background Jobs Orchestration</FluentLabel>
-            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+            <FluentLabel Typo="Typography.Body" Class="text-hint">
                 Monitor batch job execution history, view transient retries, and manually trigger or retry tenant-scoped jobs.
             </FluentLabel>
         </div>
@@ -31,7 +29,7 @@
                               OptionText="@(j => j.Name)"
                               OptionValue="@(j => j.Id)"
                               @bind-Value="_selectedJobToRun"
-                              Style="min-width: 220px;" />
+                              Class="min-w-220" />
                 <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Play())" OnClick="@TriggerSelectedJobAsync">
                     Run Job
                 </FluentButton>
@@ -43,7 +41,7 @@
     </FluentStack>
 
     <!-- Tenant Filter Toolbar -->
-    <FluentCard Style="padding: 16px;">
+    <FluentCard Class="p-4">
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16" Wrap="true">
             <FluentSelect TOption="TenantFilterOption"
                           TValue="string"
@@ -55,7 +53,7 @@
                           Disabled="@(_availableTenants.Count <= 1)"
                           Label="Filter by Tenant"
                           Placeholder="-- Select a tenant to view background jobs --"
-                          Style="min-width: 300px;" />
+                          Class="min-w-300" />
 
             @if (!string.IsNullOrWhiteSpace(_selectedTenantId) && _availableTenants.Count > 1)
             {
@@ -71,7 +69,7 @@
     @if (string.IsNullOrWhiteSpace(_selectedTenantId))
     {
         <!-- Empty State Prompt -->
-        <FluentMessageBar Intent="MessageBarIntent.Info" Style="padding: 16px;">
+        <FluentMessageBar Intent="MessageBarIntent.Info" Class="p-4">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
                 <FluentIcon Value="@(new Icons.Regular.Size24.Clock())" />
                 <div>
@@ -93,25 +91,25 @@
         <!-- Metric Summary Cards -->
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Total Executions</FluentLabel>
                     <FluentLabel Typo="Typography.H4">@_executions.Count</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Succeeded</FluentLabel>
                     <FluentLabel Typo="Typography.H4" Color="Color.Success">@_executions.Count(e => e.Status == JobStatusEnum.Succeeded)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Failed</FluentLabel>
                     <FluentLabel Typo="Typography.H4" Color="Color.Error">@_executions.Count(e => e.Status == JobStatusEnum.Failed)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Running / Retrying</FluentLabel>
                     <FluentLabel Typo="Typography.H4" Color="Color.Warning">@_executions.Count(e => e.Status == JobStatusEnum.Running || e.Status == JobStatusEnum.Retrying)</FluentLabel>
                 </FluentCard>
@@ -121,14 +119,14 @@
         <!-- Execution Detail Modal Dialog -->
         @if (_selectedErrorExecution != null)
         {
-            <FluentCard Style="@($"margin-bottom: 20px; border-left: 4px solid {(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "var(--error)" : "var(--accent-fill-rest)")};")">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+            <FluentCard Class="@(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "mb-4 card-error-border" : "mb-4 card-accent-border")">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                     <FluentLabel Typo="Typography.H5">
                         @(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "Job Error Diagnostics" : "Job Execution Details"): @_selectedErrorExecution.JobName
                     </FluentLabel>
                     <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedErrorExecution = null)" />
                 </FluentStack>
-                <FluentLabel Typo="Typography.Body" Style="margin-bottom: 8px;">
+                <FluentLabel Typo="Typography.Body" Class="mb-2">
                     <strong>Execution ID:</strong> @_selectedErrorExecution.Id 
                     | <strong>Correlation ID:</strong> @(_selectedErrorExecution.CorrelationId ?? "—") 
                     | <strong>Parent:</strong> @(_selectedErrorExecution.ParentExecutionId?.ToString() ?? "Root") 
@@ -137,30 +135,30 @@
                 </FluentLabel>
                 @if (!string.IsNullOrWhiteSpace(_selectedErrorExecution.ErrorMessage))
                 {
-                    <div style="background: var(--neutral-layer-2); padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">
+                    <div class="code-box-light">
                         @_selectedErrorExecution.ErrorMessage
                     </div>
                 }
                 else
                 {
-                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">No error messages recorded for this execution.</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Class="text-hint">No error messages recorded for this execution.</FluentLabel>
                 }
             </FluentCard>
         }
 
         <!-- Jobs Grid Card -->
-        <FluentCard Style="padding: 20px;">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+        <FluentCard Class="p-5">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-4">
                 <div>
                     <FluentLabel Typo="Typography.H5">Executions for &ldquo;@_selectedTenantName&rdquo;</FluentLabel>
-                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                    <FluentLabel Typo="Typography.Body" Class="text-hint">
                         Historical executions for tenant <code>@_selectedTenantId</code>.
                     </FluentLabel>
                 </div>
                 <FluentTextInput Placeholder="Filter jobs by name, source, or correlation..."
                                  @bind-Value="_jobSearchText"
                                  @bind-Value:after="StateHasChanged"
-                                 Style="width: 300px;">
+                                 Class="w-300">
                     <StartTemplate>
                         <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                     </StartTemplate>
@@ -169,15 +167,15 @@
 
             @if (_isLoading)
             {
-                <div style="display: flex; justify-content: center; padding: 40px;">
+                <div class="d-flex justify-center p-5">
                     <FluentSpinner Size="SpinnerSize.Medium" />
                 </div>
             }
             else if (_executions.Count == 0)
             {
-                <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
+                <div class="text-center p-5 text-hint">
                     <FluentIcon Value="@(new Icons.Regular.Size32.Clock())" Color="Color.Default" />
-                    <div style="margin-top: 10px; font-weight: 500;">No background job executions found for this tenant.</div>
+                    <div class="mt-2 font-weight-600">No background job executions found for this tenant.</div>
                 </div>
             }
             else
@@ -274,14 +272,14 @@
         var isRootAdmin = CurrentUser.IsRootAdmin;
         if (isRootAdmin)
         {
-            var dbTenants = await DbContext.Tenants
-                .AsNoTracking()
+            var dbTenants = (await TenantService.GetAllTenantsAsync())
+
                 .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(
                     t.Slug,
                     t.Slug == RootAdmin.RootTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
-                .ToListAsync();
+                .ToList();
 
             _availableTenants = dbTenants;
         }

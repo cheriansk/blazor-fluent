@@ -14,6 +14,10 @@ namespace BlazorFluent.Persistence.Services;
 
 public class TenantService : ITenantService
 {
+    private static readonly Func<AppDbContext, string, Task<TenantEntity?>> GetTenantBySlugCompiled =
+        EF.CompileAsyncQuery((AppDbContext ctx, string slug) =>
+            ctx.Tenants.AsNoTracking().FirstOrDefault(t => t.Slug.ToLower() == slug.ToLower() && !t.IsDeleted));
+
     private static readonly Func<AppDbContext, Guid, Task<TenantEntity?>> GetTenantByIdCompiled =
         EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
             ctx.Tenants.AsNoTracking().FirstOrDefault(t => t.Id == id && !t.IsDeleted));
@@ -216,8 +220,8 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Users can only query users within their own active tenant
-        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only query users within their own active tenant (Root Admin permitted for management)
+        if (!_tenantContext.HasActiveTenant || (!string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase) && !_currentUser.IsRootAdmin))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to access users of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
@@ -601,8 +605,8 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Users can only query projects within their active tenant
-        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only query projects within their active tenant (Root Admin permitted for management)
+        if (!_tenantContext.HasActiveTenant || (!string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase) && !_currentUser.IsRootAdmin))
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to access projects of tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
@@ -905,5 +909,63 @@ public class TenantService : ITenantService
             cancellationToken);
 
         return Result.Success();
+    }
+
+    public async Task<IReadOnlyList<UserEntity>> GetAllUsersAsync(int limit = 100, CancellationToken cancellationToken = default)
+    {
+        if (!_currentUser.IsRootAdmin)
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to access all users without Root Admin privileges.", _currentUser.UserId);
+            return [];
+        }
+
+        return await _dbContext.Users
+            .AsNoTracking()
+            .Where(u => !u.IsDeleted)
+            .OrderBy(u => u.FullName)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<UserEntity>> GetTenantUsersByIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        if (!_tenantContext.HasActiveTenant || (_tenantContext.TenantId != tenantId && !_currentUser.IsRootAdmin))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to access users of tenant '{TenantId}' without authorization.", _currentUser.UserId, tenantId);
+            return [];
+        }
+
+        return await _dbContext.TenantUsers
+            .AsNoTracking()
+            .Where(tu => tu.TenantId == tenantId && !tu.IsDeleted && tu.IsActive)
+            .Include(tu => tu.User)
+            .Select(tu => tu.User!)
+            .OrderBy(u => u.FullName)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ProjectEntity>> GetProjectsByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        if (!_tenantContext.HasActiveTenant || (_tenantContext.TenantId != tenantId && !_currentUser.IsRootAdmin))
+        {
+            _logger.LogWarning("Security Violation: User '{UserId}' attempted to access projects of tenant '{TenantId}' without authorization.", _currentUser.UserId, tenantId);
+            return [];
+        }
+
+        var query = _dbContext.Projects
+            .AsNoTracking()
+            .Include(p => p.Program)
+            .Where(p => p.TenantId == tenantId && !p.IsDeleted)
+            .OrderBy(p => p.Name);
+
+        if (tenantId != _tenantContext.TenantId && _currentUser.IsRootAdmin)
+        {
+            return await query.ToListWithAuditedBypassAsync(
+                _auditService,
+                $"Host user inspected projects in tenant '{tenantId}'",
+                cancellationToken);
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 }

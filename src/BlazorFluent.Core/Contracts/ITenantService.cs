@@ -23,4 +23,7 @@ public interface ITenantService
     Task<Result<bool>> IsTenantDaemonActiveAsync(Guid tenantId, CancellationToken cancellationToken = default);
     Task<Result> SetTenantDaemonActiveAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default);
     Task<UserEntity?> GetTenantDaemonUserAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<UserEntity>> GetAllUsersAsync(int limit = 100, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<UserEntity>> GetTenantUsersByIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ProjectEntity>> GetProjectsByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
 }

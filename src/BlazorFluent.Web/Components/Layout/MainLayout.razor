@@ -15,7 +15,6 @@
 @inject IUserSessionService SessionService
 @inject ICircuitSessionTracker CircuitTracker
 @inject IInternalAuthenticationService AuthVerificationService
-@inject AppDbContext DbContext
 @inject IConfiguration Configuration
 @inject ILogger<MainLayout> Logger
 @inject INavigationStateService NavState
@@ -26,17 +25,15 @@
 <ImpersonationBannerComp />
 <SessionRevokedModal />
 <SessionTimeoutModal />
-<FluentProviders />
-
-<FluentLayout>
-    <FluentLayoutItem Area="LayoutArea.Header">
+<div class="main-layout-container">
+    <header class="main-layout-header">
         @if (HasActiveTenantSession)
         {
             <FluentButton Appearance="ButtonAppearance.Subtle"
-                          IconStart="@(NavState.IsCollapsed ? new Icons.Regular.Size20.PanelLeftExpand() : new Icons.Regular.Size20.PanelLeftContract())"
-                          Title="@(NavState.IsCollapsed ? "Expand Navigation" : "Collapse Navigation")"
-                          OnClick="@NavState.Toggle"
-                          Style="margin-right: 6px;" />
+                              IconStart="@(NavState.IsCollapsed ? new Icons.Regular.Size20.PanelLeftExpand() : new Icons.Regular.Size20.PanelLeftContract())"
+                              Title="@(NavState.IsCollapsed ? "Expand Navigation" : "Collapse Navigation")"
+                              OnClick="@NavState.Toggle"
+                              Class="main-layout-header-btn" />
         }
         BlazorFluent
         <FluentSpacer />
@@ -52,56 +49,57 @@
         }
         @if (CurrentUser.IsAuthenticated)
         {
-            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size20.SignOut())" Title="Sign Out" OnClick="SignOut" Style="margin-left: 6px;">
+            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size20.SignOut())" Title="Sign Out" OnClick="SignOut" Class="main-layout-signout-btn">
                 Sign Out
             </FluentButton>
         }
         else if (!IsAnonymousPage)
         {
-            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Style="margin-left: 6px;">
+            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Class="main-layout-signout-btn">
                 Sign In
             </FluentButton>
         }
-    </FluentLayoutItem>
-    @if (HasActiveTenantSession)
-    {
-        <FluentLayoutItem Area="LayoutArea.Navigation" Style="@($"width: {(NavState.IsCollapsed ? "54px" : "260px")}; min-width: {(NavState.IsCollapsed ? "54px" : "260px")}; transition: width 0.2s ease-in-out;")">
-            <NavMenuComp />
-        </FluentLayoutItem>
-    }
-    <FluentLayoutItem Area="LayoutArea.Content" Class="main">
-        <div class="content">
-            <AppErrorBoundaryComp>
-                @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)
-                {
-                    <div style="padding: 40px; max-width: 800px; margin: 40px auto;">
-                        <FluentCard Style="border-left: 4px solid var(--error); padding: 24px;">
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
-                                    <FluentIcon Value="@(new Icons.Filled.Size24.DismissCircle())" Color="Color.Error" />
-                                    <FluentLabel Typo="Typography.H4">Active Tenant Required</FluentLabel>
+    </header>
+    <div class="main-layout-body">
+        @if (HasActiveTenantSession)
+        {
+            <aside class="@(NavState.IsCollapsed ? "main-layout-nav-collapsed" : "main-layout-nav-expanded")">
+                <NavMenuComp />
+            </aside>
+        }
+        <main class="main">
+            <div class="content">
+                <AppErrorBoundaryComp>
+                    @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)
+                    {
+                        <div class="main-layout-access-denied-wrapper">
+                            <FluentCard Class="main-layout-access-denied-card">
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                                        <FluentIcon Value="@(new Icons.Filled.Size24.DismissCircle())" Color="Color.Error" />
+                                        <FluentLabel Typo="Typography.H4">Active Tenant Required</FluentLabel>
+                                    </FluentStack>
+                                    <FluentLabel Typo="Typography.Body">
+                                        Your account is authenticated, but no active tenant is currently selected or assigned.
+                                        Application screens and data operations are disabled to prevent cross-tenant data corruption.
+                                    </FluentLabel>
+                                    <FluentLabel Typo="Typography.Body" Class="main-layout-hint-label">
+                                        Please switch to an authorized tenant or contact your organization administrator.
+                                    </FluentLabel>
                                 </FluentStack>
-                                <FluentLabel Typo="Typography.Body">
-                                    Your account is authenticated, but no active tenant is currently selected or assigned.
-                                    Application screens and data operations are disabled to prevent cross-tenant data corruption.
-                                </FluentLabel>
-                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
-                                    Please switch to an authorized tenant or contact your organization administrator.
-                                </FluentLabel>
-                            </FluentStack>
-                        </FluentCard>
-                    </div>
-                }
-                else
-                {
-                    @Body
-                }
-            </AppErrorBoundaryComp>
-        </div>
-    </FluentLayoutItem>
-
-    <FluentLayoutItem Area="LayoutArea.Footer">
-        <div style="display: flex">
+                            </FluentCard>
+                        </div>
+                    }
+                    else
+                    {
+                        @Body
+                    }
+                </AppErrorBoundaryComp>
+            </div>
+        </main>
+    </div>
+    <footer class="main-layout-footer">
+        <div class="main-layout-flex-row">
             <FluentLink Href="settings" IconStart="@(new Icons.Regular.Size16.Settings())">
                 Settings
             </FluentLink>
@@ -110,8 +108,8 @@
                 About Blazor
             </FluentLink>
         </div>
-    </FluentLayoutItem>
-</FluentLayout>
+    </footer>
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

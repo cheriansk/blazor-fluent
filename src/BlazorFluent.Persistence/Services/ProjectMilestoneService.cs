@@ -15,6 +15,10 @@ namespace BlazorFluent.Persistence.Services;
 /// </summary>
 public class ProjectMilestoneService : IProjectMilestoneService
 {
+    private static readonly Func<AppDbContext, Guid, Task<ProjectCalendarEntity?>> GetMilestoneByIdCompiled =
+        EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
+            ctx.ProjectCalendars.AsNoTracking().FirstOrDefault(m => m.Id == id && !m.IsDeleted));
+
     private readonly AppDbContext _context;
     private readonly ITenantContext _tenantContext;
     private readonly IProjectAuthorizationService _projectAuth;

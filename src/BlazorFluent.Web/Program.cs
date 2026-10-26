@@ -1,3 +1,4 @@
+using BlazorFluent.Infrastructure.Alerting;
 using Azure.Identity;
 
 using Azure.Monitor.OpenTelemetry.AspNetCore;
@@ -212,7 +213,9 @@ try
 
                 retainedFileCountLimit: 30,
 
-                outputTemplate: logOutputTemplate);
+                outputTemplate: logOutputTemplate)
+
+            .WriteTo.TeamsAlert(context.Configuration);
 
     });
 
@@ -919,7 +922,7 @@ try
 
             var currentUser = httpContext.RequestServices.GetService<ICurrentUser>();
 
-            if (!string.IsNullOrWhiteSpace(currentUser?.UserId))
+            if (currentUser?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(currentUser.UserId))
 
             {
 
@@ -978,6 +981,20 @@ try
     }).AllowAnonymous();
 
 
+
+    // Content Security Policy (CSP) browser violation telemetry endpoint
+    app.MapPost("/api/security/csp-violations", async (HttpContext context, ILoggerFactory loggerFactory) =>
+    {
+        var logger = loggerFactory.CreateLogger("Security.CSP");
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+
+        logger.LogCritical("CRITICAL SECURITY VIOLATION: Browser Content Security Policy (CSP) violation detected! Payload: {CspReport}", body);
+
+        return Results.NoContent();
+    })
+    .AllowAnonymous()
+    .DisableAntiforgery();
 
     app.Run();
 

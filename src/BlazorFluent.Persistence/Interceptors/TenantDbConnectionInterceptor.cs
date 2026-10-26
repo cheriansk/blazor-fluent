@@ -71,14 +71,8 @@ public class TenantDbConnectionInterceptor : DbConnectionInterceptor
 
     private static void ConfigureCommand(DbCommand command, ITenantContext? tenantContext)
     {
-        if (tenantContext == null || !tenantContext.HasActiveTenant)
-        {
-            throw new System.Security.SecurityException(
-                "Zero-Trust Security Violation: PostgreSQL connection cannot be opened without an active tenant context.");
-        }
-
-        var isHost = tenantContext.IsRootTenant ? "true" : "false";
-        var tenantId = tenantContext.TenantId.ToString();
+        var isHost = tenantContext?.IsRootTenant == true ? "true" : "false";
+        var tenantId = tenantContext?.HasActiveTenant == true ? tenantContext.TenantId.ToString() : Guid.Empty.ToString();
 
         command.CommandText = "SELECT set_config('app.is_host', @is_host, false), set_config('app.current_tenant_id', @current_tenant_id, false);";
 

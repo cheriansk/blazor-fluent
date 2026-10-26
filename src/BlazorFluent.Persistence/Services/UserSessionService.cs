@@ -10,6 +10,10 @@ namespace BlazorFluent.Persistence.Services;
 
 public class UserSessionService : IUserSessionService
 {
+    private static readonly Func<AppDbContext, Guid, Task<UserSessionEntity?>> GetSessionByIdCompiled =
+        EF.CompileAsyncQuery((AppDbContext ctx, Guid sessionId) =>
+            ctx.UserSessions.AsNoTracking().FirstOrDefault(s => s.Id == sessionId && !s.IsRevoked));
+
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUser _currentUser;

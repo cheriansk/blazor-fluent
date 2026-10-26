@@ -22,6 +22,10 @@ namespace BlazorFluent.Persistence.Services;
 /// </summary>
 public class InternalAuthenticationService : IInternalAuthenticationService
 {
+    private static readonly Func<AppDbContext, Guid, Task<UserEntity?>> GetUserByIdCompiled =
+        EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
+            ctx.Users.AsNoTracking().FirstOrDefault(u => u.Id == id && !u.IsDeleted));
+
     private static readonly Func<AppDbContext, string, Task<UserEntity?>> GetUserByEmailCompiled =
         EF.CompileAsyncQuery((AppDbContext ctx, string email) =>
             ctx.Users.AsNoTracking().FirstOrDefault(u => u.Email.ToLower() == email && !u.IsDeleted));

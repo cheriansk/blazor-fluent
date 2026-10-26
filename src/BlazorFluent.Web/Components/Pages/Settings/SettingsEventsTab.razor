@@ -4,11 +4,11 @@
 @using BlazorFluent.Core.Dtos.Response
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Events
-@using BlazorFluent.Persistence.Context
-@using Microsoft.EntityFrameworkCore
+
+
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject IEventTrackerService EventTrackerService
-@inject AppDbContext DbContext
+@inject ITenantService TenantService
 @inject ITenantContext TenantContext
 @inject IRootAdminService RootAdmin
 @inject ICurrentUser CurrentUser
@@ -18,10 +18,10 @@
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <!-- Header -->
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; width: 100%;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="full-width">
         <div>
             <FluentLabel Typo="Typography.H4">Event Tracker &amp; Audit Ledger</FluentLabel>
-            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+            <FluentLabel Typo="Typography.Body" Class="text-hint">
                 Trace event publication and execution: inspect sender origins, senders, JSON payloads, and per-consumer telemetry.
             </FluentLabel>
         </div>
@@ -34,7 +34,7 @@
     </FluentStack>
 
     <!-- Tenant Filter Toolbar -->
-    <FluentCard Style="padding: 16px;">
+    <FluentCard Class="p-4">
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16" Wrap="true">
             <FluentSelect TOption="TenantFilterOption" TValue="string"
                           Items="@_availableTenants"
@@ -45,7 +45,7 @@
                           Disabled="@(_availableTenants.Count <= 1)"
                           Label="Filter by Tenant"
                           Placeholder="-- Select a tenant to view events --"
-                          Style="min-width: 300px;" />
+                          Class="min-w-300" />
 
             @if (!string.IsNullOrWhiteSpace(_selectedTenantId) && _availableTenants.Count > 1)
             {
@@ -61,7 +61,7 @@
     @if (string.IsNullOrWhiteSpace(_selectedTenantId))
     {
         <!-- Empty State Prompt -->
-        <FluentMessageBar Intent="MessageBarIntent.Info" Style="padding: 16px;">
+        <FluentMessageBar Intent="MessageBarIntent.Info" Class="p-4">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
                 <FluentIcon Value="@(new Icons.Regular.Size24.Pulse())" />
                 <div>
@@ -75,25 +75,25 @@
         <!-- Metric Summary Cards -->
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Total Events</FluentLabel>
                     <FluentLabel Typo="Typography.H4">@(_eventResult?.TotalCount ?? 0)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Completed</FluentLabel>
                     <FluentLabel Typo="Typography.H4" Color="Color.Success">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.Completed) ?? 0)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">In Progress</FluentLabel>
                     <FluentLabel Typo="Typography.H4" Color="Color.Warning">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.InProgress || e.Status == EventTrackerStatusEnum.Published) ?? 0)</FluentLabel>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="6" sm="3">
-                <FluentCard Style="padding: 16px; text-align: center;">
+                <FluentCard Class="p-4 text-center">
                     <FluentLabel Typo="Typography.Subject">Failed / Partial</FluentLabel>
                     <FluentLabel Typo="Typography.H4" Color="Color.Error">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.Failed || e.Status == EventTrackerStatusEnum.PartiallyFailed) ?? 0)</FluentLabel>
                 </FluentCard>
@@ -101,20 +101,20 @@
         </FluentGrid>
 
         <!-- Filter Toolbar -->
-        <FluentCard Style="padding: 16px;">
+        <FluentCard Class="p-4">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                 <FluentLabel Typo="Typography.H6">Search &amp; Filters</FluentLabel>
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true" Style="align-items: flex-end;">
-                    <FluentTextInput Label="Search (Event, Origin, Sender, Payload)" @bind-Value="_filter.SearchTerm" Placeholder="Search..." Style="min-width: 240px;" />
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true" VerticalAlignment="VerticalAlignment.Bottom">
+                    <FluentTextInput Label="Search (Event, Origin, Sender, Payload)" @bind-Value="_filter.SearchTerm" Placeholder="Search..." Class="min-w-240" />
 
                     <div>
-                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Status</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="mb-1">Status</FluentLabel>
                         <FluentSelect Items="@_statuses"
                                       TOption="string"
                                       TValue="string"
                                       Value="@_selectedStatus"
                                       ValueChanged="@OnStatusChanged"
-                                      Style="min-width: 160px;" />
+                                      Class="min-w-160" />
                     </div>
 
                     <FluentDatePicker Label="From Date" @bind-Value="_filter.FromDate" />
@@ -133,11 +133,11 @@
         <!-- Selected Event Inspection Detail Panel -->
         @if (_selectedEvent is not null)
         {
-            <FluentCard Style="margin-bottom: 15px; border-left: 4px solid var(--accent-fill-rest); padding: 20px;">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+            <FluentCard Class="mb-3 card-accent-border p-5">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                     <div>
                         <FluentLabel Typo="Typography.H5">Event Receipt: @_selectedEvent.EventName</FluentLabel>
-                        <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">
+                        <FluentLabel Typo="Typography.Caption" Class="text-hint">
                             ID: @_selectedEvent.Id | Published: @TimeZoneService.FormatDateTime(_selectedEvent.PublishedAtUtc, "yyyy-MM-dd HH:mm:ss.fff") (@TimeZoneService.TimeZone.StandardName)
                         </FluentLabel>
                     </div>
@@ -166,19 +166,19 @@
                     </FluentGridItem>
                 </FluentGrid>
 
-                <FluentDivider Style="margin: 16px 0;" />
+                <FluentDivider Class="mt-4 mb-4" />
 
                 <!-- Consumer Execution Telemetry -->
-                <FluentLabel Typo="Typography.H6" Style="margin-bottom: 8px;">Consumer Execution Receipts</FluentLabel>
+                <FluentLabel Typo="Typography.H6" Class="mb-2">Consumer Execution Receipts</FluentLabel>
                 @if (_selectedEvent.Consumptions is null || !_selectedEvent.Consumptions.Any())
                 {
-                    <FluentMessageBar Intent="MessageBarIntent.Info" Style="margin-bottom: 12px;">
+                    <FluentMessageBar Intent="MessageBarIntent.Info" Class="mb-3">
                         No consumers have processed this event yet.
                     </FluentMessageBar>
                 }
                 else
                 {
-                    <FluentDataGrid Items="@_selectedEvent.Consumptions.AsQueryable()" ResizableColumns="true" Style="margin-bottom: 16px;">
+                    <FluentDataGrid Items="@_selectedEvent.Consumptions.AsQueryable()" ResizableColumns="true" Class="mb-4">
                         <PropertyColumn Property="@(c => c.ConsumerClass)" Title="Consumer Class" />
                         <PropertyColumn Property="@(c => c.ConsumerMethod)" Title="Method" />
                         <TemplateColumn Title="Started At">
@@ -207,59 +207,59 @@
                         <TemplateColumn Title="Diagnostics">
                             @if (!string.IsNullOrWhiteSpace(context.ErrorMessage))
                             {
-                                <span title="@context.ErrorMessage" style="color: var(--error); font-size: 12px; cursor: help;">
+                                <span title="@context.ErrorMessage" class="text-danger font-size-sm cursor-pointer">
                                     ⚠️ @Truncate(context.ErrorMessage, 60)
                                 </span>
                             }
                             else
                             {
-                                <span style="color: var(--success); font-size: 12px;">OK</span>
+                                <span class="font-size-sm">OK</span>
                             }
                         </TemplateColumn>
                     </FluentDataGrid>
                 }
 
                 <!-- Payload JSON Inspector -->
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mt-3">
                     <FluentLabel Typo="Typography.H6">Event Payload (JSON)</FluentLabel>
                     <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Copy())" OnClick="@CopyPayloadAsync">
                         @(_copied ? "Copied!" : "Copy Payload")
                     </FluentButton>
                 </FluentStack>
-                <div style="background-color: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; margin-top: 8px; max-height: 280px; overflow-y: auto; white-space: pre-wrap;">
+                <div class="code-terminal-box mt-2">
                     @_selectedEvent.PayloadJson
                 </div>
             </FluentCard>
         }
 
         <!-- Events Grid Card -->
-        <FluentCard Style="padding: 20px;">
+        <FluentCard Class="p-5">
             @if (_isLoading)
             {
-                <div style="display: flex; justify-content: center; padding: 40px;">
+                <div class="d-flex justify-center p-5">
                     <FluentSpinner Size="SpinnerSize.Medium" />
                 </div>
             }
             else if (_eventResult is null || _eventResult.Items.Count == 0)
             {
-                <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
+                <div class="text-center p-5 text-hint">
                     <FluentIcon Value="@(new Icons.Regular.Size32.Pulse())" Color="Color.Default" />
-                    <div style="margin-top: 10px; font-weight: 500;">No events found for this tenant matching search criteria.</div>
+                    <div class="mt-2 font-weight-600">No events found for this tenant matching search criteria.</div>
                 </div>
             }
             else
             {
                 <!-- In-Grid Quick Search -->
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                     <FluentTextInput Placeholder="Quick filter visible records..." 
                                      @bind-Value="_inGridSearchText"
                                      @bind-Value:after="StateHasChanged"
-                                     Style="width: 320px;">
+                                     Class="w-320">
                         <StartTemplate>
                             <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                         </StartTemplate>
                     </FluentTextInput>
-                    <span style="font-size: 12px; color: var(--neutral-foreground-hint);">
+                    <span class="font-size-sm text-hint">
                         Showing @FilteredEventItems.Count() of @(_eventResult.Items.Count) events on this page
                     </span>
                 </FluentStack>
@@ -315,7 +315,7 @@
                 </FluentDataGrid>
 
                 <!-- Pagination Bar -->
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-top: 12px;">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mt-3">
                     <FluentLabel Typo="Typography.Body">
                         Showing Page @_eventResult.PageNumber of @_eventResult.TotalPages (@_eventResult.TotalCount total records)
                     </FluentLabel>
@@ -365,14 +365,14 @@
         var isRootAdmin = CurrentUser.IsRootAdmin;
         if (isRootAdmin)
         {
-            var dbTenants = await DbContext.Tenants
-                .AsNoTracking()
+            var dbTenants = (await TenantService.GetAllTenantsAsync())
+
                 .Where(t => t.IsActive)
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(
                     t.Slug,
                     t.Slug == RootAdmin.RootTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
-                .ToListAsync();
+                .ToList();
 
             _availableTenants = dbTenants;
         }

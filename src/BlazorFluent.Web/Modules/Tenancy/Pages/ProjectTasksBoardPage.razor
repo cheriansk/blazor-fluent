@@ -1,4 +1,4 @@
-﻿@page "/projects/{ProjectId:guid}/tasks"
+@page "/projects/{ProjectId:guid}/tasks"
 @page "/tasks"
 @attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
 @rendermode InteractiveServer
@@ -12,12 +12,12 @@
 @using BlazorFluent.Core.Extensions
 @using BlazorFluent.Persistence.Context
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
+
 @inject IUserTaskService TaskService
 @inject IProjectMilestoneService MilestoneService
 @inject IProjectHealthService HealthService
 @inject IWorkflowService WorkflowService
-@inject AppDbContext DbContext
+@inject ITenantService TenantService
 @inject ITenantContext TenantContext
 @inject IProjectContext ProjectContext
 @inject ICurrentUser CurrentUser
@@ -49,7 +49,7 @@
         <!-- Project Switcher -->
         @if (_availableProjects.Count > 1)
         {
-            <div style="min-width: 180px;">
+            <div class="min-w-180">
                 <FluentSelect TOption="ProjectEntity"
                               TValue="string"
                               Items="@_availableProjects"
@@ -62,7 +62,7 @@
         }
 
         <!-- Milestone Filter -->
-        <div style="min-width: 200px;">
+        <div class="min-w-200">
             <FluentSelect TOption="MilestoneFilterItem"
                           TValue="string"
                           Items="@_milestoneFilterOptions"
@@ -91,11 +91,11 @@
 
 @if (_isLoading)
 {
-    <FluentSpinner Style="margin: 3rem auto;" />
+    <FluentSpinner Class="m-auto" />
 }
 else if (_currentProject is null)
 {
-    <FluentMessageBar Intent="MessageBarIntent.Warning" Style="margin-top: 1.5rem;">
+    <FluentMessageBar Intent="MessageBarIntent.Warning" Class="mt-4">
         No active project selected or found. Please navigate to a valid project.
     </FluentMessageBar>
 }
@@ -128,7 +128,7 @@ else
                 <div class="progress-container">
                     <span class="progress-text">@_projectHealth.ProgressPercentage% Completed</span>
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: @(_projectHealth.ProgressPercentage)%;"></div>
+                        <FluentProgressBar Min="0" Max="100" Value="@((int)Math.Round(_projectHealth.ProgressPercentage))" Class="full-width" />
                     </div>
                 </div>
                 <span class="metric-label">@_projectHealth.CompletedTasks / @_projectHealth.TotalTasks Deliverables</span>
@@ -180,7 +180,7 @@ else
     </div>
 
     <!-- Sub-tab switch between Delivery Board and Sequential Workflows -->
-    <div class="tasks-subtab-bar" style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 12px 0;">
+    <div class="tasks-subtab-bar d-flex justify-between align-center mb-3 mt-4">
         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
             <FluentButton Appearance="@(_activeSubTab == "tasks" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
                           IconStart="@(new Icons.Regular.Size16.Board())"
@@ -214,8 +214,8 @@ else
             <ItemTemplate>
                 <FluentCard Class="task-card">
                     <div class="task-card-header">
-                        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-                            <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(context.Priority)">
+                        <div class="d-flex gap-1 align-center flex-wrap">
+                            <FluentBadge Appearance="@BadgeAppearance.Tint" Class="@GetPriorityColor(context.Priority)">
                                 @context.Priority
                             </FluentBadge>
 
@@ -267,7 +267,7 @@ else
                             }
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="d-flex align-center gap-2">
                             @if (!string.IsNullOrWhiteSpace(context.ReporterEmail))
                             {
                                 <span class="reporter-pill" title="Reporter: @context.ReporterEmail">
@@ -286,13 +286,13 @@ else
     else
     {
         <!-- Sequential Workflows View -->
-        <div class="workflows-container" style="margin-top: 8px;">
+        <div class="workflows-container mt-2">
             @if (_projectWorkflows.Count == 0)
             {
-                <div style="text-align: center; padding: 48px 24px; background: var(--neutral-fill-subtle-rest, #f9f9f9); border: 1px dashed var(--neutral-stroke-subtle, #edebe9); border-radius: 8px;">
+                <div class="empty-box-dashed">
                     <FluentIcon Value="@(new Icons.Regular.Size32.Flowchart())" Color="Color.Default" />
-                    <FluentLabel Typo="Typography.H6" Style="margin-top: 12px;">No Sequential Workflows Found</FluentLabel>
-                    <p style="color: var(--neutral-foreground-hint, #616161); max-width: 480px; margin: 8px auto 20px auto; font-size: 0.9rem;">
+                    <FluentLabel Typo="Typography.H6" Class="mt-3">No Sequential Workflows Found</FluentLabel>
+                    <p class="text-hint max-w-480 m-auto font-size-sm">
                         Workflows orchestrate sequential stage-gated activities where exactly one owner is active at any time, with multi-party watcher notifications on every handoff.
                     </p>
                     @if (_canManageWorkflows)
@@ -330,45 +330,45 @@ else
             </div>
 
             <div class="modal-body">
-                <FluentTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Style="width: 100%;" Placeholder="Concise headline of the work item..." />
+                <FluentTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Class="full-width" Placeholder="Concise headline of the work item..." />
 
-                <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Style="width: 100%; margin-top: 12px;" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
+                <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Class="full-width mt-3" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
 
-                <div class="modal-grid-row" style="margin-top: 12px;">
+                <div class="modal-grid-row mt-3">
                     <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
                                   TValue="TaskPriorityEnum"
                                   Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                   OptionText="@(i => i.DisplayName)"
                                   OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Low)"
                                   @bind-Value="_newTask.Priority"
-                                  Label="Priority" Style="width: 100%;" />
+                                  Label="Priority" Class="full-width" />
 
-                    <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Style="width: 100%;" Required="true" />
+                    <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
                 </div>
 
-                <div class="modal-grid-row" style="margin-top: 12px;">
+                <div class="modal-grid-row mt-3">
                     <FluentSelect TOption="MilestoneOptionItem"
                                   TValue="string"
                                   Items="@_milestoneSelectOptions"
                                   OptionText="@(m => m.Label)"
                                   OptionValue="@(m => m.Id)"
                                   @bind-Value="_newTaskMilestoneIdString"
-                                  Label="Milestone Association (Optional)" Style="width: 100%;" />
+                                  Label="Milestone Association (Optional)" Class="full-width" />
 
                     <FluentTextInput @bind-Value="_newTask.AssigneeEmails"
                                      Label="Assignee Email(s)"
                                      Placeholder="alice@company.com; bob@company.com"
-                                     Style="width: 100%;" />
+                                     Class="full-width" />
                 </div>
 
                 <FluentTextInput @bind-Value="_newTask.Labels"
                                  Label="Labels / Tags (Comma-Separated)"
                                  Placeholder="Frontend, Bug, HighPriority"
-                                 Style="width: 100%; margin-top: 12px;" />
+                                 Class="full-width mt-3" />
 
                 @if (!string.IsNullOrWhiteSpace(_createErrorMessage))
                 {
-                    <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-top: 12px;">
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Class="mt-3">
                         @_createErrorMessage
                     </FluentMessageBar>
                 }
@@ -388,13 +388,13 @@ else
     <div class="modal-backdrop" @onclick="CloseModals">
         <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <FluentBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(_selectedTask.Priority)">
+                <div class="d-flex align-center gap-2">
+                    <FluentBadge Appearance="@BadgeAppearance.Tint" Class="@GetPriorityColor(_selectedTask.Priority)">
                         @_selectedTask.Priority
                     </FluentBadge>
                     <FluentLabel Typo="Typography.H4">@_selectedTask.Title</FluentLabel>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="d-flex align-center gap-2">
                     <EntityHistoryButton EntityName="TaskEntity" EntityId="@_selectedTask.Id.ToString()" IconOnly="false" Label="History" Appearance="ButtonAppearance.Subtle" />
                     <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
                 </div>
@@ -419,30 +419,30 @@ else
                 @if (_selectedModalTab == "details")
                 {
                     <div class="task-details-form">
-                        <FluentTextInput @bind-Value="_selectedTask.Title" Label="Title" Style="width: 100%;" />
+                        <FluentTextInput @bind-Value="_selectedTask.Title" Label="Title" Class="full-width" />
 
-                        <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Style="width: 100%; margin-top: 12px;" />
+                        <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Class="full-width mt-3" />
 
-                        <div class="modal-grid-row" style="margin-top: 12px;">
+                        <div class="modal-grid-row mt-3">
                             <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
                                           TValue="TaskPriorityEnum"
                                           Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                           OptionText="@(i => i.DisplayName)"
                                           OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Low)"
                                           @bind-Value="_selectedTask.Priority"
-                                          Label="Priority" Style="width: 100%;" />
+                                          Label="Priority" Class="full-width" />
 
-                            <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Style="width: 100%;" Required="true" />
+                            <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
                         </div>
 
-                        <div class="modal-grid-row" style="margin-top: 12px;">
+                        <div class="modal-grid-row mt-3">
                             <FluentSelect TOption="DataListItem<TaskStatusEnum>"
                                           TValue="TaskStatusEnum"
                                           Items="@(DataListExtensions.GetDataListItems<TaskStatusEnum>())"
                                           OptionText="@(i => i.DisplayName)"
                                           OptionValue="@(i => i != null ? i.Value : TaskStatusEnum.Open)"
                                           @bind-Value="_selectedTask.Status"
-                                          Label="Status" Style="width: 100%;" />
+                                          Label="Status" Class="full-width" />
 
                             <FluentSelect TOption="MilestoneOptionItem"
                                           TValue="string"
@@ -450,27 +450,27 @@ else
                                           OptionText="@(m => m.Label)"
                                           OptionValue="@(m => m.Id)"
                                           @bind-Value="_selectedTaskMilestoneIdString"
-                                          Label="Milestone" Style="width: 100%;" />
+                                          Label="Milestone" Class="full-width" />
                         </div>
 
-                        <div class="modal-grid-row" style="margin-top: 12px;">
+                        <div class="modal-grid-row mt-3">
                             <FluentTextInput @bind-Value="_selectedTask.AssigneeEmails"
                                              Label="Assignees (Semicolon-Separated)"
                                              Placeholder="email1@co.com; email2@co.com"
-                                             Style="width: 100%;" />
+                                             Class="full-width" />
 
                             <FluentTextInput Value="@_selectedTask.ReporterEmail"
                                              Label="Reporter"
                                              ReadOnly="true"
-                                             Style="width: 100%;" />
+                                             Class="full-width" />
                         </div>
 
                         <FluentTextInput @bind-Value="_selectedTask.Labels"
                                          Label="Labels"
                                          Placeholder="UI, Release-1.0"
-                                         Style="width: 100%; margin-top: 12px;" />
+                                         Class="full-width mt-3" />
 
-                        <div class="task-action-toolbar" style="margin-top: 24px;">
+                        <div class="task-action-toolbar mt-4">
                             <FluentButton Appearance="ButtonAppearance.Primary" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
                                 Save Changes
                             </FluentButton>
@@ -480,7 +480,7 @@ else
                                 <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseSelectedTaskAsync">
                                     Mark as Closed
                                 </FluentButton>
-                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelSelectedTaskAsync" Style="color: #d13438;">
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelSelectedTaskAsync" Class="text-danger">
                                     Cancel Task
                                 </FluentButton>
                             }
@@ -496,12 +496,12 @@ else
                 else if (_selectedModalTab == "subtasks")
                 {
                     <div class="task-subtasks-pane">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div class="d-flex justify-between align-center mb-3">
                             <FluentLabel Typo="Typography.H5">Child Subtasks (@_selectedTaskSubTasks.Count)</FluentLabel>
-                            <span style="font-size: 12px; color: var(--neutral-foreground-hint);">Boundary: Within this task strictly (Depth 1)</span>
+                            <span class="font-size-sm text-hint">Boundary: Within this task strictly (Depth 1)</span>
                         </div>
 
-                        <div class="subtask-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                        <div class="subtask-list d-flex flex-column gap-2 mb-4">
                             @if (_selectedTaskSubTasks.Count == 0)
                             {
                                 <div class="no-items-placeholder">No subtasks created for this task yet.</div>
@@ -510,16 +510,16 @@ else
                             {
                                 @foreach (var sub in _selectedTaskSubTasks)
                                 {
-                                    <div class="subtask-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="subtask-card subtask-item-row">
+                                        <div class="d-flex align-center gap-2">
                                             <FluentCheckbox Value="@(sub.Status == TaskStatusEnum.Closed)" ValueChanged="@(async (bool val) => await ToggleSubTaskCompleteAsync(sub, val))" />
                                             <div>
-                                                <span style="font-weight: 600; text-decoration: @(sub.Status == TaskStatusEnum.Closed ? "line-through" : "none");">@sub.Title</span>
-                                                <div style="font-size: 12px; color: #666;">
+                                                <span class="@(sub.Status == TaskStatusEnum.Closed ? "task-done font-weight-600" : "font-weight-600")">@sub.Title</span>
+                                                <div class="font-size-sm text-hint">
                                                     Priority: @sub.Priority &bull; Due: @sub.DueDate.ToString("yyyy-MM-dd")
                                                     @if (sub.BlockedBySubTaskId.HasValue)
                                                     {
-                                                        <span style="color: #e81123; font-weight: 600; margin-left: 8px;">🛑 Blocked by sibling subtask</span>
+                                                        <span class="text-danger font-weight-600 ml-2">🛑 Blocked by sibling subtask</span>
                                                     }
                                                 </div>
                                             </div>
@@ -531,18 +531,18 @@ else
                         </div>
 
                         <!-- Add SubTask Quick Box -->
-                        <div class="add-subtask-box" style="background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px;">
-                            <FluentLabel Typo="Typography.H6" Style="margin-bottom: 8px;">Add Child Subtask</FluentLabel>
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="width: 100%;">
-                                <FluentTextInput @bind-Value="_newSubTaskTitle" Placeholder="Subtask headline..." Style="flex: 2;" />
+                        <div class="add-subtask-box subtask-box">
+                            <FluentLabel Typo="Typography.H6" Class="mb-2">Add Child Subtask</FluentLabel>
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="full-width">
+                                <FluentTextInput @bind-Value="_newSubTaskTitle" Placeholder="Subtask headline..." Class="flex-2" />
                                 <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
                                               TValue="TaskPriorityEnum"
                                               Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                               OptionText="@(i => i.DisplayName)"
                                               OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Medium)"
                                               @bind-Value="_newSubTaskPriority"
-                                              Style="flex: 1;" />
-                                <FluentDatePicker @bind-Value="_newSubTaskDueDate" Style="flex: 1;" />
+                                              Class="flex-1" />
+                                <FluentDatePicker @bind-Value="_newSubTaskDueDate" Class="flex-1" />
                                 <FluentButton Appearance="ButtonAppearance.Primary" OnClick="AddSubTaskAsync" Loading="_isAddingSubTask">
                                     Add Subtask
                                 </FluentButton>
@@ -553,7 +553,7 @@ else
                 else if (_selectedModalTab == "dependencies")
                 {
                     <div class="task-dependencies-pane">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div class="d-flex justify-between align-center mb-2">
                             <FluentLabel Typo="Typography.H5">Task Dependencies & Blockers</FluentLabel>
                             <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Link())" OnClick="@(() => _showBlockerLinkModal = true)">
                                 Establish Blocker Contract
@@ -572,7 +572,7 @@ else
                                 {
                                     <div class="dependency-card">
                                         <div class="dependency-card-info">
-                                            <div style="display: flex; gap: 6px; align-items: center;">
+                                            <div class="d-flex gap-2 align-center">
                                                 <span class="dep-type-tag">@dep.DependencyType</span>
                                                 <strong>@dep.DependsOnTaskTitle</strong>
                                             </div>
@@ -613,14 +613,14 @@ else
                         <!-- Add Dependency Link Form -->
                         <div class="add-dependency-box">
                             <FluentLabel Typo="Typography.H6">Add New Dependency</FluentLabel>
-                            <div class="modal-grid-row" style="margin-top: 8px;">
+                            <div class="modal-grid-row mt-2">
                                 <FluentSelect TOption="TaskEntity"
                                               TValue="string"
                                               Items="@_otherProjectTasks"
                                               OptionText="@(t => $"{t.Title} (Due {t.DueDate:yyyy-MM-dd})")"
                                               OptionValue="@(t => t.Id.ToString())"
                                               @bind-Value="_newDepTargetTaskId"
-                                              Label="Prerequisite / Target Task" Style="width: 100%;" />
+                                              Label="Prerequisite / Target Task" Class="full-width" />
 
                                 <FluentSelect TOption="DataListItem<TaskDependencyTypeEnum>"
                                               TValue="TaskDependencyTypeEnum"
@@ -628,15 +628,15 @@ else
                                               OptionText="@(i => i.DisplayName)"
                                               OptionValue="@(i =>i.Value )"
                                               @bind-Value="_newDepType"
-                                              Label="Relationship" Style="width: 100%;" />
+                                              Label="Relationship" Class="full-width" />
                             </div>
 
-                            <div class="modal-grid-row" style="margin-top: 8px;">
-                                <FluentDatePicker @bind-Value="_newDepResolveByUtc" Label="Resolve By Target Date (Optional)" Style="width: 100%;" />
-                                <FluentTextInput @bind-Value="_newDepNotes" Label="Notes / Reason" Placeholder="e.g. Needs DB schema update first" Style="width: 100%;" />
+                            <div class="modal-grid-row mt-2">
+                                <FluentDatePicker @bind-Value="_newDepResolveByUtc" Label="Resolve By Target Date (Optional)" Class="full-width" />
+                                <FluentTextInput @bind-Value="_newDepNotes" Label="Notes / Reason" Placeholder="e.g. Needs DB schema update first" Class="full-width" />
                             </div>
 
-                            <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 12px; align-self: flex-start;" OnClick="AddDependencyAsync" Loading="@_isAddingDependency">
+                            <FluentButton Appearance="ButtonAppearance.Primary" Class="mt-3 align-self-start" OnClick="AddDependencyAsync" Loading="@_isAddingDependency">
                                 Add Dependency Link
                             </FluentButton>
                         </div>
@@ -669,8 +669,8 @@ else
 
                         <!-- Add Comment Form -->
                         <div class="add-comment-box">
-                            <FluentTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Style="width: 100%;" />
-                            <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 8px; align-self: flex-end;" OnClick="PostCommentAsync" Loading="@_isPostingComment">
+                            <FluentTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Class="full-width" />
+                            <FluentButton Appearance="ButtonAppearance.Primary" Class="mt-2 align-self-end" OnClick="PostCommentAsync" Loading="@_isPostingComment">
                                 Post Comment
                             </FluentButton>
                         </div>
@@ -706,7 +706,7 @@ else
                             {
                                 <div class="milestone-card">
                                     <div class="milestone-card-main">
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div class="d-flex justify-between align-center">
                                             <strong>@m.MilestoneName</strong>
                                             <span class="milestone-status-badge milestone-status-@m.Status.ToString().ToLowerInvariant()">
                                                 @m.Status
@@ -760,36 +760,36 @@ else
                     <div class="milestone-add-section">
                         <FluentLabel Typo="Typography.H5">Create New Milestone</FluentLabel>
 
-                        <FluentTextInput @bind-Value="_newMilestone.Title" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Style="width: 100%; margin-top: 8px;" />
+                        <FluentTextInput @bind-Value="_newMilestone.Title" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Class="full-width mt-2" />
 
-                        <FluentTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Style="width: 100%; margin-top: 8px;" />
+                        <FluentTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Class="full-width mt-2" />
 
-                        <div class="modal-grid-row" style="margin-top: 8px;">
-                            <FluentDatePicker @bind-Value="_newMilestoneStartDate" Label="Start Date (UTC)" Style="width: 100%;" />
-                            <FluentDatePicker @bind-Value="_newMilestoneEndDate" Label="End Date (UTC)" Style="width: 100%;" />
+                        <div class="modal-grid-row mt-2">
+                            <FluentDatePicker @bind-Value="_newMilestoneStartDate" Label="Start Date (UTC)" Class="full-width" />
+                            <FluentDatePicker @bind-Value="_newMilestoneEndDate" Label="End Date (UTC)" Class="full-width" />
                         </div>
 
                         @if (_milestones.Count > 0)
                         {
-                            <div style="margin-top: 8px;">
+                            <div class="mt-2">
                                 <FluentSelect TOption="ProjectCalendarEntity"
                                               TValue="string"
                                               Items="@_milestones"
                                               OptionText="@(m => $"{m.Title} (Ends {m.EndDate:yyyy-MM-dd})")"
                                               OptionValue="@(m => m.Id.ToString())"
                                               @bind-Value="_newMilestonePredecessorId"
-                                              Label="Predecessor Milestone (Optional Dependency)" Style="width: 100%;" />
+                                              Label="Predecessor Milestone (Optional Dependency)" Class="full-width" />
                             </div>
                         }
 
                         @if (!string.IsNullOrWhiteSpace(_milestoneErrorMessage))
                         {
-                            <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-top: 8px;">
+                            <FluentMessageBar Intent="MessageBarIntent.Error" Class="mt-2">
                                 @_milestoneErrorMessage
                             </FluentMessageBar>
                         }
 
-                        <FluentButton Appearance="ButtonAppearance.Primary" Style="margin-top: 14px;" OnClick="CreateMilestoneAsync" Loading="@_isCreatingMilestone">
+                        <FluentButton Appearance="ButtonAppearance.Primary" Class="mt-3" OnClick="CreateMilestoneAsync" Loading="@_isCreatingMilestone">
                             Create Milestone
                         </FluentButton>
                     </div>
@@ -820,524 +820,7 @@ else
                                OnWorkflowUpdated="HandleWorkflowUpdated" />
 }
 
-<style>
-    .tasks-page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1.25rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
 
-    .tasks-header-title-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 6px;
-    }
-
-    .tasks-page-header-actions {
-        display: flex;
-        align-items: flex-end;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    /* Live Project Health Bar */
-    .health-kpi-container {
-        background-color: var(--neutral-layer-1, #ffffff);
-        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
-        border-radius: 8px;
-        padding: 0.85rem 1.5rem;
-        margin-bottom: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .health-main-kpis {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 2rem;
-    }
-
-    .health-rating-box {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .health-pill {
-        display: inline-flex;
-        align-items: center;
-        font-weight: 700;
-        font-size: 0.95rem;
-        padding: 4px 10px;
-        border-radius: 12px;
-    }
-
-    .health-pill-ontrack { background-color: #e6f4ea; color: #137333; }
-    .health-pill-atrisk { background-color: #fef7e0; color: #b06000; }
-    .health-pill-critical { background-color: #fce8e6; color: #c5221f; }
-
-    .health-metric-box {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .progress-container {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-        min-width: 160px;
-    }
-
-    .progress-text {
-        font-size: 0.95rem;
-        font-weight: 700;
-    }
-
-    .progress-bar-bg {
-        width: 100%;
-        height: 6px;
-        background-color: #e0e0e0;
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .progress-bar-fill {
-        height: 100%;
-        background-color: #107c41;
-        transition: width 0.3s ease;
-    }
-
-    .metric-count {
-        font-size: 1.5rem;
-        font-weight: 700;
-        line-height: 1.2;
-    }
-
-    .metric-label {
-        font-size: 0.75rem;
-        color: var(--neutral-foreground-hint, #707070);
-    }
-
-    .metric-divider {
-        width: 1px;
-        height: 36px;
-        background-color: var(--neutral-stroke-layer-rest, #e0e0e0);
-    }
-
-    .health-risk-reasons-panel {
-        background-color: #fff8f0;
-        border-left: 4px solid #ff8c00;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0 4px 4px 0;
-        font-size: 0.85rem;
-    }
-
-    .risk-reasons-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: #b06000;
-        margin-bottom: 4px;
-    }
-
-    .risk-reasons-list {
-        margin: 0;
-        padding-left: 1.25rem;
-        color: #424242;
-    }
-
-    /* Task Card Styles */
-    .task-card {
-        padding: 0.85rem;
-        border-radius: 6px;
-        border: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
-        background-color: var(--neutral-layer-1, #ffffff);
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .task-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 6px;
-    }
-
-    .blocker-pill {
-        background-color: #fce8e6;
-        color: #c5221f;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 4px;
-        border: 1px solid #f5c2c7;
-    }
-
-    .milestone-pill {
-        background-color: #e8f0fe;
-        color: #1a73e8;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: 4px;
-    }
-
-    .reporter-pill {
-        font-size: 0.7rem;
-        color: #707070;
-        background-color: #f5f5f5;
-        padding: 1px 5px;
-        border-radius: 4px;
-    }
-
-    .task-card-due {
-        font-size: 0.75rem;
-        color: var(--neutral-foreground-hint, #707070);
-        white-space: nowrap;
-    }
-
-    .due-overdue {
-        color: #d13438;
-        font-weight: 700;
-    }
-
-    .task-card-title {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--neutral-foreground-rest, #242424);
-        line-height: 1.3;
-    }
-
-    .task-card-labels {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-
-    .jira-label-pill {
-        background-color: #edebe9;
-        color: #323130;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 600;
-    }
-
-    .task-card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-top: 1px solid #f3f2f1;
-        padding-top: 0.5rem;
-        font-size: 0.75rem;
-        color: #605e5c;
-    }
-
-    .badge-more {
-        background-color: #f3f2f1;
-        padding: 1px 4px;
-        border-radius: 4px;
-        font-size: 0.65rem;
-        margin-left: 3px;
-    }
-
-    .unassigned-text {
-        color: #a19f9d;
-        font-style: italic;
-    }
-
-    .text-danger { color: #d13438; }
-    .text-info { color: #0078d4; }
-    .text-muted { color: #707070; }
-
-    /* Modal Styles */
-    .modal-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.45);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-
-    .modal-dialog {
-        background: var(--neutral-layer-1, #ffffff);
-        border-radius: 8px;
-        width: 90%;
-        max-width: 580px;
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    }
-
-    .modal-dialog-large {
-        max-width: 950px;
-        width: 95%;
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
-    }
-
-    .modal-tabs-header {
-        display: flex;
-        border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
-        background-color: #faf9f8;
-        padding: 0 1rem;
-    }
-
-    .modal-tab-btn {
-        background: none;
-        border: none;
-        border-bottom: 2px solid transparent;
-        padding: 0.75rem 1.25rem;
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: #605e5c;
-        cursor: pointer;
-    }
-
-    .modal-tab-btn.active {
-        color: #0078d4;
-        border-bottom-color: #0078d4;
-    }
-
-    .modal-body-tab-content {
-        padding: 1.5rem;
-        max-height: calc(90vh - 140px);
-        overflow-y: auto;
-    }
-
-    .modal-grid-row {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .task-action-toolbar {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    /* Dependencies Styles */
-    .section-hint {
-        font-size: 0.8rem;
-        color: #707070;
-        margin-top: 2px;
-        margin-bottom: 12px;
-    }
-
-    .dependency-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 1.5rem;
-    }
-
-    .dependency-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #faf9f8;
-        border: 1px solid #e1dfdd;
-        border-radius: 6px;
-        padding: 0.65rem 1rem;
-    }
-
-    .dep-type-tag {
-        background-color: #e8f0fe;
-        color: #1a73e8;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 3px;
-    }
-
-    .dep-meta {
-        font-size: 0.75rem;
-        color: #707070;
-        margin-top: 3px;
-    }
-
-    .dependency-card-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .dep-status-resolved {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #137333;
-    }
-
-    .dep-status-overdue {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #c5221f;
-    }
-
-    .dep-status-active {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #b06000;
-    }
-
-    .add-dependency-box {
-        background-color: #f3f2f1;
-        padding: 1rem;
-        border-radius: 6px;
-    }
-
-    .no-items-placeholder {
-        padding: 1.5rem;
-        text-align: center;
-        color: #8a8a8a;
-        font-style: italic;
-    }
-
-    /* Comments Styles */
-    .comments-thread {
-        max-height: 300px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin: 1rem 0;
-    }
-
-    .comment-bubble {
-        background-color: var(--neutral-layer-2, #f5f5f5);
-        border: 1px solid #e1dfdd;
-        border-radius: 6px;
-        padding: 0.75rem;
-    }
-
-    .comment-bubble-header {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.75rem;
-        margin-bottom: 4px;
-    }
-
-    .comment-author {
-        font-weight: 600;
-    }
-
-    .comment-time {
-        color: #8a8a8a;
-    }
-
-    .comment-body {
-        font-size: 0.85rem;
-        white-space: pre-wrap;
-    }
-
-    .add-comment-box {
-        display: flex;
-        flex-direction: column;
-        border-top: 1px solid #e0e0e0;
-        padding-top: 1rem;
-    }
-
-    /* Milestones Manager Layout */
-    .milestones-manager-layout {
-        display: flex;
-        gap: 1.5rem;
-    }
-
-    .milestones-list-section {
-        flex: 3;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        max-height: 500px;
-        overflow-y: auto;
-    }
-
-    .milestone-add-section {
-        flex: 2;
-        background-color: #faf9f8;
-        border: 1px solid #e1dfdd;
-        border-radius: 6px;
-        padding: 1rem;
-    }
-
-    .milestone-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 0.75rem 1rem;
-        background-color: #fff;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .milestone-card-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .milestone-status-badge {
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 10px;
-    }
-
-    .milestone-status-planned { background-color: #edebe9; color: #323130; }
-    .milestone-status-active { background-color: #e8f0fe; color: #1a73e8; }
-    .milestone-status-completed { background-color: #e6f4ea; color: #137333; }
-    .milestone-status-atrisk { background-color: #fef7e0; color: #b06000; }
-    .milestone-status-cancelled { background-color: #f3f2f1; color: #a19f9d; }
-
-    .milestone-meta-dates {
-        font-size: 0.75rem;
-        color: #707070;
-    }
-
-    .milestone-progress-row {
-        font-size: 0.8rem;
-        font-weight: 600;
-        display: flex;
-        gap: 12px;
-    }
-
-    .milestone-risk-alert {
-        background-color: #fff8f0;
-        border-left: 3px solid #ff8c00;
-        padding: 4px 8px;
-        font-size: 0.75rem;
-        color: #b06000;
-        margin-top: 4px;
-    }
-
-    .milestone-card-actions {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-    }
-</style>
 
 @code {
     [Parameter]
@@ -1476,11 +959,11 @@ else
         _isLoading = true;
         try
         {
-            _availableProjects = await DbContext.Projects
-                .AsNoTracking()
-                .Where(p => p.IsActive && !p.IsDeleted)
-                .OrderBy(p => p.Name)
-                .ToListAsync();
+            _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug)).Where(p => p.IsActive && !p.IsDeleted).OrderBy(p => p.Name).ToList();
+
+
+
+
 
             if (_availableProjects.Count == 0)
             {
@@ -1556,10 +1039,10 @@ else
     {
         if (_currentProject is null) return;
 
-        var dependencies = await DbContext.WorkDependencies
-            .AsNoTracking()
-            .Where(d => d.ProjectId == _currentProject.Id && d.DependencyType == TaskDependencyTypeEnum.Blocks && !d.IsDeleted)
-            .ToListAsync();
+        var dependencies = (await TaskService.GetProjectWorkDependenciesAsync(_currentProject.Id)).Where(d => d.DependencyType == TaskDependencyTypeEnum.Blocks).ToList();
+
+
+
 
         var taskLookup = _tasks.ToDictionary(t => t.Id);
         _activeBlockedTaskIds = new HashSet<Guid>();

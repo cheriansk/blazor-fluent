@@ -1,16 +1,17 @@
-﻿@namespace BlazorFluent.Components.Common
+@namespace BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Shared.DataListTypes
 @using BlazorFluent.Core.Domain.Tasks
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Core.Dtos
-@using BlazorFluent.Persistence.Context
+
 @using BlazorFluent.UI.Templates.Wizards
-@using Microsoft.EntityFrameworkCore
+
 @inject IWorkflowService WorkflowService
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
-@inject AppDbContext DbContext
+@inject IProgramService ProgramService
+@inject ITenantService TenantService
 
 <FluentWizardModal @ref="_wizardModal"
                    TState="CreateWorkflowReqDto"
@@ -33,7 +34,7 @@
                                   @bind-Value="_initialState.Level"
                                   Label="Workflow Scoping Level *"
                                   Disabled="@IsEditMode"
-                                  Style="width: 100%;">
+                                  Class="full-width">
                         <FluentOption Value="@TaskLevelEnum.Tenant">🏢 Tenant Level (Executive Governance)</FluentOption>
                         <FluentOption Value="@TaskLevelEnum.Program">📁 Program Level (Multi-Project Initiative)</FluentOption>
                         <FluentOption Value="@TaskLevelEnum.Project">📋 Project Level (Team Delivery)</FluentOption>
@@ -48,7 +49,7 @@
                 <div class="form-half-width">
                     @if (_initialState.Level == TaskLevelEnum.Program)
                     {
-                        <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Program *</label>
+                        <label class="fluent-label font-size-sm font-weight-600 mb-1 d-block">Target Program *</label>
                         <FluentSelect TOption="ProgramEntity"
                                       TValue="string"
                                       Items="@_availablePrograms"
@@ -58,7 +59,7 @@
                                       ValueChanged="@OnProgramSelectedChanged"
                                       Disabled="@IsEditMode"
                                       Placeholder="Select strategic program..."
-                                      Style="width: 100%;" />
+                                      Class="full-width" />
                         @if (_stepErrors.TryGetValue("ProgramId", out var progErr))
                         {
                             <span class="field-error-text">@progErr</span>
@@ -66,7 +67,7 @@
                     }
                     else if (_initialState.Level == TaskLevelEnum.Project)
                     {
-                        <label class="fluent-label" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block;">Target Project *</label>
+                        <label class="fluent-label font-size-sm font-weight-600 mb-1 d-block">Target Project *</label>
                         <FluentSelect TOption="ProjectEntity"
                                       TValue="string"
                                       Items="@_availableProjects"
@@ -76,7 +77,7 @@
                                       ValueChanged="@OnProjectSelectedChanged"
                                       Disabled="@IsEditMode"
                                       Placeholder="Select delivery project..."
-                                      Style="width: 100%;" />
+                                      Class="full-width" />
                         @if (_stepErrors.TryGetValue("ProjectId", out var projErr))
                         {
                             <span class="field-error-text">@projErr</span>
@@ -84,7 +85,7 @@
                     }
                     else
                     {
-                        <div style="padding-top: 24px; color: var(--neutral-foreground-hint, #616161); font-size: 0.825rem;">
+                        <div class="pt-4 text-hint font-size-sm">
                             🏢 Applies across the entire tenant organization.
                         </div>
                     }
@@ -94,7 +95,7 @@
                 <div class="form-half-width">
                     <FluentTextInput Label="Constant Workflow Owner Email *"
                                      @bind-Value="_initialState.WorkflowOwnerEmail"
-                                     Style="width: 100%;"
+                                     Class="full-width"
                                      Placeholder="orchestrator@company.local" />
                     <span class="field-help-text">Accountable from start to finish; follows up across all steps without changing ownership.</span>
                     @if (_stepErrors.TryGetValue("WorkflowOwnerEmail", out var ownerErr))
@@ -109,7 +110,7 @@
                                   TValue="TaskPriorityEnum"
                                   @bind-Value="_initialState.Priority"
                                   Label="Priority"
-                                  Style="width: 100%;">
+                                  Class="full-width">
                         <FluentOption Value="@TaskPriorityEnum.Low">Low</FluentOption>
                         <FluentOption Value="@TaskPriorityEnum.Medium">Medium</FluentOption>
                         <FluentOption Value="@TaskPriorityEnum.High">High</FluentOption>
@@ -121,7 +122,7 @@
                 <div class="form-full-width">
                     <FluentTextInput Label="Workflow Title *"
                                      @bind-Value="_initialState.Title"
-                                     Style="width: 100%;"
+                                     Class="full-width"
                                      Placeholder="E.g. SOC2 Type II Audit Compliance Rollout" />
                     @if (_stepErrors.TryGetValue("Title", out var titleErr))
                     {
@@ -134,7 +135,7 @@
                     <FluentTextArea Label="Description & Governance Objectives"
                                     @bind-Value="_initialState.Description"
                                     Rows="2"
-                                    Style="width: 100%;"
+                                    Class="full-width"
                                     Placeholder="Outline key business outcomes, prerequisites, and overarching governance rules..." />
                 </div>
 
@@ -142,14 +143,14 @@
                 <div class="form-half-width">
                     <FluentDatePicker Label="Overall Target Due Date"
                                       @bind-Value="_initialState.DueDate"
-                                      Style="width: 100%;" />
+                                      Class="full-width" />
                 </div>
 
                 @* Watchers *@
                 <div class="form-half-width">
                     <FluentTextInput Label="Watcher Emails (Comma-separated)"
                                      @bind-Value="_initialState.WatcherEmails"
-                                     Style="width: 100%;"
+                                     Class="full-width"
                                      Placeholder="auditor@company.com, pmo@company.com" />
                 </div>
             </div>
@@ -161,7 +162,7 @@
             <div class="step-builder-container">
                 <div class="step-builder-header">
                     <span class="step-builder-title">Execution Pipeline Steps (Tasks)</span>
-                    <div style="display: flex; gap: 8px;">
+                    <div class="d-flex gap-2">
                         <FluentButton Appearance="ButtonAppearance.Outline"
                                       IconStart="@(new Icons.Regular.Size16.Search())"
                                       OnClick="@ToggleTaskSearch">
@@ -180,7 +181,7 @@
                 {
                     <div class="task-search-picker-box">
                         <div class="task-search-picker-header">
-                            <div style="display: flex; align-items: center; gap: 6px;">
+                            <div class="d-flex align-center gap-2">
                                 <FluentIcon Value="@(new Icons.Filled.Size16.Search())" Color="Color.Primary" />
                                 <strong>Search & Attach Existing Task to Workflow</strong>
                             </div>
@@ -190,10 +191,10 @@
                                           Title="Close picker" />
                         </div>
 
-                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <div class="d-flex gap-2 mb-2">
                             <FluentTextInput @bind-Value="_taskSearchTerm"
                                              Placeholder="Search existing task by title, number, or assignee..."
-                                             Style="flex: 1;" />
+                                             Class="flex-1" />
                             <FluentButton Appearance="ButtonAppearance.Primary"
                                           OnClick="@SearchExistingTasksAsync">
                                 Search
@@ -202,9 +203,9 @@
 
                         @if (_isSearchingTasks)
                         {
-                            <div style="padding: 12px; text-align: center;">
+                            <div class="p-3 text-center">
                                 <FluentSpinner Size="@SpinnerSize.Small" />
-                                <span style="font-size: 0.85rem; margin-left: 8px;">Searching eligible tasks...</span>
+                                <span class="font-size-sm ml-2">Searching eligible tasks...</span>
                             </div>
                         }
                         else if (_availableExistingTasks.Count == 0)
@@ -220,7 +221,7 @@
                                 {
                                     <div class="task-search-item-row">
                                         <div class="task-search-item-info">
-                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                            <div class="d-flex align-center gap-2">
                                                 <span class="task-number-pill">#@task.Id.ToString()[..8]</span>
                                                 <span class="task-item-title">@task.Title</span>
                                             </div>
@@ -235,7 +236,7 @@
                                         </div>
                                         <FluentButton Appearance="ButtonAppearance.Primary"
                                                       OnClick="@(() => AttachExistingTask(task))"
-                                                      Style="font-size: 0.8rem; padding: 4px 10px;">
+                                                      Class="font-size-sm p-1">
                                             Attach as Step
                                         </FluentButton>
                                     </div>
@@ -271,7 +272,7 @@
                                     }
                                 </div>
 
-                                <div style="display: flex; align-items: center; gap: 4px;">
+                                <div class="d-flex align-center gap-1">
                                     @* Move Up / Down *@
                                     @if (stepIndex > 0 && !IsEditMode)
                                     {
@@ -308,7 +309,7 @@
                                             <FluentButton Appearance="ButtonAppearance.Subtle"
                                                           IconStart="@(new Icons.Regular.Size16.Dismiss())"
                                                           OnClick="@(() => PromptCancelExistingStep(step))"
-                                                          Style="color: var(--error, #d13438);"
+                                                          Class="text-danger"
                                                           Title="Cancel this step (cannot be deleted)" />
                                         }
                                     }
@@ -322,11 +323,11 @@
                                 </div>
                             </div>
 
-                            <div class="wizard-form-grid" style="margin-top: 10px;">
+                            <div class="wizard-form-grid mt-2">
                                 <div class="form-half-width">
                                     <FluentTextInput Label="Step Title *"
                                                      @bind-Value="step.Title"
-                                                     Style="width: 100%;"
+                                                     Class="full-width"
                                                      Disabled="@(isExistingAttached && IsEditMode)"
                                                      Placeholder="E.g. Security Vulnerability Scanning" />
                                     @if (_stepErrors.TryGetValue($"Step_{stepIndex}_Title", out var stepTitleErr))
@@ -338,7 +339,7 @@
                                 <div class="form-half-width">
                                     <FluentTextInput Label="Step Owner Email *"
                                                      @bind-Value="step.StepOwnerEmail"
-                                                     Style="width: 100%;"
+                                                     Class="full-width"
                                                      Placeholder="lead-engineer@company.local" />
                                     @if (_stepErrors.TryGetValue($"Step_{stepIndex}_Owner", out var stepOwnerErr))
                                     {
@@ -349,13 +350,13 @@
                                 <div class="form-half-width">
                                     <FluentDatePicker Label="Step Deadline"
                                                       @bind-Value="step.DueDate"
-                                                      Style="width: 100%;" />
+                                                      Class="full-width" />
                                 </div>
 
                                 <div class="form-half-width">
                                     <FluentTextInput Label="Deliverable Instructions / Acceptance"
                                                      @bind-Value="step.Description"
-                                                     Style="width: 100%;"
+                                                     Class="full-width"
                                                      Placeholder="Actionable criteria required for sign-off" />
                                 </div>
                             </div>
@@ -370,7 +371,7 @@
                                     <FluentButton Appearance="ButtonAppearance.Subtle"
                                                   IconStart="@(new Icons.Regular.Size12.Add())"
                                                   OnClick="@(() => AddSubTaskToStep(step))"
-                                                  Style="font-size: 0.75rem; padding: 2px 6px;">
+                                                  Class="font-size-xs p-1">
                                         Add Subtask
                                     </FluentButton>
                                 </div>
@@ -387,12 +388,12 @@
                                                 <span class="sub-number">#@(subIndex + 1)</span>
                                                 <FluentTextInput Placeholder="Subtask title / work item"
                                                                  @bind-Value="sub.Title"
-                                                                 Style="flex: 2;" />
+                                                                 Class="flex-2" />
                                                 <FluentTextInput Placeholder="Team member email"
                                                                  @bind-Value="sub.AssigneeEmail"
-                                                                 Style="flex: 2;" />
+                                                                 Class="flex-2" />
                                                 <FluentDatePicker @bind-Value="sub.DueDate"
-                                                                  Style="flex: 1;" />
+                                                                  Class="flex-1" />
                                                 <FluentButton Appearance="ButtonAppearance.Subtle"
                                                               IconStart="@(new Icons.Regular.Size12.Dismiss())"
                                                               OnClick="@(() => RemoveSubTaskFromStep(step, subIndex))"
@@ -412,7 +413,7 @@
                     Summary="Final review before orchestrating">
             <div class="wizard-review-container">
                 <div class="review-section">
-                    <FluentLabel Typo="Typography.H6" Style="font-weight: 600;">@_initialState.Title</FluentLabel>
+                    <FluentLabel Typo="Typography.H6" Class="font-weight-600">@_initialState.Title</FluentLabel>
                     <p class="review-desc">@(string.IsNullOrWhiteSpace(_initialState.Description) ? "No description provided." : _initialState.Description)</p>
 
                     <div class="review-meta-pills">
@@ -442,7 +443,7 @@
                 </div>
 
                 <div class="review-section">
-                    <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 8px;">
+                    <FluentLabel Typo="Typography.Body" Class="font-weight-600 mb-2">
                         Sequential Execution Flow (@_initialState.Steps.Count Steps)
                     </FluentLabel>
                     <div class="review-steps-list">
@@ -498,25 +499,25 @@
 {
     <div class="cancel-step-dialog-backdrop">
         <div class="cancel-step-dialog">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <div class="d-flex align-center gap-2 mb-3">
                 <FluentIcon Value="@(new Icons.Filled.Size20.Warning())" Color="Color.Warning" />
-                <FluentLabel Typo="Typography.H6" Style="font-weight: 600;">Cancel Step on Workflow</FluentLabel>
+                <FluentLabel Typo="Typography.H6" Class="font-weight-600">Cancel Step on Workflow</FluentLabel>
             </div>
-            <p style="font-size: 0.85rem; color: var(--neutral-foreground-hint, #616161); margin-bottom: 12px;">
+            <p class="font-size-sm text-hint mb-3">
                 Tasks once added to a workflow cannot be deleted to maintain compliance audit trails. Instead, this step will be marked as <strong>Cancelled</strong>. If the step is currently active, the workflow will be paused.
             </p>
             <FluentTextInput Label="Mandatory Cancellation Reason *"
                              @bind-Value="_cancelStepReason"
                              Placeholder="Reason for cancelling step..."
-                             Style="width: 100%; margin-bottom: 16px;" />
+                             Class="full-width mb-4" />
             @if (!string.IsNullOrWhiteSpace(_cancelStepError))
             {
-                <div class="field-error-text" style="margin-bottom: 12px;">@_cancelStepError</div>
+                <div class="field-error-text mb-3">@_cancelStepError</div>
             }
-            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <div class="d-flex justify-end gap-2">
                 <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showCancelStepModal = false)">Dismiss</FluentButton>
                 <FluentButton Appearance="ButtonAppearance.Primary"
-                              Style="background: var(--error, #d13438);"
+                              Class="btn-danger-confirm"
                               OnClick="@ConfirmCancelExistingStepAsync">
                     Confirm Cancellation
                 </FluentButton>
@@ -525,358 +526,7 @@
     </div>
 }
 
-<style>
-    .wizard-form-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
 
-    .form-half-width {
-        flex: 1 1 calc(50% - 8px);
-        min-width: 260px;
-    }
-
-    .form-full-width {
-        flex: 1 1 100%;
-    }
-
-    .field-error-text {
-        font-size: 0.75rem;
-        color: #d13438;
-        display: block;
-        margin-top: 4px;
-    }
-
-    .field-help-text {
-        font-size: 0.75rem;
-        color: var(--neutral-foreground-hint, #616161);
-        margin-top: 4px;
-        display: block;
-    }
-
-    .step-builder-container {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .step-builder-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .step-builder-title {
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-
-    .field-error-banner {
-        background: #fde7e9;
-        color: #d13438;
-        padding: 8px 12px;
-        border-radius: 4px;
-        font-size: 0.825rem;
-    }
-
-    .step-cards-list {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        max-height: 480px;
-        overflow-y: auto;
-        padding-right: 4px;
-    }
-
-    .step-builder-card {
-        background: var(--neutral-fill-subtle-rest, #f9f9f9);
-        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
-        border-radius: 6px;
-        padding: 12px 16px;
-    }
-
-    .step-builder-card.card-attached {
-        border-left: 4px solid var(--accent-fill-rest, #0078d4);
-    }
-
-    .step-card-top-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .step-card-order-tag {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .order-number {
-        font-weight: 600;
-        font-size: 0.85rem;
-    }
-
-    .first-step-tag {
-        background: #e6f4ea;
-        color: #137333;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 4px;
-    }
-
-    .attached-tag {
-        background: #e1f5fe;
-        color: #0288d1;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 4px;
-    }
-
-    .cancelled-tag {
-        background: #fde7e9;
-        color: #d13438;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 4px;
-    }
-
-    .completed-tag {
-        background: #e6f4ea;
-        color: #137333;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 2px 6px;
-        border-radius: 4px;
-    }
-
-    /* Task Search Picker */
-    .task-search-picker-box {
-        background: #f0f8ff;
-        border: 1px solid #c7e0f4;
-        border-radius: 6px;
-        padding: 12px;
-        margin-bottom: 8px;
-    }
-
-    .task-search-picker-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-        font-size: 0.85rem;
-    }
-
-    .task-search-empty {
-        font-size: 0.825rem;
-        color: var(--neutral-foreground-hint, #616161);
-        padding: 12px;
-        text-align: center;
-    }
-
-    .task-search-results-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        max-height: 220px;
-        overflow-y: auto;
-    }
-
-    .task-search-item-row {
-        background: #ffffff;
-        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
-        border-radius: 4px;
-        padding: 8px 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .task-number-pill {
-        background: #e8f0fe;
-        color: #1a73e8;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: 3px;
-    }
-
-    .task-item-title {
-        font-weight: 600;
-        font-size: 0.85rem;
-    }
-
-    .task-item-meta {
-        font-size: 0.75rem;
-        color: var(--neutral-foreground-hint, #616161);
-        display: flex;
-        gap: 12px;
-        margin-top: 3px;
-    }
-
-    /* Subtask Builder Inside Step */
-    .subtask-builder-section {
-        background: #ffffff;
-        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
-        border-radius: 6px;
-        padding: 10px 12px;
-        margin-top: 12px;
-    }
-
-    .subtask-builder-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--neutral-foreground-hint, #616161);
-        margin-bottom: 8px;
-    }
-
-    .subtask-builder-title {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .subtask-inputs-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .subtask-input-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .sub-number {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--neutral-foreground-hint, #616161);
-        width: 16px;
-    }
-
-    .wizard-review-container {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .review-section {
-        background: var(--neutral-fill-subtle-rest, #f9f9f9);
-        padding: 14px 16px;
-        border-radius: 6px;
-    }
-
-    .review-desc {
-        font-size: 0.85rem;
-        color: var(--neutral-foreground-hint, #616161);
-        margin: 6px 0 10px 0;
-    }
-
-    .review-meta-pills {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .review-pill {
-        background: var(--neutral-fill-secondary-rest, #edebe9);
-        font-size: 0.8rem;
-        padding: 2px 8px;
-        border-radius: 4px;
-    }
-
-    .review-steps-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .review-step-item {
-        display: flex;
-        gap: 12px;
-        background: #ffffff;
-        padding: 8px 12px;
-        border-radius: 4px;
-        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
-    }
-
-    .review-step-num {
-        font-weight: 700;
-        font-size: 0.85rem;
-        color: var(--accent-fill-rest, #0078d4);
-        margin-top: 2px;
-    }
-
-    .first-active-pill {
-        background: #e6f4ea;
-        color: #137333;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 10px;
-    }
-
-    .pending-pill {
-        background: #f1f3f4;
-        color: #5f6368;
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 10px;
-    }
-
-    .review-notice-box {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #eff6fc;
-        border-left: 3px solid #0078d4;
-        padding: 10px 14px;
-        border-radius: 0 4px 4px 0;
-        font-size: 0.825rem;
-        color: #242424;
-    }
-
-    .scope-pill {
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .scope-tenant { background: #f3e8fd; color: #7b1fa2; }
-    .scope-program { background: #e1f5fe; color: #0288d1; }
-    .scope-project { background: #e8f5e9; color: #2e7d32; }
-
-    /* Cancellation Modal */
-    .cancel-step-dialog-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10001;
-    }
-
-    .cancel-step-dialog {
-        background: #ffffff;
-        border-radius: 8px;
-        padding: 20px 24px;
-        width: 480px;
-        max-width: 90vw;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
-</style>
 
 @code {
     [Parameter]
@@ -943,17 +593,17 @@
         if (TenantContext.HasActiveTenant)
         {
             var tenantId = TenantContext.TenantId;
-            _availablePrograms = await DbContext.Programs
-                .AsNoTracking()
-                .Where(p => p.TenantId == tenantId && p.IsActive)
-                .OrderBy(p => p.Name)
-                .ToListAsync();
+            _availablePrograms = (await ProgramService.GetProgramsAsync(TenantContext.TenantSlug))
 
-            _availableProjects = await DbContext.Projects
-                .AsNoTracking()
-                .Where(p => p.TenantId == tenantId && p.IsActive && !p.IsDeleted)
+                .Where(p => p.IsActive)
                 .OrderBy(p => p.Name)
-                .ToListAsync();
+                .ToList();
+
+            _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug))
+
+                .Where(p => p.IsActive && !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToList();
 
             if (ProjectId.HasValue && ProjectId.Value != Guid.Empty)
             {

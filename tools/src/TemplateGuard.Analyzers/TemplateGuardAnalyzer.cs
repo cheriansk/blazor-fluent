@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -171,11 +172,42 @@ namespace TemplateGuard.Analyzers
             description: "Enums decorated with [LifecycleEnum] must declare a companion definitions class with an AllowedTransitions matrix.",
             helpLinkUri: HelpBaseUrl + "#tg015");
 
+        public static readonly DiagnosticDescriptor RuleTg016 = new(
+            id: "TG016",
+            title: "PureStrict CSP Violation: Inline style attribute prohibited in Razor markup",
+            messageFormat: "Razor component '{0}' contains inline style attribute '{1}' at line {2}. PureStrict CSP prohibits inline styles. ALLOWED APPROACH: Define CSS classes in app.css.",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Inline styles (style= or Style=) violate enterprise PureStrict Content Security Policy.",
+            helpLinkUri: HelpBaseUrl + "#tg016");
+
+        public static readonly DiagnosticDescriptor RuleTg017 = new(
+            id: "TG017",
+            title: "PureStrict CSP Violation: Un-nonced <script> or <style> tag prohibited in Razor markup",
+            messageFormat: "Razor component '{0}' contains an un-nonced <{1}> tag at line {2}. PureStrict CSP requires a cryptographic nonce. ALLOWED APPROACH: Use static nonced scripts in App.razor or include nonce=\"@nonce\".",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Un-nonced script and style blocks violate enterprise PureStrict Content Security Policy.",
+            helpLinkUri: HelpBaseUrl + "#tg017");
+
+        public static readonly DiagnosticDescriptor RuleTg018 = new(
+            id: "TG018",
+            title: "PureStrict CSP Violation: Prohibited inline JavaScript handler or javascript: URI",
+            messageFormat: "Razor component '{0}' contains prohibited inline JavaScript '{1}' at line {2}. PureStrict CSP prohibits inline DOM execution. ALLOWED APPROACH: Use Blazor C# event directives (e.g. @onclick) and standard routing.",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Inline DOM event handlers and javascript: URIs violate enterprise PureStrict Content Security Policy.",
+            helpLinkUri: HelpBaseUrl + "#tg018");
+
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
                 RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
-                RuleTg014, RuleTg015);
+                RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -184,6 +216,7 @@ namespace TemplateGuard.Analyzers
 
             context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
             context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+            context.RegisterAdditionalFileAction(AnalyzeRazorCsp);
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
@@ -804,6 +837,124 @@ namespace TemplateGuard.Analyzers
             foreach (var subNs in nsSymbol.GetNamespaceMembers())
             {
                 CollectEntitiesFromNamespace(subNs, result);
+            }
+        }
+
+        private static readonly Regex InlineStyleRegex = new(
+            @"(?<![\w@])(?:style|Style)\s*=\s*",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ScriptOrStyleTagRegex = new(
+            @"<(?<tag>script|style)\b(?![^>]*\bnonce\s*=)[^>]*>",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        private static readonly Regex DomJsHandlerRegex = new(
+            @"(?<!@)\b(?:onload|onerror|onclick|onsubmit|onfocus|onblur|onkeydown|onkeyup|onkeypress|onmouseover|onmouseout|onmouseenter|onmouseleave)\s*=\s*[""']",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex JavascriptUriRegex = new(
+            @"\b(?:href|src|action)\s*=\s*[""']\s*javascript:",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        private static void AnalyzeRazorCsp(AdditionalFileAnalysisContext context)
+        {
+            var file = context.AdditionalFile;
+            if (!file.Path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)) return;
+
+            var text = file.GetText(context.CancellationToken);
+            if (text == null) return;
+
+            var fileName = Path.GetFileName(file.Path);
+            bool inCodeBlock = false;
+            bool inRazorComment = false;
+
+            for (int i = 0; i < text.Lines.Count; i++)
+            {
+                var line = text.Lines[i];
+                var lineStr = line.ToString();
+
+                // Track multiline Razor comments: @* ... *@
+                if (!inRazorComment && lineStr.Contains("@*"))
+                {
+                    if (!lineStr.Contains("*@"))
+                    {
+                        inRazorComment = true;
+                        continue;
+                    }
+                }
+                else if (inRazorComment)
+                {
+                    if (lineStr.Contains("*@"))
+                    {
+                        inRazorComment = false;
+                    }
+                    continue;
+                }
+
+                // Check for @code or @functions blocks
+                var trimmed = lineStr.Trim();
+                if (trimmed.StartsWith("@code", StringComparison.Ordinal) || trimmed.StartsWith("@functions", StringComparison.Ordinal))
+                {
+                    inCodeBlock = true;
+                }
+
+                // Only scan markup outside @code / @functions blocks
+                if (inCodeBlock) continue;
+
+                // 1. Inline Style Check (TG016)
+                var styleMatches = InlineStyleRegex.Matches(lineStr);
+                foreach (Match match in styleMatches)
+                {
+                    int commentStart = lineStr.IndexOf("@*");
+                    int commentEnd = lineStr.IndexOf("*@");
+                    if (commentStart >= 0 && commentEnd > commentStart && match.Index >= commentStart && match.Index <= commentEnd)
+                    {
+                        continue;
+                    }
+
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg016, location, fileName, match.Value.Trim(), i + 1));
+                }
+
+                // 2. Un-nonced <script> or <style> tags (TG017)
+                var tagMatches = ScriptOrStyleTagRegex.Matches(lineStr);
+                foreach (Match match in tagMatches)
+                {
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    var tagName = match.Groups["tag"].Value;
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg017, location, fileName, tagName, i + 1));
+                }
+
+                // 3. Inline DOM JS handler or javascript: URI (TG018)
+                var domMatches = DomJsHandlerRegex.Matches(lineStr);
+                foreach (Match match in domMatches)
+                {
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg018, location, fileName, match.Value.Trim(), i + 1));
+                }
+
+                var jsUriMatches = JavascriptUriRegex.Matches(lineStr);
+                foreach (Match match in jsUriMatches)
+                {
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg018, location, fileName, match.Value.Trim(), i + 1));
+                }
             }
         }
     }

@@ -111,4 +111,10 @@ public interface IUserTaskService
         Guid? targetProjectId,
         Guid? targetProgramId,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<TaskEntity>> GetTenantTasksAsync(Guid tenantId, CancellationToken ct = default);
+    Task<IReadOnlyList<RiskEntity>> GetTenantRisksAsync(Guid tenantId, CancellationToken ct = default);
+    Task<Result<RiskEntity>> CreateRiskAsync(RiskEntity risk, CancellationToken ct = default);
+    Task<IReadOnlyList<TaskEntity>> GetRecentTasksAsync(int limit = 30, CancellationToken ct = default);
+    Task<IReadOnlyList<WorkDependencyEntity>> GetProjectWorkDependenciesAsync(Guid projectId, CancellationToken ct = default);
 }

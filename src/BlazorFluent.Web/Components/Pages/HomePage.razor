@@ -1,16 +1,19 @@
-﻿@page "/"
+@page "/"
 @attribute [Authorize]
 @rendermode InteractiveServer
 @using BlazorFluent.Components.Common
 @using BlazorFluent.Core.Contracts
 @using BlazorFluent.Core.Domain.Auditing
 @using BlazorFluent.Core.Domain.Tasks
-@using BlazorFluent.Persistence.Context
+@using BlazorFluent.Core.Dtos.Response
+@using BlazorFluent.Shared.Contracts.Common
 @using BlazorFluent.Shared.DataListTypes
-@using Microsoft.EntityFrameworkCore
+
 @using Microsoft.FluentUI.AspNetCore.Components
 @using BlazorFluent.UI.Material.Components
-@inject AppDbContext DbContext
+@inject ITenantService TenantService
+@inject IUserTaskService TaskService
+@inject IAuditService AuditService
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject NavigationManager NavigationManager
@@ -207,161 +210,7 @@
     </div>
 </div>
 
-<style>
-    .homepage-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 0.5rem 0 2rem 0;
-        width: 100%;
-    }
 
-    .mat-metric-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.25rem;
-    }
-
-    .dashboard-columns-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 1.5rem;
-    }
-
-    @@media (max-width: 1024px) {
-        .dashboard-columns-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .dashboard-kanban-panel,
-    .dashboard-activity-panel {
-        background-color: var(--mat-surface);
-        border-radius: var(--mat-radius-card);
-        box-shadow: var(--mat-elevation-1);
-        border: 1px solid var(--mat-outline-variant);
-        padding: 1.25rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--mat-outline-variant);
-        padding-bottom: 0.75rem;
-    }
-
-    .panel-title-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .panel-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #0F172A;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .panel-subtitle {
-        font-size: 0.8125rem;
-        color: #64748B;
-        margin-top: 0.15rem;
-    }
-
-    .kanban-swimlanes {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-    }
-
-    .kanban-column {
-        background-color: var(--mat-surface-variant);
-        border-radius: var(--mat-radius-md);
-        padding: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        min-height: 280px;
-    }
-
-    .kanban-column-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid rgba(0,0,0,0.06);
-    }
-
-    .column-count {
-        background-color: rgba(0,0,0,0.06);
-        padding: 0.1rem 0.5rem;
-        border-radius: var(--mat-radius-pill);
-        font-size: 0.75rem;
-    }
-
-    .kanban-cards-stack {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .task-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.35rem;
-    }
-
-    .task-key {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--mat-primary);
-    }
-
-    .task-card-title {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #1E293B;
-        line-height: 1.35;
-        margin-bottom: 0.5rem;
-    }
-
-    .task-done {
-        text-decoration: line-through;
-        color: #94A3B8;
-    }
-
-    .task-card-footer {
-        display: flex;
-        align-items: center;
-        font-size: 0.75rem;
-        color: #64748B;
-    }
-
-    .task-assignee {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .mat-activity-description {
-        font-size: 0.8125rem;
-        color: #475569;
-        margin: 0.15rem 0;
-    }
-</style>
 
 @code {
     private string _projectCountText = "0";
@@ -387,11 +236,12 @@
         try
         {
             // 1. Projects Count
-            var realProjectCount = await DbContext.Projects.CountAsync();
+            var projects = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
+            var realProjectCount = projects.Count;
             _projectCountText = realProjectCount > 0 ? realProjectCount.ToString() : "14";
 
             // 2. Tasks Aggregation
-            var tasks = await DbContext.Tasks.Take(30).ToListAsync();
+            var tasks = await TaskService.GetRecentTasksAsync(30);
             if (tasks.Count > 0)
             {
                 _totalTasksCount = tasks.Count;
@@ -424,10 +274,11 @@
             }
 
             // 3. Audit Records
-            var auditRecords = await DbContext.AuditRecords
-                .OrderByDescending(a => a.Created)
-                .Take(5)
-                .ToListAsync();
+            var auditTrail = await AuditService.GetAuditTrailAsync(new AuditTrailFilterReqDto { PageNumber = 1, PageSize = 5 });
+            var auditRecords = auditTrail.Items;
+
+
+
 
             if (auditRecords.Count > 0)
             {

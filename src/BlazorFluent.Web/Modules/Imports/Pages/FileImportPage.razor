@@ -13,9 +13,9 @@
 @using BlazorFluent.Persistence.Context
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
-@using Microsoft.EntityFrameworkCore
+
 @inject IImportFileService ImportService
-@inject AppDbContext DbContext
+@inject ITenantService TenantService
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject NavigationManager Navigation
@@ -36,10 +36,10 @@
 <FluentGrid Spacing="3" AdaptiveRendering="true">
     <!-- Left Column: Upload Form Card -->
     <FluentGridItem xs="12" lg="5">
-        <FluentCard Style="padding: 1.5rem; height: 100%;">
+        <FluentCard Class="p-card full-height">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentLabel Typo="Typography.H6">Upload Batch Payloads</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                <FluentLabel Typo="Typography.Body" Class="text-hint">
                     Select single or multiple files. All files in a batch share a unified Batch ID and are client-side encrypted with AES-256-GCM.
                 </FluentLabel>
 
@@ -53,11 +53,11 @@
                                   Value="@(_currentProject?.Id.ToString())"
                                   ValueChanged="@OnProjectChanged"
                                   Label="Target Project Workspace"
-                                  Style="width: 100%;" />
+                                  Class="full-width" />
                 }
                 else if (_currentProject != null)
                 {
-                    <FluentTextInput Value="@_currentProject.Name" ReadOnly="true" Label="Target Project Workspace" Style="width: 100%;" />
+                    <FluentTextInput Value="@_currentProject.Name" ReadOnly="true" Label="Target Project Workspace" Class="full-width" />
                 }
                 else
                 {
@@ -67,11 +67,11 @@
                 }
 
                 <!-- Multi-File Picker Dropzone -->
-                <div style="border: 2px dashed var(--accent-fill-rest); padding: 1.25rem; border-radius: 6px; text-align: center; background: var(--neutral-fill-secondary-rest);">
-                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 0.5rem; display: block;">
+                <div class="file-drop-zone">
+                    <FluentLabel Typo="Typography.Body" Class="mb-2 d-block">
                         Choose one or more task files (.csv, .txt, .tsv)
                     </FluentLabel>
-                    <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" style="width: 100%;" />
+                    <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" class="full-width" />
                 </div>
 
                 <!-- Pending Files Table -->
@@ -86,17 +86,17 @@
                         </FluentButton>
                     </FluentStack>
 
-                    <div style="max-height: 320px; overflow-y: auto; border: 1px solid var(--neutral-stroke-layer-rest); border-radius: 6px; padding: 0.5rem;">
+                    <div class="import-files-list">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                             @foreach (var item in _pendingFiles)
                             {
-                                <div style="padding: 0.75rem; border-radius: 4px; background: var(--neutral-fill-secondary-rest); border: 1px solid var(--neutral-stroke-rest);" @key="item.Id">
-                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 0.5rem;">
+                                <div class="import-file-item" @key="item.Id">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-2">
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6" VerticalAlignment="VerticalAlignment.Center">
                                             <FluentIcon Value="@(new Icons.Regular.Size16.Document())" />
                                             <div>
-                                                <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">@item.FileName</FluentLabel>
-                                                <FluentLabel Typo="Typography.Caption" Style="color: var(--neutral-foreground-hint);">@FormatBytes(item.Size)</FluentLabel>
+                                                <FluentLabel Typo="Typography.Body" Class="font-weight-600">@item.FileName</FluentLabel>
+                                                <FluentLabel Typo="Typography.Caption" Class="text-hint">@FormatBytes(item.Size)</FluentLabel>
                                             </div>
                                         </FluentStack>
                                         <FluentButton Appearance="ButtonAppearance.Subtle"
@@ -113,7 +113,7 @@
                                                   Value="@item.SelectedFileType.ToString()"
                                                   ValueChanged="@((string? v) => OnItemFileTypeChanged(item, v))"
                                                   Label="Payload Specification"
-                                                  Style="width: 100%;" />
+                                                  Class="full-width" />
                                 </div>
                             }
                         </FluentStack>
@@ -132,7 +132,7 @@
                               IconStart="@(new Icons.Regular.Size16.ArrowSync())"
                               Disabled="@(_isUploading || _pendingFiles.Count == 0 || _currentProject == null)"
                               Loading="@_isUploading"
-                              Style="width: 100%; margin-top: 0.5rem;"
+                              Class="full-width mt-2"
                               OnClick="@UploadBatchAsync">
                     @(_isUploading ? "Encrypting & Storing Batch..." : $"Upload & Ingest Batch ({_pendingFiles.Count} files)")
                 </FluentButton>
@@ -142,7 +142,7 @@
 
     <!-- Right Column: Staging History Grid -->
     <FluentGridItem xs="12" lg="7">
-        <FluentCard Style="padding: 1.5rem; height: 100%;">
+        <FluentCard Class="p-card full-height">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
                     <FluentLabel Typo="Typography.H6">Payload Staging History</FluentLabel>
@@ -151,7 +151,7 @@
 
                 @if (_isLoadingHistory)
                 {
-                    <FluentSpinner Style="margin: 2rem auto;" />
+                    <FluentSpinner Class="import-spinner" />
                 }
                 else if (_history.Count == 0)
                 {
@@ -161,13 +161,13 @@
                 }
                 else
                 {
-                    <div style="overflow-x: auto;">
+                    <div class="overflow-x-auto">
                         <FluentDataGrid Items="@_history.AsQueryable()"
                                         ResizableColumns="true"
                                         TGridItem="ImportFileSummaryDto"
-                                        Style="width: 100%;">
+                                        Class="full-width">
                             <TemplateColumn Title="Batch ID" Width="100px">
-                                <span title="@context.ImportId.ToString()" style="font-family: monospace; font-size: 0.85em; cursor: help;">
+                                <span title="@context.ImportId.ToString()" class="mono-code">
                                     @context.ImportId.ToString()[..8]...
                                 </span>
                             </TemplateColumn>
@@ -230,7 +230,7 @@
                                     {
                                         <FluentButton Appearance="ButtonAppearance.Subtle"
                                                       IconStart="@(new Icons.Regular.Size16.ErrorCircle())"
-                                                      Style="color: var(--error);"
+                                                      Class="text-danger"
                                                       OnClick="@(() => ViewDiagnosticsAsync(context.Id))">
                                             Errors
                                         </FluentButton>
@@ -295,11 +295,11 @@
 
     private async Task LoadProjectsAsync()
     {
-        _availableProjects = await DbContext.Projects
-            .AsNoTracking()
+        _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug))
+
             .Where(p => p.IsActive && !p.IsDeleted)
             .OrderBy(p => p.Name)
-            .ToListAsync();
+            .ToList();
 
         if (_availableProjects.Count > 0)
         {

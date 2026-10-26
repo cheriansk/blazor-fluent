@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
@@ -50,13 +50,19 @@ public static class InitialDatabaseSeeder
         tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
 
         var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.SetSystemDaemon("InitialDatabaseSeeder", systemIdentity.DaemonEmailFor(rootAdminService.RootTenantSlug));
+        currentUser?.RestoreUserContext(primaryAdminEmail, primaryAdminEmail, "Root Administrator", isRootAdmin: true);
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // 1. Ensure internal root anchor Root Tenant exists
-        var defaultTenant = await dbContext.Tenants
+        var defaultTenant = await dbContext.Tenants.IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.Id == rootAdminService.RootTenantId || t.Slug == rootAdminService.RootTenantSlug, cancellationToken);
+
+        if (defaultTenant is not null && defaultTenant.Id != tenantContext.TenantId)
+        {
+            logger.LogInformation("Synchronizing ambient tenant context with existing root tenant '{Slug}' (ID: {Id})...", defaultTenant.Slug, defaultTenant.Id);
+            tenantContext.SetTenant(defaultTenant.Id, defaultTenant.Slug, defaultTenant.Name);
+        }
 
         if (defaultTenant is null)
         {
@@ -92,7 +98,7 @@ public static class InitialDatabaseSeeder
         }
 
         // 2. Seed up to 3 Root Administrator accounts inside the default tenant
-        var existingCount = await dbContext.TenantUsers
+        var existingCount = await dbContext.TenantUsers.IgnoreQueryFilters()
             .CountAsync(tu => tu.TenantId == defaultTenant.Id && !tu.IsDeleted, cancellationToken);
 
         var index = 1;
@@ -102,7 +108,7 @@ public static class InitialDatabaseSeeder
         {
             var normalizedEmail = email.Trim().ToLowerInvariant();
 
-            var existingUser = await dbContext.Users
+            var existingUser = await dbContext.Users.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(u => u.Email == normalizedEmail && !u.IsDeleted, cancellationToken);
 
             if (existingUser is null)
@@ -149,7 +155,7 @@ public static class InitialDatabaseSeeder
             }
             else
             {
-                var hasMembership = await dbContext.TenantUsers
+                var hasMembership = await dbContext.TenantUsers.IgnoreQueryFilters().IgnoreQueryFilters()
                     .AnyAsync(tu => tu.TenantId == defaultTenant.Id && tu.UserEntityId == existingUser.Id && !tu.IsDeleted, cancellationToken);
 
                 if (!hasMembership)
@@ -173,7 +179,7 @@ public static class InitialDatabaseSeeder
 
         // 2b. Seed Root Tenant Daemon and client tenant daemons
         var rootDaemonEmail = systemIdentity.DaemonEmailFor(rootAdminService.RootTenantSlug);
-        var existingRootDaemon = await dbContext.Users
+        var existingRootDaemon = await dbContext.Users.AsTracking()
             .FirstOrDefaultAsync(u => u.Email == rootDaemonEmail && !u.IsDeleted, cancellationToken);
 
         if (existingRootDaemon is null)
@@ -215,10 +221,11 @@ public static class InitialDatabaseSeeder
             {
                 existingRootDaemon.UserKind = UserKindEnum.SystemDaemon;
                 existingRootDaemon.RowSignature = existingRootDaemon.ComputeIntegritySignature(integrityKey);
+                dbContext.Users.Update(existingRootDaemon);
                 changesMade = true;
             }
 
-            var hasMembership = await dbContext.TenantUsers
+            var hasMembership = await dbContext.TenantUsers.IgnoreQueryFilters()
                 .AnyAsync(tu => tu.TenantId == defaultTenant.Id && tu.UserEntityId == existingRootDaemon.Id && !tu.IsDeleted, cancellationToken);
 
             if (!hasMembership)
@@ -238,15 +245,17 @@ public static class InitialDatabaseSeeder
         }
 
         // Seed tenant-scoped daemons for all other active tenants
-        var allOtherTenants = await dbContext.Tenants
+        var allOtherTenants = await dbContext.Tenants.IgnoreQueryFilters()
             .Where(t => t.Id != defaultTenant.Id && !t.IsDeleted)
             .ToListAsync(cancellationToken);
 
         foreach (var tenant in allOtherTenants)
         {
             var tenantDaemonEmail = systemIdentity.DaemonEmailFor(tenant.Slug);
-            var existingTenantDaemon = await dbContext.Users
+            var existingTenantDaemon = await dbContext.Users.IgnoreQueryFilters().AsTracking()
                 .FirstOrDefaultAsync(u => u.Email == tenantDaemonEmail && !u.IsDeleted, cancellationToken);
+
+            Guid daemonUserId;
 
             if (existingTenantDaemon is null)
             {
@@ -267,24 +276,36 @@ public static class InitialDatabaseSeeder
 
                 daemon.RowSignature = daemon.ComputeIntegritySignature(integrityKey);
                 dbContext.Users.Add(daemon);
+                daemonUserId = daemon.Id;
+                changesMade = true;
+            }
+            else
+            {
+                daemonUserId = existingTenantDaemon.Id;
+                if (existingTenantDaemon.UserKind != UserKindEnum.SystemDaemon)
+                {
+                    existingTenantDaemon.UserKind = UserKindEnum.SystemDaemon;
+                    existingTenantDaemon.RowSignature = existingTenantDaemon.ComputeIntegritySignature(integrityKey);
+                    dbContext.Users.Update(existingTenantDaemon);
+                    changesMade = true;
+                }
+            }
 
+            var hasDaemonMembership = await dbContext.TenantUsers.IgnoreQueryFilters()
+                .AnyAsync(tu => tu.TenantId == tenant.Id && tu.UserEntityId == daemonUserId && !tu.IsDeleted, cancellationToken);
+
+            if (!hasDaemonMembership)
+            {
                 var daemonMembership = new TenantUserEntity
                 {
                     Id = Guid.NewGuid(),
                     TenantId = tenant.Id,
-                    UserEntityId = daemon.Id,
+                    UserEntityId = daemonUserId,
                     Role = TenantRoleEnum.TenantAdmin,
                     IsActive = true,
                 };
                 daemonMembership.RowSignature = daemonMembership.ComputeIntegritySignature(integrityKey);
                 dbContext.TenantUsers.Add(daemonMembership);
-
-                changesMade = true;
-            }
-            else if (existingTenantDaemon.UserKind != UserKindEnum.SystemDaemon)
-            {
-                existingTenantDaemon.UserKind = UserKindEnum.SystemDaemon;
-                existingTenantDaemon.RowSignature = existingTenantDaemon.ComputeIntegritySignature(integrityKey);
                 changesMade = true;
             }
         }
@@ -294,7 +315,7 @@ public static class InitialDatabaseSeeder
         // Production environments remain strictly zero-trust and never automatically re-sign mismatched rows.
         if (isDevelopment)
         {
-            var devUsers = await dbContext.Users
+            var devUsers = await dbContext.Users.AsTracking()
                 .Where(u => !u.IsDeleted)
                 .ToListAsync(cancellationToken);
 
@@ -303,12 +324,13 @@ public static class InitialDatabaseSeeder
                 if (!user.VerifyIntegritySignature(integrityKey))
                 {
                     user.RowSignature = user.ComputeIntegritySignature(integrityKey);
+                    dbContext.Users.Update(user);
                     changesMade = true;
                     logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for '{Email}'.", user.Email);
                 }
             }
 
-            var devTenantUsers = await dbContext.TenantUsers
+            var devTenantUsers = await dbContext.TenantUsers.AsTracking()
                 .Where(u => !u.IsDeleted)
                 .ToListAsync(cancellationToken);
 
@@ -317,12 +339,13 @@ public static class InitialDatabaseSeeder
                 if (!tu.VerifyIntegritySignature(integrityKey))
                 {
                     tu.RowSignature = tu.ComputeIntegritySignature(integrityKey);
+                    dbContext.TenantUsers.Update(tu);
                     changesMade = true;
                     logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for TenantUser '{Id}'.", tu.Id);
                 }
             }
 
-            var devProgRoles = await dbContext.ProgramUserRoles
+            var devProgRoles = await dbContext.ProgramUserRoles.AsTracking()
                 .Where(r => !r.IsDeleted)
                 .ToListAsync(cancellationToken);
 
@@ -331,12 +354,13 @@ public static class InitialDatabaseSeeder
                 if (!pr.VerifyIntegritySignature(integrityKey))
                 {
                     pr.RowSignature = pr.ComputeIntegritySignature(integrityKey);
+                    dbContext.ProgramUserRoles.Update(pr);
                     changesMade = true;
                     logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for ProgramUserRole '{Id}'.", pr.Id);
                 }
             }
 
-            var devProjRoles = await dbContext.ProjectUserRoles
+            var devProjRoles = await dbContext.ProjectUserRoles.AsTracking()
                 .Where(r => !r.IsDeleted)
                 .ToListAsync(cancellationToken);
 
@@ -345,6 +369,7 @@ public static class InitialDatabaseSeeder
                 if (!pjr.VerifyIntegritySignature(integrityKey))
                 {
                     pjr.RowSignature = pjr.ComputeIntegritySignature(integrityKey);
+                    dbContext.ProjectUserRoles.Update(pjr);
                     changesMade = true;
                     logger.LogInformation("Development self-healing: Synchronized HMAC integrity signature for ProjectUserRole '{Id}'.", pjr.Id);
                 }

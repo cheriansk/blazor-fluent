@@ -81,11 +81,18 @@ public class ZeroTrustDbCommandInterceptor : DbCommandInterceptor
 
     private void ValidateZeroTrustAccess(DbCommand command, CommandEventData eventData)
     {
-        var currentUser = (eventData.Context as AppDbContext)?.CurrentUser;
+        var appDbContext = eventData.Context as AppDbContext;
+        var currentUser = appDbContext?.CurrentUser;
 
-        // 1. Authenticated user or background system daemon allowed
+        // 1. Authenticated user or background system daemon allowed IF tenant context is valid
         if (currentUser != null && (currentUser.IsAuthenticated || currentUser.IsSystemDaemon))
         {
+            var tenantContext = appDbContext?.TenantContext;
+            if (tenantContext == null || !tenantContext.HasActiveTenant)
+            {
+                _logger.LogCritical("ZERO-TRUST SECURITY VIOLATION: Denied database command execution without active tenant context. Command: {CommandText}", command.CommandText);
+                throw new System.Security.SecurityException("Zero-Trust Security Violation: Database command cannot be executed without an active tenant context.");
+            }
             return;
         }
 

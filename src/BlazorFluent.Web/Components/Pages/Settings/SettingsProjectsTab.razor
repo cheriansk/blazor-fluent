@@ -4,11 +4,11 @@
 @using BlazorFluent.Core.Domain.Identity
 @using BlazorFluent.Core.Domain.Tenancy
 @using BlazorFluent.Infrastructure.Security
-@using BlazorFluent.Persistence.Context
-@using BlazorFluent.Persistence.Extensions
-@using Microsoft.EntityFrameworkCore
+
+
+
 @using Microsoft.FluentUI.AspNetCore.Components
-@inject AppDbContext DbContext
+
 @inject ITenantContext TenantContext
 @inject ITenantService TenantService
 @inject IProgramService ProgramService
@@ -25,7 +25,7 @@
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <div>
         <FluentLabel Typo="Typography.H4">Project Workspaces</FluentLabel>
-        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+        <FluentLabel Typo="Typography.Body" Class="text-hint">
             Select an authorized tenant to view, manage project details, and configure per-project roles.
         </FluentLabel>
     </div>
@@ -38,7 +38,7 @@
     }
 
     <!-- Tenant Filter Toolbar -->
-    <FluentCard Style="padding: 16px;">
+    <FluentCard Class="p-4">
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16" Wrap="true">
             <FluentSelect TOption="TenantFilterOption"
                           TValue="string"
@@ -50,7 +50,7 @@
                           Disabled="@(_availableTenants.Count <= 1)"
                           Label="Filter by Tenant"
                           Placeholder="-- Select a tenant to view projects --"
-                          Style="min-width: 300px;" />
+                          Class="min-w-300" />
 
             @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
             {
@@ -65,7 +65,7 @@
                                   ValueChanged="@OnProgramSelected"
                                   Label="Filter by Program"
                                   Placeholder="-- All Programs --"
-                                  Style="min-width: 250px;" />
+                                  Class="min-w-240" />
 
                     @if (!string.IsNullOrWhiteSpace(_selectedProgramId))
                     {
@@ -97,7 +97,7 @@
     @if (string.IsNullOrWhiteSpace(_selectedTenantId))
     {
         <!-- Empty State Prompt -->
-        <FluentMessageBar Intent="MessageBarIntent.Info" Style="padding: 16px;">
+        <FluentMessageBar Intent="MessageBarIntent.Info" Class="p-4">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
                 <FluentIcon Value="@(new Icons.Regular.Size24.BuildingMultiple())" />
                 <div>
@@ -109,18 +109,18 @@
     else
     {
         <!-- Projects Data Grid Card -->
-        <FluentCard Style="padding: 20px;">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+        <FluentCard Class="p-5">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-4">
                 <div>
                     <FluentLabel Typo="Typography.H5">Projects for &ldquo;@_selectedTenantName&rdquo;</FluentLabel>
-                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+                    <FluentLabel Typo="Typography.Body" Class="text-hint">
                         Found @_projects.Count project(s) scoped to tenant <code>@_selectedTenantId</code>. Click <strong>Select</strong> to view details and roles.
                     </FluentLabel>
                 </div>
                 <FluentTextInput Placeholder="Filter projects by name, code, location..."
                                  @bind-Value="_projectSearchText"
                                  @bind-Value:after="StateHasChanged"
-                                 Style="width: 280px;">
+                                 Class="w-280">
                     <StartTemplate>
                         <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                     </StartTemplate>
@@ -129,15 +129,15 @@
 
             @if (_isLoading)
             {
-                <div style="display: flex; justify-content: center; padding: 40px;">
+                <div class="d-flex justify-center p-5">
                     <FluentSpinner Size="SpinnerSize.Medium" />
                 </div>
             }
             else if (_projects.Count == 0)
             {
-                <div style="text-align: center; padding: 40px; color: var(--neutral-foreground-hint);">
+                <div class="text-center p-5 text-hint">
                     <FluentIcon Value="@(new Icons.Regular.Size32.Folder())" Color="Color.Default" />
-                    <div style="margin-top: 10px; font-weight: 500;">No projects found for this tenant.</div>
+                    <div class="mt-2 font-weight-600">No projects found for this tenant.</div>
                 </div>
             }
             else
@@ -152,7 +152,7 @@
                         }
                         else
                         {
-                            <span style="color: var(--neutral-foreground-hint); font-size: 12px;">—</span>
+                            <span class="text-hint font-size-sm">—</span>
                         }
                     </TemplateColumn>
                     <TemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
@@ -174,7 +174,7 @@
                     </TemplateColumn>
                     <PropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
                     <TemplateColumn Title="Timeline" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.StartDate))">
-                        <span style="font-size: 12px;">
+                        <span class="font-size-sm">
                             @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
                         </span>
                     </TemplateColumn>
@@ -186,7 +186,7 @@
                                           OnClick="@(() => SelectProjectAsync(context))">
                                 @(_selectedProject?.Id == context.Id ? "Selected" : "Select")
                             </FluentButton>
-                            <FluentLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")" Style="font-size: 13px;">
+                            <FluentLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")" Class="font-size-sm">
                                 Tasks
                             </FluentLink>
                             <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
@@ -199,8 +199,8 @@
         @* Selected Project Sub-Tabs Panel (Details & Roles) *@
         @if (_selectedProject is not null)
         {
-            <FluentCard Style="padding: 20px; border-left: 4px solid var(--accent-fill-rest, #0078d4);">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px;">
+            <FluentCard Class="card-accent-border p-5">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-4">
                     <div>
                         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
                             <FluentLabel Typo="Typography.H5">@_selectedProject.Name</FluentLabel>
@@ -224,7 +224,7 @@
                                     break;
                             }
                         </FluentStack>
-                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666); margin-top: 4px;">
+                        <div class="font-size-sm text-hint mt-1">
                             ID: <code>@_selectedProject.Id</code> &bull; Tenant: <code>@_selectedProject.TenantId</code>
                         </div>
                     </div>
@@ -235,48 +235,53 @@
 
                 <FluentTabs @bind-ActiveTabId="_activeProjectTab">
                     <!-- Tab 1: Project Details -->
-                    <FluentTab Id="tab-details" Header="Details" IconStart="@(new Icons.Regular.Size16.DocumentBulletList())">
-                        <div style="padding-top: 16px;">
+                    <FluentTab Id="tab-details">
+                        <HeaderTemplate>
+                            <FluentIcon Value="@(new Icons.Regular.Size16.DocumentBulletList())" Class="me-2" />
+                            Details
+                        </HeaderTemplate>
+                        <Content>
+                        <div class="pt-4">
                             @if (!_isEditingDetails)
                             {
                                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="24" Wrap="true">
-                                        <div style="flex: 1; min-width: 200px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Project Name</span>
+                                        <div class="flex-1 min-w-200">
+                                            <span class="font-size-sm text-hint d-block">Project Name</span>
                                             <strong>@_selectedProject.Name</strong>
                                         </div>
-                                        <div style="flex: 1; min-width: 140px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Short Code</span>
+                                        <div class="flex-1 min-w-140">
+                                            <span class="font-size-sm text-hint d-block">Short Code</span>
                                             <code>@(_selectedProject.ShortCode ?? "—")</code>
                                         </div>
-                                        <div style="flex: 1; min-width: 140px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Status</span>
+                                        <div class="flex-1 min-w-140">
+                                            <span class="font-size-sm text-hint d-block">Status</span>
                                             <span>@_selectedProject.Status</span>
                                         </div>
-                                        <div style="flex: 1; min-width: 160px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Parent Program</span>
+                                        <div class="flex-1 min-w-160">
+                                            <span class="font-size-sm text-hint d-block">Parent Program</span>
                                             <span>@(_selectedProject.Program is not null ? _selectedProject.Program.Name : "—")</span>
                                         </div>
-                                        <div style="flex: 1; min-width: 180px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Location</span>
+                                        <div class="flex-1 min-w-180">
+                                            <span class="font-size-sm text-hint d-block">Location</span>
                                             <span>@(!string.IsNullOrWhiteSpace(_selectedProject.Location) ? _selectedProject.Location : "—")</span>
                                         </div>
                                     </FluentStack>
 
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="24" Wrap="true">
-                                        <div style="flex: 1; min-width: 200px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Start Date</span>
+                                        <div class="flex-1 min-w-200">
+                                            <span class="font-size-sm text-hint d-block">Start Date</span>
                                             <span>@TimeZoneService.FormatDate(_selectedProject.StartDate)</span>
                                         </div>
-                                        <div style="flex: 1; min-width: 200px;">
-                                            <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Due / Target End</span>
+                                        <div class="flex-1 min-w-200">
+                                            <span class="font-size-sm text-hint d-block">Due / Target End</span>
                                             <span>@TimeZoneService.FormatDate(_selectedProject.EndDate ?? _selectedProject.DueDate)</span>
                                         </div>
                                     </FluentStack>
 
                                     <div>
-                                        <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666); display: block;">Summary of Scope of Project</span>
-                                        <div style="margin-top: 4px; padding: 10px 14px; background: var(--neutral-layer-2, #fafafa); border-radius: 6px; line-height: 1.5; font-size: 13px;">
+                                        <span class="font-size-sm text-hint d-block">Summary of Scope of Project</span>
+                                        <div class="mt-1 p-3 bg-subtle rounded-6 font-size-sm">
                                             @(!string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : (!string.IsNullOrWhiteSpace(_selectedProject.Description) ? _selectedProject.Description : "No scope summary provided."))
                                         </div>
                                     </div>
@@ -291,23 +296,23 @@
                             else
                             {
                                 <!-- Edit Project Details Form -->
-                                <FluentCard Style="background-color: var(--neutral-layer-2, #fafafa); padding: 16px;">
-                                    <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">Edit Project Details</FluentLabel>
+                                <FluentCard Class="bg-subtle p-4">
+                                    <FluentLabel Typo="Typography.H6" Class="mb-3">Edit Project Details</FluentLabel>
                                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                                            <FluentTextInput Label="Project Name" @bind-Value="_editName" Required="true" Style="flex: 2;" />
-                                            <FluentTextInput Label="Project Short Code" @bind-Value="_editShortCode" Required="true" Style="flex: 1;" />
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                            <FluentTextInput Label="Project Name" @bind-Value="_editName" Required="true" Class="flex-2" />
+                                            <FluentTextInput Label="Project Short Code" @bind-Value="_editShortCode" Required="true" Class="flex-1" />
                                         </FluentStack>
 
-                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="width: 100%;">
-                                            <FluentTextInput Label="Location" @bind-Value="_editLocation" Style="flex: 2;" />
-                                            <div style="flex: 1;">
-                                                <DataListSelect TEnum="ProjectStatusEnum" TValue="ProjectStatusEnum" Label="Status" @bind-Value="_editStatus" Style="width: 100%;" />
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                            <FluentTextInput Label="Location" @bind-Value="_editLocation" Class="flex-2" />
+                                            <div class="flex-1">
+                                                <DataListSelect TEnum="ProjectStatusEnum" TValue="ProjectStatusEnum" Label="Status" @bind-Value="_editStatus" Class="full-width" />
                                             </div>
                                         </FluentStack>
 
                                         <div>
-                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Parent Program (Optional)</FluentLabel>
+                                            <FluentLabel Typo="Typography.Body" Class="mb-1">Parent Program (Optional)</FluentLabel>
                                             <FluentSelect TOption="ProgramFilterOption"
                                                           TValue="string"
                                                           Items="@_assignablePrograms"
@@ -315,7 +320,7 @@
                                                           OptionValue="@(p => p.Id)"
                                                           Value="@_editProgramId"
                                                           ValueChanged="@(val => _editProgramId = val)"
-                                                          Style="width: 100%;" />
+                                                          Class="full-width" />
                                         </div>
 
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
@@ -324,11 +329,11 @@
                                         </FluentStack>
 
                                         <div>
-                                            <FluentLabel Typo="Typography.Body" Style="margin-bottom: 4px;">Summary of Scope of Project</FluentLabel>
-                                            <FluentTextArea @bind-Value="_editScopeSummary" Rows="3" Style="width: 100%;" />
+                                            <FluentLabel Typo="Typography.Body" Class="mb-1">Summary of Scope of Project</FluentLabel>
+                                            <FluentTextArea @bind-Value="_editScopeSummary" Rows="3" Class="full-width" />
                                         </div>
 
-                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 8px;">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-2">
                                             <FluentButton Appearance="ButtonAppearance.Primary"
                                                           Disabled="@(!IsEditDetailsValid)"
                                                           OnClick="@SaveProjectDetailsAsync">
@@ -345,12 +350,19 @@
                     </FluentTab>
 
                     <!-- Tab 2: Project Roles & Access Management -->
-                    <FluentTab Id="tab-roles" Header="Project Roles" IconStart="@(new Icons.Regular.Size16.PeopleTeam())">
-                        <div style="padding-top: 16px;">
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 12px;">
+                    </Content>
+                    </FluentTab>
+                    <FluentTab Id="tab-roles">
+                        <HeaderTemplate>
+                            <FluentIcon Value="@(new Icons.Regular.Size16.PeopleTeam())" Class="me-2" />
+                            Project Roles
+                        </HeaderTemplate>
+                        <Content>
+                        <div class="pt-4">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-3">
                                 <div>
                                     <FluentLabel Typo="Typography.H6">Project Access &amp; Member Roles</FluentLabel>
-                                    <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                                    <div class="font-size-sm text-hint">
                                         Assign roles (Admin, Dev, QA, ReadOnly) to tenant members for project <strong>@_selectedProject.Name</strong>.
                                     </div>
                                 </div>
@@ -367,14 +379,14 @@
                             <!-- Role Assignment Form (Collapsible Card) -->
                             @if (_showAssignRoleModal)
                             {
-                                <FluentCard Style="margin-bottom: 16px; border-left: 4px solid var(--accent-fill-rest, #0078d4); padding: 16px;">
-                                    <FluentLabel Typo="Typography.H6" Style="margin-bottom: 12px;">
+                                <FluentCard Class="mb-4 card-accent-border p-4">
+                                    <FluentLabel Typo="Typography.H6" Class="mb-3">
                                         @(_isEditingRole ? "Update Project Role" : "Assign Tenant User to Project")
                                     </FluentLabel>
 
                                     @if (!_isEditingRole && _tenantUsers.Count == 0)
                                     {
-                                        <FluentMessageBar Intent="MessageBarIntent.Warning" Style="margin-bottom: 12px;">
+                                        <FluentMessageBar Intent="MessageBarIntent.Warning" Class="mb-3">
                                             No active users are provisioned for tenant '@_selectedTenantName'. Please add users to this tenant first in the Tenants tab.
                                         </FluentMessageBar>
                                         <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showAssignRoleModal = false)">
@@ -395,11 +407,11 @@
                                                               ValueChanged="@OnTenantUserSelected"
                                                               Label="Select Tenant User"
                                                               Required="true"
-                                                              Style="width: 100%;" />
+                                                              Class="full-width" />
 
                                                 @if (!string.IsNullOrWhiteSpace(_formEmail))
                                                 {
-                                                    <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-2, #fafafa); padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 16px;">
+                                                    <div class="font-size-sm text-hint bg-subtle p-2 rounded-6 d-flex align-center gap-4">
                                                         <span>Member: <strong>@_formUserName</strong></span>
                                                         <span>Email: <code>@_formEmail</code></span>
                                                         <span>Type:
@@ -417,16 +429,16 @@
                                             }
                                             else
                                             {
-                                                <div style="font-size: 13px; color: var(--neutral-foreground-2, #616161); background: var(--neutral-layer-2, #fafafa); padding: 8px 12px; border-radius: 6px;">
+                                                <div class="font-size-sm text-hint bg-subtle p-2 rounded-6">
                                                     Updating Role for: <strong>@_formUserName</strong> (<code>@_formEmail</code>)
                                                 </div>
                                             }
 
-                                            <div style="width: 50%;">
-                                                <DataListSelect TEnum="ProjectRoleEnum" TValue="ProjectRoleEnum" Label="Project Role" @bind-Value="_formRole" Style="width: 100%;" />
+                                            <div class="half-width">
+                                                <DataListSelect TEnum="ProjectRoleEnum" TValue="ProjectRoleEnum" Label="Project Role" @bind-Value="_formRole" Class="full-width" />
                                             </div>
 
-                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="margin-top: 12px;">
+                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="mt-3">
                                                 <FluentButton Appearance="ButtonAppearance.Primary"
                                                               Disabled="@(string.IsNullOrWhiteSpace(_formUserId))"
                                                               OnClick="@SaveAssignmentAsync">
@@ -444,12 +456,12 @@
                             <!-- Impersonation Form (Collapsible Card) -->
                             @if (_showImpersonateModal)
                             {
-                                <FluentCard Style="margin-bottom: 16px; border-left: 4px solid #ffd335; background-color: #fffdf5; padding: 16px;">
-                                    <FluentLabel Typo="Typography.H6" Style="margin-bottom: 8px; color: #424242;">
+                                <FluentCard Class="mb-4 card-warning-border p-4">
+                                    <FluentLabel Typo="Typography.H6" Class="mb-2 text-dark-gray">
                                         ⚠️ Operator Impersonation (SuperAdmin Troubleshooting)
                                     </FluentLabel>
 
-                                    <FluentLabel Typo="Typography.Body" Style="margin-bottom: 12px;">
+                                    <FluentLabel Typo="Typography.Body" Class="mb-3">
                                         You are about to impersonate <strong>@_impersonateTargetName</strong> (<code>@_impersonateTargetEmail</code>).
                                         This allows you to experience the application under this user's exact permissions.
                                     </FluentLabel>
@@ -459,9 +471,9 @@
                                                          @bind-Value="_impersonateReason"
                                                          Placeholder="e.g. INC-4029: User reports cannot view analytics"
                                                          Required="true"
-                                                         Style="width: 100%;" />
+                                                         Class="full-width" />
 
-                                        <div style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                                        <div class="font-size-sm text-hint">
                                             ⏳ Max Duration: 60 minutes. An exit button will be pinned to the top of all pages.
                                         </div>
 
@@ -470,7 +482,7 @@
                                                 Cancel
                                             </FluentButton>
                                             <FluentButton Appearance="ButtonAppearance.Primary"
-                                                          Style="background-color: #d83b01; border-color: #d83b01;"
+                                                          Class="btn-danger-confirm"
                                                           Disabled="@(string.IsNullOrWhiteSpace(_impersonateReason))"
                                                           OnClick="StartImpersonationAsync">
                                                 Start Impersonating
@@ -483,7 +495,7 @@
                             <!-- Members Grid -->
                             @if (_isLoadingMembers)
                             {
-                                <div style="display: flex; justify-content: center; padding: 24px;">
+                                <div class="d-flex justify-center p-4">
                                     <FluentSpinner Size="SpinnerSize.Medium" />
                                 </div>
                             }
@@ -495,16 +507,16 @@
                             }
                             else
                             {
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 8px;">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-2">
                                     <FluentTextInput Placeholder="Filter members by name, email, or role..."
                                                      @bind-Value="_memberFilterText"
                                                      @bind-Value:after="StateHasChanged"
-                                                     Style="width: 320px;">
+                                                     Class="w-320">
                                         <StartTemplate>
                                             <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
                                         </StartTemplate>
                                     </FluentTextInput>
-                                    <span style="font-size: 12px; color: var(--neutral-foreground-hint, #666);">
+                                    <span class="font-size-sm text-hint">
                                         Showing @FilteredMembers.Count() of @_members.Count members
                                     </span>
                                 </FluentStack>
@@ -515,11 +527,11 @@
                                             <strong>@context.UserName</strong>
                                             @if (BlazorFluent.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(context.UserEmail))
                                             {
-                                                <FluentBadge Appearance="BadgeAppearance.Outline" Style="background-color: #f3f2f1; color: #323130; margin-left: 6px;">
+                                                <FluentBadge Appearance="BadgeAppearance.Outline" Class="daemon-badge ml-2">
                                                     🤖 System Daemon
                                                 </FluentBadge>
                                             }
-                                            <div style="font-size: 11px; color: var(--neutral-foreground-hint, #666);">@context.UserId</div>
+                                            <div class="font-size-xs text-hint">@context.UserId</div>
                                         </div>
                                     </TemplateColumn>
                                     <PropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
@@ -563,7 +575,7 @@
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="6">
                                             @if (BlazorFluent.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(context.UserEmail))
                                             {
-                                                <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Style="font-size: 11px;">
+                                                <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Class="font-size-xs">
                                                     🔒 Locked Daemon
                                                 </FluentBadge>
                                             }
@@ -589,14 +601,16 @@
                             }
                         </div>
                     </FluentTab>
+                        </Content>
+                    </FluentTab>
                 </FluentTabs>
             </FluentCard>
         }
 
         <!-- Multi-Tenant Architecture Callout -->
-        <FluentCard Style="padding: 16px; background-color: var(--neutral-layer-2);">
-            <FluentLabel Typo="Typography.Subject" Style="font-weight: 600; margin-bottom: 6px;">Multi-Tenant Workspace Isolation &amp; Defense-in-Depth</FluentLabel>
-            <div style="font-size: 13px; color: var(--neutral-foreground-hint); line-height: 1.6;">
+        <FluentCard Class="p-4 bg-subtle">
+            <FluentLabel Typo="Typography.Subject" Class="font-weight-600 mb-1">Multi-Tenant Workspace Isolation &amp; Defense-in-Depth</FluentLabel>
+            <div class="font-size-sm text-hint line-height-16">
                 Projects are securely partitioned per-tenant. Role updates instantly invalidate <code>proj_role_{tenantId}_{userId}_{projectId}</code> in HybridCache memory so member authorizations update immediately without requiring re-login.
             </div>
         </FluentCard>
@@ -711,12 +725,12 @@
     {
         if (CurrentUser.IsRootAdmin)
         {
-            var dbTenants = await DbContext.Tenants
-                .AsNoTracking()
+            var dbTenants = (await TenantService.GetAllTenantsAsync())
+
                 .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
                 .Select(t => new TenantFilterOption(t.Slug, t.Name))
-                .ToListAsync();
+                .ToList();
 
             _availableTenants = dbTenants;
         }
@@ -799,22 +813,7 @@
             }
 
             var selectedGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
-            var query = DbContext.Projects
-                .AsNoTracking()
-                .Include(p => p.Program)
-                .Where(p => p.TenantId == selectedGuid && !p.IsDeleted)
-                .OrderBy(p => p.Name);
-
-            if (selectedGuid != TenantContext.TenantId)
-            {
-                _projects = await query.ToListWithAuditedBypassAsync(
-                    AuditService,
-                    $"Host user inspected projects in tenant '{_selectedTenantId}'");
-            }
-            else
-            {
-                _projects = await query.ToListAsync();
-            }
+            _projects = (await TenantService.GetProjectsByTenantIdAsync(selectedGuid)).ToList();
 
             if (_selectedProject != null)
             {
@@ -904,13 +903,7 @@
         var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
         try
         {
-            _tenantUsers = await DbContext.TenantUsers
-                .AsNoTracking()
-                .Where(tu => tu.TenantId == tenantGuid && !tu.IsDeleted && tu.IsActive)
-                .Include(tu => tu.User)
-                .Select(tu => tu.User)
-                .OrderBy(u => u.FullName)
-                .ToListAsync();
+            _tenantUsers = (await TenantService.GetTenantUsersByIdAsync(tenantGuid)).ToList();
         }
         catch
         {

@@ -347,4 +347,40 @@ public class ProgramService : IProgramService
             RiskReasons = riskReasons
         };
     }
+
+    public async Task<IReadOnlyList<RiskEntity>> GetProgramRisksAsync(Guid programId, CancellationToken ct = default)
+    {
+        return await _context.Risks
+            .AsNoTracking()
+            .Where(r => r.ProgramId == programId && !r.IsDeleted)
+            .OrderByDescending(r => r.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<AssumptionEntity>> GetProgramAssumptionsAsync(Guid programId, CancellationToken ct = default)
+    {
+        return await _context.Assumptions
+            .AsNoTracking()
+            .Where(a => a.ProgramId == programId && !a.IsDeleted)
+            .OrderByDescending(a => a.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<IssueEntity>> GetProgramIssuesAsync(Guid programId, CancellationToken ct = default)
+    {
+        return await _context.Issues
+            .AsNoTracking()
+            .Where(i => i.ProgramId == programId && !i.IsDeleted)
+            .OrderByDescending(i => i.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<WorkDependencyEntity>> GetProgramBlockersAsync(Guid programId, CancellationToken ct = default)
+    {
+        return await _context.WorkDependencies
+            .AsNoTracking()
+            .Where(b => b.ProgramId == programId && !b.IsDeleted)
+            .OrderByDescending(b => b.Created)
+            .ToListAsync(ct);
+    }
 }

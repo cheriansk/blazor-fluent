@@ -39,7 +39,7 @@ public class CspOptions
     /// <summary>
     /// Optional violation report endpoint URI (report-uri / report-to).
     /// </summary>
-    public string? ReportUri { get; set; }
+    public string? ReportUri { get; set; } = "/api/security/csp-violations";
 
     /// <summary>
     /// The strictness profile applied to script and style directives. Default is PureStrict.

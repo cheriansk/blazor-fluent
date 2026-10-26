@@ -1,4 +1,4 @@
-using BlazorFluent.Core.Configuration;
+﻿using BlazorFluent.Core.Configuration;
 using BlazorFluent.Core.Contracts;
 using BlazorFluent.Shared.DataListTypes;
 using BlazorFluent.Core.Domain.Identity;
@@ -48,7 +48,7 @@ public static class DevelopmentSeeder
         tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
 
         var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-        currentUser?.SetSystemDaemon("DevelopmentSeeder", $"daemon@{rootAdminService.RootTenantSlug.ToLowerInvariant()}.internal");
+        currentUser?.RestoreUserContext(primaryAdminEmail, primaryAdminEmail, "Development Administrator", isRootAdmin: true);
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var changesMade = false;
@@ -57,7 +57,7 @@ public static class DevelopmentSeeder
         if (seedOptions != null && seedOptions.Enabled && !string.IsNullOrWhiteSpace(seedOptions.TenantSlug))
         {
             var tenantSlug = seedOptions.TenantSlug.Trim();
-            var existingTenant = await dbContext.Tenants
+            var existingTenant = await dbContext.Tenants.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(t => t.Slug == tenantSlug, cancellationToken);
             TenantEntity? createdTenant = null;
 
@@ -83,8 +83,8 @@ public static class DevelopmentSeeder
             if (!string.IsNullOrWhiteSpace(seedOptions.AdminEmail))
             {
                 var adminEmail = seedOptions.AdminEmail.Trim().ToLowerInvariant();
-                var existingAdmin = await dbContext.Users
-                    .FirstOrDefaultAsync(u => u.Email == adminEmail && !u.IsDeleted, cancellationToken);
+                var existingAdmin = dbContext.Users.Local.FirstOrDefault(u => string.Equals(u.Email, adminEmail, StringComparison.OrdinalIgnoreCase) && !u.IsDeleted)
+                    ?? await dbContext.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == adminEmail && !u.IsDeleted, cancellationToken);
 
                 if (existingAdmin is null)
                 {
@@ -105,7 +105,7 @@ public static class DevelopmentSeeder
                     dbContext.Users.Add(adminUser);
 
                     var assignedTenantId = existingTenant?.Id ?? createdTenant?.Id;
-                    if (assignedTenantId.HasValue)
+                    if (assignedTenantId.HasValue && !await dbContext.TenantUsers.IgnoreQueryFilters().AnyAsync(tu => tu.TenantId == assignedTenantId.Value && tu.UserEntityId == adminUser.Id && !tu.IsDeleted, cancellationToken))
                     {
                         var tenantUser = new TenantUserEntity
                         {
@@ -122,22 +122,48 @@ public static class DevelopmentSeeder
                     changesMade = true;
                 }
             }
+
+            // Commit custom tenant and admin before proceeding to personas to prevent unique constraint races
+            if (changesMade)
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                changesMade = false;
+            }
         }
 
         // 2. DevLogin users seeding from DevLoginOptions
         if (devLoginOptions != null && devLoginOptions.Enabled && devLoginOptions.Users.Count > 0)
         {
             var targetTenantSlug = seedOptions?.TenantSlug ?? rootAdminService.RootTenantSlug;
-            var targetTenant = await dbContext.Tenants
+            var targetTenant = await dbContext.Tenants.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(t => t.Slug == targetTenantSlug, cancellationToken);
+
+            // Separation of duties: App Admin only assigns TenantAdmin.
+            // Switch execution context to targetTenant and its TenantAdmin so that TenantMembers are added within the tenant by its TenantAdmin.
+            if (targetTenant is not null && targetTenant.Id != rootAdminService.RootTenantId)
+            {
+                var tenantAdminEmail = seedOptions?.AdminEmail?.Trim().ToLowerInvariant();
+                var tenantAdminUser = !string.IsNullOrWhiteSpace(tenantAdminEmail)
+                    ? (dbContext.Users.Local.FirstOrDefault(u => string.Equals(u.Email, tenantAdminEmail, StringComparison.OrdinalIgnoreCase) && !u.IsDeleted)
+                       ?? await dbContext.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == tenantAdminEmail && !u.IsDeleted, cancellationToken))
+                    : null;
+
+                if (tenantAdminUser is not null)
+                {
+                    tenantContext.SetTenant(targetTenant.Id, targetTenant.Slug, targetTenant.Name);
+                    currentUser?.RestoreUserContext(tenantAdminUser.Id.ToString(), tenantAdminUser.Email, tenantAdminUser.FullName, isRootAdmin: false);
+                }
+            }
 
             foreach (var devUser in devLoginOptions.Users)
             {
                 if (string.IsNullOrWhiteSpace(devUser.Email)) continue;
 
                 var email = devUser.Email.Trim().ToLowerInvariant();
-                var existingUser = await dbContext.Users
-                    .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, cancellationToken);
+                var existingUser = dbContext.Users.Local.FirstOrDefault(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase) && !u.IsDeleted)
+                    ?? await dbContext.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, cancellationToken);
+
+                Guid personaUserId;
 
                 if (existingUser is null)
                 {
@@ -156,22 +182,33 @@ public static class DevelopmentSeeder
                     };
                     user.RowSignature = user.ComputeIntegritySignature(integrityKey);
                     dbContext.Users.Add(user);
+                    personaUserId = user.Id;
+                    changesMade = true;
+                }
+                else
+                {
+                    personaUserId = existingUser.Id;
+                }
 
-                    if (targetTenant is not null)
+                if (targetTenant is not null)
+                {
+                    var hasMembership = dbContext.TenantUsers.Local.Any(tu => tu.TenantId == targetTenant.Id && tu.UserEntityId == personaUserId && !tu.IsDeleted)
+                        || await dbContext.TenantUsers.IgnoreQueryFilters().AnyAsync(tu => tu.TenantId == targetTenant.Id && tu.UserEntityId == personaUserId && !tu.IsDeleted, cancellationToken);
+
+                    if (!hasMembership)
                     {
                         var tenantUser = new TenantUserEntity
                         {
                             Id = Guid.NewGuid(),
                             TenantId = targetTenant.Id,
-                            UserEntityId = user.Id,
+                            UserEntityId = personaUserId,
                             Role = TenantRoleEnum.TenantMember,
                             IsActive = true,
                         };
                         tenantUser.RowSignature = tenantUser.ComputeIntegritySignature(integrityKey);
                         dbContext.TenantUsers.Add(tenantUser);
+                        changesMade = true;
                     }
-
-                    changesMade = true;
                 }
             }
         }
@@ -181,5 +218,9 @@ public static class DevelopmentSeeder
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation("DevelopmentSeeder: Completed successfully.");
         }
+
+        // Restore ambient context back to Root Administrator in Root Tenant
+        tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
+        currentUser?.RestoreUserContext(primaryAdminEmail, primaryAdminEmail, "Development Administrator", isRootAdmin: true);
     }
 }
