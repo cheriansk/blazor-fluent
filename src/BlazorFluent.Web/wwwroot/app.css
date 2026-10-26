@@ -1,4 +1,3 @@
-@import '/_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css';
 
 body {
   --body-font: "Segoe UI Variable", "Segoe UI", sans-serif;
@@ -34,28 +33,7 @@ nav {
   width: 100dvw;
 }
 
-.fluent-layout-item[area="footer"] {
-  background: var(--neutral-layer-4);
-  color: var(--neutral-foreground-rest);
-  align-items: center;
-  padding: 10px 10px;
-}
-
-  .fluent-layout-item[area="footer"] fluent-link {
-    color: var(--neutral-foreground-rest);
-    text-decoration: none;
-  }
-
-    .fluent-layout-item[area="footer"] fluent-link:focus {
-      outline: 1px dashed;
-      outline-offset: 3px;
-    }
-
-    .fluent-layout-item[area="footer"] fluent-link:hover {
-      text-decoration: underline;
-    }
-
-
+          
 .alert {
   border: 1px dashed var(--accent-fill-rest);
   padding: 5px;

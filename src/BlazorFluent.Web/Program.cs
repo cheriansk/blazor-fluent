@@ -43,7 +43,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 
 using Microsoft.AspNetCore.RateLimiting;
 
-using Microsoft.FluentUI.AspNetCore.Components;
 
 using BlazorFluent.UI.Material.Extensions;
 
@@ -274,10 +273,6 @@ try
         options.EnableDetailedErrors = builder.Environment.IsDevelopment();
 
     });
-
-
-
-    builder.Services.AddFluentUIComponents();
 
     builder.Services.AddMaterialUI();
 

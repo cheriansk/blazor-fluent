@@ -10,6 +10,7 @@
 		<NoWarn>$(NoWarn);EXTEXP0018</NoWarn>
 		<UseRazorSourceGenerator Condition="'$(DesignTimeBuild)' == 'true'">true</UseRazorSourceGenerator>
 		<WarningsAsErrors>CS0108;RZ10012;CS0618</WarningsAsErrors>
+		<UserSecretsId>dotnet-BlazorFluent.Web-7e9b21a4-9214-4a25-b42e-9d2a6b291d4e</UserSecretsId>
 	</PropertyGroup>
 
 	<!-- Package References preserved -->
@@ -18,8 +19,6 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" />
-		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
 		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
 		<PackageReference Include="Blazored.FluentValidation" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
