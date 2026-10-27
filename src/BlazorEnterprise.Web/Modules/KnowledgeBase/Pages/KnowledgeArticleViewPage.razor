@@ -1,0 +1,161 @@
+@namespace BlazorEnterprise.Modules.KnowledgeBase.Pages
+@page "/knowledge/{Id:guid}"
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Shared.DataListTypes
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Dtos
+
+<PageTitle>@(_article?.Title ?? "Knowledge Article") - BlazorEnterprise</PageTitle>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16" Class="kb-view-container">
+    <!-- Navigation back -->
+    <CskButton Variant="CskButtonVariant.Text"
+                  IconStart="@CskIcons.ArrowLeft"
+                  OnClick="@(() => NavigationManager.NavigateTo("/knowledge"))">
+        Back to Knowledge Base
+    </CskButton>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isStatusError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    @if (_isLoading)
+    {
+        <CskSpinner Class="kb-view-spinner" />
+    }
+    else if (_article == null)
+    {
+        <EmptyStateComp Title="Article Not Found"
+                        Description="The requested knowledge base article does not exist or you do not have permission to view it."
+                        Icon="@CskIcons.DocumentDismiss" />
+    }
+    else
+    {
+        <!-- Article Header Metadata Block -->
+        <CskCard Class="article-meta-card">
+            <!-- Title & Status Row -->
+            <div class="meta-title-row">
+                <CskLabel Typo="Typography.H3" Class="meta-title">
+                    @_article.Title
+                </CskLabel>
+
+                <div class="meta-badges">
+                    <!-- Scope Badge -->
+                    @if (_article.IsGlobal)
+                    {
+                        <span class="badge-scope-global">
+                            GLOBAL
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge-scope-tenant">
+                            TENANT ONLY
+                        </span>
+                    }
+
+                    <!-- Status Badge -->
+                    @if (_article.Status == KnowledgeArticleStatusEnum.Approved)
+                    {
+                        <span class="badge-status-approved">
+                            ✓ APPROVED
+                        </span>
+                    }
+                    else if (_article.Status == KnowledgeArticleStatusEnum.PendingReview)
+                    {
+                        <span class="badge-status-pending">
+                            ⏳ PENDING REVIEW/APPROVAL
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Labels Row -->
+            <div class="meta-labels-row">
+                <span class="meta-labels-label">Labels:</span>
+                @foreach (var label in _article.Labels)
+                {
+                    <span class="badge-label-pill">
+                        @label
+                    </span>
+                }
+            </div>
+
+            <div class="meta-divider"></div>
+
+            <!-- Detailed Creator, Timestamps & Approval Status Row -->
+            <div class="meta-grid">
+                <!-- Author & Creation -->
+                <div>
+                    <span class="meta-field-label">Created By</span>
+                    <strong class="meta-field-value">@_article.AuthorUserName</strong>
+                    <div class="meta-field-hint">@_article.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy - h:mm tt")</div>
+                </div>
+
+                <!-- Last Updated -->
+                <div>
+                    <span class="meta-field-label">Last Updated</span>
+                    <strong class="meta-field-value">
+                        @(_article.UpdatedAtUtc.HasValue ? _article.UpdatedAtUtc.Value.ToLocalTime().ToString("MMM dd, yyyy - h:mm tt") : "Never modified")
+                    </strong>
+                </div>
+
+                <!-- Approval Status Section -->
+                <div>
+                    @if (_article.Status == KnowledgeArticleStatusEnum.Approved)
+                    {
+                        <span class="meta-field-label">Approved By</span>
+                        <strong class="meta-field-approved">@_article.ApprovedByUserName</strong>
+                        @if (_article.ApprovedAtUtc.HasValue)
+                        {
+                            <div class="meta-field-hint">@_article.ApprovedAtUtc.Value.ToLocalTime().ToString("MMM dd, yyyy - h:mm tt")</div>
+                        }
+                    }
+                    else
+                    {
+                        <span class="meta-field-label">Pending Approvers</span>
+                        <div class="meta-approvers-wrap">
+                            @foreach (var r in _article.Reviewers.Where(rev => !rev.HasApproved))
+                            {
+                                <span class="badge-approver-pending">
+                                    @r.UserName
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Approval Action Bar for Reviewers -->
+            @if (CanApprove)
+            {
+                <div class="approval-bar">
+                    <div>
+                        <strong class="approval-title">You are an assigned reviewer for this article.</strong>
+                        <div class="approval-hint">Review the description and images below, then click to approve and publish.</div>
+                    </div>
+
+                    <CskButton Variant="CskButtonVariant.Filled"
+                                  IconStart="@CskIcons.Checkmark"
+                                  OnClick="@ApproveArticleAsync"
+                                  Loading="@_isApproving">
+                        Approve &amp; Publish
+                    </CskButton>
+                </div>
+            }
+        </CskCard>
+
+        <!-- Article Content Body -->
+        <CskCard Class="article-content-card">
+            <div class="article-html-content">
+                @((MarkupString)_article.Content)
+            </div>
+        </CskCard>
+    }
+</CskStack>

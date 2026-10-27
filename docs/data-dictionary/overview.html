@@ -1,6 +1,6 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="styles.css"></head><body>
 <div class="page-container">
-<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorFluent Monolith</div></div></div>
+<div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorEnterprise Monolith</div></div></div>
 <div class="stat-grid">
 <div class="stat-card"><div class="stat-val">40</div><div class="stat-lbl">Domain Entities</div></div>
 <div class="stat-card"><div class="stat-val">11</div><div class="stat-lbl">Subsystems</div></div>
@@ -12,7 +12,7 @@
 <div class="card">
 <div class="card-title">The 3-Tier Enterprise Entity Framework</div>
 <div class="desc-box">
-<p>BlazorFluent applies strict zero-trust multi-tenancy, soft deletion, and row-level auditing through a standardized three-tier inheritance model:</p>
+<p>BlazorEnterprise applies strict zero-trust multi-tenancy, soft deletion, and row-level auditing through a standardized three-tier inheritance model:</p>
 <ul style="margin: 8px 0 12px 20px;">
 <li><b>Tier 1 &mdash; Architectural Markers (<code>IMarkerEntity</code>)</b>: Interface gates driving EF Core query filters and interceptors (<code>ITenantEntity</code>, <code>ISoftDeletableEntity</code>, <code>IAuditableEntity</code>, <code>IProjectScopedEntity</code>).</li>
 <li><b>Tier 2 &mdash; Reusable Base Classes</b>: Sequential UUIDv7 primary keys (<code>BaseEntity</code>), audit timestamps (<code>AuditableEntity</code>), tenant write barriers (<code>TenantAuditableEntity</code>), and work item baselines (<code>BaseTaskEntity</code>).</li>
@@ -22,7 +22,7 @@
 <div class="card">
 <div class="card-title">🖥️ UI Screen & Field Binding Integration (Presentation Layer Parity)</div>
 <div class="desc-box">
-<p>BlazorFluent indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>
+<p>BlazorEnterprise indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>
 <ul style="margin: 8px 0 12px 20px;">
 <li><b>61 Screens Cataloged</b>: Across routed pages, modal dialogs, drawers, and multi-tenant settings tabs.</li>
 <li><b>22 Entities Active in UI</b>: Every entity page documents its screens and exact property bindings (forms, data grids, and audit buttons).</li>

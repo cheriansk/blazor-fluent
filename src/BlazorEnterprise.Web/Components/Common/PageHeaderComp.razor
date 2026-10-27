@@ -1,0 +1,29 @@
+﻿@* Reusable page header: title + optional subtitle + optional action button slot *@
+<CskStack Orientation="CskOrientation.Horizontal"
+             HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Top" Class="mb-6">
+    <div>
+        <CskLabel Typo="Typography.H3">@Title</CskLabel>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <CskLabel Typo="Typography.Body"
+                         Class="text-hint mt-1">
+                @Subtitle
+            </CskLabel>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div>@Actions</div>
+    }
+</CskStack>
+
+@code {
+    /// <summary>Primary page heading text.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Optional descriptive subtitle shown below the title.</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>Optional slot for action buttons rendered top-right.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

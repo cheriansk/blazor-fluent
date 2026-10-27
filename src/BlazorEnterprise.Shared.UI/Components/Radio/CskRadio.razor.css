@@ -1,0 +1,66 @@
+.csk-radio {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.csk-radio:hover:not(.csk-radio-disabled) {
+    background-color: rgba(103, 80, 164, 0.06);
+}
+
+.csk-radio-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.csk-radio-circle {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--mat-outline, #79747E);
+    box-sizing: border-box;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.csk-radio-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--mat-primary, #6750A4);
+    transform: scale(0);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Selected State */
+.csk-radio-selected .csk-radio-circle {
+    border-color: var(--mat-primary, #6750A4);
+}
+
+.csk-radio-selected .csk-radio-dot {
+    transform: scale(1);
+}
+
+/* Disabled State */
+.csk-radio-disabled {
+    cursor: not-allowed;
+    opacity: 0.38;
+}
+
+.csk-radio-label {
+    font-size: 0.875rem;
+    color: var(--mat-on-surface, #1C1B1F);
+    line-height: 1.4;
+}

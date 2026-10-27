@@ -1,0 +1,16 @@
+.tenant-select-dropdown {
+    min-width: 180px;
+}
+
+.tenant-badge-padded {
+    padding: 4px 10px;
+}
+
+.tenant-badge-locked {
+    padding: 4px 10px;
+    cursor: default;
+}
+
+.tenant-badge-error {
+    margin-left: 8px;
+}

@@ -1,0 +1,202 @@
+@namespace BlazorEnterprise.Modules.KnowledgeBase.Pages
+@page "/knowledge"
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Shared.DataListTypes
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Dtos
+
+<PageTitle>Knowledge Base - BlazorEnterprise</PageTitle>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16" Class="kb-container">
+    <!-- Top Action Header -->
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="kb-header">
+        <div>
+            <CskLabel Typo="Typography.H3" Class="kb-title">Knowledge Base</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="kb-subtitle">
+                Search, explore, and share articles across your organization and global library.
+            </CskLabel>
+        </div>
+
+        @if (IsInternalUser)
+        {
+            <CskButton Variant="CskButtonVariant.Filled"
+                          IconStart="@CskIcons.Add"
+                          OnClick="@(() => NavigationManager.NavigateTo("/knowledge/new"))">
+                Create Article
+            </CskButton>
+        }
+    </CskStack>
+
+    <!-- Search & Filter Controls Card -->
+    <CskCard Class="kb-filter-card">
+        <CskTextInput @bind-Value="@_searchTerm"
+                         @bind-Value:after="@LoadArticlesAsync"
+                         Variant="TextInputAppearance.Outline"
+                         Placeholder="Search articles by title, content, author, or label..."
+                         Class="w-full">
+            <StartTemplate>
+                <CskIcon Icon="@CskIcons.Search" />
+            </StartTemplate>
+        </CskTextInput>
+
+        <div class="kb-filter-row">
+            <!-- Filter Pills -->
+            <div class="kb-pills-group">
+                <span class="filter-group-label">Status:</span>
+                <CskButton Variant="@(_selectedStatus == null ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetStatusFilter(null))">
+                    All
+                </CskButton>
+                <CskButton Variant="@(_selectedStatus == KnowledgeArticleStatusEnum.Approved ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.Approved))">
+                    Approved
+                </CskButton>
+                <CskButton Variant="@(_selectedStatus == KnowledgeArticleStatusEnum.PendingReview ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.PendingReview))">
+                    Pending Review
+                </CskButton>
+
+                <div class="filter-divider"></div>
+
+                <span class="filter-group-label">Scope:</span>
+                <CskButton Variant="@(_isGlobalFilter == null ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetScopeFilter(null))">
+                    All Scopes
+                </CskButton>
+                <CskButton Variant="@(_isGlobalFilter == true ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetScopeFilter(true))">
+                    Global
+                </CskButton>
+                <CskButton Variant="@(_isGlobalFilter == false ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetScopeFilter(false))">
+                    Tenant Only
+                </CskButton>
+            </div>
+
+            <!-- Label Selector Dropdown -->
+            @if (_availableLabels.Count > 0)
+            {
+                <div class="filter-label-group">
+                    <span class="filter-group-label">Label:</span>
+                    <CskSelect TOption="string" TValue="string"
+                                  Items="@_labelSelectItems"
+                                  @bind-Value="@_selectedLabel"
+                                  @bind-Value:after="@LoadArticlesAsync"
+                                  Class="kb-label-select" />
+                </div>
+            }
+        </div>
+    </CskCard>
+
+    <!-- Articles List / Grid -->
+    @if (_isLoading)
+    {
+        <CskSpinner Class="kb-spinner-wrap" />
+    }
+    else if (_articles.Count == 0)
+    {
+        <EmptyStateComp Title="No Articles Found"
+                        Description="No knowledge base articles match your search or filter criteria."
+                        Icon="@CskIcons.DocumentSearch" />
+    }
+    else
+    {
+        <div class="articles-list">
+            @foreach (var article in _articles)
+            {
+                <div @onclick="@(() => NavigationManager.NavigateTo($"/knowledge/{article.Id}"))"
+                     class="article-card">
+
+                    <!-- Top Row: Scope, Status, Labels & Date -->
+                    <div class="card-top-row">
+                        <div class="card-badges">
+                            <!-- Scope Badge -->
+                            @if (article.IsGlobal)
+                            {
+                                <span class="badge-scope-global">
+                                    GLOBAL
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-scope-tenant">
+                                    TENANT ONLY
+                                </span>
+                            }
+
+                            <!-- Status Badge -->
+                            @if (article.Status == KnowledgeArticleStatusEnum.Approved)
+                            {
+                                <span class="badge-status-approved">
+                                    ✓ APPROVED
+                                </span>
+                            }
+                            else if (article.Status == KnowledgeArticleStatusEnum.PendingReview)
+                            {
+                                <span class="badge-status-pending">
+                                    ⏳ PENDING REVIEW/APPROVAL
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-status-other">
+                                    @article.Status
+                                </span>
+                            }
+
+                            <!-- Labels Badges -->
+                            @foreach (var label in article.Labels)
+                            {
+                                <span class="badge-label-pill">
+                                    @label
+                                </span>
+                            }
+                        </div>
+
+                        <span class="card-date">
+                            @article.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")
+                        </span>
+                    </div>
+
+                    <!-- Title & Snippet -->
+                    <div>
+                        <CskLabel Typo="Typography.H5" Class="card-article-title">
+                            @article.Title
+                        </CskLabel>
+                        <p class="card-article-snippet">
+                            @article.Snippet
+                        </p>
+                    </div>
+
+                    <!-- Footer: Author & Approval Info -->
+                    <div class="card-footer">
+                        <div class="card-author-info">
+                            <CskIcon Icon="@CskIcons.Person" />
+                            <span>By <strong>@article.AuthorUserName</strong></span>
+                        </div>
+
+                        <div>
+                            @if (article.Status == KnowledgeArticleStatusEnum.Approved)
+                            {
+                                <span>Approved by <strong>@article.ApprovedByUserName</strong></span>
+                            }
+                            else
+                            {
+                                <span>@article.ReviewerCount reviewer@(article.ReviewerCount == 1 ? "" : "s") assigned</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</CskStack>

@@ -1,0 +1,46 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Dtos.Response
+@using BlazorEnterprise.Shared.UI.Components
+
+<CskButton Variant="@Variant"
+           IconStart="@CskIcons.History"
+           OnClick="@OpenHistoryDrawerAsync"
+           Title="@(Tooltip ?? (!string.IsNullOrWhiteSpace(PropertyName) ? $"View history for field '{PropertyName}'" : $"View history for record '{EntityId}'"))">
+    @if (!IconOnly && !string.IsNullOrWhiteSpace(Label))
+    {
+        @Label
+    }
+</CskButton>
+
+<EntityHistoryViewerDrawer @ref="_drawer" />
+
+@code {
+    private EntityHistoryViewerDrawer? _drawer;
+
+    [Parameter, EditorRequired] public string EntityName { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string EntityId { get; set; } = string.Empty;
+    [Parameter] public string? PropertyName { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Tooltip { get; set; }
+    [Parameter] public bool IconOnly { get; set; } = true;
+    [Parameter] public CskButtonVariant Variant { get; set; } = CskButtonVariant.Text;
+
+    private async Task OpenHistoryDrawerAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(EntityName) && !string.IsNullOrWhiteSpace(EntityId) && _drawer is not null)
+        {
+            var data = new EntityHistoryDataRespDto
+            {
+                EntityName = EntityName,
+                EntityId = EntityId,
+                PropertyName = PropertyName,
+                Title = !string.IsNullOrWhiteSpace(PropertyName)
+                    ? $"Field History: {PropertyName}"
+                    : $"Entity History: {EntityName}"
+            };
+
+            await _drawer.OpenAsync(data);
+        }
+    }
+}

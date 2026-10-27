@@ -1,0 +1,52 @@
+.csk-checkbox-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.875rem;
+    color: var(--csk-color-on-surface, #212121);
+}
+
+.csk-checkbox-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.csk-checkbox-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.csk-checkbox-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--csk-color-border, #757575);
+    background-color: transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.csk-checkbox-input:checked + .csk-checkbox-box {
+    background-color: var(--csk-color-primary, #1976d2);
+    border-color: var(--csk-color-primary, #1976d2);
+    color: #ffffff;
+}
+
+.csk-checkbox-svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    display: block;
+}
+
+.csk-checkbox-label {
+    line-height: 1.4;
+}

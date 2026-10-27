@@ -1,0 +1,279 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Dtos.Response
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@inject IAuditService AuditService
+
+<CskDialog @ref="_dialog" Modal="true" Class="dialog-850-550">
+    <CskDialogBody Class="drawer-body-pad">
+        <TitleTemplate>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="w-full">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskIcon Icon="@CskIcons.History" Class="csk-icon-primary csk-icon-lg" />
+                    <div>
+                        <CskLabel Typo="Typography.H6">@(_data?.Title ?? Title)</CskLabel>
+                        <span class="text-hint text-sm">@Subtitle</span>
+                    </div>
+                </CskStack>
+                <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@CloseAsync" />
+            </CskStack>
+        </TitleTemplate>
+        <ChildContent>
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16" Class="w-full">
+                <!-- Toolbar: Filter and Stats -->
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="w-full">
+                    @if (_isLoading)
+                    {
+                        <CskSpinner Class="m-auto mt-4 mb-4" />
+                    }
+                    else if (_historyItems.Count > 0)
+                    {
+                        <div class="drawer-filter-bar">
+                            <div class="drawer-filter-btn-group">
+                                <CskButton Variant="CskButtonVariant.Outlined" Size="CskButtonSize.Small" OnClick="@ExpandAll">Expand All</CskButton>
+                                <CskButton Variant="CskButtonVariant.Outlined" Size="CskButtonSize.Small" OnClick="@CollapseAll">Collapse All</CskButton>
+                            </div>
+                            <span class="drawer-count-badge">
+                                @(_historyItems.Count) mutation records
+                            </span>
+                        </div>
+                    }
+                </CskStack>
+
+                <!-- History Entries Content -->
+                @if (!_isLoading && GroupedHistory.Count == 0)
+                {
+                    <EmptyStateComp Icon="@CskIcons.History"
+                                   Title="No modification history"
+                                   Description="This entity has no recorded field-level audit mutations or updates since inception." />
+                }
+                else if (!_isLoading)
+                {
+                    <div class="history-groups-list">
+                        @foreach (var group in GroupedHistory)
+                        {
+                            <div class="history-group-card">
+                                <!-- Group Header -->
+                                <div class="history-group-header"
+                                     @onclick="@(() => ToggleGroup(group.Key))">
+                                    <div class="history-header-left">
+                                        @if (group.IsExpanded)
+                                        {
+                                            <CskIcon Icon="@CskIcons.ChevronDown" Class="csk-icon-primary" />
+                                        }
+                                        else
+                                        {
+                                            <CskIcon Icon="@CskIcons.ChevronRight" />
+                                        }
+                                        <CskIcon Icon="@CskIcons.Person" Class="csk-icon-primary" />
+                                        <span class="history-entity-title">@group.UserEmail</span>
+                                        @if (!string.IsNullOrWhiteSpace(group.UserType))
+                                        {
+                                            <span class="history-key-tag">@group.UserType</span>
+                                        }
+                                    </div>
+
+                                    <div class="history-header-right">
+                                        <span class="history-badge-count">
+                                            @group.Items.Count change(s)
+                                        </span>
+                                        <span class="history-timestamp-text">
+                                            @group.Timestamp.ToString("yyyy-MM-dd HH:mm:ss") UTC
+                                            <span class="history-relative-time">(@GetRelativeTime(group.Timestamp))</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Field Changes Table -->
+                                @if (group.IsExpanded)
+                                {
+                                    <div class="history-table-wrapper">
+                                        <table class="history-table">
+                                            <thead>
+                                                <tr class="history-table-head-row">
+                                                    <th class="history-th-action">Action</th>
+                                                    <th class="history-th-field">Field</th>
+                                                    <th class="history-th-val">Original Value</th>
+                                                    <th class="history-th-val">Current Value</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in group.Items)
+                                                {
+                                                    <tr class="history-table-row">
+                                                        <td class="history-td-action">
+                                                            <CskBadge Appearance="@GetOperationBadgeAppearance(item.Operation)" Class="whitespace-nowrap">
+                                                                @item.Operation
+                                                            </CskBadge>
+                                                        </td>
+                                                        <td class="history-td-field">
+                                                            @item.PropertyName
+                                                        </td>
+                                                        <td class="history-td-val-orig">
+                                                            @(string.IsNullOrWhiteSpace(item.OldValue) ? "(null)" : item.OldValue)
+                                                        </td>
+                                                        <td class="history-td-val-curr">
+                                                            @(string.IsNullOrWhiteSpace(item.NewValue) ? "(null)" : item.NewValue)
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </CskStack>
+        </ChildContent>
+        <ActionTemplate>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.Right" Class="mt-4">
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseAsync">Close</CskButton>
+            </CskStack>
+        </ActionTemplate>
+    </CskDialogBody>
+</CskDialog>
+
+@code {
+    private CskDialog? _dialog;
+    private bool _isLoading = false;
+    private EntityHistoryDataRespDto? _data;
+    private List<EntityFieldHistoryRespDto> _historyItems = new();
+    private Dictionary<string, bool> _expandedState = new();
+
+    [Parameter] public string Title { get; set; } = "Entity Audit History";
+    [Parameter] public string Subtitle { get; set; } = "Field-level mutation audit trail recorded across transactions.";
+
+    public class HistoryGroupModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string UserEmail { get; set; } = string.Empty;
+        public string? UserType { get; set; }
+        public List<EntityFieldHistoryRespDto> Items { get; set; } = new();
+        public bool IsExpanded { get; set; } = false;
+    }
+
+    private List<HistoryGroupModel> GroupedHistory
+    {
+        get
+        {
+            return _historyItems
+                .GroupBy(item => new
+                {
+                    TimeBucket = new DateTime(item.Timestamp.Year, item.Timestamp.Month, item.Timestamp.Day, item.Timestamp.Hour, item.Timestamp.Minute, item.Timestamp.Second, item.Timestamp.Kind),
+                    User = item.UserEmail ?? "System"
+                })
+                .Select(g =>
+                {
+                    var key = $"{g.Key.TimeBucket.Ticks}_{g.Key.User}";
+                    var expanded = _expandedState.TryGetValue(key, out var isExp) && isExp;
+                    return new HistoryGroupModel
+                    {
+                        Key = key,
+                        Timestamp = g.Key.TimeBucket,
+                        UserEmail = g.Key.User,
+                        UserType = g.First().UserType?.ToString(),
+                        Items = g.ToList(),
+                        IsExpanded = expanded
+                    };
+                })
+                .OrderByDescending(g => g.Timestamp)
+                .ToList();
+        }
+    }
+
+    public async Task OpenAsync(EntityHistoryDataRespDto data)
+    {
+        _data = data;
+        _isLoading = true;
+        _historyItems.Clear();
+        _expandedState.Clear();
+
+        if (_dialog is not null)
+        {
+            await _dialog.ShowAsync();
+        }
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(data.EntityName) && !string.IsNullOrWhiteSpace(data.EntityId))
+            {
+                _historyItems = await AuditService.GetEntityHistoryAsync(data.EntityName, data.EntityId, data.PropertyName);
+                var firstGroup = GroupedHistory.FirstOrDefault();
+                if (firstGroup is not null)
+                {
+                    _expandedState[firstGroup.Key] = true;
+                }
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public async Task OpenAsync(string entityName, string entityKey)
+    {
+        await OpenAsync(new EntityHistoryDataRespDto
+        {
+            EntityName = entityName,
+            EntityId = entityKey,
+            Title = $"Entity History: {entityName}"
+        });
+    }
+
+    private async Task CloseAsync()
+    {
+        if (_dialog is not null)
+        {
+            await _dialog.HideAsync();
+        }
+    }
+
+    private void ToggleGroup(string groupKey)
+    {
+        if (_expandedState.TryGetValue(groupKey, out var current))
+        {
+            _expandedState[groupKey] = !current;
+        }
+        else
+        {
+            _expandedState[groupKey] = true;
+        }
+    }
+
+    private void ExpandAll()
+    {
+        foreach (var group in GroupedHistory)
+        {
+            _expandedState[group.Key] = true;
+        }
+    }
+
+    private void CollapseAll()
+    {
+        _expandedState.Clear();
+    }
+
+    private static BadgeAppearance GetOperationBadgeAppearance(EntityOperationEnum operation) => operation switch
+    {
+        EntityOperationEnum.Insert => BadgeAppearance.Accent,
+        EntityOperationEnum.Delete => BadgeAppearance.Outline,
+        _ => BadgeAppearance.Filled
+    };
+
+    private static string GetRelativeTime(DateTime dt)
+    {
+        var span = DateTime.UtcNow - dt.ToUniversalTime();
+        if (span.TotalSeconds < 60) return "Just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 30) return $"{(int)span.TotalDays}d ago";
+        return dt.ToString("g");
+    }
+}

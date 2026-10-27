@@ -1,0 +1,216 @@
+@namespace BlazorEnterprise.Modules.Tenancy.Pages
+@page "/workflows"
+@attribute [RequiredClearance(ProjectRoleEnum.Lead)]
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Core.Dtos
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Enterprise Workflows — Delivery & Governance</PageTitle>
+
+<div class="workflows-page-container">
+    @* Page Header *@
+    <div class="workflows-page-header">
+        <div class="workflows-header-left">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="@("4px")">
+                <CskLink Href="/">Home</CskLink>
+                <CskIcon Icon="@CskIcons.ChevronRight" />
+                <CskLink>Governance</CskLink>
+                <CskIcon Icon="@CskIcons.ChevronRight" />
+                <CskLink>Workflows</CskLink>
+            </CskStack>
+            <div class="workflows-header-title-row">
+                <CskIcon Icon="@CskIcons.Flowchart" Class="csk-icon-lg" />
+                <CskLabel Typo="Typography.H3">Sequential Workflows</CskLabel>
+            </div>
+            <p class="workflows-subtitle">
+                Stage-gated activities orchestrated by constant workflow owners, with discrete task steps and delegated team subtasks across Tenant, Program, and Project scopes.
+            </p>
+        </div>
+
+        @if (_canCreateWorkflow)
+        {
+            <div class="workflows-header-actions">
+                <CskButton Variant="CskButtonVariant.Filled"
+                              IconStart="@CskIcons.Add"
+                              OnClick="@OpenCreateModal">
+                    New Workflow
+                </CskButton>
+            </div>
+        }
+    </div>
+
+    @* KPI Summary Metric Cards *@
+    <div class="workflows-kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-blue">
+                <CskIcon Icon="@CskIcons.Flowchart" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_activeWorkflowsCount</span>
+                <span class="kpi-label">Active Workflows</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-green">
+                <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-success" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_completedWorkflowsCount</span>
+                <span class="kpi-label">Completed Workflows</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-amber">
+                <CskIcon Icon="@CskIcons.Clock" Class="csk-icon-warning" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_activeStepsCount</span>
+                <span class="kpi-label">Steps Awaiting Sign-Off</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-box kpi-icon-purple">
+                <CskIcon Icon="@CskIcons.TaskListSquareLtr" />
+            </div>
+            <div class="kpi-details">
+                <span class="kpi-value">@_totalDelegatedSubtasksCount</span>
+                <span class="kpi-label">Delegated Subtasks</span>
+            </div>
+        </div>
+    </div>
+
+    @* Filters Toolbar *@
+    <div class="workflows-filters-toolbar">
+        <div class="scope-tabs-bar">
+            <CskButton Variant="@(_selectedScope == "all" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          OnClick="@(() => SetScopeFilter("all"))">
+                All Scopes (@_allWorkflows.Count)
+            </CskButton>
+            <CskButton Variant="@(_selectedScope == "tenant" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.Building"
+                          OnClick="@(() => SetScopeFilter("tenant"))">
+                Tenant Governance (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Tenant))
+            </CskButton>
+            <CskButton Variant="@(_selectedScope == "program" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.Folder"
+                          OnClick="@(() => SetScopeFilter("program"))">
+                Program Strategic (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Program))
+            </CskButton>
+            <CskButton Variant="@(_selectedScope == "project" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.TaskListSquareLtr"
+                          OnClick="@(() => SetScopeFilter("project"))">
+                Project Delivery (@_allWorkflows.Count(w => w.Level == TaskLevelEnum.Project))
+            </CskButton>
+        </div>
+
+        <div class="secondary-filters-row">
+            @* Program Switcher (Visible when Program scope selected) *@
+            @if (_selectedScope == "program" && _availablePrograms.Count > 0)
+            {
+                <div class="min-w-200">
+                    <CskSelect TOption="ProgramEntity"
+                                  TValue="string"
+                                  Items="@_availablePrograms"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id.ToString())"
+                                  Value="@(_filterProgram?.Id.ToString())"
+                                  ValueChanged="OnProgramFilterChanged"
+                                  Placeholder="Filter by program..." />
+                </div>
+            }
+
+            @* Project Switcher (Visible when Project scope selected) *@
+            @if (_selectedScope == "project" && _availableProjects.Count > 0)
+            {
+                <div class="min-w-200">
+                    <CskSelect TOption="ProjectEntity"
+                                  TValue="string"
+                                  Items="@_availableProjects"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id.ToString())"
+                                  Value="@(_filterProject?.Id.ToString())"
+                                  ValueChanged="OnProjectFilterChanged"
+                                  Placeholder="Filter by project..." />
+                </div>
+            }
+
+            @* Status Filter *@
+            <div class="min-w-140">
+                <CskSelect TOption="string"
+                              TValue="string"
+                              Items="@_statusOptions"
+                              @bind-Value="_selectedStatusFilter"
+                              @bind-Value:after="ApplyFilters" />
+            </div>
+
+            @* Search Input *@
+            <div class="flex-1 min-w-200">
+                <CskTextInput @bind-Value="_searchTerm"
+                                 @bind-Value:after="ApplyFilters"
+                                 Placeholder="Search by title, workflow owner, or instruction..."
+                                 Class="full-width">
+                    <StartTemplate>
+                        <CskIcon Icon="@CskIcons.Search" />
+                    </StartTemplate>
+                </CskTextInput>
+            </div>
+        </div>
+    </div>
+
+    @* Workflow Stepper Feed *@
+    @if (_isLoading)
+    {
+        <div class="text-center p-5">
+            <CskSpinner Size="@CskSpinnerSize.Medium" />
+            <p class="mt-3 text-hint">Loading workflows...</p>
+        </div>
+    }
+    else if (_filteredWorkflows.Count == 0)
+    {
+        <div class="empty-workflows-panel">
+            <CskIcon Icon="@CskIcons.Flowchart" Class="csk-icon-xl" />
+            <CskLabel Typo="Typography.H6" Class="mt-3">No Workflows Found</CskLabel>
+            <p class="text-hint max-w-460 m-auto font-size-sm">
+                No workflows match the selected scope and criteria. Launch a new workflow to orchestrate stage-gated delivery with dedicated step owners and delegated subtasks.
+            </p>
+            @if (_canCreateWorkflow)
+            {
+                <CskButton Variant="CskButtonVariant.Filled"
+                              IconStart="@CskIcons.Add"
+                              OnClick="@OpenCreateModal">
+                    Launch First Workflow
+                </CskButton>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="workflows-list-feed">
+            @foreach (var wf in _filteredWorkflows)
+            {
+                <WorkflowStepperComp @key="wf.Id"
+                                     Workflow="@wf"
+                                     OnWorkflowUpdated="HandleWorkflowUpdated"
+                                     OnEditWorkflow="HandleEditWorkflow" />
+            }
+        </div>
+    }
+</div>
+
+@* Creation / Edit Wizard Modal *@
+<CreateWorkflowWizardModal IsOpen="@_isCreateModalOpen"
+                           IsOpenChanged="@(val => _isCreateModalOpen = val)"
+                           DefaultLevel="@GetDefaultCreateLevel()"
+                           ProjectId="@_filterProject?.Id"
+                           WorkflowToEdit="@_workflowToEdit"
+                           OnWorkflowCreated="HandleWorkflowCreated"
+                           OnWorkflowUpdated="HandleWorkflowUpdated" />

@@ -1,0 +1,121 @@
+@using Microsoft.AspNetCore.Components.Web
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="tag-input-container">
+    <div class="tag-input-row">
+        <CskTextInput @bind-Value="@_currentInput"
+                      Placeholder="Type a label (e.g. Architecture, Security, API)..."
+                      Class="tag-input-flex"
+                      Disabled="@(Tags.Count >= MaxTags)"
+                      @onkeydown="@HandleKeyDown" />
+
+        <CskButton Variant="CskButtonVariant.Outlined"
+                   IconStart="@CskIcons.Add"
+                   OnClick="@AddTag"
+                   Disabled="@(string.IsNullOrWhiteSpace(_currentInput) || Tags.Count >= MaxTags)">
+            Add
+        </CskButton>
+    </div>
+
+    <!-- Live Counter and Guidance -->
+    <div class="tag-counter-row">
+        <span class="@(Tags.Count < MinTags ? "text-warning" : "text-hint")">
+            @if (Tags.Count == 0)
+            {
+                <span>At least 1 label is required</span>
+            }
+            else
+            {
+                <span>Press Enter or click Add to append label</span>
+            }
+        </span>
+        <span class="font-semibold @(Tags.Count > MaxTags ? "text-error" : "")">
+            @Tags.Count / @MaxTags labels
+        </span>
+    </div>
+
+    <!-- Active Label Badges -->
+    @if (Tags.Count > 0)
+    {
+        <div class="tag-badges-box">
+            @foreach (var tag in Tags)
+            {
+                <span class="tag-badge">
+                    @tag
+                    <span @onclick="@(() => RemoveTag(tag))"
+                          class="tag-badge-remove"
+                          title="Remove @tag">
+                        ✕
+                    </span>
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Quick Suggestions (clickable chips, only adds if not already present) -->
+    <div class="tag-suggestions-box">
+        <span class="text-hint">Suggestions:</span>
+        @foreach (var s in _commonSuggestions)
+        {
+            @if (!Tags.Contains(s, StringComparer.OrdinalIgnoreCase) && Tags.Count < MaxTags)
+            {
+                <span @onclick="@(() => AddSuggestion(s))"
+                      class="tag-suggestion-chip">
+                    + @s
+                </span>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<string> Tags { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> TagsChanged { get; set; }
+    [Parameter] public int MinTags { get; set; } = 1;
+    [Parameter] public int MaxTags { get; set; } = 10;
+
+    private string _currentInput = string.Empty;
+
+    private readonly string[] _commonSuggestions = new[]
+    {
+        "Architecture", "Troubleshooting", "Onboarding", "Frontend", "Backend", "API", "Database", "Security", "DevOps"
+    };
+
+    private async Task AddTag()
+    {
+        if (string.IsNullOrWhiteSpace(_currentInput)) return;
+        if (Tags.Count >= MaxTags) return;
+
+        var clean = _currentInput.Trim().Trim(';', ',');
+        if (!string.IsNullOrWhiteSpace(clean) && !Tags.Contains(clean, StringComparer.OrdinalIgnoreCase))
+        {
+            Tags.Add(clean);
+            _currentInput = string.Empty;
+            await TagsChanged.InvokeAsync(Tags);
+        }
+    }
+
+    private async Task AddSuggestion(string suggestion)
+    {
+        if (Tags.Count >= MaxTags) return;
+        if (!Tags.Contains(suggestion, StringComparer.OrdinalIgnoreCase))
+        {
+            Tags.Add(suggestion);
+            await TagsChanged.InvokeAsync(Tags);
+        }
+    }
+
+    private async Task RemoveTag(string tag)
+    {
+        Tags.Remove(tag);
+        await TagsChanged.InvokeAsync(Tags);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == ",")
+        {
+            await AddTag();
+        }
+    }
+}

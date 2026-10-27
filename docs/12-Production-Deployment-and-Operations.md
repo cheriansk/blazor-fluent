@@ -1,7 +1,7 @@
 # 12. Production Deployment & Operations Guide
 
 > **Target Audience**: DevOps Engineers, Site Reliability Engineers (SRE), Cloud Architects, and Systems Administrators.  
-> **Key Objective**: End-to-end operational guide for deploying, scaling, hardening, and maintaining BlazorFluent in enterprise production environments.
+> **Key Objective**: End-to-end operational guide for deploying, scaling, hardening, and maintaining BlazorEnterprise in enterprise production environments.
 
 ---
 
@@ -13,17 +13,17 @@ flowchart TD
     WAF --> LB[Application Gateway / ARR Load Balancer<br/>(Sticky Sessions Enabled / ARR Affinity)]
     
     subgraph WebCluster["Blazor Web App Cluster (Active-Active)"]
-        Web1["BlazorFluent.Web (Instance 1)"]
-        Web2["BlazorFluent.Web (Instance 2)"]
+        Web1["BlazorEnterprise.Web (Instance 1)"]
+        Web2["BlazorEnterprise.Web (Instance 2)"]
     end
     
     subgraph ApiCluster["Stateless API Cluster (Auto-scaling)"]
-        Api1["BlazorFluent.Api (Instance 1)"]
-        Api2["BlazorFluent.Api (Instance 2)"]
+        Api1["BlazorEnterprise.Api (Instance 1)"]
+        Api2["BlazorEnterprise.Api (Instance 2)"]
     end
     
     subgraph BackgroundWorker["Background Job Worker"]
-        Worker["BlazorFluent.Worker / JobsListener"]
+        Worker["BlazorEnterprise.Worker / JobsListener"]
     end
     
     LB --> WebCluster
@@ -42,7 +42,7 @@ flowchart TD
 
 ## 🔒 2. PostgreSQL Row-Level Security (RLS) Operations
 
-BlazorFluent implements PostgreSQL RLS as a secondary defense layer beneath application-level global query filters.
+BlazorEnterprise implements PostgreSQL RLS as a secondary defense layer beneath application-level global query filters.
 
 ### 2.1 RLS Role Setup & Script Execution
 
@@ -52,15 +52,15 @@ Before deploying schema migrations, execute the security role bootstrapping scri
 -- Create non-superuser runtime application role
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'blazorfluent_app') THEN
-        CREATE ROLE blazorfluent_app WITH LOGIN PASSWORD 'DEPLOYMENT_GENERATED_STRONG_PASSWORD';
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'blazorenterprise_app') THEN
+        CREATE ROLE blazorenterprise_app WITH LOGIN PASSWORD 'DEPLOYMENT_GENERATED_STRONG_PASSWORD';
     END IF;
 END $$;
 
 -- Grant standard permissions on application tables
-GRANT USAGE ON SCHEMA public, staging TO blazorfluent_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, staging TO blazorfluent_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public, staging GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO blazorfluent_app;
+GRANT USAGE ON SCHEMA public, staging TO blazorenterprise_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, staging TO blazorenterprise_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public, staging GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO blazorenterprise_app;
 ```
 
 ### 2.2 Dynamic Session Variable Injection
@@ -73,7 +73,7 @@ PostgreSQL RLS policies then enforce:
 ```sql
 CREATE POLICY tenant_isolation_policy ON tasks
     FOR ALL
-    TO blazorfluent_app
+    TO blazorenterprise_app
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
 ```
@@ -110,8 +110,8 @@ When rotating database credentials or HMAC secrets:
 2. **Deploy to Staging Slot**:
    ```bash
    az webapp deployment source config-zip \
-       --resource-group rg-blazorfluent-prod \
-       --name app-blazorfluent-web \
+       --resource-group rg-blazorenterprise-prod \
+       --name app-blazorenterprise-web \
        --slot staging \
        --src publish.zip
    ```
@@ -120,8 +120,8 @@ When rotating database credentials or HMAC secrets:
 4. **Swap Slots with ARR Session Draining**:
    ```bash
    az webapp deployment slot swap \
-       --resource-group rg-blazorfluent-prod \
-       --name app-blazorfluent-web \
+       --resource-group rg-blazorenterprise-prod \
+       --name app-blazorenterprise-web \
        --slot staging \
        --target-slot production
    ```
@@ -142,6 +142,6 @@ When rotating database credentials or HMAC secrets:
 ---
 
 *Related Documentation*:
-- [03. Security Model & Defense-in-Depth](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model-and-Defense-in-Depth.md)
-- [05. Observability & Reliability](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/05-Observability-and-Reliability.md)
-- [13. Database Migrations & Upgrades](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/13-Database-Migrations-and-Upgrades.md)
+- [03. Security Model & Defense-in-Depth](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/03-Security-Model-and-Defense-in-Depth.md)
+- [05. Observability & Reliability](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/05-Observability-and-Reliability.md)
+- [13. Database Migrations & Upgrades](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/13-Database-Migrations-and-Upgrades.md)

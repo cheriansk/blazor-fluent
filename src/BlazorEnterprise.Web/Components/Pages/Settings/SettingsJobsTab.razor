@@ -1,0 +1,233 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Jobs
+@using BlazorEnterprise.Shared.UI.Components
+@implements IDisposable
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="full-width">
+        <div>
+            <CskLabel Typo="Typography.H4">Background Jobs Orchestration</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint">
+                Monitor batch job execution history, view transient retries, and manually trigger or retry tenant-scoped jobs.
+            </CskLabel>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+        {
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10" Wrap="true">
+                <CskSelect TOption="JobTriggerOption"
+                              TValue="string"
+                              Items="@_availableJobs"
+                              OptionText="@(j => j.Name)"
+                              OptionValue="@(j => j.Id)"
+                              @bind-Value="_selectedJobToRun"
+                              Class="min-w-220" />
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Play" OnClick="@TriggerSelectedJobAsync">
+                    Run Job
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.ArrowSync" OnClick="@LoadExecutionsAsync">
+                    Refresh
+                </CskButton>
+            </CskStack>
+        }
+    </CskStack>
+
+    <!-- Tenant Filter Toolbar -->
+    <CskCard Class="p-4">
+        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <CskSelect TOption="TenantFilterOption"
+                          TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelected"
+                          Disabled="@(_availableTenants.Count <= 1)"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant to view background jobs --"
+                          Class="min-w-300" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId) && _availableTenants.Count > 1)
+            {
+                <CskButton Variant="CskButtonVariant.Text"
+                              IconStart="@CskIcons.Dismiss"
+                              OnClick="@ClearTenantFilter">
+                    Clear Filter
+                </CskButton>
+            }
+        </CskStack>
+    </CskCard>
+
+    @if (string.IsNullOrWhiteSpace(_selectedTenantId))
+    {
+        <!-- Empty State Prompt -->
+        <CskMessageBar Intent="MessageBarIntent.Info" Class="p-4">
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                <CskIcon Icon="@CskIcons.Clock" Class="csk-icon-lg" />
+                <div>
+                    <strong>No Tenant Selected:</strong> Please choose a tenant from the dropdown above to display its background job executions.
+                </div>
+            </CskStack>
+        </CskMessageBar>
+    }
+    else
+    {
+        <!-- Alert feedback -->
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+                @_statusMessage
+            </CskMessageBar>
+        }
+
+        <!-- Metric Summary Cards -->
+@*         <CskGrid Spacing="3" AdaptiveRendering="true">
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Total Executions</CskLabel>
+                    <CskLabel Typo="Typography.H4">@_executions.Count</CskLabel>
+                </CskCard>
+            </CskGridItem>
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Succeeded</CskLabel>
+                    <CskLabel Typo="Typography.H4" Color="Color.Success">@_executions.Count(e => e.Status == JobStatusEnum.Succeeded)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Failed</CskLabel>
+                    <CskLabel Typo="Typography.H4" Color="Color.Error">@_executions.Count(e => e.Status == JobStatusEnum.Failed)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Running / Retrying</CskLabel>
+                    <CskLabel Typo="Typography.H4" Color="Color.Warning">@_executions.Count(e => e.Status == JobStatusEnum.Running || e.Status == JobStatusEnum.Retrying)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+        </CskGrid> *@
+
+        <!-- Execution Detail Modal Dialog -->
+        @if (_selectedErrorExecution != null)
+        {
+            <CskCard Class="@(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "mb-4 card-error-border" : "mb-4 card-accent-border")">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+                    <CskLabel Typo="Typography.H5">
+                        @(_selectedErrorExecution.Status == JobStatusEnum.Failed ? "Job Error Diagnostics" : "Job Execution Details"): @_selectedErrorExecution.JobName
+                    </CskLabel>
+                    <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@(() => _selectedErrorExecution = null)" />
+                </CskStack>
+                <CskLabel Typo="Typography.Body" Class="mb-2">
+                    <strong>Execution ID:</strong> @_selectedErrorExecution.Id 
+                    | <strong>Correlation ID:</strong> @(_selectedErrorExecution.CorrelationId ?? "—") 
+                    | <strong>Parent:</strong> @(_selectedErrorExecution.ParentExecutionId?.ToString() ?? "Root") 
+                    | <strong>Source:</strong> @_selectedErrorExecution.TriggerSource 
+                    | <strong>Attempts:</strong> @_selectedErrorExecution.AttemptCount / @_selectedErrorExecution.MaxRetries
+                </CskLabel>
+                @if (!string.IsNullOrWhiteSpace(_selectedErrorExecution.ErrorMessage))
+                {
+                    <div class="code-box-light">
+                        @_selectedErrorExecution.ErrorMessage
+                    </div>
+                }
+                else
+                {
+                    <CskLabel Typo="Typography.Body" Class="text-hint">No error messages recorded for this execution.</CskLabel>
+                }
+            </CskCard>
+        }
+
+        <!-- Jobs Grid Card -->
+        <CskCard Class="p-5">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-4">
+                <div>
+                    <CskLabel Typo="Typography.H5">Executions for &ldquo;@_selectedTenantName&rdquo;</CskLabel>
+                    <CskLabel Typo="Typography.Body" Class="text-hint">
+                        Historical executions for tenant <code>@_selectedTenantId</code>.
+                    </CskLabel>
+                </div>
+                <CskTextInput Placeholder="Filter jobs by name, source, or correlation..."
+                                 @bind-Value="_jobSearchText"
+                                 @bind-Value:after="StateHasChanged"
+                                 Class="w-300">
+                    <StartTemplate>
+                        <CskIcon Icon="@CskIcons.Search" />
+                    </StartTemplate>
+                </CskTextInput>
+            </CskStack>
+
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-center p-5">
+                    <CskSpinner Size="CskSpinnerSize.Medium" />
+                </div>
+            }
+            else if (_executions.Count == 0)
+            {
+                <div class="text-center p-5 text-hint">
+                    <CskIcon Icon="@CskIcons.Clock" Class="csk-icon-xl" />
+                    <div class="mt-2 font-weight-600">No background job executions found for this tenant.</div>
+                </div>
+            }
+            else
+            {
+                <CskDataGrid Items="@FilteredExecutions" ResizableColumns="true" GridTemplateColumns="2fr 110px 100px 90px 150px 100px 200px">
+                    <CskPropertyColumn Property="@(e => e.JobName)" Title="Job Name" Sortable="true" />
+                    <CskTemplateColumn Title="Status" SortBy="@(GridSort<JobExecutionEntity>.ByAscending(e => e.Status))">
+                        @switch (context.Status)
+                        {
+                            case JobStatusEnum.Succeeded:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Succeeded</CskBadge>
+                                break;
+                            case JobStatusEnum.Failed:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">Failed</CskBadge>
+                                break;
+                            case JobStatusEnum.Running:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">Running</CskBadge>
+                                break;
+                            case JobStatusEnum.Retrying:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">Retrying</CskBadge>
+                                break;
+                            default:
+                                <CskBadge Appearance="BadgeAppearance.Tint">@context.Status</CskBadge>
+                                break;
+                        }
+                    </CskTemplateColumn>
+                    <CskPropertyColumn Property="@(e => e.TriggerSource)" Title="Source" Sortable="true" />
+                    <CskTemplateColumn Title="Attempts">
+                        @context.AttemptCount / @context.MaxRetries
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Started At" SortBy="@(GridSort<JobExecutionEntity>.ByDescending(e => e.StartedAt))">
+                        @TimeZoneService.FormatDateTime(context.StartedAt)
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Duration">
+                        @(context.DurationMs.HasValue ? $"{context.DurationMs.Value:F0} ms" : "—")
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Actions">
+                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                            @if (context.Status == JobStatusEnum.Failed)
+                            {
+                                <CskButton Variant="CskButtonVariant.Filled"
+                                              Size="CskButtonSize.Small"
+                                              IconStart="@CskIcons.ArrowCounterclockwise"
+                                              OnClick="@(() => RetryJobAsync(context.Id))">
+                                    Retry
+                                </CskButton>
+                            }
+                            <CskButton Variant="CskButtonVariant.Text"
+                                          Size="CskButtonSize.Small"
+                                          IconStart="@CskIcons.Info"
+                                          OnClick="@(() => _selectedErrorExecution = context)">
+                                Details
+                            </CskButton>
+                            <EntityHistoryButton EntityName="JobExecutionEntity" EntityId="@context.Id.ToString()" Tooltip="View job execution change history" />
+                        </CskStack>
+                    </CskTemplateColumn>
+                </CskDataGrid>
+            }
+        </CskCard>
+    }
+</CskStack>

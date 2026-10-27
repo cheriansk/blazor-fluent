@@ -1,0 +1,177 @@
+@page "/login"
+@namespace BlazorEnterprise.Web.Components.Pages
+@rendermode InteractiveServer
+@attribute [AllowAnonymous]
+@attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")]
+@using BlazorEnterprise.Core.Configuration
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Utilities
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Identity
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Infrastructure.Security
+@using BlazorEnterprise.Persistence.Context
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.Options
+@using BlazorEnterprise.Shared.UI.Components
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<PageTitle>Sign In - BlazorEnterprise</PageTitle>
+
+<div class="login-page-container">
+    @if (_isSelectingTenant && _pendingAuth != null)
+    {
+        @* Tenant Selection Step (Immediately after verified credentials) *@
+        <CskCard Class="login-card">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+                <div class="login-header">
+                    <div class="login-icon-box">
+                        <CskIcon Icon="@CskIcons.Building" />
+                    </div>
+                    <CskLabel Typo="Typography.H4" Class="login-title">Select Organization</CskLabel>
+                    <CskLabel Typo="Typography.Body" Class="login-subtitle">
+                        Welcome, <strong>@_pendingAuth.User.FullName</strong>
+                    </CskLabel>
+                    <div class="login-email">
+                        @_pendingAuth.User.Email
+                    </div>
+                </div>
+
+                <CskDivider Class="w-full" />
+
+                <div class="tenant-choice-msg">
+                    Your account has access to multiple organizations. Please choose the workspace you wish to enter:
+                </div>
+
+                <div>
+                    <CskSelect TOption="TenantInfo"
+                                  TValue="string"
+                                  Items="@_pendingAuth.AllowedTenants"
+                                  OptionText="@(t => $"{t.Name} ({t.Slug})")"
+                                  OptionValue="@(t => t.Id.ToString())"
+                                  @bind-Value="_selectedTenantSlug"
+                                  Placeholder="-- Select an organization --"
+                                  Class="w-full" />
+                </div>
+
+                <CskButton Variant="CskButtonVariant.Filled"
+                              Class="login-btn-primary"
+                              Disabled="@(string.IsNullOrWhiteSpace(_selectedTenantSlug) || _isLoading)"
+                              OnClick="HandleConfirmTenantSelectionAsync">
+                    @if (_isLoading)
+                    {
+                        <CskSpinner Size="CskSpinnerSize.Small" Class="btn-icon-mr" />
+                        <span>Entering workspace...</span>
+                    }
+                    else
+                    {
+                        <CskIcon Icon="@CskIcons.ArrowEnter" Class="btn-icon-mr" />
+                        <span>Enter Workspace</span>
+                    }
+                </CskButton>
+
+                <CskButton Variant="CskButtonVariant.Text"
+                              Class="w-full"
+                              OnClick="CancelTenantSelection">
+                    Sign in with a different account
+                </CskButton>
+            </CskStack>
+        </CskCard>
+    }
+    else
+    {
+        <CskCard Class="login-card">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+                @* Brand Header *@
+                <div class="login-header">
+                    <div class="login-icon-box">
+                        <CskIcon Icon="@CskIcons.ShieldKeyhole" />
+                    </div>
+                    <CskLabel Typo="Typography.H3" Class="login-title">BlazorEnterprise</CskLabel>
+                    <CskLabel Typo="Typography.Body" Class="login-subtitle">
+                        Enterprise Multi-Tenant Portal
+                    </CskLabel>
+                </div>
+
+                <CskDivider Class="w-full" />
+
+                @* Privacy Notice Card *@
+                <div class="login-privacy-card">
+                    <div class="login-privacy-row">
+                        <CskIcon Icon="@CskIcons.Info" Class="csk-icon-primary login-privacy-icon" />
+                        <div class="login-privacy-text">
+                            <strong>Corporate Monitoring & Privacy Notice</strong><br />
+                            Access to this portal is restricted to authorized personnel. All session activities,
+                            IP addresses, and data modifications are logged and audited in accordance with corporate security compliance policies.
+                        </div>
+                    </div>
+                </div>
+
+                @* Mandatory Checkbox *@
+                <div class="login-checkbox-wrap">
+                    <CskCheckbox @bind-Value="_isAcknowledged"
+                                    Label="I acknowledge and agree to the Privacy Policy and Monitoring Notice." />
+                </div>
+
+                @* Primary Sign In Button *@
+                <CskButton Variant="CskButtonVariant.Text"
+                              Class="login-btn-primary"
+                              Disabled="@(!_isAcknowledged || _isLoading)"
+                              OnClick="HandleMicrosoftSignIn">
+                    @if (_isLoading)
+                    {
+                        <CskSpinner Size="CskSpinnerSize.Small" Class="btn-icon-mr" />
+                        <span>Validating credentials...</span>
+                    }
+                    else
+                    {
+                        <CskIcon Icon="@CskIcons.Window" Class="btn-icon-mr" />
+                        <span>Sign in with Microsoft</span>
+                    }
+                </CskButton>
+
+                @if (!string.IsNullOrEmpty(_infoMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Warning">
+                        @_infoMessage
+                    </CskMessageBar>
+                }
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Error">
+                        @_errorMessage
+                    </CskMessageBar>
+                }
+
+                @if (HostEnvironment.IsDevelopment() && DevLoginOptions.Value.Enabled)
+                {
+                    <CskDivider Class="w-full mt-2" />
+                    <div class="dev-sandbox-card">
+                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="10">
+                            <CskTextInput Label="Email Address (Local Dev Only)"
+                                          @bind-Value="_localLoginEmail"
+                                          Placeholder="e.g. admin@localdev.internal"
+                                          Class="w-full" />
+                            <CskButton Variant="CskButtonVariant.Filled"
+                                       Class="login-btn-primary"
+                                       Disabled="@(!_isAcknowledged || _isLoading || string.IsNullOrWhiteSpace(_localLoginEmail))"
+                                       OnClick="HandleLocalEmailSignInAsync">
+                                @if (_isLoading)
+                                {
+                                    <CskSpinner Size="CskSpinnerSize.Small" Class="btn-icon-mr" />
+                                    <span>Signing in...</span>
+                                }
+                                else
+                                {
+                                    <CskIcon Icon="@CskIcons.ArrowEnter" Class="btn-icon-mr" />
+                                    <span>Sign in with Email (Local)</span>
+                                }
+                            </CskButton>
+                        </CskStack>
+                    </div>
+                }
+            </CskStack>
+        </CskCard>
+    }
+</div>

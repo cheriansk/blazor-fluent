@@ -1,0 +1,71 @@
+@page "/Error"
+@attribute [AllowAnonymous]
+@namespace BlazorEnterprise.Web.Components.Pages
+@using System.Diagnostics
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@inject IAuditService AuditService
+@inject ILogger<ErrorPage> Logger
+@rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
+
+<PageTitle>Unexpected Error</PageTitle>
+
+<div class="csk-card error-page-card">
+    <div class="error-page-content">
+        <div class="error-header-row">
+            <CskIcon Icon="@CskIcons.ErrorCircle" Class="csk-icon-error csk-icon-xl" />
+            <div>
+                <h3 class="error-header-title">Something went wrong</h3>
+                <p class="error-header-desc">
+                    An unexpected error occurred. Our team has been notified automatically.
+                </p>
+            </div>
+        </div>
+
+        @if (_errorId is not null)
+        {
+            <div class="csk-message-bar csk-message-bar-error error-ref-box">
+                <strong>Incident Reference:</strong>&nbsp;<code>@_errorId</code> — quote this reference when contacting support.
+            </div>
+        }
+
+        <div class="error-actions-row">
+            <CskButton Variant="CskButtonVariant.Filled"
+                       IconStart="@CskIcons.Home"
+                       Href="/">
+                Return to Home
+            </CskButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? _errorId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var exFeature = HttpContext?.Features
+            .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+
+        if (exFeature?.Error is { } ex)
+        {
+            try
+            {
+                _errorId = await AuditService.LogExceptionAsync(ex, "Unhandled HTTP Exception");
+            }
+            catch (Exception logEx)
+            {
+                Logger.LogCritical(logEx, "Failed to log exception from /Error page.");
+                _errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+            }
+        }
+        else
+        {
+            _errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        }
+    }
+}

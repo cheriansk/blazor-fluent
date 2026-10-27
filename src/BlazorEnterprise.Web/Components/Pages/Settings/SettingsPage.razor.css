@@ -1,0 +1,15 @@
+.settings-root {
+    margin-top: 20px;
+}
+
+.csk-tabs-bar {
+    display: flex;
+    gap: 6px;
+    border-bottom: 2px solid var(--mat-outline-variant, #e0e0e0);
+    padding-bottom: 6px;
+    overflow-x: auto;
+}
+
+.settings-tab-content {
+    padding-top: 16px;
+}

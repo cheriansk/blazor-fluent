@@ -1,0 +1,74 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-stack @GetOrientationClass() @GetGapClass() @GetHorizontalClass() @GetVerticalClass() @(Wrap ? "csk-stack-wrap" : "") @Class"
+     @attributes="AdditionalAttributes">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public CskOrientation Orientation { get; set; } = CskOrientation.Horizontal;
+    [Parameter] public CskStackGap Gap { get; set; } = CskStackGap.Medium;
+    [Parameter] public CskHorizontalAlignment HorizontalAlignment { get; set; } = CskHorizontalAlignment.Left;
+    [Parameter] public CskVerticalAlignment VerticalAlignment { get; set; } = CskVerticalAlignment.Center;
+    [Parameter] public object? HorizontalGap { get; set; }
+    [Parameter] public object? VerticalGap { get; set; }
+    [Parameter] public bool Wrap { get; set; } = false;
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string GetOrientationClass() => Orientation == CskOrientation.Vertical ? "csk-stack-vertical" : "csk-stack-horizontal";
+
+    private string GetGapClass()
+    {
+        if (VerticalGap is not null || HorizontalGap is not null)
+        {
+            var gapVal = VerticalGap ?? HorizontalGap;
+            var gapInt = gapVal switch
+            {
+                int i => i,
+                string s when int.TryParse(s.Replace("px", "").Trim(), out var parsed) => parsed,
+                _ => -1
+            };
+
+            return gapInt switch
+            {
+                0 => "csk-gap-none",
+                4 => "gap-4",
+                6 => "gap-6",
+                8 => "gap-8",
+                10 => "gap-10",
+                12 => "gap-12",
+                14 => "gap-14",
+                16 => "gap-16",
+                20 => "gap-20",
+                _ => "csk-gap-md"
+            };
+        }
+
+        return Gap switch
+        {
+            CskStackGap.None => "csk-gap-none",
+            CskStackGap.Small => "csk-gap-sm",
+            CskStackGap.Large => "csk-gap-lg",
+            _ => "csk-gap-md"
+        };
+    }
+
+    private string GetHorizontalClass() => HorizontalAlignment switch
+    {
+        CskHorizontalAlignment.Center => "csk-stack-h-center",
+        CskHorizontalAlignment.Right => "csk-stack-h-right",
+        CskHorizontalAlignment.SpaceBetween => "csk-stack-h-between",
+        CskHorizontalAlignment.SpaceAround => "csk-stack-h-around",
+        _ => "csk-stack-h-left"
+    };
+
+    private string GetVerticalClass() => VerticalAlignment switch
+    {
+        CskVerticalAlignment.Top => "csk-stack-v-top",
+        CskVerticalAlignment.Bottom => "csk-stack-v-bottom",
+        CskVerticalAlignment.Stretch => "csk-stack-v-stretch",
+        _ => "csk-stack-v-center"
+    };
+}

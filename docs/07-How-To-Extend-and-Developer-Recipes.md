@@ -12,19 +12,19 @@
 3. [Recipe 3: Author a Fluent UI V5 Role-Gated Page](#recipe-3-author-a-fluent-ui-v5-role-gated-page)
 4. [Recipe 4: Create an Asynchronous Batch Importer](#recipe-4-create-an-asynchronous-batch-importer)
 5. [Recipe 5: Author a Multi-Step Wizard with `<FluentWizardModal>`](#recipe-5-author-a-multi-step-wizard-with-fluentwizardmodal)
-6. [Recipe 6: Add a Calculation Rule to `BlazorFluent.RulesEngine`](#recipe-6-add-a-calculation-rule-to-blazorfluentrulesengine)
+6. [Recipe 6: Add a Calculation Rule to `BlazorEnterprise.RulesEngine`](#recipe-6-add-a-calculation-rule-to-blazorenterpriserulesengine)
 7. [Recipe 7: Downstream Extension with TemplateGuard (`.Custom.cs`)](#recipe-7-downstream-extension-with-templateguard-customcs)
 8. [Recipe 8: Onboard a New Tenant & Rotate License Keys](#recipe-8-onboard-a-new-tenant--rotate-license-keys)
-9. [Recipe 9: Author a Dedicated Background Job for `BlazorFluent.Worker`](#recipe-9-author-a-dedicated-background-job-for-blazorfluentworker)
+9. [Recipe 9: Author a Dedicated Background Job for `BlazorEnterprise.Worker`](#recipe-9-author-a-dedicated-background-job-for-blazorenterpriseworker)
 10. [Recipe 10: Add a DataList Enum with Display Metadata (`*Enum` Suffix Law)](#recipe-10-add-a-datalist-enum-with-display-metadata-enum-suffix-law)
 
 ---
 
 ## Recipe 1: Add a New Domain Entity & EF Core Mapping
 
-### Step 1: Create Entity in `BlazorFluent.Core/Entities/`
+### Step 1: Create Entity in `BlazorEnterprise.Core/Entities/`
 ```csharp
-namespace BlazorFluent.Core.Entities;
+namespace BlazorEnterprise.Core.Entities;
 
 public class CustomerEntity : BaseEntity, ITenantScopedEntity, IAuditableEntity
 {
@@ -35,9 +35,9 @@ public class CustomerEntity : BaseEntity, ITenantScopedEntity, IAuditableEntity
 }
 ```
 
-### Step 2: Configure Entity in `BlazorFluent.Persistence/Configurations/`
+### Step 2: Configure Entity in `BlazorEnterprise.Persistence/Configurations/`
 ```csharp
-namespace BlazorFluent.Persistence.Configurations;
+namespace BlazorEnterprise.Persistence.Configurations;
 
 public class CustomerConfiguration : IEntityTypeConfiguration<CustomerEntity>
 {
@@ -63,9 +63,9 @@ public DbSet<CustomerEntity> Customers => Set<CustomerEntity>();
 
 ## Recipe 2: Add an Authorized Domain Service
 
-### Step 1: Declare Contract in `BlazorFluent.Core/Contracts/`
+### Step 1: Declare Contract in `BlazorEnterprise.Core/Contracts/`
 ```csharp
-namespace BlazorFluent.Core.Contracts.Services;
+namespace BlazorEnterprise.Core.Contracts.Services;
 
 public interface ICustomerService
 {
@@ -74,9 +74,9 @@ public interface ICustomerService
 }
 ```
 
-### Step 2: Implement in `BlazorFluent.Persistence/Services/`
+### Step 2: Implement in `BlazorEnterprise.Persistence/Services/`
 ```csharp
-namespace BlazorFluent.Persistence.Services;
+namespace BlazorEnterprise.Persistence.Services;
 
 public class CustomerService(AppDbContext db, ICurrentUser currentUser, ILogger<CustomerService> logger) : ICustomerService
 {
@@ -100,7 +100,7 @@ public class CustomerService(AppDbContext db, ICurrentUser currentUser, ILogger<
 
 ## Recipe 3: Author a Fluent UI V5 Role-Gated Page
 
-Create `src/BlazorFluent.Web/Components/Pages/CustomersPage.razor`:
+Create `src/BlazorEnterprise.Web/Components/Pages/CustomersPage.razor`:
 
 ```razor
 @page "/customers"
@@ -163,7 +163,7 @@ else
 Under the Hybrid Batch Processing Framework, adding a new batch import target requires three declarative/stateless steps:
 
 ### 1. Register the File Type
-Add the discriminator to `ImportFileType` in `BlazorFluent.Shared.DataListTypes.ImportTypes.cs`:
+Add the discriminator to `ImportFileType` in `BlazorEnterprise.Shared.DataListTypes.ImportTypes.cs`:
 ```csharp
 public enum ImportFileType
 {
@@ -197,15 +197,15 @@ Add `config/file-templates/CustomerCsv.json`. For standard tabular formats, set 
 }
 ```
 
-> **For Complex Non-Tabular Imports**: Implement `ICanonicalBatchStager` in `BlazorFluent.Jobs` and set `"stagingBatchStrategy": "custom:CustomerCustomBatchStager"`.
+> **For Complex Non-Tabular Imports**: Implement `ICanonicalBatchStager` in `BlazorEnterprise.Jobs` and set `"stagingBatchStrategy": "custom:CustomerCustomBatchStager"`.
 
 ### 3. Implement the Stateless C# Cloud Processor
-Create a strictly typed processor inheriting `BaseCloudProcessor` in `BlazorFluent.RulesEngine/BatchProcessing/Processors/`:
+Create a strictly typed processor inheriting `BaseCloudProcessor` in `BlazorEnterprise.RulesEngine/BatchProcessing/Processors/`:
 
 ```csharp
-using BlazorFluent.Shared.Contracts.Engine.Transforms;
+using BlazorEnterprise.Shared.Contracts.Engine.Transforms;
 
-namespace BlazorFluent.RulesEngine.BatchProcessing.Processors;
+namespace BlazorEnterprise.RulesEngine.BatchProcessing.Processors;
 
 public sealed class CustomerCloudProcessor : BaseCloudProcessor
 {
@@ -262,7 +262,7 @@ public sealed class CustomerCloudProcessor : BaseCloudProcessor
 }
 ```
 
-Register the processor in `BlazorFluent.Api/Program.cs`:
+Register the processor in `BlazorEnterprise.Api/Program.cs`:
 ```csharp
 builder.Services.AddSingleton<BaseCloudProcessor, CustomerCloudProcessor>();
 ```
@@ -272,7 +272,7 @@ builder.Services.AddSingleton<BaseCloudProcessor, CustomerCloudProcessor>();
 ## Recipe 5: Author a Multi-Step Wizard with `<FluentWizardModal>`
 
 ```razor
-@using BlazorFluent.UI.Templates.Wizards
+@using BlazorEnterprise.UI.Templates.Wizards
 
 <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@(() => _isOpen = true)">
     New Onboarding
@@ -305,11 +305,11 @@ builder.Services.AddSingleton<BaseCloudProcessor, CustomerCloudProcessor>();
 
 ---
 
-## Recipe 6: Add a Calculation Rule to `BlazorFluent.RulesEngine`
+## Recipe 6: Add a Calculation Rule to `BlazorEnterprise.RulesEngine`
 
-In `BlazorFluent.RulesEngine`:
+In `BlazorEnterprise.RulesEngine`:
 ```csharp
-namespace BlazorFluent.RulesEngine.Rules;
+namespace BlazorEnterprise.RulesEngine.Rules;
 
 public static class DiscountCalculationRule
 {
@@ -372,13 +372,13 @@ Store the key in the tenant's WebApp / Worker configuration and in the Cloud Pro
 
 ---
 
-## Recipe 9: Author a Dedicated Background Job for `BlazorFluent.Worker`
+## Recipe 9: Author a Dedicated Background Job for `BlazorEnterprise.Worker`
 
-### Step 1: Define Job Event in `BlazorFluent.Core/Events/`
+### Step 1: Define Job Event in `BlazorEnterprise.Core/Events/`
 All background events must implement `IJobEvent` and carry an explicit `TenantId` and `CorrelationId`:
 
 ```csharp
-namespace BlazorFluent.Core.Events.Invoicing;
+namespace BlazorEnterprise.Core.Events.Invoicing;
 
 public record InvoiceBatchJobEvent(
     string TriggerSource,
@@ -395,11 +395,11 @@ public record InvoiceBatchJobEvent(
 }
 ```
 
-### Step 2: Implement Handler in `BlazorFluent.Jobs/Jobs/`
-Batch handlers implement `IBatchJobHandler<TEvent>` and reside exclusively in `BlazorFluent.Jobs`:
+### Step 2: Implement Handler in `BlazorEnterprise.Jobs/Jobs/`
+Batch handlers implement `IBatchJobHandler<TEvent>` and reside exclusively in `BlazorEnterprise.Jobs`:
 
 ```csharp
-namespace BlazorFluent.Jobs.Jobs.Invoicing;
+namespace BlazorEnterprise.Jobs.Jobs.Invoicing;
 
 public class InvoiceBatchJobHandler : IBatchJobHandler<InvoiceBatchJobEvent>
 {
@@ -427,17 +427,17 @@ public class InvoiceBatchJobHandler : IBatchJobHandler<InvoiceBatchJobEvent>
 
 ### Step 3: Deployment
 - The job handler is **automatically discovered and registered** by `JobsExtensions.AddBackgroundJobs()`.
-- Runs seamlessly inside `BlazorFluent.Web` (when `Jobs:EnableHostedListener = true`) or inside `BlazorFluent.Worker` (in distributed mode) with **zero code duplication**.
+- Runs seamlessly inside `BlazorEnterprise.Web` (when `Jobs:EnableHostedListener = true`) or inside `BlazorEnterprise.Worker` (in distributed mode) with **zero code duplication**.
 
 ---
 
 ## Recipe 10: Add a DataList Enum with Display Metadata (`*Enum` Suffix Law)
 
 ### Step 1: Define Enum with Mandatory `*Enum` Suffix
-All newly created enums belong in `src/BlazorFluent.Shared/DataListTypes/`. Every new enum must end with the **`Enum`** suffix to satisfy Roslyn rule **`TG006`** and provide cognitive clarity:
+All newly created enums belong in `src/BlazorEnterprise.Shared/DataListTypes/`. Every new enum must end with the **`Enum`** suffix to satisfy Roslyn rule **`TG006`** and provide cognitive clarity:
 
 ```csharp
-namespace BlazorFluent.Shared.DataListTypes;
+namespace BlazorEnterprise.Shared.DataListTypes;
 
 public enum DeliverableStatusEnum
 {
@@ -480,7 +480,7 @@ public static class DeliverableDefinitions
 Bind to UI dropdowns using cached reflection helper `DataListExtensions.GetDataListItems<TEnum>()`:
 
 ```razor
-@using BlazorFluent.Shared.DataListTypes
+@using BlazorEnterprise.Shared.DataListTypes
 
 <FluentSelect TOption="Option<string>"
               Items="@_statusOptions"

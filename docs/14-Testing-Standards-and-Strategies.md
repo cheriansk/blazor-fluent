@@ -1,7 +1,7 @@
 # 14. Testing Standards & Strategies Guide
 
 > **Target Audience**: Quality Assurance (QA) Engineers, Software Engineers, and Security Reviewers.  
-> **Key Objective**: Comprehensive guide to unit testing, integration testing, performance benchmarking, and automated security scanning in BlazorFluent.
+> **Key Objective**: Comprehensive guide to unit testing, integration testing, performance benchmarking, and automated security scanning in BlazorEnterprise.
 
 ---
 
@@ -21,12 +21,12 @@ flowchart TD
 
 | Test Project | Scope / Layer | Primary Focus |
 | :--- | :--- | :--- |
-| `tests/BlazorFluent.Core.Tests` | Domain & Security | Entity validation, HMAC verification, tenant isolation rules, API filters. |
-| `tests/BlazorFluent.Persistence.Tests` | Data Access | EF Core queries, query filters, migration extensions, interceptors. |
-| `tests/BlazorFluent.Infrastructure.Tests` | External Services | Email/Teams notification senders, token issuers, blob storage. |
-| `tests/BlazorFluent.Jobs.Tests` | Background Processing | Queue listeners, batch stagers, canonical data transforms, kill switches. |
-| `tests/BlazorFluent.Web.Tests` | Presentation & UI | Circuit lifecycle handlers, authentication state providers, UI helpers. |
-| `tests/BlazorFluent.Benchmarks` | Micro-benchmarks | Keyset pagination, AES-GCM streaming encryption, compilation performance. |
+| `tests/BlazorEnterprise.Core.Tests` | Domain & Security | Entity validation, HMAC verification, tenant isolation rules, API filters. |
+| `tests/BlazorEnterprise.Persistence.Tests` | Data Access | EF Core queries, query filters, migration extensions, interceptors. |
+| `tests/BlazorEnterprise.Infrastructure.Tests` | External Services | Email/Teams notification senders, token issuers, blob storage. |
+| `tests/BlazorEnterprise.Jobs.Tests` | Background Processing | Queue listeners, batch stagers, canonical data transforms, kill switches. |
+| `tests/BlazorEnterprise.Web.Tests` | Presentation & UI | Circuit lifecycle handlers, authentication state providers, UI helpers. |
+| `tests/BlazorEnterprise.Benchmarks` | Micro-benchmarks | Keyset pagination, AES-GCM streaming encryption, compilation performance. |
 
 ---
 
@@ -64,7 +64,7 @@ public class PostgresFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine")
-        .WithDatabase("blazorfluent_test")
+        .WithDatabase("blazorenterprise_test")
         .WithUsername("postgres")
         .WithPassword("test_secret_123")
         .Build();
@@ -80,11 +80,11 @@ public class PostgresFixture : IAsyncLifetime
 
 ## ⚡ 4. Micro-benchmarking with BenchmarkDotNet
 
-Micro-benchmarks located in `tests/BlazorFluent.Benchmarks` benchmark hot paths (keyset pagination vs offset pagination, chunked streaming AES encryption vs in-memory arrays):
+Micro-benchmarks located in `tests/BlazorEnterprise.Benchmarks` benchmark hot paths (keyset pagination vs offset pagination, chunked streaming AES encryption vs in-memory arrays):
 
 ### 4.1 Running Benchmarks (Human Developer Only)
 ```bash
-dotnet run -c Release --project tests/BlazorFluent.Benchmarks
+dotnet run -c Release --project tests/BlazorEnterprise.Benchmarks
 ```
 
 ### 4.2 Benchmark Guidelines
@@ -103,6 +103,6 @@ CI pipelines execute dynamic application security testing (DAST) using OWASP ZAP
 ---
 
 *Related Documentation*:
-- [03. Security Model & Defense-in-Depth](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model-and-Defense-in-Depth.md)
-- [09. Coding Standards & Project Rules](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/09-Coding-Standards-and-Project-Rules.md)
-- [10. AI Agent Governance & Operational Rules](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/10-AI-Agent-Governance-and-Operational-Rules.md)
+- [03. Security Model & Defense-in-Depth](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/03-Security-Model-and-Defense-in-Depth.md)
+- [09. Coding Standards & Project Rules](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/09-Coding-Standards-and-Project-Rules.md)
+- [10. AI Agent Governance & Operational Rules](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/10-AI-Agent-Governance-and-Operational-Rules.md)

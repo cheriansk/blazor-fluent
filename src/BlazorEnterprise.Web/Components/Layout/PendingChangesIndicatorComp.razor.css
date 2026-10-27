@@ -1,0 +1,124 @@
+.pending-changes-root {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+}
+
+.pending-btn {
+    position: relative;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pending-badge-count {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #d83b01;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 5px;
+    line-height: 1.2;
+}
+
+.pending-flyout-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 340px;
+    background: var(--mat-surface, #ffffff);
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pending-panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--mat-outline-variant, #f0f0f0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pending-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pending-header-title {
+    font-size: 0.95rem;
+    color: var(--mat-on-surface, #1e1e1e);
+}
+
+.pending-panel-body {
+    padding: 14px 16px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.pending-warning-callout {
+    margin-bottom: 12px;
+    font-size: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 170, 68, 0.12);
+    border-left: 3px solid #d83b01;
+    border-radius: 4px;
+    color: var(--mat-on-surface, #1e1e1e);
+}
+
+.pending-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pending-item-card {
+    padding: 8px 10px;
+    background: var(--mat-surface-container, #f5f5f5);
+    border-radius: 6px;
+    font-size: 12px;
+    border-left: 3px solid #d83b01;
+}
+
+.pending-item-source {
+    font-weight: 600;
+    color: var(--mat-on-surface, #242424);
+}
+
+.pending-item-desc {
+    color: var(--mat-on-surface-variant, #666);
+    margin-top: 2px;
+}
+
+.pending-empty-state {
+    text-align: center;
+    padding: 20px 0;
+    color: var(--mat-on-surface-variant, #888);
+}
+
+.pending-empty-desc {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.pending-panel-footer {
+    padding: 8px 16px;
+    border-top: 1px solid var(--mat-outline-variant, #f0f0f0);
+    display: flex;
+    justify-content: flex-end;
+    background: var(--mat-surface-container, #fafafa);
+}

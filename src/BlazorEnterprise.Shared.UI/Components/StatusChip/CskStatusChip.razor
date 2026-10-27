@@ -1,0 +1,36 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<span class="csk-status-chip @GetColorClass() @Class">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <CskIcon Icon="@Icon" Class="csk-status-chip-icon" />
+    }
+    <span>@Text</span>
+</span>
+
+@code {
+    public enum ChipVariant
+    {
+        Primary,
+        Success,
+        Warning,
+        Error,
+        Info,
+        Neutral
+    }
+
+    [Parameter, EditorRequired] public string Text { get; set; } = string.Empty;
+    [Parameter] public ChipVariant Variant { get; set; } = ChipVariant.Primary;
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+
+    private string GetColorClass() => Variant switch
+    {
+        ChipVariant.Success => "csk-chip-success",
+        ChipVariant.Warning => "csk-chip-warning",
+        ChipVariant.Error => "csk-chip-error",
+        ChipVariant.Info => "csk-chip-info",
+        ChipVariant.Neutral => "csk-chip-neutral",
+        _ => "csk-chip-primary"
+    };
+}

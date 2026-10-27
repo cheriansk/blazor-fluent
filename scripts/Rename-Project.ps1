@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Renames the BlazorFluent template project to a new name.
+    Renames the BlazorEnterprise template project to a new name.
 
 .DESCRIPTION
     Cross-platform PowerShell 7+ script that performs a complete project rename:
@@ -57,12 +57,12 @@ param(
     })]
     [string]$NewName = "",
 
-    [Parameter(Mandatory = $false, HelpMessage = "Old project name to replace (defaults to 'BlazorFluent')")]
+    [Parameter(Mandatory = $false, HelpMessage = "Old project name to replace (defaults to 'BlazorEnterprise')")]
     [ValidateScript({
         if ($_ -match '^[a-zA-Z_][a-zA-Z0-9_]+$') { return $true }
         throw "Invalid old project name '$_'. Must start with a letter or underscore and contain only letters, digits, and underscores."
     })]
-    [string]$OldName = "BlazorFluent",
+    [string]$OldName = "BlazorEnterprise",
 
     [Parameter(Mandatory = $false, HelpMessage = "Skip interactive confirmation prompts and git uncommitted changes warnings")]
     [switch]$Force,
@@ -111,7 +111,7 @@ if (-not $RepoRoot) {
 if ([string]::IsNullOrWhiteSpace($NewName)) {
     Write-Host ""
     Write-Host "+==============================================================+" -ForegroundColor Cyan
-    Write-Host "|          BlazorFluent Template -> Project Renamer           |" -ForegroundColor Cyan
+    Write-Host "|          BlazorEnterprise Template -> Project Renamer           |" -ForegroundColor Cyan
     Write-Host "+==============================================================+" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Project Name Format Rules:" -ForegroundColor White
@@ -165,7 +165,7 @@ function Should-Exclude {
 # --- Banner ------------------------------------------------------------------
 Write-Host ""
 Write-Host "+==============================================================+" -ForegroundColor Cyan
-Write-Host "|          BlazorFluent Template -> Project Renamer           |" -ForegroundColor Cyan
+Write-Host "|          BlazorEnterprise Template -> Project Renamer           |" -ForegroundColor Cyan
 Write-Host "+==============================================================+" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Old Name : $OldName ($OldNameLower)" -ForegroundColor Yellow
@@ -460,7 +460,7 @@ if ($DryRun) {
         Write-Host ""
     }
 
-    $setupGit = Read-Host "  Do you want to configure git remotes and branches for your new project repository? (y/N)"
+    $setupGit = if ($Force) { "n" } else { Read-Host "  Do you want to configure git remotes and branches for your new project repository? (y/N)" }
     if ($setupGit -eq "y" -or $setupGit -eq "yes") {
         Write-Host ""
 
@@ -583,7 +583,7 @@ Write-Host "    4. Generate initial database migration (creates DataProtectionKe
 Write-Host "         dotnet ef migrations add InitialCreate --project src/$NewName.Persistence --startup-project src/$NewName.Web" -ForegroundColor Cyan
 Write-Host "    5. Review staged changes and create your initial commit on 'develop':" -ForegroundColor DarkGray
 Write-Host "         git status" -ForegroundColor Cyan
-Write-Host "         git commit -m `"Initial commit: scaffold from BlazorFluent template`"" -ForegroundColor Cyan
+Write-Host "         git commit -m `"Initial commit: scaffold from BlazorEnterprise template`"" -ForegroundColor Cyan
 Write-Host "         git push -u origin develop" -ForegroundColor Cyan
 Write-Host "    6. Update Security:IntegritySecret in src/$NewName.Web/appsettings.json" -ForegroundColor DarkGray
 Write-Host "    7. Update ConnectionStrings:DefaultConnection for your database" -ForegroundColor DarkGray

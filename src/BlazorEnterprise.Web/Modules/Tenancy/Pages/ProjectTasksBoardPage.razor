@@ -1,0 +1,811 @@
+@namespace BlazorEnterprise.Modules.Tenancy.Pages
+@page "/projects/{ProjectId:guid}/tasks"
+@page "/tasks"
+@attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Domain.Calendar
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Core.Extensions
+@using BlazorEnterprise.Persistence.Context
+@using Microsoft.AspNetCore.Authorization
+
+
+<PageTitle>Tasks & Milestones — @(_currentProject?.Name ?? "Project Work Items")</PageTitle>
+
+<div class="tasks-page-header">
+    <div class="tasks-page-header-left">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="@("4px")">
+            <CskLink Href="/tenancy/projects">Projects</CskLink>
+            <CskIcon Icon="@CskIcons.ChevronRight" />
+            <CskLink>@(_currentProject?.Name ?? "Tasks")</CskLink>
+            <CskIcon Icon="@CskIcons.ChevronRight" />
+            <CskLink>Delivery Board</CskLink>
+        </CskStack>
+        <div class="tasks-header-title-row">
+            <CskLabel Typo="Typography.H3">@(_currentProject?.Name ?? "Project Tasks")</CskLabel>
+            @if (_currentProject is not null)
+            {
+                <CskBadge Variant="@BadgeAppearance.Filled">Project ID: @_currentProject.Id.ToString()[..8]...</CskBadge>
+            }
+        </div>
+    </div>
+
+    <div class="tasks-page-header-actions">
+        <!-- Project Switcher -->
+        @if (_availableProjects.Count > 1)
+        {
+            <div class="min-w-180">
+                <CskSelect TOption="ProjectEntity"
+                              TValue="string"
+                              Items="@_availableProjects"
+                              OptionText="@(p => p.Name)"
+                              OptionValue="@(p => p.Id.ToString())"
+                              Value="@(_currentProject?.Id.ToString())"
+                              ValueChanged="OnProjectChanged"
+                              Label="Project" />
+            </div>
+        }
+
+        <!-- Milestone Filter -->
+        <div class="min-w-200">
+            <CskSelect TOption="MilestoneFilterItem"
+                          TValue="string"
+                          Items="@_milestoneFilterOptions"
+                          OptionText="@(o => o.Label)"
+                          OptionValue="@(o => o.Value)"
+                          @bind-Value="_selectedMilestoneFilter"
+                          Label="Milestone Filter" />
+        </div>
+
+        <CskButton Variant="CskButtonVariant.Text"
+                      IconStart="@CskIcons.Flag"
+                      OnClick="OpenMilestonesModal">
+            Milestones (@_milestones.Count)
+        </CskButton>
+
+        <CskButton Variant="CskButtonVariant.Text"
+                      IconStart="@CskIcons.ArrowSync"
+                      OnClick="@(() => Navigation.NavigateTo("/imports"))">
+            Import
+        </CskButton>
+        <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="OpenCreateTaskModal">
+            New Task
+        </CskButton>
+    </div>
+</div>
+
+@if (_isLoading)
+{
+    <CskSpinner Class="m-auto" />
+}
+else if (_currentProject is null)
+{
+    <CskMessageBar Intent="MessageBarIntent.Warning" Class="mt-4">
+        No active project selected or found. Please navigate to a valid project.
+    </CskMessageBar>
+}
+else
+{
+    <!-- Live Project Health & Cadence KPI Bar -->
+    <div class="health-kpi-container">
+        <div class="health-main-kpis">
+            <div class="health-rating-box">
+                <span class="health-pill health-pill-@(_projectHealth.Health.ToString().ToLowerInvariant())">
+                    @if (_projectHealth.Health == ProjectHealthRatingEnum.OnTrack)
+                    {
+                        <span>🟢 On Track</span>
+                    }
+                    else if (_projectHealth.Health == ProjectHealthRatingEnum.AtRisk)
+                    {
+                        <span>🟡 At Risk</span>
+                    }
+                    else
+                    {
+                        <span>🔴 Critical</span>
+                    }
+                </span>
+                <span class="metric-label">Project Health</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <div class="progress-container">
+                    <span class="progress-text">@_projectHealth.ProgressPercentage% Completed</span>
+                    <div class="progress-bar-bg">
+                        <CskProgressBar Min="0" Max="100" Value="@((int)Math.Round(_projectHealth.ProgressPercentage))" Class="full-width" />
+                    </div>
+                </div>
+                <span class="metric-label">@_projectHealth.CompletedTasks / @_projectHealth.TotalTasks Deliverables</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <span class="metric-count @(_projectHealth.ActiveBlockersCount > 0 ? "text-danger" : "text-muted")">
+                    @_projectHealth.ActiveBlockersCount
+                </span>
+                <span class="metric-label">Active Blockers</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <span class="metric-count @(_projectHealth.OverdueTasks > 0 ? "text-danger" : "text-muted")">
+                    @_projectHealth.OverdueTasks
+                </span>
+                <span class="metric-label">Overdue Tasks</span>
+            </div>
+
+            <div class="metric-divider"></div>
+
+            <div class="health-metric-box">
+                <span class="metric-count text-info">
+                    @_projectHealth.CompletedMilestones / @_projectHealth.TotalMilestones
+                </span>
+                <span class="metric-label">Milestones Signed Off</span>
+            </div>
+        </div>
+
+        @if (_projectHealth.RiskReasons.Count > 0)
+        {
+            <div class="health-risk-reasons-panel">
+                <div class="risk-reasons-header">
+                    <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                    <strong>Root-Cause Risk Attribution:</strong>
+                </div>
+                <ul class="risk-reasons-list">
+                    @foreach (var reason in _projectHealth.RiskReasons)
+                    {
+                        <li>@reason</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+
+    <!-- Sub-tab switch between Delivery Board and Sequential Workflows -->
+    <div class="tasks-subtab-bar d-flex justify-between align-center mb-3 mt-4">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+            <CskButton Variant="@(_activeSubTab == "tasks" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.Board"
+                          OnClick="@(() => _activeSubTab = "tasks")">
+                Delivery Board (@FilteredTasks.Count())
+            </CskButton>
+            <CskButton Variant="@(_activeSubTab == "workflows" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.Flowchart"
+                          OnClick="@(() => _activeSubTab = "workflows")">
+                Sequential Workflows (@_projectWorkflows.Count)
+            </CskButton>
+        </CskStack>
+
+        @if (_activeSubTab == "workflows" && _canManageWorkflows)
+        {
+            <CskButton Variant="CskButtonVariant.Filled"
+                          IconStart="@CskIcons.Add"
+                          OnClick="@(() => { _workflowToEdit = null; _isCreateWorkflowModalOpen = true; })">
+                New Workflow
+            </CskButton>
+        }
+    </div>
+
+    @if (_activeSubTab == "tasks")
+    {
+        <!-- Reusable 6-Column Swimlane Board -->
+        <FluentSwimlaneBoardComp TItem="TaskEntity"
+                                 Columns="@_columns"
+                                 Items="@FilteredTasks"
+                                 OnItemClick="OpenTaskDetailsModal">
+            <ItemTemplate>
+                <CskCard Class="task-card">
+                    <div class="task-card-header">
+                        <div class="d-flex gap-1 align-center flex-wrap">
+                            <CskBadge Variant="@CskBadgeVariant.Filled" Class="@GetPriorityColor(context.Priority)">
+                                @context.Priority
+                            </CskBadge>
+
+                            @if (_activeBlockedTaskIds.Contains(context.Id))
+                            {
+                                <span class="blocker-pill" title="This task is blocked by one or more unresolved prerequisite tasks.">
+                                    ⛔ Blocked
+                                </span>
+                            }
+
+                            @if (context.MilestoneId.HasValue && _milestoneLookup.TryGetValue(context.MilestoneId.Value, out var mName))
+                            {
+                                <span class="milestone-pill" title="Assigned Milestone">
+                                    🚩 @mName
+                                </span>
+                            }
+                        </div>
+
+                        <span class="task-card-due @(context.DueDate.Date < _today && !context.IsClosed ? "due-overdue" : "")">
+                            @TimeZoneService.FormatDate(context.DueDate, "MMM dd")
+                        </span>
+                    </div>
+
+                    <div class="task-card-title">@context.Title</div>
+
+                    @if (!string.IsNullOrWhiteSpace(context.Labels))
+                    {
+                        <div class="task-card-labels">
+                            @foreach (var label in context.GetParsedLabels())
+                            {
+                                <span class="jira-label-pill">@label</span>
+                            }
+                        </div>
+                    }
+
+                    <div class="task-card-footer">
+                        <div class="task-card-assignees" title="@context.AssigneeEmails">
+                            @if (!string.IsNullOrWhiteSpace(context.AssigneeEmails))
+                            {
+                                <span>👤 @(context.GetParsedAssigneeEmails().FirstOrDefault() ?? "")</span>
+                                @if (context.GetParsedAssigneeEmails().Count > 1)
+                                {
+                                    <span class="badge-more">+@(context.GetParsedAssigneeEmails().Count - 1)</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="unassigned-text">Unassigned</span>
+                            }
+                        </div>
+
+                        <div class="d-flex align-center gap-2">
+                            @if (!string.IsNullOrWhiteSpace(context.ReporterEmail))
+                            {
+                                <span class="reporter-pill" title="Reporter: @context.ReporterEmail">
+                                    ✍️ @(context.ReporterEmail.Split('@').FirstOrDefault())
+                                </span>
+                            }
+                            <div class="task-card-comments-count">
+                                💬 @(context.Comments?.Count ?? 0)
+                            </div>
+                        </div>
+                    </div>
+                </CskCard>
+            </ItemTemplate>
+        </FluentSwimlaneBoardComp>
+    }
+    else
+    {
+        <!-- Sequential Workflows View -->
+        <div class="workflows-container mt-2">
+            @if (_projectWorkflows.Count == 0)
+            {
+                <div class="empty-box-dashed">
+                    <CskIcon Icon="@CskIcons.Flowchart" Class="csk-icon-xl" />
+                    <CskLabel Typo="Typography.H6" Class="mt-3">No Sequential Workflows Found</CskLabel>
+                    <p class="text-hint max-w-480 m-auto font-size-sm">
+                        Workflows orchestrate sequential stage-gated activities where exactly one owner is active at any time, with multi-party watcher notifications on every handoff.
+                    </p>
+                    @if (_canManageWorkflows)
+                    {
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                      IconStart="@CskIcons.Add"
+                                      OnClick="@(() => { _workflowToEdit = null; _isCreateWorkflowModalOpen = true; })">
+                            Launch First Workflow
+                        </CskButton>
+                    }
+                </div>
+            }
+            else
+            {
+                @foreach (var wf in _projectWorkflows)
+                {
+                    <WorkflowStepperComp @key="wf.Id" 
+                                         Workflow="@wf" 
+                                         OnWorkflowUpdated="HandleWorkflowUpdated"
+                                         OnEditWorkflow="HandleEditWorkflow" />
+                }
+            }
+        </div>
+    }
+}
+
+<!-- Create Task Modal -->
+@if (_showCreateModal)
+{
+    <div class="modal-backdrop" @onclick="CloseModals">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <CskLabel Typo="Typography.H4">Create New Task</CskLabel>
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Dismiss" OnClick="CloseModals" />
+            </div>
+
+            <div class="modal-body">
+                <CskTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Class="full-width" Placeholder="Concise headline of the work item..." />
+
+                <CskTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Class="full-width mt-3" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
+
+                <div class="modal-grid-row mt-3">
+                    <CskSelect TOption="DataListItem<TaskPriorityEnum>"
+                                  TValue="TaskPriorityEnum"
+                                  Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
+                                  OptionText="@(i => i.DisplayName)"
+                                  OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Low)"
+                                  @bind-Value="_newTask.Priority"
+                                  Label="Priority" Class="full-width" />
+
+                    <CskDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
+                </div>
+
+                <div class="modal-grid-row mt-3">
+                    <CskSelect TOption="MilestoneOptionItem"
+                                  TValue="string"
+                                  Items="@_milestoneSelectOptions"
+                                  OptionText="@(m => m.Label)"
+                                  OptionValue="@(m => m.Id)"
+                                  @bind-Value="_newTaskMilestoneIdString"
+                                  Label="Milestone Association (Optional)" Class="full-width" />
+
+                    <CskTextInput @bind-Value="_newTask.AssigneeEmails"
+                                     Label="Assignee Email(s)"
+                                     Placeholder="alice@company.com; bob@company.com"
+                                     Class="full-width" />
+                </div>
+
+                <CskTextInput @bind-Value="_newTask.Labels"
+                                 Label="Labels / Tags (Comma-Separated)"
+                                 Placeholder="Frontend, Bug, HighPriority"
+                                 Class="full-width mt-3" />
+
+                @if (!string.IsNullOrWhiteSpace(_createErrorMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Error" Class="mt-3">
+                        @_createErrorMessage
+                    </CskMessageBar>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="CloseModals">Cancel</CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="SaveNewTaskAsync" Loading="@_isSaving">Create Task</CskButton>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Task Details, Dependencies & Discussion Modal -->
+@if (_selectedTask is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="d-flex align-center gap-2">
+                    <CskBadge Variant="@BadgeAppearance.Tint" Class="@GetPriorityColor(_selectedTask.Priority)">
+                        @_selectedTask.Priority
+                    </CskBadge>
+                    <CskLabel Typo="Typography.H4">@_selectedTask.Title</CskLabel>
+                </div>
+                <div class="d-flex align-center gap-2">
+                    <EntityHistoryButton EntityName="TaskEntity" EntityId="@_selectedTask.Id.ToString()" IconOnly="false" Label="History" Variant="CskButtonVariant.Text" />
+                    <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Dismiss" OnClick="CloseModals" />
+                </div>
+            </div>
+
+            <div class="modal-tabs-header">
+                <button class="modal-tab-btn @(_selectedModalTab == "details" ? "active" : "")" @onclick="@(() => _selectedModalTab = "details")">
+                    Task Details
+                </button>
+                <button class="modal-tab-btn @(_selectedModalTab == "subtasks" ? "active" : "")" @onclick="@(() => _selectedModalTab = "subtasks")">
+                    Subtasks (@_selectedTaskSubTasks.Count)
+                </button>
+                <button class="modal-tab-btn @(_selectedModalTab == "dependencies" ? "active" : "")" @onclick="@(() => _selectedModalTab = "dependencies")">
+                    Dependencies (@_selectedTaskDependencies.Count)
+                </button>
+                <button class="modal-tab-btn @(_selectedModalTab == "comments" ? "active" : "")" @onclick="@(() => _selectedModalTab = "comments")">
+                    Comments (@_selectedTaskComments.Count)
+                </button>
+            </div>
+
+            <div class="modal-body-tab-content">
+                @if (_selectedModalTab == "details")
+                {
+                    <div class="task-details-form">
+                        <CskTextInput @bind-Value="_selectedTask.Title" Label="Title" Class="full-width" />
+
+                        <CskTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Class="full-width mt-3" />
+
+                        <div class="modal-grid-row mt-3">
+                            <CskSelect TOption="DataListItem<TaskPriorityEnum>"
+                                          TValue="TaskPriorityEnum"
+                                          Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
+                                          OptionText="@(i => i.DisplayName)"
+                                          OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Low)"
+                                          @bind-Value="_selectedTask.Priority"
+                                          Label="Priority" Class="full-width" />
+
+                            <CskDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
+                        </div>
+
+                        <div class="modal-grid-row mt-3">
+                            <CskSelect TOption="DataListItem<TaskStatusEnum>"
+                                          TValue="TaskStatusEnum"
+                                          Items="@(DataListExtensions.GetDataListItems<TaskStatusEnum>())"
+                                          OptionText="@(i => i.DisplayName)"
+                                          OptionValue="@(i => i != null ? i.Value : TaskStatusEnum.Open)"
+                                          @bind-Value="_selectedTask.Status"
+                                          Label="Status" Class="full-width" />
+
+                            <CskSelect TOption="MilestoneOptionItem"
+                                          TValue="string"
+                                          Items="@_milestoneSelectOptions"
+                                          OptionText="@(m => m.Label)"
+                                          OptionValue="@(m => m.Id)"
+                                          @bind-Value="_selectedTaskMilestoneIdString"
+                                          Label="Milestone" Class="full-width" />
+                        </div>
+
+                        <div class="modal-grid-row mt-3">
+                            <CskTextInput @bind-Value="_selectedTask.AssigneeEmails"
+                                             Label="Assignees (Semicolon-Separated)"
+                                             Placeholder="email1@co.com; email2@co.com"
+                                             Class="full-width" />
+
+                            <CskTextInput Value="@_selectedTask.ReporterEmail"
+                                             Label="Reporter"
+                                             ReadOnly="true"
+                                             Class="full-width" />
+                        </div>
+
+                        <CskTextInput @bind-Value="_selectedTask.Labels"
+                                         Label="Labels"
+                                         Placeholder="UI, Release-1.0"
+                                         Class="full-width mt-3" />
+
+                        <div class="task-action-toolbar mt-4">
+                            <CskButton Variant="CskButtonVariant.Filled" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
+                                Save Changes
+                            </CskButton>
+
+                            @if (!_selectedTask.IsClosed)
+                            {
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="CloseSelectedTaskAsync">
+                                    Mark as Closed
+                                </CskButton>
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="CancelSelectedTaskAsync" Class="text-danger">
+                                    Cancel Task
+                                </CskButton>
+                            }
+                            else
+                            {
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="ReopenSelectedTaskAsync">
+                                    Reopen Task
+                                </CskButton>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (_selectedModalTab == "subtasks")
+                {
+                    <div class="task-subtasks-pane">
+                        <div class="d-flex justify-between align-center mb-3">
+                            <CskLabel Typo="Typography.H5">Child Subtasks (@_selectedTaskSubTasks.Count)</CskLabel>
+                            <span class="font-size-sm text-hint">Boundary: Within this task strictly (Depth 1)</span>
+                        </div>
+
+                        <div class="subtask-list d-flex flex-column gap-2 mb-4">
+                            @if (_selectedTaskSubTasks.Count == 0)
+                            {
+                                <div class="no-items-placeholder">No subtasks created for this task yet.</div>
+                            }
+                            else
+                            {
+                                @foreach (var sub in _selectedTaskSubTasks)
+                                {
+                                    <div class="subtask-card subtask-item-row">
+                                        <div class="d-flex align-center gap-2">
+                                            <CskCheckbox Value="@(sub.Status == TaskStatusEnum.Closed)" ValueChanged="@(async (bool val) => await ToggleSubTaskCompleteAsync(sub, val))" />
+                                            <div>
+                                                <span class="@(sub.Status == TaskStatusEnum.Closed ? "task-done font-weight-600" : "font-weight-600")">@sub.Title</span>
+                                                <div class="font-size-sm text-hint">
+                                                    Priority: @sub.Priority &bull; Due: @sub.DueDate.ToString("yyyy-MM-dd")
+                                                    @if (sub.BlockedBySubTaskId.HasValue)
+                                                    {
+                                                        <span class="text-danger font-weight-600 ml-2">🛑 Blocked by sibling subtask</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Delete" OnClick="@(() => DeleteSubTaskAsync(sub.Id))" />
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Add SubTask Quick Box -->
+                        <div class="add-subtask-box subtask-box">
+                            <CskLabel Typo="Typography.H6" Class="mb-2">Add Child Subtask</CskLabel>
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                                <CskTextInput @bind-Value="_newSubTaskTitle" Placeholder="Subtask headline..." Class="flex-2" />
+                                <CskSelect TOption="DataListItem<TaskPriorityEnum>"
+                                              TValue="TaskPriorityEnum"
+                                              Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
+                                              OptionText="@(i => i.DisplayName)"
+                                              OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Medium)"
+                                              @bind-Value="_newSubTaskPriority"
+                                              Class="flex-1" />
+                                <CskDatePicker @bind-Value="_newSubTaskDueDate" Class="flex-1" />
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="AddSubTaskAsync" Loading="_isAddingSubTask">
+                                    Add Subtask
+                                </CskButton>
+                            </CskStack>
+                        </div>
+                    </div>
+                }
+                else if (_selectedModalTab == "dependencies")
+                {
+                    <div class="task-dependencies-pane">
+                        <div class="d-flex justify-between align-center mb-2">
+                            <CskLabel Typo="Typography.H5">Task Dependencies & Blockers</CskLabel>
+                            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Link" OnClick="@(() => _showBlockerLinkModal = true)">
+                                Establish Blocker Contract
+                            </CskButton>
+                        </div>
+                        <p class="section-hint">Tasks linked here are monitored by the Cadence engine. Unresolved blockers trigger proactive alerts to assignees.</p>
+
+                        <div class="dependency-list">
+                            @if (_selectedTaskDependencies.Count == 0)
+                            {
+                                <div class="no-items-placeholder">No dependencies linked to this task.</div>
+                            }
+                            else
+                            {
+                                @foreach (var dep in _selectedTaskDependencies)
+                                {
+                                    <div class="dependency-card">
+                                        <div class="dependency-card-info">
+                                            <div class="d-flex gap-2 align-center">
+                                                <span class="dep-type-tag">@dep.DependencyType</span>
+                                                <strong>@dep.DependsOnTaskTitle</strong>
+                                            </div>
+                                            <div class="dep-meta">
+                                                <span>Status: @dep.DependsOnTaskStatus</span>
+                                                <span>• Assignee: @(string.IsNullOrWhiteSpace(dep.DependsOnAssigneeEmails) ? "Unassigned" : dep.DependsOnAssigneeEmails)</span>
+                                                @if (dep.ResolveByUtc.HasValue)
+                                                {
+                                                    <span>• Resolve By: @dep.ResolveByUtc.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="dependency-card-actions">
+                                            @if (dep.IsResolved)
+                                            {
+                                                <span class="dep-status-resolved">🟢 Resolved</span>
+                                            }
+                                            else if (dep.IsOverdue)
+                                            {
+                                                <span class="dep-status-overdue">🔴 Blocker Overdue</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="dep-status-active">🟡 Active Blocker</span>
+                                            }
+
+                                            <CskButton Variant="CskButtonVariant.Text"
+                                                          IconStart="@CskIcons.Delete"
+                                                          OnClick="@(() => RemoveDependencyAsync(dep.DependencyId))"
+                                                          Title="Remove Dependency Link" />
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Add Dependency Link Form -->
+                        <div class="add-dependency-box">
+                            <CskLabel Typo="Typography.H6">Add New Dependency</CskLabel>
+                            <div class="modal-grid-row mt-2">
+                                <CskSelect TOption="TaskEntity"
+                                              TValue="string"
+                                              Items="@_otherProjectTasks"
+                                              OptionText="@(t => $"{t.Title} (Due {t.DueDate:yyyy-MM-dd})")"
+                                              OptionValue="@(t => t.Id.ToString())"
+                                              @bind-Value="_newDepTargetTaskId"
+                                              Label="Prerequisite / Target Task" Class="full-width" />
+
+                                <CskSelect TOption="DataListItem<TaskDependencyTypeEnum>"
+                                              TValue="TaskDependencyTypeEnum"
+                                              Items="@(DataListExtensions.GetDataListItems<TaskDependencyTypeEnum>())"
+                                              OptionText="@(i => i.DisplayName)"
+                                              OptionValue="@(i =>i.Value )"
+                                              @bind-Value="_newDepType"
+                                              Label="Relationship" Class="full-width" />
+                            </div>
+
+                            <div class="modal-grid-row mt-2">
+                                <CskDatePicker @bind-Value="_newDepResolveByUtc" Label="Resolve By Target Date (Optional)" Class="full-width" />
+                                <CskTextInput @bind-Value="_newDepNotes" Label="Notes / Reason" Placeholder="e.g. Needs DB schema update first" Class="full-width" />
+                            </div>
+
+                            <CskButton Variant="CskButtonVariant.Filled" Class="mt-3 align-self-start" OnClick="AddDependencyAsync" Loading="@_isAddingDependency">
+                                Add Dependency Link
+                            </CskButton>
+                        </div>
+                    </div>
+                }
+                else if (_selectedModalTab == "comments")
+                {
+                    <div class="task-comments-pane">
+                        <CskLabel Typo="Typography.H5">Activity & Comments (@(_selectedTaskComments.Count))</CskLabel>
+
+                        <div class="comments-thread">
+                            @if (_selectedTaskComments.Count == 0)
+                            {
+                                <div class="no-comments-placeholder">No comments yet. Start the discussion below.</div>
+                            }
+                            else
+                            {
+                                @foreach (var c in _selectedTaskComments)
+                                {
+                                    <div class="comment-bubble">
+                                        <div class="comment-bubble-header">
+                                            <span class="comment-author">@c.AuthorName</span>
+                                            <span class="comment-time">@TimeZoneService.FormatDateTime(c.CreatedAtUtc, "MMM dd, yyyy HH:mm")</span>
+                                        </div>
+                                        <div class="comment-body">@c.CommentText</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Add Comment Form -->
+                        <div class="add-comment-box">
+                            <CskTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Class="full-width" />
+                            <CskButton Variant="CskButtonVariant.Filled" Class="mt-2 align-self-end" OnClick="PostCommentAsync" Loading="@_isPostingComment">
+                                Post Comment
+                            </CskButton>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Manage Milestones Modal -->
+@if (_showMilestonesModal)
+{
+    <div class="modal-backdrop" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <CskLabel Typo="Typography.H4">Project Milestones & Delivery Cadence</CskLabel>
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Dismiss" OnClick="CloseModals" />
+            </div>
+
+            <div class="modal-body">
+                <div class="milestones-manager-layout">
+                    <!-- Milestones List -->
+                    <div class="milestones-list-section">
+                        <CskLabel Typo="Typography.H5">Configured Milestones (@_milestones.Count)</CskLabel>
+                        @if (_milestones.Count == 0)
+                        {
+                            <div class="no-items-placeholder">No milestones defined for this project yet. Create one below!</div>
+                        }
+                        else
+                        {
+                            @foreach (var m in _milestonesHealth)
+                            {
+                                <div class="milestone-card">
+                                    <div class="milestone-card-main">
+                                        <div class="d-flex justify-between align-center">
+                                            <strong>@m.MilestoneName</strong>
+                                            <span class="milestone-status-badge milestone-status-@m.Status.ToString().ToLowerInvariant()">
+                                                @m.Status
+                                            </span>
+                                        </div>
+
+                                        <div class="milestone-meta-dates">
+                                            <span>📅 @m.StartDate.ToString("yyyy-MM-dd") → @(m.EndDate?.ToString("yyyy-MM-dd") ?? "Ongoing")</span>
+                                            <span>(@(m.DaysRemaining >= 0 ? $"{m.DaysRemaining} days remaining" : $"{Math.Abs(m.DaysRemaining)} days overdue"))</span>
+                                        </div>
+
+                                        <div class="milestone-progress-row">
+                                            <span>Tasks: @m.CompletedTasks / @m.TotalTasks (@m.ProgressPercentage%)</span>
+                                            @if (m.ActiveBlockersCount > 0)
+                                            {
+                                                <span class="text-danger">⛔ @m.ActiveBlockersCount Blockers</span>
+                                            }
+                                        </div>
+
+                                        @if (m.RiskReasons.Count > 0)
+                                        {
+                                            <div class="milestone-risk-alert">
+                                                @foreach (var rr in m.RiskReasons)
+                                                {
+                                                    <div>• @rr</div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="milestone-card-actions">
+                                        @if (m.Status != CalendarEntryStatusEnum.Completed)
+                                        {
+                                            <CskButton Variant="CskButtonVariant.Filled"
+                                                          OnClick="@(() => SignOffMilestoneAsync(m.MilestoneId))"
+                                                          Title="Sign off and mark milestone as completed">
+                                                Sign-Off & Complete
+                                            </CskButton>
+                                        }
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.Delete"
+                                                      OnClick="@(() => DeleteMilestoneAsync(m.MilestoneId))"
+                                                      Title="Delete Milestone" />
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Add Milestone Form -->
+                    <div class="milestone-add-section">
+                        <CskLabel Typo="Typography.H5">Create New Milestone</CskLabel>
+
+                        <CskTextInput @bind-Value="_newMilestone.Title" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Class="full-width mt-2" />
+
+                        <CskTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Class="full-width mt-2" />
+
+                        <div class="modal-grid-row mt-2">
+                            <CskDatePicker @bind-Value="_newMilestoneStartDate" Label="Start Date (UTC)" Class="full-width" />
+                            <CskDatePicker @bind-Value="_newMilestoneEndDate" Label="End Date (UTC)" Class="full-width" />
+                        </div>
+
+                        @if (_milestones.Count > 0)
+                        {
+                            <div class="mt-2">
+                                <CskSelect TOption="ProjectCalendarEntity"
+                                              TValue="string"
+                                              Items="@_milestones"
+                                              OptionText="@(m => $"{m.Title} (Ends {m.EndDate:yyyy-MM-dd})")"
+                                              OptionValue="@(m => m.Id.ToString())"
+                                              @bind-Value="_newMilestonePredecessorId"
+                                              Label="Predecessor Milestone (Optional Dependency)" Class="full-width" />
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(_milestoneErrorMessage))
+                        {
+                            <CskMessageBar Intent="MessageBarIntent.Error" Class="mt-2">
+                                @_milestoneErrorMessage
+                            </CskMessageBar>
+                        }
+
+                        <CskButton Variant="CskButtonVariant.Filled" Class="mt-3" OnClick="CreateMilestoneAsync" Loading="@_isCreatingMilestone">
+                            Create Milestone
+                        </CskButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_selectedTask is not null)
+{
+    <TaskDependencyLinkModal IsOpen="@_showBlockerLinkModal" 
+                             SourceTaskId="@_selectedTask.Id" 
+                             SourceTaskTitle="@_selectedTask.Title" 
+                             AvailableTargetTasks="@_otherProjectTasks" 
+                             OnLinkCreated="@RefreshDependenciesAndLinksAsync" 
+                             OnClose="@(() => _showBlockerLinkModal = false)" />
+}
+
+@if (_currentProject is not null)
+{
+    <CreateWorkflowWizardModal IsOpen="@_isCreateWorkflowModalOpen"
+                               IsOpenChanged="@(val => _isCreateWorkflowModalOpen = val)"
+                               ProjectId="@_currentProject.Id"
+                               DefaultLevel="TaskLevelEnum.Project"
+                               WorkflowToEdit="@_workflowToEdit"
+                               OnWorkflowCreated="HandleWorkflowCreated"
+                               OnWorkflowUpdated="HandleWorkflowUpdated" />
+}

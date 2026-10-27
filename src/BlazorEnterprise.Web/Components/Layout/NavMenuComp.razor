@@ -1,0 +1,87 @@
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.UI.Components
+@inject ITenantContext TenantContext
+@inject ICurrentUser CurrentUser
+@inject INavigationStateService NavState
+@implements IDisposable
+
+<div class="navmenu-container @(NavState.IsCollapsed ? "nav-collapsed" : "nav-expanded")">
+    <!-- Top Toggle Row inside NavMenu -->
+    <div class="nav-toggle-row">
+        @if (!NavState.IsCollapsed)
+        {
+            <span class="nav-header-title">Menu</span>
+        }
+        <CskButton Variant="CskButtonVariant.Text"
+                   IconStart="@(NavState.IsCollapsed ? CskIcons.PanelLeftExpand : CskIcons.PanelLeftContract)"
+                   OnClick="@NavState.Toggle"
+                   Title="@(NavState.IsCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu")" />
+    </div>
+
+    <nav class="csk-nav-menu" id="main-menu">
+        @if (CurrentUser.IsAuthenticated && TenantContext.HasActiveTenant)
+        {
+            <NavLink class="csk-nav-item" href="" Match="NavLinkMatch.All" title="Home">
+                <CskIcon Icon="@CskIcons.Home" Class="csk-nav-icon" />
+                @if (!NavState.IsCollapsed)
+                {
+                    <span class="csk-nav-text">Home</span>
+                }
+            </NavLink>
+
+            @if (!TenantContext.IsRootTenant)
+            {
+                <NavLink class="csk-nav-item" href="knowledge" title="Knowledge Base">
+                    <CskIcon Icon="@CskIcons.BookOpen" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Knowledge Base</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="tasks" title="Tasks">
+                    <CskIcon Icon="@CskIcons.TaskList" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Tasks</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="workflows" title="Workflows">
+                    <CskIcon Icon="@CskIcons.Flowchart" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Workflows</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="imports" title="File Imports">
+                    <CskIcon Icon="@CskIcons.ArrowSync" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">File Imports</span>
+                    }
+                </NavLink>
+            }
+        }
+    </nav>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavState.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavState.OnChange -= HandleStateChanged;
+    }
+}

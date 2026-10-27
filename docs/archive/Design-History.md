@@ -1,15 +1,15 @@
 <div align="center">
 
-# ⚡ BlazorFluent .NET 10 Starter Kit
+# ⚡ BlazorEnterprise .NET 10 Starter Kit
 
 
 
 ## Observability & Request Logging
-BlazorFluent leverages **Serilog** for structured logging across both Blazor circuits and HTTP pipelines:
+BlazorEnterprise leverages **Serilog** for structured logging across both Blazor circuits and HTTP pipelines:
 - **Two-Stage Bootstrapping**: Early host initialization crashes are caught and flushed to the console before DI builds.
 - **Circuit Lifecycle Observability**: `BlazorCircuitObservabilityHandler` tracks circuit startup, user disconnection, reconnection, and circuit-breaking exceptions.
 - **HTTP Request Summaries**: `app.UseSerilogRequestLogging(...)` emits a single structured summary per request with `TenantId`, `UserId`, `ClientIp`, and latency.
-- **Static Asset Noise Filter**: Static assets (`/_framework/*`, `/_content/*`, `.css`, `.js`, images, fonts) are demoted to `Verbose` to keep console and rolling daily log files (`logs/blazorfluent-.log`) clean and readable.
+- **Static Asset Noise Filter**: Static assets (`/_framework/*`, `/_content/*`, `.css`, `.js`, images, fonts) are demoted to `Verbose` to keep console and rolling daily log files (`logs/blazorenterprise-.log`) clean and readable.
 
 --------------------------
 # Enterprise Tenant Security: Frameworks vs. Custom Architecture
@@ -161,7 +161,7 @@ IGlobalEntity (Crucial): Protects your #1 security priority. It switches your EF
 
 ## 1. Goal Description
 
-Implement a comprehensive, enterprise-grade auditing system in **BlazorFluent** targeting the **same PostgreSQL database under a dedicated `audit` schema** with **indefinite retention**.
+Implement a comprehensive, enterprise-grade auditing system in **BlazorEnterprise** targeting the **same PostgreSQL database under a dedicated `audit` schema** with **indefinite retention**.
 
 This elevates auditing from **Level 1** (basic row stamps `Created`/`Updated`) to:
 1. **Level 2 (Property-Level Entity Diffs)**: Automatic before-and-after property change capture in JSON format on every EF Core `Insert`, `Update`, and `Delete`, with automated masking of credentials, tokens, and secrets.
@@ -211,7 +211,7 @@ graph TD
 # Implementation Plan: Caching Architecture Specification (L1 vs. L2 & README Documentation)
 
 ## Goal Description
-Document and clarify the precise mechanics of **L1 (In-Process Memory)** vs. **L2 (Distributed Cache - Redis / Memory Fallback)** within the BlazorFluent architecture, including:
+Document and clarify the precise mechanics of **L1 (In-Process Memory)** vs. **L2 (Distributed Cache - Redis / Memory Fallback)** within the BlazorEnterprise architecture, including:
 1. Exactly what data is stored in L1 vs. L2.
 2. How .NET 10 `HybridCache` coordinates synchronization, serialization, and invalidation between L1 and L2 across auto-scaled Azure Web App instances.
 3. An explicit inventory of cached items vs. non-cached business items.
@@ -270,7 +270,7 @@ Below is the exact documentation markdown to be added to `README.md`:
 ------------------------------------------
 # Multi-Tenant Caching Architecture (L1 vs. L2 & Azure Auto-Scaling)
 
-BlazorFluent implements a high-performance, fail-closed multi-tenant caching architecture based on **.NET 10 HybridCache (`Microsoft.Extensions.Caching.Hybrid`)** and **FullStackHero surgical caching patterns**.
+BlazorEnterprise implements a high-performance, fail-closed multi-tenant caching architecture based on **.NET 10 HybridCache (`Microsoft.Extensions.Caching.Hybrid`)** and **FullStackHero surgical caching patterns**.
 
 ## 1. Two-Tier Cache Topology (L1 vs. L2)
 
@@ -324,7 +324,7 @@ BlazorFluent implements a high-performance, fail-closed multi-tenant caching arc
 
 ## 2. What Is Cached vs. What Is Not
 
-To avoid cache-invalidation bugs and stale-data hazards, BlazorFluent follows the **Surgical Caching Pattern**:
+To avoid cache-invalidation bugs and stale-data hazards, BlazorEnterprise follows the **Surgical Caching Pattern**:
 
 ### ✅ What IS Cached (Infrastructure Hotspots Only)
 1. **Global Tenant Directory (`g:tenants:all`)**:
@@ -387,7 +387,7 @@ This implementation provides:
 
 # Background Jobs Architecture (Resilience, Cron Scheduling & Fluent UI V5 Dashboard)
 
-BlazorFluent includes an ultra-lightweight, zero-dependency background batch job engine built natively on **System.Threading.Channels**, **Cronos**, and **EF Core**, avoiding the heavy database polling churn and licensing complexities of external job orchestrators.
+BlazorEnterprise includes an ultra-lightweight, zero-dependency background batch job engine built natively on **System.Threading.Channels**, **Cronos**, and **EF Core**, avoiding the heavy database polling churn and licensing complexities of external job orchestrators.
 
 ## 1. Architecture & Execution Flow
 
@@ -476,7 +476,7 @@ Located under **Administration > Background Jobs** in the navigation menu:
 
 ## Error Handling, Logging & Atomic Transactions
 
-BlazorFluent enforces end-to-end exception containment, structured audit tracking, and database transaction consistency:
+BlazorEnterprise enforces end-to-end exception containment, structured audit tracking, and database transaction consistency:
 
 ### 1. Blazor Circuit Error Boundary (`AppErrorBoundary`)
 - Wraps application content in `MainLayout.razor` to catch unhandled component rendering exceptions.
@@ -497,14 +497,14 @@ BlazorFluent enforces end-to-end exception containment, structured audit trackin
 - Returns a safe `Result.Failure("... Reference: ERR-XXXXXX")` to the calling page.
 
 ### 4. Structured Rolling File Logging (Serilog)
-- All exceptions are mirrored to rolling daily log files (`logs/blazorfluent-.log`) with structured placeholders and enriched tenant/user context.
+- All exceptions are mirrored to rolling daily log files (`logs/blazorenterprise-.log`) with structured placeholders and enriched tenant/user context.
 
 
 ------------------------------------------
 
 ## Persistence & Data Isolation (PostgreSQL + EF Core 10)
 
-BlazorFluent incorporates enterprise-grade persistence patterns inspired by FullStackHero:
+BlazorEnterprise incorporates enterprise-grade persistence patterns inspired by FullStackHero:
 
 - **Sequential UUIDv7**: All domain entities inherit from `BaseEntity` or `AuditableEntity` using native .NET 10 `Guid.CreateVersion7()`. Time-ordered sequential identifiers prevent B-Tree index page splitting in PostgreSQL.
 - **EF Core 10 Named Query Filters**:
@@ -548,7 +548,7 @@ Background batch jobs support in-process event chaining with zero external messa
 
  ## 12. Enterprise Identity: Login Flow, Active Sessions & Operator Impersonation
 
-BlazorFluent incorporates enterprise-grade identity protections adapted from FullStackHero (FSH) principles:
+BlazorEnterprise incorporates enterprise-grade identity protections adapted from FullStackHero (FSH) principles:
 
 - **Corporate Login Portal (`/login`)**: Pinned Privacy Notice & Monitoring Disclosure with a mandatory acknowledgment checkbox disabling "Sign in with Microsoft" until accepted.
 - **HMAC-SHA256 Row Integrity Seal**: Protects `UserEntity` dates (`StartDateUtc`, `EndDateUtc`) and active status from direct database tampering. If a DBA modifies dates directly in PostgreSQL, the signature fails closed, rejects login, and logs a security incident in `audit.AuditRecords`.
@@ -561,7 +561,7 @@ BlazorFluent incorporates enterprise-grade identity protections adapted from Ful
 
 ## 1. Goal Description
 
-This implementation plan provides a complete, production-ready enterprise authentication and identity lifecycle for BlazorFluent:
+This implementation plan provides a complete, production-ready enterprise authentication and identity lifecycle for BlazorEnterprise:
 
 1. **Dedicated Corporate Login Page (`/login`)**:
    - Branded Fluent UI V5 card layout.
@@ -653,7 +653,7 @@ sequenceDiagram
 | 1 | **Authentication** | Azure AD federated login, HMAC row-integrity seal on `UserEntity`, mandatory Privacy Notice agreement (`/login`). |
 | 2 | **Authorization** | Dual `DefaultPolicy` and `FallbackPolicy` requiring authenticated users, multi-tenant & project role gates (`ProjectRole`), and `PathAwareAuthorizationHandler`. |
 | 3 | **HTTPS & Transport** | Automatic HTTPS redirection, HSTS 30-day headers in production, and `ForwardedHeaders` (X-Forwarded-For, X-Forwarded-Proto) for cloud reverse proxies. |
-| 4 | **Input Validation** | Declarative `FluentValidation` validators in `BlazorFluent.Core.Validation`, auto-registered in DI and consumed in Razor components with `<FluentValidationValidator />`. |
+| 4 | **Input Validation** | Declarative `FluentValidation` validators in `BlazorEnterprise.Core.Validation`, auto-registered in DI and consumed in Razor components with `<FluentValidationValidator />`. |
 | 5 | **SQL Injection** | Parameterized queries enforced uniformly across EF Core 10 & PostgreSQL. Raw SQL string concatenation is prohibited. |
 | 6 | **CORS** | N/A for Blazor Server monolith; all UI state is negotiated via same-origin SignalR WebSockets. |
 | 7 | **CSRF / Anti-Forgery** | ASP.NET Core `app.UseAntiforgery()` enabled for form postbacks and circuit establishment. |
@@ -727,12 +727,12 @@ sequenceDiagram
 
 The application enforces a dual-layer validation pipeline to ensure rock-solid data integrity with zero developer ambiguity:
 
-1. **Tier 1: Page / Feature Form Validation** (`BlazorFluent.Core/Validation/<Module>/`)
+1. **Tier 1: Page / Feature Form Validation** (`BlazorEnterprise.Core/Validation/<Module>/`)
    - Validates user input commands and form Dtos.
    - Automatically integrated with Blazor `<EditForm>` and `<FluentValidationValidator />`.
    - Provides instant, field-level red error feedback as users type or submit, blocking navigation and server calls for invalid data.
 
-2. **Tier 2: Entity Invariant Shield** (`BlazorFluent.Core/Domain/<Module>/<Entity>Validator.cs`)
+2. **Tier 2: Entity Invariant Shield** (`BlazorEnterprise.Core/Domain/<Module>/<Entity>Validator.cs`)
    - Validates pure in-memory business invariants for domain entities before persistence.
    - Automatically executed by `EntityValidationInterceptor` during EF Core `SaveChangesAsync()`.
    - **The Single-Entity Rule**: Entity validators inspect *only their own properties* (never query the database or foreign entities).

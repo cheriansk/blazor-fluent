@@ -1,0 +1,22 @@
+.fluent-editor-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.fluent-editor-box {
+    min-height: 240px;
+    max-height: 500px;
+    background: var(--neutral-layer-1, #ffffff);
+    color: var(--neutral-foreground-rest, #242424);
+    border-radius: 4px;
+    overflow-y: auto;
+}
+
+.fluent-editor-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 4px 6px;
+    font-size: 11px;
+}

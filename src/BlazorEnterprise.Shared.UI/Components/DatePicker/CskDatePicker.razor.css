@@ -1,0 +1,79 @@
+.csk-date-field {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--csk-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    position: relative;
+    box-sizing: border-box;
+}
+
+.csk-field-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--csk-color-on-surface-variant, #49454f);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.csk-field-required {
+    color: var(--csk-color-error, #b3261e);
+}
+
+.csk-date-input-box {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    border: 1px solid var(--csk-color-outline, #79747e);
+    border-radius: var(--csk-shape-corner-small, 8px);
+    background: var(--csk-color-surface, #ffffff);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    padding: 0 12px;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.csk-date-input-box:focus-within {
+    border-color: var(--csk-color-primary, #005fb8);
+    box-shadow: 0 0 0 1px var(--csk-color-primary, #005fb8);
+}
+
+.csk-date-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--csk-color-on-surface, #1d1b20);
+    padding: 0;
+    margin: 0;
+    height: 100%;
+}
+
+.csk-date-calendar-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--csk-color-on-surface-variant, #49454f);
+    margin-left: 8px;
+    pointer-events: none;
+}
+
+.csk-field-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.csk-field-error .csk-date-input-box {
+    border-color: var(--csk-color-error, #b3261e);
+}
+
+.csk-field-helper {
+    font-size: 0.75rem;
+    color: var(--csk-color-on-surface-variant, #49454f);
+    padding: 0 4px;
+}
+
+.csk-field-helper-error {
+    color: var(--csk-color-error, #b3261e);
+}

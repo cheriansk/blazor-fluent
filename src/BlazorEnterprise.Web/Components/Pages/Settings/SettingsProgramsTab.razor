@@ -1,0 +1,571 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Calendar
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Domain.Tenancy
+
+
+@using BlazorEnterprise.Shared.UI.Components
+
+@implements IDisposable
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="full-width">
+        <div>
+            <CskLabel Typo="Typography.H4">Enterprise Programs</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint">
+                Manage multi-year programs, cross-project dependencies, program health roll-ups, and project scoping.
+            </CskLabel>
+        </div>
+        @if (_isTenantAdmin || CurrentUser.IsRootAdmin)
+        {
+            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@OpenCreateProgramModal">
+                Add Program
+            </CskButton>
+        }
+    </CskStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    <!-- Tenant Selection Toolbar -->
+    <CskCard Class="p-4">
+        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <CskSelect TOption="TenantFilterOption"
+                          TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelectedAsync"
+                          Disabled="@(_availableTenants.Count <= 1)"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant --"
+                          Class="min-w-300" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+            {
+                <CskButton Variant="CskButtonVariant.Text"
+                              IconStart="@CskIcons.ArrowSync"
+                              OnClick="@LoadProgramsAsync">
+                    Refresh
+                </CskButton>
+            }
+        </CskStack>
+    </CskCard>
+
+    @* Add / Edit Program Form Card *@
+    @if (_showProgramModal)
+    {
+        <CskCard Class="card-accent-border p-5">
+            <CskLabel Typo="Typography.H5" Class="mb-3">
+                @(_editingProgramId.HasValue ? $"Edit Program: {_programFormName}" : "Create New Program")
+            </CskLabel>
+
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+                    <CskTextInput Label="Program Code" @bind-Value="_programFormCode" Required="true" Class="flex-1" Placeholder="e.g. PRG-CORE" Disabled="@_editingProgramId.HasValue" />
+                    <CskTextInput Label="Program Name" @bind-Value="_programFormName" Required="true" Class="flex-2" Placeholder="e.g. Cloud Modernization Program" />
+                </CskStack>
+
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Description / Strategic Scope</CskLabel>
+                    <CskTextArea @bind-Value="_programFormDescription" Placeholder="Enter the high-level scope, strategic objectives, and milestones..." Rows="3" Class="full-width" />
+                </div>
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+                    <CskDatePicker Label="Start Date" @bind-Value="_programFormStartDate" Class="flex-1" />
+                    <CskDatePicker Label="Target Completion Date" @bind-Value="_programFormTargetEndDate" Class="flex-1" />
+                    <div class="flex-1">
+                        <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_programFormStatus" Class="full-width" />
+                    </div>
+                </CskStack>
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-2">
+                    <CskButton Variant="CskButtonVariant.Filled"
+                                  Disabled="@(!IsProgramFormValid)"
+                                  OnClick="@SaveProgramAsync">
+                        @(_editingProgramId.HasValue ? "Update Program" : "Create Program")
+                    </CskButton>
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseProgramModal">
+                        Cancel
+                    </CskButton>
+                </CskStack>
+            </CskStack>
+        </CskCard>
+    }
+
+    @* Programs DataGrid *@
+    <CskCard Class="p-5">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-4">
+            <div>
+                <CskLabel Typo="Typography.H5">Programs for &ldquo;@_selectedTenantName&rdquo;</CskLabel>
+                <CskLabel Typo="Typography.Body" Class="text-hint">
+                    Showing @_programs.Count program(s). Select a program to inspect health and manage member projects.
+                </CskLabel>
+            </div>
+            <CskTextInput Placeholder="Filter programs by name, code..."
+                             @bind-Value="_programSearchText"
+                             @bind-Value:after="StateHasChanged"
+                             Class="w-280">
+                <StartTemplate>
+                    <CskIcon Icon="@CskIcons.Search" />
+                </StartTemplate>
+            </CskTextInput>
+        </CskStack>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center p-5">
+                <CskSpinner Size="CskSpinnerSize.Medium" />
+            </div>
+        }
+        else if (_programs.Count == 0)
+        {
+            <div class="text-center p-5 text-hint">
+                <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-xl" />
+                <div class="mt-2 font-weight-600">No programs found for this tenant or your assigned roles.</div>
+            </div>
+        }
+        else
+        {
+            <CskDataGrid Items="@FilteredPrograms" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 100px 220px">
+                <CskPropertyColumn Property="@(p => p.Code)" Title="Code" Sortable="true" />
+                <CskPropertyColumn Property="@(p => p.Name)" Title="Program Name" Sortable="true" />
+                <CskTemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
+                    @switch (context.Status)
+                    {
+                        case ProgramStatusEnum.Active:
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</CskBadge>
+                            break;
+                        case ProgramStatusEnum.Planning:
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">Planning</CskBadge>
+                            break;
+                        case ProgramStatusEnum.AtRisk:
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">At Risk</CskBadge>
+                            break;
+                        case ProgramStatusEnum.OnHold:
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">On Hold</CskBadge>
+                            break;
+                        case ProgramStatusEnum.Completed:
+                            <CskBadge Appearance="BadgeAppearance.Tint">Completed</CskBadge>
+                            break;
+                    }
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Timeline" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.StartDate))">
+                    <span class="font-size-sm">
+                        @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
+                    </span>
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Projects">
+                    <CskBadge Appearance="BadgeAppearance.Tint">@context.Projects.Count</CskBadge>
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Actions">
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                        <CskButton Appearance="@(_selectedProgram?.Id == context.Id ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                      Size="CskButtonSize.Small"
+                                      IconStart="@CskIcons.Checkmark"
+                                      OnClick="@(() => SelectProgramAsync(context))">
+                            @(_selectedProgram?.Id == context.Id ? "Selected" : "Select")
+                        </CskButton>
+                        @if (_isTenantAdmin || CurrentUser.IsRootAdmin || _programAdminIds.Contains(context.Id))
+                        {
+                            <CskButton Variant="CskButtonVariant.Text"
+                                          Size="CskButtonSize.Small"
+                                          IconStart="@CskIcons.Edit"
+                                          OnClick="@(() => OpenEditProgramModal(context))">
+                                Edit
+                            </CskButton>
+                        }
+                        <EntityHistoryButton EntityName="ProgramEntity" EntityId="@context.Id.ToString()" Tooltip="View program history" />
+                    </CskStack>
+                </CskTemplateColumn>
+            </CskDataGrid>
+        }
+    </CskCard>
+
+    @* Selected Program Workspace Panel *@
+    @if (_selectedProgram is not null)
+    {
+        <CskCard Class="card-accent-border p-5">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-4">
+                <div>
+                    <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                        <CskLabel Typo="Typography.H5">@_selectedProgram.Name</CskLabel>
+                        <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">@_selectedProgram.Code</CskBadge>
+                        <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">@_selectedProgram.Status</CskBadge>
+                    </CskStack>
+                    <div class="font-size-sm text-hint mt-1">
+                        ID: <code>@_selectedProgram.Id</code> &bull; Tenant: <code>@_selectedProgram.TenantId</code>
+                    </div>
+                </div>
+                <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@(() => _selectedProgram = null)">
+                    Close Panel
+                </CskButton>
+            </CskStack>
+
+            <CskTabs @bind-ActiveTabId="_activeProgramTab">
+                <!-- Tab 1: Health & Cross-Project Dependencies -->
+                <CskTab Id="tab-health">
+                    <HeaderTemplate>
+                        <CskIcon Icon="@CskIcons.LightbulbPulse" Class="me-2" />
+                        Health & Roll-Up
+                    </HeaderTemplate>
+                    <Content>
+                    <div class="pt-4">
+                        @if (_isLoadingHealth)
+                        {
+                            <CskSpinner Size="CskSpinnerSize.Small" />
+                        }
+                        else if (_healthSummary is not null)
+                        {
+                            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+                                <!-- Health KPI Cards -->
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Wrap="true">
+                                    <CskCard Class="flex-1 min-w-180 p-3">
+                                        <div class="font-size-sm text-hint">Overall Health</div>
+                                        <div class="mt-1">
+                                            @switch (_healthSummary.Health)
+                                            {
+                                                case ProgramHealthRatingEnum.OnTrack:
+                                                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success" Class="font-size-sm p-1">🟢 Healthy (On Track)</CskBadge>
+                                                    break;
+                                                case ProgramHealthRatingEnum.AtRisk:
+                                                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Class="font-size-sm p-1">🟡 At Risk</CskBadge>
+                                                    break;
+                                                case ProgramHealthRatingEnum.Critical:
+                                                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger" Class="font-size-sm p-1">🔴 Critical</CskBadge>
+                                                    break;
+                                            }
+                                        </div>
+                                    </CskCard>
+
+                                    <CskCard Class="flex-1 min-w-140 p-3">
+                                        <div class="font-size-sm text-hint">Member Projects</div>
+                                        <div class="metric-kpi-val mt-1">
+                                            @_healthSummary.ActiveProjects / @_healthSummary.TotalProjects
+                                        </div>
+                                    </CskCard>
+
+                                    <CskCard Class="flex-1 min-w-140 p-3">
+                                        <div class="font-size-sm text-hint">Overdue Tasks</div>
+                                        <div class="@(_healthSummary.OverdueTasks > 0 ? "metric-kpi-val mt-1 text-danger" : "metric-kpi-val mt-1")">
+                                            @_healthSummary.OverdueTasks
+                                        </div>
+                                    </CskCard>
+
+                                    <CskCard Class="flex-1 min-w-180 p-3">
+                                        <div class="font-size-sm text-hint">Cross-Project Blockers</div>
+                                        <div class="@(_healthSummary.CrossProjectBlockersCount > 0 ? "metric-kpi-val mt-1 text-danger" : "metric-kpi-val mt-1")">
+                                            @_healthSummary.CrossProjectBlockersCount
+                                        </div>
+                                    </CskCard>
+                                </CskStack>
+
+                                <!-- Cross-Project Dependencies Breakdown -->
+                                <CskLabel Typo="Typography.H6" Class="mt-2">Cross-Project Dependencies</CskLabel>
+                                @if (_healthSummary.CrossProjectDependencies.Count == 0)
+                                {
+                                    <div class="text-hint font-size-sm">
+                                        No cross-project dependencies detected between member projects.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <CskDataGrid Items="@_healthSummary.CrossProjectDependencies.AsQueryable()" ResizableColumns="true">
+                                        <CskTemplateColumn Title="Blocked Task">
+                                            <strong>@context.SourceTaskTitle</strong>
+                                            <span class="font-size-xs text-hint d-block">in @context.SourceProjectName</span>
+                                        </CskTemplateColumn>
+                                        <CskPropertyColumn Property="@(d => d.DependencyType)" Title="Relation" />
+                                        <CskTemplateColumn Title="Depends On (Blocker)">
+                                            <strong>@context.TargetTaskTitle</strong>
+                                            <span class="font-size-xs text-hint d-block">in @context.TargetProjectName</span>
+                                        </CskTemplateColumn>
+                                        <CskTemplateColumn Title="Blocker Status">
+                                            @if (context.IsResolved)
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Resolved</CskBadge>
+                                            }
+                                            else
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">Blocking</CskBadge>
+                                            }
+                                        </CskTemplateColumn>
+                                    </CskDataGrid>
+                                }
+                            </CskStack>
+                        }
+                    </div>
+                    </Content>
+                </CskTab>
+
+                <!-- Tab 2: Projects in this Program -->
+                <CskTab Id="tab-projects">
+                    <HeaderTemplate>
+                        <CskIcon Icon="@CskIcons.BuildingMultiple" Class="me-2" />
+                        Projects in Program
+                    </HeaderTemplate>
+                    <Content>
+                    <div class="pt-4">
+                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+                            <CskLabel Typo="Typography.H6">Member Projects (@_programProjects.Count)</CskLabel>
+                            @if (_canManageSelectedProgramProjects)
+                            {
+                                <CskButton Variant="CskButtonVariant.Filled"
+                                              Size="CskButtonSize.Small"
+                                              IconStart="@CskIcons.Add"
+                                              OnClick="@OpenAddProjectModal">
+                                    Add Project to Program
+                                </CskButton>
+                            }
+                        </CskStack>
+
+                        @* Add Project Sub-Card *@
+                        @if (_showAddProjectModal)
+                        {
+                            <CskCard Class="mb-4 p-4">
+                                <CskLabel Typo="Typography.H6" Class="mb-3">
+                                    Add Project to Program: @_selectedProgram.Name
+                                </CskLabel>
+                                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                        <CskTextInput Label="Project Name" @bind-Value="_projName" Required="true" Class="flex-2" Placeholder="e.g. Identity Architecture Modernization" />
+                                        <CskTextInput Label="Short Code" @bind-Value="_projShortCode" Required="true" Class="flex-1" Placeholder="e.g. IAM-01" />
+                                    </CskStack>
+
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                        <CskTextInput Label="Location" @bind-Value="_projLocation" Class="flex-2" Placeholder="e.g. Headquarters / Remote" />
+                                        <div class="flex-1">
+                                            <DataListSelect TEnum="ProjectStatusEnum" TValue="ProjectStatusEnum" Label="Status" @bind-Value="_projStatus" Class="full-width" />
+                                        </div>
+                                    </CskStack>
+
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16">
+                                        <CskDatePicker Label="Tentative Start Date" @bind-Value="_projStartDate" />
+                                        <CskDatePicker Label="Tentative End Date" @bind-Value="_projEndDate" />
+                                    </CskStack>
+
+                                    <div>
+                                        <CskLabel Typo="Typography.Body" Class="mb-1">Summary of Scope of Project</CskLabel>
+                                        <CskTextArea @bind-Value="_projScopeSummary" Placeholder="Brief summary of project scope, deliverables, and goals..." Rows="3" Class="full-width" />
+                                    </div>
+
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-2">
+                                        <CskButton Variant="CskButtonVariant.Filled"
+                                                      Disabled="@(!IsProjectFormValid)"
+                                                      OnClick="@CreateProgramProjectAsync">
+                                            Save Project
+                                        </CskButton>
+                                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseProjectModal">
+                                            Cancel
+                                        </CskButton>
+                                    </CskStack>
+                                </CskStack>
+                            </CskCard>
+                        }
+
+                        @if (_isLoadingProjects)
+                        {
+                            <CskSpinner Size="CskSpinnerSize.Small" />
+                        }
+                        else if (_programProjects.Count == 0)
+                        {
+                            <div class="text-hint font-size-sm p-4">
+                                No projects currently assigned to this program. Click &ldquo;Add Project to Program&rdquo; to create a project workspace.
+                            </div>
+                        }
+                        else
+                        {
+                            <CskDataGrid Items="@_programProjects.AsQueryable()" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 180px">
+                                <CskPropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
+                                <CskPropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+                                <CskTemplateColumn Title="Status">
+                                    @switch (context.Status)
+                                    {
+                                        case ProjectStatusEnum.Active:
+                                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</CskBadge>
+                                            break;
+                                        case ProjectStatusEnum.New:
+                                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</CskBadge>
+                                            break;
+                                        case ProjectStatusEnum.OnHold:
+                                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</CskBadge>
+                                            break;
+                                        case ProjectStatusEnum.Done:
+                                            <CskBadge Appearance="BadgeAppearance.Tint">Done</CskBadge>
+                                            break;
+                                    }
+                                </CskTemplateColumn>
+                                <CskTemplateColumn Title="Timeline">
+                                    <span class="font-size-sm">
+                                        @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
+                                    </span>
+                                </CskTemplateColumn>
+                                <CskTemplateColumn Title="Actions">
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                        <CskLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")" Class="font-size-sm">
+                                            Tasks
+                                        </CskLink>
+                                        <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
+                                    </CskStack>
+                                </CskTemplateColumn>
+                            </CskDataGrid>
+                        }
+                    </div>
+                    </Content>
+                </CskTab>
+
+                <!-- Tab 3: Program Calendar & Deadlines -->
+                <CskTab Id="tab-calendar">
+                    <HeaderTemplate>
+                        <CskIcon Icon="@CskIcons.Calendar" Class="me-2" />
+                        Calendar & Deadlines
+                    </HeaderTemplate>
+                    <Content>
+                    <div class="pt-4">
+                        @if (_isLoadingCalendar)
+                        {
+                            <CskSpinner Size="CskSpinnerSize.Small" />
+                        }
+                        else
+                        {
+                            <FluentCalendarScheduleComp Items="@_programCalendarItems"
+                                                        @bind-SelectedDate="_selectedCalendarDate"
+                                                        ReadOnly="@(!_canManageSelectedProgramProjects)"
+                                                        OnAddEntry="@OpenAddProgramCalendarModal" />
+                        }
+                    </div>
+                    </Content>
+                </CskTab>
+
+                <!-- Tab 4: Program R.A.I.D. Log -->
+                <CskTab Id="tab-raid">
+                    <HeaderTemplate>
+                        <CskIcon Icon="@CskIcons.ShieldTask" Class="me-2" />
+                        Program R.A.I.D. Log
+                    </HeaderTemplate>
+                    <Content>
+                    <div class="pt-4">
+                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+                            <CskRadioGroup @bind-Value="_selectedRaidCategory">
+                                <CskRadio Value="@("Risks")">Risks (R: @_programRisks.Count)</CskRadio>
+                                <CskRadio Value="@("Assumptions")">Assumptions (A: @_programAssumptions.Count)</CskRadio>
+                                <CskRadio Value="@("Issues")">Issues (I: @_programIssues.Count)</CskRadio>
+                                <CskRadio Value="@("Blockers")">Blocker Dependencies (D: @_programBlockers.Count)</CskRadio>
+                            </CskRadioGroup>
+
+                            @if (_selectedRaidCategory == "Risks")
+                            {
+                                @if (_programRisks.Count == 0)
+                                {
+                                    <div class="text-hint font-size-sm">No program risks logged.</div>
+                                }
+                                else
+                                {
+                                    <CskDataGrid Items="@_programRisks.AsQueryable()" ResizableColumns="true">
+                                        <CskPropertyColumn Property="@(r => r.Title)" Title="Risk Title" />
+                                        <CskPropertyColumn Property="@(r => r.Impact)" Title="Impact" />
+                                        <CskPropertyColumn Property="@(r => r.Probability)" Title="Probability" />
+                                        <CskTemplateColumn Title="Exposure">
+                                            <CskBadge Appearance="BadgeAppearance.Filled" Color="@(context.ExposureScore >= 6 ? BadgeColor.Danger : BadgeColor.Warning)">
+                                                Score: @context.ExposureScore
+                                            </CskBadge>
+                                        </CskTemplateColumn>
+                                        <CskPropertyColumn Property="@(r => r.RiskStatus)" Title="Status" />
+                                        <CskTemplateColumn Title="Target Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </CskTemplateColumn>
+                                    </CskDataGrid>
+                                }
+                            }
+                            else if (_selectedRaidCategory == "Assumptions")
+                            {
+                                @if (_programAssumptions.Count == 0)
+                                {
+                                    <div class="text-hint font-size-sm">No program assumptions logged.</div>
+                                }
+                                else
+                                {
+                                    <CskDataGrid Items="@_programAssumptions.AsQueryable()" ResizableColumns="true">
+                                        <CskPropertyColumn Property="@(a => a.Title)" Title="Assumption" />
+                                        <CskPropertyColumn Property="@(a => a.ValidationCriteria)" Title="Validation Criteria" />
+                                        <CskPropertyColumn Property="@(a => a.ValidationStatus)" Title="Status" />
+                                        <CskPropertyColumn Property="@(a => a.ImpactIfInvalid)" Title="Impact if Invalid" />
+                                        <CskTemplateColumn Title="Validation Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </CskTemplateColumn>
+                                    </CskDataGrid>
+                                }
+                            }
+                            else if (_selectedRaidCategory == "Issues")
+                            {
+                                @if (_programIssues.Count == 0)
+                                {
+                                    <div class="text-hint font-size-sm">No active program impediments logged.</div>
+                                }
+                                else
+                                {
+                                    <CskDataGrid Items="@_programIssues.AsQueryable()" ResizableColumns="true">
+                                        <CskPropertyColumn Property="@(i => i.Title)" Title="Issue Title" />
+                                        <CskPropertyColumn Property="@(i => i.Severity)" Title="Severity" />
+                                        <CskPropertyColumn Property="@(i => i.Status)" Title="Status" />
+                                        <CskPropertyColumn Property="@(i => i.Workaround)" Title="Workaround" />
+                                        <CskPropertyColumn Property="@(i => i.ResolutionStrategy)" Title="Resolution" />
+                                        <CskTemplateColumn Title="Resolution Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </CskTemplateColumn>
+                                    </CskDataGrid>
+                                }
+                            }
+                            else if (_selectedRaidCategory == "Blockers")
+                            {
+                                @if (_programBlockers.Count == 0)
+                                {
+                                    <div class="text-hint font-size-sm">No blocker dependency contracts logged.</div>
+                                }
+                                else
+                                {
+                                    <CskDataGrid Items="@_programBlockers.AsQueryable()" ResizableColumns="true">
+                                        <CskTemplateColumn Title="Dependent Item (Blocked)">
+                                            <strong>@context.Title</strong>
+                                        </CskTemplateColumn>
+                                        <CskTemplateColumn Title="Prerequisite Item (Blocking)">
+                                            <strong>@(context.DependsOnSnapshotTitle ?? "Prerequisite Item")</strong>
+                                            @if (context.IsScheduleConflict)
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning" Class="ml-2">Schedule Conflict</CskBadge>
+                                            }
+                                        </CskTemplateColumn>
+                                        <CskPropertyColumn Property="@(b => b.Criticality)" Title="Criticality" />
+                                        <CskTemplateColumn Title="Status">
+                                            @if (context.IsResolved)
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Resolved</CskBadge>
+                                            }
+                                            else
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Danger">Blocking</CskBadge>
+                                            }
+                                        </CskTemplateColumn>
+                                        <CskPropertyColumn Property="@(b => b.ImpactDetails)" Title="Impact Details" />
+                                        <CskTemplateColumn Title="SLA Resolve Due Date">
+                                            @TimeZoneService.FormatDate(context.DueDate)
+                                        </CskTemplateColumn>
+                                    </CskDataGrid>
+                                }
+                            }
+                        </CskStack>
+                    </div>
+                    </Content>
+                </CskTab>
+            </CskTabs>
+        </CskCard>
+    }
+</CskStack>

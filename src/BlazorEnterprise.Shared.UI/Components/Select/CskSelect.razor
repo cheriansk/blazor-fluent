@@ -1,0 +1,71 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+@typeparam TOption
+@typeparam TValue
+
+<div class="csk-select-field @(HasError ? "csk-field-error" : "") @(Disabled ? "csk-field-disabled" : "") @(_isFocused ? "csk-field-focused" : "") @Class"
+     @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="csk-field-label">
+            @Label
+            @if (Required)
+            {
+                <span class="csk-field-required">*</span>
+            }
+        </label>
+    }
+
+    <div class="csk-select-box">
+        <select id="@Id"
+                disabled="@Disabled"
+                required="@Required"
+                class="csk-select-native"
+                value="@CurrentStringValue"
+                @onchange="HandleChangeAsync"
+                @onfocus="HandleFocus"
+                @onblur="HandleBlur">
+            @if (!string.IsNullOrEmpty(Placeholder))
+            {
+                <option value="" disabled="@IsPlaceholderDisabled" selected="@IsPlaceholderSelected">
+                    @Placeholder
+                </option>
+            }
+
+            @if (Items is not null)
+            {
+                @foreach (var item in Items)
+                {
+                    var text = OptionText != null ? OptionText(item) : item?.ToString();
+                    var val = OptionValue != null ? OptionValue(item)?.ToString() : item?.ToString();
+                    var isDis = OptionDisabled != null && OptionDisabled(item);
+                    var isSelected = IsItemValueSelected(val);
+                    <option value="@val" disabled="@isDis" selected="@isSelected">
+                        @text
+                    </option>
+                }
+            }
+
+            <CascadingValue Value="this" IsFixed="true">
+                @ChildContent
+            </CascadingValue>
+        </select>
+        <span class="csk-select-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M7 10l5 5 5-5z" />
+            </svg>
+        </span>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorText))
+    {
+        <div class="csk-field-helper csk-field-helper-error">
+            @ErrorText
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(HelperText))
+    {
+        <div class="csk-field-helper">
+            @HelperText
+        </div>
+    }
+</div>

@@ -1,0 +1,138 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="w-full">
+        <div>
+            <CskLabel Typo="Typography.H3">User Preferences</CskLabel>
+            <CskLabel Typo="Typography.Body">Manage personal settings, application timezone, and display preferences.</CskLabel>
+        </div>
+    </CskStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    <!-- Timezone Configuration Card -->
+    <CskCard Class="card-padded">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                <CskIcon Icon="@CskIcons.Globe" Class="csk-icon-lg" />
+                <div>
+                    <CskLabel Typo="Typography.H4">Application Timezone</CskLabel>
+                    <CskLabel Typo="Typography.Body" Class="text-hint">
+                        All dates, timestamps, session logs, and audit trails across BlazorEnterprise are formatted using this timezone.
+                    </CskLabel>
+                </div>
+            </CskStack>
+
+            <CskDivider Class="divider-spaced" />
+
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Bottom" HorizontalGap="16" Wrap="true">
+                <div class="tz-select-wrapper">
+                    <CskSelect TOption="TimeZoneInfo"
+                                  TValue="string"
+                                  Items="@_availableTimeZones"
+                                  OptionValue="@(tz => tz.Id)"
+                                  OptionText="@(tz => tz.DisplayName)"
+                                  Value="@_selectedTimeZoneId"
+                                  ValueChanged="@OnTimeZoneChanged"
+                                  Label="Select Timezone"
+                                  Class="w-full" />
+                </div>
+
+                <CskButton Variant="CskButtonVariant.Filled"
+                           IconStart="@CskIcons.Save"
+                           OnClick="@SaveTimeZoneAsync"
+                           Disabled="@(!_hasUnsavedChanges || _saving)"
+                           Loading="@_saving">
+                    Save Timezone
+                </CskButton>
+
+                <CskButton Variant="CskButtonVariant.Outlined"
+                           OnClick="@ResetToUtcAsync"
+                           Disabled="@(_selectedTimeZoneId == "UTC" && !_hasUnsavedChanges)">
+                    Reset to UTC
+                </CskButton>
+            </CskStack>
+
+            <!-- Live Clock & Preview Card -->
+            <div class="clock-preview-card">
+                <CskLabel Typo="Typography.Body" Class="clock-title">
+                    🕒 Timezone Live Preview
+                </CskLabel>
+                <CskGrid Spacing="2" Class="w-full">
+                    <CskGridItem xs="12" sm="6" md="4">
+                        <div class="clock-label">Your Local Time</div>
+                        <div class="clock-value-local">
+                            @_previewLocalTime
+                        </div>
+                    </CskGridItem>
+                    <CskGridItem xs="12" sm="6" md="4">
+                        <div class="clock-label">UTC Equivalent</div>
+                        <div class="clock-value-utc">
+                            @_previewUtcTime
+                        </div>
+                    </CskGridItem>
+                    <CskGridItem xs="12" sm="12" md="4">
+                        <div class="clock-label">Standard Name &amp; Offset</div>
+                        <div class="clock-value-offset">
+                            @_previewZoneDetails
+                        </div>
+                    </CskGridItem>
+                </CskGrid>
+            </div>
+        </CskStack>
+    </CskCard>
+
+    <!-- User Identity & Account Metadata Card -->
+    <CskCard Class="card-padded">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                <CskIcon Icon="@CskIcons.Person" Class="csk-icon-lg" />
+                <div>
+                    <CskLabel Typo="Typography.H4">Account Profile</CskLabel>
+                    <CskLabel Typo="Typography.Body" Class="text-hint">
+                        Your identity details sourced from identity claims and user session.
+                    </CskLabel>
+                </div>
+            </CskStack>
+
+            <CskDivider Class="divider-spaced" />
+
+            <CskGrid Spacing="3" Class="w-full">
+                <CskGridItem xs="12" sm="6" md="3">
+                    <div class="user-field-label">Email Address</div>
+                    <div class="user-field-value">@(string.IsNullOrWhiteSpace(CurrentUser.Email) ? "—" : CurrentUser.Email)</div>
+                </CskGridItem>
+                <CskGridItem xs="12" sm="6" md="3">
+                    <div class="user-field-label">Display Name</div>
+                    <div class="user-field-value">@(string.IsNullOrWhiteSpace(CurrentUser.UserName) ? "—" : CurrentUser.UserName)</div>
+                </CskGridItem>
+                <CskGridItem xs="12" sm="6" md="3">
+                    <div class="user-field-label">Privilege Level</div>
+                    <div class="mt-1">
+                        @if (CurrentUser.IsRootAdmin)
+                        {
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">Root Admin</CskBadge>
+                        }
+                        else
+                        {
+                            <CskBadge Appearance="BadgeAppearance.Filled">Standard User</CskBadge>
+                        }
+                    </div>
+                </CskGridItem>
+                <CskGridItem xs="12" sm="6" md="3">
+                    <div class="user-field-label">Account ID</div>
+                    <div class="user-field-id">
+                        @(string.IsNullOrWhiteSpace(CurrentUser.UserId) ? "—" : CurrentUser.UserId)
+                    </div>
+                </CskGridItem>
+            </CskGrid>
+        </CskStack>
+    </CskCard>
+</CskStack>

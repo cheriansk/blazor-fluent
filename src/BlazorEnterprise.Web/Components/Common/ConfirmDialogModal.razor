@@ -1,0 +1,65 @@
+﻿@* Reusable confirmation dialog for destructive actions (Revoke, Delete, Impersonate, etc.) *@
+<CskDialog @ref="_dialog"
+              Modal="true"
+              Class="dialog-confirm-width">
+    <CskDialogBody>
+        <TitleTemplate>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning csk-icon-lg" />
+                <CskLabel Typo="Typography.H6">@Title</CskLabel>
+            </CskStack>
+        </TitleTemplate>
+        <ChildContent>
+            <CskLabel Typo="Typography.Body">@Message</CskLabel>
+        </ChildContent>
+        <ActionTemplate>
+            <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelAsync">Cancel</CskButton>
+            <CskButton Variant="CskButtonVariant.Filled"
+                          Class="btn-confirm-danger"
+                          OnClick="@ConfirmAsync">
+                @ConfirmLabel
+            </CskButton>
+        </ActionTemplate>
+    </CskDialogBody>
+</CskDialog>
+
+@code {
+    private CskDialog? _dialog;
+
+    [Parameter, EditorRequired] public string Title { get; set; } = "Are you sure?";
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public string ConfirmLabel { get; set; } = "Confirm";
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+
+    public async Task ShowAsync()
+    {
+        if (_dialog is not null)
+        {
+            await _dialog.ShowAsync();
+        }
+    }
+
+    public void Show()
+    {
+        _ = ShowAsync();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (_dialog is not null)
+        {
+            await _dialog.HideAsync();
+        }
+        await OnConfirmed.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_dialog is not null)
+        {
+            await _dialog.HideAsync();
+        }
+        await OnCancelled.InvokeAsync();
+    }
+}

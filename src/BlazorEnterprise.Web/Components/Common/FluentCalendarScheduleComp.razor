@@ -1,0 +1,317 @@
+﻿@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="calendar-schedule-container">
+    <!-- Schedule Control Toolbar -->
+    <div class="schedule-toolbar">
+        <div class="toolbar-nav-group">
+            <CskButton Variant="CskButtonVariant.Text" 
+                          IconStart="@CskIcons.ChevronLeft" 
+                          OnClick="NavigatePrevMonth" 
+                          Title="Previous Month" />
+            <span class="month-title">@_currentMonth.ToString("MMMM yyyy")</span>
+            <CskButton Variant="CskButtonVariant.Text" 
+                          IconStart="@CskIcons.ChevronRight" 
+                          OnClick="NavigateNextMonth" 
+                          Title="Next Month" />
+            <CskButton Variant="CskButtonVariant.Outlined" Size="CskButtonSize.Small" OnClick="NavigateToday">
+                Today
+            </CskButton>
+        </div>
+
+        <div class="toolbar-filter-group">
+            <CskRadioGroup @bind-Value="_currentView" AriaLabel="Calendar View Mode">
+                <CskRadio Value="@("Month")">Month</CskRadio>
+                <CskRadio Value="@("Agenda")">Agenda</CskRadio>
+                <CskRadio Value="@("Overdue")">Overdue (@OverdueCount)</CskRadio>
+            </CskRadioGroup>
+
+            <CskSelect TOption="string" TValue="string" @bind-Value="_categoryFilter" Class="category-filter-select">
+                <CskOption Value="@("All")">All Categories</CskOption>
+                <CskOption Value="@("Task")">Tasks</CskOption>
+                <CskOption Value="@("SubTask")">SubTasks</CskOption>
+                <CskOption Value="@("Risk")">Risks</CskOption>
+                <CskOption Value="@("Assumption")">Assumptions</CskOption>
+                <CskOption Value="@("Issue")">Issues</CskOption>
+                <CskOption Value="@("Blocker")">Blockers</CskOption>
+                <CskOption Value="@("Event")">Events</CskOption>
+            </CskSelect>
+
+            @if (!ReadOnly)
+            {
+                <CskButton Variant="CskButtonVariant.Filled" 
+                              IconStart="@CskIcons.Add" 
+                              OnClick="() => OnAddEntry.InvokeAsync(SelectedDate)">
+                    New Event
+                </CskButton>
+            }
+        </div>
+    </div>
+
+    @if (_currentView == "Month")
+    {
+        <!-- Month View Grid -->
+        <div class="month-grid">
+            <div class="grid-header-row">
+                <div class="header-day">Sun</div>
+                <div class="header-day">Mon</div>
+                <div class="header-day">Tue</div>
+                <div class="header-day">Wed</div>
+                <div class="header-day">Thu</div>
+                <div class="header-day">Fri</div>
+                <div class="header-day">Sat</div>
+            </div>
+
+            <div class="grid-days">
+                @foreach (var day in GetCalendarDays())
+                {
+                    var isCurrentMonth = day.Month == _currentMonth.Month;
+                    var isToday = day.Date == DateTime.UtcNow.Date;
+                    var isSelected = day.Date == SelectedDate.Date;
+                    var dayItems = GetItemsForDate(day);
+                    var hasBlocker = dayItems.Any(i => i.ItemCategory == "Blocker");
+                    var hasOverdue = dayItems.Any(i => i.IsOverdue);
+
+                    <div class="calendar-day-cell @(isCurrentMonth ? "" : "other-month") @(isToday ? "today" : "") @(isSelected ? "selected" : "")"
+                         @onclick="() => SelectDate(day)">
+                        <div class="day-cell-header">
+                            <span class="day-number">@day.Day</span>
+                            @if (hasBlocker)
+                            {
+                                <span class="blocker-dot" title="Critical Blocker deadline">🛑</span>
+                            }
+                            else if (hasOverdue)
+                            {
+                                <span class="overdue-dot" title="Overdue item">⚠️</span>
+                            }
+                        </div>
+
+                        <div class="day-cell-items">
+                            @foreach (var item in dayItems.Take(3))
+                            {
+                                <div class="cell-item-chip @GetCategoryClass(item.ItemCategory)"
+                                     @onclick:stopPropagation="true"
+                                     @onclick="() => OnItemClick.InvokeAsync(item)"
+                                     title="@item.Title (@item.ItemCategory)">
+                                    <span class="chip-text">@item.Title</span>
+                                </div>
+                            }
+                            @if (dayItems.Count > 3)
+                            {
+                                <div class="cell-more-badge">+@(dayItems.Count - 3) more</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Selected Date Details Panel -->
+        <div class="selected-day-panel">
+            <div class="panel-header">
+                <h4>Schedule for @SelectedDate.ToString("dddd, MMMM d, yyyy")</h4>
+                <CskBadge Appearance="BadgeAppearance.Outline">@GetItemsForDate(SelectedDate).Count items</CskBadge>
+            </div>
+
+            <div class="panel-items-list">
+                @if (GetItemsForDate(SelectedDate).Count == 0)
+                {
+                    <p class="empty-hint">No work item deadlines or calendar events scheduled for this date.</p>
+                }
+                else
+                {
+                    @foreach (var item in GetItemsForDate(SelectedDate))
+                    {
+                        <div class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                            <div class="card-indicator @GetCategoryClass(item.ItemCategory)"></div>
+                            <div class="card-content">
+                                <div class="card-title-row">
+                                    <span class="card-title">@item.Title</span>
+                                    <span class="category-badge @GetCategoryClass(item.ItemCategory)">
+                                        @item.ItemCategory
+                                    </span>
+                                </div>
+                                <div class="card-meta-row">
+                                    <span>Status: <strong>@item.Status</strong></span>
+                                    <span>Priority: <strong>@item.PriorityOrCriticality</strong></span>
+                                    @if (!string.IsNullOrWhiteSpace(item.OwnerOrAssignee))
+                                    {
+                                        <span>Assignee: @item.OwnerOrAssignee</span>
+                                    }
+                                    @if (item.IsOverdue)
+                                    {
+                                        <span class="overdue-tag">⚠️ Overdue</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <div class="card-desc">@item.Description</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else if (_currentView == "Agenda")
+    {
+        <!-- Agenda List View -->
+        <div class="agenda-view">
+            @if (FilteredItems.Count == 0)
+            {
+                <div class="empty-state">No scheduled items found in the current window.</div>
+            }
+            else
+            {
+                @foreach (var group in FilteredItems.GroupBy(i => i.StartUtc.Date).OrderBy(g => g.Key))
+                {
+                    <div class="agenda-date-group">
+                        <div class="agenda-date-header">
+                            <span class="agenda-date-title">@group.Key.ToString("dddd, MMMM d, yyyy")</span>
+                            <span class="agenda-date-count">@group.Count() items</span>
+                        </div>
+                        <div class="agenda-items-list">
+                            @foreach (var item in group)
+                            {
+                                <div class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                                    <div class="card-indicator @GetCategoryClass(item.ItemCategory)"></div>
+                                    <div class="card-content">
+                                        <div class="card-title-row">
+                                            <span class="card-title">@item.Title</span>
+                                            <span class="category-badge @GetCategoryClass(item.ItemCategory)">
+                                                @item.ItemCategory
+                                            </span>
+                                        </div>
+                                        <div class="card-meta-row">
+                                            <span>Status: <strong>@item.Status</strong></span>
+                                            <span>Priority: <strong>@item.PriorityOrCriticality</strong></span>
+                                            @if (!string.IsNullOrWhiteSpace(item.OwnerOrAssignee))
+                                            {
+                                                <span>Assignee: @item.OwnerOrAssignee</span>
+                                            }
+                                            @if (item.IsOverdue)
+                                            {
+                                                <span class="overdue-tag">⚠️ Overdue</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+    else if (_currentView == "Overdue")
+    {
+        <!-- Overdue Critical Items View -->
+        <div class="overdue-view">
+            @if (OverdueItems.Count == 0)
+            {
+                <div class="empty-state">🎉 Great job! No work items or blocker contracts are currently overdue.</div>
+            }
+            else
+            {
+                <div class="overdue-warning-banner">
+                    ⚠️ The following items have passed their target SLA due dates and require immediate intervention:
+                </div>
+                <div class="agenda-items-list">
+                    @foreach (var item in OverdueItems.OrderBy(i => i.EndUtc))
+                    {
+                        <div class="schedule-item-card overdue-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                            <div class="card-indicator cat-blocker"></div>
+                            <div class="card-content">
+                                <div class="card-title-row">
+                                    <span class="card-title">@item.Title</span>
+                                    <span class="category-badge cat-blocker">
+                                        @item.ItemCategory (Due @item.EndUtc.ToString("yyyy-MM-dd"))
+                                    </span>
+                                </div>
+                                <div class="card-meta-row">
+                                    <span>Status: <strong>@item.Status</strong></span>
+                                    <span>Priority: <strong>@item.PriorityOrCriticality</strong></span>
+                                    @if (!string.IsNullOrWhiteSpace(item.OwnerOrAssignee))
+                                    {
+                                        <span>Assignee: @item.OwnerOrAssignee</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <div class="card-desc">@item.Description</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<CalendarItemDto> Items { get; set; } = [];
+    [Parameter] public DateTime SelectedDate { get; set; } = DateTime.UtcNow.Date;
+    [Parameter] public EventCallback<DateTime> SelectedDateChanged { get; set; }
+    [Parameter] public EventCallback<CalendarItemDto> OnItemClick { get; set; }
+    [Parameter] public EventCallback<DateTime> OnAddEntry { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+
+    private DateTime _currentMonth = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+    private string _currentView = "Month";
+    private string _categoryFilter = "All";
+
+    private IReadOnlyList<CalendarItemDto> FilteredItems =>
+        _categoryFilter == "All"
+            ? Items
+            : Items.Where(i => string.Equals(i.ItemCategory, _categoryFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private IReadOnlyList<CalendarItemDto> OverdueItems =>
+        Items.Where(i => i.IsOverdue).ToList();
+
+    private int OverdueCount => OverdueItems.Count;
+
+    private void NavigatePrevMonth() => _currentMonth = _currentMonth.AddMonths(-1);
+    private void NavigateNextMonth() => _currentMonth = _currentMonth.AddMonths(1);
+    private async Task NavigateToday()
+    {
+        _currentMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        await SelectDate(DateTime.UtcNow.Date);
+    }
+
+    private async Task SelectDate(DateTime date)
+    {
+        SelectedDate = date;
+        await SelectedDateChanged.InvokeAsync(date);
+    }
+
+    private List<DateTime> GetCalendarDays()
+    {
+        var days = new List<DateTime>();
+        var firstDayOfMonth = _currentMonth;
+        var startOffset = (int)firstDayOfMonth.DayOfWeek;
+        var startDate = firstDayOfMonth.AddDays(-startOffset);
+
+        for (int i = 0; i < 42; i++)
+        {
+            days.Add(startDate.AddDays(i));
+        }
+
+        return days;
+    }
+
+    private IReadOnlyList<CalendarItemDto> GetItemsForDate(DateTime date)
+    {
+        return FilteredItems.Where(i => i.EndUtc.Date == date.Date || (i.StartUtc.Date <= date.Date && i.EndUtc.Date >= date.Date)).ToList();
+    }
+
+    private static string GetCategoryClass(string category) => category switch
+    {
+        "Blocker" or "Risk" => "cat-blocker",
+        "Milestone" or "Sprint" => "cat-milestone",
+        "Task" or "SubTask" => "cat-task",
+        "General" or "WorkingSession" or "Planning" or "TimeOff" => "cat-general",
+        _ => "cat-default"
+    };
+}

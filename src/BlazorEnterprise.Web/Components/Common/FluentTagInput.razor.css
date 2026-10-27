@@ -1,0 +1,72 @@
+.tag-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.tag-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tag-input-flex {
+    flex: 1;
+}
+
+.tag-counter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.tag-badges-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px;
+    background: var(--neutral-layer-2, #f5f5f5);
+    border-radius: 6px;
+    border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+}
+
+.tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: var(--mat-primary, #1976d2);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tag-badge-remove {
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 2px;
+    padding: 0 2px;
+    border-radius: 50%;
+    opacity: 0.85;
+}
+
+.tag-suggestions-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.tag-suggestion-chip {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: var(--neutral-layer-3, #f0f0f0);
+    border: 1px dashed var(--neutral-stroke-rest, #d0d0d0);
+    color: var(--neutral-foreground-rest, #333333);
+}

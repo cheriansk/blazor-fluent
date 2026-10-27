@@ -1,0 +1,255 @@
+﻿@namespace BlazorEnterprise.Modules.Imports.Pages
+@page "/imports"
+@attribute [RequiredClearance(ProjectRoleEnum.Lead)]
+@attribute [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("file-upload")]
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Dtos.Imports
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Core.Extensions
+@using BlazorEnterprise.Modules.Imports.Components
+@using BlazorEnterprise.Persistence.Context
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+
+<PageTitle>File Import & Processing — BlazorEnterprise</PageTitle>
+
+<PageHeaderComp Title="File Import & Batch Processing Pipeline"
+                Subtitle="Upload single or bulk multi-format payloads, client-side encrypted per-tenant, and processed asynchronously.">
+    <Actions>
+        <CskButton Variant="CskButtonVariant.Outlined"
+                      IconStart="@CskIcons.ArrowClockwise"
+                      OnClick="@RefreshHistoryAsync">
+            Refresh Status
+        </CskButton>
+    </Actions>
+</PageHeaderComp>
+
+<CskGrid Spacing="3" AdaptiveRendering="true">
+    <!-- Left Column: Upload Form Card -->
+    <CskGridItem xs="12" lg="5">
+        <CskCard Class="p-card full-height">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="15">
+                <CskLabel Typo="Typography.H6">Upload Batch Payloads</CskLabel>
+                <CskLabel Typo="Typography.Body" Class="text-hint">
+                    Select single or multiple files. All files in a batch share a unified Batch ID and are client-side encrypted with AES-256-GCM.
+                </CskLabel>
+
+                <!-- Project Selector -->
+                @if (_availableProjects.Count > 1)
+                {
+                    <CskSelect TOption="ProjectEntity" TValue="string"
+                                  Items="@_availableProjects"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id.ToString())"
+                                  Value="@(_currentProject?.Id.ToString())"
+                                  ValueChanged="@OnProjectChanged"
+                                  Label="Target Project Workspace"
+                                  Class="full-width" />
+                }
+                else if (_currentProject != null)
+                {
+                    <CskTextInput Value="@_currentProject.Name" ReadOnly="true" Label="Target Project Workspace" Class="full-width" />
+                }
+                else
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Warning">
+                        No active projects found. Please create a project workspace first.
+                    </CskMessageBar>
+                }
+
+                <!-- Multi-File Picker Dropzone -->
+                <div class="file-drop-zone">
+                    <CskLabel Typo="Typography.Body" Class="mb-2 d-block">
+                        Choose one or more task files (.csv, .txt, .tsv)
+                    </CskLabel>
+                    <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" class="full-width" />
+                </div>
+
+                <!-- Pending Files Table -->
+                @if (_pendingFiles.Count > 0)
+                {
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                        <CskLabel Typo="Typography.Subtitle">Queued Files (@_pendingFiles.Count)</CskLabel>
+                        <CskButton Variant="CskButtonVariant.Text"
+                                      IconStart="@CskIcons.Dismiss"
+                                      OnClick="@ClearPendingFiles">
+                            Clear All
+                        </CskButton>
+                    </CskStack>
+
+                    <div class="import-files-list">
+                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="10">
+                            @foreach (var item in _pendingFiles)
+                            {
+                                <div class="import-file-item" @key="item.Id">
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6" VerticalAlignment="CskVerticalAlignment.Center">
+                                            <CskIcon Icon="@CskIcons.Document" />
+                                            <div>
+                                                <CskLabel Typo="Typography.Body" Class="font-weight-600">@item.FileName</CskLabel>
+                                                <CskLabel Typo="Typography.Caption" Class="text-hint">@FormatBytes(item.Size)</CskLabel>
+                                            </div>
+                                        </CskStack>
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.Delete"
+                                                      OnClick="@(() => RemovePendingFile(item.Id))"
+                                                      Title="Remove from batch" />
+                                    </CskStack>
+
+                                    <!-- Per-file Combined Format & Target Type Selector -->
+                                    <CskSelect TOption="DataListItem<ImportFileTypeEnum>" TValue="string"
+                                                  Items="@_fileTypeOptions"
+                                                  OptionText="@(i => i.DisplayName)"
+                                                  OptionValue="@(i => i.Code)"
+                                                  Value="@item.SelectedFileType.ToString()"
+                                                  ValueChanged="@((string? v) => OnItemFileTypeChanged(item, v))"
+                                                  Label="Payload Specification"
+                                                  Class="full-width" />
+                                </div>
+                            }
+                        </CskStack>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_statusMessage))
+                {
+                    <CskMessageBar Intent="@_messageIntent">
+                        @_statusMessage
+                    </CskMessageBar>
+                }
+
+                <!-- Submit Button -->
+                <CskButton Variant="CskButtonVariant.Filled"
+                              IconStart="@CskIcons.ArrowSync"
+                              Disabled="@(_isUploading || _pendingFiles.Count == 0 || _currentProject == null)"
+                              Loading="@_isUploading"
+                              Class="full-width mt-2"
+                              OnClick="@UploadBatchAsync">
+                    @(_isUploading ? "Encrypting & Storing Batch..." : $"Upload & Ingest Batch ({_pendingFiles.Count} files)")
+                </CskButton>
+            </CskStack>
+        </CskCard>
+    </CskGridItem>
+
+    <!-- Right Column: Staging History Grid -->
+    <CskGridItem xs="12" lg="7">
+        <CskCard Class="p-card full-height">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="15">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween">
+                    <CskLabel Typo="Typography.H6">Payload Staging History</CskLabel>
+                    <CskBadge Variant="@BadgeAppearance.Filled">@_history.Count file(s)</CskBadge>
+                </CskStack>
+
+                @if (_isLoadingHistory)
+                {
+                    <CskSpinner Class="import-spinner" />
+                }
+                else if (_history.Count == 0)
+                {
+                    <EmptyStateComp Title="No Files Ingested"
+                                    Description="Uploaded payloads and their background staging progress will appear here."
+                                    Icon="@CskIcons.DocumentSearch" />
+                }
+                else
+                {
+                    <div class="overflow-x-auto">
+                        <CskDataGrid Items="@_history.AsQueryable()"
+                                        ResizableColumns="true"
+                                        TGridItem="ImportFileSummaryDto"
+                                        Class="full-width">
+                            <CskTemplateColumn Title="Batch ID" Width="100px">
+                                <span title="@context.ImportId.ToString()" class="mono-code">
+                                    @context.ImportId.ToString()[..8]...
+                                </span>
+                            </CskTemplateColumn>
+                            <CskPropertyColumn Property="@(f => f.OriginalFileName)" Title="File Name" Width="170px" />
+                            <CskTemplateColumn Title="Format Specification" Width="140px">
+                                <CskBadge Variant="@BadgeAppearance.Outline">@context.FileType</CskBadge>
+                            </CskTemplateColumn>
+                            <CskTemplateColumn Title="Pipeline Stage" Width="100px">
+                                <CskBadge Variant="@BadgeAppearance.Filled" Color="BadgeColor.Subtle">
+                                    @(string.IsNullOrWhiteSpace(context.StepStage) ? "Uploaded" : context.StepStage)
+                                </CskBadge>
+                            </CskTemplateColumn>
+                            <CskTemplateColumn Title="Status" Width="140px">
+                                @switch (context.Status)
+                                {
+                                    case ImportStatusEnum.Uploaded:
+                                        <CskBadge Color="BadgeColor.Informative">Uploaded</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.Validating:
+                                        <CskBadge Color="BadgeColor.Brand">Validating</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.ValidationSuccess:
+                                        <CskBadge Color="BadgeColor.Brand">Validated</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.ValidationFailed:
+                                        <CskBadge Color="BadgeColor.Severe">Validation Failed</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.Staging:
+                                        <CskBadge Color="BadgeColor.Brand">Staging</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.StagingSuccess:
+                                        <CskBadge Color="BadgeColor.Brand">Staged</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.StagingFailed:
+                                        <CskBadge Color="BadgeColor.Severe">Staging Failed</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.Processing:
+                                        <CskBadge Color="BadgeColor.Brand">Processing</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.Completed:
+                                        <CskBadge Color="BadgeColor.Success">Completed</CskBadge>
+                                        break;
+                                    case ImportStatusEnum.ProcessingFailed:
+                                        <CskBadge Color="BadgeColor.Severe">Processing Failed</CskBadge>
+                                        break;
+                                    default:
+                                        <CskBadge>@context.Status</CskBadge>
+                                        break;
+                                }
+                            </CskTemplateColumn>
+                            <CskTemplateColumn Title="Metrics" Width="100px">
+                                <span>@context.ValidRowsCount / @context.TotalRowsCount ok</span>
+                            </CskTemplateColumn>
+                            <CskTemplateColumn Title="Size" Width="80px">
+                                <span>@FormatBytes(context.FileSizeBytes)</span>
+                            </CskTemplateColumn>
+                            <CskTemplateColumn Title="Actions" Width="130px">
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                    @if (context.Status is ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed or ImportStatusEnum.ProcessingFailed)
+                                    {
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.ErrorCircle"
+                                                      Class="text-danger"
+                                                      OnClick="@(() => ViewDiagnosticsAsync(context.Id))">
+                                            Errors
+                                        </CskButton>
+                                    }
+                                    <CskButton Variant="CskButtonVariant.Text"
+                                                  IconStart="@CskIcons.Delete"
+                                                  OnClick="@(() => PromptDelete(context.Id))" />
+                                </CskStack>
+                            </CskTemplateColumn>
+                        </CskDataGrid>
+                    </div>
+                }
+            </CskStack>
+        </CskCard>
+    </CskGridItem>
+</CskGrid>
+
+<!-- Diagnostics Modal -->
+<ImportErrorsModal @ref="_errorsModal" />
+
+<!-- Confirmation Modal -->
+<ConfirmDialogModal @ref="_confirmDialog"
+                    Title="Delete Import Record"
+                    Message="Are you sure you want to delete this import record and its staged items?"
+                    ConfirmLabel="Delete"
+                    OnConfirmed="@DeleteConfirmedAsync" />

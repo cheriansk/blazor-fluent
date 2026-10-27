@@ -1,0 +1,47 @@
+@inherits Microsoft.AspNetCore.Components.ErrorBoundaryBase
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else if (ErrorContent is not null)
+{
+    @ErrorContent(CurrentException)
+}
+else
+{
+    <CskCard Class="csk-card-error csk-card-error-boundary">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.ErrorCircle" Class="csk-icon-error csk-icon-xl" />
+                <div>
+                    <h3 class="csk-error-heading">Something went wrong</h3>
+                    <p class="csk-error-lead">
+                        An unexpected error occurred while rendering this page. The technical details have been recorded.
+                    </p>
+                </div>
+            </CskStack>
+
+            <div class="csk-message-bar csk-message-bar-error csk-error-incident-box" >
+                <strong>Incident Reference:</strong> <code>@(_errorReferenceId ?? "Recording incident...")</code>
+            </div>
+
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10">
+                <CskButton Variant="CskButtonVariant.Filled"
+                           IconStart="@CskIcons.ArrowCounterclockwise"
+                           OnClick="@RecoverAndReload">
+                    Try Again
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Text"
+                           IconStart="@CskIcons.Home"
+                           Href="/">
+                    Go to Home
+                </CskButton>
+            </CskStack>
+        </CskStack>
+    </CskCard>
+}

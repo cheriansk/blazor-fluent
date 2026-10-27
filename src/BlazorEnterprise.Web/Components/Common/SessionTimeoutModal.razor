@@ -1,0 +1,82 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (_showIdleWarning)
+{
+    @* Inactivity Warning Modal *@
+    <div class="timeout-modal-overlay">
+        <div class="csk-card timeout-card">
+            <div class="timeout-content">
+                <div class="timeout-icon-circle-warning">
+                    <CskIcon Icon="@CskIcons.Timer" Class="csk-icon-warning csk-icon-lg" />
+                </div>
+
+                <h3 class="timeout-title">Inactivity Warning</h3>
+
+                <p class="timeout-body">
+                    You have been inactive for over 15 minutes. For your security, you will be automatically signed out in:
+                </p>
+
+                <div class="timeout-clock">
+                    @FormatTimeRemaining(_idleTimeRemainingSeconds)
+                </div>
+
+                <span class="timeout-hint">
+                    Click "Stay Logged In" or interact with the page to keep working.
+                </span>
+
+                <hr class="timeout-divider" />
+
+                <div class="timeout-actions">
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               Class="btn-timeout-action"
+                               OnClick="HandleStayLoggedIn">
+                        Stay Logged In
+                    </CskButton>
+                    <CskButton Variant="CskButtonVariant.Outlined"
+                               Class="btn-timeout-action"
+                               OnClick="@(() => HandleLogout("idle_timeout"))">
+                        Sign Out Now
+                    </CskButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (_showMaxLifetimeWarning)
+{
+    @* 8-Hour Maximum Session Lifetime Warning Modal *@
+    <div class="timeout-modal-overlay">
+        <div class="csk-card timeout-card">
+            <div class="timeout-content">
+                <div class="timeout-icon-circle-danger">
+                    <CskIcon Icon="@CskIcons.ClockAlarm" Class="csk-icon-error csk-icon-lg" />
+                </div>
+
+                <h3 class="timeout-title">Maximum Session Lifetime Exceeded</h3>
+
+                <p class="timeout-body">
+                    Your current session has reached the 8-hour enterprise compliance limit. All sessions must re-authenticate daily to maintain zero-trust posture.
+                </p>
+
+                <div class="timeout-clock">
+                    @FormatTimeRemaining(_maxLifetimeRemainingSeconds)
+                </div>
+
+                <span class="timeout-hint">
+                    Please save any in-flight changes immediately.
+                </span>
+
+                <hr class="timeout-divider" />
+
+                <div class="timeout-actions">
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               Class="btn-timeout-action"
+                               OnClick="@(() => HandleLogout("max_lifetime_expired"))">
+                        Sign Out &amp; Re-Login
+                    </CskButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}

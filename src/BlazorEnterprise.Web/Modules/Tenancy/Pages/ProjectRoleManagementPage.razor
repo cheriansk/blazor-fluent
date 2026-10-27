@@ -1,0 +1,610 @@
+﻿@namespace BlazorEnterprise.Modules.Tenancy.Pages
+@page "/tenancy/project-roles"
+
+@attribute [RequiredClearance(ProjectRoleEnum.Admin)]
+
+@rendermode InteractiveServer
+
+@using BlazorEnterprise.Shared.Attributes
+
+@using BlazorEnterprise.Core.Contracts
+
+@using BlazorEnterprise.Shared.DataListTypes
+
+@using BlazorEnterprise.Core.Domain.Identity
+
+@using BlazorEnterprise.Core.Domain.Tenancy
+
+@using BlazorEnterprise.Infrastructure.Security
+
+
+
+@using Microsoft.AspNetCore.Authorization
+
+
+
+
+
+
+
+
+
+
+
+
+
+<PageTitle>Project Access Management</PageTitle>
+
+
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+
+    <CskMessageBar Intent="MessageBarIntent.Info" Class="mb-1">
+
+        <strong>Moved to Settings:</strong> Project Roles management has been consolidated into the <CskLink Href="/settings">Settings &gt; Projects</CskLink> tab.
+
+    </CskMessageBar>
+
+
+
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="full-width">
+
+        <div>
+
+            <CskLabel Typo="Typography.H3">Project Role & Access Management</CskLabel>
+
+            <CskLabel Typo="Typography.Body">
+
+                Assign and manage user roles (Admin, Dev, QA, ReadOnly) per project in tenant <strong>@TenantContext.TenantName</strong>.
+
+            </CskLabel>
+
+        </div>
+
+        <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.PersonAdd" OnClick="@OpenAddModal">
+
+            Assign User
+
+        </CskButton>
+
+    </CskStack>
+
+
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+
+    {
+
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+
+            @_statusMessage
+
+        </CskMessageBar>
+
+    }
+
+
+
+    <!-- Project Selection Bar -->
+
+    <CskCard>
+
+        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16">
+
+            <CskLabel Typo="Typography.H5">Active Project:</CskLabel>
+
+            <CskSelect TOption="ProjectEntity"
+
+                          TValue="string"
+
+                          Items="@_projects"
+
+                          OptionText="@(p => p.Name)"
+
+                          OptionValue="@(p => p.Id.ToString())"
+
+                          Value="@_selectedProjectId"
+
+                          ValueChanged="@OnProjectChanged"
+
+                          Class="min-w-280" />
+
+
+
+            @if (!string.IsNullOrWhiteSpace(_selectedProjectId))
+
+            {
+
+                <CskBadge Variant="BadgeAppearance.Tint">
+
+                    ID: @_selectedProjectId
+
+                </CskBadge>
+
+            }
+
+        </CskStack>
+
+    </CskCard>
+
+
+
+    <!-- Role Assignment Form (Collapsible Card) -->
+
+    @if (_showAssignModal)
+
+    {
+
+        <CskCard Class="card-accent-border">
+
+            <CskLabel Typo="Typography.H5" Class="mb-3">
+
+                @(_isEditing ? "Update Project Role" : "Assign Tenant User to Project")
+
+            </CskLabel>
+
+
+
+            @if (!_isEditing && _tenantUsers.Count == 0)
+
+            {
+
+                <CskMessageBar Intent="MessageBarIntent.Warning" Class="mb-3">
+
+                    No active users are provisioned for tenant '@TenantContext.TenantName'. Please add users to this tenant first in <CskLink Href="/tenants">Tenant Management</CskLink>.
+
+                </CskMessageBar>
+
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelModal">
+
+                    Close
+
+                </CskButton>
+
+            }
+
+            else
+
+            {
+
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+
+                    @if (!_isEditing)
+
+                    {
+
+                        <CskSelect TOption="UserEntity"
+
+                                      TValue="string"
+
+                                      Items="@_tenantUsers"
+
+                                      OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserTypeEnum.CompanyUser ? "Internal Staff" : "External Client")}]")"
+
+                                      OptionValue="@(u => u.Id.ToString())"
+
+                                      Value="@_selectedTenantUserId"
+
+                                      ValueChanged="@OnTenantUserSelected"
+
+                                      Label="Select Tenant User"
+
+                                      Required="true"
+
+                                      Class="full-width" />
+
+
+
+                        @if (!string.IsNullOrWhiteSpace(_formEmail))
+
+                        {
+
+                            <div class="font-size-sm text-hint d-flex align-center gap-4 p-2">
+
+                                <span>Member: <strong>@_formUserName</strong></span>
+
+                                <span>Email: <code>@_formEmail</code></span>
+
+                                <span>Type:
+
+                                    @if (_formUserType == UserTypeEnum.CompanyUser)
+
+                                    {
+
+                                        <CskBadge Variant="BadgeAppearance.Filled">Internal Staff</CskBadge>
+
+                                    }
+
+                                    else
+
+                                    {
+
+                                        <CskBadge Variant="BadgeAppearance.Tint">External Client</CskBadge>
+
+                                    }
+
+                                </span>
+
+                            </div>
+
+                        }
+
+                    }
+
+                    else
+
+                    {
+
+                        <div class="font-size-sm text-hint p-2">
+
+                            Updating Role for: <strong>@_formUserName</strong> (<code>@_formEmail</code>)
+
+                        </div>
+
+                    }
+
+
+
+                    <div class="half-width">
+
+                        <CskLabel Typo="Typography.Body" Class="mb-1">Project Role</CskLabel>
+
+                        <CskSelect TOption="string" TValue="string"
+
+                                      Value="@_formRole.ToString()"
+
+                                      ValueChanged="@(val => _formRole = val.ToEnum(ProjectRoleEnum.ReadOnly))"
+
+                                      Class="full-width">
+
+                            <CskOption Value="@nameof(ProjectRoleEnum.ReadOnly)">👁️ ReadOnly</CskOption>
+
+                            <CskOption Value="@nameof(ProjectRoleEnum.Contribute)">💻 Contribute</CskOption>
+
+                            <CskOption Value="@nameof(ProjectRoleEnum.Lead)">⭐ Lead</CskOption>
+
+                            <CskOption Value="@nameof(ProjectRoleEnum.ElevatedLead)">🛡️ ElevatedLead</CskOption>
+
+                            <CskOption Value="@nameof(ProjectRoleEnum.PMO)">📊 PMO</CskOption>
+
+                            <CskOption Value="@nameof(ProjectRoleEnum.Admin)">👑 Admin</CskOption>
+
+                        </CskSelect>
+
+                    </div>
+
+
+
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-3">
+
+                        <CskButton Variant="CskButtonVariant.Filled"
+
+                                      Disabled="@(string.IsNullOrWhiteSpace(_formUserId))"
+
+                                      OnClick="@SaveAssignmentAsync">
+
+                            Save Assignment
+
+                        </CskButton>
+
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelModal">
+
+                            Cancel
+
+                        </CskButton>
+
+                    </CskStack>
+
+                </CskStack>
+
+            }
+
+        </CskCard>
+
+    }
+
+
+
+    <!-- Impersonation Form (Collapsible Card) -->
+
+    @if (_showImpersonateModal)
+
+    {
+
+        <CskCard Class="card-warning-border">
+
+            <CskLabel Typo="Typography.H5" Class="mb-3 text-dark-gray">
+
+                ⚠️ Operator Impersonation (SuperAdmin Troubleshooting)
+
+            </CskLabel>
+
+
+
+            <CskLabel Typo="Typography.Body" Class="mb-3">
+
+                You are about to impersonate <strong>@_impersonateTargetName</strong> (<code>@_impersonateTargetEmail</code>) in tenant <strong>@TenantContext.TenantName</strong>.
+
+                This allows you to experience the application under this user's exact permissions.
+
+            </CskLabel>
+
+
+
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+
+                <CskTextInput Label="Justification / Incident Ticket (Required)"
+
+                                 @bind-Value="_impersonateReason"
+
+                                 Placeholder="e.g. INC-4029: User reports cannot view analytics"
+
+                                 Required="true"
+
+                                 Class="full-width" />
+
+
+
+                <div class="font-size-sm text-hint">
+
+                    ⏳ Max Duration: 60 minutes. An exit button will be pinned to the top of all pages.
+
+                </div>
+
+
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.Right" HorizontalGap="12">
+
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _showImpersonateModal = false)">
+
+                        Cancel
+
+                    </CskButton>
+
+                    <CskButton Variant="CskButtonVariant.Filled"
+
+                                  Class="impersonation-exit-btn"
+
+                                  Disabled="@(string.IsNullOrWhiteSpace(_impersonateReason))"
+
+                                  OnClick="StartImpersonationAsync">
+
+                        Start Impersonating
+
+                    </CskButton>
+
+                </CskStack>
+
+            </CskStack>
+
+        </CskCard>
+
+    }
+
+
+
+    <!-- Members Grid -->
+
+    <CskCard>
+
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+
+            <CskLabel Typo="Typography.H5">
+
+                Assigned Team Members (@_members.Count)
+
+            </CskLabel>
+
+            <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.ArrowClockwise" OnClick="@LoadMembersAsync">
+
+                Refresh
+
+            </CskButton>
+
+        </CskStack>
+
+
+
+        @if (_isLoading)
+
+        {
+
+            <CskSpinner Class="m-auto" />
+
+        }
+
+        else if (_members.Count == 0)
+
+        {
+
+            <CskMessageBar Intent="MessageBarIntent.Info">
+
+                No users assigned to this project yet. Click &ldquo;Assign User&rdquo; above to grant access.
+
+            </CskMessageBar>
+
+        }
+
+        else
+
+        {
+
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+
+                <CskTextInput Placeholder="Filter members by name, email, or role..."
+
+                              @bind-Value="_memberFilterText"
+
+                              @bind-Value:after="StateHasChanged"
+
+                              Class="w-320" >
+
+                    <StartTemplate>    
+
+                        <CskIcon Icon="@CskIcons.Search" />
+
+                    </StartTemplate>
+
+                </CskTextInput>
+
+                <span class="font-size-sm text-hint">
+
+                    Showing @FilteredMembers.Count() of @_members.Count members
+
+                </span>
+
+            </CskStack>
+
+
+
+            <CskDataGrid Items="@FilteredMembers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 180px">
+
+                <CskTemplateColumn Title="Member" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserName))">
+
+                    <div>
+
+                        <strong>@context.UserName</strong>
+
+                        <div class="font-size-sm text-hint">@context.UserId</div>
+
+                    </div>
+
+                </CskTemplateColumn>
+
+                <CskPropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
+
+                <CskTemplateColumn Title="Type" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserType))">
+
+                    @if (context.UserType == UserTypeEnum.CompanyUser)
+
+                    {
+
+                        <CskBadge Variant="BadgeAppearance.Filled">Company</CskBadge>
+
+                    }
+
+                    else
+
+                    {
+
+                        <CskBadge Variant="BadgeAppearance.Tint">Client</CskBadge>
+
+                    }
+
+                </CskTemplateColumn>
+
+                <CskTemplateColumn Title="Role" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.Role))">
+
+                    @switch (context.Role)
+
+                    {
+
+                        case ProjectRoleEnum.Admin:
+
+                            <CskBadge Variant="BadgeAppearance.Filled">👑 Admin</CskBadge>
+
+                            break;
+
+                        case ProjectRoleEnum.PMO:
+
+                            <CskBadge Variant="BadgeAppearance.Tint">📊 PMO</CskBadge>
+
+                            break;
+
+                        case ProjectRoleEnum.ElevatedLead:
+
+                            <CskBadge Variant="BadgeAppearance.Tint">🛡️ ElevatedLead</CskBadge>
+
+                            break;
+
+                        case ProjectRoleEnum.Lead:
+
+                            <CskBadge Variant="BadgeAppearance.Tint">⭐ Lead</CskBadge>
+
+                            break;
+
+                        case ProjectRoleEnum.Contribute:
+
+                            <CskBadge Variant="BadgeAppearance.Tint">💻 Contribute</CskBadge>
+
+                            break;
+
+                        case ProjectRoleEnum.ReadOnly:
+
+                            <CskBadge Variant="BadgeAppearance.Tint">👁️ ReadOnly</CskBadge>
+
+                            break;
+
+                        default:
+
+                            <CskBadge Variant="BadgeAppearance.Tint">@context.Role.ToString()</CskBadge>
+
+                            break;
+
+                    }
+
+                </CskTemplateColumn>
+
+                <CskTemplateColumn Title="Actions">
+
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+
+                        <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Edit" OnClick="@(() => EditAssignment(context))">
+
+                            Edit
+
+                        </CskButton>
+
+                        <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Delete" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
+
+                            Revoke
+
+                        </CskButton>
+
+                        <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View project role assignment history" />
+
+                        @if (CurrentUser.IsRootAdmin && context.UserId != CurrentUser.UserId)
+
+                        {
+
+                            <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.PersonCircle" OnClick="@(() => PromptImpersonation(context))">
+
+                                Impersonate
+
+                            </CskButton>
+
+                        }
+
+                    </CskStack>
+
+                </CskTemplateColumn>
+
+            </CskDataGrid>
+
+        }
+
+    </CskCard>
+
+
+
+    <!-- Architecture Defense-in-Depth Info -->
+
+    <CskCard>
+
+        <CskLabel Typo="Typography.H5">Defense-in-Depth Architecture Highlights</CskLabel>
+
+        <ul class="mt-2 line-height-16">
+
+            <li><strong>Compile-Time Contract:</strong> Pages inherit from <code>AuthorizedPageComponentBase</code> and must declare <code>MinimumVisitRole</code> &amp; <code>MinimumEditRole</code>.</li>
+
+            <li><strong>Fail-Closed Gate 1 (Service Layer):</strong> <code>EnsureCanEditAsync(projectId)</code> throws <code>UnauthorizedAccessException</code> and logs security audits prior to data queries or mutations.</li>
+
+            <li><strong>Fail-Closed Gate 2 (EF Core Safety Net):</strong> <code>ProjectSecurityInterceptor</code> prevents any <code>Added</code>, <code>Modified</code>, or <code>Deleted</code> project entities if the user lacks write permissions.</li>
+
+            <li><strong>Live HybridCache Invalidation:</strong> Role updates immediately purge <code>proj_role_{tenantId}_{userId}_{projectId}</code> from L1/L2 memory so permissions take effect instantly without relogin.</li>
+
+        </ul>
+
+    </CskCard>
+
+</CskStack>

@@ -1,0 +1,43 @@
+﻿@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@inject NavigationManager NavigationManager
+
+<div class="access-denied-card">
+    <div class="access-denied-inner">
+        <div class="access-denied-icon-circle">
+            <CskIcon Icon="@CskIcons.ShieldError" Class="csk-icon-error csk-icon-xl" />
+        </div>
+
+        <h2 class="access-denied-title">Access Denied</h2>
+
+        <p class="access-denied-message">
+            @(CustomMessage ?? "You do not have the required permissions to access this page or resource.")
+        </p>
+
+        <div class="access-denied-badges">
+            <span class="access-denied-badge">
+                Required Role: <strong>@RequiredRole</strong>
+            </span>
+            <span class="access-denied-badge">
+                Your Role: <strong>@(CurrentRole?.ToString() ?? "None")</strong>
+            </span>
+        </div>
+
+        <hr class="access-denied-divider" />
+
+        <div class="access-denied-actions">
+            <CskButton Variant="CskButtonVariant.Filled" OnClick="@(() => NavigationManager.NavigateTo("/tenancy/projects"))">
+                Back to Projects
+            </CskButton>
+            <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => NavigationManager.NavigateTo("/"))">
+                Go to Home
+            </CskButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ProjectRoleEnum RequiredRole { get; set; } = ProjectRoleEnum.ReadOnly;
+    [Parameter] public ProjectRoleEnum? CurrentRole { get; set; }
+    [Parameter] public string? CustomMessage { get; set; }
+}

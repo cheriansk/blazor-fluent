@@ -1,0 +1,102 @@
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.UI.Components
+@inject IUnsavedChangesStateService UnsavedChanges
+@implements IDisposable
+
+<div class="pending-changes-root">
+    @* Pending Changes Button with Count Badge *@
+    <button type="button"
+            class="csk-icon-btn pending-btn"
+            @onclick="TogglePanel"
+            title="@(UnsavedChanges.HasPendingChanges ? $"{UnsavedChanges.PendingChanges.Count} pending unsaved changes" : "No unsaved changes")">
+        <CskIcon Icon="@CskIcons.SaveEdit"
+                 Class="@(UnsavedChanges.HasPendingChanges ? "csk-icon-warning" : "csk-icon-muted")" />
+        @if (UnsavedChanges.HasPendingChanges)
+        {
+            <span class="pending-badge-count">
+                @UnsavedChanges.PendingChanges.Count
+            </span>
+        }
+    </button>
+
+    @* Unsaved Changes Flyout Panel *@
+    @if (_isOpen)
+    {
+        <div class="pending-flyout-panel">
+            @* Header *@
+            <div class="pending-panel-header">
+                <div class="pending-header-left">
+                    <CskIcon Icon="@CskIcons.SaveEdit" Class="csk-icon-warning" />
+                    <strong class="pending-header-title">Pending Changes</strong>
+                </div>
+                <CskButton Variant="CskButtonVariant.Text"
+                           Size="CskButtonSize.Small"
+                           IconStart="@CskIcons.Dismiss"
+                           OnClick="@(() => _isOpen = false)" />
+            </div>
+
+            @* Body Content *@
+            <div class="pending-panel-body">
+                @if (UnsavedChanges.HasPendingChanges)
+                {
+                    <div class="pending-warning-callout">
+                        Changes are kept in memory and will NOT persist to the database until you click <strong>Save Changes</strong> on the corresponding tab.
+                    </div>
+
+                    <div class="pending-items-list">
+                        @foreach (var (source, desc) in UnsavedChanges.PendingChanges)
+                        {
+                            <div class="pending-item-card">
+                                <div class="pending-item-source">@source</div>
+                                <div class="pending-item-desc">@desc</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="pending-empty-state">
+                        <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="csk-icon-success csk-icon-lg" />
+                        <div class="pending-empty-desc">All changes are saved.</div>
+                    </div>
+                }
+            </div>
+
+            @* Footer *@
+            @if (UnsavedChanges.HasPendingChanges)
+            {
+                <div class="pending-panel-footer">
+                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" OnClick="@(() => { UnsavedChanges.ResetAll(); _isOpen = false; })">
+                        Discard All
+                    </CskButton>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+
+    protected override void OnInitialized()
+    {
+        UnsavedChanges.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void TogglePanel()
+    {
+        _isOpen = !_isOpen;
+    }
+
+    public void Dispose()
+    {
+        UnsavedChanges.OnChange -= HandleStateChanged;
+    }
+}

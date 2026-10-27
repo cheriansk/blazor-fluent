@@ -1,0 +1,115 @@
+@inherits LayoutComponentBase
+@using BlazorEnterprise.Components.Common
+
+<ImpersonationBannerComp />
+<SessionRevokedModal />
+<SessionTimeoutModal />
+
+<div class="main-layout-container">
+    <header class="main-layout-header">
+        @if (HasActiveTenantSession)
+        {
+            <CskButton Variant="CskButtonVariant.Text"
+                       IconStart="@(NavState.IsCollapsed ? CskIcons.PanelLeftExpand : CskIcons.PanelLeftContract)"
+                       Title="@(NavState.IsCollapsed ? "Expand Navigation" : "Collapse Navigation")"
+                       OnClick="@NavState.Toggle"
+                       Class="main-layout-header-btn" />
+        }
+        <span class="main-layout-logo">BlazorEnterprise</span>
+        <CskSpacer />
+        @if (HasActiveTenantSession)
+        {
+            <TenantAndProjectSwitcherComp />
+        }
+        <CskSpacer />
+        @if (HasActiveTenantSession)
+        {
+            <PendingChangesIndicatorComp />
+            <NotificationBellPopup />
+        }
+        @if (CurrentUser.IsAuthenticated)
+        {
+            <CskButton Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       IconStart="@CskIcons.SignOut"
+                       Title="Sign Out"
+                       OnClick="SignOut"
+                       Class="main-layout-signout-btn">
+                Sign Out
+            </CskButton>
+        }
+        else if (!IsAnonymousPage)
+        {
+            <CskButton Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       OnClick="@(() => NavigationManager.NavigateTo("/login"))"
+                       Class="main-layout-signout-btn">
+                Sign In
+            </CskButton>
+        }
+    </header>
+
+    <div class="main-layout-body">
+        @if (HasActiveTenantSession)
+        {
+            <aside class="@(NavState.IsCollapsed ? "main-layout-nav-collapsed" : "main-layout-nav-expanded")">
+                <NavMenuComp />
+            </aside>
+        }
+        <main class="main">
+            <div class="content">
+                <AppErrorBoundaryComp>
+                    @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)
+                    {
+                        <div class="main-layout-access-denied-wrapper">
+                            <CskCard Variant="CskCardVariant.Elevated" Class="main-layout-access-denied-card">
+                                <CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
+                                    <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" Gap="CskStackGap.Small">
+                                        <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-error" />
+                                        <h4>Active Tenant Required</h4>
+                                    </CskStack>
+                                    <p>
+                                        Your account is authenticated, but no active tenant is currently selected or assigned.
+                                        Application screens and data operations are disabled to prevent cross-tenant data corruption.
+                                    </p>
+                                    <p class="main-layout-hint-label">
+                                        Please switch to an authorized tenant or contact your organization administrator.
+                                    </p>
+                                </CskStack>
+                            </CskCard>
+                        </div>
+                    }
+                    else
+                    {
+                        @Body
+                    }
+                </AppErrorBoundaryComp>
+            </div>
+        </main>
+    </div>
+
+    <footer class="main-layout-footer">
+        <div class="main-layout-flex-row">
+            <CskButton Href="settings"
+                       Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       IconStart="@CskIcons.Settings">
+                Settings
+            </CskButton>
+            <CskSpacer />
+            <CskButton Href="https://learn.microsoft.com/en-us/aspnet/core/blazor"
+                       Target="_blank"
+                       Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       IconEnd="@CskIcons.ArrowExit">
+                About Blazor
+            </CskButton>
+        </div>
+    </footer>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

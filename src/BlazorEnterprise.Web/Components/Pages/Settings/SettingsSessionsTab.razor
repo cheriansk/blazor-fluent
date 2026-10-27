@@ -1,0 +1,176 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Identity
+@using BlazorEnterprise.Shared.UI.Components
+@implements IDisposable
+
+<div>
+    @if (!CurrentUser.IsRootAdmin)
+    {
+        <CskMessageBar Intent="MessageBarIntent.Error" Class="mb-4">
+            Access Denied: Active user session administration is restricted exclusively to Root Administrators.
+        </CskMessageBar>
+    }
+    else
+    {
+        @* Header *@
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-6">
+        <div>
+            <CskLabel Typo="Typography.H3" Class="font-bold m-0">Active User Sessions</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint mt-1">
+                Real-time tracking of active circuits, device fingerprints, and immediate administrative session revocation.
+            </CskLabel>
+        </div>
+
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10">
+            <CskButton Variant="CskButtonVariant.Outlined"
+                          IconStart="@CskIcons.Broom"
+                          OnClick="RevokeAllStaleAsync"
+                          Title="Revoke all sessions inactive for more than 30 minutes">
+                Revoke Stale (>30m)
+            </CskButton>
+            <CskButton Variant="CskButtonVariant.Outlined"
+                          IconStart="@CskIcons.ArrowClockwise"
+                          OnClick="LoadSessionsAsync">
+                Refresh
+            </CskButton>
+        </CskStack>
+    </CskStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" Class="mb-4">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    @* Sessions Grid *@
+    <CskCard Class="p-4">
+        @if (_isLoading)
+        {
+            <div class="flex-center p-10">
+                <CskSpinner Size="CskSpinnerSize.Large" />
+            </div>
+        }
+        else if (_sessions.Count == 0)
+        {
+            <div class="text-center p-10 text-hint">
+                <CskIcon Icon="@CskIcons.ShieldCheckmark" Class="csk-icon-xl" />
+                <div class="mt-3 font-medium">No sessions found.</div>
+            </div>
+        }
+        else
+        {
+            @* Filter Pills & Search *@
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Wrap="true" Class="mb-4 gap-12">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.ActiveAndIdle ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.ActiveAndIdle))">
+                        Active &amp; Idle (@ActiveAndIdleCount)
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.OnlineOnly ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.OnlineOnly))">
+                        Online (@OnlineCount)
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.IdleOnly ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.IdleOnly))">
+                        Idle (@IdleCount)
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.TerminatedOnly ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.TerminatedOnly))">
+                        Terminated / Revoked (@TerminatedCount)
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.All ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                  OnClick="@(() => SetFilter(SessionStatusFilter.All))">
+                        All (@_sessions.Count)
+                    </CskButton>
+                </CskStack>
+
+                <CskTextInput Placeholder="Filter sessions by user, tenant, IP, or device..."
+                              @bind-Value="_sessionSearchText"
+                              @bind-Value:after="StateHasChanged"
+                              Class="w-320" >
+                    <StartTemplate>
+                        <CskIcon Icon="@CskIcons.Search" />
+                    </StartTemplate>
+                </CskTextInput>
+            </CskStack>
+
+            <CskDataGrid Items="@FilteredSessions" ResizableColumns="true" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
+                <CskTemplateColumn Title="User" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.UserEmail))">
+                    <div>
+                        <strong>@context.UserEmail</strong>
+                        <div class="text-xs text-hint">@context.UserId</div>
+                    </div>
+                </CskTemplateColumn>
+
+                <CskPropertyColumn Property="@(s => s.TenantId)" Title="Tenant" Sortable="true" />
+                <CskPropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" Sortable="true" />
+                <CskPropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" Sortable="true" />
+
+                <CskTemplateColumn Title="Started" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.StartedAtUtc))">
+                    <span title="@TimeZoneService.FormatDateTime(context.StartedAtUtc)">@GetRelativeTime(context.StartedAtUtc)</span>
+                </CskTemplateColumn>
+
+                <CskTemplateColumn Title="Last Activity" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.LastActivityAtUtc))">
+                    <span title="@TimeZoneService.FormatDateTime(context.LastActivityAtUtc)">@GetRelativeTime(context.LastActivityAtUtc)</span>
+                </CskTemplateColumn>
+
+                <CskTemplateColumn Title="Status">
+                    @{
+                        var status = GetSessionStatus(context);
+                    }
+                    @switch (status)
+                    {
+                        case "Online":
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">
+                                Online
+                            </CskBadge>
+                            break;
+                        case "Idle":
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">
+                                Idle
+                            </CskBadge>
+                            break;
+                        case "Disconnected":
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Subtle">
+                                Disconnected
+                            </CskBadge>
+                            break;
+                        default:
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">
+                                @status
+                            </CskBadge>
+                            break;
+                    }
+                </CskTemplateColumn>
+
+                <CskTemplateColumn Title="Action">
+                    @{
+                        var isTerminated = context.IsRevoked || (DateTime.UtcNow - context.LastActivityAtUtc > TimeSpan.FromMinutes(30));
+                    }
+                    @if (!isTerminated)
+                    {
+                        <CskButton Variant="CskButtonVariant.Text"
+                                      Size="CskButtonSize.Small"
+                                      Class="text-error font-semibold"
+                                      OnClick="@(() => RevokeSessionAsync(context.Id, context.UserEmail))">
+                            Revoke
+                        </CskButton>
+                    }
+                    else
+                    {
+                        <span class="text-xs text-hint">Terminated</span>
+                    }
+                </CskTemplateColumn>
+            </CskDataGrid>
+        }
+    </CskCard>
+    }
+</div>

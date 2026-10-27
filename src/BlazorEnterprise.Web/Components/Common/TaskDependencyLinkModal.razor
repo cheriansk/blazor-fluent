@@ -1,0 +1,122 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Link Work Item Dependency</h3>
+                <CskButton Variant="CskButtonVariant.Text" 
+                           IconStart="@CskIcons.Dismiss" 
+                           OnClick="Close" />
+            </div>
+
+            <div class="modal-body">
+                @if (!string.IsNullOrWhiteSpace(_modalError))
+                {
+                    <div class="csk-message-bar csk-message-bar-error modal-error-box">
+                        @_modalError
+                    </div>
+                }
+
+                <div class="source-item-banner">
+                    Linking from: <strong>@SourceTaskTitle</strong>
+                </div>
+
+                <div class="modal-form-stack">
+                    <!-- Relationship Type Selector -->
+                    <div>
+                        <label class="fluent-label">Relationship Type</label>
+                        <CskSelect TOption="TaskDependencyTypeEnum" 
+                                      TValue="TaskDependencyTypeEnum"
+                                      @bind-Value="_selectedLinkType"
+                                      Class="w-full">
+                            <CskOption Value="TaskDependencyTypeEnum.BlockedBy">🛑 Blocked By (Requires Resolution SLA & Details)</CskOption>
+                            <CskOption Value="TaskDependencyTypeEnum.RelatesTo">🔗 Relates To (Associative Link)</CskOption>
+                        </CskSelect>
+                        <span class="field-hint">
+                            @if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
+                            {
+                                <span>This task cannot proceed until the target prerequisite task is resolved. Automatically generates an accountable Blocker Contract.</span>
+                            }
+                            else
+                            {
+                                <span>Informational cross-reference between two tasks.</span>
+                            }
+                        </span>
+                    </div>
+
+                    <!-- Target Task Selector -->
+                    <div>
+                        <label class="fluent-label">Select Prerequisite / Target Task</label>
+                        <CskSelect TOption="Guid" 
+                                      TValue="Guid"
+                                      @bind-Value="_selectedTargetTaskId"
+                                      Class="w-full">
+                            <CskOption Value="Guid.Empty">-- Select Task --</CskOption>
+                            @foreach (var task in AvailableTargetTasks.Where(t => t.Id != SourceTaskId))
+                            {
+                                <CskOption Value="@task.Id">[@task.Status] @task.Title (@task.AssigneeEmails)</CskOption>
+                            }
+                        </CskSelect>
+                    </div>
+
+                    @if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
+                    {
+                        <!-- Resolve SLA Due Date -->
+                        <div>
+                            <label class="fluent-label">Resolve SLA Due Date *</label>
+                            <CskDatePicker @bind-Value="_resolveDueDate" Class="w-full" />
+                            <span class="field-hint">Target deadline by which the blocker must be resolved. Appears on project and executive calendars.</span>
+                        </div>
+
+                        <!-- Dependency Criticality -->
+                        <div>
+                            <label class="fluent-label">Criticality Rating *</label>
+                            <CskSelect TOption="DependencyCriticalityEnum" 
+                                          TValue="DependencyCriticalityEnum"
+                                          @bind-Value="_criticality"
+                                          Class="w-full">
+                                <CskOption Value="DependencyCriticalityEnum.Low">Low - Minor cosmetic or non-blocking</CskOption>
+                                <CskOption Value="DependencyCriticalityEnum.Medium">Medium - Standard execution milestone dependency</CskOption>
+                                <CskOption Value="DependencyCriticalityEnum.High">High - Critical path risk, immediate attention</CskOption>
+                                <CskOption Value="DependencyCriticalityEnum.Critical">Critical - Hard blocker halting active work stream</CskOption>
+                            </CskSelect>
+                        </div>
+
+                        <!-- Impact Details -->
+                        <div>
+                            <label class="fluent-label">Impact Details & Consequences *</label>
+                            <CskTextArea @bind-Value="_impactDetails" 
+                                            Rows="4" 
+                                            Placeholder="Detail the downstream blast radius, schedule impacts, and consequences if this blocker is not resolved on time..." 
+                                            Class="w-full" />
+                        </div>
+
+                        <!-- Watcher Emails -->
+                        <div>
+                            <label class="fluent-label">Stakeholder Watcher Emails (Optional)</label>
+                            <CskTextInput @bind-Value="_watcherEmails" 
+                                          Placeholder="alice@company.com; bob@company.com" 
+                                          Class="w-full" />
+                            <span class="field-hint">Semicolon-separated emails of stakeholders to alert when this blocker is created, resolved, or reopened.</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <CskButton Variant="CskButtonVariant.Text" OnClick="Close" Disabled="_isSubmitting">
+                    Cancel
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="SaveLinkAsync" Loading="_isSubmitting" Disabled="_isSubmitting">
+                    Create Link
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}

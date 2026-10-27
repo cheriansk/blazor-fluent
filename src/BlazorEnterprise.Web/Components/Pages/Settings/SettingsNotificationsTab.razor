@@ -1,0 +1,251 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@rendermode InteractiveServer
+
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Notifications
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+    @* Tab Header and Summary *@
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" Wrap="true" Class="settings-tab-header">
+        <div>
+            <CskLabel Typo="Typography.H5" Class="settings-title">Notification History</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="settings-desc">
+                Review all system notices, project alerts, and personal tasks received across your authorized workspaces.
+            </CskLabel>
+        </div>
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+            <CskButton Variant="CskButtonVariant.Outlined"
+                          IconStart="@CskIcons.ArrowSync"
+                          OnClick="LoadNotificationsAsync"
+                          Disabled="@_isLoading">
+                Refresh
+            </CskButton>
+            <CskButton Variant="CskButtonVariant.Filled"
+                          IconStart="@CskIcons.CheckmarkCircle"
+                          OnClick="MarkAllFilteredAsReadAsync"
+                          Disabled="@(_isLoading || _unreadCount == 0)">
+                Mark All Read (@_unreadCount)
+            </CskButton>
+        </CskStack>
+    </CskStack>
+
+    @* Filters Toolbar Card *@
+    <CskCard Class="filter-card">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
+            <CskLabel Typo="Typography.H6">Filters &amp; Search</CskLabel>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Wrap="true" Class="filter-row">
+                @* 1. Organization Filter *@
+                <div>
+                    <CskLabel Typo="Typography.Caption" Class="filter-label">Organization</CskLabel>
+                    <CskSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_tenantFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedTenantId"
+                                  Class="filter-select-tenant" />
+                </div>
+
+                @* 2. Category Filter *@
+                <div>
+                    <CskLabel Typo="Typography.Caption" Class="filter-label">Category</CskLabel>
+                    <CskSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_categoryFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedCategory"
+                                  Class="filter-select-cat" />
+                </div>
+
+                @* 3. Severity Filter *@
+                <div>
+                    <CskLabel Typo="Typography.Caption" Class="filter-label">Severity</CskLabel>
+                    <CskSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_severityFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedSeverity"
+                                  Class="filter-select-sev" />
+                </div>
+
+                @* 4. Read Status Filter *@
+                <div>
+                    <CskLabel Typo="Typography.Caption" Class="filter-label">Status</CskLabel>
+                    <CskSelect TOption="FilterOptionItem"
+                                  TValue="string"
+                                  Items="@_statusFilterItems"
+                                  OptionText="@(i => i.Label)"
+                                  OptionValue="@(i => i.Value)"
+                                  @bind-Value="_selectedStatus"
+                                  Class="filter-select-status" />
+                </div>
+
+                @* 5. Date Range Pickers *@
+                <div>
+                    <CskDatePicker Label="From Date" @bind-Value="_fromDate" />
+                </div>
+                <div>
+                    <CskDatePicker Label="To Date" @bind-Value="_toDate" />
+                </div>
+
+                @* 6. Search Text Input *@
+                <div class="filter-search-wrap">
+                    <CskTextInput @bind-Value="_searchText"
+                                     Appearance="TextInputAppearance.Outline"
+                                     Placeholder="Search title or message..."
+                                     Class="w-full">
+                        <StartTemplate>
+                            <CskIcon Icon="@CskIcons.Search" />
+                        </StartTemplate>
+                    </CskTextInput>
+                </div>
+
+                @* Action Buttons *@
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                    <CskButton Variant="CskButtonVariant.Filled" OnClick="LoadNotificationsAsync">
+                        Apply
+                    </CskButton>
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="ResetFiltersAsync">
+                        Clear
+                    </CskButton>
+                </CskStack>
+            </CskStack>
+        </CskStack>
+    </CskCard>
+
+    @* Summary and Page Size Bar *@
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" Class="summary-bar">
+        <div>
+            Showing <strong>@_notifications.Count</strong> notifications
+            @if (_unreadCount > 0)
+            {
+                <span> (<strong>@_unreadCount</strong> unread)</span>
+            }
+        </div>
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6" Class="page-size-wrap">
+            <span>Page size:</span>
+            <CskSelect TOption="int"
+                          TValue="int"
+                          Items="@(new[] { 25, 50, 100 })"
+                          @bind-Value="_pageSize"
+                          @bind-Value:after="LoadNotificationsAsync"
+                          Class="page-size-select" />
+        </CskStack>
+    </CskStack>
+
+    @* Notifications Data Grid *@
+    @if (_isLoading)
+    {
+        <div class="loading-wrap">
+            <CskSpinner Size="CskSpinnerSize.Medium" />
+        </div>
+    }
+    else if (_notifications.Count == 0)
+    {
+        <CskCard Class="empty-card">
+            <CskIcon Icon="@CskIcons.AlertOff" Class="csk-icon-xl empty-icon" />
+            <CskLabel Typo="Typography.H6" Class="empty-title">No notifications found</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="empty-desc">
+                No notifications match your current filter parameters. Try clearing your search or expanding the date range.
+            </CskLabel>
+        </CskCard>
+    }
+    else
+    {
+        <CskDataGrid Items="@_notifications.AsQueryable()" ResizableColumns="true" GridTemplateColumns="60px 1.8fr 110px 100px 140px 90px 150px">
+            <CskTemplateColumn Title="Sev" Class="grid-sev-col">
+                @switch (context.Severity)
+                {
+                    case NotificationSeverityEnum.Success:
+                        <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="csk-icon-success" />
+                        break;
+                    case NotificationSeverityEnum.Warning:
+                        <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                        break;
+                    case NotificationSeverityEnum.Error:
+                        <CskIcon Icon="@CskIcons.DismissCircle" Class="csk-icon-error" />
+                        break;
+                    default:
+                        <CskIcon Icon="@CskIcons.Info" Class="csk-icon-primary" />
+                        break;
+                }
+            </CskTemplateColumn>
+
+            <CskTemplateColumn Title="Notification">
+                <div class="grid-notif-cell">
+                    <div class="grid-notif-header @(context.IsRead ? "is-read" : "is-unread")">
+                        <span>@context.Title</span>
+                        @if (context.SentToTeams)
+                        {
+                            <span class="badge-teams">Teams</span>
+                        }
+                        @if (context.SentToMailbox)
+                        {
+                            <span class="badge-mail">Mail</span>
+                        }
+                    </div>
+                    <span class="grid-notif-body">
+                        @context.Message
+                    </span>
+                </div>
+            </CskTemplateColumn>
+
+            <CskTemplateColumn Title="Tenant" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.TenantId))">
+                <CskBadge Appearance="BadgeAppearance.Filled" Size="BadgeSize.Small">
+                    🏢 @context.TenantId
+                </CskBadge>
+            </CskTemplateColumn>
+
+            <CskTemplateColumn Title="Category" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.Category))">
+                <CskBadge Appearance="@(context.Category == NotificationCategoryEnum.Personal ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                             Color="@(context.Category == NotificationCategoryEnum.Personal ? BadgeColor.Informative : BadgeColor.Subtle)"
+                             Size="BadgeSize.Small">
+                    @(context.Category == NotificationCategoryEnum.Personal ? "Personal" : "General")
+                </CskBadge>
+            </CskTemplateColumn>
+
+            <CskTemplateColumn Title="Timestamp" SortBy="@(GridSort<NotificationEntity>.ByDescending(n => n.Created))">
+                <span class="grid-timestamp" title="@TimeZoneService.FormatDateTime(context.Created)">
+                    @TimeZoneService.FormatDateTime(context.Created)
+                </span>
+            </CskTemplateColumn>
+
+            <CskTemplateColumn Title="Status" SortBy="@(GridSort<NotificationEntity>.ByAscending(n => n.IsRead))">
+                @if (context.IsRead)
+                {
+                    <span class="grid-status-read">Read</span>
+                }
+                else
+                {
+                    <CskBadge Color="BadgeColor.Brand" Size="BadgeSize.Small">Unread</CskBadge>
+                }
+            </CskTemplateColumn>
+
+            <CskTemplateColumn Title="Actions">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="4">
+                    @if (!string.IsNullOrWhiteSpace(context.LinkUrl))
+                    {
+                        <CskButton Variant="CskButtonVariant.Text"
+                                      Size="CskButtonSize.Small"
+                                      IconStart="@CskIcons.Open"
+                                      OnClick="@(() => OpenLink(context))"
+                                      Title="Open Resource" />
+                    }
+                    @if (!context.IsRead)
+                    {
+                        <CskButton Variant="CskButtonVariant.Text"
+                                      Size="CskButtonSize.Small"
+                                      IconStart="@CskIcons.Checkmark"
+                                      OnClick="@(() => MarkAsReadAsync(context))"
+                                      Title="Mark as read" />
+                    }
+                </CskStack>
+            </CskTemplateColumn>
+        </CskDataGrid>
+    }
+</CskStack>

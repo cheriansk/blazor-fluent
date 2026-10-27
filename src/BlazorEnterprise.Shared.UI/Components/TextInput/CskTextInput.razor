@@ -1,0 +1,69 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-text-field @(HasError ? "csk-field-error" : "") @(Disabled ? "csk-field-disabled" : "") @(_isFocused ? "csk-field-focused" : "") @Class"
+     @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="csk-field-label">
+            @Label
+            @if (Required)
+            {
+                <span class="csk-field-required">*</span>
+            }
+        </label>
+    }
+
+    <div class="csk-field-input-box">
+        @if (StartTemplate is not null)
+        {
+            <span class="csk-field-icon csk-field-icon-start">
+                @StartTemplate
+            </span>
+        }
+        else if (!string.IsNullOrEmpty(IconStart))
+        {
+            <span class="csk-field-icon csk-field-icon-start">
+                <CskIcon Icon="@IconStart" Class="csk-icon-sm" />
+            </span>
+        }
+
+        <input id="@Id"
+               type="@Type"
+               value="@Value"
+               placeholder="@Placeholder"
+               disabled="@Disabled"
+               readonly="@ReadOnly"
+               required="@Required"
+               class="csk-input"
+               @oninput="HandleInputAsync"
+               @onchange="HandleChangeAsync"
+               @onfocus="HandleFocus"
+               @onblur="HandleBlur" />
+
+        @if (EndTemplate is not null)
+        {
+            <span class="csk-field-icon csk-field-icon-end">
+                @EndTemplate
+            </span>
+        }
+        else if (!string.IsNullOrEmpty(IconEnd))
+        {
+            <span class="csk-field-icon csk-field-icon-end">
+                <CskIcon Icon="@IconEnd" Class="csk-icon-sm" />
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorText))
+    {
+        <div class="csk-field-helper csk-field-helper-error">
+            @ErrorText
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(HelperText))
+    {
+        <div class="csk-field-helper">
+            @HelperText
+        </div>
+    }
+</div>

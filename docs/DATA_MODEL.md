@@ -2,13 +2,13 @@
 
 > [!NOTE]
 > **Automated Specification**: This document is generated from source code by scripts/Generate-DataModelDocs.ps1.
-> An interactive HTML portal version is available at [docs/data-dictionary/index.html](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/data-dictionary/index.html).
+> An interactive HTML portal version is available at [docs/data-dictionary/index.html](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/data-dictionary/index.html).
 
 ---
 
 ## 1. Architectural Foundation: The 3-Tier Entity Model
 
-BlazorFluent enforces strict zero-trust multi-tenancy and audit compliance via a 3-tier entity taxonomy:
+BlazorEnterprise enforces strict zero-trust multi-tenancy and audit compliance via a 3-tier entity taxonomy:
 1. **Tier 1: Architectural Marker Interfaces (IMarkerEntity)**: Compile-time gates and EF Core interceptor drivers (ITenantEntity, IGlobalEntity, ISoftDeletableEntity, IProjectScopedEntity, IAuditableEntity, IEffectiveDatedEntity, IVersionedEntity).
 2. **Tier 2: Framework Base Classes**: Reusable abstractions encapsulating sequential UUIDv7 primary keys (BaseEntity), Level 1 audit properties (AuditableEntity), tenant isolation barriers (TenantAuditableEntity), work items (BaseTaskEntity), and temporal schedules (BaseCalendarEntity).
 3. **Tier 3: Domain Entities**: Strongly-typed business objects executing inside isolated database schemas and bounded contexts.
@@ -18,7 +18,7 @@ BlazorFluent enforces strict zero-trust multi-tenancy and audit compliance via a
 | Entity Name | Subsystem | DbSet | Base Class | Architectural Markers | Foreign Keys & Navigations | UI Screen Usages | Description |
 |:---|:---|:---|:---|:---|:---|:---|:---|
 | **[AuditRecordEntity](data-dictionary/entities/AuditRecordEntity.html)** | Auditing | `AuditRecords` | `AuditableEntity` | `[Tenant]` `[Audit]` `[AuditExempt]` | - | 2 screens (SettingsAuditTab.razor, HomePage.razor) | Forensic audit trail record stored in the 'audit' PostgreSQL schema. Captures property-level entity diffs, tenant-switching events, security milestones, and user activities. Implements to prevent recursive auditing of audit log entries. |
-| **[AuditableEntity](data-dictionary/entities/AuditableEntity.html)** | Base | - | `BaseEntity` | `[Audit]` | - | - | ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK BASE CLASS DO NOT MODIFY without architectural review. Provides Level 1 audit properties (Created, CreatedBy, Updated, UpdatedBy). Automatically populated by AuditableEntityInterceptor in BlazorFluent.Persistence. Used for host-wide (global) auditable entities like UserEntity, TenantEntity, and ImpersonationGrantEntity. |
+| **[AuditableEntity](data-dictionary/entities/AuditableEntity.html)** | Base | - | `BaseEntity` | `[Audit]` | - | - | ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK BASE CLASS DO NOT MODIFY without architectural review. Provides Level 1 audit properties (Created, CreatedBy, Updated, UpdatedBy). Automatically populated by AuditableEntityInterceptor in BlazorEnterprise.Persistence. Used for host-wide (global) auditable entities like UserEntity, TenantEntity, and ImpersonationGrantEntity. |
 | **[BaseEntity](data-dictionary/entities/BaseEntity.html)** | Base | - | - | `[Audit]` | - | - | ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK ROOT ENTITY DO NOT MODIFY without architectural review. Declares the sequential UUIDv7 primary key (Guid.CreateVersion7()) for all database entities. Sequential UUIDv7 ensures optimal B-Tree index clustering and high insert throughput in PostgreSQL. |
 | **[TenantAuditableEntity](data-dictionary/entities/TenantAuditableEntity.html)** | Base | - | `AuditableEntity` | `[Tenant]` `[Audit]` | - | - | ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK BASE CLASS DO NOT MODIFY without architectural review. Combines sequential UUIDv7 primary key, Level 1 audit properties, and mandatory TenantId isolation. All tenant-scoped business entities should inherit from this class. Protected by EF Core named query filter: QueryFilters.Tenant. |
 | **[BaseCalendarEntity](data-dictionary/entities/BaseCalendarEntity.html)** | Calendar | - | `TenantAuditableEntity` | `[Tenant]` `[SoftDelete]` `[Audit]` `[EffectiveDated]` | AssociatedTaskId | - | Universal abstract base class for all calendar entities across Program, Project, and User levels. Models milestone target dates, sprint cadences, release schedules, phase gates, and delivery deadlines. Tied to tenant via . Implements (StartDate and EndDate) and . |

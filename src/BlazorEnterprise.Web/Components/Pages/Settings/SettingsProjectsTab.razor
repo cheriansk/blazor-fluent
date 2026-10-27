@@ -1,0 +1,606 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Identity
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Infrastructure.Security
+
+
+
+@using BlazorEnterprise.Shared.UI.Components
+
+@implements IDisposable
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+    <div>
+        <CskLabel Typo="Typography.H4">Project Workspaces</CskLabel>
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Select an authorized tenant to view, manage project details, and configure per-project roles.
+        </CskLabel>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    <!-- Tenant Filter Toolbar -->
+    <CskCard Class="p-4">
+        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <CskSelect TOption="TenantFilterOption"
+                          TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelected"
+                          Disabled="@(_availableTenants.Count <= 1)"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant to view projects --"
+                          Class="min-w-300" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+            {
+                @if (_availablePrograms.Count > 1)
+                {
+                    <CskSelect TOption="ProgramFilterOption"
+                                  TValue="string"
+                                  Items="@_availablePrograms"
+                                  OptionText="@(p => p.Name)"
+                                  OptionValue="@(p => p.Id)"
+                                  Value="@_selectedProgramId"
+                                  ValueChanged="@OnProgramSelected"
+                                  Label="Filter by Program"
+                                  Placeholder="-- All Programs --"
+                                  Class="min-w-240" />
+
+                    @if (!string.IsNullOrWhiteSpace(_selectedProgramId))
+                    {
+                        <CskButton Variant="CskButtonVariant.Text"
+                                      IconStart="@CskIcons.Dismiss"
+                                      OnClick="@ClearProgramFilter">
+                            All Programs
+                        </CskButton>
+                    }
+                }
+
+                @if (_availableTenants.Count > 1)
+                {
+                    <CskButton Variant="CskButtonVariant.Text"
+                                  IconStart="@CskIcons.Dismiss"
+                                  OnClick="@ClearTenantFilter">
+                        Clear Filter
+                    </CskButton>
+                }
+                <CskButton Variant="CskButtonVariant.Text"
+                              IconStart="@CskIcons.ArrowSync"
+                              OnClick="@LoadProjectsForTenantAsync">
+                    Refresh
+                </CskButton>
+            }
+        </CskStack>
+    </CskCard>
+
+    @if (string.IsNullOrWhiteSpace(_selectedTenantId))
+    {
+        <!-- Empty State Prompt -->
+        <CskMessageBar Intent="MessageBarIntent.Info" Class="p-4">
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                <CskIcon Icon="@CskIcons.BuildingMultiple" Class="csk-icon-lg" />
+                <div>
+                    <strong>No Tenant Selected:</strong> Please choose a tenant from the dropdown above to display its active projects.
+                </div>
+            </CskStack>
+        </CskMessageBar>
+    }
+    else
+    {
+        <!-- Projects Data Grid Card -->
+        <CskCard Class="p-5">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-4">
+                <div>
+                    <CskLabel Typo="Typography.H5">Projects for &ldquo;@_selectedTenantName&rdquo;</CskLabel>
+                    <CskLabel Typo="Typography.Body" Class="text-hint">
+                        Found @_projects.Count project(s) scoped to tenant <code>@_selectedTenantId</code>. Click <strong>Select</strong> to view details and roles.
+                    </CskLabel>
+                </div>
+                <CskTextInput Placeholder="Filter projects by name, code, location..."
+                                 @bind-Value="_projectSearchText"
+                                 @bind-Value:after="StateHasChanged"
+                                 Class="w-280">
+                    <StartTemplate>
+                        <CskIcon Icon="@CskIcons.Search" />
+                    </StartTemplate>
+                </CskTextInput>
+            </CskStack>
+
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-center p-5">
+                    <CskSpinner Size="CskSpinnerSize.Medium" />
+                </div>
+            }
+            else if (_projects.Count == 0)
+            {
+                <div class="text-center p-5 text-hint">
+                    <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-xl" />
+                    <div class="mt-2 font-weight-600">No projects found for this tenant.</div>
+                </div>
+            }
+            else
+            {
+                <CskDataGrid Items="@FilteredProjects" ResizableColumns="true" GridTemplateColumns="110px 1.5fr 140px 110px 140px 180px 220px">
+                    <CskPropertyColumn Property="@(p => p.ShortCode)" Title="Code" Sortable="true" />
+                    <CskPropertyColumn Property="@(p => p.Name)" Title="Project Name" Sortable="true" />
+                    <CskTemplateColumn Title="Program" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Program != null ? p.Program.Name : string.Empty))">
+                        @if (context.Program is not null)
+                        {
+                            <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative">@context.Program.Name</CskBadge>
+                        }
+                        else
+                        {
+                            <span class="text-hint font-size-sm">—</span>
+                        }
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Status" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.Status))">
+                        @switch (context.Status)
+                        {
+                            case ProjectStatusEnum.Active:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</CskBadge>
+                                break;
+                            case ProjectStatusEnum.New:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</CskBadge>
+                                break;
+                            case ProjectStatusEnum.OnHold:
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</CskBadge>
+                                break;
+                            case ProjectStatusEnum.Done:
+                                <CskBadge Appearance="BadgeAppearance.Tint">Done</CskBadge>
+                                break;
+                        }
+                    </CskTemplateColumn>
+                    <CskPropertyColumn Property="@(p => p.Location)" Title="Location" Sortable="true" />
+                    <CskTemplateColumn Title="Timeline" SortBy="@(GridSort<ProjectEntity>.ByAscending(p => p.StartDate))">
+                        <span class="font-size-sm">
+                            @TimeZoneService.FormatDate(context.StartDate) ~ @TimeZoneService.FormatDate(context.EndDate ?? context.DueDate)
+                        </span>
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Actions">
+                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                            <CskButton Appearance="@(_selectedProject?.Id == context.Id ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
+                                          Size="CskButtonSize.Small"
+                                          IconStart="@CskIcons.Checkmark"
+                                          OnClick="@(() => SelectProjectAsync(context))">
+                                @(_selectedProject?.Id == context.Id ? "Selected" : "Select")
+                            </CskButton>
+                            <CskLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{context.Id}/tasks")" Class="font-size-sm">
+                                Tasks
+                            </CskLink>
+                            <EntityHistoryButton EntityName="ProjectEntity" EntityId="@context.Id.ToString()" Tooltip="View project history" />
+                        </CskStack>
+                    </CskTemplateColumn>
+                </CskDataGrid>
+            }
+        </CskCard>
+
+        @* Selected Project Sub-Tabs Panel (Details & Roles) *@
+        @if (_selectedProject is not null)
+        {
+            <CskCard Class="card-accent-border p-5">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-4">
+                    <div>
+                        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                            <CskLabel Typo="Typography.H5">@_selectedProject.Name</CskLabel>
+                            @if (!string.IsNullOrWhiteSpace(_selectedProject.ShortCode))
+                            {
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Brand">@_selectedProject.ShortCode</CskBadge>
+                            }
+                            @switch (_selectedProject.Status)
+                            {
+                                case ProjectStatusEnum.Active:
+                                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">Active</CskBadge>
+                                    break;
+                                case ProjectStatusEnum.New:
+                                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">New</CskBadge>
+                                    break;
+                                case ProjectStatusEnum.OnHold:
+                                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">OnHold</CskBadge>
+                                    break;
+                                case ProjectStatusEnum.Done:
+                                    <CskBadge Appearance="BadgeAppearance.Tint">Done</CskBadge>
+                                    break;
+                            }
+                        </CskStack>
+                        <div class="font-size-sm text-hint mt-1">
+                            ID: <code>@_selectedProject.Id</code> &bull; Tenant: <code>@_selectedProject.TenantId</code>
+                        </div>
+                    </div>
+                    <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@(() => _selectedProject = null)">
+                        Close Panel
+                    </CskButton>
+                </CskStack>
+
+                <CskTabs @bind-ActiveTabId="_activeProjectTab">
+                    <!-- Tab 1: Project Details -->
+                    <CskTab Id="tab-details">
+                        <HeaderTemplate>
+                            <CskIcon Icon="@CskIcons.DocumentBulletList" Class="me-2" />
+                            Details
+                        </HeaderTemplate>
+                        <Content>
+                        <div class="pt-4">
+                            @if (!_isEditingDetails)
+                            {
+                                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="24" Wrap="true">
+                                        <div class="flex-1 min-w-200">
+                                            <span class="font-size-sm text-hint d-block">Project Name</span>
+                                            <strong>@_selectedProject.Name</strong>
+                                        </div>
+                                        <div class="flex-1 min-w-140">
+                                            <span class="font-size-sm text-hint d-block">Short Code</span>
+                                            <code>@(_selectedProject.ShortCode ?? "—")</code>
+                                        </div>
+                                        <div class="flex-1 min-w-140">
+                                            <span class="font-size-sm text-hint d-block">Status</span>
+                                            <span>@_selectedProject.Status</span>
+                                        </div>
+                                        <div class="flex-1 min-w-160">
+                                            <span class="font-size-sm text-hint d-block">Parent Program</span>
+                                            <span>@(_selectedProject.Program is not null ? _selectedProject.Program.Name : "—")</span>
+                                        </div>
+                                        <div class="flex-1 min-w-180">
+                                            <span class="font-size-sm text-hint d-block">Location</span>
+                                            <span>@(!string.IsNullOrWhiteSpace(_selectedProject.Location) ? _selectedProject.Location : "—")</span>
+                                        </div>
+                                    </CskStack>
+
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="24" Wrap="true">
+                                        <div class="flex-1 min-w-200">
+                                            <span class="font-size-sm text-hint d-block">Start Date</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.StartDate)</span>
+                                        </div>
+                                        <div class="flex-1 min-w-200">
+                                            <span class="font-size-sm text-hint d-block">Due / Target End</span>
+                                            <span>@TimeZoneService.FormatDate(_selectedProject.EndDate ?? _selectedProject.DueDate)</span>
+                                        </div>
+                                    </CskStack>
+
+                                    <div>
+                                        <span class="font-size-sm text-hint d-block">Summary of Scope of Project</span>
+                                        <div class="mt-1 p-3 bg-subtle rounded-6 font-size-sm">
+                                            @(!string.IsNullOrWhiteSpace(_selectedProject.ScopeSummary) ? _selectedProject.ScopeSummary : (!string.IsNullOrWhiteSpace(_selectedProject.Description) ? _selectedProject.Description : "No scope summary provided."))
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <CskButton Variant="CskButtonVariant.Outlined" IconStart="@CskIcons.Edit" OnClick="@StartEditDetails">
+                                            Edit Details
+                                        </CskButton>
+                                    </div>
+                                </CskStack>
+                            }
+                            else
+                            {
+                                <!-- Edit Project Details Form -->
+                                <CskCard Class="bg-subtle p-4">
+                                    <CskLabel Typo="Typography.H6" Class="mb-3">Edit Project Details</CskLabel>
+                                    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                            <CskTextInput Label="Project Name" @bind-Value="_editName" Required="true" Class="flex-2" />
+                                            <CskTextInput Label="Project Short Code" @bind-Value="_editShortCode" Required="true" Class="flex-1" />
+                                        </CskStack>
+
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+                                            <CskTextInput Label="Location" @bind-Value="_editLocation" Class="flex-2" />
+                                            <div class="flex-1">
+                                                <DataListSelect TEnum="ProjectStatusEnum" TValue="ProjectStatusEnum" Label="Status" @bind-Value="_editStatus" Class="full-width" />
+                                            </div>
+                                        </CskStack>
+
+                                        <div>
+                                            <CskLabel Typo="Typography.Body" Class="mb-1">Parent Program (Optional)</CskLabel>
+                                            <CskSelect TOption="ProgramFilterOption"
+                                                          TValue="string"
+                                                          Items="@_assignablePrograms"
+                                                          OptionText="@(p => p.Name)"
+                                                          OptionValue="@(p => p.Id)"
+                                                          Value="@_editProgramId"
+                                                          ValueChanged="@(val => _editProgramId = val)"
+                                                          Class="full-width" />
+                                        </div>
+
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16">
+                                            <CskDatePicker Label="Start Date" @bind-Value="_editStartDate" />
+                                            <CskDatePicker Label="Due / Target Completion Date" @bind-Value="_editEndDate" />
+                                        </CskStack>
+
+                                        <div>
+                                            <CskLabel Typo="Typography.Body" Class="mb-1">Summary of Scope of Project</CskLabel>
+                                            <CskTextArea @bind-Value="_editScopeSummary" Rows="3" Class="full-width" />
+                                        </div>
+
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-2">
+                                            <CskButton Variant="CskButtonVariant.Filled"
+                                                          Disabled="@(!IsEditDetailsValid)"
+                                                          OnClick="@SaveProjectDetailsAsync">
+                                                Save Changes
+                                            </CskButton>
+                                            <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelEditDetails">
+                                                Cancel
+                                            </CskButton>
+                                        </CskStack>
+                                    </CskStack>
+                                </CskCard>
+                            }
+                        </div>
+                        </Content>
+                    </CskTab>
+
+                    <!-- Tab 2: Project Roles & Access Management -->
+                    <CskTab Id="tab-roles">
+                        <HeaderTemplate>
+                            <CskIcon Icon="@CskIcons.PeopleTeam" Class="me-2" />
+                            Project Roles
+                        </HeaderTemplate>
+                        <Content>
+                        <div class="pt-4">
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+                                <div>
+                                    <CskLabel Typo="Typography.H6">Project Access &amp; Member Roles</CskLabel>
+                                    <div class="font-size-sm text-hint">
+                                        Assign roles (Admin, Dev, QA, ReadOnly) to tenant members for project <strong>@_selectedProject.Name</strong>.
+                                    </div>
+                                </div>
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                                    <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.PersonAdd" OnClick="@OpenAddRoleModal">
+                                        Assign User
+                                    </CskButton>
+                                    <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.ArrowClockwise" OnClick="@LoadProjectMembersAsync">
+                                        Refresh
+                                    </CskButton>
+                                </CskStack>
+                            </CskStack>
+
+                            <!-- Role Assignment Form (Collapsible Card) -->
+                            @if (_showAssignRoleModal)
+                            {
+                                <CskCard Class="mb-4 card-accent-border p-4">
+                                    <CskLabel Typo="Typography.H6" Class="mb-3">
+                                        @(_isEditingRole ? "Update Project Role" : "Assign Tenant User to Project")
+                                    </CskLabel>
+
+                                    @if (!_isEditingRole && _tenantUsers.Count == 0)
+                                    {
+                                        <CskMessageBar Intent="MessageBarIntent.Warning" Class="mb-3">
+                                            No active users are provisioned for tenant '@_selectedTenantName'. Please add users to this tenant first in the Tenants tab.
+                                        </CskMessageBar>
+                                        <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _showAssignRoleModal = false)">
+                                            Close
+                                        </CskButton>
+                                    }
+                                    else
+                                    {
+                                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                                            @if (!_isEditingRole)
+                                            {
+                                                <CskSelect TOption="UserEntity"
+                                                              TValue="string"
+                                                              Items="@_tenantUsers.Where(u => u.UserKind == UserKindEnum.Human)"
+                                                              OptionText="@(u => $"{u.FullName} ({u.Email}) — [{(u.UserType == UserTypeEnum.CompanyUser ? "Internal Staff" : "External Client")}]")"
+                                                              OptionValue="@(u => u.Id.ToString())"
+                                                              Value="@_selectedTenantUserId"
+                                                              ValueChanged="@OnTenantUserSelected"
+                                                              Label="Select Tenant User"
+                                                              Required="true"
+                                                              Class="full-width" />
+
+                                                @if (!string.IsNullOrWhiteSpace(_formEmail))
+                                                {
+                                                    <div class="font-size-sm text-hint bg-subtle p-2 rounded-6 d-flex align-center gap-4">
+                                                        <span>Member: <strong>@_formUserName</strong></span>
+                                                        <span>Email: <code>@_formEmail</code></span>
+                                                        <span>Type:
+                                                            @if (_formUserType == UserTypeEnum.CompanyUser)
+                                                            {
+                                                                <CskBadge Appearance="BadgeAppearance.Filled">Internal Staff</CskBadge>
+                                                            }
+                                                            else
+                                                            {
+                                                                <CskBadge Appearance="BadgeAppearance.Tint">External Client</CskBadge>
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <div class="font-size-sm text-hint bg-subtle p-2 rounded-6">
+                                                    Updating Role for: <strong>@_formUserName</strong> (<code>@_formEmail</code>)
+                                                </div>
+                                            }
+
+                                            <div class="half-width">
+                                                <DataListSelect TEnum="ProjectRoleEnum" TValue="ProjectRoleEnum" Label="Project Role" @bind-Value="_formRole" Class="full-width" />
+                                            </div>
+
+                                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-3">
+                                                <CskButton Variant="CskButtonVariant.Filled"
+                                                              Disabled="@(string.IsNullOrWhiteSpace(_formUserId))"
+                                                              OnClick="@SaveAssignmentAsync">
+                                                    Save Assignment
+                                                </CskButton>
+                                                <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _showAssignRoleModal = false)">
+                                                    Cancel
+                                                </CskButton>
+                                            </CskStack>
+                                        </CskStack>
+                                    }
+                                </CskCard>
+                            }
+
+                            <!-- Impersonation Form (Collapsible Card) -->
+                            @if (_showImpersonateModal)
+                            {
+                                <CskCard Class="mb-4 card-warning-border p-4">
+                                    <CskLabel Typo="Typography.H6" Class="mb-2 text-dark-gray">
+                                        ⚠️ Operator Impersonation (SuperAdmin Troubleshooting)
+                                    </CskLabel>
+
+                                    <CskLabel Typo="Typography.Body" Class="mb-3">
+                                        You are about to impersonate <strong>@_impersonateTargetName</strong> (<code>@_impersonateTargetEmail</code>).
+                                        This allows you to experience the application under this user's exact permissions.
+                                    </CskLabel>
+
+                                    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                                        <CskTextInput Label="Justification / Incident Ticket (Required)"
+                                                         @bind-Value="_impersonateReason"
+                                                         Placeholder="e.g. INC-4029: User reports cannot view analytics"
+                                                         Required="true"
+                                                         Class="full-width" />
+
+                                        <div class="font-size-sm text-hint">
+                                            ⏳ Max Duration: 60 minutes. An exit button will be pinned to the top of all pages.
+                                        </div>
+
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.Right" HorizontalGap="12">
+                                            <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _showImpersonateModal = false)">
+                                                Cancel
+                                            </CskButton>
+                                            <CskButton Variant="CskButtonVariant.Filled"
+                                                          Class="btn-danger-confirm"
+                                                          Disabled="@(string.IsNullOrWhiteSpace(_impersonateReason))"
+                                                          OnClick="StartImpersonationAsync">
+                                                Start Impersonating
+                                            </CskButton>
+                                        </CskStack>
+                                    </CskStack>
+                                </CskCard>
+                            }
+
+                            <!-- Members Grid -->
+                            @if (_isLoadingMembers)
+                            {
+                                <div class="d-flex justify-center p-4">
+                                    <CskSpinner Size="CskSpinnerSize.Medium" />
+                                </div>
+                            }
+                            else if (_members.Count == 0)
+                            {
+                                <CskMessageBar Intent="MessageBarIntent.Info">
+                                    No users assigned to this project yet. Click &ldquo;Assign User&rdquo; above to grant access.
+                                </CskMessageBar>
+                            }
+                            else
+                            {
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+                                    <CskTextInput Placeholder="Filter members by name, email, or role..."
+                                                     @bind-Value="_memberFilterText"
+                                                     @bind-Value:after="StateHasChanged"
+                                                     Class="w-320">
+                                        <StartTemplate>
+                                            <CskIcon Icon="@CskIcons.Search" />
+                                        </StartTemplate>
+                                    </CskTextInput>
+                                    <span class="font-size-sm text-hint">
+                                        Showing @FilteredMembers.Count() of @_members.Count members
+                                    </span>
+                                </CskStack>
+
+                                <CskDataGrid Items="@FilteredMembers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 110px 120px 220px">
+                                    <CskTemplateColumn Title="Member" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserName))">
+                                        <div>
+                                            <strong>@context.UserName</strong>
+                                            @if (BlazorEnterprise.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(context.UserEmail))
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Outline" Class="daemon-badge ml-2">
+                                                    🤖 System Daemon
+                                                </CskBadge>
+                                            }
+                                            <div class="font-size-xs text-hint">@context.UserId</div>
+                                        </div>
+                                    </CskTemplateColumn>
+                                    <CskPropertyColumn Property="@(m => m.UserEmail)" Title="Email" Sortable="true" />
+                                    <CskTemplateColumn Title="Type" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.UserType))">
+                                        @if (context.UserType == UserTypeEnum.CompanyUser)
+                                        {
+                                            <CskBadge Appearance="BadgeAppearance.Filled">Company</CskBadge>
+                                        }
+                                        else
+                                        {
+                                            <CskBadge Appearance="BadgeAppearance.Tint">Client</CskBadge>
+                                        }
+                                    </CskTemplateColumn>
+                                    <CskTemplateColumn Title="Role" SortBy="@(GridSort<ProjectUserRoleEntity>.ByAscending(m => m.Role))">
+                                        @switch (context.Role)
+                                        {
+                                            case ProjectRoleEnum.Admin:
+                                                <CskBadge Appearance="BadgeAppearance.Filled">👑 Admin</CskBadge>
+                                                break;
+                                            case ProjectRoleEnum.PMO:
+                                                <CskBadge Appearance="BadgeAppearance.Tint">📊 PMO</CskBadge>
+                                                break;
+                                            case ProjectRoleEnum.ElevatedLead:
+                                                <CskBadge Appearance="BadgeAppearance.Tint">🛡️ ElevatedLead</CskBadge>
+                                                break;
+                                            case ProjectRoleEnum.Lead:
+                                                <CskBadge Appearance="BadgeAppearance.Tint">⭐ Lead</CskBadge>
+                                                break;
+                                            case ProjectRoleEnum.Contribute:
+                                                <CskBadge Appearance="BadgeAppearance.Tint">💻 Contribute</CskBadge>
+                                                break;
+                                            case ProjectRoleEnum.ReadOnly:
+                                                <CskBadge Appearance="BadgeAppearance.Tint">👁️ ReadOnly</CskBadge>
+                                                break;
+                                            default:
+                                                <CskBadge Appearance="BadgeAppearance.Tint">@context.Role.ToString()</CskBadge>
+                                                break;
+                                        }
+                                    </CskTemplateColumn>
+                                    <CskTemplateColumn Title="Actions">
+                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                            @if (BlazorEnterprise.Core.Utilities.SystemIdentityUtility.IsSystemDaemon(context.UserEmail))
+                                            {
+                                                <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Informative" Class="font-size-xs">
+                                                    🔒 Locked Daemon
+                                                </CskBadge>
+                                            }
+                                            else
+                                            {
+                                                <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Edit" OnClick="@(() => EditAssignment(context))">
+                                                    Edit
+                                                </CskButton>
+                                                <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Delete" OnClick="@(() => RevokeAssignmentAsync(context.UserId))">
+                                                    Revoke
+                                                </CskButton>
+                                                <EntityHistoryButton EntityName="ProjectUserRoleEntity" EntityId="@context.Id.ToString()" Tooltip="View role history" />
+                                                @if (CurrentUser.IsRootAdmin && context.UserId != CurrentUser.UserId)
+                                                {
+                                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.PersonCircle" OnClick="@(() => PromptImpersonation(context))">
+                                                        Impersonate
+                                                    </CskButton>
+                                                }
+                                            }
+                                        </CskStack>
+                                    </CskTemplateColumn>
+                                </CskDataGrid>
+                            }
+                        </div>
+                        </Content>
+                    </CskTab>
+                </CskTabs>
+            </CskCard>
+        }
+
+        <!-- Multi-Tenant Architecture Callout -->
+        <CskCard Class="p-4 bg-subtle">
+            <CskLabel Typo="Typography.Subject" Class="font-weight-600 mb-1">Multi-Tenant Workspace Isolation &amp; Defense-in-Depth</CskLabel>
+            <div class="font-size-sm text-hint line-height-16">
+                Projects are securely partitioned per-tenant. Role updates instantly invalidate <code>proj_role_{tenantId}_{userId}_{projectId}</code> in HybridCache memory so member authorizations update immediately without requiring re-login.
+            </div>
+        </CskCard>
+    }
+</CskStack>

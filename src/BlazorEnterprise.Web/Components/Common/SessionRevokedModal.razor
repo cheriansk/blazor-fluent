@@ -1,0 +1,30 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (_isRevoked)
+{
+    @* Unclosable Full-Screen Modal Overlay *@
+    <div class="modal-overlay">
+        <div class="csk-card modal-dialog-card">
+            <div class="modal-content-box">
+                <div class="modal-icon-circle">
+                    <CskIcon Icon="@CskIcons.ShieldDismiss" Class="csk-icon-error csk-icon-lg" />
+                </div>
+
+                <h3 class="modal-heading">Session Terminated</h3>
+
+                <p class="modal-message">
+                    Your active session has been revoked by an administrator or your access window has expired.
+                </p>
+
+                <hr class="modal-divider" />
+
+                <CskButton Variant="CskButtonVariant.Filled"
+                           Class="btn-modal-action"
+                           OnClick="HandleRedirectToLogin">
+                    Log In Again
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}

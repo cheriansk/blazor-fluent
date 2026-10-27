@@ -1,0 +1,48 @@
+.csk-tabs-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.csk-tabs-header {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--csk-color-border, #e0e0e0);
+    background-color: var(--csk-color-surface, #ffffff);
+    gap: 4px;
+}
+
+.csk-tab-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--csk-color-on-surface-variant, #616161);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.csk-tab-button:hover {
+    background-color: var(--csk-color-surface-hover, rgba(0, 0, 0, 0.04));
+    color: var(--csk-color-on-surface, #212121);
+}
+
+.csk-tab-active {
+    color: var(--csk-color-primary, #1976d2);
+    border-bottom-color: var(--csk-color-primary, #1976d2);
+    font-weight: 600;
+}
+
+.csk-tabs-panel {
+    padding-top: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}

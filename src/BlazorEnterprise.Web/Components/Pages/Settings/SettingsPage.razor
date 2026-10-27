@@ -1,0 +1,134 @@
+﻿@page "/settings"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.UI.Components
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Settings — BlazorEnterprise</PageTitle>
+
+<PageHeaderComp Title="Settings"
+                Subtitle="Centralized administration: manage tenant contracts, project workspaces, background batch jobs, event ledgers, and active user sessions." />
+
+<div class="settings-root">
+    <!-- Modern Native CSK Tabs Navigation Bar -->
+    <div class="csk-tabs-bar" >
+        @if (CanViewTenantTab)
+        {
+            <CskButton Variant="@(_activeTabId == "tenants" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.Building"
+                       OnClick="@(() => SelectTab("tenants"))">
+                Tenants
+            </CskButton>
+        }
+
+        @if (CanViewProgramTab)
+        {
+            <CskButton Variant="@(_activeTabId == "programs" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.FolderDocument"
+                       OnClick="@(() => SelectTab("programs"))">
+                Programs
+            </CskButton>
+        }
+
+        <CskButton Variant="@(_activeTabId == "projects" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.BuildingMultiple"
+                   OnClick="@(() => SelectTab("projects"))">
+            Projects
+        </CskButton>
+
+        <CskButton Variant="@(_activeTabId == "jobs" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Clock"
+                   OnClick="@(() => SelectTab("jobs"))">
+            Jobs
+        </CskButton>
+
+        <CskButton Variant="@(_activeTabId == "events" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Pulse"
+                   OnClick="@(() => SelectTab("events"))">
+            Events
+        </CskButton>
+
+        @if (CanViewAuditTrail)
+        {
+            <CskButton Variant="@(_activeTabId == "auditing" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.DocumentBulletList"
+                       OnClick="@(() => SelectTab("auditing"))">
+                Audit Trail
+            </CskButton>
+        }
+
+        @if (CurrentUser.IsRootAdmin)
+        {
+            <CskButton Variant="@(_activeTabId == "sessions" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.Laptop"
+                       OnClick="@(() => SelectTab("sessions"))">
+                Sessions
+            </CskButton>
+        }
+
+        <CskButton Variant="@(_activeTabId == "user" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Person"
+                   OnClick="@(() => SelectTab("user"))">
+            User
+        </CskButton>
+
+        <CskButton Variant="@(_activeTabId == "calendar" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Calendar"
+                   OnClick="@(() => SelectTab("calendar"))">
+            My Calendar
+        </CskButton>
+
+        <CskButton Variant="@(_activeTabId == "notifications" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Alert"
+                   OnClick="@(() => SelectTab("notifications"))">
+            Notifications
+        </CskButton>
+    </div>
+
+    <!-- Active Tab Content Area with Lazy Load Preservation -->
+    <div class="settings-tab-content">
+        @if (_activeTabId == "tenants" && _visitedTabs.Contains("tenants"))
+        {
+            <SettingsTenantsTab />
+        }
+        else if (_activeTabId == "programs" && _visitedTabs.Contains("programs"))
+        {
+            <SettingsProgramsTab />
+        }
+        else if (_activeTabId == "projects" && _visitedTabs.Contains("projects"))
+        {
+            <SettingsProjectsTab />
+        }
+        else if (_activeTabId == "jobs" && _visitedTabs.Contains("jobs"))
+        {
+            <SettingsJobsTab />
+        }
+        else if (_activeTabId == "events" && _visitedTabs.Contains("events"))
+        {
+            <SettingsEventsTab />
+        }
+        else if (_activeTabId == "auditing" && _visitedTabs.Contains("auditing"))
+        {
+            <SettingsAuditTab />
+        }
+        else if (_activeTabId == "sessions" && _visitedTabs.Contains("sessions"))
+        {
+            <SettingsSessionsTab />
+        }
+        else if (_activeTabId == "user" && _visitedTabs.Contains("user"))
+        {
+            <SettingsUserTab />
+        }
+        else if (_activeTabId == "calendar" && _visitedTabs.Contains("calendar"))
+        {
+            <SettingsUserCalendarTab />
+        }
+        else if (_activeTabId == "notifications" && _visitedTabs.Contains("notifications"))
+        {
+            <SettingsNotificationsTab />
+        }
+    </div>
+</div>

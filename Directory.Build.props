@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <!--
       NuGet CVE Auditing (NuGet 6.8+, built into .NET 8+ SDK).
@@ -40,22 +40,27 @@
   </ItemGroup>
 
   <!-- TemplateGuard Roslyn Analyzer & Base Manifest Wiring -->
-  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll') And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool' And '$(IsTestProject)' != 'true' And '$(MSBuildProjectName)' != 'BlazorFluent.Benchmarks'">
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll') And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool' And '$(IsTestProject)' != 'true' And '$(MSBuildProjectName)' != 'BlazorEnterprise.Benchmarks'">
     <Analyzer Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" 
                      Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')" />
     <AdditionalFiles Include="**\*.razor" />
+    <AdditionalFiles Include="**\*.css" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Web\wwwroot\**\*.css"
+                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Web'" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Shared.UI\**\*.css"
+                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Shared.UI'" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorFluent.AppHost' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
-    <Using Include="BlazorFluent.Shared.Common" />
-    <Using Include="BlazorFluent.Shared.Attributes" />
-    <Using Include="BlazorFluent.Shared.DataListTypes" />
-    <Using Include="BlazorFluent.Shared.Models" />
-    <Using Include="BlazorFluent.Shared.Contracts.Common" />
-    <Using Include="BlazorFluent.Shared.Contracts.Engine.Client" />
-    <Using Include="BlazorFluent.Shared.Security" />
-    <Using Include="BlazorFluent.Shared.Extensions" />
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.AppHost' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">
+    <Using Include="BlazorEnterprise.Shared.Common" />
+    <Using Include="BlazorEnterprise.Shared.Attributes" />
+    <Using Include="BlazorEnterprise.Shared.DataListTypes" />
+    <Using Include="BlazorEnterprise.Shared.Models" />
+    <Using Include="BlazorEnterprise.Shared.Contracts.Common" />
+    <Using Include="BlazorEnterprise.Shared.Contracts.Engine.Client" />
+    <Using Include="BlazorEnterprise.Shared.Security" />
+    <Using Include="BlazorEnterprise.Shared.Extensions" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,18 @@
+﻿.csk-card-error-boundary {
+    margin: 20px;
+    border-left: 4px solid var(--mat-error, #d32f2f);
+}
+.csk-error-heading {
+    margin: 0;
+    color: var(--mat-error, #d32f2f);
+}
+.csk-error-lead {
+    margin: 4px 0 0 0;
+    color: var(--mat-on-surface-variant, #49454f);
+}
+.csk-error-incident-box {
+    padding: 10px 14px;
+    background: rgba(186, 26, 26, 0.08);
+    border-radius: 8px;
+    border: 1px solid var(--mat-error, #d32f2f);
+}

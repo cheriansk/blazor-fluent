@@ -1,0 +1,56 @@
+.csk-dialog-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+    backdrop-filter: blur(2px);
+    transition: opacity 0.2s ease-in-out;
+}
+
+.csk-dialog-surface {
+    background-color: var(--mat-surface, #FFFFFF);
+    color: var(--mat-on-surface, #1C1B1F);
+    border-radius: var(--mat-radius-card, 12px);
+    box-shadow: 0 11px 15px -7px rgba(0,0,0,0.2), 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.csk-dialog-title {
+    padding: 1.25rem 1.5rem 0.75rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.6;
+    letter-spacing: 0.0075em;
+    border-bottom: 1px solid var(--mat-outline-variant, #E0E0E0);
+}
+
+.csk-dialog-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    box-sizing: border-box;
+}
+
+.csk-dialog-actions {
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid var(--mat-outline-variant, #E0E0E0);
+    background-color: var(--mat-surface-variant, #FAFAFA);
+}
+
+.csk-dialog-modal { pointer-events: auto; }

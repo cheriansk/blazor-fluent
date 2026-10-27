@@ -1,0 +1,11 @@
+using BlazorEnterprise.Core.Domain.Notifications;
+
+namespace BlazorEnterprise.Core.Contracts;
+
+public interface IEmailNotificationSender
+{
+    /// <summary>
+    /// Dispatches an email notification to the specified mailbox address.
+    /// </summary>
+    Task<bool> SendEmailNotificationAsync(NotificationEntity notification, string recipientMailbox, CancellationToken ct = default);
+}

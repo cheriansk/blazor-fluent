@@ -1,0 +1,72 @@
+@using BlazorEnterprise.Shared.Models
+@using BlazorEnterprise.Core.Dtos.Imports
+
+<CskDialog @ref="_dialog"
+              Modal="true"
+              Class="dialog-diagnostics">
+    <CskDialogBody Class="modal-body-scroll">
+        <TitleTemplate>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.ErrorCircle" Class="csk-icon-lg csk-icon-error" />
+                <CskLabel Typo="Typography.H6">Validation Diagnostics: @FileDetails?.OriginalFileName</CskLabel>
+            </CskStack>
+        </TitleTemplate>
+        <ChildContent>
+            @if (FileDetails != null)
+            {
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="10">
+                    <CskMessageBar Intent="MessageBarIntent.Error">
+                        Strict fail-closed policy: @FileDetails.ValidationErrors.Count error(s) detected. 0 records staged.
+                    </CskMessageBar>
+
+                    <CskDataGrid Items="@FileDetails.ValidationErrors.AsQueryable()"
+                                    ResizableColumns="true"
+                                    TGridItem="FileValidationError"
+                                    Class="w-full">
+                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet / Section" Width="130px" />
+                        <CskPropertyColumn Property="@(e => e.RowIndex)" Title="Row #" Width="80px" />
+                        <CskPropertyColumn Property="@(e => e.ColumnName)" Title="Column / Field" Width="140px" />
+                        <CskPropertyColumn Property="@(e => e.ErrorMessage)" Title="Validation Message" />
+                        <CskPropertyColumn Property="@(e => e.AttemptedValue)" Title="Attempted Value" Width="140px" />
+                    </CskDataGrid>
+                </CskStack>
+            }
+            else
+            {
+                <CskLabel Typo="Typography.Body">No diagnostic errors recorded.</CskLabel>
+            }
+        </ChildContent>
+        <ActionTemplate>
+            <CskButton Variant="CskButtonVariant.Filled" OnClick="@CloseAsync">Close</CskButton>
+        </ActionTemplate>
+    </CskDialogBody>
+</CskDialog>
+
+@code {
+    private CskDialog? _dialog;
+
+    [Parameter] public ImportFileDetailsDto? FileDetails { get; set; }
+
+    public async Task ShowAsync(ImportFileDetailsDto details)
+    {
+        FileDetails = details;
+        if (_dialog is not null)
+        {
+            await _dialog.ShowAsync();
+        }
+        StateHasChanged();
+    }
+
+    public void Show(ImportFileDetailsDto details)
+    {
+        _ = ShowAsync(details);
+    }
+
+    private async Task CloseAsync()
+    {
+        if (_dialog is not null)
+        {
+            await _dialog.HideAsync();
+        }
+    }
+}

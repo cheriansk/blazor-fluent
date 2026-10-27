@@ -1,0 +1,524 @@
+﻿@namespace BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Core.Dtos
+
+@using BlazorEnterprise.Shared.UI.Wizards
+
+
+
+<CskWizardModal @ref="_wizardModal"
+                   TState="CreateWorkflowReqDto"
+                   IsOpen="@IsOpen"
+                   IsOpenChanged="@IsOpenChanged"
+                   Title="@(IsEditMode ? "Edit Sequential Workflow" : "Design Sequential Workflow")"
+                   Subtitle="@(IsEditMode ? "Update workflow governance, append/insert tasks, or cancel steps" : "Design multi-level stage-gated workflows with dedicated step owners and delegated subtasks")"
+                   InitialState="@_initialState"
+                   OnFinish="@HandleFinishAsync"
+                   OnCancel="@HandleCancel">
+    <Steps>
+        <WizardStep Title="Scope & Governance"
+                    Summary="Scoping level & constant workflow owner"
+                    OnValidateAsync="@ValidateStep1Async">
+            <div class="wizard-form-grid">
+                @* Scoping Level *@
+                <div class="form-half-width">
+                    <CskSelect TOption="TaskLevelEnum"
+                                  TValue="TaskLevelEnum"
+                                  @bind-Value="_initialState.Level"
+                                  Label="Workflow Scoping Level *"
+                                  Disabled="@IsEditMode"
+                                  Class="full-width">
+                        <CskOption Value="@TaskLevelEnum.Tenant">🏢 Tenant Level (Executive Governance)</CskOption>
+                        <CskOption Value="@TaskLevelEnum.Program">📁 Program Level (Multi-Project Initiative)</CskOption>
+                        <CskOption Value="@TaskLevelEnum.Project">📋 Project Level (Team Delivery)</CskOption>
+                    </CskSelect>
+                    @if (IsEditMode)
+                    {
+                        <span class="field-help-text">Workflow scope level is locked after creation.</span>
+                    }
+                </div>
+
+                @* Context Selector (Program or Project) *@
+                <div class="form-half-width">
+                    @if (_initialState.Level == TaskLevelEnum.Program)
+                    {
+                        <label class="fluent-label font-size-sm font-weight-600 mb-1 d-block">Target Program *</label>
+                        <CskSelect TOption="ProgramEntity"
+                                      TValue="string"
+                                      Items="@_availablePrograms"
+                                      OptionText="@(p => p.Name)"
+                                      OptionValue="@(p => p.Id.ToString())"
+                                      Value="@(_initialState.ProgramId?.ToString())"
+                                      ValueChanged="@OnProgramSelectedChanged"
+                                      Disabled="@IsEditMode"
+                                      Placeholder="Select strategic program..."
+                                      Class="full-width" />
+                        @if (_stepErrors.TryGetValue("ProgramId", out var progErr))
+                        {
+                            <span class="field-error-text">@progErr</span>
+                        }
+                    }
+                    else if (_initialState.Level == TaskLevelEnum.Project)
+                    {
+                        <label class="fluent-label font-size-sm font-weight-600 mb-1 d-block">Target Project *</label>
+                        <CskSelect TOption="ProjectEntity"
+                                      TValue="string"
+                                      Items="@_availableProjects"
+                                      OptionText="@(p => p.Name)"
+                                      OptionValue="@(p => p.Id.ToString())"
+                                      Value="@(_initialState.ProjectId?.ToString())"
+                                      ValueChanged="@OnProjectSelectedChanged"
+                                      Disabled="@IsEditMode"
+                                      Placeholder="Select delivery project..."
+                                      Class="full-width" />
+                        @if (_stepErrors.TryGetValue("ProjectId", out var projErr))
+                        {
+                            <span class="field-error-text">@projErr</span>
+                        }
+                    }
+                    else
+                    {
+                        <div class="pt-4 text-hint font-size-sm">
+                            🏢 Applies across the entire tenant organization.
+                        </div>
+                    }
+                </div>
+
+                @* Constant Workflow Owner *@
+                <div class="form-half-width">
+                    <CskTextInput Label="Constant Workflow Owner Email *"
+                                     @bind-Value="_initialState.WorkflowOwnerEmail"
+                                     Class="full-width"
+                                     Placeholder="orchestrator@company.local" />
+                    <span class="field-help-text">Accountable from start to finish; follows up across all steps without changing ownership.</span>
+                    @if (_stepErrors.TryGetValue("WorkflowOwnerEmail", out var ownerErr))
+                    {
+                        <span class="field-error-text">@ownerErr</span>
+                    }
+                </div>
+
+                @* Priority *@
+                <div class="form-half-width">
+                    <CskSelect TOption="TaskPriorityEnum"
+                                  TValue="TaskPriorityEnum"
+                                  @bind-Value="_initialState.Priority"
+                                  Label="Priority"
+                                  Class="full-width">
+                        <CskOption Value="@TaskPriorityEnum.Low">Low</CskOption>
+                        <CskOption Value="@TaskPriorityEnum.Medium">Medium</CskOption>
+                        <CskOption Value="@TaskPriorityEnum.High">High</CskOption>
+                        <CskOption Value="@TaskPriorityEnum.Urgent">Urgent</CskOption>
+                    </CskSelect>
+                </div>
+
+                @* Workflow Title *@
+                <div class="form-full-width">
+                    <CskTextInput Label="Workflow Title *"
+                                     @bind-Value="_initialState.Title"
+                                     Class="full-width"
+                                     Placeholder="E.g. SOC2 Type II Audit Compliance Rollout" />
+                    @if (_stepErrors.TryGetValue("Title", out var titleErr))
+                    {
+                        <span class="field-error-text">@titleErr</span>
+                    }
+                </div>
+
+                @* Description *@
+                <div class="form-full-width">
+                    <CskTextArea Label="Description & Governance Objectives"
+                                    @bind-Value="_initialState.Description"
+                                    Rows="2"
+                                    Class="full-width"
+                                    Placeholder="Outline key business outcomes, prerequisites, and overarching governance rules..." />
+                </div>
+
+                @* Target Due Date *@
+                <div class="form-half-width">
+                    <CskDatePicker Label="Overall Target Due Date"
+                                      @bind-Value="_initialState.DueDate"
+                                      Class="full-width" />
+                </div>
+
+                @* Watchers *@
+                <div class="form-half-width">
+                    <CskTextInput Label="Watcher Emails (Comma-separated)"
+                                     @bind-Value="_initialState.WatcherEmails"
+                                     Class="full-width"
+                                     Placeholder="auditor@company.com, pmo@company.com" />
+                </div>
+            </div>
+        </WizardStep>
+
+        <WizardStep Title="Steps & Subtasks"
+                    Summary="Ordered tasks & delegated subtasks"
+                    OnValidateAsync="@ValidateStep2Async">
+            <div class="step-builder-container">
+                <div class="step-builder-header">
+                    <span class="step-builder-title">Execution Pipeline Steps (Tasks)</span>
+                    <div class="d-flex gap-2">
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                      IconStart="@CskIcons.Search"
+                                      OnClick="@ToggleTaskSearch">
+                            Attach Existing Task
+                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                      IconStart="@CskIcons.Add"
+                                      OnClick="@AddNewStep">
+                            Add Next Step (Task)
+                        </CskButton>
+                    </div>
+                </div>
+
+                @* Search & Attach Existing Task Panel *@
+                @if (_showTaskSearch)
+                {
+                    <div class="task-search-picker-box">
+                        <div class="task-search-picker-header">
+                            <div class="d-flex align-center gap-2">
+                                <CskIcon Icon="@CskIcons.Search" Class="csk-icon-primary" />
+                                <strong>Search & Attach Existing Task to Workflow</strong>
+                            </div>
+                            <CskButton Variant="CskButtonVariant.Text"
+                                          IconStart="@CskIcons.Dismiss"
+                                          OnClick="@(() => _showTaskSearch = false)"
+                                          Title="Close picker" />
+                        </div>
+
+                        <div class="d-flex gap-2 mb-2">
+                            <CskTextInput @bind-Value="_taskSearchTerm"
+                                             Placeholder="Search existing task by title, number, or assignee..."
+                                             Class="flex-1" />
+                            <CskButton Variant="CskButtonVariant.Filled"
+                                          OnClick="@SearchExistingTasksAsync">
+                                Search
+                            </CskButton>
+                        </div>
+
+                        @if (_isSearchingTasks)
+                        {
+                            <div class="p-3 text-center">
+                                <CskSpinner Size="@CskSpinnerSize.Small" />
+                                <span class="font-size-sm ml-2">Searching eligible tasks...</span>
+                            </div>
+                        }
+                        else if (_availableExistingTasks.Count == 0)
+                        {
+                            <div class="task-search-empty">
+                                No eligible unassigned tasks found for this scope. You can author a new step above.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="task-search-results-list">
+                                @foreach (var task in _availableExistingTasks)
+                                {
+                                    <div class="task-search-item-row">
+                                        <div class="task-search-item-info">
+                                            <div class="d-flex align-center gap-2">
+                                                <span class="task-number-pill">#@task.Id.ToString()[..8]</span>
+                                                <span class="task-item-title">@task.Title</span>
+                                            </div>
+                                            <div class="task-item-meta">
+                                                <span>Assignee: <strong>@(string.IsNullOrWhiteSpace(task.AssigneeEmails) ? "Unassigned" : task.AssigneeEmails)</strong></span>
+                                                @if (task.DueDate.Year > 2000)
+                                                {
+                                                    <span>Due: @task.DueDate.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                <span>Priority: @task.Priority</span>
+                                            </div>
+                                        </div>
+                                        <CskButton Variant="CskButtonVariant.Filled"
+                                                      OnClick="@(() => AttachExistingTask(task))"
+                                                      Class="font-size-sm p-1">
+                                            Attach as Step
+                                        </CskButton>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (_stepErrors.TryGetValue("Steps", out var stepsErr))
+                {
+                    <div class="field-error-banner">@stepsErr</div>
+                }
+
+                <div class="step-cards-list">
+                    @for (int i = 0; i < _initialState.Steps.Count; i++)
+                    {
+                        var stepIndex = i;
+                        var step = _initialState.Steps[stepIndex];
+                        var isExistingAttached = step.ExistingTaskId.HasValue && step.ExistingTaskId.Value != Guid.Empty;
+
+                        <div class="step-builder-card @(isExistingAttached ? "card-attached" : "")">
+                            <div class="step-card-top-bar">
+                                <div class="step-card-order-tag">
+                                    <span class="order-number">Step #@(stepIndex + 1) (Task)</span>
+                                    @if (stepIndex == 0)
+                                    {
+                                        <span class="first-step-tag">Kickoff Step</span>
+                                    }
+                                    @if (isExistingAttached)
+                                    {
+                                        <span class="attached-tag">📎 Existing Task Attached</span>
+                                    }
+                                </div>
+
+                                <div class="d-flex align-center gap-1">
+                                    @* Move Up / Down *@
+                                    @if (stepIndex > 0 && !IsEditMode)
+                                    {
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.ArrowUp"
+                                                      OnClick="@(() => MoveStepUp(stepIndex))"
+                                                      Title="Move Step Up" />
+                                    }
+                                    @if (stepIndex < _initialState.Steps.Count - 1 && !IsEditMode)
+                                    {
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.ArrowDown"
+                                                      OnClick="@(() => MoveStepDown(stepIndex))"
+                                                      Title="Move Step Down" />
+                                    }
+
+                                    @* In Edit Mode: Cancel Step instead of Delete *@
+                                    @if (IsEditMode && WorkflowToEdit != null)
+                                    {
+                                        var existingEntity = WorkflowToEdit.Steps.FirstOrDefault(s => s.Id == step.ExistingTaskId);
+                                        var isCancelled = existingEntity?.Status == TaskStatusEnum.Cancelled;
+                                        var isCompleted = existingEntity?.Status == TaskStatusEnum.Closed;
+
+                                        @if (isCancelled)
+                                        {
+                                            <span class="cancelled-tag">Cancelled</span>
+                                        }
+                                        else if (isCompleted)
+                                        {
+                                            <span class="completed-tag">Completed</span>
+                                        }
+                                        else
+                                        {
+                                            <CskButton Variant="CskButtonVariant.Text"
+                                                          IconStart="@CskIcons.Dismiss"
+                                                          OnClick="@(() => PromptCancelExistingStep(step))"
+                                                          Class="text-danger"
+                                                          Title="Cancel this step (cannot be deleted)" />
+                                        }
+                                    }
+                                    else if (_initialState.Steps.Count > 1)
+                                    {
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.Delete"
+                                                      OnClick="@(() => RemoveStep(stepIndex))"
+                                                      Title="Remove this step" />
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="wizard-form-grid mt-2">
+                                <div class="form-half-width">
+                                    <CskTextInput Label="Step Title *"
+                                                     @bind-Value="step.Title"
+                                                     Class="full-width"
+                                                     Disabled="@(isExistingAttached && IsEditMode)"
+                                                     Placeholder="E.g. Security Vulnerability Scanning" />
+                                    @if (_stepErrors.TryGetValue($"Step_{stepIndex}_Title", out var stepTitleErr))
+                                    {
+                                        <span class="field-error-text">@stepTitleErr</span>
+                                    }
+                                </div>
+
+                                <div class="form-half-width">
+                                    <CskTextInput Label="Step Owner Email *"
+                                                     @bind-Value="step.StepOwnerEmail"
+                                                     Class="full-width"
+                                                     Placeholder="lead-engineer@company.local" />
+                                    @if (_stepErrors.TryGetValue($"Step_{stepIndex}_Owner", out var stepOwnerErr))
+                                    {
+                                        <span class="field-error-text">@stepOwnerErr</span>
+                                    }
+                                </div>
+
+                                <div class="form-half-width">
+                                    <CskDatePicker Label="Step Deadline"
+                                                      @bind-Value="step.DueDate"
+                                                      Class="full-width" />
+                                </div>
+
+                                <div class="form-half-width">
+                                    <CskTextInput Label="Deliverable Instructions / Acceptance"
+                                                     @bind-Value="step.Description"
+                                                     Class="full-width"
+                                                     Placeholder="Actionable criteria required for sign-off" />
+                                </div>
+                            </div>
+
+                            @* Subtasks Builder under this step *@
+                            <div class="subtask-builder-section">
+                                <div class="subtask-builder-header">
+                                    <span class="subtask-builder-title">
+                                        <CskIcon Icon="@CskIcons.TaskListSquare" />
+                                        Subtasks Delegated to Team (@step.SubTasks.Count)
+                                    </span>
+                                    <CskButton Variant="CskButtonVariant.Text"
+                                                  IconStart="@CskIcons.Add"
+                                                  OnClick="@(() => AddSubTaskToStep(step))"
+                                                  Class="font-size-xs p-1">
+                                        Add Subtask
+                                    </CskButton>
+                                </div>
+
+                                @if (step.SubTasks.Count > 0)
+                                {
+                                    <div class="subtask-inputs-list">
+                                        @for (int j = 0; j < step.SubTasks.Count; j++)
+                                        {
+                                            var subIndex = j;
+                                            var sub = step.SubTasks[subIndex];
+
+                                            <div class="subtask-input-row">
+                                                <span class="sub-number">#@(subIndex + 1)</span>
+                                                <CskTextInput Placeholder="Subtask title / work item"
+                                                                 @bind-Value="sub.Title"
+                                                                 Class="flex-2" />
+                                                <CskTextInput Placeholder="Team member email"
+                                                                 @bind-Value="sub.AssigneeEmail"
+                                                                 Class="flex-2" />
+                                                <CskDatePicker @bind-Value="sub.DueDate"
+                                                                  Class="flex-1" />
+                                                <CskButton Variant="CskButtonVariant.Text"
+                                                              IconStart="@CskIcons.Dismiss"
+                                                              OnClick="@(() => RemoveSubTaskFromStep(step, subIndex))"
+                                                              Title="Remove subtask" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </WizardStep>
+
+        <WizardStep Title="Review & Launch"
+                    Summary="Final review before orchestrating">
+            <div class="wizard-review-container">
+                <div class="review-section">
+                    <CskLabel Typo="Typography.H6" Class="font-weight-600">@_initialState.Title</CskLabel>
+                    <p class="review-desc">@(string.IsNullOrWhiteSpace(_initialState.Description) ? "No description provided." : _initialState.Description)</p>
+
+                    <div class="review-meta-pills">
+                        <span class="review-pill">
+                            <strong>Level:</strong>
+                            <span class="scope-pill scope-@_initialState.Level.ToString().ToLowerInvariant()">@_initialState.Level</span>
+                        </span>
+                        @if (_initialState.Level == TaskLevelEnum.Program && _selectedProgram != null)
+                        {
+                            <span class="review-pill"><strong>Program:</strong> @_selectedProgram.Name</span>
+                        }
+                        @if (_initialState.Level == TaskLevelEnum.Project && _selectedProject != null)
+                        {
+                            <span class="review-pill"><strong>Project:</strong> @_selectedProject.Name</span>
+                        }
+                        <span class="review-pill"><strong>Priority:</strong> @_initialState.Priority</span>
+                        <span class="review-pill"><strong>Constant Owner:</strong> @_initialState.WorkflowOwnerEmail</span>
+                        @if (_initialState.DueDate.HasValue)
+                        {
+                            <span class="review-pill"><strong>Deadline:</strong> @_initialState.DueDate.Value.ToString("yyyy-MM-dd")</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_initialState.WatcherEmails))
+                        {
+                            <span class="review-pill"><strong>Watchers:</strong> @_initialState.WatcherEmails</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <CskLabel Typo="Typography.Body" Class="font-weight-600 mb-2">
+                        Sequential Execution Flow (@_initialState.Steps.Count Steps)
+                    </CskLabel>
+                    <div class="review-steps-list">
+                        @for (int i = 0; i < _initialState.Steps.Count; i++)
+                        {
+                            var step = _initialState.Steps[i];
+                            var isFirst = i == 0;
+                            <div class="review-step-item">
+                                <div class="review-step-num">#@(i + 1)</div>
+                                <div class="review-step-body">
+                                    <div class="review-step-header">
+                                        <strong>@step.Title</strong>
+                                        @if (isFirst)
+                                        {
+                                            <span class="first-active-pill">Will activate immediately</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pending-pill">Pending Step #@(i) completion</span>
+                                        }
+                                    </div>
+                                    <div class="review-step-owner">
+                                        Step Owner: <em>@step.StepOwnerEmail</em>
+                                        @if (step.DueDate.HasValue)
+                                        {
+                                            <span> • Due: @step.DueDate.Value.ToString("yyyy-MM-dd")</span>
+                                        }
+                                        @if (step.SubTasks.Count > 0)
+                                        {
+                                            <span> • Delegated Subtasks: <strong>@step.SubTasks.Count</strong></span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="review-notice-box">
+                    <CskIcon Icon="@CskIcons.Info" Class="csk-icon-primary" />
+                    <span>
+                        Workflow orchestration enforces single active step ownership. The constant workflow owner
+                        (@_initialState.WorkflowOwnerEmail) retains accountability and receives alerts throughout execution.
+                    </span>
+                </div>
+            </div>
+        </WizardStep>
+    </Steps>
+</CskWizardModal>
+
+@* Step Cancellation Modal Dialog (Edit Mode) *@
+@if (_showCancelStepModal && _stepToCancel != null)
+{
+    <div class="cancel-step-dialog-backdrop">
+        <div class="cancel-step-dialog">
+            <div class="d-flex align-center gap-2 mb-3">
+                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                <CskLabel Typo="Typography.H6" Class="font-weight-600">Cancel Step on Workflow</CskLabel>
+            </div>
+            <p class="font-size-sm text-hint mb-3">
+                Tasks once added to a workflow cannot be deleted to maintain compliance audit trails. Instead, this step will be marked as <strong>Cancelled</strong>. If the step is currently active, the workflow will be paused.
+            </p>
+            <CskTextInput Label="Mandatory Cancellation Reason *"
+                             @bind-Value="_cancelStepReason"
+                             Placeholder="Reason for cancelling step..."
+                             Class="full-width mb-4" />
+            @if (!string.IsNullOrWhiteSpace(_cancelStepError))
+            {
+                <div class="field-error-text mb-3">@_cancelStepError</div>
+            }
+            <div class="d-flex justify-end gap-2">
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _showCancelStepModal = false)">Dismiss</CskButton>
+                <CskButton Variant="CskButtonVariant.Filled"
+                              Class="btn-danger-confirm"
+                              OnClick="@ConfirmCancelExistingStepAsync">
+                    Confirm Cancellation
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}

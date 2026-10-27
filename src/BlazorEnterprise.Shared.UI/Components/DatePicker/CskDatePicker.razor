@@ -1,0 +1,44 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-date-field @(HasError ? "csk-field-error" : "") @(Disabled ? "csk-field-disabled" : "") @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="csk-field-label">
+            @Label
+            @if (Required)
+            {
+                <span class="csk-field-required">*</span>
+            }
+        </label>
+    }
+
+    <div class="csk-date-input-box">
+        <input id="@Id"
+               type="date"
+               value="@FormattedValue"
+               disabled="@Disabled"
+               readonly="@ReadOnly"
+               required="@Required"
+               min="@FormattedMin"
+               max="@FormattedMax"
+               class="csk-date-input"
+               @onchange="HandleChangeAsync"
+               @attributes="AdditionalAttributes" />
+        <span class="csk-date-calendar-icon" aria-hidden="true">
+            <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-sm" />
+        </span>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorText))
+    {
+        <div class="csk-field-helper csk-field-helper-error">
+            @ErrorText
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(HelperText))
+    {
+        <div class="csk-field-helper">
+            @HelperText
+        </div>
+    }
+</div>

@@ -1,0 +1,107 @@
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Dtos.Response;
+using BlazorEnterprise.Core.Security;
+using BlazorEnterprise.Infrastructure.Security;
+using BlazorEnterprise.Shared.Contracts.Engine.Client;
+using BlazorEnterprise.Shared.DataListTypes;
+using FluentAssertions;
+using Microsoft.Extensions.Configuration;
+using Xunit;
+using TenantInfo = BlazorEnterprise.Core.Contracts.TenantInfo;
+
+namespace BlazorEnterprise.Core.Tests.Security;
+
+public class TenantContextRequiredTenantIdTests
+{
+    [Fact]
+    public void TenantId_WhenInitializedWithValidGuid_ReturnsGuid()
+    {
+        // Arrange
+        var context = new TenantContext();
+        var tenantId = Guid.CreateVersion7();
+        var allowedTenants = new List<TenantInfo>
+        {
+            new TenantInfo(tenantId, "Acme Corp", "acme", true)
+        };
+
+        // Act
+        context.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, allowedTenants, "acme", isRootTenant: false);
+
+        // Assert
+        context.TenantId.Should().Be(tenantId);
+    }
+
+    [Fact]
+    public void TenantId_WhenUninitialized_ThrowsZeroTrustInvalidOperationException()
+    {
+        // Arrange
+        var context = new TenantContext();
+
+        // Act & Assert
+        context.HasActiveTenant.Should().BeFalse();
+        var act = () => context.TenantId;
+        act.Should().Throw<System.Security.SecurityException>();
+    }
+
+    [Fact]
+    public void TenantId_WhenInitializedWithGuidEmpty_ThrowsZeroTrustInvalidOperationException()
+    {
+        // Arrange
+        var context = new TenantContext();
+
+        // Act
+        var act = () => context.Initialize(Guid.Empty, "Invalid Tenant", UserTypeEnum.CompanyUser, [], "invalid");
+        act.Should().Throw<System.Security.SecurityException>();
+    }
+
+    [Fact]
+    public void TenantId_AfterReset_ThrowsZeroTrustInvalidOperationException()
+    {
+        // Arrange
+        var context = new TenantContext();
+        var tenantId = Guid.CreateVersion7();
+        context.Initialize(tenantId, "Acme Corp", UserTypeEnum.CompanyUser, [new TenantInfo(tenantId, "Acme Corp", "acme", true)], "acme");
+
+        // Act
+        context.Reset();
+
+        // Assert
+        context.HasActiveTenant.Should().BeFalse();
+        var act = () => context.TenantId;
+        act.Should().Throw<System.Security.SecurityException>();
+    }
+
+    [Fact]
+    public void TenantTokenService_GenerateS2SToken_WithGuid_SucceedsAndCarriesGuidClaim()
+    {
+        // Arrange
+        var tenantGuid = Guid.CreateVersion7();
+        var tenantIdStr = tenantGuid.ToString();
+        var licenseKey = OpaqueIdUtility.GenerateSecureLicenseKey();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"Tenants:{tenantIdStr}:LicenseKey"] = licenseKey
+            })
+            .Build();
+
+        var correlationContext = new CorrelationContext { CorrelationId = "corr-" + Guid.NewGuid() };
+        var tokenService = new TenantTokenService(config, correlationContext);
+
+        // Act
+        var token = tokenService.GenerateS2SToken(tenantGuid, "BatchWorker");
+
+        // Assert
+        token.Should().NotBeNullOrWhiteSpace();
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(token);
+        jwt.Claims.Should().Contain(c => c.Type == "tenant_id" && c.Value == tenantIdStr);
+        jwt.Claims.Should().Contain(c => c.Type == "sub" && c.Value == "BatchWorker");
+        jwt.Claims.Should().Contain(c => c.Type == "corr_id" && c.Value == correlationContext.CorrelationId);
+    }
+}

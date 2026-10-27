@@ -1,0 +1,44 @@
+@page "/auth-error"
+@rendermode InteractiveServer
+@attribute [AllowAnonymous]
+@namespace BlazorEnterprise.Web.Components.Pages
+@using BlazorEnterprise.Shared.UI.Components
+@inject NavigationManager NavigationManager
+
+<PageTitle>Access Denied - BlazorEnterprise</PageTitle>
+
+<div class="auth-error-container">
+    <div class="csk-card auth-error-card">
+        <div class="auth-error-content">
+            <div class="auth-error-icon-wrap">
+                <CskIcon Icon="@CskIcons.ShieldDismiss" Class="csk-icon-error csk-icon-xl" />
+            </div>
+
+            <h2 class="auth-error-title">Access Denied</h2>
+
+            <p class="auth-error-desc">
+                Access Denied: Please contact your IT administrator.
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Reason))
+            {
+                <div class="auth-error-reason-box">
+                    <strong>Reason:</strong> @Reason
+                </div>
+            }
+
+            <hr class="auth-error-divider" />
+
+            <CskButton Variant="CskButtonVariant.Filled"
+                       Class="auth-error-btn"
+                       OnClick="@(() => NavigationManager.NavigateTo("/login"))">
+                Return to Login
+            </CskButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Reason { get; set; }
+}

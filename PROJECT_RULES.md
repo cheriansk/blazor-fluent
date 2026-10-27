@@ -1,4 +1,4 @@
-# BlazorFluent — Project Rules & Best Practices
+# BlazorEnterprise — Project Rules & Best Practices
 
 > **Canonical reference for all code authored by humans or AI agents in this template and any project derived from it.**
 > Every contributor — developer, reviewer, or AI coding assistant — must follow these rules without exception.
@@ -27,23 +27,23 @@ When cloning this template for a new Blazor WebApp, complete these steps before 
 ### 1.1 Clean Architecture Layer Boundaries
 
 ```
-BlazorFluent.Core          → Domain entities, contracts, enums, value objects, validation, OpaqueIdUtility
-BlazorFluent.Persistence   → EF Core DbContext, configurations, interceptors, migrations, data services
-BlazorFluent.Infrastructure→ S2S token services, outbound senders (email/Teams), security middleware, observability
-BlazorFluent.Jobs          → Background job handlers, schedulers, event queues (all batch logic resides here)
-BlazorFluent.Worker        → Thin background console host shell (executes queue listeners & schedulers; 0 batch logic)
-BlazorFluent.UI.Templates  → Reusable enterprise UI templates (Generic Fluent UI V5 Wizard RCL)
-BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs composition root
+BlazorEnterprise.Core          → Domain entities, contracts, enums, value objects, validation, OpaqueIdUtility
+BlazorEnterprise.Persistence   → EF Core DbContext, configurations, interceptors, migrations, data services
+BlazorEnterprise.Infrastructure→ S2S token services, outbound senders (email/Teams), security middleware, observability
+BlazorEnterprise.Jobs          → Background job handlers, schedulers, event queues (all batch logic resides here)
+BlazorEnterprise.Worker        → Thin background console host shell (executes queue listeners & schedulers; 0 batch logic)
+BlazorEnterprise.Shared.UI      → Reusable enterprise UI components, icons, theme tokens, and wizard framework RCL
+BlazorEnterprise (Web)         → Razor components, pages, layouts, Program.cs composition root
 ```
 
 | Rule | Description |
 |------|-------------|
 | **Dependency direction** | Dependencies flow inward only. `Core` has zero internal project references. |
-| **Persistence isolation** | `BlazorFluent.Persistence` contains 100% database persistence code. No HTTP clients, no SMTP, no file I/O. |
-| **Infrastructure isolation** | `BlazorFluent.Infrastructure` handles outbound integrations, S2S auth delegation, and browser interop services. Never references `Persistence`. |
-| **Worker shell isolation** | `BlazorFluent.Worker` is strictly an executable console host shell (~60 lines). Never author batch handlers or business logic directly in `BlazorFluent.Worker`. All batch logic must live in `BlazorFluent.Jobs`. |
-| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `UI.Templates` ← `Web`, All except `Web`/`UI.Templates` ← `Worker`. |
-| **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorFluent.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, `Jobs`, or `UI.Templates`. |
+| **Persistence isolation** | `BlazorEnterprise.Persistence` contains 100% database persistence code. No HTTP clients, no SMTP, no file I/O. |
+| **Infrastructure isolation** | `BlazorEnterprise.Infrastructure` handles outbound integrations, S2S auth delegation, and browser interop services. Never references `Persistence`. |
+| **Worker shell isolation** | `BlazorEnterprise.Worker` is strictly an executable console host shell (~60 lines). Never author batch handlers or business logic directly in `BlazorEnterprise.Worker`. All batch logic must live in `BlazorEnterprise.Jobs`. |
+| **No circular references** | `Core` ← `Persistence`, `Core` ← `Infrastructure`, `Core` + `Persistence` ← `Jobs`, All + `Shared.UI` ← `Web`, All except `Web`/`Shared.UI` ← `Worker`. |
+| **Abstractions in Core** | Every service contract (`I*Service`, `I*Sender`, `I*Validator`) lives in `BlazorEnterprise.Core/Contracts/`. Implementations live in `Persistence`, `Infrastructure`, `Jobs`, or `Shared.UI`. |
 
 ### 1.2 Service Scope Lifetime & Captive Dependency Governance
 
@@ -71,14 +71,14 @@ BlazorFluent (Web)         → Razor components, pages, layouts, Program.cs comp
 
 ### 1.5 Entity Architectural Standards & Roslyn Analyzer Governance (TG007 - TG012)
 
-Every domain entity and abstract entity base class in `BlazorFluent.Core` **must strictly follow the solution entity laws**, enforced automatically at compile time via Roslyn Analyzer rules in `TemplateGuard.Analyzers`:
+Every domain entity and abstract entity base class in `BlazorEnterprise.Core` **must strictly follow the solution entity laws**, enforced automatically at compile time via Roslyn Analyzer rules in `TemplateGuard.Analyzers`:
 
 | Rule Code | Law & Requirement | Allowed Approach & Enforcement |
 |-----------|-------------------|--------------------------------|
 | **`TG007`** | **Entity Naming Law** | Every domain entity class and entity base class must end with the `Entity` suffix (e.g. `TaskEntity`, `TenantEntity`). Enforced on all types inheriting `BaseEntity` or declared in domain namespaces. |
 | **`TG008`** | **Inheritance & Marker Interfaces Law** | (1) Must inherit `BaseEntity` (directly or via `AuditableEntity` / `TenantAuditableEntity`);<br/>(2) Must implement tenancy boundary: `ITenantEntity` (tenant-scoped) or `IGlobalEntity` (host-wide);<br/>(3) Must implement exactly ONE deletion lifecycle marker: `ISoftDeletableEntity`, `IHardDeletableEntity`, or `IImmutableEntity`;<br/>(4) If implementing `IProjectScopedEntity`, MUST also implement `ITenantEntity`. |
-| **`TG009`** | **Companion Validator Law** | Every concrete domain entity must declare a companion validator class in `BlazorFluent.Core` implementing `AbstractValidator<TEntity>` (e.g. `class TaskEntityValidator : AbstractValidator<TaskEntity>`). |
-| **`TG010`** | **Companion EF Core Configuration Law** | Every concrete domain entity mapped in the database must declare a companion configuration class in `BlazorFluent.Persistence` implementing `IEntityTypeConfiguration<TEntity>` (e.g. `class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>`). |
+| **`TG009`** | **Companion Validator Law** | Every concrete domain entity must declare a companion validator class in `BlazorEnterprise.Core` implementing `AbstractValidator<TEntity>` (e.g. `class TaskEntityValidator : AbstractValidator<TaskEntity>`). |
+| **`TG010`** | **Companion EF Core Configuration Law** | Every concrete domain entity mapped in the database must declare a companion configuration class in `BlazorEnterprise.Persistence` implementing `IEntityTypeConfiguration<TEntity>` (e.g. `class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>`). |
 | **`TG011`** | **Strict Prohibition of `DateOnly`** | Domain entities must never declare properties of type `DateOnly` or `DateOnly?`. All temporal fields must be declared as UTC `DateTime`. |
 | **`TG012`** | **Relational Normalization & Navigation Law** | Domain entities must persist foreign keys (`Guid`) only. Never persist mutable user attributes (`UserEmail`, `UserName`, `AuthorEmail`, `AuthorName`); convenience forwarders must be decorated with `[NotMapped]`. |
 
@@ -90,7 +90,7 @@ Every domain entity and abstract entity base class in `BlazorFluent.Core` **must
 
 ### 1.2 Entity Architecture & Developer Decision Guide
 
-When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step decision framework:
+When creating a new entity in `BlazorEnterprise.Core/Domain/`, follow this 3-step decision framework:
 
 #### Step 1: Choose the Base Class (Single Class Inheritance)
 | If the entity is... | Inherit from... | What you get |
@@ -128,12 +128,12 @@ When creating a new entity in `BlazorFluent.Core/Domain/`, follow this 3-step de
 
 ### 1.3 DataListTypes Enum Standard
 
-All shared domain enums live in `BlazorFluent.Shared/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
+All shared domain enums live in `BlazorEnterprise.Shared/DataListTypes/`. Never declare shared enums in `Contracts/`, `Common/`, or `Constants/`.
 
 | Standard | Rule & Implementation |
 |---|---|
-| **`*Enum` Suffix Law** | All enums in `BlazorFluent.Shared.DataListTypes` **MUST** end with the `Enum` suffix (e.g. `WorkflowPhaseEnum`, `ContractTierEnum`, `DependencyNodeTypeEnum`, `JobTriggerSourceEnum`) for immediate cognitive recognition in code review. Suffixes `Lst`/`List` (misleading collection indicator) and `Dtl`/`Detail` (misleading DTO/entity indicator) are strictly prohibited. Enforced at compile-time by Roslyn Analyzer rule **`TG006`**. |
-| **Enum Taxonomy Law (`TG014`)** | Every enum in `BlazorFluent.Shared.DataListTypes` must be explicitly decorated with either `[LifecycleEnum]` (state machine / progression lifecycle) or `[ClassificationEnum]` (descriptive attribute, category, or role). Enforced at compile-time by Roslyn Analyzer rule **`TG014`**. |
+| **`*Enum` Suffix Law** | All enums in `BlazorEnterprise.Shared.DataListTypes` **MUST** end with the `Enum` suffix (e.g. `WorkflowPhaseEnum`, `ContractTierEnum`, `DependencyNodeTypeEnum`, `JobTriggerSourceEnum`) for immediate cognitive recognition in code review. Suffixes `Lst`/`List` (misleading collection indicator) and `Dtl`/`Detail` (misleading DTO/entity indicator) are strictly prohibited. Enforced at compile-time by Roslyn Analyzer rule **`TG006`**. |
+| **Enum Taxonomy Law (`TG014`)** | Every enum in `BlazorEnterprise.Shared.DataListTypes` must be explicitly decorated with either `[LifecycleEnum]` (state machine / progression lifecycle) or `[ClassificationEnum]` (descriptive attribute, category, or role). Enforced at compile-time by Roslyn Analyzer rule **`TG014`**. |
 | **Category-Scoped Lifecycle Transition Law (`TG015`)** | Every enum decorated with `[LifecycleEnum]` must declare companion definitions containing an `AllowedTransitions` dictionary, scoped by Category where multiple entity workflows share an enum (e.g. `AllowedTransitions[Categories.Task]` vs `AllowedTransitions[Categories.Risk]`). State mutations must execute through entity domain transition methods (`entity.TransitionTo()`, `task.StartWork()`, `task.Complete()`). Enforced at compile-time by Roslyn Analyzer rule **`TG015`**. |
 | **Mandatory Extension Method Law (`TG013`)** | Direct calls to `Enum.TryParse`, `Enum.Parse`, `Enum.GetValues`, or `Enum.GetNames` are strictly prohibited across all code. All enum parsing, conversion, and metadata lookups must use `DataListExtensions` methods (`.ToEnum<T>()`, `.TryToEnum<T>()`, `.ToEnumOrNull<T>()`, `.GetDisplayName()`, `.GetCode()`, `.ToInt()`). Enforced at compile-time by Roslyn Analyzer rule **`TG013`**. |
 | **Multi-Category Membership** | `[DataListCategory]` supports `AllowMultiple = true`. Enums shared across multiple entity subtypes (e.g. `Open` and `Closed` shared by Tasks, SubTasks, and Risks) declare multiple category tags using strongly-typed companion constants (e.g. `[DataListCategory(Categories.Task)]`). |
@@ -155,8 +155,8 @@ Validation is strictly organized into two distinct, intuitive tiers to prevent c
 
 | Tier | Purpose | Location | Target Type | How it Fires |
 |---|---|---|---|---|
-| **Tier 1: Page / Feature Form** | Instant UI field-level red error feedback | `BlazorFluent.Core/Validation/<Module>/` | Request / Form DTO | Automatically via Blazor `<EditForm>` with `<FluentValidationValidator />` |
-| **Tier 2: Entity Invariant Shield** | Fail-closed database integrity guard | `BlazorFluent.Core/Domain/<Module>/` | Domain Entity POCO | Automatically via EF Core `EntityValidationInterceptor` during `SaveChangesAsync` |
+| **Tier 1: Page / Feature Form** | Instant UI field-level red error feedback | `BlazorEnterprise.Core/Validation/<Module>/` | Request / Form DTO | Automatically via Blazor `<EditForm>` with `<FluentValidationValidator />` |
+| **Tier 2: Entity Invariant Shield** | Fail-closed database integrity guard | `BlazorEnterprise.Core/Domain/<Module>/` | Domain Entity POCO | Automatically via EF Core `EntityValidationInterceptor` during `SaveChangesAsync` |
 
 #### Architectural Invariant Rules:
 1. **The Single-Entity Invariant Rule**: A Tier 2 Entity Validator must **only inspect properties of its own entity**. It is strictly **forbidden** to inject `DbContext`, call repositories, or reference properties of external entities.
@@ -317,7 +317,7 @@ The following headers are injected by `SecurityHeadersExtensions` middleware and
 |------|-------------|
 | **Zero Shared Keys in Client Nodes** | Client WebApp and Worker nodes never possess or store Azure Key Vault master keys. WebApp and Worker nodes sign S2S tokens exclusively using `Tenants:{tenantId}:LicenseKey`. |
 | **Masked Opaque Claims (GDPR / ASVS)** | Ephemeral S2S tokens must **never** transmit raw user emails, display names, or database primary keys across network boundaries. Tokens use opaque masked claims: `tid` (`tnt_...`), `tenant_id`, `cid` (correlation ID), and `act` (`BatchWorker` or `SystemDaemon`). |
-| **Dynamic Key Resolution** | `BlazorFluent.Api` resolves JWT signing keys dynamically via `IssuerSigningKeyResolver`, authenticating tenant-signed S2S tokens against `Tenants:{tenantId}:LicenseKey` while admitting the Cloud Master Key for user tokens. Missing tenant keys fail closed. |
+| **Dynamic Key Resolution** | `BlazorEnterprise.Api` resolves JWT signing keys dynamically via `IssuerSigningKeyResolver`, authenticating tenant-signed S2S tokens against `Tenants:{tenantId}:LicenseKey` while admitting the Cloud Master Key for user tokens. Missing tenant keys fail closed. |
 | **Ephemeral Token Expiry** | S2S tokens minted by `ITenantTokenService` have a strict 5-minute lifespan (`DateTime.UtcNow.AddMinutes(5)`), preventing replay attacks. |
 | **Compound Query Tenant Scoping** | Even with EF Core global query filters active, all batch job handlers and background listeners must enforce explicit compound LINQ query scoping: `f.TenantId == jobEvent.TenantId && ...`. |
 | **Cross-Tenant Quarantine Guard** | Background handlers processing multi-file manifests must verify that every file entity's `TenantId` matches `jobEvent.TenantId`. Any mismatch immediately throws a security violation and halts execution. |
@@ -330,7 +330,7 @@ The following headers are injected by `SecurityHeadersExtensions` middleware and
 
 | Rule | Description |
 |------|-------------|
-| **Fluent API only** | All entity configurations use `IEntityTypeConfiguration<T>` in `BlazorFluent.Persistence/Configurations/`. Never use data annotation attributes for EF mapping. |
+| **Fluent API only** | All entity configurations use `IEntityTypeConfiguration<T>` in `BlazorEnterprise.Persistence/Configurations/`. Never use data annotation attributes for EF mapping. |
 | **PostgreSQL schemas** | Each domain area has its own PostgreSQL schema: `audit`, `catalog`, `identity`, `jobs`, `notifications`, `tenancy`. |
 | **Audit columns** | Every entity gets `Created`, `CreatedBy`, `Updated`, `UpdatedBy` columns — either via `IAuditableEntity` or shadow properties injected by `AuditableEntityInterceptor`. |
 | **Exception processing** | `options.UseExceptionProcessor()` is configured in `AddDbContext`. Catch strongly-typed exceptions (`UniqueConstraintException`, `ForeignKeyConstraintException`) instead of generic `DbUpdateException`. |
@@ -348,7 +348,7 @@ The following headers are injected by `SecurityHeadersExtensions` middleware and
 
 ### 4.3 ComplexType Value Objects
 
-Value objects use EF Core 10 `[ComplexType]` and are declared as C# `record` types in `BlazorFluent.Core/Domain/ValueObjects/`. They embed inline as columns in the host entity's table without shadow keys or join tables.
+Value objects use EF Core 10 `[ComplexType]` and are declared as C# `record` types in `BlazorEnterprise.Core/Domain/ValueObjects/`. They embed inline as columns in the host entity's table without shadow keys or join tables.
 
 **Reference example**: `Address` value object on `UserEntity.PhysicalAddress`, configured via `builder.ComplexProperty(u => u.PhysicalAddress)`.
 
@@ -374,20 +374,23 @@ All current and future `.razor` files must adhere strictly to this 4-tier naming
 
 > **Framework Roots Exception**: Framework-mandated files retain their standard Blazor roles: `App.razor` (root HTML shell), `Routes.razor` (router shell), `MainLayout.razor` (master default layout), `_Imports.razor` (compiler directives).
 >
-> **Code-Behind & Scoped CSS Co-Location**:
-> - Code-behind files must exactly match the full component file name: `*Page.razor.cs`, `*Comp.razor.cs`, `*Modal.razor.cs`, `*Popup.razor.cs`, `*Layout.razor.cs`.
-> - Scoped CSS files must exactly match: `*Page.razor.css`, `*Comp.razor.css`, `*Modal.razor.css`, `*Popup.razor.css`, `*Layout.razor.css`.
+> **Code-Behind & Partial Class Standard (30-Line Threshold)**:
+> - **Threshold**: If C# code in `@code` exceeds **30 lines** or requires business orchestration/service injection, it **MUST be split into a companion partial class file** (`*Page.razor.cs`, `*Comp.razor.cs`, `*Modal.razor.cs`, `*Popup.razor.cs`, `*Layout.razor.cs`).
+> - **Dependency Injection**: In partial classes, declare injected services as properties with `[Inject]` (e.g. `[Inject] private ITenantService TenantService { get; set; } = default!;`).
+> - **Directives Separation**: Page routes (`@page "/..."`), layout directives (`@layout ...`), and security attributes (`@attribute [Authorize]`) remain at the top of the `.razor` markup file.
+> - **Lightweight Primitives**: For simple presentational components with 30 lines or fewer of C# (parameters and lightweight toggles), an inline `@code` block in the `.razor` file is preferred to avoid unnecessary file proliferation.
+> - **Scoped CSS Co-Location**: Scoped CSS files must match: `*.razor.css`.
 
-### 5.2 Component Library
+### 5.2 Component Library: Native Material Design 3 (Csk*)
 
-This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use V5 APIs.
+This project uses native Material Design 3 components (`Csk*`) housed in `BlazorEnterprise.Shared.UI`. All components adhere to 100% strict Content Security Policy (CSP) compliance.
 
 | Rule | Description |
 |------|-------------|
-| **V5 appearance enums** | Use `ButtonAppearance.Primary`, `BadgeColor.Brand`, `MessageBarIntent.Success`, etc. Never use V4 string-based parameters. |
-| **Dual-generic selects** | `FluentSelect<TOption, TValue>` requires both type parameters (`TOption="T" TValue="string"`). Never omit the value type. |
-| **Icons package** | Use `Microsoft.FluentUI.AspNetCore.Components.Icons` for all icon references. |
-| **Native Fluent components only** | Never substitute raw HTML input elements (`<select>`, raw checkboxes, raw buttons) when native Fluent UI components exist (`<FluentSelect>`, `<FluentCheckbox>`, `<FluentButton>`). |
+| **Csk* Component Prefix** | All shared UI primitives and compounds use the `Csk*` naming convention (`<CskButton>`, `<CskCard>`, `<CskTextInput>`, `<CskTable>`, `<CskDialog>`, etc.). |
+| **Strict CSP Compliance** | Zero inline styles (`style="..."`) are permitted in any component or page. All sizing, colors, and layout must use pure CSS classes and Material 3 design tokens. |
+| **Native SVG Icons (`CskIcons`)** | Icons are rendered via `<CskIcon Icon="CskIcons.*" />` using lightweight native SVG path records without external font files or style attributes. |
+| **Decoupled RCL** | All shared components live in `BlazorEnterprise.Shared.UI` and are imported into consumer applications via `@using BlazorEnterprise.Shared.UI.Components`.
 
 ### 5.2.1 Fluent UI Blazor MCP Server Governance & V5 Exclusivity Standard
 All developers and AI assistants working on UI components **MUST ALWAYS** consult the `fluent-ui-blazor` MCP server before implementing, refactoring, or referencing components:
@@ -587,14 +590,14 @@ A frequent point of confusion for .NET developers transitioning from traditional
 ## 13. File & Folder Reference
 
 ```
-BlazorFluent/
-├── BlazorFluent.slnx                           # .NET SLNX solution
+BlazorEnterprise/
+├── BlazorEnterprise.slnx                           # .NET SLNX solution
 ├── Directory.Build.props                        # NuGet CVE audit enforcement
 ├── .github/
 │   ├── dependabot.yml                           # Weekly NuGet dependency updates
 │   └── workflows/owasp-zap-scan.yml             # Weekly OWASP ZAP DAST scan
 │
-├── BlazorFluent.Core/                           # Domain layer (zero dependencies)
+├── BlazorEnterprise.Core/                           # Domain layer (zero dependencies)
 │   ├── Common/                                  # Result monad, pagination, query filters
 │   ├── Constants/                               # Role constants
 │   ├── Contracts/                               # All service interfaces
@@ -603,7 +606,7 @@ BlazorFluent/
 │   ├── Events/                                  # Job event contracts
 │   └── Validation/                              # FluentValidation validators
 │
-├── BlazorFluent.Persistence/                    # Data access layer
+├── BlazorEnterprise.Persistence/                    # Data access layer
 │   ├── Configurations/                          # EF Core Fluent API configurations
 │   ├── Context/                                 # AppDbContext
 │   ├── Extensions/                              # LINQ query extensions (LeftJoin)
@@ -611,7 +614,7 @@ BlazorFluent/
 │   ├── Services/                                # Data services (UnitOfWork, TenantService, etc.)
 │   └── PersistenceExtensions.cs                 # DI registration
 │
-├── BlazorFluent.Infrastructure/                 # Integration & middleware layer
+├── BlazorEnterprise.Infrastructure/                 # Integration & middleware layer
 │   ├── Notifications/                           # Email/Teams senders, Channel queue, worker
 │   ├── Observability/                           # Circuit lifecycle handler
 │   ├── Security/                                # CSP headers, AuthZ handlers, HMAC validator, XSS sanitizer
@@ -619,7 +622,7 @@ BlazorFluent/
 │   ├── UI/                                      # Responsive breakpoint service
 │   └── InfrastructureExtensions.cs              # DI registration
 │
-├── BlazorFluent.Jobs/                           # Background processing layer
+├── BlazorEnterprise.Jobs/                           # Background processing layer
 │   ├── Abstractions/                            # IBatchJobHandler, IJobEventQueue
 │   ├── Jobs/                                    # Job handlers (Audit/, Catalog/)
 │   ├── Listeners/                               # Channel consumer with retry policy
@@ -628,7 +631,7 @@ BlazorFluent/
 │   ├── Services/                                # JobManagerService
 │   └── JobsExtensions.cs                        # DI registration
 │
-└── BlazorFluent (Web)/                          # Presentation & composition root
+└── BlazorEnterprise (Web)/                          # Presentation & composition root
     ├── Components/
     │   ├── Common/                              # Reusable components (PageHeader, ConfirmDialog, etc.)
     │   ├── Layout/                              # MainLayout, NavMenu, NotificationBell, TenantSwitcher
@@ -652,11 +655,11 @@ BlazorFluent/
 
 ## 14. Enterprise UI Wizards & Sequential Workflows Governance
 
-### 14.1 Enterprise Wizards Framework (`BlazorFluent.UI.Templates`)
+### 14.1 Enterprise Wizards Framework (`BlazorEnterprise.Shared.UI`)
 
 | Architectural Requirement | Implementation Rule |
 |---------------------------|---------------------|
-| **Decoupled RCL Package** | Reusable wizard templates reside in `BlazorFluent.UI.Templates` (NuGet-ready Razor Class Library), keeping presentation patterns decoupled from specific business domain logic. |
+| **Decoupled RCL Package** | Reusable wizard templates reside in `BlazorEnterprise.Shared.UI` (NuGet-ready Razor Class Library), keeping presentation patterns decoupled from specific business domain logic. |
 | **Declarative Composition** | Developers compose multi-step wizards declaratively using `<FluentWizardModal TState="...">` and child `<WizardStep TState="...">` tags. |
 | **In-Memory State Preservation** | State is held in-memory via reference in generic `WizardContext<TState>` across all step transitions. Form inputs bind directly to state properties without intermediate database round-trips. |
 | **Accidental Dismissal Lock** | Backdrop clicks are locked from dismissing the modal. The cancel/close action evaluates `Context.IsDirty`; if dirty, a confirmation modal prompts before discarding user input. |
@@ -682,14 +685,14 @@ BlazorFluent/
 
 For deep-dive architectural specifications, security walkthroughs, and code recipes, refer to the following guides:
 
-- [**`docs/00-Overview-and-Glossary.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/00-Overview-and-Glossary.md) — Domain mental model, personas, feature map, and glossary.
-- [**`docs/01-Getting-Started.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/01-Getting-Started.md) — Setup, `Rename-Project.ps1`, configuration dictionary, and migrations.
-- [**`docs/02-Architecture.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture.md) — Clean Architecture 6-project topology, DI rules, interceptors, and background channels.
-- [**`docs/03-Security-Model.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model.md) — Defense-in-depth, HMAC seals, tenant isolation, and session management.
-- [**`docs/04-Task-Hierarchy-and-Workflows.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/04-Task-Hierarchy-and-Workflows.md) — Task scoping, sequential workflows, step owners, and `<FluentWizardModal>`.
-- [**`docs/05-UI-Conventions-Fluent-V5.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/05-UI-Conventions-Fluent-V5.md) — Component taxonomy (`*Page/*Comp/*Modal`), catalog, and V5 pitfall patterns.
-- [**`docs/06-How-To-Extend.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/06-How-To-Extend.md) — Step-by-step copy-paste recipes for extending features.
-- [**`docs/07-AI-Agent-Rules.md`**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/07-AI-Agent-Rules.md) — Operational guardrails and instructions for AI coding assistants.
+- [**`docs/00-Overview-and-Glossary.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/00-Overview-and-Glossary.md) — Domain mental model, personas, feature map, and glossary.
+- [**`docs/01-Getting-Started.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/01-Getting-Started.md) — Setup, `Rename-Project.ps1`, configuration dictionary, and migrations.
+- [**`docs/02-Architecture.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/02-Architecture.md) — Clean Architecture 6-project topology, DI rules, interceptors, and background channels.
+- [**`docs/03-Security-Model.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/03-Security-Model.md) — Defense-in-depth, HMAC seals, tenant isolation, and session management.
+- [**`docs/04-Task-Hierarchy-and-Workflows.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/04-Task-Hierarchy-and-Workflows.md) — Task scoping, sequential workflows, step owners, and `<FluentWizardModal>`.
+- [**`docs/05-UI-Conventions-Fluent-V5.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/05-UI-Conventions-Fluent-V5.md) — Component taxonomy (`*Page/*Comp/*Modal`), catalog, and V5 pitfall patterns.
+- [**`docs/06-How-To-Extend.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/06-How-To-Extend.md) — Step-by-step copy-paste recipes for extending features.
+- [**`docs/07-AI-Agent-Rules.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/07-AI-Agent-Rules.md) — Operational guardrails and instructions for AI coding assistants.
 
 ---
 

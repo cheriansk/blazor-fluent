@@ -1,0 +1,1072 @@
+using BlazorEnterprise.Infrastructure.Alerting;
+using Azure.Identity;
+
+using Azure.Monitor.OpenTelemetry.AspNetCore;
+
+using BlazorEnterprise.Components;
+
+using BlazorEnterprise.Core.Contracts;
+
+using BlazorEnterprise.Core.Domain.Base;
+
+using BlazorEnterprise.Core.Validation;
+
+using BlazorEnterprise.Infrastructure;
+
+using BlazorEnterprise.Infrastructure.Observability;
+
+using BlazorEnterprise.Infrastructure.Security;
+
+using BlazorEnterprise.Jobs;
+
+using BlazorEnterprise.Persistence;
+
+using BlazorEnterprise.Persistence.Context;
+
+using BlazorEnterprise.Services;
+
+using FluentValidation;
+
+using Microsoft.EntityFrameworkCore;
+
+using Microsoft.AspNetCore.Authorization;
+
+using Microsoft.AspNetCore.Authorization.Policy;
+
+using Microsoft.AspNetCore.Components.Authorization;
+
+using Microsoft.AspNetCore.Components.Server.Circuits;
+
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+
+using Microsoft.AspNetCore.HttpOverrides;
+
+using Microsoft.AspNetCore.RateLimiting;
+
+
+using BlazorEnterprise.Shared.Logging;
+using BlazorEnterprise.Shared.UI.Extensions;
+
+using Serilog;
+
+using Serilog.Enrichers.Span;
+
+using Serilog.Events;
+
+using System.Threading.RateLimiting;
+
+
+
+// 0. Npgsql PostgreSQL Timestamp Compatibility (prevents DateTimeKind.Unspecified crashes)
+
+// AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+
+
+// 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
+
+Log.Logger = new LoggerConfiguration()
+
+    .WriteTo.Console()
+
+    .CreateBootstrapLogger();
+
+
+
+try
+
+{
+
+    Log.Information("Starting BlazorEnterprise application host...");
+
+
+
+    var builder = WebApplication.CreateBuilder(args);
+
+
+
+    // Enforce DI scope validation & build validation across all environments to fail fast on captive dependencies
+
+    builder.Host.UseDefaultServiceProvider((context, options) =>
+
+    {
+
+        options.ValidateScopes = true;
+
+        options.ValidateOnBuild = true;
+
+    });
+
+
+
+    // Azure Key Vault configuration source for any environment when KeyVault:Uri is specified
+
+    var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+
+    if (!string.IsNullOrWhiteSpace(keyVaultUri))
+
+    {
+
+        builder.Configuration.AddAzureKeyVault(
+
+            new Uri(keyVaultUri),
+
+            new DefaultAzureCredential());
+
+        Log.Information("Azure Key Vault configuration source registered: {Uri}", keyVaultUri);
+
+    }
+
+    else if (builder.Environment.IsProduction())
+
+    {
+
+        Log.Warning("KeyVault:Uri not configured — checking environment and secret providers for production secrets.");
+
+    }
+
+
+
+    if (builder.Environment.IsProduction())
+
+    {
+
+
+
+        // Production Security Startup Gate: Fail-closed on missing or placeholder secrets
+
+        var dbConn = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        var integritySecret = builder.Configuration["Security:IntegritySecret"];
+
+        var masterKey = builder.Configuration["Security:MasterEncryptionKey"];
+
+
+
+        if (string.IsNullOrWhiteSpace(dbConn) || dbConn.Contains("__SET_VIA_"))
+
+        {
+
+            throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'ConnectionStrings:DefaultConnection' is not configured or contains placeholder credentials.");
+
+        }
+
+
+
+        if (string.IsNullOrWhiteSpace(integritySecret) || integritySecret.Contains("__SET_VIA_") || integritySecret.Length < 32)
+
+        {
+
+            throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'Security:IntegritySecret' must be configured in Azure Key Vault or environment variables with at least 32 characters.");
+
+        }
+
+
+
+        if (string.IsNullOrWhiteSpace(masterKey) || masterKey.Contains("__SET_VIA_") || masterKey.Length < 32)
+
+        {
+
+            throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'Security:MasterEncryptionKey' must be configured in Azure Key Vault or environment variables with at least 32 characters.");
+
+        }
+
+
+
+        Log.Information("Production Security Startup Gate passed: All required secrets and connection strings validated.");
+
+    }
+
+
+
+    // 2. Configure Serilog using Host Integration, appsettings.json, and Timezone Settings
+
+    var useUtc = !bool.TryParse(builder.Configuration["DateTimeSettings:UseUtc"], out var parsedUtc) || parsedUtc;
+
+    var timestampFormat = useUtc ? "yyyy-MM-dd HH:mm:ss 'UTC'" : "yyyy-MM-dd HH:mm:ss";
+
+    var logOutputTemplate = $"[{{Timestamp:{timestampFormat}}}] [{{Level:u3}}] {{Message:lj}} {{Properties:j}}{{NewLine}}{{Exception}}";
+
+
+
+    builder.Host.UseSerilog((context, services, configuration) =>
+
+    {
+
+        configuration
+
+            .ReadFrom.Configuration(context.Configuration)
+
+            .ReadFrom.Services(services)
+
+            .Enrich.FromLogContext()
+
+            .Enrich.WithSpan()
+
+            .WriteTo.StrictSeverity(wt =>
+            {
+                wt.Console(outputTemplate: logOutputTemplate);
+                wt.File(
+                    path: "logs/blazorenterprise-.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30,
+                    outputTemplate: logOutputTemplate);
+                wt.TeamsAlert(context.Configuration);
+            });
+
+    });
+
+
+
+    // 3. Add presentation and UI services (with enterprise SignalR & Circuit options)
+
+    builder.Services.AddRazorComponents()
+
+        .AddInteractiveServerComponents(options =>
+
+        {
+
+            options.DetailedErrors = builder.Environment.IsDevelopment();
+
+            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+
+            options.DisconnectedCircuitMaxRetained = 100;
+
+            options.MaxBufferedUnacknowledgedRenderBatches = 10;
+
+        });
+
+
+
+    builder.Services.AddServerSideBlazor(options =>
+
+    {
+
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+
+        options.DisconnectedCircuitMaxRetained = 100;
+
+    });
+
+
+
+    builder.Services.AddScoped<CircuitHandler, BlazorEnterprise.Web.Infrastructure.Observability.BlazorCircuitObservabilityHandler>();
+
+
+
+    builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
+
+    {
+
+        options.MaximumReceiveMessageSize = 128 * 1024; // 128 KB
+
+        options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+
+        options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+
+        options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+
+    });
+
+    builder.Services.AddSharedUI();
+
+    builder.Services.AddHttpContextAccessor();
+
+    builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
+
+    builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();
+
+
+
+    // 4. Authentication & Authorization State Provider with Dual Policy Wiring (FSH Standard)
+
+    builder.Services.AddAuthentication();
+
+    builder.Services.AddAuthorization(options =>
+
+    {
+
+        var defaultPolicy = new AuthorizationPolicyBuilder()
+
+            .RequireAuthenticatedUser()
+
+            .Build();
+
+
+
+        options.DefaultPolicy = defaultPolicy;
+
+        options.FallbackPolicy = defaultPolicy;
+
+        options.AddPolicy(BlazorEnterprise.Core.Security.AuthorizationPolicies.HostAdminOnly, policy => policy.RequireRole("RootAdmin"));
+
+    });
+
+    builder.Services.AddCascadingAuthenticationState();
+
+    builder.Services.AddScoped<AppCurrentUser>();
+
+    builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<AppCurrentUser>());
+
+    builder.Services.AddScoped<CurrentUserAuthenticationStateProvider>();
+
+    builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CurrentUserAuthenticationStateProvider>());
+
+
+
+    // 5. Validation Architecture: Register all Tier 1 (Page) and Tier 2 (Entity) validators from Core
+
+    builder.Services.AddValidatorsFromAssemblyContaining<BaseEntity>();
+
+
+
+    // 6. Modular Monolith Registrations (Persistence, Infrastructure, Jobs)
+
+    builder.Services.AddPersistence(builder.Configuration);
+
+    builder.Services.AddInfrastructure(builder.Configuration);
+
+
+
+    var enableHostedJobsListener = builder.Configuration.GetValue<bool>("Jobs:EnableHostedListener", true);
+
+    var enableScheduler = builder.Configuration.GetValue<bool>("Jobs:EnableScheduler", true);
+
+    builder.Services.AddBackgroundJobs(enableListener: enableHostedJobsListener, enableScheduler: enableScheduler);
+
+
+
+    // 7. Security Hardening: Request Body Limits (Anti-Pattern 5), Rate Limiting (Anti-Pattern 7) & Secure Cookie Policy
+
+    builder.WebHost.ConfigureKestrel(serverOptions =>
+
+    {
+
+        serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB limit
+
+    });
+
+
+
+    builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+
+    {
+
+        options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB limit
+
+    });
+
+
+
+    builder.Services.AddRateLimiter(options =>
+
+    {
+
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+
+
+        // Global Rate Limiter: IP-partitioned sliding window (200 requests/minute), exempting static assets and health checks
+
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+
+        {
+
+            var path = httpContext.Request.Path.Value ?? string.Empty;
+
+
+
+            // Exempt static assets, blazor framework bundles, and health check probes
+
+            if (path.StartsWith("/_content") ||
+
+                path.StartsWith("/_framework") ||
+
+                path.StartsWith("/healthz") ||
+
+                path.StartsWith("/health/ready") ||
+
+                path.EndsWith(".css") ||
+
+                path.EndsWith(".js") ||
+
+                path.EndsWith(".ico") ||
+
+                path.EndsWith(".png") ||
+
+                path.EndsWith(".svg") ||
+
+                path.EndsWith(".woff2"))
+
+            {
+
+                return RateLimitPartition.GetNoLimiter("StaticOrHealth");
+
+            }
+
+
+
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+            return RateLimitPartition.GetSlidingWindowLimiter(
+
+                clientIp,
+
+                _ => new SlidingWindowRateLimiterOptions
+
+                {
+
+                    PermitLimit = 200,
+
+                    Window = TimeSpan.FromMinutes(1),
+
+                    SegmentsPerWindow = 6,
+
+                    QueueLimit = 0
+
+                });
+
+        });
+
+
+
+        // Dedicated Named Policy: Login Endpoint (10 requests/minute fixed window)
+
+        options.AddFixedWindowLimiter("login", opt =>
+
+        {
+
+            opt.Window = TimeSpan.FromMinutes(1);
+
+            opt.PermitLimit = 10;
+
+            opt.QueueLimit = 0;
+
+            opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+
+        });
+
+
+
+        // Dedicated Named Policy: API Endpoints (60 requests/minute sliding window)
+
+        options.AddPolicy("api", httpContext =>
+
+        {
+
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+            return RateLimitPartition.GetSlidingWindowLimiter(
+
+                clientIp,
+
+                _ => new SlidingWindowRateLimiterOptions
+
+                {
+
+                    PermitLimit = 60,
+
+                    Window = TimeSpan.FromMinutes(1),
+
+                    SegmentsPerWindow = 6,
+
+                    QueueLimit = 0
+
+                });
+
+        });
+
+
+
+        // Dedicated Named Policy: File Upload Pipeline (10 uploads/minute fixed window)
+
+        options.AddPolicy("file-upload", httpContext =>
+
+        {
+
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+
+                clientIp,
+
+                _ => new FixedWindowRateLimiterOptions
+
+                {
+
+                    PermitLimit = 10,
+
+                    Window = TimeSpan.FromMinutes(1),
+
+                    QueueLimit = 0
+
+                });
+
+        });
+
+
+
+        // Dedicated Named Policy: Data Export Operations (5 exports/minute fixed window)
+
+        options.AddPolicy("export", httpContext =>
+
+        {
+
+            var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+
+                clientIp,
+
+                _ => new FixedWindowRateLimiterOptions
+
+                {
+
+                    PermitLimit = 5,
+
+                    Window = TimeSpan.FromMinutes(1),
+
+                    QueueLimit = 0
+
+                });
+
+        });
+
+    });
+
+
+
+    builder.Services.AddCookiePolicy(options =>
+
+    {
+
+        options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
+
+        options.Secure = CookieSecurePolicy.Always;
+
+        options.MinimumSameSitePolicy = SameSiteMode.Strict;
+
+    });
+
+
+
+    // Strongly typed configuration options with zero-trust startup validation
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.JobsOptions>()
+
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.JobsOptions.SectionName)
+
+        .Validate(o => !o.EnableScheduler || !string.IsNullOrWhiteSpace(o.CronServiceAccountEmail),
+
+            "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be explicitly configured when 'Jobs:EnableScheduler' is enabled.")
+
+        .ValidateOnStart();
+
+
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.SecurityOptions>()
+
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.SecurityOptions.SectionName)
+
+        .Validate(o => !string.IsNullOrWhiteSpace(o.SystemBootstrapEmail),
+
+            "Zero-Trust Security Violation: 'Security:SystemBootstrapEmail' must be explicitly configured.")
+
+        .ValidateOnStart();
+
+
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.CspOptions>()
+
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.CspOptions.SectionName)
+
+        .ValidateOnStart();
+
+
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.CachingOptions>()
+
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.CachingOptions.SectionName)
+
+        .ValidateOnStart();
+
+
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevLoginOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.DevLoginOptions.SectionName)
+        .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
+            "Zero-Trust Security Violation: 'Auth:DevLogin' cannot be enabled outside Development environment.")
+        .ValidateOnStart();
+
+    if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Auth:DevLogin:Enabled"))
+    {
+        Log.Fatal("FATAL SECURITY WARNING: Local passwordless email login ('Auth:DevLogin:Enabled') is ACTIVE in Development mode. This MUST be removed or disabled before production deployment!");
+    }
+
+
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions>()
+
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions.SectionName)
+
+        .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
+
+            "Zero-Trust Security Violation: 'Seed' cannot be enabled outside Development environment.")
+
+        .ValidateOnStart();
+
+
+
+    // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready)
+
+    builder.Services.AddHealthChecks()
+
+        .AddCheck<BlazorEnterprise.Persistence.HealthChecks.TenantContextHealthCheck>(
+
+            "Tenant Context Resolution",
+
+            tags: ["ready", "business"])
+
+        .AddCheck<BlazorEnterprise.Jobs.HealthChecks.BackgroundJobQueueHealthCheck>(
+
+            "Background Job Queue",
+
+            tags: ["ready", "jobs"]);
+
+
+
+    // 9. Observability: OpenTelemetry → Azure Monitor (Application Insights)
+
+    var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+
+    if (!string.IsNullOrWhiteSpace(aiConnectionString))
+
+    {
+
+        builder.Services.AddOpenTelemetry()
+
+            .UseAzureMonitor(options =>
+
+            {
+
+                options.ConnectionString = aiConnectionString;
+
+            });
+
+        Log.Information("OpenTelemetry → Azure Monitor configured.");
+
+    }
+
+    else
+
+    {
+
+        Log.Warning("ApplicationInsights:ConnectionString is not configured. OpenTelemetry tracing disabled.");
+
+    }
+
+
+
+    var app = builder.Build();
+    BlazorEnterprise.Core.Utilities.SystemIdentityUtility.SetCurrent(app.Services.GetRequiredService<BlazorEnterprise.Core.Contracts.ISystemIdentity>());
+
+
+
+    // 10. Database Migration and Root Seeding in Development (creates tables and seeds root anchor)
+
+    if (app.Environment.IsDevelopment())
+
+    {
+
+        try
+
+        {
+
+            Log.Information("Applying EF Core database migrations in Development...");
+
+            using var scope = app.Services.CreateScope();
+
+            var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+
+            var rootAdminService = scope.ServiceProvider.GetRequiredService<BlazorEnterprise.Core.Contracts.IRootAdminService>();
+
+            var tenantContext = scope.ServiceProvider.GetRequiredService<BlazorEnterprise.Core.Contracts.ITenantContext>();
+
+            tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
+
+            var bootstrapEmail = app.Configuration["Security:SystemBootstrapEmail"];
+
+            if (string.IsNullOrWhiteSpace(bootstrapEmail))
+
+            {
+
+                throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:SystemBootstrapEmail' must be configured for startup migration and seeding.");
+
+            }
+
+            currentUser?.SetSystemDaemon("StartupMigration", bootstrapEmail);
+
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+
+
+            // Inspect for pending entity changes not captured in a migration
+
+            try
+
+            {
+
+                if (db.Database.HasPendingModelChanges())
+
+                {
+
+                    Log.Fatal("⚠️ [FATAL SCHEMA DRIFT DETECTED] The EF Core model for 'AppDbContext' has pending entity changes that have not been captured in a migration! Please run 'dotnet ef migrations add <Name>' to generate the missing migration.");
+
+                }
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                Log.Warning(ex, "Could not evaluate pending model changes during startup check.");
+
+            }
+
+
+
+            db.Database.Migrate();
+
+            Log.Information("Database migrations applied successfully.");
+
+
+
+            Log.Information("Seeding default root tenant anchor and designated super-administrators...");
+
+            await BlazorEnterprise.Persistence.Initialization.InitialDatabaseSeeder.SeedAsync(app.Services);
+
+
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            Log.Fatal(ex, "Failed to apply database migrations or seed initial data on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
+
+            throw;
+
+        }
+
+    }
+
+
+
+    // Configure the HTTP request pipeline.
+
+    if (!app.Environment.IsDevelopment())
+
+    {
+
+        app.UseExceptionHandler("/Error", createScopeForErrors: true);
+
+        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+
+        app.UseHsts();
+
+    }
+
+    app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+
+
+
+    // 6. Reverse Proxy & Forwarded Headers (preserves real client IP and HTTPS scheme behind Azure App Service / Cloudflare)
+
+    var forwardedHeadersOptions = new ForwardedHeadersOptions
+
+    {
+
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+
+    };
+
+    forwardedHeadersOptions.KnownNetworks.Clear();
+
+    forwardedHeadersOptions.KnownProxies.Clear();
+
+    app.UseForwardedHeaders(forwardedHeadersOptions);
+
+
+
+    app.UseCookiePolicy();
+
+
+
+    app.UseHttpsRedirection();
+
+
+
+    // 7. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
+
+    app.UseSecurityHeaders();
+
+
+
+    // 8. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
+
+    app.UseSerilogRequestLogging(options =>
+
+    {
+
+        options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+
+
+
+        // Silence noisy static web assets (_framework, _content, .css, .js, fonts, images)
+
+        options.GetLevel = (httpContext, elapsed, ex) =>
+
+        {
+
+            if (ex != null || httpContext.Response.StatusCode >= 500)
+
+                return LogEventLevel.Error;
+
+            if (httpContext.Response.StatusCode >= 400)
+
+                return LogEventLevel.Warning;
+
+
+
+            var path = httpContext.Request.Path.Value;
+
+            if (path != null && (
+
+                path.StartsWith("/_content") ||
+
+                path.StartsWith("/_framework") ||
+
+                path.EndsWith(".css") ||
+
+                path.EndsWith(".js") ||
+
+                path.EndsWith(".ico") ||
+
+                path.EndsWith(".png") ||
+
+                path.EndsWith(".svg") ||
+
+                path.EndsWith(".woff2")))
+
+            {
+
+                return LogEventLevel.Verbose;
+
+            }
+
+
+
+            return LogEventLevel.Information;
+
+        };
+
+
+
+        // Diagnostic context enrichment: TenantId, UserId, ClientIp
+
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+
+        {
+
+            diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+
+            diagnosticContext.Set("Host", httpContext.Request.Host.Value);
+
+
+
+            var tenantContext = httpContext.RequestServices.GetService<ITenantContext>();
+
+            if (tenantContext?.HasActiveTenant == true)
+
+            {
+
+                diagnosticContext.Set("TenantId", tenantContext.TenantId);
+
+            }
+
+
+
+            var currentUser = httpContext.RequestServices.GetService<ICurrentUser>();
+
+            if (currentUser?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(currentUser.UserId))
+
+            {
+
+                diagnosticContext.Set("UserId", currentUser.UserId);
+
+            }
+
+        };
+
+    });
+
+
+
+    app.UseAntiforgery();
+
+    app.UseRateLimiter();
+
+    app.UseAuthorization();
+
+
+
+    app.MapStaticAssets()
+
+        .AllowAnonymous();
+
+    app.MapRazorComponents<App>()
+
+        .AddInteractiveServerRenderMode()
+
+        .RequireAuthorization();
+
+
+
+    // Health Check endpoints (unauthenticated probes)
+
+    app.MapHealthChecks("/healthz", new HealthCheckOptions
+
+    {
+
+        Predicate = _ => false,
+
+        AllowCachingResponses = false
+
+    }).AllowAnonymous();
+
+
+
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
+
+    {
+
+        Predicate = check => check.Tags.Contains("ready"),
+
+        AllowCachingResponses = false
+
+    }).AllowAnonymous();
+
+
+
+    // Content Security Policy (CSP) browser violation telemetry endpoint
+    app.MapPost("/api/security/csp-violations", async (HttpContext context, ILoggerFactory loggerFactory) =>
+    {
+        var logger = loggerFactory.CreateLogger("Security.CSP");
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+
+        logger.LogCritical("CRITICAL SECURITY VIOLATION: Browser Content Security Policy (CSP) violation detected! Payload: {CspReport}", body);
+
+        return Results.NoContent();
+    })
+    .AllowAnonymous()
+    .DisableAntiforgery();
+
+    app.Run();
+
+}
+
+catch (Exception ex)
+
+{
+
+    Log.Fatal(ex, "BlazorEnterprise application host terminated unexpectedly.");
+
+    throw;
+
+}
+
+finally
+
+{
+
+    Log.Information("Shutting down BlazorEnterprise host and flushing logs...");
+
+    Log.CloseAndFlush();
+
+}
+
+
+
+
+
+/**
+
+ * 
+
+ * 1.  UseExceptionHandler            → RFC 9457 ProblemDetails
+
+2.  UseResponseCompression
+
+3.  UseCors                        ← before HTTPS redirect (preflight)
+
+4.  UseHttpsRedirection
+
+5.  Security headers
+
+6.  UseStaticFiles                 (optional)
+
+7.  Hangfire dashboard             (if jobs enabled)
+
+8.  UseRouting
+
+9.  OpenAPI + Scalar
+
+10. UseAuthentication
+
+11. Per-module ConfigureMiddleware ← multi-tenant root override etc.
+
+12. UseRateLimiter
+
+13. Quota enforcement              (if quotas enabled)
+
+14. UseAuthorization
+
+15. Per-module MapEndpoints
+
+16. Health, SSE, SignalR
+
+17. CurrentUserMiddleware          ← last, so authorization already done
+
+
+
+
+
+
+
+Three ordering rules are unusual and important:
+
+
+
+ --> Tenant resolution before authentication. Finbuckle’s strategy chain sees an anonymous User, which is why claim-aware tenant logic lives in post-auth module middleware - see the multitenancy deep dive.
+
+--> CORS before HTTPS redirect. Preflight OPTIONS requests can’t follow redirects per the Fetch spec.
+
+--> Per-module middleware after authentication. UseModuleMiddlewares runs each module’s ConfigureMiddleware right after UseAuthentication, so module middleware (like Multitenancy’s root-operator override) can read claims.
+
+--> CurrentUserMiddleware runs last: it populates ICurrentUser from claims for the endpoint to consume. Anything reading ICurrentUser earlier in the chain sees nothing - middleware that needs the user reads claims directly.
+
+
+
+Related
+
+ * 
+
+ */
+

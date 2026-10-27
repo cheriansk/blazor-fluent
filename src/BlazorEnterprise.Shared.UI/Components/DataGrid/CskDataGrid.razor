@@ -1,0 +1,65 @@
+@typeparam TGridItem
+@attribute [CascadingTypeParameter(nameof(TGridItem))]
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-datagrid-container @(Outlined ? "csk-datagrid-outlined" : "") csk-elevation-@Elevation @Class" @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+
+    <div class="csk-datagrid-responsive">
+        <table class="csk-datagrid-table @(Dense ? "csk-datagrid-dense" : "") @(Hover ? "csk-datagrid-hover" : "")">
+            <thead>
+                <tr class="csk-datagrid-header-row">
+                    @foreach (var col in _columns)
+                    {
+                        var isCurrent = _currentSortColumn == col;
+                        <th class="csk-datagrid-th @col.Class @(col.Sortable ? "csk-sortable" : "")"
+                            @onclick="() => HandleHeaderClickAsync(col)">
+                            @col.RenderHeader(isCurrent, _sortDescending)
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var items = GetSortedItems().ToList();
+                }
+                @if (items.Count > 0)
+                {
+                    @foreach (var item in items)
+                    {
+                        <tr class="csk-datagrid-row">
+                            @foreach (var col in _columns)
+                            {
+                                <td class="csk-datagrid-td @col.Class">
+                                    @col.RenderCell(item)
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr class="csk-datagrid-empty-row">
+                        <td colspan="@(Math.Max(1, _columns.Count))" class="csk-datagrid-empty">
+                            @if (EmptyContent != null)
+                            {
+                                @EmptyContent
+                            }
+                            else
+                            {
+                                <div class="csk-empty-placeholder">
+                                    <svg class="csk-empty-svg" viewBox="0 0 24 24">
+                                        <path d="@CskIcons.DocumentSearch" />
+                                    </svg>
+                                    <span>No records to display</span>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

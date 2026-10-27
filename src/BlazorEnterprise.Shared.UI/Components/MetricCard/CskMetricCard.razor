@@ -1,0 +1,41 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-metric-card @Class">
+    <div class="csk-metric-top">
+        <div class="csk-metric-info">
+            <span class="csk-metric-title">@Title</span>
+            <div class="csk-metric-value">@Value</div>
+        </div>
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <div class="csk-metric-avatar @AvatarColorClass">
+                <CskIcon Icon="@Icon" Class="csk-metric-avatar-icon" />
+            </div>
+        }
+    </div>
+
+    <div class="csk-metric-bottom">
+        @if (!string.IsNullOrWhiteSpace(TrendText))
+        {
+            <span class="csk-metric-chip @(TrendPositive ? "csk-chip-success" : "csk-chip-error")">
+                <CskIcon Icon="@(TrendPositive ? CskIcons.TrendingUp : CskIcons.TrendingDown)" Class="csk-metric-trend-icon" />
+                <span>@TrendText</span>
+            </span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Subtext))
+        {
+            <span class="csk-metric-subtext">@Subtext</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? TrendText { get; set; }
+    [Parameter] public bool TrendPositive { get; set; } = true;
+    [Parameter] public string? Subtext { get; set; }
+    [Parameter] public string AvatarColorClass { get; set; } = "csk-avatar-primary";
+    [Parameter] public string Class { get; set; } = string.Empty;
+}

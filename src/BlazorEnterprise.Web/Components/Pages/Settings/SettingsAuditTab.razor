@@ -1,0 +1,187 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
+
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.Contracts.Common
+@using BlazorEnterprise.Core.Dtos.Response
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Auditing
+
+
+@using BlazorEnterprise.Shared.UI.Components
+@implements IDisposable
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+    <div>
+        <CskLabel Typo="Typography.H4">Audit Trail Explorer</CskLabel>
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Forensic audit trail: inspect entity mutations, tenant switching, security alerts, and background execution telemetry.
+        </CskLabel>
+    </div>
+
+    <!-- Filter Toolbar -->
+    <CskCard Class="p-4">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
+            <CskLabel Typo="Typography.H6">Filters & Search</CskLabel>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Wrap="true" VerticalAlignment="CskVerticalAlignment.Bottom">
+                <!-- Tenant Filter Dropdown -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Tenant</CskLabel>
+                    <CskSelect TOption="TenantFilterOption"
+                                  TValue="string"
+                                  Items="@_availableTenants"
+                                  OptionText="@(t => t.Name)"
+                                  OptionValue="@(t => t.Id)"
+                                  Value="@_selectedTenantId"
+                                  ValueChanged="@OnTenantSelectedAsync"
+                                  Disabled="@(_availableTenants.Count <= 1)"
+                                  Placeholder="-- All Tenants --"
+                                  Class="min-w-200" />
+                </div>
+
+                <!-- User Filter Dropdown -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="mb-1">User</CskLabel>
+                    <CskSelect TOption="UserFilterOption"
+                                  TValue="string"
+                                  Items="@_availableUsers"
+                                  OptionText="@(u => u.DisplayName)"
+                                  OptionValue="@(u => u.Id)"
+                                  Value="@_selectedUserId"
+                                  ValueChanged="@OnUserSelected"
+                                  Placeholder="-- All Users --"
+                                  Class="min-w-220" />
+                </div>
+
+                <!-- Event Type Filter -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Event Type</CskLabel>
+                    <CskSelect Items="@_eventTypes"
+                                  TOption="string"
+                                  TValue="string"
+                                  Value="@_selectedEventType"
+                                  ValueChanged="@OnEventTypeChanged"
+                                  Class="min-w-150" />
+                </div>
+
+                <!-- Severity Filter -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Severity</CskLabel>
+                    <CskSelect Items="@_severities"
+                                  TOption="string"
+                                  TValue="string"
+                                  Value="@_selectedSeverity"
+                                  ValueChanged="@OnSeverityChanged"
+                                  Class="min-w-140" />
+                </div>
+
+                <!-- Date Pickers -->
+                <CskDatePicker Label="From Date" @bind-Value="_filter.FromDate" />
+                <CskDatePicker Label="To Date" @bind-Value="_filter.ToDate" />
+
+                <!-- Text Search -->
+                <CskTextInput Label="Search (Description, Entity)" @bind-Value="_filter.SearchTerm" Placeholder="Search term..." Class="min-w-200" />
+
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Search" OnClick="@SearchAsync">
+                    Filter
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@ResetFiltersAsync">
+                    Reset
+                </CskButton>
+            </CskStack>
+        </CskStack>
+    </CskCard>
+
+    <!-- Selected Audit Record Diff Viewer Panel -->
+    @if (_selectedAuditRecord is not null)
+    {
+        <CskCard Class="mb-3 card-accent-border p-4">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+                <CskLabel Typo="Typography.H5">Change Details: @_selectedAuditRecord.EntityName (@_selectedAuditRecord.Operation)</CskLabel>
+                <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@(() => _selectedAuditRecord = null)">Close</CskButton>
+            </CskStack>
+            <CskLabel Typo="Typography.Body" Class="mb-2">
+                <b>Record ID:</b> @_selectedAuditRecord.EntityId | <b>Tenant:</b> @_selectedAuditRecord.TenantId | <b>User:</b> @(_selectedAuditRecord.UserEmail ?? _selectedAuditRecord.UserId)
+            </CskLabel>
+            <div class="code-terminal-box">
+                @(_selectedAuditRecord.ChangesJson ?? "No property diff payload recorded.")
+            </div>
+        </CskCard>
+    }
+
+    <!-- Audit Records Grid -->
+    @if (_isLoading)
+    {
+        <CskSpinner Class="m-auto" />
+    }
+    else if (_auditResult is null || _auditResult.Items.Count == 0)
+    {
+        <CskMessageBar Intent="MessageBarIntent.Info">
+            No audit records found matching the current search criteria.
+        </CskMessageBar>
+    }
+    else
+    {
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+            <CskTextInput Placeholder="Quick filter visible audit records..."
+                             @bind-Value="_inGridSearchText"
+                             @bind-Value:after="StateHasChanged"
+                             Class="w-320">
+                <StartTemplate>
+                    <CskIcon Icon="@CskIcons.Search" />
+                </StartTemplate>
+            </CskTextInput>
+            <span class="font-size-sm text-hint">
+                Showing @FilteredAuditItems.Count() of @(_auditResult.Items.Count) records on this page
+            </span>
+        </CskStack>
+
+        <CskDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 180px 120px 110px 1fr 100px">
+            <CskTemplateColumn Title="Timestamp" SortBy="@(GridSort<AuditRecordEntity>.ByDescending(a => a.Created))">
+                @TimeZoneService.FormatDateTime(context.Created)
+            </CskTemplateColumn>
+            <CskPropertyColumn Property="@(a => a.TenantId)" Title="Tenant" Sortable="true" />
+            <CskTemplateColumn Title="User" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.UserEmail ?? a.UserId))">
+                <span title="@context.UserId">
+                    @(context.UserEmail ?? context.UserId)
+                </span>
+            </CskTemplateColumn>
+            <CskTemplateColumn Title="Event" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.EventType))">
+                <CskBadge>@context.EventType</CskBadge>
+            </CskTemplateColumn>
+            <CskTemplateColumn Title="Severity" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Severity))">
+                @if (context.Severity == AuditSeverityEnum.Critical || context.Severity == AuditSeverityEnum.Error)
+                {
+                    <CskBadge Color="BadgeColor.Severe">@context.Severity</CskBadge>
+                }
+                else if (context.Severity == AuditSeverityEnum.Warning)
+                {
+                    <CskBadge Color="BadgeColor.Warning">@context.Severity</CskBadge>
+                }
+                else
+                {
+                    <CskBadge Color="BadgeColor.Informative">@context.Severity</CskBadge>
+                }
+            </CskTemplateColumn>
+            <CskPropertyColumn Property="@(a => a.Description)" Title="Description" Sortable="true" />
+            <CskTemplateColumn Title="Diff">
+                @if (!string.IsNullOrWhiteSpace(context.ChangesJson))
+                {
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _selectedAuditRecord = context)">
+                        View Diff
+                    </CskButton>
+                }
+            </CskTemplateColumn>
+        </CskDataGrid>
+
+        <!-- Pagination Bar -->
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mt-3">
+            <CskLabel Typo="Typography.Body">
+                Showing Page @_auditResult.PageNumber of @_auditResult.TotalPages (@_auditResult.TotalCount total records)
+            </CskLabel>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                <CskButton Disabled="@(!_auditResult.HasPreviousPage)" OnClick="@PreviousPageAsync">Previous</CskButton>
+                <CskButton Disabled="@(!_auditResult.HasNextPage)" OnClick="@NextPageAsync">Next</CskButton>
+            </CskStack>
+        </CskStack>
+    }
+</CskStack>

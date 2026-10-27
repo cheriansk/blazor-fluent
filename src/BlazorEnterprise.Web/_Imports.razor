@@ -1,0 +1,31 @@
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using Blazored.FluentValidation
+@using BlazorEnterprise
+@using BlazorEnterprise.Components
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Components.Layout
+@using BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Web.Components.Pages.Settings
+
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using TenantInfo = BlazorEnterprise.Core.Contracts.TenantInfo
+@using BlazorEnterprise.Shared.Extensions
+@using BlazorEnterprise.Core.Domain.Base
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Dtos.Response
+@using BlazorEnterprise.Jobs.Abstractions
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+
+@attribute [Authorize]

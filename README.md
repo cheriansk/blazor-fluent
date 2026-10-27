@@ -1,4 +1,4 @@
-# ⚡ BlazorFluent
+# ⚡ BlazorEnterprise
 
 > **Enterprise Cloud-Native SaaS Starter Kit & Reference Architecture**  
 > Built with **.NET 10**, **Interactive Server Blazor**, **Microsoft Fluent UI Blazor V5**, **EF Core 10**, **PostgreSQL Native RLS**, and **.NET Aspire Orchestration**.
@@ -12,18 +12,18 @@
 
 ---
 
-## 🎯 What is BlazorFluent?
+## 🎯 What is BlazorEnterprise?
 
-**BlazorFluent** is an enterprise-grade, security-hardened starter kit and reference architecture designed for organizations building mission-critical multi-tenant SaaS applications, internal portals, and governance platforms. 
+**BlazorEnterprise** is an enterprise-grade, security-hardened starter kit and reference architecture designed for organizations building mission-critical multi-tenant SaaS applications, internal portals, and governance platforms. 
 
-Rather than providing simple CRUD templates, BlazorFluent delivers production-grade enterprise subsystems:
+Rather than providing simple CRUD templates, BlazorEnterprise delivers production-grade enterprise subsystems:
 
 - 🐘 **Layer 5 Defense-in-Depth (PostgreSQL Native RLS)**: Tenant isolation is physically guaranteed at the database engine level via `TenantDbConnectionInterceptor` and native PostgreSQL Row-Level Security policies.
 - 📐 **Clean Architecture (12-Project Topology)**: Strictly enforced inward dependency direction, separating domain core, persistence, infrastructure, API gateway, standalone worker host, and orchestration.
 - ☁️ **.NET Aspire Orchestration**: Turnkey local orchestration with distributed OpenTelemetry tracing, live metrics, and dual-mode database routing (Native Local PostgreSQL vs Docker containerized PostgreSQL/pgAdmin).
-- ⚙️ **Dual-Mode Asynchronous Worker Host (`BlazorFluent.Worker`)**: Thin standalone console host shell (`net10.0` Worker SDK) for distributed, horizontally scalable background queues with zero code duplication from `BlazorFluent.Jobs`.
+- ⚙️ **Dual-Mode Asynchronous Worker Host (`BlazorEnterprise.Worker`)**: Thin standalone console host shell (`net10.0` Worker SDK) for distributed, horizontally scalable background queues with zero code duplication from `BlazorEnterprise.Jobs`.
 - 🔐 **Zero-Trust Multi-Tenancy Isolation**: Ephemeral 5-minute S2S JWTs signed via private `TenantLicenseKey`, dynamic API key resolver, masked claims (`tid: tnt_...`, zero PII), and cross-tenant quarantine barriers.
-- ⚡ **100% In-Memory Rules Engine (`BlazorFluent.RulesEngine`)**: Sub-millisecond calculation pipeline for regulatory, financial, and business rule evaluations with zero database contention.
+- ⚡ **100% In-Memory Rules Engine (`BlazorEnterprise.RulesEngine`)**: Sub-millisecond calculation pipeline for regulatory, financial, and business rule evaluations with zero database contention.
 - 🔐 **Zero-Knowledge Envelope Encryption**: Hardware-accelerated AES-256-GCM authenticated stream encryption with dynamic per-tenant keys derived via HKDF-SHA256.
 - ⏱️ **Thread-Isolated Asynchronous Ingestion**: Bounded `System.Threading.Channels` queues with a 4-stage batch pipeline (Ingestion -> Queue -> Validation/Staging -> Domain Promotion).
 - 🎨 **Microsoft Fluent UI Blazor V5**: Modern Microsoft Fluent 2 design language with zero legacy V4 tokens, custom design tokens, and automated Roslyn compliance verification.
@@ -33,35 +33,35 @@ Rather than providing simple CRUD templates, BlazorFluent delivers production-gr
 
 ## 🏗️ 12-Project Solution Architecture
 
-BlazorFluent strictly follows Clean Architecture dependency boundaries where all dependencies flow inward toward the domain core:
+BlazorEnterprise strictly follows Clean Architecture dependency boundaries where all dependencies flow inward toward the domain core:
 
 ```mermaid
 flowchart TD
     subgraph Orchestration ["Orchestration & Diagnostics"]
-        AppHost["BlazorFluent.AppHost\n(Aspire 13.4 Host)"]
-        Defaults["BlazorFluent.ServiceDefaults\n(OpenTelemetry & Health)"]
+        AppHost["BlazorEnterprise.AppHost\n(Aspire 13.4 Host)"]
+        Defaults["BlazorEnterprise.ServiceDefaults\n(OpenTelemetry & Health)"]
     end
 
     subgraph Presentation ["Presentation Layer"]
-        Web["BlazorFluent.Web\n(Interactive Server Blazor, Fluent UI V5)"]
-        Templates["BlazorFluent.UI.Templates\n(Enterprise Wizard RCL)"]
+        Web["BlazorEnterprise.Web\n(Interactive Server Blazor, Fluent UI V5)"]
+        Templates["BlazorEnterprise.UI.Templates\n(Enterprise Wizard RCL)"]
     end
 
     subgraph BusinessAndApi ["Business Services, API Gateway & Background Processing"]
-        Api["BlazorFluent.Api\n(ProcessAPI, Multi-IdP Auth Gateway)"]
-        Rules["BlazorFluent.RulesEngine\n(In-Memory Calculation Engine)"]
-        Jobs["BlazorFluent.Jobs\n(Channel Batch Queue, File Ingestion)"]
-        Worker["BlazorFluent.Worker\n(Standalone Background Host Shell)"]
+        Api["BlazorEnterprise.Api\n(ProcessAPI, Multi-IdP Auth Gateway)"]
+        Rules["BlazorEnterprise.RulesEngine\n(In-Memory Calculation Engine)"]
+        Jobs["BlazorEnterprise.Jobs\n(Channel Batch Queue, File Ingestion)"]
+        Worker["BlazorEnterprise.Worker\n(Standalone Background Host Shell)"]
     end
 
     subgraph DataAndInfra ["Persistence & Infrastructure"]
-        Infra["BlazorFluent.Infrastructure\n(Notifications, S2S Auth Handlers)"]
-        Persist["BlazorFluent.Persistence\n(PostgreSQL AppDbContext, Interceptors)"]
+        Infra["BlazorEnterprise.Infrastructure\n(Notifications, S2S Auth Handlers)"]
+        Persist["BlazorEnterprise.Persistence\n(PostgreSQL AppDbContext, Interceptors)"]
     end
 
     subgraph CoreRing ["Domain Core & Shared Primitives"]
-        Core["BlazorFluent.Core\n(Domain Entities, Interfaces, Validation)"]
-        Shared["BlazorFluent.Shared\n(Cross-Cutting DTOs, Security Envelopes)"]
+        Core["BlazorEnterprise.Core\n(Domain Entities, Interfaces, Validation)"]
+        Shared["BlazorEnterprise.Shared\n(Cross-Cutting DTOs, Security Envelopes)"]
     end
 
     AppHost --> Web
@@ -97,18 +97,18 @@ flowchart TD
 
 | Project | Target Framework | Purpose |
 | :--- | :--- | :--- |
-| [`BlazorFluent.Shared`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Shared/BlazorFluent.Shared.csproj) | `net10.0` | Cross-cutting domain enums, security DTOs, encryption contracts, and common models. |
-| [`BlazorFluent.Core`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/BlazorFluent.Core.csproj) | `net10.0` | Pure domain entities, business service interfaces, `OpaqueIdUtility`, and FluentValidation rules. |
-| [`BlazorFluent.Persistence`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Persistence/BlazorFluent.Persistence.csproj) | `net10.0` | PostgreSQL AppDbContext, EF Core RLS interceptors, and HybridCache (L1/L2). |
-| [`BlazorFluent.Infrastructure`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Infrastructure/BlazorFluent.Infrastructure.csproj) | `net10.0` | S2S `TenantTokenService`, `TenantAuthDelegatingHandler`, notifications (SMTP/Teams), and circuit security. |
-| [`BlazorFluent.Jobs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/BlazorFluent.Jobs.csproj) | `net10.0` | Bounded Channel batch queue, Cronos periodic schedulers, and 4-stage file ingestion library. |
-| [`BlazorFluent.Worker`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Worker/BlazorFluent.Worker.csproj) | `net10.0` | Thin standalone console host shell executing background queues with horizontal scalability. |
-| [`BlazorFluent.Web`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/BlazorFluent.Web.csproj) | `net10.0` | Web application host, 65+ Fluent UI V5 components, and role authorization contracts. |
-| [`BlazorFluent.UI.Templates`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.UI.Templates/BlazorFluent.UI.Templates.csproj) | `net10.0` | Decoupled Razor Class Library (RCL) housing the Enterprise Wizard framework. |
-| [`BlazorFluent.RulesEngine`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.RulesEngine/BlazorFluent.RulesEngine.csproj) | `net10.0` | Company Azure 100% in-memory CPU calculation routines with sub-millisecond execution. |
-| [`BlazorFluent.Api`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Api/BlazorFluent.Api.csproj) | `net10.0` | ProcessAPI with dynamic `IssuerSigningKeyResolver`, Multi-IdP Auth Gateway, and Key Vault management. |
-| [`BlazorFluent.ServiceDefaults`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.ServiceDefaults/BlazorFluent.ServiceDefaults.csproj) | `net10.0` | Shared Aspire OpenTelemetry metrics, distributed tracing, and health checks. |
-| [`BlazorFluent.AppHost`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.AppHost/BlazorFluent.AppHost.csproj) | `net10.0` | Aspire 13.4 Orchestrator host managing multi-project lifecycles and database routing. |
+| [`BlazorEnterprise.Shared`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Shared/BlazorEnterprise.Shared.csproj) | `net10.0` | Cross-cutting domain enums, security DTOs, encryption contracts, and common models. |
+| [`BlazorEnterprise.Core`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Core/BlazorEnterprise.Core.csproj) | `net10.0` | Pure domain entities, business service interfaces, `OpaqueIdUtility`, and FluentValidation rules. |
+| [`BlazorEnterprise.Persistence`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Persistence/BlazorEnterprise.Persistence.csproj) | `net10.0` | PostgreSQL AppDbContext, EF Core RLS interceptors, and HybridCache (L1/L2). |
+| [`BlazorEnterprise.Infrastructure`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Infrastructure/BlazorEnterprise.Infrastructure.csproj) | `net10.0` | S2S `TenantTokenService`, `TenantAuthDelegatingHandler`, notifications (SMTP/Teams), and circuit security. |
+| [`BlazorEnterprise.Jobs`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Jobs/BlazorEnterprise.Jobs.csproj) | `net10.0` | Bounded Channel batch queue, Cronos periodic schedulers, and 4-stage file ingestion library. |
+| [`BlazorEnterprise.Worker`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Worker/BlazorEnterprise.Worker.csproj) | `net10.0` | Thin standalone console host shell executing background queues with horizontal scalability. |
+| [`BlazorEnterprise.Web`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Web/BlazorEnterprise.Web.csproj) | `net10.0` | Web application host, 65+ Fluent UI V5 components, and role authorization contracts. |
+| [`BlazorEnterprise.UI.Templates`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.UI.Templates/BlazorEnterprise.UI.Templates.csproj) | `net10.0` | Decoupled Razor Class Library (RCL) housing the Enterprise Wizard framework. |
+| [`BlazorEnterprise.RulesEngine`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.RulesEngine/BlazorEnterprise.RulesEngine.csproj) | `net10.0` | Company Azure 100% in-memory CPU calculation routines with sub-millisecond execution. |
+| [`BlazorEnterprise.Api`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Api/BlazorEnterprise.Api.csproj) | `net10.0` | ProcessAPI with dynamic `IssuerSigningKeyResolver`, Multi-IdP Auth Gateway, and Key Vault management. |
+| [`BlazorEnterprise.ServiceDefaults`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.ServiceDefaults/BlazorEnterprise.ServiceDefaults.csproj) | `net10.0` | Shared Aspire OpenTelemetry metrics, distributed tracing, and health checks. |
+| [`BlazorEnterprise.AppHost`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.AppHost/BlazorEnterprise.AppHost.csproj) | `net10.0` | Aspire 13.4 Orchestrator host managing multi-project lifecycles and database routing. |
 
 ---
 
@@ -177,7 +177,7 @@ flowchart LR
 - [PostgreSQL 16+](https://www.postgresql.org/download/) installed locally **OR** [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 ### 2. Configure Database Routing
-BlazorFluent dynamically supports both **Native Local PostgreSQL** and **Docker Containerized PostgreSQL** in [`src/BlazorFluent.AppHost/appsettings.json`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.AppHost/appsettings.json):
+BlazorEnterprise dynamically supports both **Native Local PostgreSQL** and **Docker Containerized PostgreSQL** in [`src/BlazorEnterprise.AppHost/appsettings.json`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.AppHost/appsettings.json):
 
 ```json
 {
@@ -185,7 +185,7 @@ BlazorFluent dynamically supports both **Native Local PostgreSQL** and **Docker 
     "UseDockerPostgres": false
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=blazorfluent_db;Username=postgres;Password=<your_password>;Pooling=true;"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=blazorenterprise_db;Username=postgres;Password=<your_password>;Pooling=true;"
   }
 }
 ```
@@ -193,7 +193,7 @@ BlazorFluent dynamically supports both **Native Local PostgreSQL** and **Docker 
 - Set `"UseDockerPostgres": true` if you prefer Aspire to spin up containerized PostgreSQL and pgAdmin.
 
 ### 3. Launch with Aspire Orchestration
-Set [`src/BlazorFluent.AppHost`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.AppHost/BlazorFluent.AppHost.csproj) as the Startup Project and press **F5** (or **Ctrl+F5** to start without debugging). 
+Set [`src/BlazorEnterprise.AppHost`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.AppHost/BlazorEnterprise.AppHost.csproj) as the Startup Project and press **F5** (or **Ctrl+F5** to start without debugging). 
 
 The Aspire Telemetry Dashboard opens automatically, displaying running endpoints, live traces, and metrics. Click on `web` to access the application.
 
@@ -214,16 +214,16 @@ The Aspire Telemetry Dashboard opens automatically, displaying running endpoints
 
 ## 📚 Documentation Index
 
-For in-depth architectural guides, security specifications, and developer recipes, consult the [**BlazorFluent Documentation Suite**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/Readme.md):
+For in-depth architectural guides, security specifications, and developer recipes, consult the [**BlazorEnterprise Documentation Suite**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/Readme.md):
 
-- [**00 — Overview & Executive Summary**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/00-Overview-and-Executive-Summary.md): Capabilities matrix, mental model, and personas.
-- [**01 — Getting Started & Setup**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/01-Getting-Started-and-Environment-Setup.md): Prerequisites, Aspire setup, and config dictionary.
-- [**02 — Architecture & Project Structure**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/02-Architecture-and-Project-Structure.md): 11-project Clean Architecture specification.
-- [**03 — Security Model & Defense-in-Depth**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/03-Security-Model-and-Defense-in-Depth.md): PostgreSQL Native RLS, Envelope Encryption, and Auth Gateway.
-- [**04 — Enterprise Features & Subsystems**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/04-Enterprise-Features-and-Subsystems.md): Channel queues, Rules Engine, and Wizard RCL.
-- [**05 — Observability & Reliability**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/05-Observability-and-Reliability.md): Aspire OpenTelemetry, HybridCache, and audit diffs.
-- [**06 — UI Conventions (Fluent UI V5)**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/06-UI-Conventions-and-Fluent-V5.md): 4-tier taxonomy and Fluent 2 design language.
-- [**07 — How-To-Extend & Developer Recipes**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/07-How-To-Extend-and-Developer-Recipes.md): Copy-pasteable step-by-step developer recipes.
-- [**08 — Operational Scripts & Tooling**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/08-Operational-Scripts-and-Tooling.md): Full script catalog and usage guide.
-- [**09 — Coding Standards & Project Rules**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/09-Coding-Standards-and-Project-Rules.md): Human engineering team standards and C# 13 idioms.
-- [**10 — AI Agent Governance & Rules**](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/10-AI-Agent-Governance-and-Operational-Rules.md): Strict operational rules and behavioral constraints for AI coding agents.
+- [**00 — Overview & Executive Summary**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/00-Overview-and-Executive-Summary.md): Capabilities matrix, mental model, and personas.
+- [**01 — Getting Started & Setup**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/01-Getting-Started-and-Environment-Setup.md): Prerequisites, Aspire setup, and config dictionary.
+- [**02 — Architecture & Project Structure**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/02-Architecture-and-Project-Structure.md): 11-project Clean Architecture specification.
+- [**03 — Security Model & Defense-in-Depth**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/03-Security-Model-and-Defense-in-Depth.md): PostgreSQL Native RLS, Envelope Encryption, and Auth Gateway.
+- [**04 — Enterprise Features & Subsystems**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/04-Enterprise-Features-and-Subsystems.md): Channel queues, Rules Engine, and Wizard RCL.
+- [**05 — Observability & Reliability**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/05-Observability-and-Reliability.md): Aspire OpenTelemetry, HybridCache, and audit diffs.
+- [**06 — UI Conventions (Fluent UI V5)**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/06-UI-Conventions-and-Fluent-V5.md): 4-tier taxonomy and Fluent 2 design language.
+- [**07 — How-To-Extend & Developer Recipes**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/07-How-To-Extend-and-Developer-Recipes.md): Copy-pasteable step-by-step developer recipes.
+- [**08 — Operational Scripts & Tooling**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/08-Operational-Scripts-and-Tooling.md): Full script catalog and usage guide.
+- [**09 — Coding Standards & Project Rules**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/09-Coding-Standards-and-Project-Rules.md): Human engineering team standards and C# 13 idioms.
+- [**10 — AI Agent Governance & Rules**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/10-AI-Agent-Governance-and-Operational-Rules.md): Strict operational rules and behavioral constraints for AI coding agents.

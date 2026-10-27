@@ -1,0 +1,48 @@
+.csk-link {
+    display: inline;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    transition: color 0.15s ease-in-out, text-decoration 0.15s ease-in-out;
+}
+
+.csk-link-normal {
+    color: var(--mat-primary, #6750A4);
+}
+
+.csk-link-normal:hover {
+    color: #4f378b;
+}
+
+.csk-link-subtle {
+    color: var(--mat-on-surface-variant, #49454F);
+}
+
+.csk-link-subtle:hover {
+    color: var(--mat-primary, #6750A4);
+}
+
+.csk-link-underline-hover {
+    text-decoration: none;
+}
+.csk-link-underline-hover:hover {
+    text-decoration: underline;
+}
+
+.csk-link-underline-always {
+    text-decoration: underline;
+}
+
+.csk-link-underline-none {
+    text-decoration: none;
+}
+.csk-link-underline-none:hover {
+    text-decoration: none;
+}
+
+.csk-link-disabled {
+    opacity: 0.38;
+    pointer-events: none;
+    cursor: not-allowed;
+}

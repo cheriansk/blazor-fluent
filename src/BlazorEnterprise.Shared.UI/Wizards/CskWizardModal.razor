@@ -1,0 +1,170 @@
+@namespace BlazorEnterprise.Shared.UI.Wizards
+@typeparam TState
+@implements IWizardHost
+@implements IDisposable
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (IsOpen)
+{
+    @* Modal Backdrop (Dismissal Locked to Prevent Accidental Data Loss) *@
+    <div class="csk-wizard-backdrop" @onclick="@HandleBackdropClick">
+        <div class="csk-wizard-dialog @Class" @onclick:stopPropagation="true">
+            
+            @* Wizard Header *@
+            <div class="csk-wizard-header">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                    <div>
+                        <CskLabel Typo="CskTypography.H5" Class="csk-wizard-title">@Title</CskLabel>
+                        @if (!string.IsNullOrWhiteSpace(Subtitle))
+                        {
+                            <CskLabel Typo="CskTypography.Caption" Class="csk-wizard-subtitle">@Subtitle</CskLabel>
+                        }
+                    </div>
+                    <CskButton Variant="CskButtonVariant.Text"
+                               IconStart="@CskIcons.Dismiss"
+                               OnClick="@RequestCloseAsync"
+                               Disabled="@_isBusy"
+                               Title="Close Wizard" />
+                </CskStack>
+
+                @* Visual Stepper Pipeline *@
+                <div class="csk-wizard-stepper">
+                    @for (int i = 0; i < _steps.Count; i++)
+                    {
+                        var index = i;
+                        var step = _steps[index];
+                        var isCompleted = index < _currentStepIndex;
+                        var isCurrent = index == _currentStepIndex;
+
+                        <div class="csk-wizard-step-node @(isCurrent ? "active" : isCompleted ? "completed" : "pending")">
+                            <div class="step-badge">
+                                @if (isCompleted)
+                                {
+                                    <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm csk-icon-success" />
+                                }
+                                else
+                                {
+                                    <span>@(index + 1)</span>
+                                }
+                            </div>
+                            <div class="step-label">
+                                <div class="step-title">@step.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(step.Summary))
+                                {
+                                    <div class="step-summary">@step.Summary</div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (index < _steps.Count - 1)
+                        {
+                            <div class="step-connector @(index < _currentStepIndex ? "completed" : "")"></div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @* Step Content Body *@
+            <div class="csk-wizard-body">
+                @if (!string.IsNullOrEmpty(_activeErrorMessage))
+                {
+                    <CskMessageBar Intent="CskAlertSeverity.Error" Class="mb-3">
+                        @_activeErrorMessage
+                    </CskMessageBar>
+                }
+
+                <CascadingValue Value="@this" IsFixed="true">
+                    <CascadingValue Value="@Context">
+                        @Steps
+                    </CascadingValue>
+                </CascadingValue>
+            </div>
+
+            @* Wizard Footer Navigation *@
+            <div class="csk-wizard-footer">
+                <CskButton Variant="CskButtonVariant.Text"
+                           OnClick="@RequestCloseAsync"
+                           Disabled="@_isBusy">
+                    Cancel
+                </CskButton>
+
+                <CskSpacer />
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                    @if (_currentStepIndex > 0)
+                    {
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                   IconStart="@CskIcons.ArrowLeft"
+                                   OnClick="@GoPreviousAsync"
+                                   Disabled="@_isBusy">
+                            Back
+                        </CskButton>
+                    }
+
+                    @if (_currentStepIndex < _steps.Count - 1)
+                    {
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   IconEnd="@CskIcons.ArrowRight"
+                                   OnClick="@GoNextAsync"
+                                   Disabled="@_isBusy">
+                            @if (_isBusy)
+                            {
+                                <CskSpinner Size="CskSpinnerSize.Small" Class="mr-2" />
+                                <span>Validating...</span>
+                            }
+                            else
+                            {
+                                <span>Next</span>
+                            }
+                        </CskButton>
+                    }
+                    else
+                    {
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   IconStart="@CskIcons.CheckmarkCircle"
+                                   OnClick="@HandleFinishAsync"
+                                   Disabled="@_isBusy">
+                            @if (_isBusy)
+                            {
+                                <CskSpinner Size="CskSpinnerSize.Small" Class="mr-2" />
+                                <span>Finishing...</span>
+                            }
+                            else
+                            {
+                                <span>@(FinishButtonText ?? "Complete")</span>
+                            }
+                        </CskButton>
+                    }
+                </CskStack>
+            </div>
+        </div>
+    </div>
+
+    @* Unsaved Changes / Discard Confirmation Dialog *@
+    @if (_showDiscardConfirm)
+    {
+        <div class="csk-wizard-backdrop confirm-overlay" @onclick:stopPropagation="true">
+            <CskCard Class="discard-confirm-card">
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
+                    <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                        <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning csk-icon-lg" />
+                        <CskLabel Typo="CskTypography.H6" Class="font-weight-600">Discard Unsaved Changes?</CskLabel>
+                    </CskStack>
+
+                    <CskLabel Typo="CskTypography.Body">
+                        You have entered data that has not been saved. If you exit this wizard now, your progress will be discarded.
+                    </CskLabel>
+
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.End" HorizontalGap="8" Class="mt-2">
+                        <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _showDiscardConfirm = false)">
+                            Keep Editing
+                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Filled" OnClick="@ConfirmDiscardAsync">
+                            Discard &amp; Exit
+                        </CskButton>
+                    </CskStack>
+                </CskStack>
+            </CskCard>
+        </div>
+    }
+}

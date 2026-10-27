@@ -1,0 +1,332 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
+
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.Contracts.Common
+@using BlazorEnterprise.Core.Dtos.Response
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Events
+
+
+@using BlazorEnterprise.Shared.UI.Components
+@implements IDisposable
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
+    <!-- Header -->
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="full-width">
+        <div>
+            <CskLabel Typo="Typography.H4">Event Tracker &amp; Audit Ledger</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint">
+                Trace event publication and execution: inspect sender origins, senders, JSON payloads, and per-consumer telemetry.
+            </CskLabel>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
+        {
+            <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.ArrowSync" OnClick="@LoadEventsAsync">
+                Refresh
+            </CskButton>
+        }
+    </CskStack>
+
+    <!-- Tenant Filter Toolbar -->
+    <CskCard Class="p-4">
+        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16" Wrap="true">
+            <CskSelect TOption="TenantFilterOption" TValue="string"
+                          Items="@_availableTenants"
+                          OptionText="@(t => t.Name)"
+                          OptionValue="@(t => t.Id)"
+                          Value="@_selectedTenantId"
+                          ValueChanged="@OnTenantSelected"
+                          Disabled="@(_availableTenants.Count <= 1)"
+                          Label="Filter by Tenant"
+                          Placeholder="-- Select a tenant to view events --"
+                          Class="min-w-300" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedTenantId) && _availableTenants.Count > 1)
+            {
+                <CskButton Variant="CskButtonVariant.Text"
+                              IconStart="@CskIcons.Dismiss"
+                              OnClick="@ClearTenantFilter">
+                    Clear Filter
+                </CskButton>
+            }
+        </CskStack>
+    </CskCard>
+
+    @if (string.IsNullOrWhiteSpace(_selectedTenantId))
+    {
+        <!-- Empty State Prompt -->
+        <CskMessageBar Intent="MessageBarIntent.Info" Class="p-4">
+            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
+                <CskIcon Icon="@CskIcons.Pulse" Class="csk-icon-lg" />
+                <div>
+                    <strong>No Tenant Selected:</strong> Please choose a tenant from the dropdown above to display its event ledger records.
+                </div>
+            </CskStack>
+        </CskMessageBar>
+    }
+    else
+    {
+        <!-- Metric Summary Cards -->
+@*         <CskGrid Spacing="3" AdaptiveRendering="true">
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Total Events</CskLabel>
+                    <CskLabel Typo="Typography.H4">@(_eventResult?.TotalCount ?? 0)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Completed</CskLabel>
+                    <CskLabel Typo="Typography.H4" Color="Color.Success">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.Completed) ?? 0)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">In Progress</CskLabel>
+                    <CskLabel Typo="Typography.H4" Color="Color.Warning">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.InProgress || e.Status == EventTrackerStatusEnum.Published) ?? 0)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+            <CskGridItem xs="6" sm="3">
+                <CskCard Class="p-4 text-center">
+                    <CskLabel Typo="Typography.Subject">Failed / Partial</CskLabel>
+                    <CskLabel Typo="Typography.H4" Color="Color.Error">@(_eventResult?.Items.Count(e => e.Status == EventTrackerStatusEnum.Failed || e.Status == EventTrackerStatusEnum.PartiallyFailed) ?? 0)</CskLabel>
+                </CskCard>
+            </CskGridItem>
+        </CskGrid> *@
+
+        <!-- Filter Toolbar -->
+        <CskCard Class="p-4">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                <CskLabel Typo="Typography.H6">Search &amp; Filters</CskLabel>
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Wrap="true" VerticalAlignment="CskVerticalAlignment.Bottom">
+                    <CskTextInput Label="Search (Event, Origin, Sender, Payload)" @bind-Value="_filter.SearchTerm" Placeholder="Search..." Class="min-w-240" />
+
+                    <div>
+                        <CskLabel Typo="Typography.Body" Class="mb-1">Status</CskLabel>
+                        <CskSelect Items="@_statuses"
+                                      TOption="string"
+                                      TValue="string"
+                                      Value="@_selectedStatus"
+                                      ValueChanged="@OnStatusChanged"
+                                      Class="min-w-160" />
+                    </div>
+
+                    <CskDatePicker Label="From Date" @bind-Value="_filter.FromDate" />
+                    <CskDatePicker Label="To Date" @bind-Value="_filter.ToDate" />
+
+                    <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Search" OnClick="@SearchAsync">
+                        Filter
+                    </CskButton>
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@ResetFiltersAsync">
+                        Reset
+                    </CskButton>
+                </CskStack>
+            </CskStack>
+        </CskCard>
+
+        <!-- Selected Event Inspection Detail Panel -->
+        @if (_selectedEvent is not null)
+        {
+            <CskCard Class="mb-3 card-accent-border p-5">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+                    <div>
+                        <CskLabel Typo="Typography.H5">Event Receipt: @_selectedEvent.EventName</CskLabel>
+                        <CskLabel Typo="Typography.Caption" Class="text-hint">
+                            ID: @_selectedEvent.Id | Published: @TimeZoneService.FormatDateTime(_selectedEvent.PublishedAtUtc, "yyyy-MM-dd HH:mm:ss.fff") (@TimeZoneService.TimeZone.StandardName)
+                        </CskLabel>
+                    </div>
+                    <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@(() => _selectedEvent = null)" />
+                </CskStack>
+
+                <CskGrid Spacing="2">
+                    <CskGridItem xs="12" sm="6">
+                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="4">
+                            <div><b>Trigger Origin:</b> <code>@_selectedEvent.GetEffectiveSenderOrigin()</code></div>
+                            <div><b>Correlation ID:</b> @(_selectedEvent.CorrelationId ?? "—")</div>
+                            <div><b>Tenant:</b> @_selectedEvent.TenantId</div>
+                        </CskStack>
+                    </CskGridItem>
+                    <CskGridItem xs="12" sm="6">
+                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="4">
+                            <div><b>Published by:</b> @_selectedEvent.GetEffectiveSender()</div>
+                            <div>
+                                <b>Status:</b>
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(_selectedEvent.Status)">
+                                    @_selectedEvent.Status
+                                </CskBadge>
+                            </div>
+                            <div><b>Consumers Run:</b> @(_selectedEvent.Consumptions?.Count ?? _selectedEvent.ConsumerCount)</div>
+                        </CskStack>
+                    </CskGridItem>
+                </CskGrid>
+
+                <CskDivider Class="mt-4 mb-4" />
+
+                <!-- Consumer Execution Telemetry -->
+                <CskLabel Typo="Typography.H6" Class="mb-2">Consumer Execution Receipts</CskLabel>
+                @if (_selectedEvent.Consumptions is null || !_selectedEvent.Consumptions.Any())
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Info" Class="mb-3">
+                        No consumers have processed this event yet.
+                    </CskMessageBar>
+                }
+                else
+                {
+                    <CskDataGrid Items="@_selectedEvent.Consumptions.AsQueryable()" ResizableColumns="true" Class="mb-4">
+                        <CskPropertyColumn Property="@(c => c.ConsumerClass)" Title="Consumer Class" />
+                        <CskPropertyColumn Property="@(c => c.ConsumerMethod)" Title="Method" />
+                        <CskTemplateColumn Title="Started At">
+                            @TimeZoneService.FormatDateTime(context.StartedAtUtc, "HH:mm:ss.fff")
+                        </CskTemplateColumn>
+                        <CskTemplateColumn Title="Duration">
+                            @context.DurationMs.ToString("F1") ms
+                        </CskTemplateColumn>
+                        <CskTemplateColumn Title="Status">
+                            @if (context.Status == EventConsumptionStatusEnum.Succeeded)
+                            {
+                                <CskBadge Color="BadgeColor.Success">Succeeded</CskBadge>
+                            }
+                            else if (context.Status == EventConsumptionStatusEnum.Running)
+                            {
+                                <CskBadge Color="BadgeColor.Warning">Running</CskBadge>
+                            }
+                            else
+                            {
+                                <CskBadge Color="BadgeColor.Severe">Failed</CskBadge>
+                            }
+                        </CskTemplateColumn>
+                        <CskTemplateColumn Title="Attempt">
+                            #@context.AttemptCount
+                        </CskTemplateColumn>
+                        <CskTemplateColumn Title="Diagnostics">
+                            @if (!string.IsNullOrWhiteSpace(context.ErrorMessage))
+                            {
+                                <span title="@context.ErrorMessage" class="text-danger font-size-sm cursor-pointer">
+                                    ⚠️ @Truncate(context.ErrorMessage, 60)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="font-size-sm">OK</span>
+                            }
+                        </CskTemplateColumn>
+                    </CskDataGrid>
+                }
+
+                <!-- Payload JSON Inspector -->
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mt-3">
+                    <CskLabel Typo="Typography.H6">Event Payload (JSON)</CskLabel>
+                    <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Copy" OnClick="@CopyPayloadAsync">
+                        @(_copied ? "Copied!" : "Copy Payload")
+                    </CskButton>
+                </CskStack>
+                <div class="code-terminal-box mt-2">
+                    @_selectedEvent.PayloadJson
+                </div>
+            </CskCard>
+        }
+
+        <!-- Events Grid Card -->
+        <CskCard Class="p-5">
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-center p-5">
+                    <CskSpinner Size="CskSpinnerSize.Medium" />
+                </div>
+            }
+            else if (_eventResult is null || _eventResult.Items.Count == 0)
+            {
+                <div class="text-center p-5 text-hint">
+                    <CskIcon Icon="@CskIcons.Pulse" Class="csk-icon-xl" />
+                    <div class="mt-2 font-weight-600">No events found for this tenant matching search criteria.</div>
+                </div>
+            }
+            else
+            {
+                <!-- In-Grid Quick Search -->
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+                    <CskTextInput Placeholder="Quick filter visible records..." 
+                                     @bind-Value="_inGridSearchText"
+                                     @bind-Value:after="StateHasChanged"
+                                     Class="w-320">
+                        <StartTemplate>
+                            <CskIcon Icon="@CskIcons.Search" />
+                        </StartTemplate>
+                    </CskTextInput>
+                    <span class="font-size-sm text-hint">
+                        Showing @FilteredEventItems.Count() of @(_eventResult.Items.Count) events on this page
+                    </span>
+                </CskStack>
+
+                <!-- Master Events Grid -->
+                <CskDataGrid Items="@FilteredEventItems" ResizableColumns="true" GridTemplateColumns="170px 180px 220px 140px 140px 120px 110px">
+                    <CskTemplateColumn Title="Published At" SortBy="@(GridSort<EventPublishTrackerEntity>.ByDescending(e => e.PublishedAtUtc))">
+                        @TimeZoneService.FormatDateTime(context.PublishedAtUtc)
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Event Name" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.EventName))">
+                        <b>@context.EventName</b>
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Sender Origin" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.GetEffectiveSenderOrigin()))">
+                        <span title="@context.GetEffectiveSenderOrigin()">
+                            <code>@context.GetEffectiveSenderOrigin()</code>
+                        </span>
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Sender" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.GetEffectiveSender()))">
+                        <span title="@context.GetEffectiveSender()">
+                            @context.GetEffectiveSender()
+                        </span>
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Status" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.Status))">
+                        @if (context.Status == EventTrackerStatusEnum.Completed)
+                        {
+                            <CskBadge Color="BadgeColor.Success">Completed</CskBadge>
+                        }
+                        else if (context.Status == EventTrackerStatusEnum.InProgress)
+                        {
+                            <CskBadge Color="BadgeColor.Warning">In Progress</CskBadge>
+                        }
+                        else if (context.Status == EventTrackerStatusEnum.Failed)
+                        {
+                            <CskBadge Color="BadgeColor.Severe">Failed</CskBadge>
+                        }
+                        else if (context.Status == EventTrackerStatusEnum.PartiallyFailed)
+                        {
+                            <CskBadge Color="BadgeColor.Warning">Partial Fail</CskBadge>
+                        }
+                        else
+                        {
+                            <CskBadge Color="BadgeColor.Informative">Published</CskBadge>
+                        }
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Consumers">
+                        <span>@((context.Consumptions?.Count ?? 0)) consumer(s)</span>
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Actions">
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => SelectEventAsync(context))">
+                            Inspect
+                        </CskButton>
+                    </CskTemplateColumn>
+                </CskDataGrid>
+
+                <!-- Pagination Bar -->
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mt-3">
+                    <CskLabel Typo="Typography.Body">
+                        Showing Page @_eventResult.PageNumber of @_eventResult.TotalPages (@_eventResult.TotalCount total records)
+                    </CskLabel>
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                      Disabled="@(!_eventResult.HasPreviousPage)"
+                                      OnClick="@PreviousPageAsync">
+                            Previous
+                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                      Disabled="@(!_eventResult.HasNextPage)"
+                                      OnClick="@NextPageAsync">
+                            Next
+                        </CskButton>
+                    </CskStack>
+                </CskStack>
+            }
+        </CskCard>
+    }
+</CskStack>

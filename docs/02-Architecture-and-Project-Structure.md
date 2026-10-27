@@ -7,35 +7,35 @@
 
 ## 🏛️ 1. Clean Architecture Layer Topology
 
-BlazorFluent strictly adheres to **Clean Architecture** principles. Dependencies flow strictly inward toward the domain core. Outward or circular references are forbidden at compile time.
+BlazorEnterprise strictly adheres to **Clean Architecture** principles. Dependencies flow strictly inward toward the domain core. Outward or circular references are forbidden at compile time.
 
 ```mermaid
 flowchart TD
     subgraph Orchestration ["Orchestration & Diagnostics"]
-        AppHost["BlazorFluent.AppHost\n(Aspire 13.4 Orchestrator Host)"]
-        Defaults["BlazorFluent.ServiceDefaults\n(OpenTelemetry, Health Checks)"]
+        AppHost["BlazorEnterprise.AppHost\n(Aspire 13.4 Orchestrator Host)"]
+        Defaults["BlazorEnterprise.ServiceDefaults\n(OpenTelemetry, Health Checks)"]
     end
 
     subgraph Presentation ["Presentation & UI Layer"]
-        Web["BlazorFluent.Web\n(Interactive Server Blazor, Fluent UI V5)"]
-        Templates["BlazorFluent.UI.Templates\n(Reusable Enterprise Wizard RCL)"]
+        Web["BlazorEnterprise.Web\n(Interactive Server Blazor, Fluent UI V5)"]
+        Templates["BlazorEnterprise.UI.Templates\n(Reusable Enterprise Wizard RCL)"]
     end
 
     subgraph BusinessAndApi ["Business Services, API Gateway & Background Processing"]
-        Api["BlazorFluent.Api\n(ProcessAPI, Multi-IdP Auth Gateway, Key Vault)"]
-        Rules["BlazorFluent.RulesEngine\n(Company Azure 100% In-Memory Rules)"]
-        Jobs["BlazorFluent.Jobs\n(Bounded Channel Queue, Batch Ingestion)"]
-        Worker["BlazorFluent.Worker\n(Standalone Background Host Shell)"]
+        Api["BlazorEnterprise.Api\n(ProcessAPI, Multi-IdP Auth Gateway, Key Vault)"]
+        Rules["BlazorEnterprise.RulesEngine\n(Company Azure 100% In-Memory Rules)"]
+        Jobs["BlazorEnterprise.Jobs\n(Bounded Channel Queue, Batch Ingestion)"]
+        Worker["BlazorEnterprise.Worker\n(Standalone Background Host Shell)"]
     end
 
     subgraph IntegrationAndData ["Integration & Persistence"]
-        Infra["BlazorFluent.Infrastructure\n(Notifications, S2S Auth Handlers)"]
-        Persist["BlazorFluent.Persistence\n(PostgreSQL AppDbContext, Interceptors, Caching)"]
+        Infra["BlazorEnterprise.Infrastructure\n(Notifications, S2S Auth Handlers)"]
+        Persist["BlazorEnterprise.Persistence\n(PostgreSQL AppDbContext, Interceptors, Caching)"]
     end
 
     subgraph CoreRing ["Domain Core & Shared Primitives"]
-        Core["BlazorFluent.Core\n(Domain Entities, Interfaces, Validation)"]
-        Shared["BlazorFluent.Shared\n(Cross-Cutting DTOs, Security, Contracts)"]
+        Core["BlazorEnterprise.Core\n(Domain Entities, Interfaces, Validation)"]
+        Shared["BlazorEnterprise.Shared\n(Cross-Cutting DTOs, Security, Contracts)"]
     end
 
     %% Dependency flow
@@ -74,7 +74,7 @@ flowchart TD
 
 The solution is divided into distinct, cohesive architectural domains:
 
-### 1. `BlazorFluent.Shared` (Cross-Cutting Contracts & Primitives)
+### 1. `BlazorEnterprise.Shared` (Cross-Cutting Contracts & Primitives)
 - **Role**: The universal foundation defining shared DTOs, domain attributes, security models, common response wrappers, and cryptographic contracts.
 - **Key Responsibilities**:
   - Domain enums (`TaskStatus`, `ProjectRole`, `WorkflowState`, `UserType`).
@@ -82,7 +82,7 @@ The solution is divided into distinct, cohesive architectural domains:
   - Cross-tier API request/response envelopes.
 - **Dependencies**: Zero project references. Clean, portable, framework-agnostic.
 
-### 2. `BlazorFluent.Core` (Enterprise Domain & Contracts)
+### 2. `BlazorEnterprise.Core` (Enterprise Domain & Contracts)
 - **Role**: Pure domain entities, value objects, domain events, and core abstractions. Zero UI or EF Core dependencies.
 - **Key Responsibilities**:
   - Domain entities (`TenantEntity`, `ProjectEntity`, `WorkflowEntity`, `TaskEntity`, `AuditRecordEntity`).
@@ -90,9 +90,9 @@ The solution is divided into distinct, cohesive architectural domains:
   - Cryptographic utilities: `OpaqueIdUtility` for 256-bit license keys, tenant reference IDs (`tnt_...`), and salted HMAC GUID masking.
   - Universal batch staging & encryption contracts: `ISourceTrackedEntity` (deterministic `SourceRowId` linking to raw staged records in `staging.StagedImports`), `IEncryptedPayloadEntity` (protects confidential business payloads at rest via AES-256-GCM `EncryptedPayloadBytes`), and `StagedImportEntity` (universal `staging.StagedImports` with `jsonb` payloads and `IsProcessed` lifecycle flags).
   - FluentValidation rules (`TaskValidator`, `WorkflowValidator`, `StagedImportEntityValidator`).
-- **Dependencies**: `BlazorFluent.Shared`, `FluentValidation`.
+- **Dependencies**: `BlazorEnterprise.Shared`, `FluentValidation`.
 
-### 3. `BlazorFluent.Persistence` (Data Access & Caching)
+### 3. `BlazorEnterprise.Persistence` (Data Access & Caching)
 - **Role**: 100% database access, EF Core configurations, and multi-tier caching.
 - **Key Responsibilities**:
   - PostgreSQL `AppDbContext` with schema isolation (`core`, `audit`, `staging`).
@@ -103,9 +103,9 @@ The solution is divided into distinct, cohesive architectural domains:
     - `ProjectSecurityInterceptor`: Fails closed if unauthorized users attempt project mutations.
   - HybridCache implementation combining L1 in-memory RAM with L2 Redis caching.
   - `TenantService.RegenerateTenantLicenseKeyAsync`: Generates cryptographically secure 256-bit tenant license keys with security audit logging.
-- **Dependencies**: `BlazorFluent.Core`, `BlazorFluent.Shared`, `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.Extensions.Caching.Hybrid`.
+- **Dependencies**: `BlazorEnterprise.Core`, `BlazorEnterprise.Shared`, `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.Extensions.Caching.Hybrid`.
 
-### 4. `BlazorFluent.Infrastructure` (Outbound Integrations, S2S Auth & Edge Security)
+### 4. `BlazorEnterprise.Infrastructure` (Outbound Integrations, S2S Auth & Edge Security)
 - **Role**: External service communication, S2S delegation, security middleware, and browser interop.
 - **Key Responsibilities**:
   - `TenantTokenService` (`ITenantTokenService`): Mints ephemeral 5-minute S2S JWTs signed strictly via `Tenants:{tenantId}:LicenseKey`, containing masked claims (`tid: tnt_...`, `tenant_id`, `cid`, `act: BatchWorker|SystemDaemon`) and zero PII.
@@ -114,9 +114,9 @@ The solution is divided into distinct, cohesive architectural domains:
   - SignalR circuit monitoring and real-time remote kill-switch service (`CircuitHeartbeatHandler`).
   - HTTP Edge security middleware (CSP headers, CORS, Antiforgery tokens).
   - Remote Engine Gateway (`RemoteEngineGateway` implementing `IEngineClient` for batch transforms and proprietary decryption).
-- **Dependencies**: `BlazorFluent.Core`, `BlazorFluent.Shared`, `Microsoft.AspNetCore.App`, `Microsoft.AspNetCore.Authentication.JwtBearer`.
+- **Dependencies**: `BlazorEnterprise.Core`, `BlazorEnterprise.Shared`, `Microsoft.AspNetCore.App`, `Microsoft.AspNetCore.Authentication.JwtBearer`.
 
-### 5. `BlazorFluent.Jobs` (Asynchronous Processing & Batch Pipeline Library)
+### 5. `BlazorEnterprise.Jobs` (Asynchronous Processing & Batch Pipeline Library)
 - **Role**: In-process background queueing, Cronos periodic schedulers, and bulk ingestion logic.
 - **Key Responsibilities**:
   - `System.Threading.Channels` thread-isolated bounded batch queue (`ChannelJobEventQueue`).
@@ -129,83 +129,83 @@ The solution is divided into distinct, cohesive architectural domains:
     - Compound tenant scoping (`f.TenantId == jobEvent.TenantId && ...`) and cross-tenant quarantine guards.
   - Cronos periodic cron schedulers with automated 3x exponential backoff.
   - Strict fail-closed execution in `BatchJobQueueListener` (aborts if `TenantId` is missing; zero fallback to default tenant slug).
-- **Dependencies**: `BlazorFluent.Persistence`, `BlazorFluent.Core`, `BlazorFluent.Shared`, `Cronos`, `DocumentFormat.OpenXml`.
+- **Dependencies**: `BlazorEnterprise.Persistence`, `BlazorEnterprise.Core`, `BlazorEnterprise.Shared`, `Cronos`, `DocumentFormat.OpenXml`.
 
-### 6. `BlazorFluent.Worker` (Standalone Background Host Shell)
+### 6. `BlazorEnterprise.Worker` (Standalone Background Host Shell)
 - **Role**: Thin console host (`Microsoft.NET.Sdk.Worker`, `.NET 10.0`) executing background queues and periodic schedulers in decoupled or horizontally scaled topologies.
 - **Key Responsibilities**:
   - Host builder wiring Serilog, Aspire ServiceDefaults, Persistence, Infrastructure, and EngineGateway client.
-  - **Thin Shell Guarantee**: Exactly 0 batch handlers or business logic are located in this project. 100% of batch handlers, event models, stagers, and schedulers reside in `BlazorFluent.Jobs`.
-  - Enables dual-mode execution: runs when `Jobs:EnableHostedListener = false` in `BlazorFluent.Web`.
-- **Dependencies**: `BlazorFluent.Jobs`, `BlazorFluent.Persistence`, `BlazorFluent.Infrastructure`, `BlazorFluent.Core`, `BlazorFluent.Shared`, `BlazorFluent.ServiceDefaults`.
+  - **Thin Shell Guarantee**: Exactly 0 batch handlers or business logic are located in this project. 100% of batch handlers, event models, stagers, and schedulers reside in `BlazorEnterprise.Jobs`.
+  - Enables dual-mode execution: runs when `Jobs:EnableHostedListener = false` in `BlazorEnterprise.Web`.
+- **Dependencies**: `BlazorEnterprise.Jobs`, `BlazorEnterprise.Persistence`, `BlazorEnterprise.Infrastructure`, `BlazorEnterprise.Core`, `BlazorEnterprise.Shared`, `BlazorEnterprise.ServiceDefaults`.
 
-### 7. `BlazorFluent.Web` (Presentation & Web Host)
+### 7. `BlazorEnterprise.Web` (Presentation & Web Host)
 - **Role**: The user-facing web application and DI composition root.
 - **Key Responsibilities**:
   - 65+ Interactive Server Blazor components adhering strictly to Microsoft Fluent UI Blazor V5.
   - Page-level compile-time role authorization contracts (`AuthorizedPageComponentBase`).
   - Composition root (`Program.cs`) wiring all layers, logging, and security middleware.
   - Configurable background listener via `Jobs:EnableHostedListener`.
-- **Dependencies**: References all solution projects except `BlazorFluent.Worker`.
+- **Dependencies**: References all solution projects except `BlazorEnterprise.Worker`.
 
-### 8. `BlazorFluent.UI.Templates` (Reusable Enterprise Wizard RCL)
+### 8. `BlazorEnterprise.UI.Templates` (Reusable Enterprise Wizard RCL)
 - **Role**: Decoupled Razor Class Library (RCL) providing multi-step wizard templates.
 - **Key Responsibilities**:
   - `<FluentWizardModal TState>` component providing modal experience, backdrop locking, and dirty form guards.
   - State preservation across transitions (`WizardContext<TState>`).
   - Independent packability as a standalone `.nupkg`.
-- **Dependencies**: `BlazorFluent.Core`, `BlazorFluent.Shared`, `Microsoft.FluentUI.AspNetCore.Components`.
+- **Dependencies**: `BlazorEnterprise.Core`, `BlazorEnterprise.Shared`, `Microsoft.FluentUI.AspNetCore.Components`.
 
-### 9. `BlazorFluent.RulesEngine` (Company Azure In-Memory Engine)
+### 9. `BlazorEnterprise.RulesEngine` (Company Azure In-Memory Engine)
 - **Role**: Ultra-high-speed calculation, batch transformation, and business rule evaluation engine.
 - **Key Responsibilities**:
   - 100% in-memory CPU calculation routines with zero database latency.
   - Stateless C# batch processing strategies (`ICloudProcessingStrategy`, `BaseCloudProcessor`, `TaskCloudProcessor`) with reverse `headerMap` lookup.
   - Strict **all-or-nothing atomicity**: validates all rows in a chunk; if any row fails, rejects the batch with 0 processed rows.
   - `CloudProcessorDispatcher` resolving processors by incoming `FileType`.
-- **Dependencies**: `BlazorFluent.Shared`, `DocumentFormat.OpenXml`.
+- **Dependencies**: `BlazorEnterprise.Shared`, `DocumentFormat.OpenXml`.
 
-### 10. `BlazorFluent.Api` (ProcessAPI & Auth Gateway)
+### 10. `BlazorEnterprise.Api` (ProcessAPI & Auth Gateway)
 - **Role**: Centralized backend API, identity broker, stateless processing engine, and Key Vault integration.
 - **Key Responsibilities**:
   - Multi-IdP federation (Microsoft Entra ID, Azure AD B2C, Okta, Local Dev).
   - Dynamic `IssuerSigningKeyResolver` in `JwtBearerOptions`: dynamically extracts `tenant_id` or `tid` from token, retrieves `Tenants:{tenantId}:LicenseKey` to validate S2S signatures, while admitting the Cloud Master Key for user tokens.
   - .NET 10 `HybridCache` (L1 RAM + optional L2 Redis fallback) with tenant namespace partitioning (`t:{tenantId}:batch:...`).
   - Batch endpoints supporting both `tenant_id` and masked `tid` claims with strict fail-closed enforcement (shared key fallback strictly prohibited).
-- **Dependencies**: `BlazorFluent.RulesEngine`, `BlazorFluent.Shared`.
+- **Dependencies**: `BlazorEnterprise.RulesEngine`, `BlazorEnterprise.Shared`.
 
-### 11. `BlazorFluent.ServiceDefaults` (Aspire OpenTelemetry & Health Checks)
+### 11. `BlazorEnterprise.ServiceDefaults` (Aspire OpenTelemetry & Health Checks)
 - **Role**: Shared Aspire operational defaults for cloud-native telemetry.
 - **Key Responsibilities**:
   - OpenTelemetry metrics and distributed tracing (`ActivitySource`).
   - Health checks for database, cache, and external endpoints (`/healthz`, `/alive`).
 - **Dependencies**: `Microsoft.Extensions.ServiceDiscovery`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`.
 
-### 12. `BlazorFluent.AppHost` (.NET Aspire Orchestration Host)
+### 12. `BlazorEnterprise.AppHost` (.NET Aspire Orchestration Host)
 - **Role**: Local orchestrator and container manager.
 - **Key Responsibilities**:
   - Coordinates multi-project startup (`Web`, `Api`, and `Dashboard`).
   - Dual-mode database routing (Native Local PostgreSQL vs Docker containerized PostgreSQL/pgAdmin).
-- **Dependencies**: `Aspire.AppHost.Sdk/13.4`, references `BlazorFluent.Web` and `BlazorFluent.Api`.
+- **Dependencies**: `Aspire.AppHost.Sdk/13.4`, references `BlazorEnterprise.Web` and `BlazorEnterprise.Api`.
 
 ---
 
 ## ⚙️ 2.1 Dual-Mode Background Processing Architecture
 
-BlazorFluent natively supports two distinct operational modes for background processing without any code modification:
+BlazorEnterprise natively supports two distinct operational modes for background processing without any code modification:
 
 ```mermaid
 flowchart TD
     subgraph ModeA ["Mode 1: Single-Node On-Premise Monolith"]
-        WebA["BlazorFluent.Web\n(Jobs:EnableHostedListener = true)"]
+        WebA["BlazorEnterprise.Web\n(Jobs:EnableHostedListener = true)"]
         ChannelA["ChannelJobEventQueue\n(In-Memory Bounded Channels)"]
         ListenerA["BatchJobQueueListener\n(HostedService inside Web)"]
         WebA --> ChannelA --> ListenerA
     end
 
     subgraph ModeB ["Mode 2: Distributed Multi-Node / Cloud Topology"]
-        WebB["BlazorFluent.Web\n(Jobs:EnableHostedListener = false)"]
-        WorkerB["BlazorFluent.Worker Nodes\n(Independent Console Hosts)"]
+        WebB["BlazorEnterprise.Web\n(Jobs:EnableHostedListener = false)"]
+        WorkerB["BlazorEnterprise.Worker Nodes\n(Independent Console Hosts)"]
         ListenerB["BatchJobQueueListener\n(HostedService inside Worker)"]
         WebB -.->|Outbound Ingestion| WorkerB
         WorkerB --> ListenerB
@@ -214,22 +214,22 @@ flowchart TD
 
 | Deployment Mode | `Jobs:EnableHostedListener` in Web | Host Process | Best Suited For |
 | :--- | :--- | :--- | :--- |
-| **Single-Node Monolith** | `true` | `BlazorFluent.Web` | Local developer setup, single-server on-premise deployments, cost-optimized environments. |
-| **Distributed / Cloud** | `false` | `BlazorFluent.Worker` (1..N instances) | High-volume production, horizontal auto-scaling, CPU isolation between UI and batch workers. |
+| **Single-Node Monolith** | `true` | `BlazorEnterprise.Web` | Local developer setup, single-server on-premise deployments, cost-optimized environments. |
+| **Distributed / Cloud** | `false` | `BlazorEnterprise.Worker` (1..N instances) | High-volume production, horizontal auto-scaling, CPU isolation between UI and batch workers. |
 
 ---
 
 ## ⚡ 3. Two-Tier Hybrid Architecture
 
-BlazorFluent supports both unified single-host deployments and two-tier hybrid cloud architectures where calculation-intensive rules execute independently:
+BlazorEnterprise supports both unified single-host deployments and two-tier hybrid cloud architectures where calculation-intensive rules execute independently:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Client / User
-    participant Web as BlazorFluent.Web (UI Host)
-    participant Api as BlazorFluent.Api (Auth & Gateway)
-    participant Rules as BlazorFluent.RulesEngine (In-Memory)
+    participant Web as BlazorEnterprise.Web (UI Host)
+    participant Api as BlazorEnterprise.Api (Auth & Gateway)
+    participant Rules as BlazorEnterprise.RulesEngine (In-Memory)
     participant DB as PostgreSQL (Native RLS)
 
     User->>Web: Navigate to Financial / Regulatory View
@@ -247,7 +247,7 @@ sequenceDiagram
 
 ## 🔒 4. Service Scope Lifetime & Captive Dependency Governance
 
-BlazorFluent strictly governs dependency injection lifetimes to prevent concurrency defects:
+BlazorEnterprise strictly governs dependency injection lifetimes to prevent concurrency defects:
 
 | Lifetime | Scope Definition | Permitted Services | Forbidden Anti-Patterns |
 | :--- | :--- | :--- | :--- |

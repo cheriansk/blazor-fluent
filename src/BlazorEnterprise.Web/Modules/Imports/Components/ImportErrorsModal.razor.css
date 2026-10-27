@@ -1,0 +1,11 @@
+.dialog-diagnostics {
+    width: 850px;
+    max-width: 90vw;
+    height: 550px;
+    max-height: 85vh;
+}
+
+.modal-body-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+}

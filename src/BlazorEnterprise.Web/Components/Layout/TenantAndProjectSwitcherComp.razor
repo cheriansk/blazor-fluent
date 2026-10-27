@@ -1,0 +1,92 @@
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty)
+{
+    @* Not yet initialized — render nothing *@
+    return;
+}
+
+<div class="tenant-project-bar">
+    <!-- 1. Tenant Selector Section -->
+    <div class="tenant-section">
+        <CskIcon Icon="@CskIcons.Building" Class="icon-faded" />
+        @if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
+        {
+            <CskSelect TOption="TenantInfo"
+                          TValue="string"
+                          Items="@TenantContext.AllowedTenants.ToList()"
+                          OptionValue="@(t => t.Id.ToString())"
+                          OptionText="@(t => t.Name)"
+                          Value="@TenantContext.TenantId.ToString()"
+                          ValueChanged="@OnTenantChanged"
+                          Class="select-compact"
+                          Title="Select Active Tenant" />
+        }
+        else if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count == 1)
+        {
+            <span class="tenant-name-static">
+                @TenantContext.TenantName
+            </span>
+        }
+        else
+        {
+            <span class="tenant-name-locked" title="Locked to assigned tenant">
+                🔒 @TenantContext.TenantName
+            </span>
+        }
+    </div>
+
+    @if (!TenantContext.IsRootTenant)
+    {
+        <!-- Divider / Chevron -->
+        <CskIcon Icon="@CskIcons.ChevronRight" Class="icon-faded-more" />
+
+        <!-- 2. Project Selector Section -->
+        <div class="project-section">
+            <CskIcon Icon="@CskIcons.Folder" Class="icon-faded" />
+            @if (_isLoadingProjects)
+            {
+                <span class="csk-btn-spinner spinner-icon-sm"></span>
+            }
+            else if (_projects.Count == 0)
+            {
+                <span class="no-projects-text">
+                    (No Projects)
+                </span>
+            }
+            else if (_projects.Count == 1)
+            {
+                <CskSelect TOption="ProjectInfoDto"
+                              TValue="string"
+                              Items="@_projects"
+                              OptionValue="@(p => p.Id.ToString())"
+                              OptionText="@(p => p.Name)"
+                              Value="@(_projects[0].Id.ToString())"
+                              Disabled="true"
+                              Class="select-compact"
+                              Title="Project locked (only 1 project available)" />
+            }
+            else
+            {
+                <CskSelect TOption="ProjectInfoDto"
+                              TValue="string"
+                              Items="@_projects"
+                              OptionValue="@(p => p.Id.ToString())"
+                              OptionText="@(p => p.Name)"
+                              Value="@(ProjectContext.ProjectId?.ToString() ?? _projects[0].Id.ToString())"
+                              ValueChanged="@OnProjectChanged"
+                              Class="select-compact"
+                              Title="Select Active Project Workspace" />
+            }
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(_switchError))
+{
+    <span class="csk-badge badge-switch-error">
+        @_switchError
+    </span>
+}

@@ -1,0 +1,96 @@
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Infrastructure.Security
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ITenantContext TenantContext
+@inject IAuditService AuditService
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager NavigationManager
+
+@if (!TenantContext.HasActiveTenant)
+{
+    @* Not yet initialized — show nothing *@
+    return;
+}
+
+@if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
+{
+    @* Company user with multiple tenants — show dropdown *@
+    <CskSelect TOption="TenantInfo"
+                  TValue="string"
+                  Items="@TenantContext.AllowedTenants.ToList()"
+                  OptionValue="@(t => t.Id.ToString())"
+                  OptionText="@(t => t.Name)"
+                  Value="@(TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : string.Empty)"
+                  ValueChanged="@((string? id) => OnTenantChanged(id))"
+                  Class="tenant-select-dropdown">
+    </CskSelect>
+}
+else if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count == 1)
+{
+    @* Company user but only one tenant *@
+    <CskBadge Class="tenant-badge-padded">
+        @TenantContext.TenantName
+    </CskBadge>
+}
+else
+{
+    @* Client user — locked to their tenant, no switching *@
+    <CskTooltip Anchor="tenant-badge" Position="TooltipPosition.Bottom">
+        You are locked to this tenant and cannot switch.
+    </CskTooltip>
+    <CskBadge Id="tenant-badge"
+                 Class="tenant-badge-locked">
+        🔒 @TenantContext.TenantName
+    </CskBadge>
+}
+
+@if (!string.IsNullOrEmpty(_switchError))
+{
+    <CskBadge Color="BadgeColor.Severe" Class="tenant-badge-error">
+        @_switchError
+    </CskBadge>
+}
+
+@code {
+    private string? _switchError;
+
+    private async Task OnTenantChanged(string? newTenantId)
+    {
+        if (string.IsNullOrWhiteSpace(newTenantId) || (Guid.TryParse(newTenantId, out var gId) && gId == TenantContext.TenantId)) return;
+
+        var prevTenant = TenantContext.HasActiveTenant ? TenantContext.TenantSlug : "unknown";
+
+        // Zero Trust: Validate that the requested tenant is authorized for this user
+        var targetMatch = TenantContext.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == newTenantId || t.Slug == newTenantId);
+        if (targetMatch == null)
+        {
+            _switchError = "You do not have permission to access the requested tenant.";
+            await AuditService.LogSecurityEventAsync(
+                "TenantSwitchBlocked",
+                AuditSeverityEnum.Warning,
+                $"Attempted unauthorized switch from '{prevTenant}' to '{newTenantId}'.");
+            return;
+        }
+
+        _switchError = null;
+
+        // 1. Audit tenant switch initiation
+        await AuditService.LogSecurityEventAsync(
+            "TenantSwitchInitiated",
+            AuditSeverityEnum.Information,
+            $"User initiated tenant switch from '{prevTenant}' to '{targetMatch.Slug}'. Purging session and enforcing re-authentication.");
+
+        // 2. Purge browser session storage to eliminate cross-tenant state bleeding
+        try
+        {
+            await SessionStorage.DeleteAsync("app_session");
+        }
+        catch { }
+
+        // 3. Reset in-memory tenant context
+        TenantContext.Reset();
+
+        // 4. Force full circuit teardown and navigate to login targeting the selected tenant
+        NavigationManager.NavigateTo($"/login?tenant={Uri.EscapeDataString(targetMatch.Slug)}", forceLoad: true);
+    }
+}

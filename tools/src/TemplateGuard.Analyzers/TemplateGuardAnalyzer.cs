@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -74,11 +75,11 @@ namespace TemplateGuard.Analyzers
         public static readonly DiagnosticDescriptor RuleTg006 = new(
             id: "TG006",
             title: "DataList enum type name must end with 'Enum' suffix",
-            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            messageFormat: "Enum '{0}' in namespace '{1}' does not end with 'Enum' (e.g. '{0}Enum'). For cognitive readability and quick identification, all enums in BlazorEnterprise.Shared.DataListTypes must end with the 'Enum' suffix.",
             category: "Naming",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "All enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.",
+            description: "All enums in BlazorEnterprise.Shared.DataListTypes must end with the 'Enum' suffix.",
             helpLinkUri: HelpBaseUrl + "#tg006");
 
         public static readonly DiagnosticDescriptor RuleTg007 = new(
@@ -158,7 +159,7 @@ namespace TemplateGuard.Analyzers
             category: "Architecture",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "All enums in BlazorFluent.Shared.DataListTypes must declare their taxonomy category via [LifecycleEnum] or [ClassificationEnum].",
+            description: "All enums in BlazorEnterprise.Shared.DataListTypes must declare their taxonomy category via [LifecycleEnum] or [ClassificationEnum].",
             helpLinkUri: HelpBaseUrl + "#tg014");
 
         public static readonly DiagnosticDescriptor RuleTg015 = new(
@@ -171,11 +172,52 @@ namespace TemplateGuard.Analyzers
             description: "Enums decorated with [LifecycleEnum] must declare a companion definitions class with an AllowedTransitions matrix.",
             helpLinkUri: HelpBaseUrl + "#tg015");
 
+        public static readonly DiagnosticDescriptor RuleTg016 = new(
+            id: "TG016",
+            title: "PureStrict CSP Violation: Inline style attribute prohibited in Razor markup",
+            messageFormat: "Razor component '{0}' contains inline style attribute '{1}' at line {2}. PureStrict CSP prohibits inline styles. ALLOWED APPROACH: Define CSS classes in app.css.",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Inline styles (style= or Style=) violate enterprise PureStrict Content Security Policy.",
+            helpLinkUri: HelpBaseUrl + "#tg016");
+
+        public static readonly DiagnosticDescriptor RuleTg017 = new(
+            id: "TG017",
+            title: "PureStrict CSP Violation: Un-nonced <script> or <style> tag prohibited in Razor markup",
+            messageFormat: "Razor component '{0}' contains an un-nonced <{1}> tag at line {2}. PureStrict CSP requires a cryptographic nonce. ALLOWED APPROACH: Use static nonced scripts in App.razor or include nonce=\"@nonce\".",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Un-nonced script and style blocks violate enterprise PureStrict Content Security Policy.",
+            helpLinkUri: HelpBaseUrl + "#tg017");
+
+        public static readonly DiagnosticDescriptor RuleTg018 = new(
+            id: "TG018",
+            title: "PureStrict CSP Violation: Prohibited inline JavaScript handler or javascript: URI",
+            messageFormat: "Razor component '{0}' contains prohibited inline JavaScript '{1}' at line {2}. PureStrict CSP prohibits inline DOM execution. ALLOWED APPROACH: Use Blazor C# event directives (e.g. @onclick) and standard routing.",
+            category: "Security",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Inline DOM event handlers and javascript: URIs violate enterprise PureStrict Content Security Policy.",
+            helpLinkUri: HelpBaseUrl + "#tg018");
+
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
                 RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
-                RuleTg014, RuleTg015);
+                RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018, RuleTg019);
+
+        public static readonly DiagnosticDescriptor RuleTg019 = new(
+            id: "TG019",
+            title: "Undefined CSS class referenced in Razor markup",
+            messageFormat: "Razor component '{0}' references undefined CSS class '{1}' at line {2}. ALLOWED APPROACH: Define '.{1}' in the component's scoped '{0}.css' stylesheet or in global 'app.css' / 'material-theme.css'.",
+            category: "Styling",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "All CSS classes referenced via class or Class attributes in Razor markup must exist in the component's scoped .razor.css file, shared Csk* component stylesheets, or global wwwroot stylesheets.",
+            helpLinkUri: HelpBaseUrl + "#tg019");
 
         public override void Initialize(AnalysisContext context)
         {
@@ -184,6 +226,7 @@ namespace TemplateGuard.Analyzers
 
             context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
             context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+            context.RegisterAdditionalFileAction(AnalyzeRazorCsp);
 
             context.RegisterCompilationStartAction(compilationContext =>
             {
@@ -191,10 +234,10 @@ namespace TemplateGuard.Analyzers
                 var assemblyName = compilation.AssemblyName ?? string.Empty;
 
                 bool isCoreAssembly = assemblyName.EndsWith(".Core", StringComparison.OrdinalIgnoreCase) ||
-                                      assemblyName.Equals("BlazorFluent.Core", StringComparison.OrdinalIgnoreCase);
+                                      assemblyName.Equals("BlazorEnterprise.Core", StringComparison.OrdinalIgnoreCase);
 
                 bool isPersistenceAssembly = assemblyName.EndsWith(".Persistence", StringComparison.OrdinalIgnoreCase) ||
-                                            assemblyName.Equals("BlazorFluent.Persistence", StringComparison.OrdinalIgnoreCase);
+                                            assemblyName.Equals("BlazorEnterprise.Persistence", StringComparison.OrdinalIgnoreCase);
 
                 var concreteEntitiesInSource = new ConcurrentBag<INamedTypeSymbol>();
                 var validatorTargetTypes = new ConcurrentBag<string>();
@@ -282,7 +325,7 @@ namespace TemplateGuard.Analyzers
                         foreach (var refAssembly in endCtx.Compilation.SourceModule.ReferencedAssemblySymbols)
                         {
                             if (refAssembly.Name.EndsWith(".Core", StringComparison.OrdinalIgnoreCase) ||
-                                refAssembly.Name.Equals("BlazorFluent.Core", StringComparison.OrdinalIgnoreCase))
+                                refAssembly.Name.Equals("BlazorEnterprise.Core", StringComparison.OrdinalIgnoreCase))
                             {
                                 CollectEntitiesFromNamespace(refAssembly.GlobalNamespace, allEntities);
                             }
@@ -292,7 +335,7 @@ namespace TemplateGuard.Analyzers
                         {
                             if (!entity.IsAbstract && InheritsFrom(entity, "BaseEntity") && !configurations.Contains(entity.Name))
                             {
-                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName("BlazorFluent.Persistence.Context.AppDbContext");
+                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName("BlazorEnterprise.Persistence.Context.AppDbContext");
                                 var location = appDbContextSymbol?.Locations.FirstOrDefault() ?? Location.None;
                                 endCtx.ReportDiagnostic(Diagnostic.Create(RuleTg010, location, entity.Name));
                             }
@@ -415,7 +458,7 @@ namespace TemplateGuard.Analyzers
         private static string? NormalizeToLayerRelativePath(string fullPath)
         {
             var normalized = fullPath.Replace('\\', '/');
-            var layers = new[] { "UI.Templates", "Core", "Persistence", "Infrastructure", "Jobs", "Web" };
+            var layers = new[] { "Shared.UI", "Core", "Persistence", "Infrastructure", "Jobs", "Web" };
             foreach (var layer in layers)
             {
                 var marker = "." + layer + "/";
@@ -505,7 +548,7 @@ namespace TemplateGuard.Analyzers
             if (namedType.IsImplicitlyDeclared || namedType.Name.StartsWith("<")) return;
 
             var ns = namedType.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-            var isDomainNamespace = ns.Contains(".Core.Domain") || ns.StartsWith("BlazorFluent.Core.Domain");
+            var isDomainNamespace = ns.Contains(".Core.Domain") || ns.StartsWith("BlazorEnterprise.Core.Domain");
             var isValueObjectNamespace = ns.EndsWith(".ValueObjects") || ns.Contains(".ValueObjects.");
 
             // Exclude value objects (e.g. Address) and nested definitions/validators
@@ -748,7 +791,7 @@ namespace TemplateGuard.Analyzers
             if (filePath != null)
             {
                 if (filePath.EndsWith("/DataListExtensions.cs", StringComparison.OrdinalIgnoreCase) ||
-                    filePath.Contains("/BlazorFluent.Shared/Extensions/") ||
+                    filePath.Contains("/BlazorEnterprise.Shared/Extensions/") ||
                     filePath.Contains("/Migrations/") ||
                     filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
                 {
@@ -804,6 +847,281 @@ namespace TemplateGuard.Analyzers
             foreach (var subNs in nsSymbol.GetNamespaceMembers())
             {
                 CollectEntitiesFromNamespace(subNs, result);
+            }
+        }
+
+        private static readonly Regex InlineStyleRegex = new(
+            @"(?<![\w@])(?:style|Style)\s*=\s*",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ScriptOrStyleTagRegex = new(
+            @"<(?<tag>script|style)\b(?![^>]*\bnonce\s*=)[^>]*>",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        private static readonly Regex DomJsHandlerRegex = new(
+            @"(?<!@)\b(?:onload|onerror|onclick|onsubmit|onfocus|onblur|onkeydown|onkeyup|onkeypress|onmouseover|onmouseout|onmouseenter|onmouseleave)\s*=\s*[""']",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex JavascriptUriRegex = new(
+            @"\b(?:href|src|action)\s*=\s*[""']\s*javascript:",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        private static readonly Regex CssCommentRegex = new(
+            @"/\*[\s\S]*?\*/",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex CssClassSelectorRegex = new(
+            @"\.(?<cls>[a-zA-Z_-][a-zA-Z0-9_-]*)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ClassAttributeRegex = new(
+            @"(?<![\w@])(?:class|Class)\s*=\s*""(?<val>(?:@\([^)]*\)|[^""])*)""",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex PrefixedRazorVarRegex = new(
+            @"[a-zA-Z0-9_-]*@[a-zA-Z_][a-zA-Z0-9_.]*(?:\([^)]*\))?(?:\.[a-zA-Z_][a-zA-Z0-9_.]*(?:\([^)]*\))?)*[a-zA-Z0-9_-]*",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ParenExpressionRegex = new(
+            @"@\((?<expr>[^)]*)\)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex TernaryBranchStringLiteralRegex = new(
+            @"(?:\?|:)\s*""(?<str>[^""]*)""",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex SimpleRazorVarRegex = new(
+            @"@[a-zA-Z_][a-zA-Z0-9_.]*(?:\([^)]*\))?",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex ValidCssIdentifierRegex = new(
+            @"^[a-zA-Z_-][a-zA-Z0-9_-]*$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static HashSet<string> BuildAllowedCssClassesForRazorFile(
+            string razorFilePath,
+            ImmutableArray<AdditionalText> additionalFiles,
+            System.Threading.CancellationToken cancellationToken)
+        {
+            var allowed = new HashSet<string>(StringComparer.Ordinal);
+            var expectedScopedCssPath = razorFilePath + ".css";
+
+            foreach (var addFile in additionalFiles)
+            {
+                if (!addFile.Path.EndsWith(".css", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var normalizedCssPath = addFile.Path.Replace('\\', '/');
+                bool isGlobalCss = normalizedCssPath.IndexOf("/wwwroot/", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool isOwnScopedCss = string.Equals(addFile.Path, expectedScopedCssPath, StringComparison.OrdinalIgnoreCase);
+                bool isSharedUiComponentCss = normalizedCssPath.IndexOf("/BlazorEnterprise.Shared.UI/Components/", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                                              normalizedCssPath.EndsWith(".razor.css", StringComparison.OrdinalIgnoreCase);
+
+                if (!isGlobalCss && !isOwnScopedCss && !isSharedUiComponentCss)
+                {
+                    continue;
+                }
+
+                var cssText = addFile.GetText(cancellationToken)?.ToString();
+                if (string.IsNullOrEmpty(cssText)) continue;
+
+                var uncommented = CssCommentRegex.Replace(cssText!, string.Empty);
+                var matches = CssClassSelectorRegex.Matches(uncommented);
+                foreach (Match m in matches)
+                {
+                    var clsName = m.Groups["cls"].Value;
+                    if (!string.IsNullOrEmpty(clsName))
+                    {
+                        allowed.Add(clsName);
+                    }
+                }
+            }
+
+            return allowed;
+        }
+
+        private static IEnumerable<string> ExtractVerifiableCssClasses(string rawClassAttributeValue)
+        {
+            if (string.IsNullOrWhiteSpace(rawClassAttributeValue))
+            {
+                yield break;
+            }
+
+            var trimmedAttr = rawClassAttributeValue.Trim();
+            if (trimmedAttr.StartsWith("@", StringComparison.Ordinal) && !trimmedAttr.StartsWith("@(", StringComparison.Ordinal) && !trimmedAttr.Contains(" "))
+            {
+                yield break;
+            }
+
+            var candidateTokens = new List<string>();
+
+            // 1. Extract string literals from ternary branches inside @(condition ? "classA" : "classB")
+            var parenMatches = ParenExpressionRegex.Matches(rawClassAttributeValue);
+            foreach (Match pm in parenMatches)
+            {
+                var expr = pm.Groups["expr"].Value;
+                var branchMatches = TernaryBranchStringLiteralRegex.Matches(expr);
+                foreach (Match bm in branchMatches)
+                {
+                    var literalContent = bm.Groups["str"].Value;
+                    if (!string.IsNullOrWhiteSpace(literalContent))
+                    {
+                        candidateTokens.AddRange(literalContent.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+                    }
+                }
+            }
+
+            // 2. Remove @(...) parenthesized expressions and any prefixed Razor vars (e.g. status-@(...) or status-@step...)
+            var staticPortion = rawClassAttributeValue;
+            // First strip out prefixed dynamic expressions like status-@(...) or status-@var
+            staticPortion = Regex.Replace(staticPortion, @"[a-zA-Z0-9_-]*@\([^)]*\)[a-zA-Z0-9_-]*", " ");
+            staticPortion = ParenExpressionRegex.Replace(staticPortion, " ");
+            staticPortion = PrefixedRazorVarRegex.Replace(staticPortion, " ");
+            candidateTokens.AddRange(staticPortion.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+
+            foreach (var token in candidateTokens)
+            {
+                // Discard tokens that end with a hyphen (incomplete prefix of a dynamic expression)
+                if (token.EndsWith("-", StringComparison.Ordinal) || token.StartsWith("-", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (ValidCssIdentifierRegex.IsMatch(token))
+                {
+                    yield return token;
+                }
+            }
+        }
+
+        private static void AnalyzeRazorCsp(AdditionalFileAnalysisContext context)
+        {
+            var file = context.AdditionalFile;
+            if (!file.Path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)) return;
+
+            var text = file.GetText(context.CancellationToken);
+            if (text == null) return;
+
+            var fileName = Path.GetFileName(file.Path);
+            var allowedCssClasses = BuildAllowedCssClassesForRazorFile(file.Path, context.Options.AdditionalFiles, context.CancellationToken);
+            bool hasCssFilesLoaded = allowedCssClasses.Count > 0;
+            bool inCodeBlock = false;
+            bool inRazorComment = false;
+
+            for (int i = 0; i < text.Lines.Count; i++)
+            {
+                var line = text.Lines[i];
+                var lineStr = line.ToString();
+
+                // Track multiline Razor comments: @* ... *@
+                if (!inRazorComment && lineStr.Contains("@*"))
+                {
+                    if (!lineStr.Contains("*@"))
+                    {
+                        inRazorComment = true;
+                        continue;
+                    }
+                }
+                else if (inRazorComment)
+                {
+                    if (lineStr.Contains("*@"))
+                    {
+                        inRazorComment = false;
+                    }
+                    continue;
+                }
+
+                // Check for @code or @functions blocks
+                var trimmed = lineStr.Trim();
+                if (trimmed.StartsWith("@code", StringComparison.Ordinal) || trimmed.StartsWith("@functions", StringComparison.Ordinal))
+                {
+                    inCodeBlock = true;
+                }
+
+                // Only scan markup outside @code / @functions blocks
+                if (inCodeBlock) continue;
+
+                // 1. Inline Style Check (TG016)
+                var styleMatches = InlineStyleRegex.Matches(lineStr);
+                foreach (Match match in styleMatches)
+                {
+                    int commentStart = lineStr.IndexOf("@*");
+                    int commentEnd = lineStr.IndexOf("*@");
+                    if (commentStart >= 0 && commentEnd > commentStart && match.Index >= commentStart && match.Index <= commentEnd)
+                    {
+                        continue;
+                    }
+
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg016, location, fileName, match.Value.Trim(), i + 1));
+                }
+
+                // 2. Un-nonced <script> or <style> tags (TG017)
+                var tagMatches = ScriptOrStyleTagRegex.Matches(lineStr);
+                foreach (Match match in tagMatches)
+                {
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    var tagName = match.Groups["tag"].Value;
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg017, location, fileName, tagName, i + 1));
+                }
+
+                // 3. Inline DOM JS handler or javascript: URI (TG018)
+                var domMatches = DomJsHandlerRegex.Matches(lineStr);
+                foreach (Match match in domMatches)
+                {
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg018, location, fileName, match.Value.Trim(), i + 1));
+                }
+
+                var jsUriMatches = JavascriptUriRegex.Matches(lineStr);
+                foreach (Match match in jsUriMatches)
+                {
+                    var span = new TextSpan(line.Start + match.Index, match.Length);
+                    var linePosSpan = new LinePositionSpan(
+                        new LinePosition(i, match.Index),
+                        new LinePosition(i, match.Index + match.Length));
+                    var location = Location.Create(file.Path, span, linePosSpan);
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg018, location, fileName, match.Value.Trim(), i + 1));
+                }
+                // 4. Undefined CSS Class Check (TG019)
+                if (hasCssFilesLoaded)
+                {
+                    var classAttrMatches = ClassAttributeRegex.Matches(lineStr);
+                    foreach (Match match in classAttrMatches)
+                    {
+                        int commentStart = lineStr.IndexOf("@*");
+                        int commentEnd = lineStr.IndexOf("*@");
+                        if (commentStart >= 0 && commentEnd > commentStart && match.Index >= commentStart && match.Index <= commentEnd)
+                        {
+                            continue;
+                        }
+
+                        var rawVal = match.Groups["val"].Value;
+                        foreach (var cls in ExtractVerifiableCssClasses(rawVal))
+                        {
+                            if (!allowedCssClasses.Contains(cls))
+                            {
+                                var span = new TextSpan(line.Start + match.Index, match.Length);
+                                var linePosSpan = new LinePositionSpan(
+                                    new LinePosition(i, match.Index),
+                                    new LinePosition(i, match.Index + match.Length));
+                                var location = Location.Create(file.Path, span, linePosSpan);
+                                context.ReportDiagnostic(Diagnostic.Create(RuleTg019, location, fileName, cls, i + 1));
+                            }
+                        }
+                    }
+                }
             }
         }
     }

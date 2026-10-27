@@ -7,18 +7,18 @@
 
 ## 🔭 1. Cloud-Native Observability with .NET Aspire & OpenTelemetry
 
-BlazorFluent integrates the **OpenTelemetry (OTel)** standard across all service layers, orchestrated seamlessly by `.NET Aspire`:
+BlazorEnterprise integrates the **OpenTelemetry (OTel)** standard across all service layers, orchestrated seamlessly by `.NET Aspire`:
 
 ```mermaid
 flowchart LR
     subgraph Sources ["Telemetry Sources"]
-        Web["BlazorFluent.Web\n(HTTP & SignalR Circuits)"]
-        Api["BlazorFluent.Api\n(Gateway Requests & Tokens)"]
-        Jobs["BlazorFluent.Jobs\n(Batch Consumers & Cronos)"]
-        Persist["BlazorFluent.Persistence\n(EF Core & Npgsql Commands)"]
+        Web["BlazorEnterprise.Web\n(HTTP & SignalR Circuits)"]
+        Api["BlazorEnterprise.Api\n(Gateway Requests & Tokens)"]
+        Jobs["BlazorEnterprise.Jobs\n(Batch Consumers & Cronos)"]
+        Persist["BlazorEnterprise.Persistence\n(EF Core & Npgsql Commands)"]
     end
 
-    subgraph ServiceDefaults ["BlazorFluent.ServiceDefaults"]
+    subgraph ServiceDefaults ["BlazorEnterprise.ServiceDefaults"]
         OTel["OpenTelemetry TracerProvider & MeterProvider"]
     end
 
@@ -54,7 +54,7 @@ All logging utilizes strongly-typed structured logging via **Serilog**:
 
 ## 🚀 3. Multi-Tier Surgical Caching (HybridCache)
 
-BlazorFluent utilizes the **.NET 10 `HybridCache`** library to provide two-tier surgical caching:
+BlazorEnterprise utilizes the **.NET 10 `HybridCache`** library to provide two-tier surgical caching:
 
 ```mermaid
 flowchart TD
@@ -81,7 +81,7 @@ When an administrator modifies a user's project role at `/tenancy/project-roles`
 
 ## 🔍 4. Forensic Audit Record Diff Engine (`audit.AuditRecords`)
 
-BlazorFluent enforces immutable audit logging via `AuditableEntityInterceptor`:
+BlazorEnterprise enforces immutable audit logging via `AuditableEntityInterceptor`:
 
 ```mermaid
 sequenceDiagram
@@ -112,7 +112,7 @@ sequenceDiagram
 
 ## 🩺 5. Health Checks & Readiness Probes
 
-BlazorFluent registers standard ASP.NET Core health checks in `BlazorFluent.ServiceDefaults`:
+BlazorEnterprise registers standard ASP.NET Core health checks in `BlazorEnterprise.ServiceDefaults`:
 
 | Endpoint | Probe Type | Monitored Subsystems |
 | :--- | :--- | :--- |

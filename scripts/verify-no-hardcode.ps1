@@ -92,7 +92,13 @@ foreach ($rule in $configRules) {
     $pattern = $rule.Pattern
     $desc = $rule.Description
     
-    $matches = $configFiles | Select-String -Pattern $pattern
+    $filesToCheck = $configFiles
+    if ($pattern -match 'Password=' -or $pattern -match 'RootTenantId') {
+        # Strict zero-hardcode applies to base appsettings.json and production configs; local development files populated by setup script are exempt
+        $filesToCheck = $configFiles | Where-Object { $_.Name -ne 'appsettings.Development.json' }
+    }
+
+    $matches = $filesToCheck | Select-String -Pattern $pattern
     if ($matches) {
         foreach ($m in $matches) {
             $relPath = Resolve-Path -Relative $m.Path

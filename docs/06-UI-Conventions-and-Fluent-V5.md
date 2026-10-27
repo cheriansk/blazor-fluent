@@ -7,7 +7,7 @@
 
 ## 📐 1. The 4-Tier Component Taxonomy
 
-All Razor components in `BlazorFluent.Web` and `BlazorFluent.UI.Templates` strictly follow a 4-tier naming taxonomy:
+All Razor components in `BlazorEnterprise.Web` and `BlazorEnterprise.UI.Templates` strictly follow a 4-tier naming taxonomy:
 
 ```mermaid
 flowchart TD
@@ -33,7 +33,7 @@ flowchart TD
 
 ## 🎨 2. Microsoft Fluent UI Blazor V5 Standards
 
-BlazorFluent is built natively on **Microsoft Fluent UI Blazor V5**, which implements Microsoft's modern **Fluent 2 Design System**:
+BlazorEnterprise is built natively on **Microsoft Fluent UI Blazor V5**, which implements Microsoft's modern **Fluent 2 Design System**:
 
 ### Banned Legacy V3/V4 Patterns vs V5 Replacements:
 
@@ -51,13 +51,13 @@ BlazorFluent is built natively on **Microsoft Fluent UI Blazor V5**, which imple
 
 ## 🧩 3. Reusable Enterprise UI Component Catalog
 
-BlazorFluent includes a suite of reusable, production-tested components:
+BlazorEnterprise includes a suite of reusable, production-tested components:
 
 | Component | Category | Purpose | Location |
 | :--- | :--- | :--- | :--- |
 | **`<FluentSwimlaneBoardComp>`** | Visual Widget | Multi-column Kanban swimlane board for tasks and workflows. | `Components/Tasks/` |
 | **`<WorkflowStepperComp>`** | Visual Widget | Interactive visual stepper showing real-time stage-gated workflow progression. | `Components/Workflows/` |
-| **`<FluentWizardModal>`** | Reusable RCL | Modal multi-step wizard with validation gates and dirty form protection. | `BlazorFluent.UI.Templates` |
+| **`<FluentWizardModal>`** | Reusable RCL | Modal multi-step wizard with validation gates and dirty form protection. | `BlazorEnterprise.UI.Templates` |
 | **`<SessionRevokedModal>`** | Security Modal | Real-time circuit freeze overlay triggered when an administrator revokes a session. | `Components/Security/` |
 | **`<AuditHistoryModal>`** | Audit Modal | Property-level before/after JSON diff viewer for forensic change tracking. | `Components/Audit/` |
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve BlazorFluent. This project is a template, so changes should keep it **clean, secure and easy to build on**.
+Thanks for helping improve BlazorEnterprise. This project is a template, so changes should keep it **clean, secure and easy to build on**.
 
 ## Before you start
 1. Read [docs/00-Overview-and-Glossary.md](docs/00-Overview-and-Glossary.md) and [docs/02-Architecture.md](docs/02-Architecture.md).

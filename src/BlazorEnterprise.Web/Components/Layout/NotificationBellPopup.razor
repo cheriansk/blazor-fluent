@@ -1,0 +1,182 @@
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
+
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Notifications
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="bell-wrapper">
+    @* Bell Button with Unread Badge *@
+    <CskButton Variant="CskButtonVariant.Text"
+               OnClick="TogglePanel"
+               Title="Notifications"
+               Class="bell-btn">
+        <CskIcon Icon="@CskIcons.Alert" />
+        @if (_unreadCounts.TotalUnread > 0)
+        {
+            <span class="bell-badge-count">
+                @(_unreadCounts.TotalUnread > 99 ? "99+" : _unreadCounts.TotalUnread.ToString())
+            </span>
+        }
+    </CskButton>
+
+    @* Notification Dropdown Panel *@
+    @if (_isOpen)
+    {
+        <div class="bell-dropdown-panel">
+            @* Header *@
+            <div class="bell-panel-header">
+                <div class="bell-header-left">
+                    <CskLabel Typo="Typography.BodyStrong">Notifications</CskLabel>
+                    @if (_unreadCounts.TotalUnread > 0)
+                    {
+                        <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">
+                            @_unreadCounts.TotalUnread unread
+                        </CskBadge>
+                    }
+                </div>
+                <CskButton Variant="CskButtonVariant.Text"
+                           Size="CskButtonSize.Small"
+                           OnClick="MarkAllAsReadAsync"
+                           Disabled="@(GetActiveTabUnreadCount() == 0)">
+                    Mark all read
+                </CskButton>
+            </div>
+
+            @* Tabs (General vs Personal) *@
+            <div class="bell-tabs-bar">
+                <button type="button"
+                        class="bell-tab-btn @(_activeCategory == NotificationCategoryEnum.Generic ? "active" : "")"
+                        @onclick="() => SetCategory(NotificationCategoryEnum.Generic)">
+                    <span>General</span>
+                    @if (_unreadCounts.GenericUnread > 0)
+                    {
+                        <span class="bell-tab-badge">
+                            @_unreadCounts.GenericUnread
+                        </span>
+                    }
+                </button>
+                <button type="button"
+                        class="bell-tab-btn @(_activeCategory == NotificationCategoryEnum.Personal ? "active" : "")"
+                        @onclick="() => SetCategory(NotificationCategoryEnum.Personal)">
+                    <span>Personal</span>
+                    @if (_unreadCounts.PersonalUnread > 0)
+                    {
+                        <span class="bell-tab-badge">
+                            @_unreadCounts.PersonalUnread
+                        </span>
+                    }
+                </button>
+            </div>
+
+            @* Filter Toolbar *@
+            <div class="bell-toolbar">
+                <label class="bell-toolbar-checkbox">
+                    <input type="checkbox" checked="@_onlyUnread" @onchange="OnOnlyUnreadChanged" />
+                    <span>Unread only</span>
+                </label>
+                <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" OnClick="RefreshNotificationsAsync">
+                    Refresh
+                </CskButton>
+            </div>
+
+            @* Notification List *@
+            <div class="bell-items-scroll">
+                @if (_isLoading)
+                {
+                    <div class="bell-loading-box">
+                        <CskSpinner Size="CskSpinnerSize.Medium" />
+                    </div>
+                }
+                else if (_notifications.Count == 0)
+                {
+                    <div class="bell-empty-box">
+                        <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="csk-icon-muted csk-icon-xl" />
+                        <div class="bell-empty-title">No notifications</div>
+                        <div class="bell-empty-subtitle">You're all caught up!</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="bell-list-stack">
+                        @foreach (var notification in _notifications)
+                        {
+                            <div class="bell-item-card @(notification.IsRead ? "is-read" : "")">
+                                <div class="bell-item-row">
+                                    <div class="bell-item-icon">
+                                        @switch (notification.Severity)
+                                        {
+                                            case NotificationSeverityEnum.Success:
+                                                <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="csk-icon-success" />
+                                                break;
+                                            case NotificationSeverityEnum.Warning:
+                                                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                                                break;
+                                            case NotificationSeverityEnum.Error:
+                                                <CskIcon Icon="@CskIcons.DismissCircle" Class="csk-icon-error" />
+                                                break;
+                                            default:
+                                                <CskIcon Icon="@CskIcons.Info" Class="csk-icon-primary" />
+                                                break;
+                                        }
+                                    </div>
+                                    <div class="bell-item-content">
+                                        <div class="bell-item-header @(notification.IsRead ? "is-read" : "")">
+                                            <span>@notification.Title</span>
+                                            @if (!notification.IsRead)
+                                            {
+                                                <span class="bell-unread-dot" title="Unread"></span>
+                                            }
+                                        </div>
+                                        <div class="bell-item-message">
+                                            @notification.Message
+                                        </div>
+                                        <div class="bell-item-footer">
+                                            <div class="bell-footer-left">
+                                                <span>@GetRelativeTime(notification.Created)</span>
+                                                @if (CurrentUser.IsRootAdmin && notification.TenantId != Guid.Empty)
+                                                {
+                                                    <span class="bell-tenant-tag">@notification.TenantId</span>
+                                                }
+                                            </div>
+                                            <div class="bell-footer-right">
+                                                @if (notification.SentToTeams)
+                                                {
+                                                    <span class="badge-teams">Teams</span>
+                                                }
+                                                @if (notification.SentToMailbox)
+                                                {
+                                                    <span class="badge-mail">Mail</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(notification.LinkUrl))
+                                                {
+                                                    <CskButton Variant="CskButtonVariant.Text"
+                                                               Size="CskButtonSize.Small"
+                                                               Class="btn-open-link"
+                                                               OnClick="@(() => NavigateToLink(notification))">
+                                                        Open
+                                                    </CskButton>
+                                                }
+                                                @if (!notification.IsRead)
+                                                {
+                                                    <CskButton Variant="CskButtonVariant.Text"
+                                                               Size="CskButtonSize.Small"
+                                                               Class="btn-dismiss-action"
+                                                               OnClick="@(() => MarkAsReadAsync(notification.Id))"
+                                                               Title="Mark read">
+                                                        Dismiss
+                                                    </CskButton>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

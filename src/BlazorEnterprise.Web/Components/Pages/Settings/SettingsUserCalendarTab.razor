@@ -1,0 +1,83 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Calendar
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+    <div class="flex-row justify-between items-center w-full">
+        <div>
+            <CskLabel Typo="Typography.H4">My Schedule & Calendar</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint">
+                Your consolidated schedule: personal appointments, sprint commitments, and assigned work item deadlines across all projects.
+            </CskLabel>
+        </div>
+        <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="OpenNewEventModal">
+            Add Appointment
+        </CskButton>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    @if (_isLoading)
+    {
+        <div class="flex-center p-10">
+            <CskSpinner Size="CskSpinnerSize.Medium" />
+        </div>
+    }
+    else
+    {
+        <FluentCalendarScheduleComp Items="@_calendarItems" 
+                                    @bind-SelectedDate="_selectedDate" 
+                                    OnItemClick="HandleItemClick"
+                                    OnAddEntry="HandleAddEntryForDate" />
+    }
+
+    <!-- Add Appointment Modal -->
+    @if (_showEventModal)
+    {
+        <div class="calendar-modal-backdrop">
+            <div class="calendar-modal-card">
+                <div class="modal-header">
+                    <h4>New Personal Appointment</h4>
+                    <CskButton Variant="CskButtonVariant.Text" 
+                                  IconStart="@CskIcons.Dismiss" 
+                                  OnClick="() => _showEventModal = false" />
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(_modalError))
+                    {
+                        <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _modalError = null)" Class="mb-3">
+                            @_modalError
+                        </CskMessageBar>
+                    }
+                    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                        <CskTextInput Label="Title *" @bind-Value="_newEventTitle" Placeholder="e.g. Sprint Review Prep, Focus Time" Class="w-full" />
+                        
+                        <CskSelect TOption="CalendarEntryTypeEnum" TValue="CalendarEntryTypeEnum" Label="Category" @bind-Value="_newEntryType" Class="w-full">
+                            <CskOption Value="CalendarEntryTypeEnum.General">General</CskOption>
+                            <CskOption Value="CalendarEntryTypeEnum.WorkingSession">Working Focus Session</CskOption>
+                            <CskOption Value="CalendarEntryTypeEnum.Planning">Planning</CskOption>
+                            <CskOption Value="CalendarEntryTypeEnum.TimeOff">Planned Time Off</CskOption>
+                        </CskSelect>
+
+                        <CskDatePicker Label="Date" @bind-Value="_newEventDate" Class="w-full" />
+
+                        <CskTextArea Label="Description / Agenda" @bind-Value="_newEventDescription" Rows="3" Class="w-full" />
+
+                        <CskTextInput Label="Location or Meeting Link" @bind-Value="_newLocation" Placeholder="e.g. Teams, Room 402" Class="w-full" />
+                    </CskStack>
+                </div>
+                <div class="modal-footer">
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="() => _showEventModal = false">Cancel</CskButton>
+                    <CskButton Variant="CskButtonVariant.Filled" OnClick="SaveNewEventAsync" Loading="_isSaving">Save Event</CskButton>
+                </div>
+            </div>
+        </div>
+    }
+</CskStack>

@@ -1,0 +1,50 @@
+using BlazorEnterprise.Shared.DataListTypes;
+using BlazorEnterprise.Core.Domain.Tasks;
+using BlazorEnterprise.Core.Domain.Tenancy;
+using BlazorEnterprise.Core.Dtos.Response;
+
+namespace BlazorEnterprise.Core.Contracts;
+
+/// <summary>
+/// Service contract for managing enterprise programs within a tenant.
+/// Enforces Zero Trust and role-based permissions (Tenant Admin, Program Admin).
+/// </summary>
+public interface IProgramService
+{
+    Task<IReadOnlyList<ProgramEntity>> GetProgramsAsync(string tenantSlug, CancellationToken ct = default);
+
+    Task<Result<ProgramEntity>> GetProgramByIdAsync(Guid programId, CancellationToken ct = default);
+
+    Task<Result<ProgramEntity>> CreateProgramAsync(
+        string tenantSlug,
+        string name,
+        string code,
+        string description,
+        DateTime? startDateUtc,
+        DateTime? targetEndDateUtc,
+        ProgramStatusEnum status = ProgramStatusEnum.Active,
+        CancellationToken ct = default);
+
+    Task<Result<ProgramEntity>> UpdateProgramAsync(
+        Guid programId,
+        string name,
+        string code,
+        string description,
+        DateTime? startDateUtc,
+        DateTime? targetEndDateUtc,
+        ProgramStatusEnum status,
+        bool isActive,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<ProjectEntity>> GetProgramProjectsAsync(Guid programId, CancellationToken ct = default);
+
+    Task<ProgramHealthSummaryDto> GetProgramHealthAsync(Guid programId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<RiskEntity>> GetProgramRisksAsync(Guid programId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<AssumptionEntity>> GetProgramAssumptionsAsync(Guid programId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<IssueEntity>> GetProgramIssuesAsync(Guid programId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<WorkDependencyEntity>> GetProgramBlockersAsync(Guid programId, CancellationToken ct = default);
+}

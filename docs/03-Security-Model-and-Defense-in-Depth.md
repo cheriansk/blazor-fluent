@@ -7,7 +7,7 @@
 
 ## 🛡️ 1. The 5-Layer Defense-in-Depth Model
 
-BlazorFluent implements a strict **Fail-Closed Zero-Trust** security architecture. Security is never assumed to be solved at a single boundary; each layer independently verifies identity, tenant context, and authorization:
+BlazorEnterprise implements a strict **Fail-Closed Zero-Trust** security architecture. Security is never assumed to be solved at a single boundary; each layer independently verifies identity, tenant context, and authorization:
 
 ```mermaid
 flowchart TD
@@ -55,7 +55,7 @@ flowchart TD
 
 ## 🐘 2. Layer 5: PostgreSQL Native Row-Level Security (RLS)
 
-While most web applications rely solely on C# LINQ query filters (which can be accidentally bypassed via `.IgnoreQueryFilters()` or raw SQL), BlazorFluent enforces tenant isolation at the **PostgreSQL database engine level**:
+While most web applications rely solely on C# LINQ query filters (which can be accidentally bypassed via `.IgnoreQueryFilters()` or raw SQL), BlazorEnterprise enforces tenant isolation at the **PostgreSQL database engine level**:
 
 ```mermaid
 sequenceDiagram
@@ -87,20 +87,20 @@ sequenceDiagram
 In PostgreSQL, database superusers (`postgres`) and roles with the `BYPASSRLS` attribute inherently bypass RLS policies even when `FORCE ROW LEVEL SECURITY` is applied. 
 
 To guarantee physical RLS enforcement:
-- Application runtime queries execute under a dedicated non-superuser role (`blazorfluent_app`).
+- Application runtime queries execute under a dedicated non-superuser role (`blazorenterprise_app`).
 - The `postgres` superuser is strictly reserved for database creation, schema migrations, and administrative maintenance.
 
 ---
 
 ## 🔐 3. Application-Level Envelope Encryption (AES-256-GCM + HKDF)
 
-For sensitive attachments, imported spreadsheets, and tenant documents, BlazorFluent utilizes **Zero-Knowledge Envelope Encryption**:
+For sensitive attachments, imported spreadsheets, and tenant documents, BlazorEnterprise utilizes **Zero-Knowledge Envelope Encryption**:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Client Upload
-    participant Web as BlazorFluent.Web
+    participant Web as BlazorEnterprise.Web
     participant Crypto as EncryptedStreamWriter (AES-256-GCM)
     participant HKDF as HKDF-SHA256 Derivation
     participant Storage as Tenant Blob Storage (Disk / Azure Blob)
@@ -145,14 +145,14 @@ For domain entities that hold sensitive business data or intellectual property (
 
 ## 🔑 4. Centralized Authentication Gateway & Multi-IdP Support
 
-`BlazorFluent.Api` acts as a centralized authentication broker supporting enterprise federation:
+`BlazorEnterprise.Api` acts as a centralized authentication broker supporting enterprise federation:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as User Browser
     participant Web as Blazor Server WebApp
-    participant Gateway as Centralized Auth Gateway (BlazorFluent.Api)
+    participant Gateway as Centralized Auth Gateway (BlazorEnterprise.Api)
     participant IdP as Enterprise Identity Provider (Entra ID / Okta)
 
     User->>Web: Access Application
@@ -197,7 +197,7 @@ flowchart TD
 
 ### 5.1 Authorization Paradigm: Hybrid HRBAC + ReBAC + ABAC
 
-A frequent architectural question is: **"Is BlazorFluent using RBAC (Role-Based Access Control)?"**
+A frequent architectural question is: **"Is BlazorEnterprise using RBAC (Role-Based Access Control)?"**
 
 **Answer**: The platform does **not** rely on simple/flat RBAC. Instead, it implements a modern **Zero-Trust Hybrid Authorization Model** integrating three complementary industry standards:
 
@@ -245,7 +245,7 @@ flowchart TD
 
 ### 5.2 The 5-Layer Defense-in-Depth Implementation
 
-BlazorFluent enforces authorization through compile-time route verification, ambient component gating, API filters, service mutation guards, and persistence write barriers:
+BlazorEnterprise enforces authorization through compile-time route verification, ambient component gating, API filters, service mutation guards, and persistence write barriers:
 
 ```mermaid
 flowchart TD
@@ -333,7 +333,7 @@ Whenever a user with insufficient privileges attempts to access a restricted res
 
 ### 5.6 Dual-Tier Clearance & Route Decoupling (`viewTier` vs `editTier`)
 
-Enterprise UIs frequently require different privilege levels for viewing a screen versus performing mutating actions on it. Rather than forcing developers to author duplicate pages or complex conditional UI blocks, BlazorFluent provides decoupled dual-tier route attributes:
+Enterprise UIs frequently require different privilege levels for viewing a screen versus performing mutating actions on it. Rather than forcing developers to author duplicate pages or complex conditional UI blocks, BlazorEnterprise provides decoupled dual-tier route attributes:
 
 ```razor
 @attribute [RequiredClearance(viewTier: ProjectRole.Lead, editTier: ProjectRole.PMO)]
@@ -346,7 +346,7 @@ Enterprise UIs frequently require different privilege levels for viewing a scree
 
 ### 5.7 Minimal API Transport Clearance Gate & Workflow State Transitions
 
-In addition to Blazor circuit protection, HTTP endpoints exposed by `BlazorFluent.Web` (such as workflow lifecycle progression, transition triggers, and batch exports) enforce transport-level clearance:
+In addition to Blazor circuit protection, HTTP endpoints exposed by `BlazorEnterprise.Web` (such as workflow lifecycle progression, transition triggers, and batch exports) enforce transport-level clearance:
 
 ```mermaid
 sequenceDiagram
@@ -405,7 +405,7 @@ without declaring an explicit authorization attribute ([Authorize], [RequiredCle
 
 ### 5.9 Master Page Inventory & Security Classification
 
-Every application page in `BlazorFluent.Web` adheres strictly to compile-time route governance:
+Every application page in `BlazorEnterprise.Web` adheres strictly to compile-time route governance:
 
 | Page Component | Route | Security Classification | Required Attribute | Effective Clearance |
 | :--- | :--- | :--- | :--- | :--- |
@@ -431,7 +431,7 @@ Every application page in `BlazorFluent.Web` adheres strictly to compile-time ro
 
 ### 5.8 Separation of Duties & Zero-Trust Delegated Administration Matrix
 
-To maintain strict data segregation and prevent accidental cross-tenant data leaks in enterprise multi-tenant deployments, BlazorFluent enforces an absolute separation of administrative duties across all four organizational tiers (**App Admin -> Tenant Admin -> Program Admin -> Project Admin**):
+To maintain strict data segregation and prevent accidental cross-tenant data leaks in enterprise multi-tenant deployments, BlazorEnterprise enforces an absolute separation of administrative duties across all four organizational tiers (**App Admin -> Tenant Admin -> Program Admin -> Project Admin**):
 
 ```mermaid
 graph TD
@@ -497,15 +497,15 @@ Blazor Server circuits maintain persistent WebSocket connections. In enterprise 
 
 ## 🛡️ 7. Zero-Trust Multi-Tenancy Isolation & S2S Token Security
 
-In multi-tenant SaaS and distributed hybrid deployments, boundary isolation must prevent cross-tenant enumeration, privilege escalation, and credential exfiltration. BlazorFluent enforces a comprehensive **Zero-Trust Multi-Tenancy Isolation Model**:
+In multi-tenant SaaS and distributed hybrid deployments, boundary isolation must prevent cross-tenant enumeration, privilege escalation, and credential exfiltration. BlazorEnterprise enforces a comprehensive **Zero-Trust Multi-Tenancy Isolation Model**:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Worker as BlazorFluent.Worker / Web (Client Node)
+    participant Worker as BlazorEnterprise.Worker / Web (Client Node)
     participant S2S as ITenantTokenService (TenantTokenService)
     participant Handler as TenantAuthDelegatingHandler
-    participant API as BlazorFluent.Api (Cloud ProcessAPI)
+    participant API as BlazorEnterprise.Api (Cloud ProcessAPI)
     participant Resolver as IssuerSigningKeyResolver
     participant Engine as ProcessEndpoints / RulesEngine
 
@@ -531,7 +531,7 @@ sequenceDiagram
 - **Ephemeral S2S Tokens**: Minted by WebApp or Worker nodes for asynchronous batch operations, streaming ingestion, and scheduled jobs. Signed **strictly** using `Tenants:{tenantId}:LicenseKey` (5-minute lifespan).
 
 #### 2. Dynamic Key Resolution (`IssuerSigningKeyResolver`)
-In `BlazorFluent.Api/Program.cs`, `JwtBearerOptions` registers a dynamic `IssuerSigningKeyResolver`:
+In `BlazorEnterprise.Api/Program.cs`, `JwtBearerOptions` registers a dynamic `IssuerSigningKeyResolver`:
 - Extracts the incoming token's `tenant_id` or `tid` claim.
 - Resolves the private tenant key from `Tenants:{tenantId}:LicenseKey`.
 - Admits the Cloud Master Key for user tokens.
@@ -545,7 +545,7 @@ In compliance with GDPR Article 5(1)(c) and OWASP ASVS 4.3:
   - `tenant_id`: Scoped tenant identifier.
   - `cid`: Distributed correlation identifier linking logs across WebApp, Worker, and API.
   - `act`: Actor role (`BatchWorker` or `SystemDaemon`).
-- Cryptographic utility [`OpaqueIdUtility`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/Security/OpaqueIdUtility.cs):
+- Cryptographic utility [`OpaqueIdUtility`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Core/Security/OpaqueIdUtility.cs):
   - `GenerateSecureLicenseKey()`: Cryptographically secure 256-bit (32-byte) random Base64 key generator.
   - `GenerateTenantRefId()`: Non-correlatable tenant reference slugs.
   - `MaskGuid(id, salt)`: Salted HMAC-SHA256 indirect reference handles.
@@ -553,7 +553,7 @@ In compliance with GDPR Article 5(1)(c) and OWASP ASVS 4.3:
 #### 4. Strict Key Separation & Cloud Vault Isolation
 - Client WebApp and Worker nodes installed on client infrastructure **never possess Azure Key Vault credentials or master signing keys**.
 - Client software possesses only its own `TenantLicenseKey`.
-- Azure Key Vault is strictly accessible by Azure-hosted services (`BlazorFluent.Api`).
+- Azure Key Vault is strictly accessible by Azure-hosted services (`BlazorEnterprise.Api`).
 
 #### 5. Compound Query Scoping & Cross-Tenant Quarantine Guards
 - Even with EF Core global query filters active, all background batch handlers enforce explicit compound LINQ queries:
@@ -562,7 +562,7 @@ In compliance with GDPR Article 5(1)(c) and OWASP ASVS 4.3:
       .Where(f => f.TenantId == jobEvent.TenantId && f.ImportId == jobEvent.ImportId && !f.IsDeleted)
       .ToListAsync(ct);
   ```
-- Cross-tenant quarantine guard in [`GenericFileImportBatchJobHandler`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/FileImports/GenericFileImportBatchJobHandler.cs):
+- Cross-tenant quarantine guard in [`GenericFileImportBatchJobHandler`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Jobs/FileImports/GenericFileImportBatchJobHandler.cs):
   ```csharp
   if (file.TenantId != jobEvent.TenantId)
   {
@@ -570,7 +570,7 @@ In compliance with GDPR Article 5(1)(c) and OWASP ASVS 4.3:
       throw new InvalidOperationException("Cross-tenant data access detected. Execution halted.");
   }
   ```
-- Strict fail-closed background listener: [`BatchJobQueueListener`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Jobs/Listeners/BatchJobQueueListener.cs) aborts processing immediately if `jobEvent.TenantId` is missing, preventing silent fallback to default tenant slugs.
+- Strict fail-closed background listener: [`BatchJobQueueListener`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Jobs/Listeners/BatchJobQueueListener.cs) aborts processing immediately if `jobEvent.TenantId` is missing, preventing silent fallback to default tenant slugs.
 
 ---
 
@@ -584,8 +584,8 @@ Many teams hit complete InfoSec approval roadblocks when using frameworks like M
 2. **Runtime `eval()`**: MudBlazor relies on runtime JavaScript evaluation (`eval` or `Function`) for popovers, resize observers, and scroll listeners.
 3. **No Nonce Integration**: Forces teams to run `script-src 'unsafe-inline' 'unsafe-eval'`, failing automated DAST/SAST scanners with zero exceptions.
 
-### How BlazorFluent & Microsoft Fluent UI Blazor V5 Comply
-BlazorFluent leverages **Microsoft Fluent UI Blazor V5 (`Microsoft.FluentUI.AspNetCore.Components`)**:
+### How BlazorEnterprise & Microsoft Fluent UI Blazor V5 Comply
+BlazorEnterprise leverages **Microsoft Fluent UI Blazor V5 (`Microsoft.FluentUI.AspNetCore.Components`)**:
 - **Native Shadow DOM**: Styles are encapsulated inside Shadow DOM roots via native `CSSStyleSheet` (`adoptedStyleSheets`), eliminating runtime `<head>` stylesheet injection.
 - **Zero `eval()`**: Requires zero `eval()` or `Function()` calls.
 - **Pure External Scripts**: All client-side JavaScript (`blazor.web.js`, `responsive-interop.js`, `session-tracker.js`, `ReconnectModal.razor.js`) reside in static `.js` files.
@@ -593,13 +593,13 @@ BlazorFluent leverages **Microsoft Fluent UI Blazor V5 (`Microsoft.FluentUI.AspN
 ### Cryptographic Nonce Pipeline
 
 1. **Per-Request Nonce Generation**:
-   [`SecurityHeadersExtensions.cs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Infrastructure/Security/SecurityHeadersExtensions.cs) generates a 128-bit (16-byte) random nonce using `RandomNumberGenerator.GetBytes(16)` on every HTTP request and stores it in `HttpContext.Items["CspNonce"]`.
+   [`SecurityHeadersExtensions.cs`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Infrastructure/Security/SecurityHeadersExtensions.cs) generates a 128-bit (16-byte) random nonce using `RandomNumberGenerator.GetBytes(16)` on every HTTP request and stores it in `HttpContext.Items["CspNonce"]`.
 2. **Strict Directive Enforcement**:
    - `script-src 'self' 'nonce-{nonce}' 'strict-dynamic'`: **Zero occurrences of `'unsafe-inline'` or `'unsafe-eval'`**.
    - `style-src 'self' 'nonce-{nonce}'`: Enforces cryptographic nonces on all `<link rel="stylesheet">` elements and style blocks.
 3. **Razor Host Tagging**:
-   [`App.razor`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/Components/App.razor) and [`ReconnectModal.razor`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Web/Components/Layout/ReconnectModal.razor) dynamically resolve the nonce and tag all `<script>`, `<link>`, and `<ImportMap>` elements.
-4. **Configurable Enterprise Profiles ([`CspOptions.cs`](file:///c:/Users/cheri/source/repos/BlazorFluent/src/BlazorFluent.Core/Configuration/CspOptions.cs))**:
+   [`App.razor`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Web/Components/App.razor) and [`ReconnectModal.razor`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Web/Components/Layout/ReconnectModal.razor) dynamically resolve the nonce and tag all `<script>`, `<link>`, and `<ImportMap>` elements.
+4. **Configurable Enterprise Profiles ([`CspOptions.cs`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/src/BlazorEnterprise.Core/Configuration/CspOptions.cs))**:
    - `PureStrict`: Complete eradication of `'unsafe-inline'` from both script and style directives.
    - `Level3Isolated`: Strict nonced scripts with CSP Level 3 `style-src-elem` nonces and `style-src-attr 'unsafe-inline'` for element layout attributes.
    - `ReportOnly`: Supports testing in staging environments before hard enforcement.

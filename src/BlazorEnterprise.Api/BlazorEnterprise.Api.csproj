@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BlazorEnterprise.Api</RootNamespace>
+    <AssemblyName>BlazorEnterprise.Api</AssemblyName>
+    <WarningsAsErrors>CS0108</WarningsAsErrors>
+    <UserSecretsId>dotnet-BlazorEnterprise.Api-3a8f11bc-2d93-4c91-a831-7e492b6a9082</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Identity.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorEnterprise.RulesEngine\BlazorEnterprise.RulesEngine.csproj" />
+    <ProjectReference Include="..\BlazorEnterprise.Shared\BlazorEnterprise.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="BlazorEnterprise.Shared.DataListTypes.TaskStatus" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
+
+</Project>

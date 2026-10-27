@@ -7,18 +7,18 @@
 
 ## ⚡ 1. Hybrid Batch Processing & Universal Staging Subsystem
 
-Traditional web uploads block HTTP request threads, parse directly into live transactional tables, risk cross-tenant pollution, and overwhelm databases with massive unstructured payloads. BlazorFluent introduces an enterprise-grade **Hybrid Batch Processing Framework** decoupling local streaming ingestion from stateless cloud processing:
+Traditional web uploads block HTTP request threads, parse directly into live transactional tables, risk cross-tenant pollution, and overwhelm databases with massive unstructured payloads. BlazorEnterprise introduces an enterprise-grade **Hybrid Batch Processing Framework** decoupling local streaming ingestion from stateless cloud processing:
 
 ```mermaid
 flowchart TD
-    subgraph Client["Client-Side (BlazorFluent.Jobs + Local DB)"]
+    subgraph Client["Client-Side (BlazorEnterprise.Jobs + Local DB)"]
         A["1. Encrypted Upload\n(Azure Blob / Disk)"] --> B["2. Manifest Ordering\n(Topological DependsOn Sort)"]
         B --> C["3. Forward-Only SAX Parsing\n(GenericTabularJsonBatchStager)"]
         C --> D["4. Universal Staging Table\n(staging.StagedImports: jsonb, headerMap, IsProcessed)"]
         D --> E["5. Gzip Compression\n(PayloadEncryptionUtility.CompressGzip)"]
     end
     
-    subgraph Cloud["Cloud API (BlazorFluent.Api + RulesEngine)"]
+    subgraph Cloud["Cloud API (BlazorEnterprise.Api + RulesEngine)"]
         E -->|POST /api/v1/transforms/process-batch| F["6. Stateless Cloud Dispatcher\n(TaskCloudProcessor)"]
         F --> G{"All-or-Nothing\nValidation"}
         G -->|Any Row Fails| H["Reject Entire Batch\n(0 Rows Committed)"]
@@ -36,7 +36,7 @@ flowchart TD
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ 1. Local Schema Validation & Universal JSON Staging                                    │
-│    • 100% of schema validation and SAX parsing executes locally in BlazorFluent.Jobs.  │
+│    • 100% of schema validation and SAX parsing executes locally in BlazorEnterprise.Jobs.  │
 │    • Normalized JSON chunks are persisted to staging.StagedImports with jsonb payload. │
 │    • Universal table replaces ad-hoc staging tables across all file formats.           │
 │    • Explicit IsProcessed (bool), Status, and ProcessedAtUtc columns for auditability. │
@@ -84,8 +84,8 @@ flowchart TD
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ 6. Dual-Mode Host Execution & Strict Cross-Tenant Quarantine Guard                     │
-│    • Runs in single-node mode inside BlazorFluent.Web (Jobs:EnableHostedListener=true) │
-│      or in distributed scale mode via standalone BlazorFluent.Worker console host.     │
+│    • Runs in single-node mode inside BlazorEnterprise.Web (Jobs:EnableHostedListener=true) │
+│      or in distributed scale mode via standalone BlazorEnterprise.Worker console host.     │
 │    • Handlers enforce compound LINQ query scoping (f.TenantId == jobEvent.TenantId).   │
 │    • Quarantine Guard: Aborts immediately if any staged file's TenantId mismatches.    │
 └────────────────────────────────────────────────────────────────────────────────────────┘
@@ -122,7 +122,7 @@ Standard tabular files are configured declaratively with zero stager C# code:
 
 ---
 
-## 🧙 2. Enterprise Wizard Framework (`BlazorFluent.UI.Templates`)
+## 🧙 2. Enterprise Wizard Framework (`BlazorEnterprise.UI.Templates`)
 
 A decoupled, reusable Razor Class Library (RCL) providing multi-step wizard templates and components built natively on **Microsoft Fluent UI Blazor V5**:
 
@@ -160,9 +160,9 @@ stateDiagram-v2
 
 ---
 
-## ⚡ 3. 100% In-Memory Rules Engine (`BlazorFluent.RulesEngine`)
+## ⚡ 3. 100% In-Memory Rules Engine (`BlazorEnterprise.RulesEngine`)
 
-For performance-critical financial, compliance, and regulatory calculations, `BlazorFluent.RulesEngine` executes pure in-memory calculation routines:
+For performance-critical financial, compliance, and regulatory calculations, `BlazorEnterprise.RulesEngine` executes pure in-memory calculation routines:
 
 ```mermaid
 sequenceDiagram
@@ -189,7 +189,7 @@ sequenceDiagram
 
 ## 📊 4. Multi-Level Work Management & Task Subtype Hierarchy
 
-BlazorFluent organizes enterprise work management across a structured hierarchy:
+BlazorEnterprise organizes enterprise work management across a structured hierarchy:
 
 ```mermaid
 flowchart TD

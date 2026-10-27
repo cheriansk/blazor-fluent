@@ -1,0 +1,8 @@
+.csk-tooltip {
+    display: none;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: rgba(33, 33, 33, 0.9);
+    color: #ffffff;
+}

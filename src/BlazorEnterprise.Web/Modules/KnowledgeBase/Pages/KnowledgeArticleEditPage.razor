@@ -1,0 +1,199 @@
+@namespace BlazorEnterprise.Modules.KnowledgeBase.Pages
+@page "/knowledge/new"
+@page "/knowledge/{Id:guid}/edit"
+@rendermode InteractiveServer
+@using BlazorEnterprise.Shared.Attributes
+@using BlazorEnterprise.Shared.DataListTypes
+@attribute [RequiredClearance(ProjectRoleEnum.Contribute)]
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Validation
+
+<PageTitle>@(IsEditMode ? "Edit Article" : "Create New Article") - Knowledge Base</PageTitle>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16" Class="kb-edit-container">
+    <!-- Top Bar -->
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="kb-edit-header">
+        <CskButton Variant="CskButtonVariant.Text"
+                      IconStart="@CskIcons.ArrowLeft"
+                      OnClick="@(() => NavigationManager.NavigateTo("/knowledge"))">
+            Cancel &amp; Return
+        </CskButton>
+
+        <CskLabel Typo="Typography.H4" Class="kb-edit-title">
+            @(IsEditMode ? "Edit Knowledge Article" : "Create Knowledge Article")
+        </CskLabel>
+
+        <div></div>
+    </CskStack>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isStatusError ? MessageBarIntent.Error : MessageBarIntent.Success)" AllowDismiss="true" OnDismiss="@(() => _statusMessage = null)">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    @if (_isLoading)
+    {
+        <CskSpinner Class="kb-edit-spinner" />
+    }
+    else
+    {
+        <CskCard Class="kb-edit-card">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="20" Class="w-full">
+                
+                <!-- 1. Title Input (Max 100 Characters) -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="field-label">
+                        Article Title <span class="field-required">*</span>
+                    </CskLabel>
+                    <CskTextInput @bind-Value="@_model.Title"
+                                     MaxLength="100"
+                                     Placeholder="Enter a clear headline title (max 100 characters)..."
+                                     Class="w-full"
+                                     Immediate="true" />
+                    <div class="char-counter">
+                        @(_model.Title?.Length ?? 0) / 100 characters
+                    </div>
+                </div>
+
+                <!-- 2. Scope Selection (No default, user must explicitly choose) -->
+                <div class="scope-card">
+                    <CskLabel Typo="Typography.Body" Class="scope-label">
+                        Article Scope <span class="field-required">*</span>
+                        <span class="scope-hint">
+                            (Please explicitly select visibility)
+                        </span>
+                    </CskLabel>
+
+                    <div class="scope-options">
+                        <label class="scope-option-label">
+                            <input type="radio"
+                                   name="articleScope"
+                                   checked="@(_model.Scope == KnowledgeArticleScopeEnum.TenantOnly)"
+                                   @onchange="@(() => _model.Scope = KnowledgeArticleScopeEnum.TenantOnly)" />
+                            <div>
+                                <strong>Tenant Only</strong>
+                                <div class="scope-desc">Visible only to internal users in your tenant</div>
+                            </div>
+                        </label>
+
+                        <label class="scope-option-label">
+                            <input type="radio"
+                                   name="articleScope"
+                                   checked="@(_model.Scope == KnowledgeArticleScopeEnum.Global)"
+                                   @onchange="@(() => _model.Scope = KnowledgeArticleScopeEnum.Global)" />
+                            <div>
+                                <strong>Global (Cross-Tenant)</strong>
+                                <div class="scope-desc">Visible to all internal users across all tenants</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    @if (_scopeError)
+                    {
+                        <div class="field-error-text">
+                            Please select article scope (Tenant Only or Global).
+                        </div>
+                    }
+                </div>
+
+                <!-- 3. Labels (Purely manual, no automatic labels, min 1, max 10) -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="field-label">
+                        Labels / Tags <span class="field-required">*</span>
+                        <span class="scope-hint">
+                            (Add between 1 and 10 labels)
+                        </span>
+                    </CskLabel>
+
+                    <FluentTagInput @bind-Tags="@_model.Labels" MinTags="1" MaxTags="10" />
+
+                    @if (_labelsError)
+                    {
+                        <div class="field-error-text">
+                            At least 1 label is required (maximum 10).
+                        </div>
+                    }
+                </div>
+
+                <!-- 4. Reviewer Selection (1 or more required) -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="field-label">
+                        Assigned Approvers / Reviewers <span class="field-required">*</span>
+                        <span class="scope-hint">
+                            (Select 1 or more internal users to review and approve)
+                        </span>
+                    </CskLabel>
+
+                    @if (_availableReviewers.Count == 0)
+                    {
+                        <div class="no-reviewers-text">
+                            No other internal users found in the system.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="reviewers-grid">
+                            @foreach (var user in _availableReviewers)
+                            {
+                                var isSelected = _model.ReviewerUserIds.Contains(user.Id);
+                                <label class="reviewer-item @(isSelected ? "selected" : "")">
+                                    <input type="checkbox"
+                                           checked="@isSelected"
+                                           @onchange="@((ChangeEventArgs e) => ToggleReviewer(user.Id, (bool)(e.Value ?? false)))" />
+                                    <span>
+                                        <strong>@user.FullName</strong>
+                                        <span class="reviewer-email">@user.Email</span>
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                    }
+
+                    @if (_reviewersError)
+                    {
+                        <div class="field-error-text">
+                            At least 1 reviewer must be assigned for approval.
+                        </div>
+                    }
+                </div>
+
+                <!-- 5. Rich Text Content (Up to 20,000 Characters with Images) -->
+                <div>
+                    <CskLabel Typo="Typography.Body" Class="field-label">
+                        Article Content &amp; Embedded Images <span class="field-required">*</span>
+                        <span class="scope-hint">
+                            (Rich text description with image upload/embedding up to 20,000 characters)
+                        </span>
+                    </CskLabel>
+
+                    <FluentRichTextEditor @bind-Value="@_model.Content" MaxLength="20000" MinHeight="280px" />
+
+                    @if (_contentError)
+                    {
+                        <div class="field-error-text">
+                            Article content is required and cannot exceed 20,000 characters.
+                        </div>
+                    }
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions-row">
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => NavigationManager.NavigateTo("/knowledge"))">
+                        Cancel
+                    </CskButton>
+
+                    <CskButton Variant="CskButtonVariant.Filled"
+                                  IconStart="@CskIcons.Save"
+                                  OnClick="@SaveArticleAsync"
+                                  Loading="@_isSubmitting">
+                        @(IsEditMode ? "Save Changes" : "Submit for Approval")
+                    </CskButton>
+                </div>
+            </CskStack>
+        </CskCard>
+    }
+</CskStack>

@@ -1,0 +1,134 @@
+.kb-edit-container {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.kb-edit-header {
+    width: 100%;
+}
+
+.kb-edit-title {
+    font-weight: 700;
+    margin: 0;
+}
+
+.kb-edit-spinner {
+    margin: 80px auto;
+}
+
+.kb-edit-card {
+    padding: 24px;
+    background: var(--neutral-layer-2, #ffffff);
+}
+
+.field-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.field-required {
+    color: var(--error, #d32f2f);
+}
+
+.char-counter {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 11px;
+    color: var(--neutral-foreground-hint, #616161);
+    margin-top: 2px;
+}
+
+.scope-card {
+    border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+    border-radius: 6px;
+    padding: 14px;
+    background: var(--neutral-layer-1, #fcfcfc);
+}
+
+.scope-label {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.scope-hint {
+    font-weight: normal;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+    margin-left: 6px;
+}
+
+.scope-options {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.scope-option-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.scope-desc {
+    font-size: 11px;
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+.field-error-text {
+    color: var(--error, #d32f2f);
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.reviewers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+    border-radius: 6px;
+    background: var(--neutral-layer-1, #fcfcfc);
+}
+
+.reviewer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.reviewer-item.selected {
+    background: var(--neutral-layer-3, #f0f0f0);
+}
+
+.reviewer-email {
+    font-size: 11px;
+    color: var(--neutral-foreground-hint, #616161);
+    display: block;
+}
+
+.no-reviewers-text {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+    font-style: italic;
+}
+
+.form-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+    border-top: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+    padding-top: 16px;
+}

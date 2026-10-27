@@ -1,0 +1,575 @@
+@namespace BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Core.Dtos
+
+
+<div class="workflow-stepper-card">
+    @* Workflow Header Summary *@
+    <div class="workflow-header">
+        <div class="workflow-header-title-section">
+            <div class="workflow-title-row">
+                <CskIcon Icon="@CskIcons.Flowchart" Class="csk-icon-primary" />
+                <span class="workflow-title">@Workflow.Title</span>
+
+                @* Scoping Level Badge *@
+                <span class="scope-pill scope-@Workflow.Level.ToString().ToLowerInvariant()">
+                    @if (Workflow.Level == TaskLevelEnum.Tenant)
+                    {
+                        <span>🏢 Tenant Governance</span>
+                    }
+                    else if (Workflow.Level == TaskLevelEnum.Program)
+                    {
+                        <span>📁 Program Initiative</span>
+                    }
+                    else
+                    {
+                        <span>📋 Project Delivery</span>
+                    }
+                </span>
+
+                <CskBadge Appearance="@BadgeAppearance.Tint" BackgroundColor="@GetPriorityColor(Workflow.Priority)">
+                    @Workflow.Priority
+                </CskBadge>
+
+                @if (Workflow.Status == TaskStatusEnum.Paused)
+                {
+                    <CskBadge Appearance="@BadgeAppearance.Filled" BackgroundColor="var(--warning, #d83b01)">
+                        ⚠️ Paused (Attention Required)
+                    </CskBadge>
+                }
+                else if (Workflow.Status == TaskStatusEnum.Closed || Workflow.CurrentStepId is null)
+                {
+                    <CskBadge Appearance="@BadgeAppearance.Filled" BackgroundColor="var(--success, #107c41)">
+                        Completed
+                    </CskBadge>
+                }
+                else
+                {
+                    <CskBadge Appearance="@BadgeAppearance.Filled" BackgroundColor="var(--accent-fill-rest, #0078d4)">
+                        In Progress
+                    </CskBadge>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Workflow.Description))
+            {
+                <div class="workflow-description">@Workflow.Description</div>
+            }
+
+            <div class="workflow-meta-row">
+                <span class="meta-item">
+                    <CskIcon Icon="@CskIcons.Calendar" />
+                    <strong>Due:</strong>
+                    @if (Workflow.DueDate!=null)
+                    {
+                        <UserDateTime Value="@Workflow.DueDate" Format="yyyy-MM-dd" />
+                    }
+                    else
+                    {
+                        <span>No deadline</span>
+                    }
+                </span>
+
+                @* Constant Workflow Owner Badge *@
+                <span class="meta-item constant-owner-badge" title="Constant Workflow Owner orchestrates and drives delivery across all steps">
+                    <CskIcon Icon="@CskIcons.PersonStar" Class="csk-icon-primary" />
+                    <strong>Workflow Owner:</strong>
+                    <span class="owner-email">@Workflow.WorkflowOwnerEmail</span>
+                </span>
+
+                @if (!string.IsNullOrWhiteSpace(Workflow.WatcherEmails))
+                {
+                    <span class="meta-item watchers-item">
+                        <CskIcon Icon="@CskIcons.Eye" />
+                        <strong>Watchers:</strong>
+                        <span class="watchers-text" title="@Workflow.WatcherEmails">@Workflow.WatcherEmails</span>
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (_canManage)
+        {
+            <div class="workflow-header-actions stepper-header-actions" >
+                @if (Workflow.Status == TaskStatusEnum.Paused)
+                {
+                    <CskButton Variant="CskButtonVariant.Filled"
+                                  IconStart="@CskIcons.Play"
+                                  OnClick="@PromptResumeWorkflowAsync">
+                        Resume Pipeline
+                    </CskButton>
+                }
+                <CskButton Variant="CskButtonVariant.Outlined"
+                              IconStart="@CskIcons.Edit"
+                              OnClick="@(() => OnEditWorkflow.InvokeAsync(Workflow))">
+                    Edit Workflow
+                </CskButton>
+            </div>
+        }
+    </div>
+
+    @if (Workflow.Status == TaskStatusEnum.Paused)
+    {
+        <div class="workflow-paused-banner stepper-paused-banner" >
+            <div class="stepper-paused-left">
+                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                <div>
+                    <strong class="stepper-paused-title">Pipeline Paused — Attention Required</strong>
+                    <div class="stepper-paused-desc">
+                        An active step was cancelled. Sequential execution is halted pending administrator review.
+                    </div>
+                </div>
+            </div>
+            @if (_canManage)
+            {
+                <CskButton Variant="CskButtonVariant.Filled"
+                              IconStart="@CskIcons.Play"
+                              OnClick="@PromptResumeWorkflowAsync">
+                    Resume Next Step
+                </CskButton>
+            }
+        </div>
+    }
+
+    @* Visual Stepper Pipeline Track *@
+    <div class="stepper-pipeline">
+        @{
+            var orderedSteps = Workflow.Steps.OrderBy(s => s.WorkflowStepOrder ?? 1).ToList();
+        }
+        @for (int i = 0; i < orderedSteps.Count; i++)
+        {
+            var step = orderedSteps[i];
+            var stepIndex = i;
+            var isCurrentActive = step.Status == TaskStatusEnum.InProgress;
+            var isCompleted = step.Status == TaskStatusEnum.Closed;
+            var isPending = step.Status == TaskStatusEnum.Pending;
+
+            <div class="pipeline-step-node @(isCurrentActive ? "step-active" : isCompleted ? "step-completed" : "step-pending")">
+                <div class="step-indicator">
+                    @if (isCompleted)
+                    {
+                        <div class="step-circle step-circle-completed" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) completed">
+                            <CskIcon Icon="@CskIcons.Checkmark" />
+                        </div>
+                    }
+                    else if (step.Status == TaskStatusEnum.Cancelled)
+                    {
+                        <div class="step-circle step-circle-cancelled stepper-cancelled-circle"  title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) cancelled">
+                            <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-error" />
+                        </div>
+                    }
+                    else if (isCurrentActive)
+                    {
+                        <div class="step-circle step-circle-active" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) currently active">
+                            <span>@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="step-circle step-circle-pending" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) pending completion of previous steps">
+                            <CskIcon Icon="@CskIcons.LockClosed" />
+                        </div>
+                    }
+
+                    @if (stepIndex < orderedSteps.Count - 1)
+                    {
+                        <div class="step-connector @(isCompleted ? "connector-completed" : "")"></div>
+                    }
+                </div>
+
+                <div class="step-content">
+                    <div class="step-header">
+                        <div class="stepper-step-row">
+                            <span class="step-name @(step.Status == TaskStatusEnum.Cancelled ? "stepper-name-cancelled" : "")">@step.Title</span>
+                            <span class="step-order-badge">Step #@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
+                        </div>
+                        <span class="step-status-tag status-@(step.Status.ToString().ToLowerInvariant())">
+                            @step.Status.ToString()
+                        </span>
+                    </div>
+
+                    <div class="step-owner-line">
+                        <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                        <span>Step Owner: <strong>@(string.IsNullOrWhiteSpace(step.AssigneeEmails) ? "Unassigned" : step.AssigneeEmails)</strong></span>
+                        @if (step.DueDate!=null)
+                        {
+                            <span class="stepper-deadline-text">📅 Deadline: <UserDateTime Value="@step.DueDate" Format="yyyy-MM-dd" /></span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(step.Description))
+                    {
+                        <div class="step-instruction">@step.Description</div>
+                    }
+
+                    @* Subtasks Delegation Section *@
+                    <div class="step-subtasks-panel">
+                        <div class="subtasks-header-row">
+                            <span class="subtasks-label">
+                                <CskIcon Icon="@CskIcons.TaskListSquare" />
+                                Subtasks Delegated to Team (@(step.SubTasks.Count(s => s.IsClosed))/@step.SubTasks.Count completed)
+                            </span>
+                            @if (isCurrentActive)
+                            {
+                                <CskButton Variant="CskButtonVariant.Text"
+                                              IconStart="@CskIcons.Add"
+                                              OnClick="@(() => PromptAddSubtask(step))"
+                                              Class="stepper-btn-compact">
+                                    Add Subtask
+                                </CskButton>
+                            }
+                        </div>
+
+                        @if (step.SubTasks.Count > 0)
+                        {
+                            <div class="subtasks-list">
+                                @foreach (var sub in step.SubTasks.OrderBy(s => s.OrderIndex))
+                                {
+                                    <div class="subtask-row @(sub.IsClosed ? "subtask-closed" : "")">
+                                        <CskCheckbox Value="@sub.IsClosed"
+                                                        ValueChanged="@((bool val) => ToggleSubtaskAsync(sub, val))"
+                                                        Disabled="@(!CanToggleSubtask(step, sub))" />
+                                        <span class="subtask-title">@sub.Title</span>
+                                        @if (!string.IsNullOrWhiteSpace(sub.AssigneeEmails))
+                                        {
+                                            <span class="subtask-assignee-pill" title="Assigned Team Member">
+                                                👤 @sub.AssigneeEmails
+                                            </span>
+                                        }
+                                        @if (sub.DueDate!=null)
+                                        {
+                                            <span class="subtask-date">
+                                                <UserDateTime Value="@sub.DueDate" Format="yyyy-MM-dd" />
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (isCompleted && step.EndDate.HasValue)
+                    {
+                        <div class="step-completion-note">
+                            <CskIcon Icon="@CskIcons.Comment" Class="csk-icon-sm csk-icon-success" />
+                            <em>Completed on</em>
+                            <span class="step-completed-time">
+                                (<UserDateTime Value="@step.EndDate" Format="yyyy-MM-dd HH:mm" />)
+                            </span>
+                        </div>
+                    }
+
+                    @if (step.Status == TaskStatusEnum.Cancelled)
+                    {
+                        <div class="step-completion-note stepper-reason-box">
+                            <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-sm csk-icon-error" />
+                            <em>Step was cancelled by administrator.</em>
+                        </div>
+                    }
+
+                    @if (isCurrentActive)
+                    {
+                        <div class="step-actions">
+                            @{
+                                var isOwner = string.Equals(CurrentUser.Email, step.AssigneeEmails, StringComparison.OrdinalIgnoreCase);
+                                var isWfOwner = string.Equals(CurrentUser.Email, Workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase);
+                                var canAct = isOwner || isWfOwner || _isTenantAdmin || CurrentUser.IsRootAdmin;
+                            }
+                            @if (canAct)
+                            {
+                                <CskButton Variant="CskButtonVariant.Filled"
+                                              IconStart="@CskIcons.Checkmark"
+                                              OnClick="@(() => PromptCompleteStep(step))">
+                                    Sign Off & Advance Step
+                                </CskButton>
+                                <CskButton Variant="CskButtonVariant.Outlined"
+                                              IconStart="@CskIcons.PersonSwap"
+                                              OnClick="@(() => PromptReassignStep(step))">
+                                    Reassign Step Owner
+                                </CskButton>
+                            }
+                            else
+                            {
+                                <div class="step-zero-trust-notice">
+                                    <CskIcon Icon="@CskIcons.ShieldKeyhole" Class="csk-icon-warning" />
+                                    <span>Waiting for Step Owner <strong>@step.AssigneeEmails</strong> or Workflow Owner <strong>@Workflow.WorkflowOwnerEmail</strong> to sign off.</span>
+                                </div>
+                            }
+
+                            @if (_canManage)
+                            {
+                                <CskButton Variant="CskButtonVariant.Text"
+                                              IconStart="@CskIcons.Dismiss"
+                                              Class="stepper-danger-label"
+                                              OnClick="@(() => PromptCancelStep(step))">
+                                    Cancel Step
+                                </CskButton>
+                            }
+                        </div>
+                    }
+                    else if (isPending && _canManage)
+                    {
+                        <div class="step-actions mt-2">
+                            <CskButton Variant="CskButtonVariant.Text"
+                                          IconStart="@CskIcons.Dismiss"
+                                          Class="stepper-danger-sm"
+                                          OnClick="@(() => PromptCancelStep(step))">
+                                Cancel Pending Step
+                            </CskButton>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* Complete Step Dialog Modal *@
+@if (_isCompleteModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelCompleteStep">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskLabel Typo="Typography.H6">Complete Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</CskLabel>
+                    <CskButton Variant="CskButtonVariant.Text"
+                                  IconStart="@CskIcons.Dismiss"
+                                  OnClick="@CancelCompleteStep" />
+                </CskStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Error" Class="mb-3">
+                        @_errorMessage
+                    </CskMessageBar>
+                }
+
+                <p class="modal-instruction">
+                    Signing off on this step marks it as completed and immediately activates the subsequent step
+                    in the pipeline. Any remaining open subtasks will be recorded as completed.
+                </p>
+
+                <CskTextArea Label="Sign-Off Notes / Delivery Summary"
+                                @bind-Value="_completionNotes"
+                                Rows="4"
+                                Class="w-full"
+                                Placeholder="Provide sign-off details, deliverable links, or verification results..." />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <CskButton Variant="CskButtonVariant.Text"
+                              OnClick="@CancelCompleteStep"
+                              Disabled="@_isSubmitting">
+                    Cancel
+                </CskButton>
+                <CskSpacer />
+                <CskButton Variant="CskButtonVariant.Filled"
+                              OnClick="@ConfirmCompleteStepAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <CskSpinner Size="@CskSpinnerSize.Small" />
+                        <span>Submitting...</span>
+                    }
+                    else
+                    {
+                        <span>Confirm & Advance Workflow</span>
+                    }
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}
+
+@* Reassign Step Dialog Modal *@
+@if (_isReassignModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelReassignStep">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskLabel Typo="Typography.H6">Reassign Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</CskLabel>
+                    <CskButton Variant="CskButtonVariant.Text"
+                                  IconStart="@CskIcons.Dismiss"
+                                  OnClick="@CancelReassignStep" />
+                </CskStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Error" Class="mb-3">
+                        @_errorMessage
+                    </CskMessageBar>
+                }
+
+                <p class="modal-instruction">
+                    Reassigning delegates execution accountability for this step to a new Step Owner.
+                    The overarching Workflow Owner (@Workflow.WorkflowOwnerEmail) remains constant.
+                </p>
+
+                <CskTextInput Label="New Step Owner Email"
+                                 @bind-Value="_reassignEmail"
+                                 Class="w-full mb-3"
+                                 Placeholder="engineer@company.local" />
+
+                <CskTextArea Label="Reason for Reassignment"
+                                @bind-Value="_reassignReason"
+                                Rows="3"
+                                Class="w-full"
+                                Placeholder="E.g. Handing off to domain specialist, PTO delegation..." />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <CskButton Variant="CskButtonVariant.Text"
+                              OnClick="@CancelReassignStep"
+                              Disabled="@_isSubmitting">
+                    Cancel
+                </CskButton>
+                <CskSpacer />
+                <CskButton Variant="CskButtonVariant.Filled"
+                              OnClick="@ConfirmReassignStepAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <CskSpinner Size="@CskSpinnerSize.Small" />
+                        <span>Reassigning...</span>
+                    }
+                    else
+                    {
+                        <span>Reassign Step</span>
+                    }
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}
+
+@* Add Subtask Dialog Modal *@
+@if (_isAddSubtaskModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelAddSubtask">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskLabel Typo="Typography.H6">Add Subtask under Step #@(_targetStep.WorkflowStepOrder ?? 1)</CskLabel>
+                    <CskButton Variant="CskButtonVariant.Text"
+                                  IconStart="@CskIcons.Dismiss"
+                                  OnClick="@CancelAddSubtask" />
+                </CskStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Error" Class="mb-3">
+                        @_errorMessage
+                    </CskMessageBar>
+                }
+
+                <CskTextInput Label="Subtask Title *"
+                                 @bind-Value="_newSubtaskTitle"
+                                 Class="w-full mb-3"
+                                 Placeholder="E.g. Perform penetration test on auth endpoint" />
+
+                <CskTextInput Label="Assign to Team Member Email *"
+                                 @bind-Value="_newSubtaskAssignee"
+                                 Class="w-full mb-3"
+                                 Placeholder="developer@company.local" />
+
+                <CskDatePicker Label="Subtask Due Date"
+                                  @bind-Value="_newSubtaskDueDate"
+                                  Class="w-full" />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <CskButton Variant="CskButtonVariant.Text"
+                              OnClick="@CancelAddSubtask"
+                              Disabled="@_isSubmitting">
+                    Cancel
+                </CskButton>
+                <CskSpacer />
+                <CskButton Variant="CskButtonVariant.Filled"
+                              OnClick="@ConfirmAddSubtaskAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <CskSpinner Size="@CskSpinnerSize.Small" />
+                        <span>Adding...</span>
+                    }
+                    else
+                    {
+                        <span>Add & Delegate Subtask</span>
+                    }
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}
+
+@* Cancel Step Dialog Modal *@
+@if (_isCancelModalOpen && _targetStep is not null)
+{
+    <div class="stepper-modal-backdrop" @onclick="@CancelCancelStep">
+        <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
+            <div class="stepper-modal-header">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskLabel Typo="Typography.H6">Cancel Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</CskLabel>
+                    <CskButton Variant="CskButtonVariant.Text"
+                                  IconStart="@CskIcons.Dismiss"
+                                  OnClick="@CancelCancelStep" />
+                </CskStack>
+            </div>
+
+            <div class="stepper-modal-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <CskMessageBar Intent="MessageBarIntent.Error" Class="mb-3">
+                        @_errorMessage
+                    </CskMessageBar>
+                }
+
+                <p class="modal-instruction stepper-error-text">
+                    Tasks added to a workflow cannot be permanently deleted. Instead, this step will be marked as Cancelled.
+                    @if (_targetStep.Status == TaskStatusEnum.InProgress)
+                    {
+                        <strong> Since this is the active step, the workflow will be paused until an administrator activates the next step.</strong>
+                    }
+                </p>
+
+                <CskTextInput Label="Mandatory Cancellation Reason *"
+                                 @bind-Value="_cancelReason"
+                                 Placeholder="State reason for cancelling this step..."
+                                 Class="w-full" />
+            </div>
+
+            <div class="stepper-modal-footer">
+                <CskButton Variant="CskButtonVariant.Text"
+                              OnClick="@CancelCancelStep"
+                              Disabled="@_isSubmitting">
+                    Close
+                </CskButton>
+                <CskSpacer />
+                <CskButton Variant="CskButtonVariant.Filled"
+                              Class="stepper-danger-btn"
+                              OnClick="@ConfirmCancelStepAsync"
+                              Disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <CskSpinner Size="@CskSpinnerSize.Small" />
+                        <span>Processing...</span>
+                    }
+                    else
+                    {
+                        <span>Confirm Step Cancellation</span>
+                    }
+                </CskButton>
+            </div>
+        </div>
+    </div>
+}

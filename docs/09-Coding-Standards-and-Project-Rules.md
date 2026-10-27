@@ -3,23 +3,23 @@
 > **Target Audience**: Human Developers, Tech Leads, Code Reviewers, and Architects contributing to this codebase.  
 > **Key Objective**: Establish the authoritative coding standards, Clean Architecture laws, captive dependency rules, and modern C# 13 / .NET 10 conventions for the engineering team.
 >
-> *(Note: For AI assistant behavioral guardrails and operational rules, see [10. AI Agent Governance & Operational Rules](file:///c:/Users/cheri/source/repos/BlazorFluent/docs/10-AI-Agent-Governance-and-Operational-Rules.md). This document aligns with the root [`PROJECT_RULES.md`](file:///c:/Users/cheri/source/repos/BlazorFluent/PROJECT_RULES.md)).*
+> *(Note: For AI assistant behavioral guardrails and operational rules, see [10. AI Agent Governance & Operational Rules](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/10-AI-Agent-Governance-and-Operational-Rules.md). This document aligns with the root [`PROJECT_RULES.md`](file:///c:/Users/cheri/source/repos/BlazorEnterprise/PROJECT_RULES.md)).*
 
 ---
 
 ## 🏛️ 1. Clean Architecture Laws
 
 1. **Strict Inward Dependency Flow**:
-   - `BlazorFluent.Core` has **zero** internal project references. It contains only pure business contracts, entities, and enums.
-   - `BlazorFluent.Persistence` references `Core` and `Shared`. It must never reference `Infrastructure` or UI projects.
-   - `BlazorFluent.Infrastructure` handles external protocols (SMTP, Teams, SignalR, HTTP Engine Client) and must never reference `Persistence`.
-   - `BlazorFluent.Jobs` contains all background queue listeners, batch handlers, and file import pipelines.
-   - `BlazorFluent.Web` is the interactive Blazor UI composition root.
-   - `BlazorFluent.Api` is the headless REST/minimal API processing engine.
-   - `BlazorFluent.Worker` is a thin headless console host shell (.NET 10 Worker SDK). **Exactly zero batch handlers or business logic belong in `BlazorFluent.Worker`**; all job processing code resides in `BlazorFluent.Jobs`.
+   - `BlazorEnterprise.Core` has **zero** internal project references. It contains only pure business contracts, entities, and enums.
+   - `BlazorEnterprise.Persistence` references `Core` and `Shared`. It must never reference `Infrastructure` or UI projects.
+   - `BlazorEnterprise.Infrastructure` handles external protocols (SMTP, Teams, SignalR, HTTP Engine Client) and must never reference `Persistence`.
+   - `BlazorEnterprise.Jobs` contains all background queue listeners, batch handlers, and file import pipelines.
+   - `BlazorEnterprise.Web` is the interactive Blazor UI composition root.
+   - `BlazorEnterprise.Api` is the headless REST/minimal API processing engine.
+   - `BlazorEnterprise.Worker` is a thin headless console host shell (.NET 10 Worker SDK). **Exactly zero batch handlers or business logic belong in `BlazorEnterprise.Worker`**; all job processing code resides in `BlazorEnterprise.Jobs`.
 
 2. **Persistence Isolation**:
-   - 100% of database access belongs in `BlazorFluent.Persistence`.
+   - 100% of database access belongs in `BlazorEnterprise.Persistence`.
    - No direct `DbContext` queries inside UI components or Razor pages. Always call an injected domain service interface.
 
 ---
@@ -52,7 +52,7 @@ In `Program.cs`, container validation is enabled across all environments (`Valid
    - **Dual-Token Architecture**:
      - *Interactive Users*: Standard JWT bearer tokens authenticated via the centralized Cloud Master Key.
      - *Background/S2S Daemons*: Ephemeral JWT tokens (5-minute lifetime) authenticated via tenant-specific license keys (`Tenants:{tenantId}:LicenseKey`).
-   - **Dynamic Key Resolution**: `BlazorFluent.Api` relies on `IssuerSigningKeyResolver` to dynamically fetch the tenant's symmetric key. Falling back to a shared system key on tenant mismatch is strictly prohibited.
+   - **Dynamic Key Resolution**: `BlazorEnterprise.Api` relies on `IssuerSigningKeyResolver` to dynamically fetch the tenant's symmetric key. Falling back to a shared system key on tenant mismatch is strictly prohibited.
    - **Opaque Reference Slugs & Data Privacy**:
      - Token claims MUST NOT expose raw database tenant IDs or user PII.
      - Use `OpaqueIdUtility.GenerateTenantSlug(tenantId)` for public `tid` claims (`tnt_...`) and `OpaqueIdUtility.MaskGuid` with per-tenant salt for sub/actor masks.
@@ -68,7 +68,7 @@ In `Program.cs`, container validation is enabled across all environments (`Valid
 
 ## 💻 4. Modern C# 13 & .NET 10 Idioms
 
-- **File-Scoped Namespaces**: Always use file-scoped namespaces (`namespace BlazorFluent.Core.Services;`).
+- **File-Scoped Namespaces**: Always use file-scoped namespaces (`namespace BlazorEnterprise.Core.Services;`).
 - **Primary Constructors**: Use primary constructors for dependency injection:
   ```csharp
   public class CustomerService(AppDbContext db, ICurrentUser currentUser, ILogger<CustomerService> logger) : ICustomerService
@@ -83,7 +83,7 @@ In `Program.cs`, container validation is enabled across all environments (`Valid
 To maximize cognitive readability and eliminate ambiguity during mental code parsing, all enumeration types must follow strict naming rules:
 
 1. **The `*Enum` Suffix Law**:
-   - All newly created enumeration types in `BlazorFluent.Shared.DataListTypes` must be explicitly suffixed with **`Enum`** (e.g., `WorkflowPhaseEnum`, `ContractTierEnum`, `DeliverableStatusEnum`).
+   - All newly created enumeration types in `BlazorEnterprise.Shared.DataListTypes` must be explicitly suffixed with **`Enum`** (e.g., `WorkflowPhaseEnum`, `ContractTierEnum`, `DeliverableStatusEnum`).
    - In code review, seeing `WorkflowPhaseEnum.Draft` instantly signals to the brain that the identifier is an enum, without confusing it with a class, record, or interface.
 
 2. **Prohibited Suffixes**:
@@ -96,9 +96,9 @@ To maximize cognitive readability and eliminate ambiguity during mental code par
 4. **Compile-Time Governance (`TG006`)**:
    - Enforced by the `TemplateGuard.Analyzers` Roslyn package rule **`TG006`**:
      ```
-     Error TG006: Enum 'DeliverableStatus' in namespace 'BlazorFluent.Shared.DataListTypes' 
+     Error TG006: Enum 'DeliverableStatus' in namespace 'BlazorEnterprise.Shared.DataListTypes' 
      does not end with 'Enum' (e.g. 'DeliverableStatusEnum'). For cognitive readability, 
-     all new enums in BlazorFluent.Shared.DataListTypes must end with the 'Enum' suffix.
+     all new enums in BlazorEnterprise.Shared.DataListTypes must end with the 'Enum' suffix.
      ```
    - Any new enum lacking the `*Enum` suffix fails `dotnet build` with an analyzer compilation error.
 

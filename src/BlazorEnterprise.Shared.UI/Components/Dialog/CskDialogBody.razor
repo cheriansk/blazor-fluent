@@ -1,0 +1,19 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+@if (TitleTemplate is not null)
+{
+    <div class="csk-dialog-title">
+        @TitleTemplate
+    </div>
+}
+
+<div class="csk-dialog-body @Class">
+    @ChildContent
+</div>
+
+@if (ActionTemplate is not null)
+{
+    <div class="csk-dialog-actions">
+        @ActionTemplate
+    </div>
+}

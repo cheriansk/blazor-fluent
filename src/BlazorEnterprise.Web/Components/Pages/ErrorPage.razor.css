@@ -1,0 +1,47 @@
+.error-page-card {
+    max-width: 600px;
+    margin: 80px auto;
+    padding: 32px;
+    background: var(--mat-surface, #ffffff);
+    border-radius: 12px;
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    box-shadow: var(--mat-elevation-2);
+}
+
+.error-page-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.error-header-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.error-header-title {
+    margin: 0;
+    color: var(--mat-error, #ba1a1a);
+    font-size: 1.25rem;
+}
+
+.error-header-desc {
+    margin: 4px 0 0 0;
+    color: var(--mat-on-surface-variant, #616161);
+    font-size: 0.95rem;
+}
+
+.error-ref-box {
+    padding: 10px 14px;
+    background: rgba(186, 26, 26, 0.08);
+    border-radius: 8px;
+    border: 1px solid var(--mat-error, #ba1a1a);
+    font-size: 0.9rem;
+}
+
+.error-actions-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}

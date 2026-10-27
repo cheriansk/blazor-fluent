@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorEnterprise.Core\BlazorEnterprise.Core.csproj" />
+    <ProjectReference Include="..\BlazorEnterprise.Persistence\BlazorEnterprise.Persistence.csproj" />
+    <ProjectReference Include="..\BlazorEnterprise.Shared\BlazorEnterprise.Shared.csproj" />
+    <ProjectReference Include="..\BlazorEnterprise.Infrastructure\BlazorEnterprise.Infrastructure.csproj" />
+  </ItemGroup>
+	<ItemGroup>
+    <PackageReference Include="Cronos" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <WarningsAsErrors>CS0108</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

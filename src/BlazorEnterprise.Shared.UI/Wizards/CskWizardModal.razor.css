@@ -1,0 +1,145 @@
+.csk-wizard-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.csk-wizard-backdrop.confirm-overlay {
+    z-index: 1100;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.csk-wizard-dialog {
+    background: var(--mat-surface, #ffffff);
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    border-radius: var(--mat-radius-card, 12px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    max-width: 900px;
+    width: 92%;
+    overflow: hidden;
+}
+
+.csk-wizard-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--mat-outline-variant, #f0f0f0);
+    background: var(--mat-surface-variant, #fafafa);
+}
+
+.csk-wizard-title {
+    font-weight: 600;
+}
+
+.csk-wizard-subtitle {
+    color: var(--mat-on-surface-variant, #616161);
+}
+
+.csk-wizard-stepper {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.csk-wizard-step-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.step-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--mat-surface-variant, #eeeeee);
+    color: var(--mat-on-surface-variant, #888888);
+    border: 2px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.csk-wizard-step-node.active .step-badge {
+    background: var(--mat-primary, #6750A4);
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.25);
+}
+
+.csk-wizard-step-node.completed .step-badge {
+    background: var(--mat-surface, #ffffff);
+    border-color: var(--mat-success, #2e7d32);
+    color: var(--mat-success, #2e7d32);
+}
+
+.step-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mat-on-surface, #333333);
+}
+
+.csk-wizard-step-node.active .step-title {
+    color: var(--mat-primary, #6750A4);
+}
+
+.step-summary {
+    font-size: 11px;
+    color: var(--mat-on-surface-variant, #777777);
+}
+
+.step-connector {
+    flex: 1;
+    min-width: 24px;
+    height: 2px;
+    background: var(--mat-outline-variant, #e0e0e0);
+    margin: 0 10px;
+    transition: background 0.3s ease;
+}
+
+.step-connector.completed {
+    background: var(--mat-success, #2e7d32);
+}
+
+.csk-wizard-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.csk-wizard-footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--mat-outline-variant, #f0f0f0);
+    background: var(--mat-surface-variant, #fafafa);
+    display: flex;
+    align-items: center;
+}
+
+.discard-confirm-card {
+    max-width: 420px;
+    width: 90%;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.csk-wizard-step-node.pending { opacity: 0.75; }
+.font-weight-600 { font-weight: 600; }

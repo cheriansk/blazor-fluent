@@ -1,0 +1,43 @@
+﻿@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Infrastructure.Security
+@using BlazorEnterprise.Shared.UI.Components
+@inject ICurrentUser CurrentUser
+@inject IImpersonationService ImpersonationService
+@inject CurrentUserAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+@if (CurrentUser.IsImpersonated)
+{
+    <div class="impersonation-banner">
+        <div class="impersonation-content">
+            <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+            <span>
+                <strong>OPERATOR TROUBLESHOOTING MODE:</strong> You are currently impersonating
+                <strong>@CurrentUser.UserName</strong> (<code>@CurrentUser.Email</code>).
+                All data mutations are shadow-audited under your admin account.
+            </span>
+        </div>
+
+        <CskButton Variant="CskButtonVariant.Filled"
+                   Size="CskButtonSize.Small"
+                   Class="btn-impersonation-exit"
+                   OnClick="ExitImpersonationAsync">
+            Exit Impersonation
+        </CskButton>
+    </div>
+}
+
+@code {
+    private async Task ExitImpersonationAsync()
+    {
+        await ImpersonationService.StopImpersonationAsync();
+
+        if (CurrentUser is AppCurrentUser appUser)
+        {
+            appUser.ClearImpersonation();
+        }
+
+        AuthStateProvider.NotifyUserChanged();
+        NavigationManager.NavigateTo("/", forceLoad: false);
+    }
+}

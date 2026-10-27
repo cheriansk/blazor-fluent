@@ -1,0 +1,30 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-card @GetVariantClass() @GetElevationClass() @(Clickable ? "csk-card-clickable" : "") @Class"
+     @attributes="AdditionalAttributes"
+     @onclick="HandleClickAsync">
+    @if (Header is not null)
+    {
+        <div class="csk-card-header">
+            @Header
+        </div>
+    }
+
+    @if (Header is not null || Actions is not null)
+    {
+        <div class="csk-card-body">
+            @ChildContent
+        </div>
+    }
+    else
+    {
+        @ChildContent
+    }
+
+    @if (Actions is not null)
+    {
+        <div class="csk-card-actions">
+            @Actions
+        </div>
+    }
+</div>

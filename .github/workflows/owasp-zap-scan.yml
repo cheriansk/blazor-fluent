@@ -19,7 +19,7 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Launch Blazor Application Host
         run: |
-          dotnet run --project src/BlazorFluent.Web/BlazorFluent.Web.csproj --urls "http://localhost:5000" &
+          dotnet run --project src/BlazorEnterprise.Web/BlazorEnterprise.Web.csproj --urls "http://localhost:5000" &
           sleep 10
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0

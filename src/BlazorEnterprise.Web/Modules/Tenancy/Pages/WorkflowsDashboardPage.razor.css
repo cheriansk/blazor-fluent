@@ -1,0 +1,119 @@
+    .workflows-page-container {
+        padding: 24px;
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+
+    .workflows-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .workflows-header-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .workflows-subtitle {
+        color: var(--neutral-foreground-hint, #616161);
+        font-size: 0.9rem;
+        margin: 6px 0 0 0;
+        max-width: 780px;
+        line-height: 1.4;
+    }
+
+    /* KPI Cards */
+    .workflows-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-card {
+        background: var(--neutral-layer-card-container, #ffffff);
+        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .kpi-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .kpi-icon-blue { background: #e8f0fe; }
+    .kpi-icon-green { background: #e6f4ea; }
+    .kpi-icon-amber { background: #fef7e0; }
+    .kpi-icon-purple { background: #f3e8fd; }
+
+    .kpi-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kpi-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--neutral-foreground-rest, #242424);
+        line-height: 1.2;
+    }
+
+    .kpi-label {
+        font-size: 0.775rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-top: 2px;
+    }
+
+    /* Filters Toolbar */
+    .workflows-filters-toolbar {
+        background: var(--neutral-layer-card-container, #ffffff);
+        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .scope-tabs-bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .secondary-filters-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .workflows-list-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .empty-workflows-panel {
+        text-align: center;
+        padding: 48px 24px;
+        background: var(--neutral-fill-subtle-rest, #f9f9f9);
+        border: 1px dashed var(--neutral-stroke-subtle, #edebe9);
+        border-radius: 8px;
+    }
