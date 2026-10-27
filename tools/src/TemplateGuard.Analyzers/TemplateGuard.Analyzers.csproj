@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsRoslynComponent>true</IsRoslynComponent>
@@ -15,6 +15,10 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="System.Text.Json" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\TemplateGuard\.basefiles.json')">
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)..\..\TemplateGuard\.basefiles.json" LogicalName="TemplateGuard.Analyzers..basefiles.json" />
   </ItemGroup>
   <Target Name="DeployAnalyzerBinary" AfterTargets="Build">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildThisFileDirectory)..\..\TemplateGuard\" SkipUnchangedFiles="true" />

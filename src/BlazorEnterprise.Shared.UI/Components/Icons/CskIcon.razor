@@ -1,0 +1,31 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<svg class="csk-icon @ColorClass @Class"
+     viewBox="0 0 24 24"
+     focusable="false"
+     aria-hidden="@(string.IsNullOrEmpty(Title) ? "true" : "false")"
+     role="@(string.IsNullOrEmpty(Title) ? "presentation" : "img")"
+     @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <title>@Title</title>
+    }
+    <path d="@Icon" />
+</svg>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ColorClass { get; set; } = string.Empty;
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}
