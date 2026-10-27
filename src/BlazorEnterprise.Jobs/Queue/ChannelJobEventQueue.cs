@@ -115,7 +115,7 @@ public class ChannelJobEventQueue : IJobEventQueue, IJobEventPublisher
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to record event publish tracking for event {EventId}", jobEvent.EventId);
+                _logger.LogError(ex, "Failed to record event publish tracking for event {EventId}", jobEvent.EventId);
             }
         }
 

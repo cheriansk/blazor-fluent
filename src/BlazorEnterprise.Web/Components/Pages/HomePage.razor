@@ -1,73 +1,57 @@
 @page "/"
 @attribute [Authorize]
 @rendermode InteractiveServer
-@using BlazorEnterprise.Components.Common
-@using BlazorEnterprise.Core.Contracts
-@using BlazorEnterprise.Core.Domain.Auditing
-@using BlazorEnterprise.Core.Domain.Tasks
-@using BlazorEnterprise.Core.Dtos.Response
-@using BlazorEnterprise.Shared.Contracts.Common
-@using BlazorEnterprise.Shared.DataListTypes
-
-@using Microsoft.FluentUI.AspNetCore.Components
-@using BlazorEnterprise.Shared.UI.Components
-@inject ITenantService TenantService
-@inject IUserTaskService TaskService
-@inject IAuditService AuditService
-@inject ITenantContext TenantContext
-@inject ICurrentUser CurrentUser
-@inject NavigationManager NavigationManager
 
 <PageTitle>Dashboard — BlazorEnterprise Material</PageTitle>
 
 <div class="homepage-container">
     <!-- Material Section Header & Action Toolbar -->
-    <MaterialSectionHeader Title="Operations Executive Dashboard"
-                           Subtitle="Real-time multi-tenant operations, rules engine throughput, and forensic audit trail."
-                           Icon="@(new Icons.Regular.Size24.Apps())">
+    <CskSectionHeader Title="Operations Executive Dashboard"
+                      Subtitle="Real-time multi-tenant operations, rules engine throughput, and forensic audit trail."
+                      Icon="@CskIcons.Apps">
         <Actions>
-            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@NavigateToTasks">
+            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@NavigateToTasks">
                 New Task
-            </FluentButton>
-            <FluentButton Appearance="ButtonAppearance.Outline" IconStart="@(new Icons.Regular.Size16.ArrowSync())" OnClick="@RefreshDataAsync">
+            </CskButton>
+            <CskButton Variant="CskButtonVariant.Outlined" IconStart="@CskIcons.ArrowSync" OnClick="@RefreshDataAsync">
                 Refresh
-            </FluentButton>
+            </CskButton>
         </Actions>
-    </MaterialSectionHeader>
+    </CskSectionHeader>
 
     <!-- Top KPI Metric Cards Grid -->
     <div class="mat-metric-grid">
-        <MaterialMetricCard Title="Active Projects"
-                            Value="@_projectCountText"
-                            Icon="@(new Icons.Regular.Size24.Folder())"
-                            AvatarColorClass="mat-avatar-primary"
-                            TrendText="+2 this month"
-                            TrendPositive="true"
-                            Subtext="Across enterprise portfolio" />
+        <CskMetricCard Title="Active Projects"
+                       Value="@_projectCountText"
+                       Icon="@CskIcons.Folder"
+                       AvatarColorClass="csk-avatar-primary"
+                       TrendText="+2 this month"
+                       TrendPositive="true"
+                       Subtext="Across enterprise portfolio" />
 
-        <MaterialMetricCard Title="Task Completion"
-                            Value="@_completionRateText"
-                            Icon="@(new Icons.Regular.Size24.CheckmarkCircle())"
-                            AvatarColorClass="mat-avatar-success"
-                            TrendText="+5.3% efficiency"
-                            TrendPositive="true"
-                            Subtext="@($"{_completedTasksCount} of {_totalTasksCount} tasks closed")" />
+        <CskMetricCard Title="Task Completion"
+                       Value="@_completionRateText"
+                       Icon="@CskIcons.Checkmark"
+                       AvatarColorClass="csk-avatar-success"
+                       TrendText="+5.3% efficiency"
+                       TrendPositive="true"
+                       Subtext="@($"{_completedTasksCount} of {_totalTasksCount} tasks closed")" />
 
-        <MaterialMetricCard Title="Zero-Trust Score"
-                            Value="100% (A+)"
-                            Icon="@(new Icons.Regular.Size24.ShieldCheckmark())"
-                            AvatarColorClass="mat-avatar-info"
-                            TrendText="Audited"
-                            TrendPositive="true"
-                            Subtext="PureStrict Nonced CSP Active" />
+        <CskMetricCard Title="Zero-Trust Score"
+                       Value="100% (A+)"
+                       Icon="@CskIcons.ShieldCheck"
+                       AvatarColorClass="csk-avatar-primary"
+                       TrendText="Audited"
+                       TrendPositive="true"
+                       Subtext="PureStrict Nonced CSP Active" />
 
-        <MaterialMetricCard Title="Engine Throughput"
-                            Value="3,420 ops/s"
-                            Icon="@(new Icons.Regular.Size24.Flash())"
-                            AvatarColorClass="mat-avatar-warning"
-                            TrendText="+14.8% throughput"
-                            TrendPositive="true"
-                            Subtext="100% in-memory CPU engine" />
+        <CskMetricCard Title="Engine Throughput"
+                       Value="3,420 ops/s"
+                       Icon="@CskIcons.Bolt"
+                       AvatarColorClass="csk-avatar-warning"
+                       TrendText="+14.8% throughput"
+                       TrendPositive="true"
+                       Subtext="100% in-memory CPU engine" />
     </div>
 
     <!-- Main Content Area: Kanban Workflow Board & Recent Activity -->
@@ -77,12 +61,12 @@
             <div class="panel-header">
                 <div class="panel-title-group">
                     <h3 class="panel-title">
-                        <FluentIcon Value="@(new Icons.Regular.Size20.TaskListLtr())" Color="Color.Primary" Width="20px" />
-                        Active Workflow Kanban
+                        <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-primary" />
+                        <span>Active Workflow Kanban</span>
                     </h3>
                     <span class="panel-subtitle">Current sprint deliverables and review gates</span>
                 </div>
-                <FluentBadge Appearance="@BadgeAppearance.Tint">@_kanbanTasks.Count Active</FluentBadge>
+                <span class="column-count">@_kanbanTasks.Count Active</span>
             </div>
 
             <div class="kanban-swimlanes">
@@ -98,13 +82,13 @@
                             <div class="mat-kanban-card" @onclick="NavigateToTasks">
                                 <div class="task-card-header">
                                     <span class="task-key">@task.Key</span>
-                                    <MaterialStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
+                                    <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
                                 </div>
                                 <div class="task-card-title">@task.Title</div>
                                 <div class="task-card-footer">
                                     <span class="task-assignee">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.Person())" Width="14px" />
-                                        @task.Assignee
+                                        <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                                        <span>@task.Assignee</span>
                                     </span>
                                 </div>
                             </div>
@@ -124,13 +108,13 @@
                             <div class="mat-kanban-card" @onclick="NavigateToTasks">
                                 <div class="task-card-header">
                                     <span class="task-key">@task.Key</span>
-                                    <MaterialStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
+                                    <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
                                 </div>
                                 <div class="task-card-title">@task.Title</div>
                                 <div class="task-card-footer">
                                     <span class="task-assignee">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.Person())" Width="14px" />
-                                        @task.Assignee
+                                        <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                                        <span>@task.Assignee</span>
                                     </span>
                                 </div>
                             </div>
@@ -150,13 +134,13 @@
                             <div class="mat-kanban-card" @onclick="NavigateToTasks">
                                 <div class="task-card-header">
                                     <span class="task-key">@task.Key</span>
-                                    <MaterialStatusChip Text="Resolved" Variant="MaterialStatusChip.ChipVariant.Success" />
+                                    <CskStatusChip Text="Resolved" Variant="CskStatusChip.ChipVariant.Success" />
                                 </div>
                                 <div class="task-card-title task-done">@task.Title</div>
                                 <div class="task-card-footer">
                                     <span class="task-assignee">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.Checkmark())" Width="14px" />
-                                        @task.Assignee
+                                        <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" />
+                                        <span>@task.Assignee</span>
                                     </span>
                                 </div>
                             </div>
@@ -171,8 +155,8 @@
             <div class="panel-header">
                 <div class="panel-title-group">
                     <h3 class="panel-title">
-                        <FluentIcon Value="@(new Icons.Regular.Size20.History())" Color="Color.Primary" Width="20px" />
-                        Forensic Audit Trail
+                        <CskIcon Icon="@CskIcons.History" Class="csk-icon-primary" />
+                        <span>Forensic Audit Trail</span>
                     </h3>
                     <span class="panel-subtitle">Chronological ledger of security and tenant actions</span>
                 </div>
@@ -194,14 +178,14 @@
                     {
                         <div class="mat-activity-item">
                             <div class="mat-activity-icon">
-                                <FluentIcon Value="@audit.Icon" Color="@audit.IconColor" Width="18px" />
+                                <CskIcon Icon="@audit.Icon" Class="csk-icon-sm" />
                             </div>
                             <div class="mat-activity-content">
                                 <div class="mat-activity-title">@audit.Title</div>
                                 <div class="mat-activity-description">@audit.Description</div>
                                 <div class="mat-activity-time">@audit.TimeAgo • @audit.User</div>
                             </div>
-                            <MaterialStatusChip Text="@audit.BadgeText" Variant="@audit.BadgeVariant" />
+                            <CskStatusChip Text="@audit.BadgeText" Variant="@audit.BadgeVariant" />
                         </div>
                     }
                 }
@@ -209,161 +193,3 @@
         </div>
     </div>
 </div>
-
-
-
-@code {
-    private string _projectCountText = "0";
-    private string _completionRateText = "100%";
-    private int _completedTasksCount = 0;
-    private int _totalTasksCount = 0;
-
-    private List<KanbanTaskItem> _kanbanTasks = new();
-    private List<AuditActivityItem> _auditActivities = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadDashboardDataAsync();
-    }
-
-    private async Task RefreshDataAsync()
-    {
-        await LoadDashboardDataAsync();
-    }
-
-    private async Task LoadDashboardDataAsync()
-    {
-        try
-        {
-            // 1. Projects Count
-            var projects = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
-            var realProjectCount = projects.Count;
-            _projectCountText = realProjectCount > 0 ? realProjectCount.ToString() : "14";
-
-            // 2. Tasks Aggregation
-            var tasks = await TaskService.GetRecentTasksAsync(30);
-            if (tasks.Count > 0)
-            {
-                _totalTasksCount = tasks.Count;
-                _completedTasksCount = tasks.Count(t => t.Status == TaskStatusEnum.Closed);
-                var rate = _totalTasksCount > 0 ? (double)_completedTasksCount / _totalTasksCount * 100 : 100;
-                _completionRateText = $"{rate:0.#}%";
-
-                _kanbanTasks = tasks.Take(9).Select(t => new KanbanTaskItem
-                {
-                    Key = $"TSK-{t.Id.ToString()[..4].ToUpper()}",
-                    Title = t.Title,
-                    Column = t.Status == TaskStatusEnum.Closed ? "Done" : (t.Status == TaskStatusEnum.InProgress ? "InProgress" : "ToDo"),
-                    PriorityText = t.Priority.ToString(),
-                    PriorityVariant = t.Priority switch
-                    {
-                        TaskPriorityEnum.Urgent => MaterialStatusChip.ChipVariant.Error,
-                        TaskPriorityEnum.High => MaterialStatusChip.ChipVariant.Warning,
-                        _ => MaterialStatusChip.ChipVariant.Neutral
-                    },
-                    Assignee = "Engineering Team"
-                }).ToList();
-            }
-            else
-            {
-                // Graceful realistic fallback if database is newly initialized
-                _totalTasksCount = 18;
-                _completedTasksCount = 15;
-                _completionRateText = "94.8%";
-                _kanbanTasks = GetFallbackKanbanTasks();
-            }
-
-            // 3. Audit Records
-            var auditTrail = await AuditService.GetAuditTrailAsync(new AuditTrailFilterReqDto { PageNumber = 1, PageSize = 5 });
-            var auditRecords = auditTrail.Items;
-
-
-
-
-            if (auditRecords.Count > 0)
-            {
-                _auditActivities = auditRecords.Select(a => new AuditActivityItem
-                {
-                    Title = a.EventType.ToString(),
-                    Description = a.Description ?? $"{a.EntityName} updated",
-                    User = a.UserEmail ?? "system",
-                    TimeAgo = FormatTimeAgo(a.Created),
-                    BadgeText = a.Severity.ToString(),
-                    BadgeVariant = a.Severity switch
-                    {
-                        AuditSeverityEnum.Critical => MaterialStatusChip.ChipVariant.Error,
-                        AuditSeverityEnum.Warning => MaterialStatusChip.ChipVariant.Warning,
-                        _ => MaterialStatusChip.ChipVariant.Info
-                    },
-                    Icon = new Icons.Regular.Size20.CheckmarkCircle(),
-                    IconColor = Color.Primary
-                }).ToList();
-            }
-            else
-            {
-                _auditActivities = GetFallbackAuditActivities();
-            }
-        }
-        catch
-        {
-            // Fallback gracefully on any transient error
-            _projectCountText = "14";
-            _completionRateText = "94.8%";
-            _totalTasksCount = 18;
-            _completedTasksCount = 15;
-            _kanbanTasks = GetFallbackKanbanTasks();
-            _auditActivities = GetFallbackAuditActivities();
-        }
-    }
-
-    private static string FormatTimeAgo(DateTime dt)
-    {
-        var span = DateTime.UtcNow - dt;
-        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
-        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
-        return $"{(int)span.TotalDays}d ago";
-    }
-
-    private void NavigateToTasks()
-    {
-        NavigationManager.NavigateTo("tasks");
-    }
-
-    private static List<KanbanTaskItem> GetFallbackKanbanTasks() => new()
-    {
-        new KanbanTaskItem { Key = "ENG-102", Title = "Verify Zero-Trust CSP nonce injection in SSR pipeline", Column = "InProgress", PriorityText = "High", PriorityVariant = MaterialStatusChip.ChipVariant.Warning, Assignee = "SecOps Lead" },
-        new KanbanTaskItem { Key = "ENG-108", Title = "Benchmark in-memory Rules Engine across 10k nodes", Column = "InProgress", PriorityText = "Medium", PriorityVariant = MaterialStatusChip.ChipVariant.Info, Assignee = "Perf Engineer" },
-        new KanbanTaskItem { Key = "PRJ-304", Title = "Configure PostgreSQL row-level multi-tenant filter policy", Column = "ToDo", PriorityText = "High", PriorityVariant = MaterialStatusChip.ChipVariant.Warning, Assignee = "Backend Team" },
-        new KanbanTaskItem { Key = "PRJ-310", Title = "Material 3 elevation and design tokens integration", Column = "Done", PriorityText = "Resolved", PriorityVariant = MaterialStatusChip.ChipVariant.Success, Assignee = "UI Architect" },
-        new KanbanTaskItem { Key = "SEC-402", Title = "Eliminate unsafe-inline style directives across layouts", Column = "Done", PriorityText = "Resolved", PriorityVariant = MaterialStatusChip.ChipVariant.Success, Assignee = "Enterprise InfoSec" }
-    };
-
-    private static List<AuditActivityItem> GetFallbackAuditActivities() => new()
-    {
-        new AuditActivityItem { Title = "Security Token Audit", Description = "Per-request CSP nonces verified; zero unsafe-inline violations.", User = "infosec@enterprise.local", TimeAgo = "12m ago", BadgeText = "Audited", BadgeVariant = MaterialStatusChip.ChipVariant.Success, Icon = new Icons.Regular.Size20.ShieldCheckmark(), IconColor = Color.Success },
-        new AuditActivityItem { Title = "Tenant Schema Migration", Description = "Multi-tenant tenant partition successfully migrated to EF Core 10.", User = "system", TimeAgo = "45m ago", BadgeText = "Success", BadgeVariant = MaterialStatusChip.ChipVariant.Info, Icon = new Icons.Regular.Size20.ArrowSync(), IconColor = Color.Primary },
-        new AuditActivityItem { Title = "Rules Engine Sync", Description = "Loaded 4,200 calculation rules into CPU memory.", User = "worker@engine.local", TimeAgo = "2h ago", BadgeText = "Info", BadgeVariant = MaterialStatusChip.ChipVariant.Neutral, Icon = new Icons.Regular.Size20.Flash(), IconColor = Color.Warning }
-    };
-
-    private sealed class KanbanTaskItem
-    {
-        public string Key { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string Column { get; set; } = "ToDo";
-        public string PriorityText { get; set; } = "Medium";
-        public MaterialStatusChip.ChipVariant PriorityVariant { get; set; } = MaterialStatusChip.ChipVariant.Neutral;
-        public string Assignee { get; set; } = string.Empty;
-    }
-
-    private sealed class AuditActivityItem
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string User { get; set; } = string.Empty;
-        public string TimeAgo { get; set; } = string.Empty;
-        public string BadgeText { get; set; } = "Info";
-        public MaterialStatusChip.ChipVariant BadgeVariant { get; set; } = MaterialStatusChip.ChipVariant.Info;
-        public Icon Icon { get; set; } = new Icons.Regular.Size20.Info();
-        public Color IconColor { get; set; } = Color.Primary;
-    }
-}

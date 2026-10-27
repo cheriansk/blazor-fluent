@@ -125,7 +125,7 @@ public class UserTimeZoneService : IUserTimeZoneService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to persist timezone {TimeZoneId} to session storage.", _timeZoneId);
+            _logger.LogError(ex, "Failed to persist timezone {TimeZoneId} to session storage.", _timeZoneId);
         }
 
         // 2. Persist to database if authenticated

@@ -1,3 +1,4 @@
+@namespace BlazorEnterprise.Modules.KnowledgeBase.Pages
 @page "/knowledge"
 @rendermode InteractiveServer
 @using BlazorEnterprise.Shared.Attributes
@@ -6,134 +7,128 @@
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
 @using BlazorEnterprise.Core.Dtos
-@inject IKnowledgeBaseService KnowledgeService
-@inject NavigationManager NavigationManager
-@inject ITenantContext TenantContext
-@inject ICurrentUser CurrentUser
 
 <PageTitle>Knowledge Base - BlazorEnterprise</PageTitle>
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="width: 100%; max-width: 1200px; margin: 0 auto;">
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16" Class="kb-container">
     <!-- Top Action Header -->
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="width: 100%;">
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="kb-header">
         <div>
-            <FluentLabel Typo="Typography.H3" Style="font-weight: 700;">Knowledge Base</FluentLabel>
-            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">
+            <CskLabel Typo="Typography.H3" Class="kb-title">Knowledge Base</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="kb-subtitle">
                 Search, explore, and share articles across your organization and global library.
-            </FluentLabel>
+            </CskLabel>
         </div>
 
         @if (IsInternalUser)
         {
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          IconStart="@(new Icons.Regular.Size20.Add())"
+            <CskButton Variant="CskButtonVariant.Filled"
+                          IconStart="@CskIcons.Add"
                           OnClick="@(() => NavigationManager.NavigateTo("/knowledge/new"))">
                 Create Article
-            </FluentButton>
+            </CskButton>
         }
-    </FluentStack>
+    </CskStack>
 
     <!-- Search & Filter Controls Card -->
-    <FluentCard Style="padding: 14px;">
-            <FluentTextInput @bind-Value="@_searchTerm"
-                             @bind-Value:after="@LoadArticlesAsync"
-                             Appearance="TextInputAppearance.Outline"
-                             Placeholder="Search articles by title, content, author, or label..."
-                             Style="width: 100%;">
-                <StartTemplate>
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
-                </StartTemplate>
-            </FluentTextInput>
+    <CskCard Class="kb-filter-card">
+        <CskTextInput @bind-Value="@_searchTerm"
+                         @bind-Value:after="@LoadArticlesAsync"
+                         Variant="TextInputAppearance.Outline"
+                         Placeholder="Search articles by title, content, author, or label..."
+                         Class="w-full">
+            <StartTemplate>
+                <CskIcon Icon="@CskIcons.Search" />
+            </StartTemplate>
+        </CskTextInput>
 
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
-                <!-- Filter Pills -->
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                    <span style="font-size: 12px; font-weight: 600; color: var(--neutral-foreground-hint);">Status:</span>
-                    <FluentButton Appearance="@(_selectedStatus == null ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                                  Size="ButtonSize.Small"
-                                  OnClick="@(() => SetStatusFilter(null))">
-                        All
-                    </FluentButton>
-                    <FluentButton Appearance="@(_selectedStatus == KnowledgeArticleStatusEnum.Approved ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                                  Size="ButtonSize.Small"
-                                  OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.Approved))">
-                        Approved
-                    </FluentButton>
-                    <FluentButton Appearance="@(_selectedStatus == KnowledgeArticleStatusEnum.PendingReview ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                                  Size="ButtonSize.Small"
-                                  OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.PendingReview))">
-                        Pending Review
-                    </FluentButton>
+        <div class="kb-filter-row">
+            <!-- Filter Pills -->
+            <div class="kb-pills-group">
+                <span class="filter-group-label">Status:</span>
+                <CskButton Variant="@(_selectedStatus == null ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetStatusFilter(null))">
+                    All
+                </CskButton>
+                <CskButton Variant="@(_selectedStatus == KnowledgeArticleStatusEnum.Approved ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.Approved))">
+                    Approved
+                </CskButton>
+                <CskButton Variant="@(_selectedStatus == KnowledgeArticleStatusEnum.PendingReview ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetStatusFilter(KnowledgeArticleStatusEnum.PendingReview))">
+                    Pending Review
+                </CskButton>
 
-                    <div style="width: 1px; height: 16px; background: var(--neutral-stroke-rest); margin: 0 4px;"></div>
+                <div class="filter-divider"></div>
 
-                    <span style="font-size: 12px; font-weight: 600; color: var(--neutral-foreground-hint);">Scope:</span>
-                    <FluentButton Appearance="@(_isGlobalFilter == null ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                                  Size="ButtonSize.Small"
-                                  OnClick="@(() => SetScopeFilter(null))">
-                        All Scopes
-                    </FluentButton>
-                    <FluentButton Appearance="@(_isGlobalFilter == true ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                                  Size="ButtonSize.Small"
-                                  OnClick="@(() => SetScopeFilter(true))">
-                        Global
-                    </FluentButton>
-                    <FluentButton Appearance="@(_isGlobalFilter == false ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                                  Size="ButtonSize.Small"
-                                  OnClick="@(() => SetScopeFilter(false))">
-                        Tenant Only
-                    </FluentButton>
-                </div>
-
-                <!-- Label Selector Dropdown -->
-                @if (_availableLabels.Count > 0)
-                {
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 12px; font-weight: 600; color: var(--neutral-foreground-hint);">Label:</span>
-                        <FluentSelect TOption="string" TValue="string"
-                                      Items="@_labelSelectItems"
-                                      @bind-Value="@_selectedLabel"
-                                      @bind-Value:after="@LoadArticlesAsync"
-                                      Style="min-width: 160px;" />
-                    </div>
-                }
+                <span class="filter-group-label">Scope:</span>
+                <CskButton Variant="@(_isGlobalFilter == null ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetScopeFilter(null))">
+                    All Scopes
+                </CskButton>
+                <CskButton Variant="@(_isGlobalFilter == true ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetScopeFilter(true))">
+                    Global
+                </CskButton>
+                <CskButton Variant="@(_isGlobalFilter == false ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                              Size="CskButtonSize.Small"
+                              OnClick="@(() => SetScopeFilter(false))">
+                    Tenant Only
+                </CskButton>
             </div>
-       
-    </FluentCard>
+
+            <!-- Label Selector Dropdown -->
+            @if (_availableLabels.Count > 0)
+            {
+                <div class="filter-label-group">
+                    <span class="filter-group-label">Label:</span>
+                    <CskSelect TOption="string" TValue="string"
+                                  Items="@_labelSelectItems"
+                                  @bind-Value="@_selectedLabel"
+                                  @bind-Value:after="@LoadArticlesAsync"
+                                  Class="kb-label-select" />
+                </div>
+            }
+        </div>
+    </CskCard>
 
     <!-- Articles List / Grid -->
     @if (_isLoading)
     {
-        <FluentSpinner Style="margin: 60px auto;" />
+        <CskSpinner Class="kb-spinner-wrap" />
     }
     else if (_articles.Count == 0)
     {
         <EmptyStateComp Title="No Articles Found"
                         Description="No knowledge base articles match your search or filter criteria."
-                        IconValue="@(new Icons.Regular.Size32.DocumentSearch())" />
+                        Icon="@CskIcons.DocumentSearch" />
     }
     else
     {
-        <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="articles-list">
             @foreach (var article in _articles)
             {
                 <div @onclick="@(() => NavigationManager.NavigateTo($"/knowledge/{article.Id}"))"
-                     style="padding: 16px; border: 1px solid var(--neutral-stroke-layer-1); border-radius: 8px; background: var(--neutral-layer-2); cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: box-shadow 0.15s ease-in-out, transform 0.1s ease-in-out;"
                      class="article-card">
 
                     <!-- Top Row: Scope, Status, Labels & Date -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div class="card-top-row">
+                        <div class="card-badges">
                             <!-- Scope Badge -->
                             @if (article.IsGlobal)
                             {
-                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #6b21a8; color: #ffffff;">
+                                <span class="badge-scope-global">
                                     GLOBAL
                                 </span>
                             }
                             else
                             {
-                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #0369a1; color: #ffffff;">
+                                <span class="badge-scope-tenant">
                                     TENANT ONLY
                                 </span>
                             }
@@ -141,19 +136,19 @@
                             <!-- Status Badge -->
                             @if (article.Status == KnowledgeArticleStatusEnum.Approved)
                             {
-                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #15803d; color: #ffffff;">
+                                <span class="badge-status-approved">
                                     ✓ APPROVED
                                 </span>
                             }
                             else if (article.Status == KnowledgeArticleStatusEnum.PendingReview)
                             {
-                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #d97706; color: #ffffff;">
+                                <span class="badge-status-pending">
                                     ⏳ PENDING REVIEW/APPROVAL
                                 </span>
                             }
                             else
                             {
-                                <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--neutral-stroke-rest); color: var(--neutral-foreground-rest);">
+                                <span class="badge-status-other">
                                     @article.Status
                                 </span>
                             }
@@ -161,31 +156,31 @@
                             <!-- Labels Badges -->
                             @foreach (var label in article.Labels)
                             {
-                                <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--neutral-layer-3); border: 1px solid var(--neutral-stroke-rest); color: var(--neutral-foreground-rest);">
+                                <span class="badge-label-pill">
                                     @label
                                 </span>
                             }
                         </div>
 
-                        <span style="font-size: 12px; color: var(--neutral-foreground-hint);">
+                        <span class="card-date">
                             @article.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")
                         </span>
                     </div>
 
                     <!-- Title & Snippet -->
                     <div>
-                        <FluentLabel Typo="Typography.H5" Style="font-weight: 600; margin-bottom: 4px;">
+                        <CskLabel Typo="Typography.H5" Class="card-article-title">
                             @article.Title
-                        </FluentLabel>
-                        <p style="margin: 0; font-size: 13px; color: var(--neutral-foreground-rest); line-height: 1.4;">
+                        </CskLabel>
+                        <p class="card-article-snippet">
                             @article.Snippet
                         </p>
                     </div>
 
                     <!-- Footer: Author & Approval Info -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--neutral-foreground-hint); border-top: 1px solid var(--neutral-stroke-subtle); padding-top: 8px;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <FluentIcon Value="@(new Icons.Filled.Size16.Person())" Color="Color.Primary" />
+                    <div class="card-footer">
+                        <div class="card-author-info">
+                            <CskIcon Icon="@CskIcons.Person" />
                             <span>By <strong>@article.AuthorUserName</strong></span>
                         </div>
 
@@ -204,72 +199,4 @@
             }
         </div>
     }
-</FluentStack>
-
-@code {
-    private bool _isLoading = true;
-    private string _searchTerm = string.Empty;
-    private KnowledgeArticleStatusEnum? _selectedStatus = null;
-    private bool? _isGlobalFilter = null;
-    private string _selectedLabel = "All Labels";
-
-    private List<KnowledgeArticleListDto> _articles = new();
-    private List<string> _availableLabels = new();
-    private List<string> _labelSelectItems = new();
-
-    private bool IsInternalUser =>
-        CurrentUser.IsAuthenticated && (CurrentUser.IsRootAdmin || TenantContext.UserType == UserTypeEnum.CompanyUser);
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadLabelsAsync();
-        await LoadArticlesAsync();
-    }
-
-    private async Task LoadLabelsAsync()
-    {
-        try
-        {
-            _availableLabels = await KnowledgeService.GetAllLabelsAsync();
-            _labelSelectItems = new List<string> { "All Labels" };
-            _labelSelectItems.AddRange(_availableLabels);
-        }
-        catch
-        {
-            _availableLabels = new();
-            _labelSelectItems = new List<string> { "All Labels" };
-        }
-    }
-
-    private async Task LoadArticlesAsync()
-    {
-        _isLoading = true;
-        try
-        {
-            var filter = string.IsNullOrWhiteSpace(_selectedLabel) || _selectedLabel == "All Labels"
-                ? null
-                : _selectedLabel;
-            _articles = await KnowledgeService.GetArticlesAsync(_searchTerm, _selectedStatus, filter, _isGlobalFilter);
-        }
-        catch (Exception)
-        {
-            _articles = new();
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private async Task SetStatusFilter(KnowledgeArticleStatusEnum? status)
-    {
-        _selectedStatus = status;
-        await LoadArticlesAsync();
-    }
-
-    private async Task SetScopeFilter(bool? isGlobal)
-    {
-        _isGlobalFilter = isGlobal;
-        await LoadArticlesAsync();
-    }
-}
+</CskStack>

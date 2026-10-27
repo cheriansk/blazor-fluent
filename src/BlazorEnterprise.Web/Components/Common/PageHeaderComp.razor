@@ -1,21 +1,21 @@
-@* Reusable page header: title + optional subtitle + optional action button slot *@
-<FluentStack Orientation="Orientation.Horizontal"
-             Style="justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+﻿@* Reusable page header: title + optional subtitle + optional action button slot *@
+<CskStack Orientation="CskOrientation.Horizontal"
+             HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Top" Class="mb-6">
     <div>
-        <FluentLabel Typo="Typography.H3">@Title</FluentLabel>
+        <CskLabel Typo="Typography.H3">@Title</CskLabel>
         @if (!string.IsNullOrWhiteSpace(Subtitle))
         {
-            <FluentLabel Typo="Typography.Body"
-                         Style="color: var(--neutral-foreground-rest); margin-top: 4px;">
+            <CskLabel Typo="Typography.Body"
+                         Class="text-hint mt-1">
                 @Subtitle
-            </FluentLabel>
+            </CskLabel>
         }
     </div>
     @if (Actions is not null)
     {
         <div>@Actions</div>
     }
-</FluentStack>
+</CskStack>
 
 @code {
     /// <summary>Primary page heading text.</summary>

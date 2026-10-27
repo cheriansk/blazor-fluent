@@ -1,17 +1,6 @@
 @rendermode InteractiveServer
-@using BlazorEnterprise.Core.Contracts
-@using BlazorEnterprise.Shared.DataListTypes
-@using BlazorEnterprise.Infrastructure.Security
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@using Microsoft.FluentUI.AspNetCore.Components
-@inject ITenantContext TenantContext
-@inject IProjectContext ProjectContext
-@inject ITenantService TenantService
-@inject IAuditService AuditService
-@inject ProtectedSessionStorage SessionStorage
-@inject NavigationManager NavigationManager
-@inject IUnsavedChangesStateService UnsavedChanges
-@inject ILogger<TenantAndProjectSwitcherComp> Logger
+@namespace BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Shared.UI.Components
 
 @if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty)
 {
@@ -19,34 +8,31 @@
     return;
 }
 
-<div style="display: inline-flex; align-items: center; gap: 8px; background: var(--neutral-layer-2, #f5f5f5); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);">
+<div class="tenant-project-bar">
     <!-- 1. Tenant Selector Section -->
-    <div style="display: flex; align-items: center; gap: 6px;">
-        <FluentIcon Value="@(new Icons.Regular.Size16.Building())" Style="opacity: 0.7;" />
+    <div class="tenant-section">
+        <CskIcon Icon="@CskIcons.Building" Class="icon-faded" />
         @if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
         {
-            <FluentSelect TOption="TenantInfo"
+            <CskSelect TOption="TenantInfo"
                           TValue="string"
                           Items="@TenantContext.AllowedTenants.ToList()"
                           OptionValue="@(t => t.Id.ToString())"
                           OptionText="@(t => t.Name)"
                           Value="@TenantContext.TenantId.ToString()"
                           ValueChanged="@OnTenantChanged"
-                          Style="min-width: 150px; max-width: 220px;"
+                          Class="select-compact"
                           Title="Select Active Tenant" />
         }
         else if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count == 1)
         {
-            <span style="font-weight: 600; font-size: 13px; color: var(--neutral-foreground-1, #242424);">
+            <span class="tenant-name-static">
                 @TenantContext.TenantName
             </span>
         }
         else
         {
-            <FluentTooltip Anchor="header-tenant-lock" Position="TooltipPosition.Bottom">
-                Locked to assigned tenant
-            </FluentTooltip>
-            <span id="header-tenant-lock" style="font-weight: 600; font-size: 13px; color: var(--neutral-foreground-1, #242424); cursor: default;">
+            <span class="tenant-name-locked" title="Locked to assigned tenant">
                 🔒 @TenantContext.TenantName
             </span>
         }
@@ -55,45 +41,43 @@
     @if (!TenantContext.IsRootTenant)
     {
         <!-- Divider / Chevron -->
-        <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Style="opacity: 0.35;" />
+        <CskIcon Icon="@CskIcons.ChevronRight" Class="icon-faded-more" />
 
         <!-- 2. Project Selector Section -->
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Style="opacity: 0.7;" />
+        <div class="project-section">
+            <CskIcon Icon="@CskIcons.Folder" Class="icon-faded" />
             @if (_isLoadingProjects)
             {
-                <FluentSpinner Size="SpinnerSize.Small" Style="width: 16px; height: 16px;" />
+                <span class="csk-btn-spinner spinner-icon-sm"></span>
             }
             else if (_projects.Count == 0)
             {
-                <span style="font-size: 12px; color: var(--neutral-foreground-hint, #888); font-style: italic;">
+                <span class="no-projects-text">
                     (No Projects)
                 </span>
             }
             else if (_projects.Count == 1)
             {
-                <!-- Exactly 1 project: Defaulted and Read-Only / Disabled -->
-                <FluentSelect TOption="ProjectInfoDto"
+                <CskSelect TOption="ProjectInfoDto"
                               TValue="string"
                               Items="@_projects"
                               OptionValue="@(p => p.Id.ToString())"
                               OptionText="@(p => p.Name)"
                               Value="@(_projects[0].Id.ToString())"
                               Disabled="true"
-                              Style="min-width: 150px; max-width: 220px;"
+                              Class="select-compact"
                               Title="Project locked (only 1 project available)" />
             }
             else
             {
-                <!-- Multiple projects: Switchable dropdown -->
-                <FluentSelect TOption="ProjectInfoDto"
+                <CskSelect TOption="ProjectInfoDto"
                               TValue="string"
                               Items="@_projects"
                               OptionValue="@(p => p.Id.ToString())"
                               OptionText="@(p => p.Name)"
                               Value="@(ProjectContext.ProjectId?.ToString() ?? _projects[0].Id.ToString())"
                               ValueChanged="@OnProjectChanged"
-                              Style="min-width: 150px; max-width: 220px;"
+                              Class="select-compact"
                               Title="Select Active Project Workspace" />
             }
         </div>
@@ -102,114 +86,7 @@
 
 @if (!string.IsNullOrEmpty(_switchError))
 {
-    <FluentBadge Color="BadgeColor.Severe" Style="margin-left: 8px;">
+    <span class="csk-badge badge-switch-error">
         @_switchError
-    </FluentBadge>
-}
-
-@code {
-    private List<ProjectInfoDto> _projects = new();
-    private bool _isLoadingProjects;
-    private string? _switchError;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadProjectsForCurrentTenantAsync();
-    }
-
-    private async Task LoadProjectsForCurrentTenantAsync()
-    {
-        if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty || TenantContext.IsRootTenant) return;
-
-        try
-        {
-            _isLoadingProjects = true;
-            var entities = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
-            _projects = entities
-                .Select(e => new ProjectInfoDto(e.Id, e.Name, e.ShortCode, e.Status))
-                .ToList();
-
-            // Initialize ProjectContext
-            ProjectContext.Initialize(
-                ProjectContext.ProjectId,
-                ProjectContext.ProjectName,
-                ProjectContext.ProjectShortCode,
-                _projects);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to load projects for tenant '{TenantSlug}'", TenantContext.TenantSlug);
-        }
-        finally
-        {
-            _isLoadingProjects = false;
-        }
-    }
-
-    private async Task OnTenantChanged(string? newTenantId)
-    {
-        if (string.IsNullOrWhiteSpace(newTenantId) || (Guid.TryParse(newTenantId, out var gId) && gId == TenantContext.TenantId)) return;
-
-        var prevTenant = TenantContext.TenantSlug;
-
-        // Zero Trust: Validate that the requested tenant is authorized for this user
-        var targetMatch = TenantContext.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == newTenantId || t.Slug == newTenantId);
-        if (targetMatch == null)
-        {
-            _switchError = "You do not have permission to access the requested tenant.";
-            await AuditService.LogSecurityEventAsync(
-                "TenantSwitchBlocked",
-                AuditSeverityEnum.Warning,
-                $"Attempted unauthorized switch from '{prevTenant}' to '{newTenantId}'.");
-            return;
-        }
-
-        _switchError = null;
-
-        // 1. Audit tenant switch initiation
-        await AuditService.LogSecurityEventAsync(
-            "TenantSwitchInitiated",
-            AuditSeverityEnum.Information,
-            $"User initiated tenant switch from '{prevTenant}' to '{targetMatch.Slug}'. Purging session and enforcing re-authentication.");
-
-        // 2. Purge browser session storage to guarantee zero state bleeding
-        try
-        {
-            await SessionStorage.DeleteAsync("app_session");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to purge session storage during tenant switch.");
-        }
-
-        // 3. Reset in-memory contexts
-        ProjectContext.Reset();
-        TenantContext.Reset();
-        UnsavedChanges.ResetAll();
-
-        // 4. Force full circuit teardown and navigate to login targeting the newly selected tenant
-        NavigationManager.NavigateTo($"/login?tenant={Uri.EscapeDataString(targetMatch.Slug)}", forceLoad: true);
-    }
-
-    private async Task OnProjectChanged(string? newProjectIdStr)
-    {
-        if (string.IsNullOrWhiteSpace(newProjectIdStr)) return;
-        if (!Guid.TryParse(newProjectIdStr, out var newProjectId)) return;
-        if (ProjectContext.ProjectId == newProjectId) return;
-
-        var result = ProjectContext.SetActiveProject(newProjectId);
-        if (!result.Succeeded)
-        {
-            _switchError = result.Errors.FirstOrDefault() ?? "Project switch failed.";
-            return;
-        }
-
-        _switchError = null;
-
-        await AuditService.LogUserActivityAsync(
-            "ProjectWorkspaceSwitched",
-            $"User switched active project workspace to '{ProjectContext.ProjectName}' ({newProjectId}).");
-
-        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
-    }
+    </span>
 }

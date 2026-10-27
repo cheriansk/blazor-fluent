@@ -131,7 +131,7 @@ public abstract class AuthorizedPageComponentBase : ComponentBase
 
             await AuditService.LogSecurityEventAsync(
                 "PageAccessDenied",
-                AuditSeverityEnum.Warning,
+                AuditSeverityEnum.Critical,
                 $"UserId: {CurrentUser.UserId}, ProjectId: {ProjectId}, Page: {GetType().Name}, RequiredTier: {MinimumVisitRole}, ActualTier: {CurrentRole?.ToString() ?? "None"}");
         }
 

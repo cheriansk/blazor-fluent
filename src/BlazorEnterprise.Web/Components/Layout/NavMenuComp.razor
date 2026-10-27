@@ -1,5 +1,7 @@
 @rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
 @using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.UI.Components
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject INavigationStateService NavState
@@ -12,26 +14,59 @@
         {
             <span class="nav-header-title">Menu</span>
         }
-        <FluentButton Appearance="ButtonAppearance.Subtle"
-                      IconStart="@(NavState.IsCollapsed ? new Icons.Regular.Size20.PanelLeftExpand() : new Icons.Regular.Size20.PanelLeftContract())"
-                      OnClick="@NavState.Toggle"
-                      Title="@(NavState.IsCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu")" />
+        <CskButton Variant="CskButtonVariant.Text"
+                   IconStart="@(NavState.IsCollapsed ? CskIcons.PanelLeftExpand : CskIcons.PanelLeftContract)"
+                   OnClick="@NavState.Toggle"
+                   Title="@(NavState.IsCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu")" />
     </div>
 
-    <FluentNav Id="main-menu" Width="@(NavState.IsCollapsed ? "54px" : "260px")">
+    <nav class="csk-nav-menu" id="main-menu">
         @if (CurrentUser.IsAuthenticated && TenantContext.HasActiveTenant)
         {
-            <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())" IconActive="@(new Icons.Filled.Size20.Home())" Tooltip="Home">@(!NavState.IsCollapsed ? "Home" : null)</FluentNavItem>
+            <NavLink class="csk-nav-item" href="" Match="NavLinkMatch.All" title="Home">
+                <CskIcon Icon="@CskIcons.Home" Class="csk-nav-icon" />
+                @if (!NavState.IsCollapsed)
+                {
+                    <span class="csk-nav-text">Home</span>
+                }
+            </NavLink>
 
             @if (!TenantContext.IsRootTenant)
             {
-                <FluentNavItem Href="knowledge" IconRest="@(new Icons.Regular.Size20.BookOpen())" IconActive="@(new Icons.Filled.Size20.BookOpen())" Tooltip="Knowledge Base">@(!NavState.IsCollapsed ? "Knowledge Base" : null)</FluentNavItem>
-                <FluentNavItem Href="tasks" IconRest="@(new Icons.Regular.Size20.TaskListLtr())" IconActive="@(new Icons.Filled.Size20.TaskListLtr())" Tooltip="Tasks">@(!NavState.IsCollapsed ? "Tasks" : null)</FluentNavItem>
-                <FluentNavItem Href="workflows" IconRest="@(new Icons.Regular.Size20.Flowchart())" IconActive="@(new Icons.Filled.Size20.Flowchart())" Tooltip="Workflows">@(!NavState.IsCollapsed ? "Workflows" : null)</FluentNavItem>
-                <FluentNavItem Href="imports" IconRest="@(new Icons.Regular.Size20.ArrowSync())" IconActive="@(new Icons.Filled.Size20.ArrowSync())" Tooltip="File Imports">@(!NavState.IsCollapsed ? "File Imports" : null)</FluentNavItem>
+                <NavLink class="csk-nav-item" href="knowledge" title="Knowledge Base">
+                    <CskIcon Icon="@CskIcons.BookOpen" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Knowledge Base</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="tasks" title="Tasks">
+                    <CskIcon Icon="@CskIcons.TaskList" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Tasks</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="workflows" title="Workflows">
+                    <CskIcon Icon="@CskIcons.Flowchart" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Workflows</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="imports" title="File Imports">
+                    <CskIcon Icon="@CskIcons.ArrowSync" Class="csk-nav-icon" />
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">File Imports</span>
+                    }
+                </NavLink>
             }
         }
-    </FluentNav>
+    </nav>
 </div>
 
 @code {

@@ -1,12 +1,12 @@
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
 
-<div class="fluent-editor-wrapper" style="display: flex; flex-direction: column; width: 100%;">
-    <div id="@_editorId" style="min-height: @(MinHeight); max-height: @(MaxHeight); background: var(--neutral-layer-1); color: var(--neutral-foreground-rest); border-radius: 4px; overflow-y: auto;"></div>
+<div class="fluent-editor-wrapper">
+    <div id="@_editorId" class="fluent-editor-box"></div>
 
     @if (!ReadOnly)
     {
-        <div style="display: flex; justify-content: flex-end; align-items: center; padding: 4px 6px; font-size: 11px; color: @(_charCount > MaxLength ? "var(--error)" : "var(--neutral-foreground-hint)");">
+        <div class="fluent-editor-footer @(_charCount > MaxLength ? "text-error" : "text-hint")">
             <span>@_charCount.ToString("N0") / @MaxLength.ToString("N0") characters</span>
         </div>
     }

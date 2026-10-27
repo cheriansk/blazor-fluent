@@ -86,17 +86,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -138,17 +138,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -182,17 +182,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -227,17 +227,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -273,17 +273,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -319,17 +319,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -446,17 +446,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })
@@ -503,17 +503,17 @@ public static class ProcessEndpoints
             }
             catch (CryptographicException ex)
             {
-                logger.LogWarning(ex, "Proprietary decryption failed for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Proprietary decryption failed for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "DecryptionFailed", message = "Invalid encryption key or corrupted proprietary payload" }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Unauthorized tenant claim access for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "UnauthorizedTenant", message = ex.Message }, statusCode: StatusCodes.Status401Unauthorized);
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogWarning(ex, "Tenant license or vault key violation for user {User}", user.Identity?.Name);
+                logger.LogCritical(ex, "Tenant license or vault key violation for user {User}", user.Identity?.Name);
                 return Results.Json(new { error = "LicenseViolation", message = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         })

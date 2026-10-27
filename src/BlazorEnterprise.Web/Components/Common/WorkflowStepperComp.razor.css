@@ -1,0 +1,398 @@
+﻿.workflow-stepper-card {
+        background: var(--neutral-layer-card-container, #ffffff);
+        border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .workflow-header-title-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--neutral-stroke-divider, #edebe9);
+        padding-bottom: 16px;
+    }
+
+    .workflow-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .workflow-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--neutral-foreground-rest, #242424);
+    }
+
+    .scope-pill {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .scope-tenant {
+        background: #f3e8fd;
+        color: #7b1fa2;
+    }
+
+    .scope-program {
+        background: #e1f5fe;
+        color: #0288d1;
+    }
+
+    .scope-project {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .workflow-description {
+        font-size: 0.9rem;
+        color: var(--neutral-foreground-hint, #616161);
+        line-height: 1.4;
+    }
+
+    .workflow-meta-row {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 0.825rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-top: 4px;
+    }
+
+    .meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .constant-owner-badge {
+        background: #eef4ff;
+        border: 1px solid #d0e1fd;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .owner-email {
+        color: var(--accent-fill-rest, #0078d4);
+        font-weight: 600;
+    }
+
+    .watchers-text {
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .stepper-pipeline {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 10px;
+    }
+
+    .pipeline-step-node {
+        display: flex;
+        gap: 16px;
+        position: relative;
+    }
+
+    .step-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 32px;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        z-index: 1;
+        transition: all 0.2s ease;
+    }
+
+    .step-circle-completed {
+        background: var(--success, #107c41);
+        color: white;
+    }
+
+    .step-circle-active {
+        background: var(--accent-fill-rest, #0078d4);
+        color: white;
+        box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.2);
+    }
+
+    .step-circle-pending {
+        background: var(--neutral-fill-secondary-rest, #edebe9);
+        color: var(--neutral-foreground-hint, #616161);
+    }
+
+    .step-connector {
+        flex: 1;
+        width: 2px;
+        min-height: 40px;
+        background: var(--neutral-stroke-divider, #edebe9);
+        margin: 4px 0;
+    }
+
+    .step-connector.connector-completed {
+        background: var(--success, #107c41);
+    }
+
+    .step-content {
+        flex: 1;
+        background: var(--neutral-fill-subtle-rest, #f9f9f9);
+        border: 1px solid var(--neutral-stroke-subtle, #f0f0f0);
+        border-radius: 6px;
+        padding: 12px 16px;
+    }
+
+    .step-active .step-content {
+        background: #f0f8ff;
+        border-color: #b3d8ff;
+    }
+
+    .step-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .step-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--neutral-foreground-rest, #242424);
+    }
+
+    .step-order-badge {
+        font-size: 0.75rem;
+        background: var(--neutral-fill-secondary-rest, #edebe9);
+        color: var(--neutral-foreground-hint, #616161);
+        padding: 1px 6px;
+        border-radius: 4px;
+    }
+
+    .step-status-tag {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-completed {
+        background: #e6f4ea;
+        color: #137333;
+    }
+
+    .status-active {
+        background: #e8f0fe;
+        color: #1a73e8;
+    }
+
+    .status-pending {
+        background: #f1f3f4;
+        color: #5f6368;
+    }
+
+    .step-owner-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-bottom: 6px;
+    }
+
+    .step-instruction {
+        font-size: 0.85rem;
+        color: var(--neutral-foreground-rest, #323130);
+        margin: 4px 0 8px 0;
+        line-height: 1.4;
+    }
+
+    /* Subtasks Panel */
+    .step-subtasks-panel {
+        background: #ffffff;
+        border: 1px solid var(--neutral-stroke-subtle, #edebe9);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin: 8px 0;
+    }
+
+    .subtasks-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-bottom: 6px;
+    }
+
+    .subtasks-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .subtasks-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .subtask-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.825rem;
+        padding: 2px 0;
+    }
+
+    .subtask-closed .subtask-title {
+        text-decoration: line-through;
+        color: var(--neutral-foreground-hint, #8a8886);
+    }
+
+    .subtask-title {
+        flex: 1;
+    }
+
+    .subtask-assignee-pill {
+        font-size: 0.725rem;
+        background: #f3f2f1;
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: #323130;
+    }
+
+    .subtask-date {
+        font-size: 0.725rem;
+        color: #707070;
+    }
+
+    .step-completion-note {
+        font-size: 0.85rem;
+        background: #f3fdf6;
+        border-left: 3px solid #107c41;
+        padding: 6px 10px;
+        border-radius: 0 4px 4px 0;
+        margin-top: 8px;
+        color: #242424;
+    }
+
+    .step-completed-time {
+        font-size: 0.75rem;
+        color: #616161;
+        margin-left: 4px;
+    }
+
+    .step-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        align-items: center;
+    }
+
+    .step-zero-trust-notice {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.825rem;
+        color: var(--neutral-foreground-hint, #616161);
+        background: #fff8e1;
+        padding: 4px 10px;
+        border-radius: 4px;
+        border: 1px solid #ffe082;
+    }
+
+    /* Modal Backdrop & Dialog */
+    .stepper-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(2px);
+    }
+
+    .stepper-modal-dialog {
+        background: var(--neutral-layer-card-container, #ffffff);
+        width: 90%;
+        max-width: 520px;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .stepper-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--neutral-stroke-divider, #edebe9);
+    }
+
+    .stepper-modal-body {
+        padding: 20px;
+    }
+
+    .modal-instruction {
+        font-size: 0.875rem;
+        color: var(--neutral-foreground-hint, #616161);
+        margin-top: 0;
+        margin-bottom: 14px;
+        line-height: 1.4;
+    }
+
+    .stepper-modal-footer {
+        padding: 14px 20px;
+        background: var(--neutral-fill-secondary-rest, #f9f9f9);
+        border-top: 1px solid var(--neutral-stroke-divider, #edebe9);
+        display: flex;
+        align-items: center;
+    }
+/* Scoped classes replacing inline styles (PureStrict CSP) */
+.stepper-header-actions { display: flex; gap: 8px; align-items: flex-start; }
+.stepper-paused-banner {
+    background: #fff4ce;
+    border-left: 4px solid #ffb900;
+    padding: 12px 16px;
+    margin: 0 16px 12px 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.stepper-paused-left { display: flex; align-items: center; gap: 10px; }
+.stepper-paused-title { color: #323130; font-size: 0.9rem; font-weight: bold; }
+.stepper-paused-desc { color: #605e5c; font-size: 0.8rem; margin-top: 2px; }
+.stepper-cancelled-circle { background: #fde7e9 !important; border-color: #d13438 !important; color: #d13438 !important; }
+.stepper-step-row { display: flex; align-items: center; gap: 8px; }
+.stepper-name-cancelled { text-decoration: line-through; opacity: 0.7; }
+.stepper-deadline-text { margin-left: 12px; }
+.stepper-btn-compact { font-size: 0.75rem !important; padding: 2px 6px !important; }
+.stepper-reason-box { background: #fde7e9; border-left: 3px solid #d13438; color: #a80000; margin-top: 8px; padding: 8px 12px; border-radius: 4px; }
+.stepper-danger-label { color: var(--error, #d13438); }
+.stepper-danger-sm { color: var(--error, #d13438); font-size: 0.8rem; }
+.stepper-danger-btn { background: var(--error, #d13438) !important; color: #ffffff !important; }
+.stepper-error-text { color: #a80000; }

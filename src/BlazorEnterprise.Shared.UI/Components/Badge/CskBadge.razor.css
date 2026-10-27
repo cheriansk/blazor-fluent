@@ -1,0 +1,150 @@
+.csk-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+/* Sizes */
+.csk-badge-sm {
+    font-size: 0.6875rem;
+    padding: 0.2rem 0.5rem;
+    height: 1.25rem;
+}
+
+.csk-badge-md {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    height: 1.5rem;
+}
+
+.csk-badge-lg {
+    font-size: 0.875rem;
+    padding: 0.35rem 0.75rem;
+    height: 1.75rem;
+}
+
+/* Filled Variant */
+.csk-badge-filled.csk-badge-default {
+    background-color: var(--mat-surface-variant, #E7E0EC);
+    color: var(--mat-on-surface-variant, #49454F);
+}
+
+.csk-badge-filled.csk-badge-primary {
+    background-color: var(--mat-primary, #6750A4);
+    color: var(--mat-on-primary, #FFFFFF);
+}
+
+.csk-badge-filled.csk-badge-secondary {
+    background-color: var(--mat-secondary, #625B71);
+    color: var(--mat-on-secondary, #FFFFFF);
+}
+
+.csk-badge-filled.csk-badge-success {
+    background-color: var(--mat-success, #2E7D32);
+    color: #FFFFFF;
+}
+
+.csk-badge-filled.csk-badge-warning {
+    background-color: var(--mat-warning, #ED6C02);
+    color: #FFFFFF;
+}
+
+.csk-badge-filled.csk-badge-error {
+    background-color: var(--mat-error, #BA1A1A);
+    color: var(--mat-on-error, #FFFFFF);
+}
+
+.csk-badge-filled.csk-badge-info {
+    background-color: var(--mat-info, #0288D1);
+    color: #FFFFFF;
+}
+
+.csk-badge-filled.csk-badge-subtle {
+    background-color: var(--neutral-layer-3, #E0E0E0);
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+/* Tint / Subtle Variant (MudBlazor Chip look) */
+.csk-badge-tint.csk-badge-default {
+    background-color: rgba(0, 0, 0, 0.06);
+    color: var(--mat-on-surface, #1C1B1F);
+}
+
+.csk-badge-tint.csk-badge-primary {
+    background-color: rgba(103, 80, 164, 0.12);
+    color: var(--mat-primary, #6750A4);
+}
+
+.csk-badge-tint.csk-badge-secondary {
+    background-color: rgba(98, 91, 113, 0.12);
+    color: var(--mat-secondary, #625B71);
+}
+
+.csk-badge-tint.csk-badge-success {
+    background-color: rgba(46, 125, 50, 0.12);
+    color: #1B5E20;
+}
+
+.csk-badge-tint.csk-badge-warning {
+    background-color: rgba(237, 108, 2, 0.12);
+    color: #C65102;
+}
+
+.csk-badge-tint.csk-badge-error {
+    background-color: rgba(186, 26, 26, 0.12);
+    color: var(--mat-error, #BA1A1A);
+}
+
+.csk-badge-tint.csk-badge-info {
+    background-color: rgba(2, 136, 209, 0.12);
+    color: #0277BD;
+}
+
+.csk-badge-tint.csk-badge-subtle {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+/* Outline Variant */
+.csk-badge-outline {
+    background-color: transparent;
+    border: 1px solid currentColor;
+}
+
+.csk-badge-outline.csk-badge-default {
+    color: var(--mat-outline, #79747E);
+}
+
+.csk-badge-outline.csk-badge-primary {
+    color: var(--mat-primary, #6750A4);
+}
+
+.csk-badge-outline.csk-badge-secondary {
+    color: var(--mat-secondary, #625B71);
+}
+
+.csk-badge-outline.csk-badge-success {
+    color: var(--mat-success, #2E7D32);
+}
+
+.csk-badge-outline.csk-badge-warning {
+    color: var(--mat-warning, #ED6C02);
+}
+
+.csk-badge-outline.csk-badge-error {
+    color: var(--mat-error, #BA1A1A);
+}
+
+.csk-badge-outline.csk-badge-info {
+    color: var(--mat-info, #0288D1);
+}
+
+.csk-badge-outline.csk-badge-subtle {
+    color: var(--neutral-foreground-hint, #616161);
+}

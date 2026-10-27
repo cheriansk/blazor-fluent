@@ -95,9 +95,11 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
         base.ConfigureConventions(configurationBuilder);
 
         configurationBuilder.Properties<DateTime>()
+            .HaveColumnType("timestamp with time zone")
             .HaveConversion<UtcDateTimeConverter>();
 
         configurationBuilder.Properties<DateTime?>()
+            .HaveColumnType("timestamp with time zone")
             .HaveConversion<NullableUtcDateTimeConverter>();
     }
 

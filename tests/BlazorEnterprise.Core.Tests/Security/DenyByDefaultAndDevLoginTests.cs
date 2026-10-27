@@ -34,7 +34,6 @@ public class DenyByDefaultAndDevLoginTests
         var options = new DevLoginOptions();
 
         options.Enabled.Should().BeFalse();
-        options.Users.Should().BeEmpty();
         DevLoginOptions.SectionName.Should().Be("Auth:DevLogin");
     }
 

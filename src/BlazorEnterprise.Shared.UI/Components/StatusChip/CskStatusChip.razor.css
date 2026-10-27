@@ -1,0 +1,55 @@
+.csk-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--mat-radius-pill, 9999px);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    user-select: none;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.csk-status-chip-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.csk-chip-primary {
+    background-color: rgba(103, 80, 164, 0.12);
+    color: var(--mat-primary, #6750A4);
+    border-color: rgba(103, 80, 164, 0.24);
+}
+
+.csk-chip-success {
+    background-color: rgba(46, 125, 50, 0.12);
+    color: var(--mat-success, #2E7D32);
+    border-color: rgba(46, 125, 50, 0.24);
+}
+
+.csk-chip-warning {
+    background-color: rgba(237, 108, 2, 0.12);
+    color: var(--mat-warning, #ED6C02);
+    border-color: rgba(237, 108, 2, 0.24);
+}
+
+.csk-chip-error {
+    background-color: rgba(186, 26, 26, 0.12);
+    color: var(--mat-error, #BA1A1A);
+    border-color: rgba(186, 26, 26, 0.24);
+}
+
+.csk-chip-info {
+    background-color: rgba(2, 136, 209, 0.12);
+    color: #0288D1;
+    border-color: rgba(2, 136, 209, 0.24);
+}
+
+.csk-chip-neutral {
+    background-color: var(--mat-surface-variant, #E7E0EC);
+    color: var(--mat-on-surface-variant, #49454F);
+    border-color: var(--mat-outline-variant, #CAC4D0);
+}

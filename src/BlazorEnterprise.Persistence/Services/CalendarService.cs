@@ -60,11 +60,14 @@ public class CalendarService : ICalendarService
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
-        var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.Program, programId, null, startUtc, endUtc, ct));
-
-        var rollupResults = await Task.WhenAll(rollupTasks);
-        var combinedRollups = rollupResults.SelectMany(r => r).ToList();
+        // Sequential execution across shared AppDbContext to prevent concurrency violations
+        var combinedRollups = new List<CalendarItemDto>();
+        foreach (var provider in _rollupProviders)
+        {
+            var rollupItems = await provider.GetCalendarRollupItemsAsync(
+                tenantId, TaskLevelEnum.Program, programId, null, startUtc, endUtc, ct);
+            combinedRollups.AddRange(rollupItems);
+        }
 
         return directDtos.Concat(combinedRollups)
             .OrderBy(i => i.StartUtc)
@@ -105,11 +108,14 @@ public class CalendarService : ICalendarService
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
-        var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.Project, projectId, null, startUtc, endUtc, ct));
-
-        var rollupResults = await Task.WhenAll(rollupTasks);
-        var combinedRollups = rollupResults.SelectMany(r => r).ToList();
+        // Sequential execution across shared AppDbContext to prevent concurrency violations
+        var combinedRollups = new List<CalendarItemDto>();
+        foreach (var provider in _rollupProviders)
+        {
+            var rollupItems = await provider.GetCalendarRollupItemsAsync(
+                tenantId, TaskLevelEnum.Project, projectId, null, startUtc, endUtc, ct);
+            combinedRollups.AddRange(rollupItems);
+        }
 
         return directDtos.Concat(combinedRollups)
             .OrderBy(i => i.StartUtc)
@@ -150,11 +156,14 @@ public class CalendarService : ICalendarService
         }).ToList();
 
         // 2. Extensible plugin fan-out for work items
-        var rollupTasks = _rollupProviders.Select(p =>
-            p.GetCalendarRollupItemsAsync(tenantId, TaskLevelEnum.User, null, userId, startUtc, endUtc, ct));
-
-        var rollupResults = await Task.WhenAll(rollupTasks);
-        var combinedRollups = rollupResults.SelectMany(r => r).ToList();
+        // Sequential execution across shared AppDbContext to prevent concurrency violations
+        var combinedRollups = new List<CalendarItemDto>();
+        foreach (var provider in _rollupProviders)
+        {
+            var rollupItems = await provider.GetCalendarRollupItemsAsync(
+                tenantId, TaskLevelEnum.User, null, userId, startUtc, endUtc, ct);
+            combinedRollups.AddRange(rollupItems);
+        }
 
         return directDtos.Concat(combinedRollups)
             .OrderBy(i => i.StartUtc)

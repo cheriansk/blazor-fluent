@@ -1,4 +1,4 @@
-@using BlazorEnterprise.Core.Contracts
+﻿@using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
 @inject IProjectAuthorizationService ProjectAuth
 @inject ICurrentUser CurrentUser
@@ -11,7 +11,7 @@
     }
     else
     {
-        <FluentSpinner Style="margin: 12px auto;" />
+        <CskSpinner Class="m-auto mt-3 mb-3" />
     }
 }
 else if (_isAuthorized)

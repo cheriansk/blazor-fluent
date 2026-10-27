@@ -1,0 +1,25 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<label class="csk-checkbox-wrapper @(Disabled ? "csk-checkbox-disabled" : "") @Class" @attributes="AdditionalAttributes">
+    <input type="checkbox"
+           class="csk-checkbox-input"
+           checked="@Value"
+           disabled="@Disabled"
+           @onchange="HandleChangeAsync" />
+    <span class="csk-checkbox-box">
+        @if (Value)
+        {
+            <svg class="csk-checkbox-svg" viewBox="0 0 24 24">
+                <path d="@CskIcons.Checkmark" />
+            </svg>
+        }
+    </span>
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="csk-checkbox-label">@Label</span>
+    }
+    @if (ChildContent != null)
+    {
+        <span class="csk-checkbox-label">@ChildContent</span>
+    }
+</label>

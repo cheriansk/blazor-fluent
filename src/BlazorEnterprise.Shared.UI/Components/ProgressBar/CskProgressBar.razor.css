@@ -1,0 +1,25 @@
+.csk-progress-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    appearance: none;
+    border: none;
+    background-color: var(--csk-color-surface-container, #e0e0e0);
+}
+
+.csk-progress-bar::-webkit-progress-bar {
+    background-color: var(--csk-color-surface-container, #e0e0e0);
+    border-radius: 4px;
+}
+
+.csk-progress-bar::-webkit-progress-value {
+    background-color: var(--csk-color-primary, #1976d2);
+    border-radius: 4px;
+    transition: width 0.25s ease;
+}
+
+.csk-progress-bar::-moz-progress-bar {
+    background-color: var(--csk-color-primary, #1976d2);
+    border-radius: 4px;
+}

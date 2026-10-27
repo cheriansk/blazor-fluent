@@ -1,49 +1,49 @@
 @using BlazorEnterprise.Shared.Models
 @using BlazorEnterprise.Core.Dtos.Imports
 
-<FluentDialog @ref="_dialog"
+<CskDialog @ref="_dialog"
               Modal="true"
-              Style="--dialog-width: 850px; --dialog-height: 550px;">
-    <FluentDialogBody Style="max-height: 400px; overflow-y: auto;">
+              Class="dialog-diagnostics">
+    <CskDialogBody Class="modal-body-scroll">
         <TitleTemplate>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center;">
-                <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
-                <FluentLabel Typo="Typography.H6">Validation Diagnostics: @FileDetails?.OriginalFileName</FluentLabel>
-            </FluentStack>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.ErrorCircle" Class="csk-icon-lg csk-icon-error" />
+                <CskLabel Typo="Typography.H6">Validation Diagnostics: @FileDetails?.OriginalFileName</CskLabel>
+            </CskStack>
         </TitleTemplate>
         <ChildContent>
             @if (FileDetails != null)
             {
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                    <FluentMessageBar Intent="MessageBarIntent.Error">
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="10">
+                    <CskMessageBar Intent="MessageBarIntent.Error">
                         Strict fail-closed policy: @FileDetails.ValidationErrors.Count error(s) detected. 0 records staged.
-                    </FluentMessageBar>
+                    </CskMessageBar>
 
-                    <FluentDataGrid Items="@FileDetails.ValidationErrors.AsQueryable()"
+                    <CskDataGrid Items="@FileDetails.ValidationErrors.AsQueryable()"
                                     ResizableColumns="true"
                                     TGridItem="FileValidationError"
-                                    Style="width: 100%;">
-                        <PropertyColumn Property="@(e => e.SheetName)" Title="Sheet / Section" Width="130px" />
-                        <PropertyColumn Property="@(e => e.RowIndex)" Title="Row #" Width="80px" />
-                        <PropertyColumn Property="@(e => e.ColumnName)" Title="Column / Field" Width="140px" />
-                        <PropertyColumn Property="@(e => e.ErrorMessage)" Title="Validation Message" />
-                        <PropertyColumn Property="@(e => e.AttemptedValue)" Title="Attempted Value" Width="140px" />
-                    </FluentDataGrid>
-                </FluentStack>
+                                    Class="w-full">
+                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet / Section" Width="130px" />
+                        <CskPropertyColumn Property="@(e => e.RowIndex)" Title="Row #" Width="80px" />
+                        <CskPropertyColumn Property="@(e => e.ColumnName)" Title="Column / Field" Width="140px" />
+                        <CskPropertyColumn Property="@(e => e.ErrorMessage)" Title="Validation Message" />
+                        <CskPropertyColumn Property="@(e => e.AttemptedValue)" Title="Attempted Value" Width="140px" />
+                    </CskDataGrid>
+                </CskStack>
             }
             else
             {
-                <FluentLabel Typo="Typography.Body">No diagnostic errors recorded.</FluentLabel>
+                <CskLabel Typo="Typography.Body">No diagnostic errors recorded.</CskLabel>
             }
         </ChildContent>
         <ActionTemplate>
-            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@CloseAsync">Close</FluentButton>
+            <CskButton Variant="CskButtonVariant.Filled" OnClick="@CloseAsync">Close</CskButton>
         </ActionTemplate>
-    </FluentDialogBody>
-</FluentDialog>
+    </CskDialogBody>
+</CskDialog>
 
 @code {
-    private FluentDialog? _dialog;
+    private CskDialog? _dialog;
 
     [Parameter] public ImportFileDetailsDto? FileDetails { get; set; }
 

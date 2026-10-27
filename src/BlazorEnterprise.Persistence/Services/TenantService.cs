@@ -204,6 +204,112 @@ public class TenantService : ITenantService
         return Result<TenantEntity>.Success(tenant);
     }
 
+    public async Task<Result<TenantEntity>> CreateTenantWithAdminAsync(
+        string slug,
+        string displayName,
+        IEnumerable<string> internalEmailDomains,
+        IEnumerable<string> externalEmailDomains,
+        DateTime startDate,
+        DateTime endDate,
+        string adminFullName,
+        string adminEmail,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_currentUser.IsRootAdmin)
+            return Result<TenantEntity>.Failure("Access Denied: Only designated root super-administrators can provision new tenants.");
+
+        if (string.IsNullOrWhiteSpace(adminFullName))
+            return Result<TenantEntity>.Failure("Administrator Full Name is required.");
+
+        if (string.IsNullOrWhiteSpace(adminEmail))
+            return Result<TenantEntity>.Failure("Administrator Email is required.");
+
+        var normalizedAdminEmail = adminEmail.Trim().ToLowerInvariant();
+        if (normalizedAdminEmail == "system" || normalizedAdminEmail.Contains("daemon.local") || normalizedAdminEmail.StartsWith("daemon@") || normalizedAdminEmail.EndsWith(".internal"))
+            return Result<TenantEntity>.Failure("Reserved background system daemon identities cannot be provisioned as user accounts.");
+
+        var internalList = internalEmailDomains?.Select(NormalizeDomain).Where(d => !string.IsNullOrEmpty(d)).Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
+        var externalList = externalEmailDomains?.Select(NormalizeDomain).Where(d => !string.IsNullOrEmpty(d)).Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
+
+        UserTypeEnum userType;
+        if (internalList.Any(d => normalizedAdminEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
+        {
+            userType = UserTypeEnum.CompanyUser;
+        }
+        else if (externalList.Any(d => normalizedAdminEmail.EndsWith(d, StringComparison.OrdinalIgnoreCase)))
+        {
+            userType = UserTypeEnum.ClientUser;
+        }
+        else
+        {
+            return Result<TenantEntity>.Failure(
+                $"Administrator email '{normalizedAdminEmail}' does not match any configured Internal domain ({string.Join(", ", internalList)}) or External domain ({string.Join(", ", externalList)}).");
+        }
+
+        var secretKey = _configuration["Security:IntegritySecret"];
+        if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
+        {
+            throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
+        }
+
+        // Check if admin user already exists globally
+        var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == normalizedAdminEmail && !u.IsDeleted, cancellationToken);
+
+        // 1. Create the tenant and daemon
+        var createTenantResult = await CreateTenantAsync(slug, displayName, internalList, externalList, startDate, endDate, cancellationToken);
+        if (!createTenantResult.Succeeded || createTenantResult.Data is null)
+        {
+            return createTenantResult;
+        }
+
+        var tenant = createTenantResult.Data;
+        UserEntity adminUser;
+
+        if (existingUser != null)
+        {
+            adminUser = existingUser;
+        }
+        else
+        {
+            adminUser = new UserEntity
+            {
+                Id = Guid.NewGuid(),
+                Email = normalizedAdminEmail,
+                FullName = adminFullName.Trim(),
+                UserType = userType,
+                UserKind = UserKindEnum.Human,
+                IsActive = true,
+                StartDate = startDate.ToUniversalTime(),
+                EndDate = endDate.ToUniversalTime(),
+                TimeZoneId = "UTC"
+            };
+            adminUser.RowSignature = adminUser.ComputeIntegritySignature(secretKey);
+            _dbContext.Users.Add(adminUser);
+        }
+
+        var adminMembership = new TenantUserEntity
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenant.Id,
+            UserEntityId = adminUser.Id,
+            Role = TenantRoleEnum.TenantAdmin,
+            IsActive = true
+        };
+        adminMembership.RowSignature = adminMembership.ComputeIntegritySignature(secretKey);
+        _dbContext.TenantUsers.Add(adminMembership);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Provisioned initial Tenant Administrator '{Email}' ({FullName}) for tenant '{TenantSlug}'", adminUser.Email, adminUser.FullName, tenant.Slug);
+
+        await _auditService.LogUserActivityAsync(
+            $"Provisioned initial Tenant Administrator '{adminUser.FullName}' ({adminUser.Email}) for tenant '{tenant.Slug}'",
+            $"Tenant: {tenant.Slug}, Role: TenantAdmin, Type: {adminUser.UserType}",
+            cancellationToken);
+
+        return Result<TenantEntity>.Success(tenant);
+    }
+
     public Task<Result<TenantEntity>> CreateTenantAsync(
         string slug,
         string displayName,
@@ -251,8 +357,9 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Users can only add users to their own active tenant
-        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only add users to their own active tenant (Root Admin permitted for customer tenant administration)
+        var isCrossTenantRootAdmin = _tenantContext.IsRootTenant && _currentUser.IsRootAdmin;
+        if ((!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase)) && !isCrossTenantRootAdmin)
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to add user to tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
@@ -371,8 +478,9 @@ public class TenantService : ITenantService
     {
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
 
-        // Zero Trust: Users can only modify users within their own active tenant
-        if (!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase))
+        // Zero Trust: Users can only modify users within their own active tenant (Root Admin permitted for customer tenant administration)
+        var isCrossTenantRootAdmin = _tenantContext.IsRootTenant && _currentUser.IsRootAdmin;
+        if ((!_tenantContext.HasActiveTenant || !string.Equals(normalizedSlug, _tenantContext.TenantSlug, StringComparison.OrdinalIgnoreCase)) && !isCrossTenantRootAdmin)
         {
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to modify user in tenant '{TenantSlug}' outside their active tenant '{ActiveTenant}'.",
                 _currentUser.UserId, tenantSlug, _tenantContext.HasActiveTenant ? _tenantContext.TenantSlug : "None");
@@ -967,5 +1075,12 @@ public class TenantService : ITenantService
         }
 
         return await query.ToListAsync(cancellationToken);
+    }
+
+    private static string NormalizeDomain(string domain)
+    {
+        if (string.IsNullOrWhiteSpace(domain)) return string.Empty;
+        var trimmed = domain.Trim().ToLowerInvariant();
+        return trimmed.StartsWith('@') ? trimmed : "@" + trimmed;
     }
 }

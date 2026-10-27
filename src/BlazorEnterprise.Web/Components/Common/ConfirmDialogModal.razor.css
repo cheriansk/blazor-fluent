@@ -1,0 +1,8 @@
+﻿.dialog-confirm-width {
+    max-width: 480px;
+    width: 100%;
+}
+.btn-confirm-danger {
+    background-color: var(--mat-error, #d32f2f) !important;
+    color: #ffffff !important;
+}

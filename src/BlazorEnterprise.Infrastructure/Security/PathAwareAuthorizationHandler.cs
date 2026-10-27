@@ -15,6 +15,8 @@ public class PathAwareAuthorizationHandler : IAuthorizationMiddlewareResultHandl
 
     private static readonly string[] BypassPrefixes =
     [
+        "/_blazor",
+        "/_vs",
         "/_content",
         "/_framework",
         "/login",

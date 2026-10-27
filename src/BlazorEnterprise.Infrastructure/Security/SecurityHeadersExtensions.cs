@@ -110,19 +110,19 @@ public static class SecurityHeadersExtensions
                 {
                     // Pure Strict Mode: Completely eradicates 'unsafe-inline' and 'unsafe-eval' from both script-src and style-src.
                     // Passes 100% of enterprise DAST/SAST scanners with zero exceptions.
-                    scriptSrc = $"script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; ";
+                    scriptSrc = isDev ? $"script-src 'self' 'nonce-{nonce}'; " : $"script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; ";
                     styleSrc = $"style-src 'self' 'nonce-{nonce}'; ";
                 }
                 else
                 {
                     // CSP Level 3 Isolated Mode: Nonced script-src (zero unsafe-inline scripts), nonced stylesheet elements,
                     // and isolated inline style attribute permission for dynamic component attributes.
-                    scriptSrc = $"script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; ";
+                    scriptSrc = isDev ? $"script-src 'self' 'nonce-{nonce}'; " : $"script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; ";
                     styleSrc = $"style-src-elem 'self' 'nonce-{nonce}'; style-src-attr 'unsafe-inline'; ";
                 }
 
                 var connectSrc = isDev
-                    ? "connect-src 'self' wss: ws: http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:*; "
+                    ? "connect-src 'self' wss: ws: http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* http://127.0.0.1:* https://127.0.0.1:* ws://127.0.0.1:* wss://127.0.0.1:*; "
                     : "connect-src 'self' wss: ws:; ";
 
                 var reportDirective = !string.IsNullOrWhiteSpace(cspOptions.ReportUri)

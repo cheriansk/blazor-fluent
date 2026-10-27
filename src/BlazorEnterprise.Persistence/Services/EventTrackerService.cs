@@ -210,7 +210,7 @@ public class EventTrackerService : IEventTrackerService
 
             {
 
-                _logger.LogWarning(ex, "Failed to serialize event payload of type {EventType}", eventName);
+                _logger.LogError(ex, "Failed to serialize event payload of type {EventType}", eventName);
 
                 payloadJson = $"{{\"serializationError\": \"{ex.Message}\"}}";
 

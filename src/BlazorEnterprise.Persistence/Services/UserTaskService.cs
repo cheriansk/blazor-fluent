@@ -152,7 +152,7 @@ public partial class UserTaskService : IUserTaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to hydrate proprietary encrypted tasks in-memory via Engine API.");
+            _logger.LogCritical(ex, "DEAD BLOCKER: Failed to hydrate proprietary encrypted tasks in-memory via Engine API.");
         }
     }
 
@@ -655,7 +655,7 @@ public partial class UserTaskService : IUserTaskService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to dispatch in-app notification to assignee {Email} for task {TaskId}", email, task.Id);
+                _logger.LogError(ex, "Failed to dispatch in-app notification to assignee {Email} for task {TaskId}", email, task.Id);
             }
         }
     }
@@ -987,7 +987,7 @@ public partial class UserTaskService : IUserTaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send blocker alert to {Email}", email);
+            _logger.LogError(ex, "Failed to send blocker alert to {Email}", email);
         }
     }
 

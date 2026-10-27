@@ -1,0 +1,31 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+@if (!_dismissed)
+{
+    <div class="csk-message-bar @GetSeverityClass() @GetVariantClass() @Class"
+         role="alert"
+         @attributes="AdditionalAttributes">
+        <div class="csk-mb-icon-wrap">
+            <CskIcon Icon="@GetSeverityIcon()" Class="csk-mb-icon" />
+        </div>
+
+        <div class="csk-mb-content">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <div class="csk-mb-title">@Title</div>
+            }
+            <div class="csk-mb-body">
+                @ChildContent
+            </div>
+        </div>
+
+        @if (AllowDismiss)
+        {
+            <div class="csk-mb-dismiss-wrap">
+                <button type="button" class="csk-mb-dismiss-btn" @onclick="HandleDismissAsync" title="Dismiss">
+                    <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-sm" />
+                </button>
+            </div>
+        }
+    </div>
+}

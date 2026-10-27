@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Configuration;
 using Serilog.Enrichers.Span;
 using Serilog.Events;
 
@@ -28,12 +29,31 @@ public static class SharedLoggingExtensions
                 .Enrich.WithProperty("Application", applicationName)
                 .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
                 .Enrich.WithSpan()
-                .WriteTo.Console(outputTemplate: logOutputTemplate)
-                .WriteTo.File(
-                    path: $"logs/{applicationName.ToLowerInvariant()}-.log",
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 30,
-                    outputTemplate: logOutputTemplate);
+                .WriteTo.StrictSeverity(wt =>
+                {
+                    wt.Console(outputTemplate: logOutputTemplate);
+                    wt.File(
+                        path: $"logs/{applicationName.ToLowerInvariant()}-.log",
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 30,
+                        outputTemplate: logOutputTemplate);
+                });
         });
+    }
+
+    /// <summary>
+    /// Wraps inner Serilog sinks in <see cref="StrictExceptionSeveritySink"/> so all exceptions are logged at Error/Fatal
+    /// and all security violations or dead blockers are promoted to Fatal ([FTL]).
+    /// </summary>
+    public static LoggerConfiguration StrictSeverity(
+        this LoggerSinkConfiguration sinkConfiguration,
+        Action<LoggerSinkConfiguration> configureWrappedSinks)
+    {
+        return LoggerSinkConfiguration.Wrap(
+            sinkConfiguration,
+            innerSink => new StrictExceptionSeveritySink(innerSink),
+            configureWrappedSinks,
+            LogEventLevel.Verbose,
+            null);
     }
 }

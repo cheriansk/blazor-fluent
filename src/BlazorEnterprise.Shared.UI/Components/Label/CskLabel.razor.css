@@ -1,0 +1,123 @@
+.csk-label {
+    box-sizing: border-box;
+    margin: 0;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+/* Typo Scales */
+.csk-typo-h1 {
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 1.167;
+    letter-spacing: -0.01562em;
+}
+
+.csk-typo-h2 {
+    font-size: 2.75rem;
+    font-weight: 300;
+    line-height: 1.2;
+    letter-spacing: -0.00833em;
+}
+
+.csk-typo-h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0em;
+}
+
+.csk-typo-h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.334;
+    letter-spacing: 0.00735em;
+}
+
+.csk-typo-h5 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0em;
+}
+
+.csk-typo-h6 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.0075em;
+}
+
+.csk-typo-subtitle {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.00938em;
+}
+
+.csk-typo-subject {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+}
+
+.csk-typo-body {
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0.01071em;
+}
+
+.csk-typo-bodystrong {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.01071em;
+}
+
+.csk-typo-caption {
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.66;
+    letter-spacing: 0.03333em;
+}
+
+.csk-typo-button {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.75;
+    letter-spacing: 0.02857em;
+    text-transform: uppercase;
+}
+
+.csk-typo-overline {
+    font-size: 0.625rem;
+    font-weight: 500;
+    line-height: 2.66;
+    letter-spacing: 0.08333em;
+    text-transform: uppercase;
+}
+
+/* Colors */
+.csk-color-inherit { color: inherit; }
+.csk-color-default { color: var(--mat-on-surface, #1C1B1F); }
+.csk-color-primary { color: var(--mat-primary, #6750A4); }
+.csk-color-secondary { color: var(--mat-secondary, #625B71); }
+.csk-color-success { color: var(--mat-success, #2E7D32); }
+.csk-color-warning { color: var(--mat-warning, #ED6C02); }
+.csk-color-error { color: var(--mat-error, #BA1A1A); }
+.csk-color-info { color: var(--mat-info, #0288D1); }
+.csk-color-hint { color: var(--mat-on-surface-variant, #49454F); }
+
+/* Alignments */
+.csk-align-inherit { text-align: inherit; }
+.csk-align-left { text-align: left; }
+.csk-align-center { text-align: center; }
+.csk-align-right { text-align: right; }
+.csk-align-justify { text-align: justify; }
+
+/* Gutter */
+.csk-gutter-bottom {
+    margin-bottom: 0.5rem;
+}

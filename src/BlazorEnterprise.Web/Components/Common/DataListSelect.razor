@@ -1,28 +1,28 @@
-@using System.Reflection
+﻿@using System.Reflection
 @using BlazorEnterprise.Shared.DataListTypes
 @using BlazorEnterprise.Shared.Extensions
 @using BlazorEnterprise.Shared.Models
 @typeparam TEnum where TEnum : struct, Enum
 @typeparam TValue
 
-<FluentSelect TOption="string"
+<CskSelect TOption="string"
               TValue="string"
               Value="@CurrentStringValue"
               ValueChanged="@OnStringValueChangedAsync"
               Label="@Label"
-              Style="@Style"
+              Class="@Class"
               Disabled="@Disabled">
     @if (!string.IsNullOrEmpty(Placeholder))
     {
-        <FluentOption Value="@("")">@Placeholder</FluentOption>
+        <CskOption Value="@("")">@Placeholder</CskOption>
     }
     @foreach (var item in GetSelectableItems())
     {
-        <FluentOption Value="@item.Code" Selected="@(item.Code == CurrentStringValue)">
+        <CskOption Value="@item.Code" Selected="@(item.Code == CurrentStringValue)">
             @item.DisplayName
-        </FluentOption>
+        </CskOption>
     }
-</FluentSelect>
+</CskSelect>
 
 @code {
     [Parameter]
@@ -38,7 +38,7 @@
     public string? Placeholder { get; set; }
 
     [Parameter]
-    public string? Style { get; set; }
+    public string? Class { get; set; }
 
     [Parameter]
     public bool Disabled { get; set; }

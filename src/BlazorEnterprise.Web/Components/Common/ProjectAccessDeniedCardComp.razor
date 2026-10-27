@@ -1,39 +1,40 @@
-@using BlazorEnterprise.Shared.DataListTypes
+﻿@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
 @inject NavigationManager NavigationManager
 
-<FluentCard Style="padding: 32px; max-width: 600px; margin: 40px auto; text-align: center;">
-    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="16">
-        <div style="background-color: var(--error-background, #fde7e9); padding: 16px; border-radius: 50%; display: inline-flex;">
-            <FluentIcon Value="@(new Icons.Regular.Size32.ShieldError())" Color="Color.Error" />
+<div class="access-denied-card">
+    <div class="access-denied-inner">
+        <div class="access-denied-icon-circle">
+            <CskIcon Icon="@CskIcons.ShieldError" Class="csk-icon-error csk-icon-xl" />
         </div>
 
-        <FluentLabel Typo="Typography.H4">Access Denied</FluentLabel>
+        <h2 class="access-denied-title">Access Denied</h2>
 
-        <FluentLabel Typo="Typography.Body">
+        <p class="access-denied-message">
             @(CustomMessage ?? "You do not have the required permissions to access this page or resource.")
-        </FluentLabel>
+        </p>
 
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="12" Style="margin-top: 8px;">
-            <FluentBadge Appearance="BadgeAppearance.Filled">
+        <div class="access-denied-badges">
+            <span class="access-denied-badge">
                 Required Role: <strong>@RequiredRole</strong>
-            </FluentBadge>
-            <FluentBadge Appearance="BadgeAppearance.Filled">
+            </span>
+            <span class="access-denied-badge">
                 Your Role: <strong>@(CurrentRole?.ToString() ?? "None")</strong>
-            </FluentBadge>
-        </FluentStack>
+            </span>
+        </div>
 
-        <FluentDivider Style="width: 100%; margin: 12px 0;" />
+        <hr class="access-denied-divider" />
 
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="12">
-            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="@(() => NavigationManager.NavigateTo("/tenancy/projects"))">
+        <div class="access-denied-actions">
+            <CskButton Variant="CskButtonVariant.Filled" OnClick="@(() => NavigationManager.NavigateTo("/tenancy/projects"))">
                 Back to Projects
-            </FluentButton>
-            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => NavigationManager.NavigateTo("/"))">
+            </CskButton>
+            <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => NavigationManager.NavigateTo("/"))">
                 Go to Home
-            </FluentButton>
-        </FluentStack>
-    </FluentStack>
-</FluentCard>
+            </CskButton>
+        </div>
+    </div>
+</div>
 
 @code {
     [Parameter] public ProjectRoleEnum RequiredRole { get; set; } = ProjectRoleEnum.ReadOnly;

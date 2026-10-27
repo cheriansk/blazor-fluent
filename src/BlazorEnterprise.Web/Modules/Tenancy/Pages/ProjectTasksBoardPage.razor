@@ -1,3 +1,4 @@
+@namespace BlazorEnterprise.Modules.Tenancy.Pages
 @page "/projects/{ProjectId:guid}/tasks"
 @page "/tasks"
 @attribute [RequiredClearance(ProjectRoleEnum.ReadOnly)]
@@ -13,34 +14,23 @@
 @using BlazorEnterprise.Persistence.Context
 @using Microsoft.AspNetCore.Authorization
 
-@inject IUserTaskService TaskService
-@inject IProjectMilestoneService MilestoneService
-@inject IProjectHealthService HealthService
-@inject IWorkflowService WorkflowService
-@inject ITenantService TenantService
-@inject ITenantContext TenantContext
-@inject IProjectContext ProjectContext
-@inject ICurrentUser CurrentUser
-@inject IUserTimeZoneService TimeZoneService
-@inject NavigationManager Navigation
-@implements IDisposable
 
 <PageTitle>Tasks & Milestones — @(_currentProject?.Name ?? "Project Work Items")</PageTitle>
 
 <div class="tasks-page-header">
     <div class="tasks-page-header-left">
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4px">
-            <FluentLink Href="/tenancy/projects">Projects</FluentLink>
-            <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
-            <FluentLink>@(_currentProject?.Name ?? "Tasks")</FluentLink>
-            <FluentIcon Value="@(new Icons.Regular.Size12.ChevronRight())" />
-            <FluentLink>Delivery Board</FluentLink>
-        </FluentStack>
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="@("4px")">
+            <CskLink Href="/tenancy/projects">Projects</CskLink>
+            <CskIcon Icon="@CskIcons.ChevronRight" />
+            <CskLink>@(_currentProject?.Name ?? "Tasks")</CskLink>
+            <CskIcon Icon="@CskIcons.ChevronRight" />
+            <CskLink>Delivery Board</CskLink>
+        </CskStack>
         <div class="tasks-header-title-row">
-            <FluentLabel Typo="Typography.H3">@(_currentProject?.Name ?? "Project Tasks")</FluentLabel>
+            <CskLabel Typo="Typography.H3">@(_currentProject?.Name ?? "Project Tasks")</CskLabel>
             @if (_currentProject is not null)
             {
-                <FluentBadge Appearance="@BadgeAppearance.Filled">Project ID: @_currentProject.Id.ToString()[..8]...</FluentBadge>
+                <CskBadge Variant="@BadgeAppearance.Filled">Project ID: @_currentProject.Id.ToString()[..8]...</CskBadge>
             }
         </div>
     </div>
@@ -50,7 +40,7 @@
         @if (_availableProjects.Count > 1)
         {
             <div class="min-w-180">
-                <FluentSelect TOption="ProjectEntity"
+                <CskSelect TOption="ProjectEntity"
                               TValue="string"
                               Items="@_availableProjects"
                               OptionText="@(p => p.Name)"
@@ -63,7 +53,7 @@
 
         <!-- Milestone Filter -->
         <div class="min-w-200">
-            <FluentSelect TOption="MilestoneFilterItem"
+            <CskSelect TOption="MilestoneFilterItem"
                           TValue="string"
                           Items="@_milestoneFilterOptions"
                           OptionText="@(o => o.Label)"
@@ -72,32 +62,32 @@
                           Label="Milestone Filter" />
         </div>
 
-        <FluentButton Appearance="ButtonAppearance.Subtle"
-                      IconStart="@(new Icons.Regular.Size16.Flag())"
+        <CskButton Variant="CskButtonVariant.Text"
+                      IconStart="@CskIcons.Flag"
                       OnClick="OpenMilestonesModal">
             Milestones (@_milestones.Count)
-        </FluentButton>
+        </CskButton>
 
-        <FluentButton Appearance="ButtonAppearance.Subtle"
-                      IconStart="@(new Icons.Regular.Size16.ArrowSync())"
+        <CskButton Variant="CskButtonVariant.Text"
+                      IconStart="@CskIcons.ArrowSync"
                       OnClick="@(() => Navigation.NavigateTo("/imports"))">
             Import
-        </FluentButton>
-        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="OpenCreateTaskModal">
+        </CskButton>
+        <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="OpenCreateTaskModal">
             New Task
-        </FluentButton>
+        </CskButton>
     </div>
 </div>
 
 @if (_isLoading)
 {
-    <FluentSpinner Class="m-auto" />
+    <CskSpinner Class="m-auto" />
 }
 else if (_currentProject is null)
 {
-    <FluentMessageBar Intent="MessageBarIntent.Warning" Class="mt-4">
+    <CskMessageBar Intent="MessageBarIntent.Warning" Class="mt-4">
         No active project selected or found. Please navigate to a valid project.
-    </FluentMessageBar>
+    </CskMessageBar>
 }
 else
 {
@@ -128,7 +118,7 @@ else
                 <div class="progress-container">
                     <span class="progress-text">@_projectHealth.ProgressPercentage% Completed</span>
                     <div class="progress-bar-bg">
-                        <FluentProgressBar Min="0" Max="100" Value="@((int)Math.Round(_projectHealth.ProgressPercentage))" Class="full-width" />
+                        <CskProgressBar Min="0" Max="100" Value="@((int)Math.Round(_projectHealth.ProgressPercentage))" Class="full-width" />
                     </div>
                 </div>
                 <span class="metric-label">@_projectHealth.CompletedTasks / @_projectHealth.TotalTasks Deliverables</span>
@@ -166,7 +156,7 @@ else
         {
             <div class="health-risk-reasons-panel">
                 <div class="risk-reasons-header">
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="@Color.Warning" />
+                    <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
                     <strong>Root-Cause Risk Attribution:</strong>
                 </div>
                 <ul class="risk-reasons-list">
@@ -181,26 +171,26 @@ else
 
     <!-- Sub-tab switch between Delivery Board and Sequential Workflows -->
     <div class="tasks-subtab-bar d-flex justify-between align-center mb-3 mt-4">
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-            <FluentButton Appearance="@(_activeSubTab == "tasks" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                          IconStart="@(new Icons.Regular.Size16.Board())"
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+            <CskButton Variant="@(_activeSubTab == "tasks" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.Board"
                           OnClick="@(() => _activeSubTab = "tasks")">
                 Delivery Board (@FilteredTasks.Count())
-            </FluentButton>
-            <FluentButton Appearance="@(_activeSubTab == "workflows" ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
-                          IconStart="@(new Icons.Filled.Size16.Flowchart())"
+            </CskButton>
+            <CskButton Variant="@(_activeSubTab == "workflows" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                          IconStart="@CskIcons.Flowchart"
                           OnClick="@(() => _activeSubTab = "workflows")">
                 Sequential Workflows (@_projectWorkflows.Count)
-            </FluentButton>
-        </FluentStack>
+            </CskButton>
+        </CskStack>
 
         @if (_activeSubTab == "workflows" && _canManageWorkflows)
         {
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          IconStart="@(new Icons.Regular.Size16.Add())"
+            <CskButton Variant="CskButtonVariant.Filled"
+                          IconStart="@CskIcons.Add"
                           OnClick="@(() => { _workflowToEdit = null; _isCreateWorkflowModalOpen = true; })">
                 New Workflow
-            </FluentButton>
+            </CskButton>
         }
     </div>
 
@@ -212,12 +202,12 @@ else
                                  Items="@FilteredTasks"
                                  OnItemClick="OpenTaskDetailsModal">
             <ItemTemplate>
-                <FluentCard Class="task-card">
+                <CskCard Class="task-card">
                     <div class="task-card-header">
                         <div class="d-flex gap-1 align-center flex-wrap">
-                            <FluentBadge Appearance="@BadgeAppearance.Tint" Class="@GetPriorityColor(context.Priority)">
+                            <CskBadge Variant="@CskBadgeVariant.Filled" Class="@GetPriorityColor(context.Priority)">
                                 @context.Priority
-                            </FluentBadge>
+                            </CskBadge>
 
                             @if (_activeBlockedTaskIds.Contains(context.Id))
                             {
@@ -279,7 +269,7 @@ else
                             </div>
                         </div>
                     </div>
-                </FluentCard>
+                </CskCard>
             </ItemTemplate>
         </FluentSwimlaneBoardComp>
     }
@@ -290,18 +280,18 @@ else
             @if (_projectWorkflows.Count == 0)
             {
                 <div class="empty-box-dashed">
-                    <FluentIcon Value="@(new Icons.Regular.Size32.Flowchart())" Color="Color.Default" />
-                    <FluentLabel Typo="Typography.H6" Class="mt-3">No Sequential Workflows Found</FluentLabel>
+                    <CskIcon Icon="@CskIcons.Flowchart" Class="csk-icon-xl" />
+                    <CskLabel Typo="Typography.H6" Class="mt-3">No Sequential Workflows Found</CskLabel>
                     <p class="text-hint max-w-480 m-auto font-size-sm">
                         Workflows orchestrate sequential stage-gated activities where exactly one owner is active at any time, with multi-party watcher notifications on every handoff.
                     </p>
                     @if (_canManageWorkflows)
                     {
-                        <FluentButton Appearance="ButtonAppearance.Primary"
-                                      IconStart="@(new Icons.Regular.Size16.Add())"
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                      IconStart="@CskIcons.Add"
                                       OnClick="@(() => { _workflowToEdit = null; _isCreateWorkflowModalOpen = true; })">
                             Launch First Workflow
-                        </FluentButton>
+                        </CskButton>
                     }
                 </div>
             }
@@ -325,17 +315,17 @@ else
     <div class="modal-backdrop" @onclick="CloseModals">
         <div class="modal-dialog" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <FluentLabel Typo="Typography.H4">Create New Task</FluentLabel>
-                <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
+                <CskLabel Typo="Typography.H4">Create New Task</CskLabel>
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Dismiss" OnClick="CloseModals" />
             </div>
 
             <div class="modal-body">
-                <FluentTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Class="full-width" Placeholder="Concise headline of the work item..." />
+                <CskTextInput @bind-Value="_newTask.Title" Label="Task Title" Required="true" Class="full-width" Placeholder="Concise headline of the work item..." />
 
-                <FluentTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Class="full-width mt-3" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
+                <CskTextArea @bind-Value="_newTask.Description" Label="Description & Acceptance Criteria" Rows="3" Class="full-width mt-3" Placeholder="Add reproduction steps, acceptance criteria, or technical details..." />
 
                 <div class="modal-grid-row mt-3">
-                    <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
+                    <CskSelect TOption="DataListItem<TaskPriorityEnum>"
                                   TValue="TaskPriorityEnum"
                                   Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                   OptionText="@(i => i.DisplayName)"
@@ -343,11 +333,11 @@ else
                                   @bind-Value="_newTask.Priority"
                                   Label="Priority" Class="full-width" />
 
-                    <FluentDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
+                    <CskDatePicker @bind-Value="_newTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
                 </div>
 
                 <div class="modal-grid-row mt-3">
-                    <FluentSelect TOption="MilestoneOptionItem"
+                    <CskSelect TOption="MilestoneOptionItem"
                                   TValue="string"
                                   Items="@_milestoneSelectOptions"
                                   OptionText="@(m => m.Label)"
@@ -355,28 +345,28 @@ else
                                   @bind-Value="_newTaskMilestoneIdString"
                                   Label="Milestone Association (Optional)" Class="full-width" />
 
-                    <FluentTextInput @bind-Value="_newTask.AssigneeEmails"
+                    <CskTextInput @bind-Value="_newTask.AssigneeEmails"
                                      Label="Assignee Email(s)"
                                      Placeholder="alice@company.com; bob@company.com"
                                      Class="full-width" />
                 </div>
 
-                <FluentTextInput @bind-Value="_newTask.Labels"
+                <CskTextInput @bind-Value="_newTask.Labels"
                                  Label="Labels / Tags (Comma-Separated)"
                                  Placeholder="Frontend, Bug, HighPriority"
                                  Class="full-width mt-3" />
 
                 @if (!string.IsNullOrWhiteSpace(_createErrorMessage))
                 {
-                    <FluentMessageBar Intent="MessageBarIntent.Error" Class="mt-3">
+                    <CskMessageBar Intent="MessageBarIntent.Error" Class="mt-3">
                         @_createErrorMessage
-                    </FluentMessageBar>
+                    </CskMessageBar>
                 }
             </div>
 
             <div class="modal-footer">
-                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseModals">Cancel</FluentButton>
-                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveNewTaskAsync" Loading="@_isSaving">Create Task</FluentButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="CloseModals">Cancel</CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="SaveNewTaskAsync" Loading="@_isSaving">Create Task</CskButton>
             </div>
         </div>
     </div>
@@ -389,14 +379,14 @@ else
         <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <div class="d-flex align-center gap-2">
-                    <FluentBadge Appearance="@BadgeAppearance.Tint" Class="@GetPriorityColor(_selectedTask.Priority)">
+                    <CskBadge Variant="@BadgeAppearance.Tint" Class="@GetPriorityColor(_selectedTask.Priority)">
                         @_selectedTask.Priority
-                    </FluentBadge>
-                    <FluentLabel Typo="Typography.H4">@_selectedTask.Title</FluentLabel>
+                    </CskBadge>
+                    <CskLabel Typo="Typography.H4">@_selectedTask.Title</CskLabel>
                 </div>
                 <div class="d-flex align-center gap-2">
-                    <EntityHistoryButton EntityName="TaskEntity" EntityId="@_selectedTask.Id.ToString()" IconOnly="false" Label="History" Appearance="ButtonAppearance.Subtle" />
-                    <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
+                    <EntityHistoryButton EntityName="TaskEntity" EntityId="@_selectedTask.Id.ToString()" IconOnly="false" Label="History" Variant="CskButtonVariant.Text" />
+                    <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Dismiss" OnClick="CloseModals" />
                 </div>
             </div>
 
@@ -419,12 +409,12 @@ else
                 @if (_selectedModalTab == "details")
                 {
                     <div class="task-details-form">
-                        <FluentTextInput @bind-Value="_selectedTask.Title" Label="Title" Class="full-width" />
+                        <CskTextInput @bind-Value="_selectedTask.Title" Label="Title" Class="full-width" />
 
-                        <FluentTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Class="full-width mt-3" />
+                        <CskTextArea @bind-Value="_selectedTask.Description" Label="Description" Rows="3" Class="full-width mt-3" />
 
                         <div class="modal-grid-row mt-3">
-                            <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
+                            <CskSelect TOption="DataListItem<TaskPriorityEnum>"
                                           TValue="TaskPriorityEnum"
                                           Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                           OptionText="@(i => i.DisplayName)"
@@ -432,11 +422,11 @@ else
                                           @bind-Value="_selectedTask.Priority"
                                           Label="Priority" Class="full-width" />
 
-                            <FluentDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
+                            <CskDatePicker @bind-Value="_selectedTaskDueDate" Label="Due Date (Mandatory)" Class="full-width" Required="true" />
                         </div>
 
                         <div class="modal-grid-row mt-3">
-                            <FluentSelect TOption="DataListItem<TaskStatusEnum>"
+                            <CskSelect TOption="DataListItem<TaskStatusEnum>"
                                           TValue="TaskStatusEnum"
                                           Items="@(DataListExtensions.GetDataListItems<TaskStatusEnum>())"
                                           OptionText="@(i => i.DisplayName)"
@@ -444,7 +434,7 @@ else
                                           @bind-Value="_selectedTask.Status"
                                           Label="Status" Class="full-width" />
 
-                            <FluentSelect TOption="MilestoneOptionItem"
+                            <CskSelect TOption="MilestoneOptionItem"
                                           TValue="string"
                                           Items="@_milestoneSelectOptions"
                                           OptionText="@(m => m.Label)"
@@ -454,41 +444,41 @@ else
                         </div>
 
                         <div class="modal-grid-row mt-3">
-                            <FluentTextInput @bind-Value="_selectedTask.AssigneeEmails"
+                            <CskTextInput @bind-Value="_selectedTask.AssigneeEmails"
                                              Label="Assignees (Semicolon-Separated)"
                                              Placeholder="email1@co.com; email2@co.com"
                                              Class="full-width" />
 
-                            <FluentTextInput Value="@_selectedTask.ReporterEmail"
+                            <CskTextInput Value="@_selectedTask.ReporterEmail"
                                              Label="Reporter"
                                              ReadOnly="true"
                                              Class="full-width" />
                         </div>
 
-                        <FluentTextInput @bind-Value="_selectedTask.Labels"
+                        <CskTextInput @bind-Value="_selectedTask.Labels"
                                          Label="Labels"
                                          Placeholder="UI, Release-1.0"
                                          Class="full-width mt-3" />
 
                         <div class="task-action-toolbar mt-4">
-                            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
+                            <CskButton Variant="CskButtonVariant.Filled" OnClick="UpdateSelectedTaskAsync" Loading="@_isSaving">
                                 Save Changes
-                            </FluentButton>
+                            </CskButton>
 
                             @if (!_selectedTask.IsClosed)
                             {
-                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseSelectedTaskAsync">
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="CloseSelectedTaskAsync">
                                     Mark as Closed
-                                </FluentButton>
-                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelSelectedTaskAsync" Class="text-danger">
+                                </CskButton>
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="CancelSelectedTaskAsync" Class="text-danger">
                                     Cancel Task
-                                </FluentButton>
+                                </CskButton>
                             }
                             else
                             {
-                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="ReopenSelectedTaskAsync">
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="ReopenSelectedTaskAsync">
                                     Reopen Task
-                                </FluentButton>
+                                </CskButton>
                             }
                         </div>
                     </div>
@@ -497,7 +487,7 @@ else
                 {
                     <div class="task-subtasks-pane">
                         <div class="d-flex justify-between align-center mb-3">
-                            <FluentLabel Typo="Typography.H5">Child Subtasks (@_selectedTaskSubTasks.Count)</FluentLabel>
+                            <CskLabel Typo="Typography.H5">Child Subtasks (@_selectedTaskSubTasks.Count)</CskLabel>
                             <span class="font-size-sm text-hint">Boundary: Within this task strictly (Depth 1)</span>
                         </div>
 
@@ -512,7 +502,7 @@ else
                                 {
                                     <div class="subtask-card subtask-item-row">
                                         <div class="d-flex align-center gap-2">
-                                            <FluentCheckbox Value="@(sub.Status == TaskStatusEnum.Closed)" ValueChanged="@(async (bool val) => await ToggleSubTaskCompleteAsync(sub, val))" />
+                                            <CskCheckbox Value="@(sub.Status == TaskStatusEnum.Closed)" ValueChanged="@(async (bool val) => await ToggleSubTaskCompleteAsync(sub, val))" />
                                             <div>
                                                 <span class="@(sub.Status == TaskStatusEnum.Closed ? "task-done font-weight-600" : "font-weight-600")">@sub.Title</span>
                                                 <div class="font-size-sm text-hint">
@@ -524,7 +514,7 @@ else
                                                 </div>
                                             </div>
                                         </div>
-                                        <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteSubTaskAsync(sub.Id))" />
+                                        <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Delete" OnClick="@(() => DeleteSubTaskAsync(sub.Id))" />
                                     </div>
                                 }
                             }
@@ -532,21 +522,21 @@ else
 
                         <!-- Add SubTask Quick Box -->
                         <div class="add-subtask-box subtask-box">
-                            <FluentLabel Typo="Typography.H6" Class="mb-2">Add Child Subtask</FluentLabel>
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Class="full-width">
-                                <FluentTextInput @bind-Value="_newSubTaskTitle" Placeholder="Subtask headline..." Class="flex-2" />
-                                <FluentSelect TOption="DataListItem<TaskPriorityEnum>"
+                            <CskLabel Typo="Typography.H6" Class="mb-2">Add Child Subtask</CskLabel>
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                                <CskTextInput @bind-Value="_newSubTaskTitle" Placeholder="Subtask headline..." Class="flex-2" />
+                                <CskSelect TOption="DataListItem<TaskPriorityEnum>"
                                               TValue="TaskPriorityEnum"
                                               Items="@(DataListExtensions.GetDataListItems<TaskPriorityEnum>())"
                                               OptionText="@(i => i.DisplayName)"
                                               OptionValue="@(i => i != null ? i.Value : TaskPriorityEnum.Medium)"
                                               @bind-Value="_newSubTaskPriority"
                                               Class="flex-1" />
-                                <FluentDatePicker @bind-Value="_newSubTaskDueDate" Class="flex-1" />
-                                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="AddSubTaskAsync" Loading="_isAddingSubTask">
+                                <CskDatePicker @bind-Value="_newSubTaskDueDate" Class="flex-1" />
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="AddSubTaskAsync" Loading="_isAddingSubTask">
                                     Add Subtask
-                                </FluentButton>
-                            </FluentStack>
+                                </CskButton>
+                            </CskStack>
                         </div>
                     </div>
                 }
@@ -554,10 +544,10 @@ else
                 {
                     <div class="task-dependencies-pane">
                         <div class="d-flex justify-between align-center mb-2">
-                            <FluentLabel Typo="Typography.H5">Task Dependencies & Blockers</FluentLabel>
-                            <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Link())" OnClick="@(() => _showBlockerLinkModal = true)">
+                            <CskLabel Typo="Typography.H5">Task Dependencies & Blockers</CskLabel>
+                            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Link" OnClick="@(() => _showBlockerLinkModal = true)">
                                 Establish Blocker Contract
-                            </FluentButton>
+                            </CskButton>
                         </div>
                         <p class="section-hint">Tasks linked here are monitored by the Cadence engine. Unresolved blockers trigger proactive alerts to assignees.</p>
 
@@ -600,8 +590,8 @@ else
                                                 <span class="dep-status-active">🟡 Active Blocker</span>
                                             }
 
-                                            <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                          IconStart="@(new Icons.Regular.Size16.Delete())"
+                                            <CskButton Variant="CskButtonVariant.Text"
+                                                          IconStart="@CskIcons.Delete"
                                                           OnClick="@(() => RemoveDependencyAsync(dep.DependencyId))"
                                                           Title="Remove Dependency Link" />
                                         </div>
@@ -612,9 +602,9 @@ else
 
                         <!-- Add Dependency Link Form -->
                         <div class="add-dependency-box">
-                            <FluentLabel Typo="Typography.H6">Add New Dependency</FluentLabel>
+                            <CskLabel Typo="Typography.H6">Add New Dependency</CskLabel>
                             <div class="modal-grid-row mt-2">
-                                <FluentSelect TOption="TaskEntity"
+                                <CskSelect TOption="TaskEntity"
                                               TValue="string"
                                               Items="@_otherProjectTasks"
                                               OptionText="@(t => $"{t.Title} (Due {t.DueDate:yyyy-MM-dd})")"
@@ -622,7 +612,7 @@ else
                                               @bind-Value="_newDepTargetTaskId"
                                               Label="Prerequisite / Target Task" Class="full-width" />
 
-                                <FluentSelect TOption="DataListItem<TaskDependencyTypeEnum>"
+                                <CskSelect TOption="DataListItem<TaskDependencyTypeEnum>"
                                               TValue="TaskDependencyTypeEnum"
                                               Items="@(DataListExtensions.GetDataListItems<TaskDependencyTypeEnum>())"
                                               OptionText="@(i => i.DisplayName)"
@@ -632,20 +622,20 @@ else
                             </div>
 
                             <div class="modal-grid-row mt-2">
-                                <FluentDatePicker @bind-Value="_newDepResolveByUtc" Label="Resolve By Target Date (Optional)" Class="full-width" />
-                                <FluentTextInput @bind-Value="_newDepNotes" Label="Notes / Reason" Placeholder="e.g. Needs DB schema update first" Class="full-width" />
+                                <CskDatePicker @bind-Value="_newDepResolveByUtc" Label="Resolve By Target Date (Optional)" Class="full-width" />
+                                <CskTextInput @bind-Value="_newDepNotes" Label="Notes / Reason" Placeholder="e.g. Needs DB schema update first" Class="full-width" />
                             </div>
 
-                            <FluentButton Appearance="ButtonAppearance.Primary" Class="mt-3 align-self-start" OnClick="AddDependencyAsync" Loading="@_isAddingDependency">
+                            <CskButton Variant="CskButtonVariant.Filled" Class="mt-3 align-self-start" OnClick="AddDependencyAsync" Loading="@_isAddingDependency">
                                 Add Dependency Link
-                            </FluentButton>
+                            </CskButton>
                         </div>
                     </div>
                 }
                 else if (_selectedModalTab == "comments")
                 {
                     <div class="task-comments-pane">
-                        <FluentLabel Typo="Typography.H5">Activity & Comments (@(_selectedTaskComments.Count))</FluentLabel>
+                        <CskLabel Typo="Typography.H5">Activity & Comments (@(_selectedTaskComments.Count))</CskLabel>
 
                         <div class="comments-thread">
                             @if (_selectedTaskComments.Count == 0)
@@ -669,10 +659,10 @@ else
 
                         <!-- Add Comment Form -->
                         <div class="add-comment-box">
-                            <FluentTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Class="full-width" />
-                            <FluentButton Appearance="ButtonAppearance.Primary" Class="mt-2 align-self-end" OnClick="PostCommentAsync" Loading="@_isPostingComment">
+                            <CskTextArea @bind-Value="_newCommentText" Placeholder="Add a comment similar to Jira..." Rows="3" Class="full-width" />
+                            <CskButton Variant="CskButtonVariant.Filled" Class="mt-2 align-self-end" OnClick="PostCommentAsync" Loading="@_isPostingComment">
                                 Post Comment
-                            </FluentButton>
+                            </CskButton>
                         </div>
                     </div>
                 }
@@ -687,15 +677,15 @@ else
     <div class="modal-backdrop" @onclick="CloseModals">
         <div class="modal-dialog modal-dialog-large" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <FluentLabel Typo="Typography.H4">Project Milestones & Delivery Cadence</FluentLabel>
-                <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="CloseModals" />
+                <CskLabel Typo="Typography.H4">Project Milestones & Delivery Cadence</CskLabel>
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Dismiss" OnClick="CloseModals" />
             </div>
 
             <div class="modal-body">
                 <div class="milestones-manager-layout">
                     <!-- Milestones List -->
                     <div class="milestones-list-section">
-                        <FluentLabel Typo="Typography.H5">Configured Milestones (@_milestones.Count)</FluentLabel>
+                        <CskLabel Typo="Typography.H5">Configured Milestones (@_milestones.Count)</CskLabel>
                         @if (_milestones.Count == 0)
                         {
                             <div class="no-items-placeholder">No milestones defined for this project yet. Create one below!</div>
@@ -740,14 +730,14 @@ else
                                     <div class="milestone-card-actions">
                                         @if (m.Status != CalendarEntryStatusEnum.Completed)
                                         {
-                                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                            <CskButton Variant="CskButtonVariant.Filled"
                                                           OnClick="@(() => SignOffMilestoneAsync(m.MilestoneId))"
                                                           Title="Sign off and mark milestone as completed">
                                                 Sign-Off & Complete
-                                            </FluentButton>
+                                            </CskButton>
                                         }
-                                        <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                      IconStart="@(new Icons.Regular.Size16.Delete())"
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.Delete"
                                                       OnClick="@(() => DeleteMilestoneAsync(m.MilestoneId))"
                                                       Title="Delete Milestone" />
                                     </div>
@@ -758,21 +748,21 @@ else
 
                     <!-- Add Milestone Form -->
                     <div class="milestone-add-section">
-                        <FluentLabel Typo="Typography.H5">Create New Milestone</FluentLabel>
+                        <CskLabel Typo="Typography.H5">Create New Milestone</CskLabel>
 
-                        <FluentTextInput @bind-Value="_newMilestone.Title" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Class="full-width mt-2" />
+                        <CskTextInput @bind-Value="_newMilestone.Title" Label="Milestone Name" Required="true" Placeholder="e.g. Sprint 1, QA Phase, Go-Live" Class="full-width mt-2" />
 
-                        <FluentTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Class="full-width mt-2" />
+                        <CskTextArea @bind-Value="_newMilestone.Description" Label="Scope & Criteria" Rows="2" Placeholder="Key deliverables, acceptance criteria..." Class="full-width mt-2" />
 
                         <div class="modal-grid-row mt-2">
-                            <FluentDatePicker @bind-Value="_newMilestoneStartDate" Label="Start Date (UTC)" Class="full-width" />
-                            <FluentDatePicker @bind-Value="_newMilestoneEndDate" Label="End Date (UTC)" Class="full-width" />
+                            <CskDatePicker @bind-Value="_newMilestoneStartDate" Label="Start Date (UTC)" Class="full-width" />
+                            <CskDatePicker @bind-Value="_newMilestoneEndDate" Label="End Date (UTC)" Class="full-width" />
                         </div>
 
                         @if (_milestones.Count > 0)
                         {
                             <div class="mt-2">
-                                <FluentSelect TOption="ProjectCalendarEntity"
+                                <CskSelect TOption="ProjectCalendarEntity"
                                               TValue="string"
                                               Items="@_milestones"
                                               OptionText="@(m => $"{m.Title} (Ends {m.EndDate:yyyy-MM-dd})")"
@@ -784,14 +774,14 @@ else
 
                         @if (!string.IsNullOrWhiteSpace(_milestoneErrorMessage))
                         {
-                            <FluentMessageBar Intent="MessageBarIntent.Error" Class="mt-2">
+                            <CskMessageBar Intent="MessageBarIntent.Error" Class="mt-2">
                                 @_milestoneErrorMessage
-                            </FluentMessageBar>
+                            </CskMessageBar>
                         }
 
-                        <FluentButton Appearance="ButtonAppearance.Primary" Class="mt-3" OnClick="CreateMilestoneAsync" Loading="@_isCreatingMilestone">
+                        <CskButton Variant="CskButtonVariant.Filled" Class="mt-3" OnClick="CreateMilestoneAsync" Loading="@_isCreatingMilestone">
                             Create Milestone
-                        </FluentButton>
+                        </CskButton>
                     </div>
                 </div>
             </div>
@@ -818,682 +808,4 @@ else
                                WorkflowToEdit="@_workflowToEdit"
                                OnWorkflowCreated="HandleWorkflowCreated"
                                OnWorkflowUpdated="HandleWorkflowUpdated" />
-}
-
-
-
-@code {
-    [Parameter]
-    public Guid ProjectId { get; set; }
-
-    public sealed record MilestoneFilterItem(string Value, string Label);
-    public sealed record MilestoneOptionItem(string Id, string Label);
-
-    private bool _isLoading = true;
-    private bool _isSaving = false;
-    private bool _isPostingComment = false;
-    private bool _isAddingDependency = false;
-    private bool _isCreatingMilestone = false;
-    private DateTime _today = DateTime.UtcNow.Date;
-
-    private ProjectEntity? _currentProject;
-    private List<ProjectEntity> _availableProjects = [];
-    private List<TaskEntity> _tasks = [];
-    private List<ProjectCalendarEntity> _milestones = [];
-    private List<MilestoneHealthSummaryDto> _milestonesHealth = [];
-    private ProjectHealthSummaryDto _projectHealth = new();
-    private Dictionary<Guid, string> _milestoneLookup = new();
-    private HashSet<Guid> _activeBlockedTaskIds = [];
-
-    private List<SwimlaneColumn<TaskEntity>> _columns = [];
-    private List<MilestoneFilterItem> _milestoneFilterOptions = [];
-    private List<MilestoneOptionItem> _milestoneSelectOptions = [];
-    private string _selectedMilestoneFilter = "all";
-
-    // Workflow state
-    private string _activeSubTab = "tasks";
-    private List<WorkflowEntity> _projectWorkflows = [];
-    private bool _isCreateWorkflowModalOpen = false;
-    private WorkflowEntity? _workflowToEdit;
-    private bool _canManageWorkflows = false;
-
-    // Modal state
-    private bool _showCreateModal = false;
-    private bool _showMilestonesModal = false;
-    private string _createErrorMessage = string.Empty;
-    private string _milestoneErrorMessage = string.Empty;
-
-    private TaskEntity _newTask = new()
-    {
-        Level = TaskLevelEnum.Project,
-        Title = string.Empty,
-        Priority = TaskPriorityEnum.Medium,
-        Status = TaskStatusEnum.Open,
-        StartDate = DateTime.UtcNow.Date,
-        DueDate = DateTime.UtcNow.Date.AddDays(7)
-    };
-    private DateTime? _newTaskDueDate;
-    private string _newTaskMilestoneIdString = string.Empty;
-
-    private TaskEntity? _selectedTask;
-    private DateTime? _selectedTaskDueDate;
-    private string _selectedTaskMilestoneIdString = string.Empty;
-    private string _selectedModalTab = "details";
-    private List<UserTaskCommentEntity> _selectedTaskComments = [];
-    private List<TaskDependencyItemDto> _selectedTaskDependencies = [];
-    private List<TaskEntity> _otherProjectTasks = [];
-    private string _newCommentText = string.Empty;
-
-    // SubTasks & Blocker Modal state
-    private List<SubTaskEntity> _selectedTaskSubTasks = [];
-    private string _newSubTaskTitle = string.Empty;
-    private TaskPriorityEnum _newSubTaskPriority = TaskPriorityEnum.Medium;
-    private DateTime? _newSubTaskDueDate = DateTime.UtcNow.Date.AddDays(3);
-    private bool _isAddingSubTask = false;
-    private bool _showBlockerLinkModal = false;
-
-    // Dependency form
-    private string _newDepTargetTaskId = string.Empty;
-    private TaskDependencyTypeEnum _newDepType = TaskDependencyTypeEnum.Blocks;
-    private DateTime? _newDepResolveByUtc;
-    private string? _newDepNotes;
-
-    // Milestone create form
-    private ProjectCalendarEntity _newMilestone = new()
-    {
-        Title = string.Empty,
-        StartDate = DateTime.UtcNow.Date,
-        EndDate = DateTime.UtcNow.Date.AddDays(14),
-        EntryType = CalendarEntryTypeEnum.Milestone,
-        Status = CalendarEntryStatusEnum.Scheduled
-    };
-    private DateTime? _newMilestoneStartDate;
-    private DateTime? _newMilestoneEndDate;
-    private string _newMilestonePredecessorId = string.Empty;
-
-    private IReadOnlyList<TaskEntity> FilteredTasks
-    {
-        get
-        {
-            if (_selectedMilestoneFilter == "all") return _tasks;
-            if (_selectedMilestoneFilter == "adhoc") return _tasks.Where(t => t.MilestoneId == null).ToList();
-            if (Guid.TryParse(_selectedMilestoneFilter, out var mid)) return _tasks.Where(t => t.MilestoneId == mid).ToList();
-            return _tasks;
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        TimeZoneService.OnChange += HandleTimeZoneChanged;
-        InitializeSwimlanes();
-        await LoadProjectsAndTasksAsync();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (_currentProject is not null && _currentProject.Id != ProjectId && ProjectId != Guid.Empty)
-        {
-            await LoadProjectsAndTasksAsync();
-        }
-    }
-
-    private void InitializeSwimlanes()
-    {
-        _today = DateTime.UtcNow.Date;
-        var tomorrow = _today.AddDays(1);
-        var in2Days = _today.AddDays(2);
-
-        _columns = new List<SwimlaneColumn<TaskEntity>>
-        {
-            new("Past Due", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date < _today, "#d13438", "Overdue"),
-            new("Due Today", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date == _today, "#ff8c00", "Today's priority"),
-            new("Due Tomorrow", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date == tomorrow, "#0078d4", "Next 24 hours"),
-            new("Due in 2 Days", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date == in2Days, "#8764b8", "Upcoming"),
-            new("Due Later", t => !t.IsClosed && t.Status != TaskStatusEnum.Closed && t.Status != TaskStatusEnum.Cancelled && t.DueDate.Date > in2Days, "#605e5c", "Future pipeline"),
-            new("Closed", t => t.IsClosed || t.Status == TaskStatusEnum.Closed || t.Status == TaskStatusEnum.Cancelled, "#107c41", "Completed work")
-        };
-    }
-
-    private async Task LoadProjectsAndTasksAsync()
-    {
-        _isLoading = true;
-        try
-        {
-            _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug)).Where(p => p.IsActive && !p.IsDeleted).OrderBy(p => p.Name).ToList();
-
-
-
-
-
-            if (_availableProjects.Count == 0)
-            {
-                _currentProject = null;
-                _tasks = [];
-                return;
-            }
-
-            if (ProjectId != Guid.Empty)
-            {
-                _currentProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectId) ?? _availableProjects.First();
-            }
-            else if (ProjectContext.ProjectId.HasValue)
-            {
-                _currentProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectContext.ProjectId.Value) ?? _availableProjects.First();
-                ProjectId = _currentProject.Id;
-            }
-            else
-            {
-                _currentProject = _availableProjects.First();
-                ProjectId = _currentProject.Id;
-            }
-
-            // Load tasks
-            var result = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
-            _tasks = result.ToList();
-
-            // Load milestones & health
-            _milestones = (await MilestoneService.GetMilestonesByProjectAsync(_currentProject.Id)).ToList();
-            _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Title);
-            _milestonesHealth = (await HealthService.GetProjectMilestonesHealthAsync(_currentProject.Id)).ToList();
-            _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
-
-            // Load sequential workflows
-            _projectWorkflows = (await WorkflowService.GetProjectWorkflowsAsync(_currentProject.Id)).ToList();
-         //   _canManageWorkflows = await WorkflowService.CanUserManageWorkflowAsync(null, null, _currentProject.Id);
-
-            // Compute active blockers
-            await RefreshActiveBlockersAsync();
-
-            // Build filter options
-            BuildMilestoneOptions();
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void HandleWorkflowCreated(WorkflowEntity created)
-    {
-        _projectWorkflows.Insert(0, created);
-        StateHasChanged();
-    }
-
-    private void HandleWorkflowUpdated(WorkflowEntity updated)
-    {
-        var idx = _projectWorkflows.FindIndex(w => w.Id == updated.Id);
-        if (idx >= 0)
-        {
-            _projectWorkflows[idx] = updated;
-        }
-        StateHasChanged();
-    }
-
-    private void HandleEditWorkflow(WorkflowEntity wf)
-    {
-        _workflowToEdit = wf;
-        _isCreateWorkflowModalOpen = true;
-    }
-
-    private async Task RefreshActiveBlockersAsync()
-    {
-        if (_currentProject is null) return;
-
-        var dependencies = (await TaskService.GetProjectWorkDependenciesAsync(_currentProject.Id)).Where(d => d.DependencyType == TaskDependencyTypeEnum.Blocks).ToList();
-
-
-
-
-        var taskLookup = _tasks.ToDictionary(t => t.Id);
-        _activeBlockedTaskIds = new HashSet<Guid>();
-
-        foreach (var dep in dependencies)
-        {
-            if (dep.DependsOnItemId.HasValue && taskLookup.TryGetValue(dep.DependsOnItemId.Value, out var blocker))
-            {
-                if (!blocker.IsClosed && dep.DependentItemId.HasValue)
-                {
-                    _activeBlockedTaskIds.Add(dep.DependentItemId.Value);
-                }
-            }
-            else if (!dep.IsResolved && dep.DependentItemId.HasValue)
-            {
-                // Unresolved cross-project, gate, or manual dependency
-                _activeBlockedTaskIds.Add(dep.DependentItemId.Value);
-            }
-        }
-    }
-
-    private void BuildMilestoneOptions()
-    {
-        _milestoneFilterOptions = new List<MilestoneFilterItem>
-        {
-            new("all", "All Deliverables"),
-            new("adhoc", "Ad-hoc Tasks (No Milestone)")
-        };
-
-        foreach (var m in _milestones)
-        {
-            _milestoneFilterOptions.Add(new(m.Id.ToString(), $"🚩 {m.Title} ({m.Status})"));
-        }
-
-        _milestoneSelectOptions = new List<MilestoneOptionItem>
-        {
-            new(string.Empty, "(None - Ad-hoc Task)")
-        };
-
-        foreach (var m in _milestones)
-        {
-            _milestoneSelectOptions.Add(new(m.Id.ToString(), m.Title));
-        }
-    }
-
-    private void OnProjectChanged(string? newProjectIdStr)
-    {
-        if (Guid.TryParse(newProjectIdStr, out var newProjId) && newProjId != ProjectId)
-        {
-            Navigation.NavigateTo($"/projects/{newProjId}/tasks");
-        }
-    }
-
-    private void OpenCreateTaskModal()
-    {
-        _createErrorMessage = string.Empty;
-        _newTask = new TaskEntity
-        {
-            ProjectId = _currentProject?.Id ?? ProjectId,
-            Priority = TaskPriorityEnum.Medium,
-            Level = TaskLevelEnum.Project,
-            Title = string.Empty,
-            Status = TaskStatusEnum.Open,
-            StartDate = DateTime.UtcNow.Date,
-            DueDate = DateTime.UtcNow.Date.AddDays(7)
-        };
-        _newTaskDueDate = DateTime.UtcNow.Date.AddDays(7);
-        _newTaskMilestoneIdString = _selectedMilestoneFilter != "all" && _selectedMilestoneFilter != "adhoc"
-            ? _selectedMilestoneFilter
-            : string.Empty;
-
-        _showCreateModal = true;
-    }
-
-    private void OpenMilestonesModal()
-    {
-        _milestoneErrorMessage = string.Empty;
-        _newMilestone = new ProjectCalendarEntity
-        {
-            ProjectId = _currentProject?.Id ?? ProjectId,
-            Title = string.Empty,
-            StartDate = DateTime.UtcNow.Date,
-            EndDate = DateTime.UtcNow.Date.AddDays(14),
-            EntryType = CalendarEntryTypeEnum.Milestone,
-            Status = CalendarEntryStatusEnum.Confirmed
-        };
-        _newMilestoneStartDate = DateTime.UtcNow.Date;
-        _newMilestoneEndDate = DateTime.UtcNow.Date.AddDays(14);
-        _newMilestonePredecessorId = string.Empty;
-        _showMilestonesModal = true;
-    }
-
-    private void CloseModals()
-    {
-        _showCreateModal = false;
-        _showMilestonesModal = false;
-        _selectedTask = null;
-        _selectedTaskComments.Clear();
-        _selectedTaskDependencies.Clear();
-        _otherProjectTasks.Clear();
-        _newCommentText = string.Empty;
-        _selectedModalTab = "details";
-    }
-
-    private async Task SaveNewTaskAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_newTask.Title))
-        {
-            _createErrorMessage = "Task title is mandatory.";
-            return;
-        }
-
-        if (!_newTaskDueDate.HasValue)
-        {
-            _createErrorMessage = "Due date is mandatory for all tasks.";
-            return;
-        }
-
-        _isSaving = true;
-        _createErrorMessage = string.Empty;
-        try
-        {
-            _newTask.ProjectId = _currentProject!.Id;
-            _newTask.DueDate = _newTaskDueDate.Value;
-            _newTask.MilestoneId = Guid.TryParse(_newTaskMilestoneIdString, out var mid) ? mid : null;
-
-            var result = await TaskService.CreateTaskAsync(_newTask);
-            if (result.IsSuccess)
-            {
-                CloseModals();
-                await ReloadDataAsync();
-            }
-            else
-            {
-                _createErrorMessage = result.Error ?? "Failed to create task.";
-            }
-        }
-        finally
-        {
-            _isSaving = false;
-        }
-    }
-
-    private async Task OpenTaskDetailsModal(TaskEntity task)
-    {
-        if (_currentProject is null) return;
-        _selectedTask = await TaskService.GetTaskByIdAsync(_currentProject.Id, task.Id);
-        if (_selectedTask is not null)
-        {
-            _selectedTaskDueDate = _selectedTask.DueDate;
-            _selectedTaskMilestoneIdString = _selectedTask.MilestoneId?.ToString() ?? string.Empty;
-            _selectedTaskComments = (await TaskService.GetCommentsAsync(_currentProject.Id, _selectedTask.Id)).ToList();
-            _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
-            _selectedTaskSubTasks = (await TaskService.GetSubTasksByTaskIdAsync(_selectedTask.Id)).ToList();
-            _otherProjectTasks = _tasks.Where(t => t.Id != _selectedTask.Id).ToList();
-
-            _newDepTargetTaskId = _otherProjectTasks.FirstOrDefault()?.Id.ToString() ?? string.Empty;
-            _newDepType = TaskDependencyTypeEnum.Blocks;
-            _newDepResolveByUtc = _selectedTask.DueDate;
-            _newDepNotes = string.Empty;
-            _selectedModalTab = "details";
-        }
-    }
-
-    private async Task AddSubTaskAsync()
-    {
-        if (_selectedTask is null || string.IsNullOrWhiteSpace(_newSubTaskTitle)) return;
-        _isAddingSubTask = true;
-        try
-        {
-            var subTask = new SubTaskEntity
-            {
-                ParentTaskId = _selectedTask.Id,
-                Title = _newSubTaskTitle.Trim(),
-                Priority = _newSubTaskPriority,
-                Level = TaskLevelEnum.Project,
-                StartDate = DateTime.UtcNow.Date,
-                Status = TaskStatusEnum.Open,
-                DueDate = _newSubTaskDueDate ?? DateTime.UtcNow.Date.AddDays(3),
-                OrderIndex = _selectedTaskSubTasks.Count + 1,
-                ReporterEmail = CurrentUser.Email ?? string.Empty
-            };
-
-            var result = await TaskService.CreateSubTaskAsync(subTask);
-            if (result.IsSuccess)
-            {
-                _newSubTaskTitle = string.Empty;
-                _selectedTaskSubTasks = (await TaskService.GetSubTasksByTaskIdAsync(_selectedTask.Id)).ToList();
-            }
-        }
-        finally
-        {
-            _isAddingSubTask = false;
-        }
-    }
-
-    private async Task ToggleSubTaskCompleteAsync(SubTaskEntity subTask, bool isCompleted)
-    {
-        subTask.Status = isCompleted ? TaskStatusEnum.Closed : TaskStatusEnum.Open;
-        subTask.EndDate = isCompleted ? DateTime.UtcNow : null;
-        await TaskService.UpdateSubTaskAsync(subTask);
-        if (_selectedTask is not null)
-        {
-            _selectedTaskSubTasks = (await TaskService.GetSubTasksByTaskIdAsync(_selectedTask.Id)).ToList();
-        }
-    }
-
-    private async Task DeleteSubTaskAsync(Guid subTaskId)
-    {
-        await TaskService.DeleteSubTaskAsync(subTaskId);
-        if (_selectedTask is not null)
-        {
-            _selectedTaskSubTasks = (await TaskService.GetSubTasksByTaskIdAsync(_selectedTask.Id)).ToList();
-        }
-    }
-
-    private async Task RefreshDependenciesAndLinksAsync()
-    {
-        if (_currentProject is null || _selectedTask is null) return;
-        _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
-        await RefreshHealthKpisAsync();
-    }
-
-    private async Task UpdateSelectedTaskAsync()
-    {
-        if (_selectedTask is null) return;
-        if (!_selectedTaskDueDate.HasValue) return;
-
-        _isSaving = true;
-        try
-        {
-            _selectedTask.DueDate = _selectedTaskDueDate.Value;
-            _selectedTask.MilestoneId = Guid.TryParse(_selectedTaskMilestoneIdString, out var mid) ? mid : null;
-
-            var result = await TaskService.UpdateTaskAsync(_selectedTask);
-            if (result.IsSuccess)
-            {
-                CloseModals();
-                await ReloadDataAsync();
-            }
-        }
-        finally
-        {
-            _isSaving = false;
-        }
-    }
-
-    private async Task CloseSelectedTaskAsync()
-    {
-        if (_selectedTask is null || _currentProject is null) return;
-
-        var result = await TaskService.CloseTaskAsync(_currentProject.Id, _selectedTask.Id);
-        if (result.IsSuccess)
-        {
-            CloseModals();
-            await ReloadDataAsync();
-        }
-    }
-
-    private async Task CancelSelectedTaskAsync()
-    {
-        if (_selectedTask is null || _currentProject is null) return;
-
-        var result = await TaskService.CancelTaskAsync(_currentProject.Id, _selectedTask.Id);
-        if (result.IsSuccess)
-        {
-            CloseModals();
-            await ReloadDataAsync();
-        }
-    }
-
-    private async Task ReopenSelectedTaskAsync()
-    {
-        if (_selectedTask is null || _currentProject is null) return;
-
-        var result = await TaskService.ReopenTaskAsync(_currentProject.Id, _selectedTask.Id);
-        if (result.IsSuccess)
-        {
-            CloseModals();
-            await ReloadDataAsync();
-        }
-    }
-
-    private async Task AddDependencyAsync()
-    {
-        if (_selectedTask is null || _currentProject is null) return;
-        if (!Guid.TryParse(_newDepTargetTaskId, out var targetId)) return;
-
-        _isAddingDependency = true;
-        try
-        {
-            var result = await TaskService.AddTaskDependencyAsync(
-                _currentProject.Id,
-                _selectedTask.Id,
-                targetId,
-                _newDepType,
-                _newDepResolveByUtc,
-                _newDepNotes);
-
-            if (result.IsSuccess)
-            {
-                _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
-                await RefreshActiveBlockersAsync();
-                _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
-            }
-        }
-        finally
-        {
-            _isAddingDependency = false;
-        }
-    }
-
-    private async Task RemoveDependencyAsync(Guid depId)
-    {
-        if (_selectedTask is null || _currentProject is null) return;
-
-        var result = await TaskService.RemoveTaskDependencyAsync(_currentProject.Id, depId);
-        if (result.IsSuccess)
-        {
-            _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
-            await RefreshActiveBlockersAsync();
-            _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
-        }
-    }
-
-    private async Task PostCommentAsync()
-    {
-        if (_selectedTask is null || _currentProject is null || string.IsNullOrWhiteSpace(_newCommentText)) return;
-
-        _isPostingComment = true;
-        try
-        {
-            var result = await TaskService.AddCommentAsync(_currentProject.Id, _selectedTask.Id, _newCommentText);
-            if (result.IsSuccess)
-            {
-                _newCommentText = string.Empty;
-                _selectedTaskComments = (await TaskService.GetCommentsAsync(_currentProject.Id, _selectedTask.Id)).ToList();
-            }
-        }
-        finally
-        {
-            _isPostingComment = false;
-        }
-    }
-
-    private async Task CreateMilestoneAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_newMilestone.Title))
-        {
-            _milestoneErrorMessage = "Milestone name is required.";
-            return;
-        }
-
-        if (!_newMilestoneStartDate.HasValue || !_newMilestoneEndDate.HasValue)
-        {
-            _milestoneErrorMessage = "Start and End dates are required.";
-            return;
-        }
-
-        if (_newMilestoneEndDate.Value < _newMilestoneStartDate.Value)
-        {
-            _milestoneErrorMessage = "End date cannot precede Start date.";
-            return;
-        }
-
-        _isCreatingMilestone = true;
-        _milestoneErrorMessage = string.Empty;
-        try
-        {
-            _newMilestone.ProjectId = _currentProject!.Id;
-            _newMilestone.StartDate = _newMilestoneStartDate.Value;
-            _newMilestone.EndDate = _newMilestoneEndDate.Value;
-            _newMilestone.Status = CalendarEntryStatusEnum.Confirmed;
-            _newMilestone.EntryType = CalendarEntryTypeEnum.Milestone;
-
-            var res = await MilestoneService.CreateMilestoneAsync(_newMilestone);
-            if (res.IsSuccess)
-            {
-                if (Guid.TryParse(_newMilestonePredecessorId, out var predId) && predId != Guid.Empty)
-                {
-                    await MilestoneService.AddMilestoneDependencyAsync(_newMilestone.Id, predId);
-                }
-
-                _showMilestonesModal = false;
-                await ReloadDataAsync();
-            }
-            else
-            {
-                _milestoneErrorMessage = res.Error ?? "Failed to create milestone.";
-            }
-        }
-        finally
-        {
-            _isCreatingMilestone = false;
-        }
-    }
-
-    private async Task SignOffMilestoneAsync(Guid mid)
-    {
-        var res = await MilestoneService.CompleteMilestoneAsync(mid);
-        if (res.IsSuccess)
-        {
-            await ReloadDataAsync();
-        }
-    }
-
-    private async Task DeleteMilestoneAsync(Guid mid)
-    {
-        var res = await MilestoneService.DeleteMilestoneAsync(mid);
-        if (res.IsSuccess)
-        {
-            await ReloadDataAsync();
-        }
-    }
-
-    private async Task RefreshHealthKpisAsync()
-    {
-        if (_currentProject is null) return;
-        _milestonesHealth = (await HealthService.GetProjectMilestonesHealthAsync(_currentProject.Id)).ToList();
-        _projectHealth = await HealthService.GetProjectHealthAsync(_currentProject.Id);
-    }
-
-    private async Task ReloadDataAsync()
-    {
-        if (_currentProject is null) return;
-        var freshTasks = await TaskService.GetTasksByProjectAsync(_currentProject.Id);
-        _tasks = freshTasks.ToList();
-
-        _milestones = (await MilestoneService.GetMilestonesByProjectAsync(_currentProject.Id)).ToList();
-        _milestoneLookup = _milestones.ToDictionary(m => m.Id, m => m.Title);
-        await RefreshHealthKpisAsync();
-
-        await RefreshActiveBlockersAsync();
-        BuildMilestoneOptions();
-    }
-
-    private static string GetPriorityColor(TaskPriorityEnum priority) => priority switch
-    {
-        TaskPriorityEnum.Urgent => "#d13438", // Red
-        TaskPriorityEnum.High => "#ff8c00",   // Orange
-        TaskPriorityEnum.Medium => "#0078d4", // Blue
-        _ => "#605e5c"                    // Gray
-    };
-
-    private void HandleTimeZoneChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        TimeZoneService.OnChange -= HandleTimeZoneChanged;
-    }
 }

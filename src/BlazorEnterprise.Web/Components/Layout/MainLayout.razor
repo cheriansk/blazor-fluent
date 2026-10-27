@@ -1,47 +1,27 @@
 @inherits LayoutComponentBase
 @using BlazorEnterprise.Components.Common
-@using BlazorEnterprise.Core.Contracts
-@using BlazorEnterprise.Shared.DataListTypes
-@using BlazorEnterprise.Core.Domain.Tenancy
-@using BlazorEnterprise.Infrastructure.Security
-@using BlazorEnterprise.Persistence.Context
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@using Microsoft.EntityFrameworkCore
-@inject ICurrentUser CurrentUser
-@inject ITenantContext TenantContext
-@inject CurrentUserAuthenticationStateProvider AuthStateProvider
-@inject NavigationManager NavigationManager
-@inject ProtectedSessionStorage SessionStorage
-@inject IUserSessionService SessionService
-@inject ICircuitSessionTracker CircuitTracker
-@inject IInternalAuthenticationService AuthVerificationService
-@inject IConfiguration Configuration
-@inject ILogger<MainLayout> Logger
-@inject INavigationStateService NavState
-@inject IProjectContext ProjectContext
-@inject IUserTimeZoneService TimeZoneService
-@implements IDisposable
 
 <ImpersonationBannerComp />
 <SessionRevokedModal />
 <SessionTimeoutModal />
+
 <div class="main-layout-container">
     <header class="main-layout-header">
         @if (HasActiveTenantSession)
         {
-            <FluentButton Appearance="ButtonAppearance.Subtle"
-                              IconStart="@(NavState.IsCollapsed ? new Icons.Regular.Size20.PanelLeftExpand() : new Icons.Regular.Size20.PanelLeftContract())"
-                              Title="@(NavState.IsCollapsed ? "Expand Navigation" : "Collapse Navigation")"
-                              OnClick="@NavState.Toggle"
-                              Class="main-layout-header-btn" />
+            <CskButton Variant="CskButtonVariant.Text"
+                       IconStart="@(NavState.IsCollapsed ? CskIcons.PanelLeftExpand : CskIcons.PanelLeftContract)"
+                       Title="@(NavState.IsCollapsed ? "Expand Navigation" : "Collapse Navigation")"
+                       OnClick="@NavState.Toggle"
+                       Class="main-layout-header-btn" />
         }
-        BlazorEnterprise
-        <FluentSpacer />
+        <span class="main-layout-logo">BlazorEnterprise</span>
+        <CskSpacer />
         @if (HasActiveTenantSession)
         {
             <TenantAndProjectSwitcherComp />
         }
-        <FluentSpacer />
+        <CskSpacer />
         @if (HasActiveTenantSession)
         {
             <PendingChangesIndicatorComp />
@@ -49,17 +29,26 @@
         }
         @if (CurrentUser.IsAuthenticated)
         {
-            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" IconStart="@(new Icons.Regular.Size20.SignOut())" Title="Sign Out" OnClick="SignOut" Class="main-layout-signout-btn">
+            <CskButton Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       IconStart="@CskIcons.SignOut"
+                       Title="Sign Out"
+                       OnClick="SignOut"
+                       Class="main-layout-signout-btn">
                 Sign Out
-            </FluentButton>
+            </CskButton>
         }
         else if (!IsAnonymousPage)
         {
-            <FluentButton Appearance="ButtonAppearance.Subtle" Size="ButtonSize.Small" OnClick="@(() => NavigationManager.NavigateTo("/login"))" Class="main-layout-signout-btn">
+            <CskButton Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       OnClick="@(() => NavigationManager.NavigateTo("/login"))"
+                       Class="main-layout-signout-btn">
                 Sign In
-            </FluentButton>
+            </CskButton>
         }
     </header>
+
     <div class="main-layout-body">
         @if (HasActiveTenantSession)
         {
@@ -73,21 +62,21 @@
                     @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)
                     {
                         <div class="main-layout-access-denied-wrapper">
-                            <FluentCard Class="main-layout-access-denied-card">
-                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
-                                        <FluentIcon Value="@(new Icons.Filled.Size24.DismissCircle())" Color="Color.Error" />
-                                        <FluentLabel Typo="Typography.H4">Active Tenant Required</FluentLabel>
-                                    </FluentStack>
-                                    <FluentLabel Typo="Typography.Body">
+                            <CskCard Variant="CskCardVariant.Elevated" Class="main-layout-access-denied-card">
+                                <CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
+                                    <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" Gap="CskStackGap.Small">
+                                        <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-error" />
+                                        <h4>Active Tenant Required</h4>
+                                    </CskStack>
+                                    <p>
                                         Your account is authenticated, but no active tenant is currently selected or assigned.
                                         Application screens and data operations are disabled to prevent cross-tenant data corruption.
-                                    </FluentLabel>
-                                    <FluentLabel Typo="Typography.Body" Class="main-layout-hint-label">
+                                    </p>
+                                    <p class="main-layout-hint-label">
                                         Please switch to an authorized tenant or contact your organization administrator.
-                                    </FluentLabel>
-                                </FluentStack>
-                            </FluentCard>
+                                    </p>
+                                </CskStack>
+                            </CskCard>
                         </div>
                     }
                     else
@@ -98,15 +87,23 @@
             </div>
         </main>
     </div>
+
     <footer class="main-layout-footer">
         <div class="main-layout-flex-row">
-            <FluentLink Href="settings" IconStart="@(new Icons.Regular.Size16.Settings())">
+            <CskButton Href="settings"
+                       Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       IconStart="@CskIcons.Settings">
                 Settings
-            </FluentLink>
-            <FluentSpacer />
-            <FluentLink Href="https://learn.microsoft.com/en-us/aspnet/core/blazor" Target="LinkTarget.Blank" IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
+            </CskButton>
+            <CskSpacer />
+            <CskButton Href="https://learn.microsoft.com/en-us/aspnet/core/blazor"
+                       Target="_blank"
+                       Variant="CskButtonVariant.Text"
+                       Size="CskButtonSize.Small"
+                       IconEnd="@CskIcons.ArrowExit">
                 About Blazor
-            </FluentLink>
+            </CskButton>
         </div>
     </footer>
 </div>
@@ -116,186 +113,3 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
-
-@code {
-    private bool HasActiveTenantSession => CurrentUser.IsAuthenticatedTenantUser;
-
-    private bool IsAnonymousPage
-    {
-        get
-        {
-            var uri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLowerInvariant();
-            return uri.StartsWith("login") || uri.StartsWith("auth-error") || uri.StartsWith("error") || uri.StartsWith("not-found");
-        }
-    }
-
-    protected override void OnInitialized()
-    {
-        NavState.OnChange += HandleNavStateChanged;
-        TimeZoneService.OnChange += HandleTimeZoneChanged;
-    }
-
-    private void HandleNavStateChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleTimeZoneChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        NavState.OnChange -= HandleNavStateChanged;
-        TimeZoneService.OnChange -= HandleTimeZoneChanged;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-
-        await TimeZoneService.InitializeAsync();
-
-        if (!CurrentUser.IsAuthenticated)
-        {
-            try
-            {
-                var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
-                if (result.Success && result.Value != null)
-                {
-                    var data = result.Value;
-
-                    var rehydrateResult = await AuthVerificationService.VerifyAndRehydrateSessionAsync(data.UserId, data.SessionId);
-                    if (rehydrateResult.IsSuccess)
-                    {
-                        var verified = rehydrateResult.Value!;
-                        var user = verified.User;
-                        var isHost = verified.IsRootAdmin;
-
-                        if (CurrentUser is AppCurrentUser appUser)
-                        {
-                            appUser.SetUser(user.Id.ToString(), user.Email, user.FullName, isAuthenticated: true);
-                            appUser.SessionId = data.SessionId.ToString();
-                            if (isHost)
-                            {
-                                appUser.AddRole("Admin");
-                                appUser.AddRole("RootAdmin");
-                            }
-                        }
-
-                        // Apply persisted user timezone immediately upon rehydration
-                        var tzToApply = !string.IsNullOrWhiteSpace(user.TimeZoneId)
-                            ? user.TimeZoneId
-                            : data.TimeZoneId;
-                        if (!string.IsNullOrWhiteSpace(tzToApply))
-                        {
-                            TimeZoneService.ApplyUserTimeZone(tzToApply);
-                        }
-
-                        // Prefer the intra-session active tenant if still permitted in allowed tenants
-                        var resolvedTenantId = verified.ResolvedTenantId;
-                        var resolvedTenantSlug = verified.ResolvedTenantSlug;
-                        var resolvedTenantName = verified.ResolvedTenantName;
-
-                        if (!string.IsNullOrWhiteSpace(data.ActiveTenantId))
-                        {
-                            var activeMatch = verified.AllowedTenants.FirstOrDefault(t => t.Id.ToString() == data.ActiveTenantId || t.Slug == data.ActiveTenantId);
-                            if (activeMatch != null)
-                            {
-                                resolvedTenantId = activeMatch.Id;
-                                resolvedTenantSlug = activeMatch.Slug;
-                                resolvedTenantName = activeMatch.Name;
-                            }
-                        }
-
-                        TenantContext.Initialize(
-                            tenantId: resolvedTenantId,
-                            tenantName: resolvedTenantName,
-                            userType: user.UserType,
-                            allowedTenants: verified.AllowedTenants,
-                            tenantSlug: resolvedTenantSlug);
-
-                        if (data.ActiveProjectId.HasValue)
-                        {
-                            ProjectContext.Initialize(data.ActiveProjectId.Value, null, null, Array.Empty<ProjectInfoDto>());
-                        }
-
-                        AuthStateProvider.NotifyUserChanged();
-                        StateHasChanged();
-
-                        // If user is currently on an anonymous/login page, navigate back to returnUrl or home
-                        if (IsAnonymousPage)
-                        {
-                            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-                            var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-                            if (queryParams.TryGetValue("returnUrl", out var returnUrl) && !string.IsNullOrWhiteSpace(returnUrl))
-                            {
-                                NavigationManager.NavigateTo(returnUrl.ToString(), replace: true);
-                            }
-                            else
-                            {
-                                NavigationManager.NavigateTo("/", replace: true);
-                            }
-                        }
-                        return;
-                    }
-                    else
-                    {
-                        Logger.LogWarning("Session restoration rejected: {Error}", rehydrateResult.Error);
-                        // Session revoked or invalid: clear storage
-                        await SessionStorage.DeleteAsync("app_session");
-                        if (!IsAnonymousPage)
-                        {
-                            NavigationManager.NavigateTo($"/auth-error?reason={Uri.EscapeDataString(rehydrateResult.Error ?? "Account access denied.")}", replace: true);
-                            return;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "Failed to restore session from browser sessionStorage.");
-            }
-
-            // If still not authenticated and trying to access a protected page, redirect to login
-            if (!IsAnonymousPage)
-            {
-                NavigationManager.NavigateTo("/login");
-            }
-        }
-        else if ((!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty) && !IsAnonymousPage)
-        {
-            // Zero Trust: Authenticated but tenant missing -> redirect to login/tenant selection
-            NavigationManager.NavigateTo("/login", replace: true);
-        }
-    }
-
-    private async Task SignOut()
-    {
-        try
-        {
-            var result = await SessionStorage.GetAsync<UserSessionStorageData>("app_session");
-            if (result.Success && result.Value != null)
-            {
-                var adminOrSelf = CurrentUser.IsAuthenticated ? CurrentUser.UserId : (result.Value.UserId ?? "user");
-                await SessionService.RevokeSessionAsync(result.Value.SessionId, adminOrSelf);
-            }
-            await SessionStorage.DeleteAsync("app_session");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Error while cleaning session storage on sign out.");
-        }
-
-        if (CurrentUser is AppCurrentUser appUser)
-        {
-            appUser.Clear();
-        }
-
-        TenantContext.Reset();
-        ProjectContext.Reset();
-        AuthStateProvider.NotifyUserChanged();
-        NavigationManager.NavigateTo("/login", forceLoad: true);
-    }
-}

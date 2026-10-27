@@ -16,10 +16,10 @@ else if (ErrorContent is not null)
 }
 else
 {
-    <FluentMessageBar Title="Unexpected Error" Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@Recover">
+    <CskMessageBar Title="Unexpected Error" Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@Recover">
         An unexpected error occurred in page '@(PageName ?? "Current View")'. The error details have been logged for diagnosis.
-        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@Recover">Try Again</FluentButton>
-    </FluentMessageBar>
+        <CskButton Variant="CskButtonVariant.Text" OnClick="@Recover">Try Again</CskButton>
+    </CskMessageBar>
 }
 
 @code {
@@ -28,7 +28,7 @@ else
 
     protected override Task OnErrorAsync(Exception exception)
     {
-        Logger.LogError(
+        Logger.LogCritical(
             exception,
             "Razor Page Execution Error: Unhandled exception in page '{PageName}' ({PageType}) at URL '{CurrentUri}'. TenantId='{TenantId}', UserId='{UserId}', ErrorMessage='{ErrorMessage}'",
             PageName ?? "UnknownPage",

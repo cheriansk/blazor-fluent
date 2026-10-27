@@ -44,6 +44,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 
 
+using BlazorEnterprise.Shared.Logging;
 using BlazorEnterprise.Shared.UI.Extensions;
 
 using Serilog;
@@ -58,7 +59,7 @@ using System.Threading.RateLimiting;
 
 // 0. Npgsql PostgreSQL Timestamp Compatibility (prevents DateTimeKind.Unspecified crashes)
 
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+// AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 
 
@@ -202,19 +203,16 @@ try
 
             .Enrich.WithSpan()
 
-            .WriteTo.Console(outputTemplate: logOutputTemplate)
-
-            .WriteTo.File(
-
-                path: "logs/blazorenterprise-.log",
-
-                rollingInterval: RollingInterval.Day,
-
-                retainedFileCountLimit: 30,
-
-                outputTemplate: logOutputTemplate)
-
-            .WriteTo.TeamsAlert(context.Configuration);
+            .WriteTo.StrictSeverity(wt =>
+            {
+                wt.Console(outputTemplate: logOutputTemplate);
+                wt.File(
+                    path: "logs/blazorenterprise-.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30,
+                    outputTemplate: logOutputTemplate);
+                wt.TeamsAlert(context.Configuration);
+            });
 
     });
 
@@ -599,18 +597,15 @@ try
 
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevLoginOptions>()
-
         .BindConfiguration(BlazorEnterprise.Core.Configuration.DevLoginOptions.SectionName)
-
         .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
-
             "Zero-Trust Security Violation: 'Auth:DevLogin' cannot be enabled outside Development environment.")
-
-        .Validate(o => !o.Enabled || o.Users.Count > 0,
-
-            "Configuration Violation: 'Auth:DevLogin' is enabled but no user personas are configured in 'Auth:DevLogin:Users'.")
-
         .ValidateOnStart();
+
+    if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Auth:DevLogin:Enabled"))
+    {
+        Log.Fatal("FATAL SECURITY WARNING: Local passwordless email login ('Auth:DevLogin:Enabled') is ACTIVE in Development mode. This MUST be removed or disabled before production deployment!");
+    }
 
 
 
@@ -676,7 +671,7 @@ try
 
 
 
-    var app = builder.Build();
+    var app = builder.Build();
     BlazorEnterprise.Core.Utilities.SystemIdentityUtility.SetCurrent(app.Services.GetRequiredService<BlazorEnterprise.Core.Contracts.ISystemIdentity>());
 
 
@@ -756,14 +751,6 @@ try
             await BlazorEnterprise.Persistence.Initialization.InitialDatabaseSeeder.SeedAsync(app.Services);
 
 
-
-            if (app.Environment.IsDevelopment())
-
-            {
-
-                await BlazorEnterprise.Persistence.Initialization.DevelopmentSeeder.SeedAsync(app.Services);
-
-            }
 
         }
 

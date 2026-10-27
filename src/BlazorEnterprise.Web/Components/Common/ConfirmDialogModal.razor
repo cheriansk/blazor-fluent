@@ -1,30 +1,30 @@
-@* Reusable confirmation dialog for destructive actions (Revoke, Delete, Impersonate, etc.) *@
-<FluentDialog @ref="_dialog"
+﻿@* Reusable confirmation dialog for destructive actions (Revoke, Delete, Impersonate, etc.) *@
+<CskDialog @ref="_dialog"
               Modal="true"
-              Style="--dialog-width: 480px;">
-    <FluentDialogBody>
+              Class="dialog-confirm-width">
+    <CskDialogBody>
         <TitleTemplate>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Style="align-items: center;">
-                <FluentIcon Value="@(new Icons.Filled.Size24.Warning())" Color="Color.Warning" />
-                <FluentLabel Typo="Typography.H6">@Title</FluentLabel>
-            </FluentStack>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning csk-icon-lg" />
+                <CskLabel Typo="Typography.H6">@Title</CskLabel>
+            </CskStack>
         </TitleTemplate>
         <ChildContent>
-            <FluentLabel Typo="Typography.Body">@Message</FluentLabel>
+            <CskLabel Typo="Typography.Body">@Message</CskLabel>
         </ChildContent>
         <ActionTemplate>
-            <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@CancelAsync">Cancel</FluentButton>
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          Style="background: var(--error); color: white;"
+            <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelAsync">Cancel</CskButton>
+            <CskButton Variant="CskButtonVariant.Filled"
+                          Class="btn-confirm-danger"
                           OnClick="@ConfirmAsync">
                 @ConfirmLabel
-            </FluentButton>
+            </CskButton>
         </ActionTemplate>
-    </FluentDialogBody>
-</FluentDialog>
+    </CskDialogBody>
+</CskDialog>
 
 @code {
-    private FluentDialog? _dialog;
+    private CskDialog? _dialog;
 
     [Parameter, EditorRequired] public string Title { get; set; } = "Are you sure?";
     [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;

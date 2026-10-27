@@ -500,6 +500,44 @@ public static class DataListExtensions
     }
 
     /// <summary>
+    /// Attempts to parse a string code into the specified enum type (case-insensitive) using cached metadata without direct Enum.TryParse.
+    /// Complies strictly with TG013 architectural standard.
+    /// </summary>
+    public static bool TryToEnum(this string? code, Type enumType, out object? result)
+    {
+        if (!string.IsNullOrWhiteSpace(code) && enumType.IsEnum)
+        {
+            var defs = ResolveTypeDefinitions(enumType);
+            if (defs.CodeToMetadata.TryGetValue(code.Trim(), out var meta))
+            {
+                result = meta.EnumValue;
+                return true;
+            }
+        }
+        result = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to parse an integer value into the specified enum type using cached metadata without direct Enum.TryParse.
+    /// Complies strictly with TG013 architectural standard.
+    /// </summary>
+    public static bool TryToEnum(this int value, Type enumType, out object? result)
+    {
+        if (enumType.IsEnum)
+        {
+            var defs = ResolveTypeDefinitions(enumType);
+            if (defs.IntToMetadata.TryGetValue(value, out var meta))
+            {
+                result = meta.EnumValue;
+                return true;
+            }
+        }
+        result = null;
+        return false;
+    }
+
+    /// <summary>
     /// Returns the cached string code representation for an enum member (avoiding repeated ToString allocations).
     /// </summary>
     public static string GetCode<TEnum>(this TEnum value) where TEnum : struct, Enum =>

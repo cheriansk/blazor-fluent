@@ -16,17 +16,19 @@
 .nav-toggle-row {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--neutral-stroke-subtle);
+    border-bottom: 1px solid var(--mat-outline-variant, #e0e0e0);
+    height: 48px;
+    box-sizing: border-box;
 }
 
 .nav-expanded .nav-toggle-row {
     justify-content: space-between;
-    padding: 8px 12px;
+    padding: 0 12px;
 }
 
 .nav-collapsed .nav-toggle-row {
     justify-content: center;
-    padding: 8px 0;
+    padding: 0;
 }
 
 .nav-header-title {
@@ -34,30 +36,48 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--neutral-foreground-hint);
+    color: var(--mat-on-surface-variant, #616161);
 }
 
-/* Collapsed Icon-Only Rules */
-.nav-collapsed ::deep .fluent-navitem {
-    justify-content: center !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
+.csk-nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 6px;
 }
 
-.nav-collapsed ::deep .fluent-navitem svg {
-    margin: 0 !important;
+.csk-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--mat-on-surface, #1e1e1e);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-.nav-collapsed ::deep .fluent-navitem > span:not(.fluent-nav-icon):not(svg),
-.nav-collapsed ::deep .fluent-navgroup-title,
-.nav-collapsed ::deep .fluent-navgroup-expander {
-    display: none !important;
+.csk-nav-item:hover {
+    background-color: var(--mat-surface-container-high, #ebebeb);
 }
 
-.nav-collapsed ::deep .fluent-navgroup-header {
-    justify-content: center !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+.csk-nav-item.active {
+    background-color: var(--mat-secondary-container, #e8def8);
+    color: var(--mat-on-secondary-container, #1d192b);
+    font-weight: 600;
+}
+
+.csk-nav-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.nav-collapsed .csk-nav-item {
+    justify-content: center;
+    padding: 10px 0;
 }

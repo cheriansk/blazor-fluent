@@ -86,7 +86,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         {
             await auditService.LogSecurityEventAsync(
                 "LoginFailedUnprovisioned",
-                AuditSeverityEnum.Warning,
+                AuditSeverityEnum.Critical,
                 $"Authentication rejected for unprovisioned email '{email}'.",
                 ct);
 
@@ -113,35 +113,16 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         {
             await auditService.LogSecurityEventAsync(
                 "LoginFailedValidityGate",
-                AuditSeverityEnum.Warning,
+                AuditSeverityEnum.Critical,
                 $"Login rejected for '{email}': {failureReason}",
                 ct);
 
             return Result<AuthUserResult>.Failure(failureReason);
         }
 
+
         var isRootAdmin = _rootAdminService.IsRootAdmin(user.Email);
         var isHost = isRootAdmin;
-
-        if (!isRootAdmin)
-        {
-            var hasAssignedRole = await dbContext.ProjectUserRoles
-                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct)
-                || await dbContext.ProgramUserRoles
-                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct);
-
-            if (!hasAssignedRole)
-            {
-                await auditService.LogSecurityEventAsync(
-                    "LoginFailedNoAssignedRoles",
-                    AuditSeverityEnum.Warning,
-                    $"UserId '{user.Id}' denied access: account is active but has zero assigned project or program roles.",
-                    ct);
-
-                return Result<AuthUserResult>.Failure("Your account is active but has not been assigned to any project or program. Please contact an administrator.");
-            }
-        }
-
         var dbTenants = await dbContext.Tenants
             .AsNoTracking()
             .Where(t => t.IsActive && t.Slug != _rootAdminService.RootTenantSlug)
@@ -154,6 +135,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         var nowUtc = DateTime.UtcNow;
         var userMemberships = await dbContext.TenantUsers
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted)
             .Include(tu => tu.Tenant)
@@ -247,7 +229,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
 
         if (user is null)
         {
-            _logger.LogWarning("Session rehydration rejected: user {UserId} not found or deleted.", userId);
+            _logger.LogCritical("SECURITY VIOLATION: Session rehydration rejected: user {UserId} not found or deleted.", userId);
             return Result<AuthUserResult>.Failure("User account is no longer valid or has been removed.");
         }
 
@@ -258,27 +240,13 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         }
         if (!user.IsValidForLogin(DateTime.UtcNow, secretKey, out var failureReason))
         {
-            _logger.LogWarning("Session rehydration rejected for user {Email}: {Reason}", user.Email, failureReason);
+            _logger.LogCritical("SECURITY VIOLATION: Session rehydration rejected for user {Email}: {Reason}", user.Email, failureReason);
             return Result<AuthUserResult>.Failure(failureReason);
         }
 
+
         var isRootAdmin = _rootAdminService.IsRootAdmin(user.Email);
         var isHost = isRootAdmin;
-
-        if (!isRootAdmin)
-        {
-            var hasAssignedRole = await dbContext.ProjectUserRoles
-                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct)
-                || await dbContext.ProgramUserRoles
-                .AnyAsync(r => r.UserEntityId == user.Id && !r.IsDeleted, ct);
-
-            if (!hasAssignedRole)
-            {
-                _logger.LogWarning("Session rehydration rejected: user {UserId} has zero assigned project or program roles.", userId);
-                return Result<AuthUserResult>.Failure("Your account has not been assigned to any project or program.");
-            }
-        }
-
         var dbTenants = await dbContext.Tenants
             .AsNoTracking()
             .Where(t => t.IsActive && t.Slug != _rootAdminService.RootTenantSlug)
@@ -290,6 +258,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             .FirstOrDefaultAsync(t => t.Slug == _rootAdminService.RootTenantSlug, ct);
 
         var userMemberships = await dbContext.TenantUsers
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .Where(tu => tu.UserEntityId == user.Id && tu.IsActive && !tu.IsDeleted)
             .Include(tu => tu.Tenant)

@@ -1,0 +1,111 @@
+.csk-select-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.csk-field-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--mat-on-surface-variant, #49454F);
+    transition: color 0.15s ease-in-out;
+}
+
+.csk-field-required {
+    color: var(--mat-error, #BA1A1A);
+    margin-left: 2px;
+}
+
+.csk-select-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--mat-outline, #79747E);
+    border-radius: var(--mat-radius-sm, 8px);
+    background-color: var(--mat-surface, #FDF8FD);
+    height: 48px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.csk-select-native {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    flex: 1 1 auto;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    color: var(--mat-on-surface, #1C1B1F);
+    padding: 0 2.25rem 0 0.875rem;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.csk-select-arrow {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--mat-on-surface-variant, #49454F);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease-in-out;
+}
+
+/* Focused State */
+.csk-field-focused .csk-select-box {
+    border-color: var(--mat-primary, #6750A4);
+    box-shadow: 0 0 0 1px var(--mat-primary, #6750A4);
+}
+
+.csk-field-focused .csk-field-label {
+    color: var(--mat-primary, #6750A4);
+}
+
+.csk-field-focused .csk-select-arrow {
+    color: var(--mat-primary, #6750A4);
+}
+
+/* Error State */
+.csk-field-error .csk-select-box {
+    border-color: var(--mat-error, #BA1A1A);
+    box-shadow: 0 0 0 1px var(--mat-error, #BA1A1A);
+}
+
+.csk-field-error .csk-field-label {
+    color: var(--mat-error, #BA1A1A);
+}
+
+/* Disabled State */
+.csk-field-disabled {
+    opacity: 0.38;
+    pointer-events: none;
+}
+
+.csk-field-disabled .csk-select-box {
+    background-color: var(--mat-surface-variant, #E7E0EC);
+    border-color: var(--mat-outline-variant, #CAC4D0);
+}
+
+/* Helper Text */
+.csk-field-helper {
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant, #49454F);
+    margin-top: 0.15rem;
+    padding: 0 0.25rem;
+}
+
+.csk-field-helper-error {
+    color: var(--mat-error, #BA1A1A);
+}

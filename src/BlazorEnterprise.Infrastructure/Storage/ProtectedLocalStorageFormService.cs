@@ -25,7 +25,7 @@ public class ProtectedLocalStorageFormService : ILocalStorageFormService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to save form draft for key '{FormKey}'", formKey);
+            _logger.LogError(ex, "Failed to save form draft for key '{FormKey}'", formKey);
         }
     }
 
@@ -38,7 +38,7 @@ public class ProtectedLocalStorageFormService : ILocalStorageFormService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load form draft for key '{FormKey}'", formKey);
+            _logger.LogError(ex, "Failed to load form draft for key '{FormKey}'", formKey);
             return default;
         }
     }
@@ -51,7 +51,7 @@ public class ProtectedLocalStorageFormService : ILocalStorageFormService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to clear form draft for key '{FormKey}'", formKey);
+            _logger.LogError(ex, "Failed to clear form draft for key '{FormKey}'", formKey);
         }
     }
 }

@@ -40,7 +40,7 @@ public class SubTaskRollupProvider : IWorkItemRollupProvider
         }
         else if (level == TaskLevelEnum.User && !string.IsNullOrWhiteSpace(userId))
         {
-            query = query.Where(s => s.UserId == userId || s.AssigneeEmails.Contains(userId) || s.WatcherEmails.Contains(userId));
+            query = query.Where(s => s.UserId == userId || (s.AssigneeEmails != null && s.AssigneeEmails.Contains(userId)) || (s.WatcherEmails != null && s.WatcherEmails.Contains(userId)));
         }
 
         var items = await query.ToListAsync(ct);

@@ -1,0 +1,16 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<label class="csk-radio @(IsSelected ? "csk-radio-selected" : "") @(IsDisabled ? "csk-radio-disabled" : "") @Class"
+       @attributes="AdditionalAttributes"
+       @onclick="HandleClickAsync">
+    <span class="csk-radio-icon">
+        <span class="csk-radio-circle"></span>
+        <span class="csk-radio-dot"></span>
+    </span>
+    @if (ChildContent is not null)
+    {
+        <span class="csk-radio-label">
+            @ChildContent
+        </span>
+    }
+</label>

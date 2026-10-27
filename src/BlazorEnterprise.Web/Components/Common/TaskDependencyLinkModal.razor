@@ -1,8 +1,8 @@
+@namespace BlazorEnterprise.Web.Components.Common
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
 @using BlazorEnterprise.Core.Domain.Tasks
-@using Microsoft.FluentUI.AspNetCore.Components
-@inject IUserTaskService UserTaskService
+@using BlazorEnterprise.Shared.UI.Components
 
 @if (IsOpen)
 {
@@ -10,34 +10,34 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3>Link Work Item Dependency</h3>
-                <FluentButton Appearance="ButtonAppearance.Subtle" 
-                              IconStart="@(new Icons.Regular.Size16.Dismiss())" 
-                              OnClick="Close" />
+                <CskButton Variant="CskButtonVariant.Text" 
+                           IconStart="@CskIcons.Dismiss" 
+                           OnClick="Close" />
             </div>
 
             <div class="modal-body">
                 @if (!string.IsNullOrWhiteSpace(_modalError))
                 {
-                    <FluentMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _modalError = null)" Style="margin-bottom: 12px;">
+                    <div class="csk-message-bar csk-message-bar-error modal-error-box">
                         @_modalError
-                    </FluentMessageBar>
+                    </div>
                 }
 
                 <div class="source-item-banner">
                     Linking from: <strong>@SourceTaskTitle</strong>
                 </div>
 
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                <div class="modal-form-stack">
                     <!-- Relationship Type Selector -->
                     <div>
                         <label class="fluent-label">Relationship Type</label>
-                        <FluentSelect TOption="TaskDependencyTypeEnum" 
+                        <CskSelect TOption="TaskDependencyTypeEnum" 
                                       TValue="TaskDependencyTypeEnum"
                                       @bind-Value="_selectedLinkType"
-                                      Style="width: 100%;">
-                            <FluentOption Value="TaskDependencyTypeEnum.BlockedBy">🛑 Blocked By (Requires Resolution SLA & Details)</FluentOption>
-                            <FluentOption Value="TaskDependencyTypeEnum.RelatesTo">🔗 Relates To (Associative Link)</FluentOption>
-                        </FluentSelect>
+                                      Class="w-full">
+                            <CskOption Value="TaskDependencyTypeEnum.BlockedBy">🛑 Blocked By (Requires Resolution SLA & Details)</CskOption>
+                            <CskOption Value="TaskDependencyTypeEnum.RelatesTo">🔗 Relates To (Associative Link)</CskOption>
+                        </CskSelect>
                         <span class="field-hint">
                             @if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
                             {
@@ -53,16 +53,16 @@
                     <!-- Target Task Selector -->
                     <div>
                         <label class="fluent-label">Select Prerequisite / Target Task</label>
-                        <FluentSelect TOption="Guid" 
+                        <CskSelect TOption="Guid" 
                                       TValue="Guid"
                                       @bind-Value="_selectedTargetTaskId"
-                                      Style="width: 100%;">
-                            <FluentOption Value="Guid.Empty">-- Select Task --</FluentOption>
+                                      Class="w-full">
+                            <CskOption Value="Guid.Empty">-- Select Task --</CskOption>
                             @foreach (var task in AvailableTargetTasks.Where(t => t.Id != SourceTaskId))
                             {
-                                <FluentOption Value="@task.Id">[@task.Status] @task.Title (@task.AssigneeEmails)</FluentOption>
+                                <CskOption Value="@task.Id">[@task.Status] @task.Title (@task.AssigneeEmails)</CskOption>
                             }
-                        </FluentSelect>
+                        </CskSelect>
                     </div>
 
                     @if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
@@ -70,223 +70,53 @@
                         <!-- Resolve SLA Due Date -->
                         <div>
                             <label class="fluent-label">Resolve SLA Due Date *</label>
-                            <FluentDatePicker @bind-Value="_resolveDueDate" Style="width: 100%;" />
+                            <CskDatePicker @bind-Value="_resolveDueDate" Class="w-full" />
                             <span class="field-hint">Target deadline by which the blocker must be resolved. Appears on project and executive calendars.</span>
                         </div>
 
                         <!-- Dependency Criticality -->
                         <div>
                             <label class="fluent-label">Criticality Rating *</label>
-                            <FluentSelect TOption="DependencyCriticalityEnum" 
+                            <CskSelect TOption="DependencyCriticalityEnum" 
                                           TValue="DependencyCriticalityEnum"
                                           @bind-Value="_criticality"
-                                          Style="width: 100%;">
-                                <FluentOption Value="DependencyCriticalityEnum.Low">Low - Minor cosmetic or non-blocking</FluentOption>
-                                <FluentOption Value="DependencyCriticalityEnum.Medium">Medium - Standard execution milestone dependency</FluentOption>
-                                <FluentOption Value="DependencyCriticalityEnum.High">High - Critical path risk, immediate attention</FluentOption>
-                                <FluentOption Value="DependencyCriticalityEnum.Critical">Critical - Hard blocker halting active work stream</FluentOption>
-                            </FluentSelect>
+                                          Class="w-full">
+                                <CskOption Value="DependencyCriticalityEnum.Low">Low - Minor cosmetic or non-blocking</CskOption>
+                                <CskOption Value="DependencyCriticalityEnum.Medium">Medium - Standard execution milestone dependency</CskOption>
+                                <CskOption Value="DependencyCriticalityEnum.High">High - Critical path risk, immediate attention</CskOption>
+                                <CskOption Value="DependencyCriticalityEnum.Critical">Critical - Hard blocker halting active work stream</CskOption>
+                            </CskSelect>
                         </div>
 
                         <!-- Impact Details -->
                         <div>
                             <label class="fluent-label">Impact Details & Consequences *</label>
-                            <FluentTextArea @bind-Value="_impactDetails" 
+                            <CskTextArea @bind-Value="_impactDetails" 
                                             Rows="4" 
                                             Placeholder="Detail the downstream blast radius, schedule impacts, and consequences if this blocker is not resolved on time..." 
-                                            Style="width: 100%;" />
+                                            Class="w-full" />
                         </div>
 
                         <!-- Watcher Emails -->
                         <div>
                             <label class="fluent-label">Stakeholder Watcher Emails (Optional)</label>
-                            <FluentTextInput @bind-Value="_watcherEmails" 
-                                             Placeholder="alice@company.com; bob@company.com" 
-                                             Style="width: 100%;" />
+                            <CskTextInput @bind-Value="_watcherEmails" 
+                                          Placeholder="alice@company.com; bob@company.com" 
+                                          Class="w-full" />
                             <span class="field-hint">Semicolon-separated emails of stakeholders to alert when this blocker is created, resolved, or reopened.</span>
                         </div>
                     }
-                </FluentStack>
+                </div>
             </div>
 
             <div class="modal-footer">
-                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="Close" Disabled="_isSubmitting">
+                <CskButton Variant="CskButtonVariant.Text" OnClick="Close" Disabled="_isSubmitting">
                     Cancel
-                </FluentButton>
-                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveLinkAsync" Loading="_isSubmitting" Disabled="_isSubmitting">
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="SaveLinkAsync" Loading="_isSubmitting" Disabled="_isSubmitting">
                     Create Link
-                </FluentButton>
+                </CskButton>
             </div>
         </div>
     </div>
-}
-
-<style>
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-    .modal-card {
-        background: var(--neutral-fill-layer-rest, #fff);
-        border-radius: 8px;
-        width: 100%;
-        max-width: 580px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--neutral-stroke-divider-rest, #e0e0e0);
-    }
-    .modal-header h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-    }
-    .modal-body {
-        padding: 1.25rem;
-        max-height: 70vh;
-        overflow-y: auto;
-    }
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
-        padding: 1rem 1.25rem;
-        border-top: 1px solid var(--neutral-stroke-divider-rest, #e0e0e0);
-        background: var(--neutral-fill-subtle-rest, #fafafa);
-    }
-    .source-item-banner {
-        background: #f0f7ff;
-        border: 1px solid #cce4ff;
-        padding: 0.6rem 0.8rem;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-    }
-    .fluent-label {
-        display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-    }
-    .field-hint {
-        display: block;
-        font-size: 0.75rem;
-        color: #666;
-        margin-top: 0.2rem;
-    }
-</style>
-
-@code {
-    [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public Guid SourceTaskId { get; set; }
-    [Parameter] public string SourceTaskTitle { get; set; } = string.Empty;
-    [Parameter] public IReadOnlyList<TaskEntity> AvailableTargetTasks { get; set; } = [];
-    [Parameter] public EventCallback OnLinkCreated { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
-
-    private TaskDependencyTypeEnum _selectedLinkType = TaskDependencyTypeEnum.BlockedBy;
-    private Guid _selectedTargetTaskId = Guid.Empty;
-    private DateTime? _resolveDueDate = DateTime.UtcNow.AddDays(7);
-    private DependencyCriticalityEnum _criticality = DependencyCriticalityEnum.High;
-    private string _impactDetails = string.Empty;
-    private string _watcherEmails = string.Empty;
-    private bool _isSubmitting;
-    private string? _modalError;
-
-    private async Task Close()
-    {
-        _modalError = null;
-        IsOpen = false;
-        await OnClose.InvokeAsync();
-    }
-
-    private async Task SaveLinkAsync()
-    {
-        _modalError = null;
-
-        if (_selectedTargetTaskId == Guid.Empty)
-        {
-            _modalError = "Please select a target prerequisite task.";
-            return;
-        }
-
-        if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
-        {
-            if (string.IsNullOrWhiteSpace(_impactDetails))
-            {
-                _modalError = "Impact details describing consequences of unresolved blocker are required.";
-                return;
-            }
-
-            if (!_resolveDueDate.HasValue)
-            {
-                _modalError = "Resolve SLA due date is mandatory.";
-                return;
-            }
-        }
-
-        _isSubmitting = true;
-        try
-        {
-            if (_selectedLinkType == TaskDependencyTypeEnum.BlockedBy)
-            {
-                var result = await UserTaskService.CreateBlockedByLinkAsync(
-                    SourceTaskId,
-                    _selectedTargetTaskId,
-                    _resolveDueDate!.Value,
-                    _criticality,
-                    _impactDetails,
-                    _watcherEmails);
-
-                if (result.IsSuccess)
-                {
-                    await OnLinkCreated.InvokeAsync();
-                    await Close();
-                }
-                else
-                {
-                    _modalError = result.Error ?? "Failed to create blocker link.";
-                }
-            }
-            else
-            {
-                // Relates To
-                var result = await UserTaskService.AddTaskDependencyAsync(
-                    Guid.Empty,
-                    SourceTaskId,
-                    _selectedTargetTaskId,
-                    TaskDependencyTypeEnum.RelatesTo);
-
-                if (result.IsSuccess)
-                {
-                    await OnLinkCreated.InvokeAsync();
-                    await Close();
-                }
-                else
-                {
-                    _modalError = result.Error ?? "Failed to create relationship.";
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _modalError = $"Error creating link: {ex.Message}";
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
-    }
 }

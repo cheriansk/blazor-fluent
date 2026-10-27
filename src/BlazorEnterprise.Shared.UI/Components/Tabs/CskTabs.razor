@@ -1,0 +1,38 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-tabs-container @Class" @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+
+    <div class="csk-tabs-header" role="tablist">
+        @foreach (var tab in _tabs)
+        {
+            var isActive = IsTabActive(tab);
+            <button type="button"
+                    role="tab"
+                    aria-selected="@isActive"
+                    class="csk-tab-button @(isActive ? "csk-tab-active" : "") @tab.Class"
+                    @onclick="() => SelectTabAsync(tab)">
+                @if (tab.HeaderTemplate != null)
+                {
+                    @tab.HeaderTemplate
+                }
+                else
+                {
+                    <span>@tab.Label</span>
+                }
+            </button>
+        }
+    </div>
+
+    <div class="csk-tabs-panel" role="tabpanel">
+        @{
+            var active = GetActiveTab();
+        }
+        @if (active != null)
+        {
+            @(active.Content ?? active.ChildContent)
+        }
+    </div>
+</div>

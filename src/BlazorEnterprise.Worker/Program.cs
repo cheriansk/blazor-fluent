@@ -4,11 +4,12 @@ using BlazorEnterprise.Infrastructure.EngineGateway;
 using BlazorEnterprise.Jobs;
 using BlazorEnterprise.Persistence;
 using BlazorEnterprise.ServiceDefaults;
+using BlazorEnterprise.Shared.Logging;
 using Serilog;
 using Serilog.Enrichers.Span;
 
 // 0. Npgsql PostgreSQL Timestamp Compatibility (prevents DateTimeKind.Unspecified crashes)
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+// AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // 1. Serilog Bootstrapping
 Log.Logger = new LoggerConfiguration()
@@ -31,12 +32,15 @@ try
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithSpan()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss 'UTC'}] [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
-            .WriteTo.File(
-                path: "logs/worker-.log",
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss 'UTC'}] [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+            .WriteTo.StrictSeverity(wt =>
+            {
+                wt.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss 'UTC'}] [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+                wt.File(
+                    path: "logs/worker-.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30,
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss 'UTC'}] [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+            });
     });
 
     // 3. Strongly typed Options

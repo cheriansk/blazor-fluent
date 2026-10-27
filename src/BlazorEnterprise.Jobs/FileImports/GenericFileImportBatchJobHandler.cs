@@ -467,7 +467,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send notification for file {ImportFileId}", file.Id);
+            _logger.LogError(ex, "Failed to send notification for file {ImportFileId}", file.Id);
         }
     }
 }

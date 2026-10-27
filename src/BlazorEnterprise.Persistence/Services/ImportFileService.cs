@@ -186,7 +186,7 @@ public class ImportFileService : IImportFileService
                 }
                 catch (Exception cleanupEx)
                 {
-                    _logger.LogWarning(cleanupEx, "Failed to delete blob '{BlobPath}' during batch rollback.", blobPath);
+                    _logger.LogError(cleanupEx, "Failed to delete blob '{BlobPath}' during batch rollback.", blobPath);
                 }
             }
 
@@ -298,7 +298,7 @@ public class ImportFileService : IImportFileService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to deserialize ValidationErrorsJson for file {ImportFileId}", importFileId);
+                _logger.LogError(ex, "Failed to deserialize ValidationErrorsJson for file {ImportFileId}", importFileId);
             }
         }
 
@@ -366,7 +366,7 @@ public class ImportFileService : IImportFileService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send import notification to user {UserId}", _currentUser.UserId);
+            _logger.LogError(ex, "Failed to send import notification to user {UserId}", _currentUser.UserId);
         }
     }
 }

@@ -1,0 +1,147 @@
+.settings-tab-header {
+    align-items: flex-start;
+    width: 100%;
+}
+
+.settings-title {
+    font-weight: 600;
+}
+
+.settings-desc {
+    color: var(--neutral-foreground-hint, #616161);
+    margin-top: 2px;
+}
+
+.filter-card {
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.filter-row {
+    align-items: flex-end;
+}
+
+.filter-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.filter-select-tenant {
+    min-width: 180px;
+}
+
+.filter-select-cat {
+    min-width: 150px;
+}
+
+.filter-select-sev {
+    min-width: 150px;
+}
+
+.filter-select-status {
+    min-width: 130px;
+}
+
+.filter-search-wrap {
+    flex: 1;
+    min-width: 220px;
+}
+
+.summary-bar {
+    align-items: center;
+    padding: 0 4px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+.page-size-wrap {
+    align-items: center;
+}
+
+.page-size-select {
+    width: 90px;
+}
+
+.loading-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 48px 0;
+}
+
+.empty-card {
+    padding: 48px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.empty-icon {
+    margin-bottom: 12px;
+}
+
+.empty-title {
+    margin-bottom: 4px;
+}
+
+.empty-desc {
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+.grid-sev-col {
+    text-align: center;
+}
+
+.grid-notif-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.grid-notif-header {
+    font-size: 13px;
+    color: var(--neutral-foreground-1, #242424);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.grid-notif-header.is-read {
+    font-weight: 500;
+}
+
+.grid-notif-header.is-unread {
+    font-weight: 700;
+}
+
+.badge-teams {
+    font-size: 10px;
+    background: #e8ebfa;
+    color: #444791;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.badge-mail {
+    font-size: 10px;
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.grid-notif-body {
+    font-size: 12px;
+    color: var(--neutral-foreground-2, #616161);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.grid-timestamp {
+    font-size: 12px;
+}
+
+.grid-status-read {
+    font-size: 11px;
+    color: var(--neutral-foreground-hint, #616161);
+}

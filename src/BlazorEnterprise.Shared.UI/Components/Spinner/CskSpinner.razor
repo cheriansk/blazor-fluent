@@ -1,0 +1,12 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-spinner @GetSizeClass() @Class"
+     role="progressbar"
+     aria-label="@AriaLabel"
+     aria-busy="true"
+     @attributes="AdditionalAttributes">
+    <svg class="csk-spinner-svg" viewBox="0 0 48 48">
+        <circle class="csk-spinner-track" cx="24" cy="24" r="18" fill="none" stroke-width="4" />
+        <circle class="csk-spinner-circle" cx="24" cy="24" r="18" fill="none" stroke-width="4" />
+    </svg>
+</div>

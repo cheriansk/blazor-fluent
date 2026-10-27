@@ -1,3 +1,4 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
 
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.Contracts.Common
@@ -6,32 +7,26 @@
 @using BlazorEnterprise.Core.Domain.Auditing
 
 
-@using Microsoft.FluentUI.AspNetCore.Components
-@inject IAuditService AuditService
-@inject ICurrentUser CurrentUser
-@inject ITenantContext TenantContext
-@inject IRootAdminService RootAdmin
-@inject ITenantService TenantService
-@inject IUserTimeZoneService TimeZoneService
+@using BlazorEnterprise.Shared.UI.Components
 @implements IDisposable
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
     <div>
-        <FluentLabel Typo="Typography.H4">Audit Trail Explorer</FluentLabel>
-        <FluentLabel Typo="Typography.Body" Class="text-hint">
+        <CskLabel Typo="Typography.H4">Audit Trail Explorer</CskLabel>
+        <CskLabel Typo="Typography.Body" Class="text-hint">
             Forensic audit trail: inspect entity mutations, tenant switching, security alerts, and background execution telemetry.
-        </FluentLabel>
+        </CskLabel>
     </div>
 
     <!-- Filter Toolbar -->
-    <FluentCard Class="p-4">
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
-            <FluentLabel Typo="Typography.H6">Filters & Search</FluentLabel>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true" VerticalAlignment="VerticalAlignment.Bottom">
+    <CskCard Class="p-4">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
+            <CskLabel Typo="Typography.H6">Filters & Search</CskLabel>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Wrap="true" VerticalAlignment="CskVerticalAlignment.Bottom">
                 <!-- Tenant Filter Dropdown -->
                 <div>
-                    <FluentLabel Typo="Typography.Body" Class="mb-1">Tenant</FluentLabel>
-                    <FluentSelect TOption="TenantFilterOption"
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Tenant</CskLabel>
+                    <CskSelect TOption="TenantFilterOption"
                                   TValue="string"
                                   Items="@_availableTenants"
                                   OptionText="@(t => t.Name)"
@@ -45,8 +40,8 @@
 
                 <!-- User Filter Dropdown -->
                 <div>
-                    <FluentLabel Typo="Typography.Body" Class="mb-1">User</FluentLabel>
-                    <FluentSelect TOption="UserFilterOption"
+                    <CskLabel Typo="Typography.Body" Class="mb-1">User</CskLabel>
+                    <CskSelect TOption="UserFilterOption"
                                   TValue="string"
                                   Items="@_availableUsers"
                                   OptionText="@(u => u.DisplayName)"
@@ -59,8 +54,8 @@
 
                 <!-- Event Type Filter -->
                 <div>
-                    <FluentLabel Typo="Typography.Body" Class="mb-1">Event Type</FluentLabel>
-                    <FluentSelect Items="@_eventTypes"
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Event Type</CskLabel>
+                    <CskSelect Items="@_eventTypes"
                                   TOption="string"
                                   TValue="string"
                                   Value="@_selectedEventType"
@@ -70,8 +65,8 @@
 
                 <!-- Severity Filter -->
                 <div>
-                    <FluentLabel Typo="Typography.Body" Class="mb-1">Severity</FluentLabel>
-                    <FluentSelect Items="@_severities"
+                    <CskLabel Typo="Typography.Body" Class="mb-1">Severity</CskLabel>
+                    <CskSelect Items="@_severities"
                                   TOption="string"
                                   TValue="string"
                                   Value="@_selectedSeverity"
@@ -80,351 +75,113 @@
                 </div>
 
                 <!-- Date Pickers -->
-                <FluentDatePicker Label="From Date" @bind-Value="_filter.FromDate" />
-                <FluentDatePicker Label="To Date" @bind-Value="_filter.ToDate" />
+                <CskDatePicker Label="From Date" @bind-Value="_filter.FromDate" />
+                <CskDatePicker Label="To Date" @bind-Value="_filter.ToDate" />
 
                 <!-- Text Search -->
-                <FluentTextInput Label="Search (Description, Entity)" @bind-Value="_filter.SearchTerm" Placeholder="Search term..." Class="min-w-200" />
+                <CskTextInput Label="Search (Description, Entity)" @bind-Value="_filter.SearchTerm" Placeholder="Search term..." Class="min-w-200" />
 
-                <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size16.Search())" OnClick="@SearchAsync">
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Search" OnClick="@SearchAsync">
                     Filter
-                </FluentButton>
-                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@ResetFiltersAsync">
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@ResetFiltersAsync">
                     Reset
-                </FluentButton>
-            </FluentStack>
-        </FluentStack>
-    </FluentCard>
+                </CskButton>
+            </CskStack>
+        </CskStack>
+    </CskCard>
 
     <!-- Selected Audit Record Diff Viewer Panel -->
     @if (_selectedAuditRecord is not null)
     {
-        <FluentCard Class="mb-3 card-accent-border p-4">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-2">
-                <FluentLabel Typo="Typography.H5">Change Details: @_selectedAuditRecord.EntityName (@_selectedAuditRecord.Operation)</FluentLabel>
-                <FluentButton Appearance="ButtonAppearance.Subtle" IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="@(() => _selectedAuditRecord = null)">Close</FluentButton>
-            </FluentStack>
-            <FluentLabel Typo="Typography.Body" Class="mb-2">
+        <CskCard Class="mb-3 card-accent-border p-4">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+                <CskLabel Typo="Typography.H5">Change Details: @_selectedAuditRecord.EntityName (@_selectedAuditRecord.Operation)</CskLabel>
+                <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="@(() => _selectedAuditRecord = null)">Close</CskButton>
+            </CskStack>
+            <CskLabel Typo="Typography.Body" Class="mb-2">
                 <b>Record ID:</b> @_selectedAuditRecord.EntityId | <b>Tenant:</b> @_selectedAuditRecord.TenantId | <b>User:</b> @(_selectedAuditRecord.UserEmail ?? _selectedAuditRecord.UserId)
-            </FluentLabel>
+            </CskLabel>
             <div class="code-terminal-box">
                 @(_selectedAuditRecord.ChangesJson ?? "No property diff payload recorded.")
             </div>
-        </FluentCard>
+        </CskCard>
     }
 
     <!-- Audit Records Grid -->
     @if (_isLoading)
     {
-        <FluentSpinner Class="m-auto" />
+        <CskSpinner Class="m-auto" />
     }
     else if (_auditResult is null || _auditResult.Items.Count == 0)
     {
-        <FluentMessageBar Intent="MessageBarIntent.Info">
+        <CskMessageBar Intent="MessageBarIntent.Info">
             No audit records found matching the current search criteria.
-        </FluentMessageBar>
+        </CskMessageBar>
     }
     else
     {
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mb-2">
-            <FluentTextInput Placeholder="Quick filter visible audit records..."
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
+            <CskTextInput Placeholder="Quick filter visible audit records..."
                              @bind-Value="_inGridSearchText"
                              @bind-Value:after="StateHasChanged"
                              Class="w-320">
                 <StartTemplate>
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                    <CskIcon Icon="@CskIcons.Search" />
                 </StartTemplate>
-            </FluentTextInput>
+            </CskTextInput>
             <span class="font-size-sm text-hint">
                 Showing @FilteredAuditItems.Count() of @(_auditResult.Items.Count) records on this page
             </span>
-        </FluentStack>
+        </CskStack>
 
-        <FluentDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 180px 120px 110px 1fr 100px">
-            <TemplateColumn Title="Timestamp" SortBy="@(GridSort<AuditRecordEntity>.ByDescending(a => a.Created))">
+        <CskDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 180px 120px 110px 1fr 100px">
+            <CskTemplateColumn Title="Timestamp" SortBy="@(GridSort<AuditRecordEntity>.ByDescending(a => a.Created))">
                 @TimeZoneService.FormatDateTime(context.Created)
-            </TemplateColumn>
-            <PropertyColumn Property="@(a => a.TenantId)" Title="Tenant" Sortable="true" />
-            <TemplateColumn Title="User" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.UserEmail ?? a.UserId))">
+            </CskTemplateColumn>
+            <CskPropertyColumn Property="@(a => a.TenantId)" Title="Tenant" Sortable="true" />
+            <CskTemplateColumn Title="User" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.UserEmail ?? a.UserId))">
                 <span title="@context.UserId">
                     @(context.UserEmail ?? context.UserId)
                 </span>
-            </TemplateColumn>
-            <TemplateColumn Title="Event" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.EventType))">
-                <FluentBadge>@context.EventType</FluentBadge>
-            </TemplateColumn>
-            <TemplateColumn Title="Severity" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Severity))">
+            </CskTemplateColumn>
+            <CskTemplateColumn Title="Event" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.EventType))">
+                <CskBadge>@context.EventType</CskBadge>
+            </CskTemplateColumn>
+            <CskTemplateColumn Title="Severity" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => a.Severity))">
                 @if (context.Severity == AuditSeverityEnum.Critical || context.Severity == AuditSeverityEnum.Error)
                 {
-                    <FluentBadge Color="BadgeColor.Severe">@context.Severity</FluentBadge>
+                    <CskBadge Color="BadgeColor.Severe">@context.Severity</CskBadge>
                 }
                 else if (context.Severity == AuditSeverityEnum.Warning)
                 {
-                    <FluentBadge Color="BadgeColor.Warning">@context.Severity</FluentBadge>
+                    <CskBadge Color="BadgeColor.Warning">@context.Severity</CskBadge>
                 }
                 else
                 {
-                    <FluentBadge Color="BadgeColor.Informative">@context.Severity</FluentBadge>
+                    <CskBadge Color="BadgeColor.Informative">@context.Severity</CskBadge>
                 }
-            </TemplateColumn>
-            <PropertyColumn Property="@(a => a.Description)" Title="Description" Sortable="true" />
-            <TemplateColumn Title="Diff">
+            </CskTemplateColumn>
+            <CskPropertyColumn Property="@(a => a.Description)" Title="Description" Sortable="true" />
+            <CskTemplateColumn Title="Diff">
                 @if (!string.IsNullOrWhiteSpace(context.ChangesJson))
                 {
-                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _selectedAuditRecord = context)">
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _selectedAuditRecord = context)">
                         View Diff
-                    </FluentButton>
+                    </CskButton>
                 }
-            </TemplateColumn>
-        </FluentDataGrid>
+            </CskTemplateColumn>
+        </CskDataGrid>
 
         <!-- Pagination Bar -->
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="mt-3">
-            <FluentLabel Typo="Typography.Body">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mt-3">
+            <CskLabel Typo="Typography.Body">
                 Showing Page @_auditResult.PageNumber of @_auditResult.TotalPages (@_auditResult.TotalCount total records)
-            </FluentLabel>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                <FluentButton Disabled="@(!_auditResult.HasPreviousPage)" OnClick="@PreviousPageAsync">Previous</FluentButton>
-                <FluentButton Disabled="@(!_auditResult.HasNextPage)" OnClick="@NextPageAsync">Next</FluentButton>
-            </FluentStack>
-        </FluentStack>
+            </CskLabel>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                <CskButton Disabled="@(!_auditResult.HasPreviousPage)" OnClick="@PreviousPageAsync">Previous</CskButton>
+                <CskButton Disabled="@(!_auditResult.HasNextPage)" OnClick="@NextPageAsync">Next</CskButton>
+            </CskStack>
+        </CskStack>
     }
-</FluentStack>
-
-@code {
-    public record TenantFilterOption(string Id, string Name);
-    public record UserFilterOption(string Id, string DisplayName);
-
-    private List<TenantFilterOption> _availableTenants = new();
-    private string? _selectedTenantId;
-
-    private List<UserFilterOption> _availableUsers = new();
-    private string? _selectedUserId;
-
-    private AuditTrailFilterReqDto _filter = new() { PageSize = 15 };
-    private PagedResultRespDto<AuditRecordEntity>? _auditResult;
-    private bool _isLoading = true;
-    private AuditRecordEntity? _selectedAuditRecord;
-    private string _inGridSearchText = string.Empty;
-
-    private readonly List<string> _eventTypes = ["All", "EntityChange", "Security", "TenantSwitch", "UserActivity"];
-    private string _selectedEventType = "All";
-
-    private readonly List<string> _severities = ["All", "Information", "Warning", "Error", "Critical"];
-    private string _selectedSeverity = "All";
-
-    private IQueryable<AuditRecordEntity> FilteredAuditItems
-    {
-        get
-        {
-            var items = _auditResult?.Items ?? [];
-            var query = items.AsQueryable();
-            if (!string.IsNullOrWhiteSpace(_inGridSearchText))
-            {
-                var term = _inGridSearchText.Trim();
-                query = query.Where(a =>
-                    (a.Description != null && a.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    a.TenantId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    (a.UserId != null && a.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (a.UserEmail != null && a.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    a.EventType.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
-            }
-            return query;
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        TimeZoneService.OnChange += HandleTimeZoneChanged;
-        await LoadAvailableTenantsAsync();
-        await LoadAvailableUsersAsync();
-        await LoadAuditsAsync();
-    }
-
-    private async Task LoadAvailableTenantsAsync()
-    {
-        var isRootAdmin = CurrentUser.IsRootAdmin;
-        if (isRootAdmin)
-        {
-            var dbTenants = (await TenantService.GetAllTenantsAsync())
-
-                .Where(t => t.IsActive)
-                .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(
-                    t.Slug,
-                    t.Slug == RootAdmin.RootTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
-                .ToList();
-
-            _availableTenants = dbTenants;
-        }
-        else
-        {
-            _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive)
-                .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
-                .ToList();
-        }
-
-        if (_availableTenants.Count == 1)
-        {
-            await OnTenantSelectedAsync(_availableTenants[0].Id);
-        }
-    }
-
-    private async Task LoadAvailableUsersAsync()
-    {
-        var users = new List<UserFilterOption>();
-
-        if (CurrentUser.IsRootAdmin)
-        {
-            users.Add(new UserFilterOption("system", "⚙️ System / Daemon User"));
-        }
-
-        try
-        {
-            IEnumerable<UserFilterOption> dbUsers;
-            if (!string.IsNullOrWhiteSpace(_selectedTenantId))
-            {
-                var tenantGuid = Guid.TryParse(_selectedTenantId, out var g) ? g : Guid.Empty;
-                var tenantUsers = await TenantService.GetTenantUsersByIdAsync(tenantGuid);
-                dbUsers = tenantUsers
-                    .OrderBy(u => u.FullName)
-                    .Take(100)
-                    .Select(u => new UserFilterOption(u.Id.ToString(), $"{u.FullName} ({u.Email})"));
-            }
-            else if (CurrentUser.IsRootAdmin)
-            {
-                var allUsers = await TenantService.GetAllUsersAsync(100);
-                dbUsers = allUsers
-                    .Select(u => new UserFilterOption(u.Id.ToString(), $"{u.FullName} ({u.Email})"));
-            }
-            else
-            {
-                var tenantUsers = await TenantService.GetTenantUsersAsync(TenantContext.TenantSlug);
-                dbUsers = tenantUsers
-                    .OrderBy(u => u.FullName)
-                    .Take(100)
-                    .Select(u => new UserFilterOption(u.Id.ToString(), $"{u.FullName} ({u.Email})"));
-            }
-
-            users.AddRange(dbUsers);
-        }
-        catch
-        {
-            // Fallback gracefully if users cannot be queried
-        }
-
-        _availableUsers = users;
-    }
-
-    private async Task OnTenantSelectedAsync(string? tenantId)
-    {
-        _selectedTenantId = tenantId;
-        _filter.TenantId = tenantId;
-        _filter.PageNumber = 1;
-        await LoadAvailableUsersAsync();
-        await LoadAuditsAsync();
-    }
-
-    private async Task OnUserSelected(string? userId)
-    {
-        _selectedUserId = userId;
-        _filter.UserId = userId;
-        _filter.PageNumber = 1;
-        await LoadAuditsAsync();
-    }
-
-    private async Task LoadAuditsAsync()
-    {
-        _isLoading = true;
-        try
-        {
-            if (!CurrentUser.IsRootAdmin && string.IsNullOrWhiteSpace(_filter.TenantId))
-            {
-                _filter.AllowedTenantIds = TenantContext.AllowedTenants.Select(t => t.Id.ToString()).ToList();
-            }
-            else
-            {
-                _filter.AllowedTenantIds = null;
-            }
-
-            _auditResult = await AuditService.GetAuditTrailAsync(_filter);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void OnEventTypeChanged(string val)
-    {
-        _selectedEventType = val;
-        _filter.EventType = val switch
-        {
-            "EntityChange" => AuditEventTypeEnum.EntityChange,
-            "Security" => AuditEventTypeEnum.Security,
-            "TenantSwitch" => AuditEventTypeEnum.TenantSwitch,
-            "UserActivity" => AuditEventTypeEnum.UserActivity,
-            _ => null
-        };
-    }
-
-    private void OnSeverityChanged(string val)
-    {
-        _selectedSeverity = val;
-        _filter.Severity = val switch
-        {
-            "Information" => AuditSeverityEnum.Information,
-            "Warning" => AuditSeverityEnum.Warning,
-            "Error" => AuditSeverityEnum.Error,
-            "Critical" => AuditSeverityEnum.Critical,
-            _ => null
-        };
-    }
-
-    private async Task SearchAsync()
-    {
-        _filter.PageNumber = 1;
-        await LoadAuditsAsync();
-    }
-
-    private async Task ResetFiltersAsync()
-    {
-        _selectedTenantId = null;
-        _selectedUserId = null;
-        _filter = new AuditTrailFilterReqDto { PageSize = 15 };
-        _selectedEventType = "All";
-        _selectedSeverity = "All";
-        await LoadAvailableUsersAsync();
-        await LoadAuditsAsync();
-    }
-
-    private async Task PreviousPageAsync()
-    {
-        if (_auditResult?.HasPreviousPage == true)
-        {
-            _filter.PageNumber--;
-            await LoadAuditsAsync();
-        }
-    }
-
-    private async Task NextPageAsync()
-    {
-        if (_auditResult?.HasNextPage == true)
-        {
-            _filter.PageNumber++;
-            await LoadAuditsAsync();
-        }
-    }
-
-    private void HandleTimeZoneChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        TimeZoneService.OnChange -= HandleTimeZoneChanged;
-    }
-}
+</CskStack>

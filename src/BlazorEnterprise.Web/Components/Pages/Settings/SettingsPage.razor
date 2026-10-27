@@ -1,195 +1,134 @@
-@page "/settings"
+﻿@page "/settings"
 @attribute [Authorize]
 @rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
 @using BlazorEnterprise.Components.Common
 @using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.UI.Components
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.FluentUI.AspNetCore.Components
-@inject ISettingsNavigationState SettingsNav
-@inject ITenantContext TenantContext
-@inject ICurrentUser CurrentUser
-@inject IHierarchyAuthorizationService HierarchyAuth
 
 <PageTitle>Settings — BlazorEnterprise</PageTitle>
 
 <PageHeaderComp Title="Settings"
                 Subtitle="Centralized administration: manage tenant contracts, project workspaces, background batch jobs, event ledgers, and active user sessions." />
 
-<div style="margin-top: 20px;">
-    <FluentTabs @bind-ActiveTabId="_activeTabId" @bind-ActiveTabId:after="OnTabChanged" Orientation="Orientation.Horizontal">
+<div class="settings-root">
+    <!-- Modern Native CSK Tabs Navigation Bar -->
+    <div class="csk-tabs-bar" >
         @if (CanViewTenantTab)
         {
-            <FluentTab Id="tenants" Header="Tenants" IconStart="@(new Icons.Regular.Size20.Building())">
-                @if (_visitedTabs.Contains("tenants"))
-                {
-                    <div style="padding-top: 16px;">
-                        <SettingsTenantsTab />
-                    </div>
-                }
-            </FluentTab>
+            <CskButton Variant="@(_activeTabId == "tenants" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.Building"
+                       OnClick="@(() => SelectTab("tenants"))">
+                Tenants
+            </CskButton>
         }
 
         @if (CanViewProgramTab)
         {
-            <FluentTab Id="programs" Header="Programs" IconStart="@(new Icons.Regular.Size20.FolderDocument())">
-                @if (_visitedTabs.Contains("programs"))
-                {
-                    <div style="padding-top: 16px;">
-                        <SettingsProgramsTab />
-                    </div>
-                }
-            </FluentTab>
+            <CskButton Variant="@(_activeTabId == "programs" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.FolderDocument"
+                       OnClick="@(() => SelectTab("programs"))">
+                Programs
+            </CskButton>
         }
 
-        <FluentTab Id="projects" Header="Projects" IconStart="@(new Icons.Regular.Size20.BuildingMultiple())">
-            @if (_visitedTabs.Contains("projects"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsProjectsTab />
-                </div>
-            }
-        </FluentTab>
+        <CskButton Variant="@(_activeTabId == "projects" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.BuildingMultiple"
+                   OnClick="@(() => SelectTab("projects"))">
+            Projects
+        </CskButton>
 
-        <FluentTab Id="jobs" Header="Jobs" IconStart="@(new Icons.Regular.Size20.Clock())">
-            @if (_visitedTabs.Contains("jobs"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsJobsTab />
-                </div>
-            }
-        </FluentTab>
+        <CskButton Variant="@(_activeTabId == "jobs" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Clock"
+                   OnClick="@(() => SelectTab("jobs"))">
+            Jobs
+        </CskButton>
 
-        <FluentTab Id="events" Header="Events" IconStart="@(new Icons.Regular.Size20.Pulse())">
-            @if (_visitedTabs.Contains("events"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsEventsTab />
-                </div>
-            }
-        </FluentTab>
+        <CskButton Variant="@(_activeTabId == "events" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Pulse"
+                   OnClick="@(() => SelectTab("events"))">
+            Events
+        </CskButton>
 
         @if (CanViewAuditTrail)
         {
-            <FluentTab Id="auditing" Header="Audit Trail" IconStart="@(new Icons.Regular.Size20.DocumentBulletList())">
-                @if (_visitedTabs.Contains("auditing"))
-                {
-                    <div style="padding-top: 16px;">
-                        <SettingsAuditTab />
-                    </div>
-                }
-            </FluentTab>
+            <CskButton Variant="@(_activeTabId == "auditing" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.DocumentBulletList"
+                       OnClick="@(() => SelectTab("auditing"))">
+                Audit Trail
+            </CskButton>
         }
 
         @if (CurrentUser.IsRootAdmin)
         {
-            <FluentTab Id="sessions" Header="Sessions" IconStart="@(new Icons.Regular.Size20.Laptop())">
-                @if (_visitedTabs.Contains("sessions"))
-                {
-                    <div style="padding-top: 16px;">
-                        <SettingsSessionsTab />
-                    </div>
-                }
-            </FluentTab>
+            <CskButton Variant="@(_activeTabId == "sessions" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.Laptop"
+                       OnClick="@(() => SelectTab("sessions"))">
+                Sessions
+            </CskButton>
         }
 
-        <FluentTab Id="user" Header="User" IconStart="@(new Icons.Regular.Size20.Person())">
-            @if (_visitedTabs.Contains("user"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsUserTab />
-                </div>
-            }
-        </FluentTab>
+        <CskButton Variant="@(_activeTabId == "user" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Person"
+                   OnClick="@(() => SelectTab("user"))">
+            User
+        </CskButton>
 
-        <FluentTab Id="calendar" Header="My Calendar" IconStart="@(new Icons.Regular.Size20.Calendar())">
-            @if (_visitedTabs.Contains("calendar"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsUserCalendarTab />
-                </div>
-            }
-        </FluentTab>
+        <CskButton Variant="@(_activeTabId == "calendar" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Calendar"
+                   OnClick="@(() => SelectTab("calendar"))">
+            My Calendar
+        </CskButton>
 
-        <FluentTab Id="notifications" Header="Notifications" IconStart="@(new Icons.Regular.Size20.Alert())">
-            @if (_visitedTabs.Contains("notifications"))
-            {
-                <div style="padding-top: 16px;">
-                    <SettingsNotificationsTab />
-                </div>
-            }
-        </FluentTab>
-    </FluentTabs>
+        <CskButton Variant="@(_activeTabId == "notifications" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                   IconStart="@CskIcons.Alert"
+                   OnClick="@(() => SelectTab("notifications"))">
+            Notifications
+        </CskButton>
+    </div>
+
+    <!-- Active Tab Content Area with Lazy Load Preservation -->
+    <div class="settings-tab-content">
+        @if (_activeTabId == "tenants" && _visitedTabs.Contains("tenants"))
+        {
+            <SettingsTenantsTab />
+        }
+        else if (_activeTabId == "programs" && _visitedTabs.Contains("programs"))
+        {
+            <SettingsProgramsTab />
+        }
+        else if (_activeTabId == "projects" && _visitedTabs.Contains("projects"))
+        {
+            <SettingsProjectsTab />
+        }
+        else if (_activeTabId == "jobs" && _visitedTabs.Contains("jobs"))
+        {
+            <SettingsJobsTab />
+        }
+        else if (_activeTabId == "events" && _visitedTabs.Contains("events"))
+        {
+            <SettingsEventsTab />
+        }
+        else if (_activeTabId == "auditing" && _visitedTabs.Contains("auditing"))
+        {
+            <SettingsAuditTab />
+        }
+        else if (_activeTabId == "sessions" && _visitedTabs.Contains("sessions"))
+        {
+            <SettingsSessionsTab />
+        }
+        else if (_activeTabId == "user" && _visitedTabs.Contains("user"))
+        {
+            <SettingsUserTab />
+        }
+        else if (_activeTabId == "calendar" && _visitedTabs.Contains("calendar"))
+        {
+            <SettingsUserCalendarTab />
+        }
+        else if (_activeTabId == "notifications" && _visitedTabs.Contains("notifications"))
+        {
+            <SettingsNotificationsTab />
+        }
+    </div>
 </div>
-
-@code {
-    private string _activeTabId = "projects";
-    private readonly HashSet<string> _visitedTabs = new(StringComparer.OrdinalIgnoreCase);
-    private bool _canViewTenantTab = false;
-    private bool _canViewProgramTab = false;
-
-    private bool CanViewTenantTab => CurrentUser.IsRootAdmin || _canViewTenantTab;
-    private bool CanViewProgramTab => CurrentUser.IsRootAdmin || _canViewProgramTab;
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (CurrentUser.IsRootAdmin)
-        {
-            _canViewTenantTab = true;
-            _canViewProgramTab = true;
-        }
-        else
-        {
-            if (TenantContext.HasActiveTenant && CurrentUser.IsAuthenticated)
-            {
-                var tenantId = TenantContext.TenantId;
-                var userId = CurrentUser.UserId;
-                _canViewTenantTab = await HierarchyAuth.CanViewTenantSettingsAsync(tenantId, userId);
-                var accessiblePrograms = await HierarchyAuth.GetAccessibleProgramIdsAsync(tenantId, userId);
-                _canViewProgramTab = _canViewTenantTab || accessiblePrograms.Count > 0;
-            }
-        }
-
-        _activeTabId = CanViewTenantTab ? "tenants" : (CanViewProgramTab ? "programs" : "projects");
-
-        if (!string.IsNullOrWhiteSpace(SettingsNav.InitialTab))
-        {
-            _activeTabId = SettingsNav.InitialTab;
-            SettingsNav.InitialTab = null;
-        }
-
-        if (_activeTabId.Equals("tenants", StringComparison.OrdinalIgnoreCase) && !CanViewTenantTab)
-        {
-            _activeTabId = CanViewProgramTab ? "programs" : "projects";
-        }
-
-        if (_activeTabId.Equals("programs", StringComparison.OrdinalIgnoreCase) && !CanViewProgramTab)
-        {
-            _activeTabId = "projects";
-        }
-
-        if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
-        {
-            _activeTabId = "projects";
-        }
-
-        if (_activeTabId.Equals("auditing", StringComparison.OrdinalIgnoreCase) && !CanViewAuditTrail)
-        {
-            _activeTabId = "projects";
-        }
-
-        _visitedTabs.Add(_activeTabId);
-    }
-
-    private bool CanViewAuditTrail =>
-        CurrentUser.IsRootAdmin ||
-        CurrentUser.IsInRole("Admin") ||
-        CurrentUser.IsInRole("CompanyAdmin");
-
-    private void OnTabChanged()
-    {
-        if (!string.IsNullOrWhiteSpace(_activeTabId))
-        {
-            _visitedTabs.Add(_activeTabId);
-        }
-    }
-}

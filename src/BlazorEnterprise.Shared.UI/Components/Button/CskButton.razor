@@ -1,0 +1,26 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+@if (!string.IsNullOrEmpty(Href))
+{
+    <a href="@Href"
+       target="@Target"
+       class="csk-btn @GetVariantClass() @GetSizeClass() @Class @(Disabled ? "disabled" : "")"
+       title="@Title"
+       role="button"
+       aria-disabled="@(Disabled ? "true" : "false")"
+       @onclick="HandleClickAsync"
+       @attributes="AdditionalAttributes">
+        @RenderInnerContent()
+    </a>
+}
+else
+{
+    <button type="@Type"
+            class="csk-btn @GetVariantClass() @GetSizeClass() @Class"
+            disabled="@(Disabled || Loading)"
+            title="@Title"
+            @onclick="HandleClickAsync"
+            @attributes="AdditionalAttributes">
+        @RenderInnerContent()
+    </button>
+}

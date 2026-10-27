@@ -1,0 +1,29 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+@if (_isOpen)
+{
+    <div class="csk-dialog-backdrop @(Modal ? "csk-dialog-modal" : "")"
+         @onclick="HandleBackdropClick">
+        <div class="csk-dialog-surface @Class"
+             @onclick:stopPropagation="true"
+             @attributes="AdditionalAttributes">
+            <CascadingValue Value="this" IsFixed="true">
+                @if (TitleTemplate is not null)
+                {
+                    <div class="csk-dialog-title">
+                        @TitleTemplate
+                    </div>
+                }
+
+                @ChildContent
+
+                @if (ActionTemplate is not null)
+                {
+                    <div class="csk-dialog-actions">
+                        @ActionTemplate
+                    </div>
+                }
+            </CascadingValue>
+        </div>
+    </div>
+}

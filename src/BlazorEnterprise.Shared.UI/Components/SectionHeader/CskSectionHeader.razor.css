@@ -1,0 +1,52 @@
+.csk-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--mat-outline-variant, #CAC4D0);
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.csk-section-header-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.csk-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--mat-on-surface, #1C1B1F);
+}
+
+.csk-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mat-primary, #6750A4);
+}
+
+.csk-section-icon-svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.csk-section-subtitle {
+    font-size: 0.875rem;
+    color: var(--mat-on-surface-variant, #49454F);
+    line-height: 1.4;
+}
+
+.csk-section-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}

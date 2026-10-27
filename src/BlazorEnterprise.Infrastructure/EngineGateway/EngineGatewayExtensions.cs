@@ -22,11 +22,16 @@ public static class EngineGatewayExtensions
         services.AddScoped<BlazorEnterprise.Infrastructure.Security.ITenantTokenService, BlazorEnterprise.Infrastructure.Security.TenantTokenService>();
 
         // Register HttpClient for ProcessAPI
-        var apiBaseUrl = configuration["Engine:ApiBaseUrl"] ?? "https://localhost:7150";
+        var rawBaseUrl = configuration["Engine:ApiBaseUrl"];
+        var apiBaseUrl = rawBaseUrl.Trim();
+        if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var parsedBaseUri))
+        {
+            throw new InvalidOperationException($"FATAL CONFIGURATION BLOCKER: 'Engine:ApiBaseUrl' ('{apiBaseUrl}') is not a valid absolute URI.");
+        }
 
         services.AddHttpClient<RemoteEngineGateway>(client =>
         {
-            client.BaseAddress = new Uri(apiBaseUrl);
+            client.BaseAddress = parsedBaseUri;
             client.Timeout = TimeSpan.FromSeconds(60);
         })
         .AddHttpMessageHandler<CorrelationIdDelegatingHandler>()

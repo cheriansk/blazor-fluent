@@ -1,0 +1,22 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+@if (!string.IsNullOrEmpty(Href) && !Disabled)
+{
+    <a href="@Href"
+       target="@Target"
+       class="csk-link @GetAppearanceClass() @GetUnderlineClass() @Class"
+       @attributes="AdditionalAttributes"
+       @onclick="HandleClickAsync">
+        @ChildContent
+    </a>
+}
+else
+{
+    <span class="csk-link @GetAppearanceClass() @(Disabled ? "csk-link-disabled" : "") @Class"
+          role="link"
+          tabindex="@(Disabled ? "-1" : "0")"
+          @attributes="AdditionalAttributes"
+          @onclick="HandleClickAsync">
+        @ChildContent
+    </span>
+}

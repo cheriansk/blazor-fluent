@@ -374,20 +374,23 @@ All current and future `.razor` files must adhere strictly to this 4-tier naming
 
 > **Framework Roots Exception**: Framework-mandated files retain their standard Blazor roles: `App.razor` (root HTML shell), `Routes.razor` (router shell), `MainLayout.razor` (master default layout), `_Imports.razor` (compiler directives).
 >
-> **Code-Behind & Scoped CSS Co-Location**:
-> - Code-behind files must exactly match the full component file name: `*Page.razor.cs`, `*Comp.razor.cs`, `*Modal.razor.cs`, `*Popup.razor.cs`, `*Layout.razor.cs`.
-> - Scoped CSS files must exactly match: `*Page.razor.css`, `*Comp.razor.css`, `*Modal.razor.css`, `*Popup.razor.css`, `*Layout.razor.css`.
+> **Code-Behind & Partial Class Standard (30-Line Threshold)**:
+> - **Threshold**: If C# code in `@code` exceeds **30 lines** or requires business orchestration/service injection, it **MUST be split into a companion partial class file** (`*Page.razor.cs`, `*Comp.razor.cs`, `*Modal.razor.cs`, `*Popup.razor.cs`, `*Layout.razor.cs`).
+> - **Dependency Injection**: In partial classes, declare injected services as properties with `[Inject]` (e.g. `[Inject] private ITenantService TenantService { get; set; } = default!;`).
+> - **Directives Separation**: Page routes (`@page "/..."`), layout directives (`@layout ...`), and security attributes (`@attribute [Authorize]`) remain at the top of the `.razor` markup file.
+> - **Lightweight Primitives**: For simple presentational components with 30 lines or fewer of C# (parameters and lightweight toggles), an inline `@code` block in the `.razor` file is preferred to avoid unnecessary file proliferation.
+> - **Scoped CSS Co-Location**: Scoped CSS files must match: `*.razor.css`.
 
-### 5.2 Component Library
+### 5.2 Component Library: Native Material Design 3 (Csk*)
 
-This project uses **Microsoft Fluent UI Blazor V5**. All UI components must use V5 APIs.
+This project uses native Material Design 3 components (`Csk*`) housed in `BlazorEnterprise.Shared.UI`. All components adhere to 100% strict Content Security Policy (CSP) compliance.
 
 | Rule | Description |
 |------|-------------|
-| **V5 appearance enums** | Use `ButtonAppearance.Primary`, `BadgeColor.Brand`, `MessageBarIntent.Success`, etc. Never use V4 string-based parameters. |
-| **Dual-generic selects** | `FluentSelect<TOption, TValue>` requires both type parameters (`TOption="T" TValue="string"`). Never omit the value type. |
-| **Icons package** | Use `Microsoft.FluentUI.AspNetCore.Components.Icons` for all icon references. |
-| **Native Fluent components only** | Never substitute raw HTML input elements (`<select>`, raw checkboxes, raw buttons) when native Fluent UI components exist (`<FluentSelect>`, `<FluentCheckbox>`, `<FluentButton>`). |
+| **Csk* Component Prefix** | All shared UI primitives and compounds use the `Csk*` naming convention (`<CskButton>`, `<CskCard>`, `<CskTextInput>`, `<CskTable>`, `<CskDialog>`, etc.). |
+| **Strict CSP Compliance** | Zero inline styles (`style="..."`) are permitted in any component or page. All sizing, colors, and layout must use pure CSS classes and Material 3 design tokens. |
+| **Native SVG Icons (`CskIcons`)** | Icons are rendered via `<CskIcon Icon="CskIcons.*" />` using lightweight native SVG path records without external font files or style attributes. |
+| **Decoupled RCL** | All shared components live in `BlazorEnterprise.Shared.UI` and are imported into consumer applications via `@using BlazorEnterprise.Shared.UI.Components`.
 
 ### 5.2.1 Fluent UI Blazor MCP Server Governance & V5 Exclusivity Standard
 All developers and AI assistants working on UI components **MUST ALWAYS** consult the `fluent-ui-blazor` MCP server before implementing, refactoring, or referencing components:

@@ -1,0 +1,45 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-textarea-field @(HasError ? "csk-field-error" : "") @(Disabled ? "csk-field-disabled" : "") @(_isFocused ? "csk-field-focused" : "") @Class"
+     @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@Id" class="csk-field-label">
+            @Label
+            @if (Required)
+            {
+                <span class="csk-field-required">*</span>
+            }
+        </label>
+    }
+
+    <div class="csk-textarea-box">
+        <textarea id="@Id"
+                  rows="@Rows"
+                  cols="@Cols"
+                  value="@Value"
+                  placeholder="@Placeholder"
+                  disabled="@Disabled"
+                  readonly="@ReadOnly"
+                  required="@Required"
+                  maxlength="@(MaxLength.HasValue ? MaxLength.Value : null)"
+                  class="csk-textarea-native csk-resize-@Resize.ToString().ToLowerInvariant()"
+                  @oninput="HandleInputAsync"
+                  @onchange="HandleChangeAsync"
+                  @onfocus="HandleFocus"
+                  @onblur="HandleBlur"></textarea>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorText))
+    {
+        <div class="csk-field-helper csk-field-helper-error">
+            @ErrorText
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(HelperText))
+    {
+        <div class="csk-field-helper">
+            @HelperText
+        </div>
+    }
+</div>

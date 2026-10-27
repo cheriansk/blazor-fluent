@@ -1,4 +1,5 @@
-@namespace BlazorEnterprise.Components.Common
+﻿@namespace BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Shared.UI.Components
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
 @using BlazorEnterprise.Core.Domain.Tasks
@@ -7,13 +8,9 @@
 
 @using BlazorEnterprise.Shared.UI.Wizards
 
-@inject IWorkflowService WorkflowService
-@inject ICurrentUser CurrentUser
-@inject ITenantContext TenantContext
-@inject IProgramService ProgramService
-@inject ITenantService TenantService
 
-<FluentWizardModal @ref="_wizardModal"
+
+<CskWizardModal @ref="_wizardModal"
                    TState="CreateWorkflowReqDto"
                    IsOpen="@IsOpen"
                    IsOpenChanged="@IsOpenChanged"
@@ -29,16 +26,16 @@
             <div class="wizard-form-grid">
                 @* Scoping Level *@
                 <div class="form-half-width">
-                    <FluentSelect TOption="TaskLevelEnum"
+                    <CskSelect TOption="TaskLevelEnum"
                                   TValue="TaskLevelEnum"
                                   @bind-Value="_initialState.Level"
                                   Label="Workflow Scoping Level *"
                                   Disabled="@IsEditMode"
                                   Class="full-width">
-                        <FluentOption Value="@TaskLevelEnum.Tenant">🏢 Tenant Level (Executive Governance)</FluentOption>
-                        <FluentOption Value="@TaskLevelEnum.Program">📁 Program Level (Multi-Project Initiative)</FluentOption>
-                        <FluentOption Value="@TaskLevelEnum.Project">📋 Project Level (Team Delivery)</FluentOption>
-                    </FluentSelect>
+                        <CskOption Value="@TaskLevelEnum.Tenant">🏢 Tenant Level (Executive Governance)</CskOption>
+                        <CskOption Value="@TaskLevelEnum.Program">📁 Program Level (Multi-Project Initiative)</CskOption>
+                        <CskOption Value="@TaskLevelEnum.Project">📋 Project Level (Team Delivery)</CskOption>
+                    </CskSelect>
                     @if (IsEditMode)
                     {
                         <span class="field-help-text">Workflow scope level is locked after creation.</span>
@@ -50,7 +47,7 @@
                     @if (_initialState.Level == TaskLevelEnum.Program)
                     {
                         <label class="fluent-label font-size-sm font-weight-600 mb-1 d-block">Target Program *</label>
-                        <FluentSelect TOption="ProgramEntity"
+                        <CskSelect TOption="ProgramEntity"
                                       TValue="string"
                                       Items="@_availablePrograms"
                                       OptionText="@(p => p.Name)"
@@ -68,7 +65,7 @@
                     else if (_initialState.Level == TaskLevelEnum.Project)
                     {
                         <label class="fluent-label font-size-sm font-weight-600 mb-1 d-block">Target Project *</label>
-                        <FluentSelect TOption="ProjectEntity"
+                        <CskSelect TOption="ProjectEntity"
                                       TValue="string"
                                       Items="@_availableProjects"
                                       OptionText="@(p => p.Name)"
@@ -93,7 +90,7 @@
 
                 @* Constant Workflow Owner *@
                 <div class="form-half-width">
-                    <FluentTextInput Label="Constant Workflow Owner Email *"
+                    <CskTextInput Label="Constant Workflow Owner Email *"
                                      @bind-Value="_initialState.WorkflowOwnerEmail"
                                      Class="full-width"
                                      Placeholder="orchestrator@company.local" />
@@ -106,21 +103,21 @@
 
                 @* Priority *@
                 <div class="form-half-width">
-                    <FluentSelect TOption="TaskPriorityEnum"
+                    <CskSelect TOption="TaskPriorityEnum"
                                   TValue="TaskPriorityEnum"
                                   @bind-Value="_initialState.Priority"
                                   Label="Priority"
                                   Class="full-width">
-                        <FluentOption Value="@TaskPriorityEnum.Low">Low</FluentOption>
-                        <FluentOption Value="@TaskPriorityEnum.Medium">Medium</FluentOption>
-                        <FluentOption Value="@TaskPriorityEnum.High">High</FluentOption>
-                        <FluentOption Value="@TaskPriorityEnum.Urgent">Urgent</FluentOption>
-                    </FluentSelect>
+                        <CskOption Value="@TaskPriorityEnum.Low">Low</CskOption>
+                        <CskOption Value="@TaskPriorityEnum.Medium">Medium</CskOption>
+                        <CskOption Value="@TaskPriorityEnum.High">High</CskOption>
+                        <CskOption Value="@TaskPriorityEnum.Urgent">Urgent</CskOption>
+                    </CskSelect>
                 </div>
 
                 @* Workflow Title *@
                 <div class="form-full-width">
-                    <FluentTextInput Label="Workflow Title *"
+                    <CskTextInput Label="Workflow Title *"
                                      @bind-Value="_initialState.Title"
                                      Class="full-width"
                                      Placeholder="E.g. SOC2 Type II Audit Compliance Rollout" />
@@ -132,7 +129,7 @@
 
                 @* Description *@
                 <div class="form-full-width">
-                    <FluentTextArea Label="Description & Governance Objectives"
+                    <CskTextArea Label="Description & Governance Objectives"
                                     @bind-Value="_initialState.Description"
                                     Rows="2"
                                     Class="full-width"
@@ -141,14 +138,14 @@
 
                 @* Target Due Date *@
                 <div class="form-half-width">
-                    <FluentDatePicker Label="Overall Target Due Date"
+                    <CskDatePicker Label="Overall Target Due Date"
                                       @bind-Value="_initialState.DueDate"
                                       Class="full-width" />
                 </div>
 
                 @* Watchers *@
                 <div class="form-half-width">
-                    <FluentTextInput Label="Watcher Emails (Comma-separated)"
+                    <CskTextInput Label="Watcher Emails (Comma-separated)"
                                      @bind-Value="_initialState.WatcherEmails"
                                      Class="full-width"
                                      Placeholder="auditor@company.com, pmo@company.com" />
@@ -163,16 +160,16 @@
                 <div class="step-builder-header">
                     <span class="step-builder-title">Execution Pipeline Steps (Tasks)</span>
                     <div class="d-flex gap-2">
-                        <FluentButton Appearance="ButtonAppearance.Outline"
-                                      IconStart="@(new Icons.Regular.Size16.Search())"
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                      IconStart="@CskIcons.Search"
                                       OnClick="@ToggleTaskSearch">
                             Attach Existing Task
-                        </FluentButton>
-                        <FluentButton Appearance="ButtonAppearance.Primary"
-                                      IconStart="@(new Icons.Regular.Size16.Add())"
+                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                      IconStart="@CskIcons.Add"
                                       OnClick="@AddNewStep">
                             Add Next Step (Task)
-                        </FluentButton>
+                        </CskButton>
                     </div>
                 </div>
 
@@ -182,29 +179,29 @@
                     <div class="task-search-picker-box">
                         <div class="task-search-picker-header">
                             <div class="d-flex align-center gap-2">
-                                <FluentIcon Value="@(new Icons.Filled.Size16.Search())" Color="Color.Primary" />
+                                <CskIcon Icon="@CskIcons.Search" Class="csk-icon-primary" />
                                 <strong>Search & Attach Existing Task to Workflow</strong>
                             </div>
-                            <FluentButton Appearance="ButtonAppearance.Subtle"
-                                          IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                            <CskButton Variant="CskButtonVariant.Text"
+                                          IconStart="@CskIcons.Dismiss"
                                           OnClick="@(() => _showTaskSearch = false)"
                                           Title="Close picker" />
                         </div>
 
                         <div class="d-flex gap-2 mb-2">
-                            <FluentTextInput @bind-Value="_taskSearchTerm"
+                            <CskTextInput @bind-Value="_taskSearchTerm"
                                              Placeholder="Search existing task by title, number, or assignee..."
                                              Class="flex-1" />
-                            <FluentButton Appearance="ButtonAppearance.Primary"
+                            <CskButton Variant="CskButtonVariant.Filled"
                                           OnClick="@SearchExistingTasksAsync">
                                 Search
-                            </FluentButton>
+                            </CskButton>
                         </div>
 
                         @if (_isSearchingTasks)
                         {
                             <div class="p-3 text-center">
-                                <FluentSpinner Size="@SpinnerSize.Small" />
+                                <CskSpinner Size="@CskSpinnerSize.Small" />
                                 <span class="font-size-sm ml-2">Searching eligible tasks...</span>
                             </div>
                         }
@@ -234,11 +231,11 @@
                                                 <span>Priority: @task.Priority</span>
                                             </div>
                                         </div>
-                                        <FluentButton Appearance="ButtonAppearance.Primary"
+                                        <CskButton Variant="CskButtonVariant.Filled"
                                                       OnClick="@(() => AttachExistingTask(task))"
                                                       Class="font-size-sm p-1">
                                             Attach as Step
-                                        </FluentButton>
+                                        </CskButton>
                                     </div>
                                 }
                             </div>
@@ -276,15 +273,15 @@
                                     @* Move Up / Down *@
                                     @if (stepIndex > 0 && !IsEditMode)
                                     {
-                                        <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                      IconStart="@(new Icons.Regular.Size16.ArrowUp())"
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.ArrowUp"
                                                       OnClick="@(() => MoveStepUp(stepIndex))"
                                                       Title="Move Step Up" />
                                     }
                                     @if (stepIndex < _initialState.Steps.Count - 1 && !IsEditMode)
                                     {
-                                        <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                      IconStart="@(new Icons.Regular.Size16.ArrowDown())"
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.ArrowDown"
                                                       OnClick="@(() => MoveStepDown(stepIndex))"
                                                       Title="Move Step Down" />
                                     }
@@ -306,8 +303,8 @@
                                         }
                                         else
                                         {
-                                            <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                          IconStart="@(new Icons.Regular.Size16.Dismiss())"
+                                            <CskButton Variant="CskButtonVariant.Text"
+                                                          IconStart="@CskIcons.Dismiss"
                                                           OnClick="@(() => PromptCancelExistingStep(step))"
                                                           Class="text-danger"
                                                           Title="Cancel this step (cannot be deleted)" />
@@ -315,8 +312,8 @@
                                     }
                                     else if (_initialState.Steps.Count > 1)
                                     {
-                                        <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                      IconStart="@(new Icons.Regular.Size16.Delete())"
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                      IconStart="@CskIcons.Delete"
                                                       OnClick="@(() => RemoveStep(stepIndex))"
                                                       Title="Remove this step" />
                                     }
@@ -325,7 +322,7 @@
 
                             <div class="wizard-form-grid mt-2">
                                 <div class="form-half-width">
-                                    <FluentTextInput Label="Step Title *"
+                                    <CskTextInput Label="Step Title *"
                                                      @bind-Value="step.Title"
                                                      Class="full-width"
                                                      Disabled="@(isExistingAttached && IsEditMode)"
@@ -337,7 +334,7 @@
                                 </div>
 
                                 <div class="form-half-width">
-                                    <FluentTextInput Label="Step Owner Email *"
+                                    <CskTextInput Label="Step Owner Email *"
                                                      @bind-Value="step.StepOwnerEmail"
                                                      Class="full-width"
                                                      Placeholder="lead-engineer@company.local" />
@@ -348,13 +345,13 @@
                                 </div>
 
                                 <div class="form-half-width">
-                                    <FluentDatePicker Label="Step Deadline"
+                                    <CskDatePicker Label="Step Deadline"
                                                       @bind-Value="step.DueDate"
                                                       Class="full-width" />
                                 </div>
 
                                 <div class="form-half-width">
-                                    <FluentTextInput Label="Deliverable Instructions / Acceptance"
+                                    <CskTextInput Label="Deliverable Instructions / Acceptance"
                                                      @bind-Value="step.Description"
                                                      Class="full-width"
                                                      Placeholder="Actionable criteria required for sign-off" />
@@ -365,15 +362,15 @@
                             <div class="subtask-builder-section">
                                 <div class="subtask-builder-header">
                                     <span class="subtask-builder-title">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.TaskListSquareLtr())" Color="Color.Default" />
+                                        <CskIcon Icon="@CskIcons.TaskListSquare" />
                                         Subtasks Delegated to Team (@step.SubTasks.Count)
                                     </span>
-                                    <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                  IconStart="@(new Icons.Regular.Size12.Add())"
+                                    <CskButton Variant="CskButtonVariant.Text"
+                                                  IconStart="@CskIcons.Add"
                                                   OnClick="@(() => AddSubTaskToStep(step))"
                                                   Class="font-size-xs p-1">
                                         Add Subtask
-                                    </FluentButton>
+                                    </CskButton>
                                 </div>
 
                                 @if (step.SubTasks.Count > 0)
@@ -386,16 +383,16 @@
 
                                             <div class="subtask-input-row">
                                                 <span class="sub-number">#@(subIndex + 1)</span>
-                                                <FluentTextInput Placeholder="Subtask title / work item"
+                                                <CskTextInput Placeholder="Subtask title / work item"
                                                                  @bind-Value="sub.Title"
                                                                  Class="flex-2" />
-                                                <FluentTextInput Placeholder="Team member email"
+                                                <CskTextInput Placeholder="Team member email"
                                                                  @bind-Value="sub.AssigneeEmail"
                                                                  Class="flex-2" />
-                                                <FluentDatePicker @bind-Value="sub.DueDate"
+                                                <CskDatePicker @bind-Value="sub.DueDate"
                                                                   Class="flex-1" />
-                                                <FluentButton Appearance="ButtonAppearance.Subtle"
-                                                              IconStart="@(new Icons.Regular.Size12.Dismiss())"
+                                                <CskButton Variant="CskButtonVariant.Text"
+                                                              IconStart="@CskIcons.Dismiss"
                                                               OnClick="@(() => RemoveSubTaskFromStep(step, subIndex))"
                                                               Title="Remove subtask" />
                                             </div>
@@ -413,7 +410,7 @@
                     Summary="Final review before orchestrating">
             <div class="wizard-review-container">
                 <div class="review-section">
-                    <FluentLabel Typo="Typography.H6" Class="font-weight-600">@_initialState.Title</FluentLabel>
+                    <CskLabel Typo="Typography.H6" Class="font-weight-600">@_initialState.Title</CskLabel>
                     <p class="review-desc">@(string.IsNullOrWhiteSpace(_initialState.Description) ? "No description provided." : _initialState.Description)</p>
 
                     <div class="review-meta-pills">
@@ -443,9 +440,9 @@
                 </div>
 
                 <div class="review-section">
-                    <FluentLabel Typo="Typography.Body" Class="font-weight-600 mb-2">
+                    <CskLabel Typo="Typography.Body" Class="font-weight-600 mb-2">
                         Sequential Execution Flow (@_initialState.Steps.Count Steps)
-                    </FluentLabel>
+                    </CskLabel>
                     <div class="review-steps-list">
                         @for (int i = 0; i < _initialState.Steps.Count; i++)
                         {
@@ -483,7 +480,7 @@
                 </div>
 
                 <div class="review-notice-box">
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Info())" Color="Color.Primary" />
+                    <CskIcon Icon="@CskIcons.Info" Class="csk-icon-primary" />
                     <span>
                         Workflow orchestration enforces single active step ownership. The constant workflow owner
                         (@_initialState.WorkflowOwnerEmail) retains accountability and receives alerts throughout execution.
@@ -492,7 +489,7 @@
             </div>
         </WizardStep>
     </Steps>
-</FluentWizardModal>
+</CskWizardModal>
 
 @* Step Cancellation Modal Dialog (Edit Mode) *@
 @if (_showCancelStepModal && _stepToCancel != null)
@@ -500,13 +497,13 @@
     <div class="cancel-step-dialog-backdrop">
         <div class="cancel-step-dialog">
             <div class="d-flex align-center gap-2 mb-3">
-                <FluentIcon Value="@(new Icons.Filled.Size20.Warning())" Color="Color.Warning" />
-                <FluentLabel Typo="Typography.H6" Class="font-weight-600">Cancel Step on Workflow</FluentLabel>
+                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                <CskLabel Typo="Typography.H6" Class="font-weight-600">Cancel Step on Workflow</CskLabel>
             </div>
             <p class="font-size-sm text-hint mb-3">
                 Tasks once added to a workflow cannot be deleted to maintain compliance audit trails. Instead, this step will be marked as <strong>Cancelled</strong>. If the step is currently active, the workflow will be paused.
             </p>
-            <FluentTextInput Label="Mandatory Cancellation Reason *"
+            <CskTextInput Label="Mandatory Cancellation Reason *"
                              @bind-Value="_cancelStepReason"
                              Placeholder="Reason for cancelling step..."
                              Class="full-width mb-4" />
@@ -515,488 +512,13 @@
                 <div class="field-error-text mb-3">@_cancelStepError</div>
             }
             <div class="d-flex justify-end gap-2">
-                <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => _showCancelStepModal = false)">Dismiss</FluentButton>
-                <FluentButton Appearance="ButtonAppearance.Primary"
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _showCancelStepModal = false)">Dismiss</CskButton>
+                <CskButton Variant="CskButtonVariant.Filled"
                               Class="btn-danger-confirm"
                               OnClick="@ConfirmCancelExistingStepAsync">
                     Confirm Cancellation
-                </FluentButton>
+                </CskButton>
             </div>
         </div>
     </div>
-}
-
-
-
-@code {
-    [Parameter]
-    public bool IsOpen { get; set; }
-
-    [Parameter]
-    public EventCallback<bool> IsOpenChanged { get; set; }
-
-    [Parameter]
-    public Guid? ProjectId { get; set; }
-
-    [Parameter]
-    public TaskLevelEnum DefaultLevel { get; set; } = TaskLevelEnum.Project;
-
-    [Parameter]
-    public WorkflowEntity? WorkflowToEdit { get; set; }
-
-    [Parameter]
-    public EventCallback<WorkflowEntity> OnWorkflowCreated { get; set; }
-
-    [Parameter]
-    public EventCallback<WorkflowEntity> OnWorkflowUpdated { get; set; }
-
-    private bool IsEditMode => WorkflowToEdit != null;
-
-    private CreateWorkflowReqDto _initialState = new();
-    private FluentWizardModal<CreateWorkflowReqDto>? _wizardModal;
-    private Dictionary<string, string> _stepErrors = new(StringComparer.OrdinalIgnoreCase);
-    private List<ProgramEntity> _availablePrograms = [];
-    private List<ProjectEntity> _availableProjects = [];
-    private ProgramEntity? _selectedProgram;
-    private ProjectEntity? _selectedProject;
-
-    // Task Search & Attach State
-    private bool _showTaskSearch;
-    private string _taskSearchTerm = string.Empty;
-    private bool _isSearchingTasks;
-    private List<TaskEntity> _availableExistingTasks = [];
-
-    // Step Cancellation Modal State
-    private bool _showCancelStepModal;
-    private CreateWorkflowStepDto? _stepToCancel;
-    private string _cancelStepReason = string.Empty;
-    private string? _cancelStepError;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsOpen)
-        {
-            await LoadScopingEntitiesAsync();
-            if (WorkflowToEdit != null)
-            {
-                PopulateFromExistingWorkflow(WorkflowToEdit);
-            }
-            else if (_initialState.ProjectId != ProjectId || _initialState.Steps.Count == 0)
-            {
-                ResetState();
-            }
-        }
-    }
-
-    private async Task LoadScopingEntitiesAsync()
-    {
-        if (TenantContext.HasActiveTenant)
-        {
-            var tenantId = TenantContext.TenantId;
-            _availablePrograms = (await ProgramService.GetProgramsAsync(TenantContext.TenantSlug))
-
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.Name)
-                .ToList();
-
-            _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug))
-
-                .Where(p => p.IsActive && !p.IsDeleted)
-                .OrderBy(p => p.Name)
-                .ToList();
-
-            if (ProjectId.HasValue && ProjectId.Value != Guid.Empty)
-            {
-                _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectId.Value);
-            }
-        }
-    }
-
-    private void OnProgramSelectedChanged(string? val)
-    {
-        if (Guid.TryParse(val, out var progId))
-        {
-            _initialState.ProgramId = progId;
-            _selectedProgram = _availablePrograms.FirstOrDefault(p => p.Id == progId);
-        }
-        else
-        {
-            _initialState.ProgramId = null;
-            _selectedProgram = null;
-        }
-        _wizardModal?.Context?.MarkDirty();
-    }
-
-    private void OnProjectSelectedChanged(string? val)
-    {
-        if (Guid.TryParse(val, out var projId))
-        {
-            _initialState.ProjectId = projId;
-            _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == projId);
-        }
-        else
-        {
-            _initialState.ProjectId = null;
-            _selectedProject = null;
-        }
-        _wizardModal?.Context?.MarkDirty();
-    }
-
-    private void PopulateFromExistingWorkflow(WorkflowEntity wf)
-    {
-        _initialState = new CreateWorkflowReqDto
-        {
-            Level = wf.Level,
-            ProgramId = wf.ProgramId,
-            ProjectId = wf.ProjectId,
-            Title = wf.Title,
-            Description = wf.Description,
-            WorkflowOwnerEmail = wf.WorkflowOwnerEmail,
-            Priority = wf.Priority,
-            DueDate = wf.DueDate,
-            WatcherEmails = wf.WatcherEmails,
-            Steps = wf.Steps
-                .OrderBy(s => s.WorkflowStepOrder ?? 1)
-                .Select(s => new CreateWorkflowStepDto
-                {
-                    ExistingTaskId = s.Id,
-                    Title = s.Title,
-                    Description = s.Description,
-                    StepOwnerEmail = s.AssigneeEmails,
-                    DueDate = s.DueDate,
-                    SubTasks = s.SubTasks
-                        .OrderBy(st => st.OrderIndex)
-                        .Select(st => new CreateWorkflowSubTaskDto
-                        {
-                            Title = st.Title,
-                            AssigneeEmail = st.AssigneeEmails,
-                            DueDate = st.DueDate
-                        }).ToList()
-                }).ToList()
-        };
-
-        if (wf.ProjectId.HasValue)
-        {
-            _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == wf.ProjectId.Value);
-        }
-        if (wf.ProgramId.HasValue)
-        {
-            _selectedProgram = _availablePrograms.FirstOrDefault(p => p.Id == wf.ProgramId.Value);
-        }
-    }
-
-    private void ResetState()
-    {
-        _initialState = new CreateWorkflowReqDto
-        {
-            Level = DefaultLevel,
-            ProjectId = ProjectId,
-            WorkflowOwnerEmail = CurrentUser.Email ?? "orchestrator@company.local",
-            Priority = TaskPriorityEnum.Medium,
-            DueDate = DateTime.UtcNow.AddDays(14),
-            Steps = new List<CreateWorkflowStepDto>
-            {
-                new()
-                {
-                    Title = "Initial Analysis & Feasibility",
-                    StepOwnerEmail = CurrentUser.Email ?? "engineer@company.local",
-                    DueDate = DateTime.UtcNow.AddDays(3),
-                    Description = "Assess technical scope, requirements, and architecture.",
-                    SubTasks = new List<CreateWorkflowSubTaskDto>
-                    {
-                        new() { Title = "Architecture Review", AssigneeEmail = CurrentUser.Email ?? "architect@company.local" },
-                        new() { Title = "Security Threat Modeling", AssigneeEmail = "security@company.local" }
-                    }
-                },
-                new()
-                {
-                    Title = "Stakeholder Approval & Sign-Off",
-                    StepOwnerEmail = "lead@company.local",
-                    DueDate = DateTime.UtcNow.AddDays(7),
-                    Description = "Verify sign-off checklist and approve final rollout."
-                }
-            }
-        };
-
-        if (ProjectId.HasValue && _availableProjects.Count > 0)
-        {
-            _selectedProject = _availableProjects.FirstOrDefault(p => p.Id == ProjectId.Value) ?? _availableProjects.FirstOrDefault();
-            _initialState.ProjectId = _selectedProject?.Id;
-        }
-        if (_availablePrograms.Count > 0)
-        {
-            _selectedProgram = _availablePrograms.FirstOrDefault();
-            if (_initialState.Level == TaskLevelEnum.Program)
-            {
-                _initialState.ProgramId = _selectedProgram?.Id;
-            }
-        }
-    }
-
-    private void ToggleTaskSearch()
-    {
-        _showTaskSearch = !_showTaskSearch;
-        if (_showTaskSearch && _availableExistingTasks.Count == 0)
-        {
-            _ = SearchExistingTasksAsync();
-        }
-    }
-
-    private async Task SearchExistingTasksAsync()
-    {
-        _isSearchingTasks = true;
-        try
-        {
-            var filter = new TaskSearchFilterDto(
-                Level: _initialState.Level,
-                ProgramId: _initialState.ProgramId,
-                ProjectId: _initialState.ProjectId,
-                SearchTerm: _taskSearchTerm,
-                ExcludeTasksWithWorkflows: true
-            );
-            var results = await WorkflowService.GetAvailableTasksForWorkflowAsync(filter);
-            // Exclude tasks already added in current state
-            var currentTaskIds = _initialState.Steps
-                .Where(s => s.ExistingTaskId.HasValue)
-                .Select(s => s.ExistingTaskId!.Value)
-                .ToHashSet();
-
-            _availableExistingTasks = results.Where(t => !currentTaskIds.Contains(t.Id)).ToList();
-        }
-        finally
-        {
-            _isSearchingTasks = false;
-        }
-    }
-
-    private void AttachExistingTask(TaskEntity task)
-    {
-        _initialState.Steps.Add(new CreateWorkflowStepDto
-        {
-            ExistingTaskId = task.Id,
-            Title = task.Title,
-            Description = task.Description,
-            StepOwnerEmail = !string.IsNullOrWhiteSpace(task.AssigneeEmails) ? task.AssigneeEmails : (CurrentUser.Email ?? string.Empty),
-            DueDate = task.DueDate.Year > 2000 ? task.DueDate : DateTime.UtcNow.AddDays(7),
-            SubTasks = task.SubTasks
-                .OrderBy(s => s.OrderIndex)
-                .Select(s => new CreateWorkflowSubTaskDto
-                {
-                    Title = s.Title,
-                    AssigneeEmail = s.AssigneeEmails,
-                    DueDate = s.DueDate
-                }).ToList()
-        });
-
-        _availableExistingTasks.RemoveAll(t => t.Id == task.Id);
-        _showTaskSearch = false;
-        _wizardModal?.Context?.MarkDirty();
-    }
-
-    private Task<bool> ValidateStep1Async()
-    {
-        _stepErrors.Clear();
-        if (string.IsNullOrWhiteSpace(_initialState.Title))
-        {
-            _stepErrors["Title"] = "Workflow title is required.";
-            return Task.FromResult(false);
-        }
-
-        if (string.IsNullOrWhiteSpace(_initialState.WorkflowOwnerEmail) || !_initialState.WorkflowOwnerEmail.Contains('@'))
-        {
-            _stepErrors["WorkflowOwnerEmail"] = "A valid constant Workflow Owner email is required.";
-            return Task.FromResult(false);
-        }
-
-        if (_initialState.Level == TaskLevelEnum.Program && (!_initialState.ProgramId.HasValue || _initialState.ProgramId == Guid.Empty))
-        {
-            _stepErrors["ProgramId"] = "Please select a target Program.";
-            return Task.FromResult(false);
-        }
-
-        if (_initialState.Level == TaskLevelEnum.Project && (!_initialState.ProjectId.HasValue || _initialState.ProjectId == Guid.Empty))
-        {
-            _stepErrors["ProjectId"] = "Please select a target Project.";
-            return Task.FromResult(false);
-        }
-
-        return Task.FromResult(true);
-    }
-
-    private Task<bool> ValidateStep2Async()
-    {
-        _stepErrors.Clear();
-        if (_initialState.Steps == null || _initialState.Steps.Count == 0)
-        {
-            _stepErrors["Steps"] = "At least one sequential step (task) is required.";
-            return Task.FromResult(false);
-        }
-
-        for (int i = 0; i < _initialState.Steps.Count; i++)
-        {
-            var s = _initialState.Steps[i];
-            if (string.IsNullOrWhiteSpace(s.Title))
-            {
-                _stepErrors[$"Step_{i}_Title"] = $"Step #{i + 1} requires a title.";
-                return Task.FromResult(false);
-            }
-            if (string.IsNullOrWhiteSpace(s.StepOwnerEmail) || !s.StepOwnerEmail.Contains('@'))
-            {
-                _stepErrors[$"Step_{i}_Owner"] = $"Step #{i + 1} requires a valid Step Owner email.";
-                return Task.FromResult(false);
-            }
-        }
-        return Task.FromResult(true);
-    }
-
-    private void AddNewStep()
-    {
-        _initialState.Steps.Add(new CreateWorkflowStepDto
-        {
-            Title = $"Step #{_initialState.Steps.Count + 1}",
-            StepOwnerEmail = string.Empty,
-            DueDate = DateTime.UtcNow.AddDays(7),
-            Description = string.Empty
-        });
-        _wizardModal?.Context?.MarkDirty();
-    }
-
-    private void MoveStepUp(int index)
-    {
-        if (index > 0 && index < _initialState.Steps.Count)
-        {
-            var item = _initialState.Steps[index];
-            _initialState.Steps.RemoveAt(index);
-            _initialState.Steps.Insert(index - 1, item);
-            _wizardModal?.Context?.MarkDirty();
-        }
-    }
-
-    private void MoveStepDown(int index)
-    {
-        if (index >= 0 && index < _initialState.Steps.Count - 1)
-        {
-            var item = _initialState.Steps[index];
-            _initialState.Steps.RemoveAt(index);
-            _initialState.Steps.Insert(index + 1, item);
-            _wizardModal?.Context?.MarkDirty();
-        }
-    }
-
-    private void RemoveStep(int index)
-    {
-        if (_initialState.Steps.Count > 1 && index >= 0 && index < _initialState.Steps.Count)
-        {
-            _initialState.Steps.RemoveAt(index);
-            _wizardModal?.Context?.MarkDirty();
-        }
-    }
-
-    private void AddSubTaskToStep(CreateWorkflowStepDto step)
-    {
-        step.SubTasks.Add(new CreateWorkflowSubTaskDto
-        {
-            Title = string.Empty,
-            AssigneeEmail = string.Empty,
-            DueDate = step.DueDate
-        });
-        _wizardModal?.Context?.MarkDirty();
-    }
-
-    private void RemoveSubTaskFromStep(CreateWorkflowStepDto step, int subIndex)
-    {
-        if (subIndex >= 0 && subIndex < step.SubTasks.Count)
-        {
-            step.SubTasks.RemoveAt(subIndex);
-            _wizardModal?.Context?.MarkDirty();
-        }
-    }
-
-    private void PromptCancelExistingStep(CreateWorkflowStepDto step)
-    {
-        _stepToCancel = step;
-        _cancelStepReason = string.Empty;
-        _cancelStepError = null;
-        _showCancelStepModal = true;
-    }
-
-    private async Task ConfirmCancelExistingStepAsync()
-    {
-        if (_stepToCancel == null || WorkflowToEdit == null || !_stepToCancel.ExistingTaskId.HasValue) return;
-
-        if (string.IsNullOrWhiteSpace(_cancelStepReason))
-        {
-            _cancelStepError = "Cancellation reason is mandatory.";
-            return;
-        }
-
-        try
-        {
-            var updated = await WorkflowService.CancelStepAsync(new CancelWorkflowStepReqDto(
-                WorkflowToEdit.Id,
-                _stepToCancel.ExistingTaskId.Value,
-                _cancelStepReason.Trim()
-            ));
-
-            _showCancelStepModal = false;
-            _stepToCancel = null;
-            await OnWorkflowUpdated.InvokeAsync(updated);
-            PopulateFromExistingWorkflow(updated);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _cancelStepError = ex.Message;
-        }
-    }
-
-    private async Task HandleFinishAsync(CreateWorkflowReqDto state)
-    {
-        if (IsEditMode && WorkflowToEdit != null)
-        {
-            var editReq = new EditWorkflowReqDto
-            {
-                WorkflowId = WorkflowToEdit.Id,
-                Title = state.Title,
-                Description = state.Description,
-                WorkflowOwnerEmail = state.WorkflowOwnerEmail,
-                Priority = state.Priority,
-                DueDate = state.DueDate,
-                WatcherEmails = state.WatcherEmails
-            };
-            var updated = await WorkflowService.EditWorkflowAsync(editReq);
-
-            // Handle any newly added steps in Edit Mode
-            var existingStepIds = WorkflowToEdit.Steps.Select(s => s.Id).ToHashSet();
-            var newSteps = state.Steps.Where(s => !s.ExistingTaskId.HasValue || !existingStepIds.Contains(s.ExistingTaskId.Value)).ToList();
-
-            foreach (var newStep in newSteps)
-            {
-                await WorkflowService.AppendStepAsync(new AppendStepToWorkflowReqDto(
-                    WorkflowId: WorkflowToEdit.Id,
-                    ExistingTaskId: newStep.ExistingTaskId,
-                    NewTaskTitle: newStep.Title,
-                    NewTaskOwnerEmail: newStep.StepOwnerEmail,
-                    DeliverableNotes: newStep.Description
-                ));
-            }
-
-            var reloaded = await WorkflowService.GetWorkflowByIdAsync(WorkflowToEdit.Id) ?? updated;
-            await OnWorkflowUpdated.InvokeAsync(reloaded);
-        }
-        else
-        {
-            var created = await WorkflowService.CreateWorkflowAsync(state);
-            await OnWorkflowCreated.InvokeAsync(created);
-        }
-
-        await IsOpenChanged.InvokeAsync(false);
-        ResetState();
-    }
-
-    private async Task HandleCancel()
-    {
-        await IsOpenChanged.InvokeAsync(false);
-        ResetState();
-    }
 }

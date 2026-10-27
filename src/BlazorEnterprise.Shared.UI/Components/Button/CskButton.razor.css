@@ -1,0 +1,148 @@
+.csk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    border: none;
+    outline: none;
+    text-decoration: none;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    user-select: none;
+    vertical-align: middle;
+    border-radius: var(--mat-radius-pill, 9999px);
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.csk-btn:focus-visible {
+    outline: 2px solid var(--mat-primary, #6750A4);
+    outline-offset: 2px;
+}
+
+/* Sizing Tiers */
+.csk-btn-sm {
+    height: 32px;
+    padding: 0 16px;
+    font-size: 0.8125rem;
+    gap: 6px;
+}
+
+.csk-btn-md {
+    height: 40px;
+    padding: 0 24px;
+    font-size: 0.875rem;
+    gap: 8px;
+}
+
+.csk-btn-lg {
+    height: 48px;
+    padding: 0 32px;
+    font-size: 1rem;
+    gap: 10px;
+}
+
+/* Variants */
+/* 1. Filled */
+.csk-btn-filled {
+    background-color: var(--mat-primary, #6750A4);
+    color: var(--mat-on-primary, #FFFFFF);
+    box-shadow: var(--mat-elevation-0, none);
+}
+
+.csk-btn-filled:hover:not(:disabled) {
+    background-color: #5B4495;
+    box-shadow: var(--mat-elevation-1, 0px 1px 3px rgba(0,0,0,0.12));
+}
+
+/* 2. Outlined */
+.csk-btn-outlined {
+    background-color: transparent;
+    color: var(--mat-primary, #6750A4);
+    border: 1px solid var(--mat-outline, #79747E);
+}
+
+.csk-btn-outlined:hover:not(:disabled) {
+    background-color: rgba(103, 80, 164, 0.08);
+    border-color: var(--mat-primary, #6750A4);
+}
+
+/* 3. Text */
+.csk-btn-text {
+    background-color: transparent;
+    color: var(--mat-primary, #6750A4);
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.csk-btn-text:hover:not(:disabled) {
+    background-color: rgba(103, 80, 164, 0.08);
+}
+
+/* 4. Elevated */
+.csk-btn-elevated {
+    background-color: var(--mat-surface, #FDF8FD);
+    color: var(--mat-primary, #6750A4);
+    box-shadow: var(--mat-elevation-1, 0px 1px 3px rgba(0,0,0,0.12));
+}
+
+.csk-btn-elevated:hover:not(:disabled) {
+    background-color: #F8F2F8;
+    box-shadow: var(--mat-elevation-2, 0px 2px 6px rgba(0,0,0,0.15));
+}
+
+/* 5. Tonal */
+.csk-btn-tonal {
+    background-color: var(--mat-secondary-container, #E8DEF8);
+    color: var(--mat-on-secondary-container, #1D192B);
+}
+
+.csk-btn-tonal:hover:not(:disabled) {
+    background-color: #DFD3F2;
+    box-shadow: var(--mat-elevation-1, 0px 1px 3px rgba(0,0,0,0.12));
+}
+
+/* Disabled State */
+.csk-btn:disabled,
+.csk-btn.disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+/* Inner elements */
+.csk-btn-label {
+    display: inline-flex;
+    align-items: center;
+}
+
+.csk-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Inline Loading Spinner */
+.csk-btn-spinner {
+    display: inline-block;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: csk-spin 0.75s linear infinite;
+}
+
+@keyframes csk-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

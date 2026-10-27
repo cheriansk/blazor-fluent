@@ -1,0 +1,11 @@
+@namespace BlazorEnterprise.Shared.UI.Components
+@typeparam TValue
+
+<div class="csk-radio-group @Class"
+     role="radiogroup"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+</div>

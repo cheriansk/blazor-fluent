@@ -1,9 +1,8 @@
-@inherits ErrorBoundaryBase
+@inherits Microsoft.AspNetCore.Components.ErrorBoundaryBase
+@namespace BlazorEnterprise.Web.Components.Common
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
-@using Microsoft.FluentUI.AspNetCore.Components
-@inject IAuditService AuditService
-@inject ILogger<AppErrorBoundaryComp> Logger
+@using BlazorEnterprise.Shared.UI.Components
 
 @if (CurrentException is null)
 {
@@ -15,78 +14,34 @@ else if (ErrorContent is not null)
 }
 else
 {
-    <FluentCard Style="margin: 20px; border-left: 4px solid var(--error);">
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: center;">
-                <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
+    <CskCard Class="csk-card-error csk-card-error-boundary">
+        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.ErrorCircle" Class="csk-icon-error csk-icon-xl" />
                 <div>
-                    <FluentLabel Typo="Typography.H5" Style="color: var(--error);">Something went wrong</FluentLabel>
-                    <FluentLabel Typo="Typography.Body">
+                    <h3 class="csk-error-heading">Something went wrong</h3>
+                    <p class="csk-error-lead">
                         An unexpected error occurred while rendering this page. The technical details have been recorded.
-                    </FluentLabel>
+                    </p>
                 </div>
-            </FluentStack>
+            </CskStack>
 
-            <FluentMessageBar Intent="MessageBarIntent.Error" AllowDismiss="false">
+            <div class="csk-message-bar csk-message-bar-error csk-error-incident-box" >
                 <strong>Incident Reference:</strong> <code>@(_errorReferenceId ?? "Recording incident...")</code>
-            </FluentMessageBar>
+            </div>
 
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                <FluentButton Appearance="ButtonAppearance.Primary"
-                              IconStart="@(new Icons.Regular.Size16.ArrowCounterclockwise())"
-                              OnClick="@RecoverAndReload">
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10">
+                <CskButton Variant="CskButtonVariant.Filled"
+                           IconStart="@CskIcons.ArrowCounterclockwise"
+                           OnClick="@RecoverAndReload">
                     Try Again
-                </FluentButton>
-                <FluentButton Appearance="ButtonAppearance.Subtle"
-                              IconStart="@(new Icons.Regular.Size16.Home())"
-                              Href="/">
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Text"
+                           IconStart="@CskIcons.Home"
+                           Href="/">
                     Go to Home
-                </FluentButton>
-            </FluentStack>
-        </FluentStack>
-    </FluentCard>
-}
-
-@code {
-    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
-    [Inject] private ITenantContext TenantContext { get; set; } = default!;
-    [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
-
-    private string? _errorReferenceId;
-
-    protected override async Task OnErrorAsync(Exception exception)
-    {
-        var currentUri = NavigationManager.Uri;
-        var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "none";
-        var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "anonymous";
-
-        try
-        {
-            _errorReferenceId = await AuditService.LogExceptionAsync(
-                exception,
-                $"Razor Page Rendering Error at URL: {currentUri} (Tenant: {tenantId}, User: {userId})",
-                AuditSeverityEnum.Critical);
-        }
-        catch (Exception logEx)
-        {
-            Logger.LogCritical(logEx, "Failed to log UI exception to AuditService. Original message: {Message}", exception.Message);
-            _errorReferenceId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
-        }
-
-        Logger.LogError(
-            exception,
-            "Razor Page Rendering Error: Incident='{IncidentRef}', URL='{CurrentUri}', Tenant='{TenantId}', User='{UserId}', ExceptionType='{ExceptionType}': {ErrorMessage}",
-            _errorReferenceId,
-            currentUri,
-            tenantId,
-            userId,
-            exception.GetType().FullName,
-            exception.Message);
-    }
-
-    private void RecoverAndReload()
-    {
-        _errorReferenceId = null;
-        Recover();
-    }
+                </CskButton>
+            </CskStack>
+        </CskStack>
+    </CskCard>
 }

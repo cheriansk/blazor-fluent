@@ -318,6 +318,18 @@ internal class AuditService : IAuditService
 
             currentUser?.SetSystemDaemon("AuditTrailLogger");
 
+            var isolatedTenant = scope.ServiceProvider.GetService<ITenantContext>();
+            if (isolatedTenant != null && record.TenantId != Guid.Empty)
+            {
+                isolatedTenant.Initialize(
+                    record.TenantId,
+                    _tenantContext.TenantName ?? "AuditScope",
+                    _tenantContext.UserType,
+                    Array.Empty<Core.Contracts.TenantInfo>(),
+                    _tenantContext.TenantSlug ?? "audit",
+                    isRootTenant: _tenantContext.IsRootTenant);
+            }
+
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
 
@@ -559,6 +571,18 @@ internal class AuditService : IAuditService
                 : SystemIdentityUtility.FormatInternalDaemonEmail("ForensicAuditLogger");
 
             currentUser?.SetSystemDaemon("ForensicAuditLogger", auditEmail);
+
+            var isolatedTenant = scope.ServiceProvider.GetService<ITenantContext>();
+            if (isolatedTenant != null && tenantId != Guid.Empty)
+            {
+                isolatedTenant.Initialize(
+                    tenantId,
+                    _tenantContext.TenantName ?? "AuditScope",
+                    _tenantContext.UserType ,
+                    Array.Empty<Core.Contracts.TenantInfo>(),
+                    _tenantContext.TenantSlug ?? "audit",
+                    isRootTenant: _tenantContext.IsRootTenant);
+            }
 
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -837,7 +861,7 @@ internal class AuditService : IAuditService
 
             {
 
-                _logger.LogWarning(ex, "Failed to parse ChangesJson for audit record {AuditId}", record.Id);
+                _logger.LogError(ex, "Failed to parse ChangesJson for audit record {AuditId}", record.Id);
 
             }
 

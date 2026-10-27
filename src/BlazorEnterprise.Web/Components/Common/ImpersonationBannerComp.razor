@@ -1,6 +1,6 @@
-@using BlazorEnterprise.Core.Contracts
+﻿@using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Infrastructure.Security
-@using Microsoft.FluentUI.AspNetCore.Components
+@using BlazorEnterprise.Shared.UI.Components
 @inject ICurrentUser CurrentUser
 @inject IImpersonationService ImpersonationService
 @inject CurrentUserAuthenticationStateProvider AuthStateProvider
@@ -8,9 +8,9 @@
 
 @if (CurrentUser.IsImpersonated)
 {
-    <div style="background-color: #fff4ce; border-bottom: 2px solid #ffd335; color: #424242; padding: 8px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 2000; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
-            <FluentIcon Value="@(new Icons.Filled.Size20.Warning())" Color="Color.Warning" />
+    <div class="impersonation-banner">
+        <div class="impersonation-content">
+            <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
             <span>
                 <strong>OPERATOR TROUBLESHOOTING MODE:</strong> You are currently impersonating
                 <strong>@CurrentUser.UserName</strong> (<code>@CurrentUser.Email</code>).
@@ -18,12 +18,12 @@
             </span>
         </div>
 
-        <FluentButton Appearance="ButtonAppearance.Subtle"
-                      Size="ButtonSize.Small"
-                      Style="background-color: #d83b01; border-color: #d83b01; font-weight: 600;"
-                      OnClick="ExitImpersonationAsync">
+        <CskButton Variant="CskButtonVariant.Filled"
+                   Size="CskButtonSize.Small"
+                   Class="btn-impersonation-exit"
+                   OnClick="ExitImpersonationAsync">
             Exit Impersonation
-        </FluentButton>
+        </CskButton>
     </div>
 }
 

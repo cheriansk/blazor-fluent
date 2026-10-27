@@ -1,43 +1,44 @@
 @page "/Error"
 @attribute [AllowAnonymous]
+@namespace BlazorEnterprise.Web.Components.Pages
 @using System.Diagnostics
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
-@using Microsoft.FluentUI.AspNetCore.Components
+@using BlazorEnterprise.Shared.UI.Components
 @inject IAuditService AuditService
 @inject ILogger<ErrorPage> Logger
 @rendermode Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer
 
 <PageTitle>Unexpected Error</PageTitle>
 
-<FluentCard Style="max-width: 600px; margin: 80px auto; padding: 32px;">
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Style="align-items: center;">
-            <FluentIcon Value="@(new Icons.Filled.Size24.ErrorCircle())" Color="Color.Error" />
+<div class="csk-card error-page-card">
+    <div class="error-page-content">
+        <div class="error-header-row">
+            <CskIcon Icon="@CskIcons.ErrorCircle" Class="csk-icon-error csk-icon-xl" />
             <div>
-                <FluentLabel Typo="Typography.H4" Style="color: var(--error);">Something went wrong</FluentLabel>
-                <FluentLabel Typo="Typography.Body">
+                <h3 class="error-header-title">Something went wrong</h3>
+                <p class="error-header-desc">
                     An unexpected error occurred. Our team has been notified automatically.
-                </FluentLabel>
+                </p>
             </div>
-        </FluentStack>
+        </div>
 
         @if (_errorId is not null)
         {
-            <FluentMessageBar Intent="MessageBarIntent.Error" AllowDismiss="false">
+            <div class="csk-message-bar csk-message-bar-error error-ref-box">
                 <strong>Incident Reference:</strong>&nbsp;<code>@_errorId</code> — quote this reference when contacting support.
-            </FluentMessageBar>
+            </div>
         }
 
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          IconStart="@(new Icons.Regular.Size16.Home())"
-                          Href="/">
+        <div class="error-actions-row">
+            <CskButton Variant="CskButtonVariant.Filled"
+                       IconStart="@CskIcons.Home"
+                       Href="/">
                 Return to Home
-            </FluentButton>
-        </FluentStack>
-    </FluentStack>
-</FluentCard>
+            </CskButton>
+        </div>
+    </div>
+</div>
 
 @code {
     [CascadingParameter]

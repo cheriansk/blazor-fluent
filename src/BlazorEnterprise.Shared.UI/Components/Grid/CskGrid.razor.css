@@ -1,0 +1,24 @@
+.csk-grid {
+    display: flex;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Spacings (increments of 4px) */
+.csk-grid-spacing-0 { gap: 0; }
+.csk-grid-spacing-1 { gap: 4px; }
+.csk-grid-spacing-2 { gap: 8px; }
+.csk-grid-spacing-3 { gap: 12px; }
+.csk-grid-spacing-4 { gap: 16px; }
+.csk-grid-spacing-5 { gap: 20px; }
+.csk-grid-spacing-6 { gap: 24px; }
+.csk-grid-spacing-8 { gap: 32px; }
+
+/* Justifications */
+.csk-justify-start { justify-content: flex-start; }
+.csk-justify-center { justify-content: center; }
+.csk-justify-end { justify-content: flex-end; }
+.csk-justify-space-between { justify-content: space-between; }
+.csk-justify-space-around { justify-content: space-around; }
+.csk-justify-space-evenly { justify-content: space-evenly; }

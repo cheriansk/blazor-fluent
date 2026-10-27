@@ -1,0 +1,23 @@
+﻿.impersonation-banner {
+    background-color: #fff4ce;
+    border-bottom: 2px solid #ffd335;
+    color: #424242;
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.impersonation-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+.btn-impersonation-exit {
+    background-color: #d83b01 !important;
+    border-color: #d83b01 !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+}

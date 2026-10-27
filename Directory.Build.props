@@ -45,6 +45,11 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" 
                      Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')" />
     <AdditionalFiles Include="**\*.razor" />
+    <AdditionalFiles Include="**\*.css" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Web\wwwroot\**\*.css"
+                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Web'" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Shared.UI\**\*.css"
+                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Shared.UI'" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.AppHost' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">

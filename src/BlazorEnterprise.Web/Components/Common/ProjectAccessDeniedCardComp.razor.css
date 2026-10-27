@@ -1,0 +1,56 @@
+﻿.access-denied-card {
+    padding: 32px;
+    max-width: 600px;
+    margin: 40px auto;
+    text-align: center;
+    background: var(--mat-surface, #ffffff);
+    border-radius: 12px;
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    box-shadow: var(--mat-elevation-1);
+}
+.access-denied-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+.access-denied-icon-circle {
+    background-color: var(--mat-error-container, #fde7e9);
+    padding: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+}
+.access-denied-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--mat-on-surface, #1e1e1e);
+}
+.access-denied-message {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--mat-on-surface-variant, #616161);
+    line-height: 1.5;
+}
+.access-denied-badges {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+.access-denied-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--mat-surface-container, #f0f0f0);
+    font-size: 0.8rem;
+}
+.access-denied-divider {
+    width: 100%;
+    margin: 12px 0;
+    border: 0;
+    border-top: 1px solid var(--mat-outline-variant, #e0e0e0);
+}
+.access-denied-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}

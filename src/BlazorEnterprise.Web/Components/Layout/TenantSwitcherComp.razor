@@ -5,7 +5,6 @@
 @inject IAuditService AuditService
 @inject ProtectedSessionStorage SessionStorage
 @inject NavigationManager NavigationManager
-@using Microsoft.FluentUI.AspNetCore.Components
 
 @if (!TenantContext.HasActiveTenant)
 {
@@ -16,41 +15,40 @@
 @if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count > 1)
 {
     @* Company user with multiple tenants — show dropdown *@
-    <FluentSelect TOption="TenantInfo"
+    <CskSelect TOption="TenantInfo"
                   TValue="string"
                   Items="@TenantContext.AllowedTenants.ToList()"
                   OptionValue="@(t => t.Id.ToString())"
                   OptionText="@(t => t.Name)"
                   Value="@(TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : string.Empty)"
                   ValueChanged="@((string? id) => OnTenantChanged(id))"
-                  Style="min-width: 180px;">
-    </FluentSelect>
+                  Class="tenant-select-dropdown">
+    </CskSelect>
 }
 else if (TenantContext.CanSwitchTenant && TenantContext.AllowedTenants.Count == 1)
 {
     @* Company user but only one tenant *@
-    <FluentBadge Style="padding: 4px 10px;">
+    <CskBadge Class="tenant-badge-padded">
         @TenantContext.TenantName
-    </FluentBadge>
+    </CskBadge>
 }
 else
 {
     @* Client user — locked to their tenant, no switching *@
-    <FluentTooltip Anchor="tenant-badge" Position="TooltipPosition.Bottom">
+    <CskTooltip Anchor="tenant-badge" Position="TooltipPosition.Bottom">
         You are locked to this tenant and cannot switch.
-    </FluentTooltip>
-    <FluentBadge Id="tenant-badge"
-                 
-                 Style="padding: 4px 10px; cursor: default;">
+    </CskTooltip>
+    <CskBadge Id="tenant-badge"
+                 Class="tenant-badge-locked">
         🔒 @TenantContext.TenantName
-    </FluentBadge>
+    </CskBadge>
 }
 
 @if (!string.IsNullOrEmpty(_switchError))
 {
-    <FluentBadge  Color="BadgeColor.Severe" Style="margin-left: 8px;">
+    <CskBadge Color="BadgeColor.Severe" Class="tenant-badge-error">
         @_switchError
-    </FluentBadge>
+    </CskBadge>
 }
 
 @code {

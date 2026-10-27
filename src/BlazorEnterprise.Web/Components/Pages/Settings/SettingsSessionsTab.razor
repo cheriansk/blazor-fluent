@@ -1,375 +1,176 @@
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.DataListTypes
 @using BlazorEnterprise.Core.Domain.Identity
-@using Microsoft.FluentUI.AspNetCore.Components
-@inject IUserSessionService SessionService
-@inject ICircuitSessionTracker CircuitTracker
-@inject ICurrentUser CurrentUser
-@inject ITenantContext TenantContext
-@inject IAuditService AuditService
-@inject IUserTimeZoneService TimeZoneService
-@inject ILogger<SettingsSessionsTab> Logger
+@using BlazorEnterprise.Shared.UI.Components
 @implements IDisposable
 
 <div>
     @if (!CurrentUser.IsRootAdmin)
     {
-        <FluentMessageBar Intent="MessageBarIntent.Error" Style="margin-bottom: 16px;">
+        <CskMessageBar Intent="MessageBarIntent.Error" Class="mb-4">
             Access Denied: Active user session administration is restricted exclusively to Root Administrators.
-        </FluentMessageBar>
+        </CskMessageBar>
     }
     else
     {
         @* Header *@
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Style="margin-bottom: 24px;">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-6">
         <div>
-            <FluentLabel Typo="Typography.H3" Style="font-weight: 700; margin: 0;">Active User Sessions</FluentLabel>
-            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-2, #616161); margin-top: 4px;">
+            <CskLabel Typo="Typography.H3" Class="font-bold m-0">Active User Sessions</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint mt-1">
                 Real-time tracking of active circuits, device fingerprints, and immediate administrative session revocation.
-            </FluentLabel>
+            </CskLabel>
         </div>
 
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-            <FluentButton Appearance="ButtonAppearance.Outline"
-                          IconStart="@(new Icons.Regular.Size16.Broom())"
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10">
+            <CskButton Variant="CskButtonVariant.Outlined"
+                          IconStart="@CskIcons.Broom"
                           OnClick="RevokeAllStaleAsync"
                           Title="Revoke all sessions inactive for more than 30 minutes">
                 Revoke Stale (>30m)
-            </FluentButton>
-            <FluentButton Appearance="ButtonAppearance.Outline"
-                          IconStart="@(new Icons.Regular.Size16.ArrowClockwise())"
+            </CskButton>
+            <CskButton Variant="CskButtonVariant.Outlined"
+                          IconStart="@CskIcons.ArrowClockwise"
                           OnClick="LoadSessionsAsync">
                 Refresh
-            </FluentButton>
-        </FluentStack>
-    </FluentStack>
+            </CskButton>
+        </CskStack>
+    </CskStack>
 
     @if (!string.IsNullOrWhiteSpace(_statusMessage))
     {
-        <FluentMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" Style="margin-bottom: 16px;">
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" Class="mb-4">
             @_statusMessage
-        </FluentMessageBar>
+        </CskMessageBar>
     }
 
     @* Sessions Grid *@
-    <FluentCard Style="padding: 20px;">
+    <CskCard Class="p-4">
         @if (_isLoading)
         {
-            <div style="display: flex; justify-content: center; padding: 48px;">
-                <FluentSpinner Size="SpinnerSize.Large" />
+            <div class="flex-center p-10">
+                <CskSpinner Size="CskSpinnerSize.Large" />
             </div>
         }
         else if (_sessions.Count == 0)
         {
-            <div style="text-align: center; padding: 48px; color: var(--neutral-foreground-3, #8a8886);">
-                <FluentIcon Value="@(new Icons.Regular.Size32.ShieldCheckmark())" Color="Color.Default" />
-                <div style="margin-top: 12px; font-weight: 500;">No sessions found.</div>
+            <div class="text-center p-10 text-hint">
+                <CskIcon Icon="@CskIcons.ShieldCheckmark" Class="csk-icon-xl" />
+                <div class="mt-3 font-medium">No sessions found.</div>
             </div>
         }
         else
         {
             @* Filter Pills & Search *@
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="align-items: center;">
-                    <FluentButton Size="ButtonSize.Small"
-                                  Appearance="@(_currentFilter == SessionStatusFilter.ActiveAndIdle ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Wrap="true" Class="mb-4 gap-12">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.ActiveAndIdle ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
                                   OnClick="@(() => SetFilter(SessionStatusFilter.ActiveAndIdle))">
                         Active &amp; Idle (@ActiveAndIdleCount)
-                    </FluentButton>
-                    <FluentButton Size="ButtonSize.Small"
-                                  Appearance="@(_currentFilter == SessionStatusFilter.OnlineOnly ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.OnlineOnly ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
                                   OnClick="@(() => SetFilter(SessionStatusFilter.OnlineOnly))">
                         Online (@OnlineCount)
-                    </FluentButton>
-                    <FluentButton Size="ButtonSize.Small"
-                                  Appearance="@(_currentFilter == SessionStatusFilter.IdleOnly ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.IdleOnly ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
                                   OnClick="@(() => SetFilter(SessionStatusFilter.IdleOnly))">
                         Idle (@IdleCount)
-                    </FluentButton>
-                    <FluentButton Size="ButtonSize.Small"
-                                  Appearance="@(_currentFilter == SessionStatusFilter.TerminatedOnly ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.TerminatedOnly ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
                                   OnClick="@(() => SetFilter(SessionStatusFilter.TerminatedOnly))">
                         Terminated / Revoked (@TerminatedCount)
-                    </FluentButton>
-                    <FluentButton Size="ButtonSize.Small"
-                                  Appearance="@(_currentFilter == SessionStatusFilter.All ? ButtonAppearance.Default : ButtonAppearance.Outline)"
+                    </CskButton>
+                    <CskButton Size="CskButtonSize.Small"
+                                  Appearance="@(_currentFilter == SessionStatusFilter.All ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
                                   OnClick="@(() => SetFilter(SessionStatusFilter.All))">
                         All (@_sessions.Count)
-                    </FluentButton>
-                </FluentStack>
+                    </CskButton>
+                </CskStack>
 
-                <FluentTextInput Placeholder="Filter sessions by user, tenant, IP, or device..."
+                <CskTextInput Placeholder="Filter sessions by user, tenant, IP, or device..."
                               @bind-Value="_sessionSearchText"
                               @bind-Value:after="StateHasChanged"
-                              Style="width: 320px;" >
+                              Class="w-320" >
                     <StartTemplate>
-                        <FluentIcon Value="@(new Icons.Regular.Size16.Search())" />
+                        <CskIcon Icon="@CskIcons.Search" />
                     </StartTemplate>
-                </FluentTextInput>
-            </FluentStack>
+                </CskTextInput>
+            </CskStack>
 
-            <FluentDataGrid Items="@FilteredSessions" ResizableColumns="true" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
-                <TemplateColumn Title="User" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.UserEmail))">
+            <CskDataGrid Items="@FilteredSessions" ResizableColumns="true" GridTemplateColumns="1.5fr 1fr 1fr 1.5fr 1fr 1fr 120px 100px">
+                <CskTemplateColumn Title="User" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.UserEmail))">
                     <div>
                         <strong>@context.UserEmail</strong>
-                        <div style="font-size: 11px; color: var(--neutral-foreground-3, #888);">@context.UserId</div>
+                        <div class="text-xs text-hint">@context.UserId</div>
                     </div>
-                </TemplateColumn>
+                </CskTemplateColumn>
 
-                <PropertyColumn Property="@(s => s.TenantId)" Title="Tenant" Sortable="true" />
-                <PropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" Sortable="true" />
-                <PropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" Sortable="true" />
+                <CskPropertyColumn Property="@(s => s.TenantId)" Title="Tenant" Sortable="true" />
+                <CskPropertyColumn Property="@(s => s.IpAddress)" Title="IP Address" Sortable="true" />
+                <CskPropertyColumn Property="@(s => s.UserAgent)" Title="Client / Device" Sortable="true" />
 
-                <TemplateColumn Title="Started" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.StartedAtUtc))">
+                <CskTemplateColumn Title="Started" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.StartedAtUtc))">
                     <span title="@TimeZoneService.FormatDateTime(context.StartedAtUtc)">@GetRelativeTime(context.StartedAtUtc)</span>
-                </TemplateColumn>
+                </CskTemplateColumn>
 
-                <TemplateColumn Title="Last Activity" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.LastActivityAtUtc))">
+                <CskTemplateColumn Title="Last Activity" SortBy="@(GridSort<UserSessionEntity>.ByAscending(s => s.LastActivityAtUtc))">
                     <span title="@TimeZoneService.FormatDateTime(context.LastActivityAtUtc)">@GetRelativeTime(context.LastActivityAtUtc)</span>
-                </TemplateColumn>
+                </CskTemplateColumn>
 
-                <TemplateColumn Title="Status">
+                <CskTemplateColumn Title="Status">
                     @{
                         var status = GetSessionStatus(context);
                     }
                     @switch (status)
                     {
                         case "Online":
-                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Success">
                                 Online
-                            </FluentBadge>
+                            </CskBadge>
                             break;
                         case "Idle":
-                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Warning">
                                 Idle
-                            </FluentBadge>
+                            </CskBadge>
                             break;
                         case "Disconnected":
-                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Subtle">
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Subtle">
                                 Disconnected
-                            </FluentBadge>
+                            </CskBadge>
                             break;
                         default:
-                            <FluentBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Severe">
                                 @status
-                            </FluentBadge>
+                            </CskBadge>
                             break;
                     }
-                </TemplateColumn>
+                </CskTemplateColumn>
 
-                <TemplateColumn Title="Action">
+                <CskTemplateColumn Title="Action">
                     @{
                         var isTerminated = context.IsRevoked || (DateTime.UtcNow - context.LastActivityAtUtc > TimeSpan.FromMinutes(30));
                     }
                     @if (!isTerminated)
                     {
-                        <FluentButton Appearance="ButtonAppearance.Subtle"
-                                      Size="ButtonSize.Small"
-                                      Style="color: #d83b01; font-weight: 600;"
+                        <CskButton Variant="CskButtonVariant.Text"
+                                      Size="CskButtonSize.Small"
+                                      Class="text-error font-semibold"
                                       OnClick="@(() => RevokeSessionAsync(context.Id, context.UserEmail))">
                             Revoke
-                        </FluentButton>
+                        </CskButton>
                     }
                     else
                     {
-                        <span style="font-size: 12px; color: var(--neutral-foreground-3, #999);">Terminated</span>
+                        <span class="text-xs text-hint">Terminated</span>
                     }
-                </TemplateColumn>
-            </FluentDataGrid>
+                </CskTemplateColumn>
+            </CskDataGrid>
         }
-    </FluentCard>
+    </CskCard>
     }
 </div>
-
-@code {
-    private enum SessionStatusFilter
-    {
-        ActiveAndIdle,
-        OnlineOnly,
-        IdleOnly,
-        TerminatedOnly,
-        All
-    }
-
-    private SessionStatusFilter _currentFilter = SessionStatusFilter.ActiveAndIdle;
-    private bool _isLoading = true;
-    private bool _isError;
-    private string? _statusMessage;
-    private List<UserSessionEntity> _sessions = new();
-    private string _sessionSearchText = string.Empty;
-
-    private int ActiveAndIdleCount => _sessions.Count(s => !IsTerminated(s));
-    private int OnlineCount => _sessions.Count(s => GetSessionStatus(s) == "Online");
-    private int IdleCount => _sessions.Count(s => GetSessionStatus(s) == "Idle");
-    private int TerminatedCount => _sessions.Count(s => IsTerminated(s));
-
-    private bool IsTerminated(UserSessionEntity s) =>
-        s.IsRevoked || (DateTime.UtcNow - s.LastActivityAtUtc > TimeSpan.FromMinutes(30));
-
-    private string GetSessionStatus(UserSessionEntity session)
-    {
-        if (session.IsRevoked) return "Revoked";
-
-        var idleDuration = DateTime.UtcNow - session.LastActivityAtUtc;
-        if (idleDuration > TimeSpan.FromMinutes(30)) return "Expired";
-
-        var isConnected = CircuitTracker.IsSessionConnected(session.Id);
-        if (isConnected && idleDuration <= TimeSpan.FromMinutes(15)) return "Online";
-        if (isConnected && idleDuration > TimeSpan.FromMinutes(15)) return "Idle";
-        if (!isConnected && idleDuration <= TimeSpan.FromMinutes(30)) return "Idle";
-
-        return "Disconnected";
-    }
-
-    private IQueryable<UserSessionEntity> FilteredSessions
-    {
-        get
-        {
-            var query = _sessions.AsQueryable();
-
-            query = _currentFilter switch
-            {
-                SessionStatusFilter.ActiveAndIdle => query.Where(s => !IsTerminated(s)),
-                SessionStatusFilter.OnlineOnly => query.Where(s => GetSessionStatus(s) == "Online"),
-                SessionStatusFilter.IdleOnly => query.Where(s => GetSessionStatus(s) == "Idle"),
-                SessionStatusFilter.TerminatedOnly => query.Where(s => IsTerminated(s)),
-                _ => query
-            };
-
-            if (!string.IsNullOrWhiteSpace(_sessionSearchText))
-            {
-                var term = _sessionSearchText.Trim();
-                query = query.Where(s =>
-                    (s.UserEmail != null && s.UserEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (s.UserId != null && s.UserId.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (s.TenantId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (s.IpAddress != null && s.IpAddress.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (s.UserAgent != null && s.UserAgent.Contains(term, StringComparison.OrdinalIgnoreCase)));
-            }
-
-            return query;
-        }
-    }
-
-    private void SetFilter(SessionStatusFilter filter)
-    {
-        _currentFilter = filter;
-        StateHasChanged();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        TimeZoneService.OnChange += HandleTimeZoneChanged;
-
-        if (!CurrentUser.IsRootAdmin)
-        {
-            _isLoading = false;
-            _isError = true;
-            _statusMessage = "Access Denied: Active user session administration is restricted exclusively to Root Administrators.";
-            return;
-        }
-
-        await LoadSessionsAsync();
-    }
-
-    private async Task LoadSessionsAsync()
-    {
-        if (!CurrentUser.IsRootAdmin) return;
-
-        _isLoading = true;
-        _statusMessage = null;
-
-        try
-        {
-            var sessions = await SessionService.GetActiveSessionsAsync(includeTerminated: true);
-            _sessions = sessions.ToList();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to load active user sessions");
-            _statusMessage = "Failed to load sessions.";
-            _isError = true;
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private async Task RevokeAllStaleAsync()
-    {
-        if (!CurrentUser.IsRootAdmin) return;
-
-        var adminId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "admin";
-        try
-        {
-            var count = await SessionService.RevokeStaleSessionsAsync(TimeSpan.FromMinutes(30), adminId);
-            if (count > 0)
-            {
-                await AuditService.LogSecurityEventAsync(
-                    "StaleSessionsRevoked",
-                    AuditSeverityEnum.Warning,
-                    $"Admin '{adminId}' revoked {count} stale session(s) older than 30 minutes.");
-
-                _statusMessage = $"Successfully cleaned up {count} stale session(s).";
-                _isError = false;
-            }
-            else
-            {
-                _statusMessage = "No stale sessions (>30m inactive) found to revoke.";
-                _isError = false;
-            }
-
-            await LoadSessionsAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error revoking stale sessions");
-            _statusMessage = "Failed to revoke stale sessions.";
-            _isError = true;
-        }
-    }
-
-    private async Task RevokeSessionAsync(Guid sessionId, string userEmail)
-    {
-        if (!CurrentUser.IsRootAdmin) return;
-
-        var adminId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "admin";
-        var success = await SessionService.RevokeSessionAsync(sessionId, adminId);
-        if (success)
-        {
-            await AuditService.LogSecurityEventAsync(
-                "SessionRevokedByAdmin",
-                AuditSeverityEnum.Warning,
-                $"Admin '{CurrentUser.Email}' revoked active session '{sessionId}' for user '{userEmail}'.");
-
-            _statusMessage = $"Successfully revoked session for '{userEmail}'. Real-time invalidation broadcast.";
-            _isError = false;
-            await LoadSessionsAsync();
-        }
-        else
-        {
-            _statusMessage = "Could not revoke session.";
-            _isError = true;
-        }
-    }
-
-    private string GetRelativeTime(DateTime dt)
-    {
-        var span = DateTime.UtcNow - dt.ToUniversalTime();
-        if (span.TotalMinutes < 1) return "just now";
-        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
-        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
-        return TimeZoneService.FormatDateTime(dt, "MMM dd HH:mm");
-    }
-
-    private void HandleTimeZoneChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        TimeZoneService.OnChange -= HandleTimeZoneChanged;
-    }
-}

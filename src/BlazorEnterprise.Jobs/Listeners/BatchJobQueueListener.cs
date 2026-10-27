@@ -306,7 +306,7 @@ public class BatchJobQueueListener : BackgroundService
                     lastException = ex;
                     var backoffDelay = TimeSpan.FromMilliseconds(500 * Math.Pow(2, attempt - 1));
 
-                    _logger.LogWarning(ex,
+                    _logger.LogError(ex,
                         "Batch job {JobName} ({EventId}, CorrelationId={CorrelationId}) failed attempt {Attempt}/{MaxRetries}. Retrying in {Delay}ms...",
                         jobName, jobEvent.EventId, jobEvent.CorrelationId, attempt, MaxRetries, backoffDelay.TotalMilliseconds);
 

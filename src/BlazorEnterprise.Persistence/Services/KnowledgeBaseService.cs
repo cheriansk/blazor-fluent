@@ -259,7 +259,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send notification to reviewer '{ReviewerEmail}'", reviewerUser.Email);
+                _logger.LogError(ex, "Failed to send notification to reviewer '{ReviewerEmail}'", reviewerUser.Email);
             }
         }
 
@@ -375,7 +375,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to send approval notification to author '{AuthorUserId}'", article.AuthorUserId);
+            _logger.LogError(ex, "Failed to send approval notification to author '{AuthorUserId}'", article.AuthorUserId);
         }
 
         return true;

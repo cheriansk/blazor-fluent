@@ -81,10 +81,26 @@ public class ZeroTrustDbCommandInterceptor : DbCommandInterceptor
 
     private void ValidateZeroTrustAccess(DbCommand command, CommandEventData eventData)
     {
+        // 1. Allow EF Core migrations engine (db.Database.Migrate and CLI dotnet ef commands)
+        if (eventData.CommandSource == CommandSource.Migrations)
+        {
+            return;
+        }
+
+        // 2. Allow internal framework queries strictly needed during startup, key management, forensic audit recording, and active session tracking
+        var cmdText = command.CommandText ?? string.Empty;
+        if (cmdText.Contains("DataProtectionKeys", StringComparison.OrdinalIgnoreCase) ||
+            cmdText.Contains("__EFMigrationsHistory", StringComparison.OrdinalIgnoreCase) ||
+            cmdText.Contains("AuditRecords", StringComparison.OrdinalIgnoreCase) ||
+            cmdText.Contains("UserSessions", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         var appDbContext = eventData.Context as AppDbContext;
         var currentUser = appDbContext?.CurrentUser;
 
-        // 1. Authenticated user or background system daemon allowed IF tenant context is valid
+        // 3. Authenticated user or background system daemon allowed IF tenant context is valid
         if (currentUser != null && (currentUser.IsAuthenticated || currentUser.IsSystemDaemon))
         {
             var tenantContext = appDbContext?.TenantContext;
@@ -93,22 +109,6 @@ public class ZeroTrustDbCommandInterceptor : DbCommandInterceptor
                 _logger.LogCritical("ZERO-TRUST SECURITY VIOLATION: Denied database command execution without active tenant context. Command: {CommandText}", command.CommandText);
                 throw new System.Security.SecurityException("Zero-Trust Security Violation: Database command cannot be executed without an active tenant context.");
             }
-            return;
-        }
-
-        // 2. Allow EF Core migrations engine (db.Database.Migrate and CLI dotnet ef commands)
-        if (eventData.CommandSource == CommandSource.Migrations)
-        {
-            return;
-        }
-
-        // 3. Allow internal framework queries strictly needed during startup, key management, forensic audit recording, and active session tracking
-        var cmdText = command.CommandText ?? string.Empty;
-        if (cmdText.Contains("DataProtectionKeys", StringComparison.OrdinalIgnoreCase) ||
-            cmdText.Contains("__EFMigrationsHistory", StringComparison.OrdinalIgnoreCase) ||
-            cmdText.Contains("AuditRecords", StringComparison.OrdinalIgnoreCase) ||
-            cmdText.Contains("UserSessions", StringComparison.OrdinalIgnoreCase))
-        {
             return;
         }
 

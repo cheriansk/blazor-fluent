@@ -1,0 +1,7 @@
+.csk-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    box-sizing: border-box;
+}
