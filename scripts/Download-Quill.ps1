@@ -6,7 +6,8 @@ $ErrorActionPreference = "Stop"
 $ScriptRoot = $PSScriptRoot
 if (-not $ScriptRoot) { $ScriptRoot = Get-Location }
 
-$targetDir = Join-Path $ScriptRoot "wwwroot\lib\quill"
+$repoRoot = (Resolve-Path "$ScriptRoot\..").Path
+$targetDir = Join-Path $repoRoot "src\BlazorEnterprise.Web\wwwroot\lib\quill"
 
 if (-not (Test-Path $targetDir)) {
     Write-Host "Creating directory: $targetDir" -ForegroundColor Cyan

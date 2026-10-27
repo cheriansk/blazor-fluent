@@ -1,0 +1,45 @@
+.csk-icon {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+    flex-shrink: 0;
+    vertical-align: middle;
+    transition: fill 0.15s ease-in-out;
+}
+
+/* Optional standard helper classes scoped to icons */
+.csk-icon-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.csk-icon-lg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.csk-icon-xl {
+    width: 2rem;
+    height: 2rem;
+}
+
+.csk-icon-primary {
+    fill: var(--mat-primary);
+}
+
+.csk-icon-success {
+    fill: var(--mat-success);
+}
+
+.csk-icon-warning {
+    fill: var(--mat-warning);
+}
+
+.csk-icon-error {
+    fill: var(--mat-error);
+}
+
+.csk-icon-muted {
+    fill: var(--mat-on-surface-variant);
+}

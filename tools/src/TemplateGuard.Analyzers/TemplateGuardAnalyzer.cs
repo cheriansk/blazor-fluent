@@ -343,19 +343,37 @@ namespace TemplateGuard.Analyzers
                     }
                 });
 
-                var manifestFile = compilationContext.Options.AdditionalFiles
-                    .FirstOrDefault(f => Path.GetFileName(f.Path).Equals(".basefiles.json", StringComparison.OrdinalIgnoreCase));
+                string? manifestJson = null;
 
-                if (manifestFile == null) return;
+                // Priority 1: Check if the base manifest was embedded into the analyzer assembly at build time (tamper-proof)
+                using (var resourceStream = typeof(TemplateGuardAnalyzer).Assembly.GetManifestResourceStream("TemplateGuard.Analyzers..basefiles.json"))
+                {
+                    if (resourceStream != null)
+                    {
+                        using var reader = new StreamReader(resourceStream);
+                        manifestJson = reader.ReadToEnd();
+                    }
+                }
 
-                var text = manifestFile.GetText(compilationContext.CancellationToken)?.ToString();
-                if (string.IsNullOrEmpty(text)) return;
+                // Priority 2: Fall back to AdditionalFiles (.basefiles.json)
+                if (string.IsNullOrEmpty(manifestJson))
+                {
+                    var manifestFile = compilationContext.Options.AdditionalFiles
+                        .FirstOrDefault(f => Path.GetFileName(f.Path).Equals(".basefiles.json", StringComparison.OrdinalIgnoreCase));
+
+                    if (manifestFile != null)
+                    {
+                        manifestJson = manifestFile.GetText(compilationContext.CancellationToken)?.ToString();
+                    }
+                }
+
+                if (string.IsNullOrEmpty(manifestJson)) return;
 
                 BaseManifestModel? manifest;
                 try
                 {
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    manifest = JsonSerializer.Deserialize<BaseManifestModel>(text!, options);
+                    manifest = JsonSerializer.Deserialize<BaseManifestModel>(manifestJson!, options);
                 }
                 catch
                 {
