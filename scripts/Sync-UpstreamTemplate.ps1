@@ -10,6 +10,9 @@
     translates all namespaces, project files, and folders to match the downstream project's name,
     and then launches Beyond Compare (or runs safe auto-sync).
 
+.PARAMETER TemplateFolder
+    Local path to the base template folder (e.g. 'C:\Users\cheri\source\repos\BlazorFluent').
+
 .PARAMETER DownstreamFolder
     Path to the renamed downstream project folder. If omitted, prompts interactively.
 
@@ -87,6 +90,13 @@ if (-not $TemplateFolder) {
     $TemplateFolder = (Resolve-Path $TemplateFolder).Path
 }
 
+Write-Host "======================================================================" -ForegroundColor Cyan
+Write-Host "  Template Synchronization Engine (Local Upstream Mirror)" -ForegroundColor Cyan
+Write-Host "======================================================================" -ForegroundColor Cyan
+Write-Host "  Template Source   : $TemplateFolder" -ForegroundColor DarkGray
+Write-Host "  Downstream Target : $DownstreamFolder" -ForegroundColor DarkGray
+Write-Host "  Execution Mode    : $Mode" -ForegroundColor Yellow
+
 # --- 2. Auto-Detect Project Brand Names ---
 function Get-ProjectNameFromSlnx([string]$folderPath) {
     $slnx = Get-ChildItem -Path $folderPath -Filter "*.slnx" -File -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -143,7 +153,7 @@ if (-not $DownstreamName) {
     $DownstreamName = Get-ProjectNameFromSlnx $DownstreamFolder
     if (-not $DownstreamName) {
         $DownstreamName = [System.IO.Path]::GetFileName($DownstreamFolder)
-    }
+}
 }
 
 # --- 5. Display Configuration Summary & Ask Confirmation ---
