@@ -73,7 +73,7 @@ Write-Host ""
 # ─── 2. MAP DBSETS FROM APPDBNAMES ─────────────────────────────────────────────
 $dbSetMap = @{}
 if (Test-Path $resolvedDbContext) {
-    $dbContextContent = Get-Content $resolvedDbContext -Raw
+    $dbContextContent = Get-Content $resolvedDbContext -Raw -Encoding utf8
     $matches = [regex]::Matches($dbContextContent, 'public\s+DbSet<(?<entity>\w+)>\s+(?<name>\w+)\s*=>')
     foreach ($m in $matches) {
         $dbSetMap[$m.Groups['entity'].Value] = $m.Groups['name'].Value
@@ -95,7 +95,7 @@ Write-Host "Scanning $($files.Count) C# domain definitions..." -ForegroundColor 
 $typeDict = [System.Collections.Generic.Dictionary[string, PSObject]]::new()
 
 foreach ($file in $files) {
-    $content = Get-Content $file.FullName -Raw
+    $content = Get-Content $file.FullName -Raw -Encoding utf8
     $relDir = Split-Path $file.FullName -Parent
     $subsystem = Split-Path $relDir -Leaf
     if ($subsystem -eq "Domain") { $subsystem = "Base" }
@@ -318,10 +318,10 @@ foreach ($e in $typeDict.Values) {
 $screens = @()
 
 foreach ($rf in $razorFiles) {
-    $rfContent = Get-Content $rf.FullName -Raw
+    $rfContent = Get-Content $rf.FullName -Raw -Encoding utf8
     $csCompanion = $rf.FullName + ".cs"
     if (Test-Path $csCompanion) {
-        $rfContent += "`n" + (Get-Content $csCompanion -Raw)
+        $rfContent += "`n" + (Get-Content $csCompanion -Raw -Encoding utf8)
     }
 
     # Extract routes

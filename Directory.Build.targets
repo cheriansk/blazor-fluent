@@ -4,23 +4,29 @@
     Provides automated MSBuild governance checks for TemplateGuard.
   -->
 
-  <!-- Visual Studio FastUpToDateCheck tracking for base manifest -->
-  <ItemGroup Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true' And Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj')">
-    <UpToDateCheckInput Include="$(MSBuildThisFileDirectory)src\**\*.cs" Exclude="$(MSBuildThisFileDirectory)src\**\bin\**;$(MSBuildThisFileDirectory)src\**\obj\**" />
-    <UpToDateCheckInput Include="$(MSBuildThisFileDirectory)src\**\*.razor" Exclude="$(MSBuildThisFileDirectory)src\**\bin\**;$(MSBuildThisFileDirectory)src\**\obj\**" />
-    <UpToDateCheckBuilt Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" />
-  </ItemGroup>
+  <!--
+    Heavy Governance, Manifest & DataModelDocs Automation:
+    Strictly restricted to Solution Rebuild (AfterTargets="Rebuild").
+    Normal Build, Run, and F5 Debug sessions execute ZERO scripts and ZERO out-of-process scans!
+  -->
+  <Target Name="OnRebuildGovernanceAndDocs" 
+          AfterTargets="Rebuild" 
+          Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And 
+                     Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj') And 
+                     '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true' And 
+                     '$(RunHeavyScansOnRebuild)' == 'true'">
+    <Message Text="==&gt; [Rebuild Automation] Updating base manifest, verifying zero-hardcode, and regenerating data model docs..." Importance="high" />
 
-  <!-- Auto-update base manifest on build/rebuild in TemplateAuthoring mode when building the startup Web project -->
-  <Target Name="AutoUpdateBaseManifestOnBuild" 
-          AfterTargets="Build" 
-          Inputs="$(MSBuildThisFileDirectory)src\**\*.cs;$(MSBuildThisFileDirectory)src\**\*.razor"
-          Outputs="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json"
-          Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' And Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj') And '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true' And '$(SkipBaseManifestUpdate)' != 'true'">
-    <Message Text="==&gt; [TemplateGuard] Auto-updating locked base manifest (.basefiles.json) for template authoring..." Importance="high" />
+    <!-- 1. Base Manifest Scan -->
     <Exec Command="&quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe&quot; &quot;$(MSBuildThisFileDirectory).&quot;" 
           Condition="Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe')" />
     <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj&quot; -- &quot;$(MSBuildThisFileDirectory).&quot;" 
           Condition="!Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe')" />
+
+    <!-- 2. Verify Zero-Hardcode -->
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\verify-no-hardcode.ps1&quot;" />
+
+    <!-- 3. Generate Data Model Docs (Markdown) -->
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\Generate-DataModelDocs.ps1&quot; -Format Markdown" />
   </Target>
 </Project>
