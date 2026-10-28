@@ -1,24 +1,20 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Synchronizes upstream template updates into a renamed downstream project from a local template directory.
+    Synchronizes and compares the base template project against a renamed downstream project.
 
 .DESCRIPTION
-    Takes a local folder pointing to the base template (e.g. BlazorFluent / BlazorEnterprise),
-    copies it into a temporary staging workspace (ignoring .git, bin, obj, etc.),
-    runs the template rename engine (Rename-Project.ps1) on the staged copy so that all folders,
-    .csproj files, and namespaces match the downstream project brand 1-to-1, and then:
-      1. BeyondCompare (default): Launches BCompare.exe comparing .template-staging ↔ downstream repo
-         with zero rename/namespace noise!
-      2. StageOnly: Leaves the renamed staging copy ready for inspection.
-      3. AutoApply: Automatically copies new and updated base files while strictly protecting
-         *.Custom.cs downstream extensions and files containing [BaseModification].
-
-.PARAMETER TemplateFolder
-    Local path to the base template folder (e.g. 'C:\Users\cheri\source\repos\BlazorFluent').
+    Always executed from the Base Template project.
+    Takes the path to your renamed downstream project folder (or prompts for it),
+    stages a temporary copy of this template into .template-staging,
+    translates all namespaces, project files, and folders to match the downstream project's name,
+    and then launches Beyond Compare (or runs safe auto-sync).
 
 .PARAMETER DownstreamFolder
-    Path to the downstream project repo. Defaults to the current repository root.
+    Path to the renamed downstream project folder. If omitted, prompts interactively.
+
+.PARAMETER TemplateFolder
+    Path to the base template repo. Defaults to the current template repository root.
 
 .PARAMETER DownstreamName
     Downstream project name. Auto-detected from *.slnx in DownstreamFolder if omitted.
@@ -32,6 +28,9 @@
 .PARAMETER BeyondCompareExe
     Optional path to BCompare.exe. Auto-detected if omitted.
 
+.PARAMETER Force
+    Skips interactive confirmation prompts.
+
 .PARAMETER KeepStaging
     If specified, preserves .template-staging after Beyond Compare exits.
 
@@ -39,26 +38,22 @@
     Simulates the operations and displays the file classification report without modifying files.
 
 .EXAMPLE
-    pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent"
+    pwsh scripts/Sync-UpstreamTemplate.ps1
 
 .EXAMPLE
-    pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent" -Mode AutoApply -DryRun
+    pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\Users\cheri\source\repos\AcmePortal"
 
 .EXAMPLE
-    pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent" -Mode AutoApply
+    pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\Users\cheri\source\repos\AcmePortal" -Mode AutoApply -DryRun
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [Parameter(Mandatory = $true, Position = 0, HelpMessage = "Local path to base template directory")]
-    [ValidateScript({
-        if (Test-Path $_ -PathType Container) { return $true }
-        throw "Template directory not found: '$_'"
-    })]
-    [string]$TemplateFolder,
-
-    [Parameter(Mandatory = $false, HelpMessage = "Path to downstream repository root")]
+    [Parameter(Position = 0, Mandatory = $false, HelpMessage = "Path to the renamed downstream project directory")]
     [string]$DownstreamFolder = "",
+
+    [Parameter(Mandatory = $false, HelpMessage = "Path to base template directory (defaults to current repo)")]
+    [string]$TemplateFolder = "",
 
     [Parameter(Mandatory = $false, HelpMessage = "Downstream project brand name (auto-detected if omitted)")]
     [string]$DownstreamName = "",
@@ -73,6 +68,9 @@ param(
     [Parameter(Mandatory = $false, HelpMessage = "Path to BCompare.exe")]
     [string]$BeyondCompareExe = "",
 
+    [Parameter(Mandatory = $false, HelpMessage = "Skip interactive confirmation prompts")]
+    [switch]$Force,
+
     [Parameter(Mandatory = $false)]
     [switch]$KeepStaging,
 
@@ -82,21 +80,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# --- 1. Resolve Paths ---
-$TemplateFolder = (Resolve-Path $TemplateFolder).Path
-
-if (-not $DownstreamFolder) {
-    $DownstreamFolder = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# --- 1. Resolve Template Folder (Always running from Template Project) ---
+if (-not $TemplateFolder) {
+    $TemplateFolder = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 } else {
-    $DownstreamFolder = (Resolve-Path $DownstreamFolder).Path
+    $TemplateFolder = (Resolve-Path $TemplateFolder).Path
 }
-
-Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  Template Synchronization Engine (Local Upstream Mirror)" -ForegroundColor Cyan
-Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  Template Source   : $TemplateFolder" -ForegroundColor DarkGray
-Write-Host "  Downstream Target : $DownstreamFolder" -ForegroundColor DarkGray
-Write-Host "  Execution Mode    : $Mode" -ForegroundColor Yellow
 
 # --- 2. Auto-Detect Project Brand Names ---
 function Get-ProjectNameFromSlnx([string]$folderPath) {
@@ -116,22 +105,65 @@ if (-not $TemplateName) {
     if (-not $TemplateName) { $TemplateName = "BlazorEnterprise" }
 }
 
-if (-not $DownstreamName) {
-    $DownstreamName = Get-ProjectNameFromSlnx $DownstreamFolder
-    if (-not $DownstreamName) { $DownstreamName = "BlazorEnterprise" }
-}
-
-Write-Host "  Template Brand    : $TemplateName" -ForegroundColor DarkGray
-Write-Host "  Downstream Brand  : $DownstreamName" -ForegroundColor DarkGray
+# --- 3. Prominent Header ---
+Write-Host ""
+Write-Host "======================================================================" -ForegroundColor Cyan
+Write-Host "       BASE TEMPLATE SYNCHRONIZATION & COMPARISON ENGINE" -ForegroundColor Cyan
+Write-Host "======================================================================" -ForegroundColor Cyan
+Write-Host "  Running from Base Template Project:" -ForegroundColor DarkGray
+Write-Host "    $TemplateFolder ($TemplateName)" -ForegroundColor White
+Write-Host ""
+Write-Host "  [!] NOTICE: This tool will stage a temporary mirror of this template," -ForegroundColor Yellow
+Write-Host "      translate all namespaces and folder names to match your downstream" -ForegroundColor Yellow
+Write-Host "      renamed project, and open a 1:1 noise-free comparison in Beyond Compare." -ForegroundColor Yellow
+Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
 
-if ($TemplateFolder -eq $DownstreamFolder) {
-    Write-Host "  NOTICE: TemplateFolder and DownstreamFolder are the same directory." -ForegroundColor Yellow
-    Write-Host "  This run will test template staging and renaming without self-sync." -ForegroundColor DarkGray
+# --- 4. Prompt for Downstream Project Folder if not supplied ---
+while (-not $DownstreamFolder -or -not (Test-Path $DownstreamFolder -PathType Container)) {
+    if ($DownstreamFolder) {
+        Write-Host "  Directory not found: '$DownstreamFolder'" -ForegroundColor Red
+    }
+    $DownstreamFolder = Read-Host "  Enter the folder path of the renamed downstream project"
+    if (-not $DownstreamFolder) {
+        Write-Host "  Aborted: Downstream project folder is required." -ForegroundColor Yellow
+        exit 0
+    }
+}
+
+$DownstreamFolder = (Resolve-Path $DownstreamFolder).Path
+
+if ($DownstreamFolder -eq $TemplateFolder) {
+    Write-Host "  ERROR: Downstream project cannot be the same as the base template directory!" -ForegroundColor Red
+    Write-Host "  Please enter the path to the cloned/renamed project." -ForegroundColor Red
+    exit 1
+}
+
+if (-not $DownstreamName) {
+    $DownstreamName = Get-ProjectNameFromSlnx $DownstreamFolder
+    if (-not $DownstreamName) {
+        $DownstreamName = [System.IO.Path]::GetFileName($DownstreamFolder)
+    }
+}
+
+# --- 5. Display Configuration Summary & Ask Confirmation ---
+Write-Host ""
+Write-Host "  Sync & Compare Configuration:" -ForegroundColor Cyan
+Write-Host "    Base Template (Source) : $TemplateFolder ($TemplateName)" -ForegroundColor DarkGray
+Write-Host "    Renamed Target         : $DownstreamFolder ($DownstreamName)" -ForegroundColor DarkGray
+Write-Host "    Execution Mode         : $Mode" -ForegroundColor Yellow
+Write-Host ""
+
+if (-not $Force -and -not $DryRun) {
+    $confirm = Read-Host "  Do you want to continue? [Y/n] (default: Y)"
+    if ($confirm -and $confirm.Trim().ToLowerInvariant() -notin @("y", "yes")) {
+        Write-Host "  Operation cancelled by user." -ForegroundColor Yellow
+        exit 0
+    }
     Write-Host ""
 }
 
-# --- 3. Locate Beyond Compare if in BeyondCompare Mode ---
+# --- 6. Locate Beyond Compare if in BeyondCompare Mode ---
 if ($Mode -eq "BeyondCompare") {
     if (-not $BeyondCompareExe) {
         $candidatePaths = @(
@@ -157,12 +189,12 @@ if ($Mode -eq "BeyondCompare") {
         Write-Host "  Switching mode to 'StageOnly'. You can inspect the staged folder manually." -ForegroundColor Yellow
         $Mode = "StageOnly"
     } else {
-        Write-Host "  Beyond Compare    : $BeyondCompareExe" -ForegroundColor Green
+        Write-Host "  Beyond Compare Found  : $BeyondCompareExe" -ForegroundColor Green
     }
 }
 
-# --- 4. Prepare Staging Workspace ---
-$stagingDir = Join-Path $DownstreamFolder ".template-staging"
+# --- 7. Prepare Staging Workspace inside Template Project ---
+$stagingDir = Join-Path $TemplateFolder ".template-staging"
 if (Test-Path $stagingDir) {
     Write-Host "==> Cleaning prior staging workspace: $stagingDir" -ForegroundColor DarkGray
     Remove-Item -Path $stagingDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -179,13 +211,7 @@ foreach ($item in $items) {
     Copy-Item -Path $item.FullName -Destination $stagingDir -Recurse -Force
 }
 
-# Ensure .template-staging gitignore is present so staging is ignored
-$stagingGitIgnore = Join-Path $stagingDir ".gitignore"
-if (Test-Path $stagingGitIgnore) {
-    # It's an isolated copy
-}
-
-# --- 5. Rename Staging Workspace to Match Downstream Project ---
+# --- 8. Rename Staging Workspace to Match Downstream Project ---
 if ($TemplateName -ne $DownstreamName) {
     Write-Host "==> Translating template brand '$TemplateName' -> '$DownstreamName' in staging..." -ForegroundColor Cyan
     $renameScript = Join-Path $stagingDir "scripts\Rename-Project.ps1"
@@ -205,7 +231,7 @@ if ($TemplateName -ne $DownstreamName) {
 
 Write-Host ""
 
-# --- 6. Scan & Classify Files ---
+# --- 9. Scan & Classify Files ---
 Write-Host "=== File Classification & Safety Audit ===" -ForegroundColor Cyan
 
 $stagedFiles = Get-ChildItem -Path (Join-Path $stagingDir "src") -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
@@ -248,10 +274,10 @@ foreach ($sFile in $stagedFiles) {
     }
 }
 
-Write-Host "  Identical Files                  : $($unchangedFiles.Count)" -ForegroundColor Green
-Write-Host "  New Upstream Template Files      : $($newTemplateFiles.Count)" -ForegroundColor Cyan
-Write-Host "  Updated Safe Base Files          : $($updatedBaseFiles.Count)" -ForegroundColor Yellow
-Write-Host "  Protected [BaseModification] Files: $($protectedModifiedFiles.Count)" -ForegroundColor Magenta
+Write-Host "  Identical Files                   : $($unchangedFiles.Count)" -ForegroundColor Green
+Write-Host "  New Upstream Template Files       : $($newTemplateFiles.Count)" -ForegroundColor Cyan
+Write-Host "  Updated Safe Base Files           : $($updatedBaseFiles.Count)" -ForegroundColor Yellow
+Write-Host "  Protected [BaseModification] Files : $($protectedModifiedFiles.Count)" -ForegroundColor Magenta
 Write-Host ""
 
 if ($protectedModifiedFiles.Count -gt 0) {
@@ -263,20 +289,20 @@ if ($protectedModifiedFiles.Count -gt 0) {
     Write-Host ""
 }
 
-# --- 7. Execute Selected Mode ---
+# --- 10. Execute Selected Mode ---
 switch ($Mode) {
     "BeyondCompare" {
         Write-Host "==> Launching Beyond Compare..." -ForegroundColor Cyan
-        Write-Host "  Left  (Staged Upstream Template): $stagingDir" -ForegroundColor DarkGray
-        Write-Host "  Right (Your Downstream Project) : $DownstreamFolder" -ForegroundColor DarkGray
+        Write-Host "  Left  (Staged Base Template) : $stagingDir" -ForegroundColor DarkGray
+        Write-Host "  Right (Renamed Downstream)    : $DownstreamFolder" -ForegroundColor DarkGray
         Write-Host ""
 
         # Launch Beyond Compare process
         $bcArgs = @(
             $stagingDir,
             $DownstreamFolder,
-            "/title1=Upstream Template ($TemplateName -> $DownstreamName)",
-            "/title2=Downstream Project ($DownstreamName)"
+            "/title1=Base Template ($TemplateName -> $DownstreamName)",
+            "/title2=Renamed Downstream ($DownstreamName)"
         )
 
         $proc = Start-Process -FilePath $BeyondCompareExe -ArgumentList $bcArgs -PassThru
