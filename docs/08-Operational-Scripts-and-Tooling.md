@@ -116,21 +116,25 @@ pwsh scripts/Download-Quill.ps1
 
 ## 🔄 7. Template Synchronization (`scripts/Sync-UpstreamTemplate.ps1`)
 
-Synchronizes updates from your local template folder directly into your renamed downstream project:
+Executed directly from the **Base Template project** to compare or synchronize changes into a renamed downstream project:
 
 ```powershell
-# 1. Compare local template folder against this downstream project in Beyond Compare (1:1 folder & namespace match)
-pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent"
+# 1. Interactive mode: Prompts for downstream project folder and confirms before running
+pwsh scripts/Sync-UpstreamTemplate.ps1
 
-# 2. Dry run preview of new template files and safe updates
-pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent" -Mode AutoApply -DryRun
+# 2. Specify downstream folder directly:
+pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal"
 
-# 3. Automatically apply safe base updates while protecting *.Custom.cs and [BaseModification] files
-pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent" -Mode AutoApply
+# 3. Dry run preview without making changes:
+pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal" -Mode AutoApply -DryRun
+
+# 4. Auto-apply safe base updates while protecting *.Custom.cs and [BaseModification] files:
+pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal" -Mode AutoApply
 ```
 
 ### Safety Features:
-- **No Git / Remote Dependency**: Works directly against any local directory path.
+- **Always Runs from Base Template**: Guarantees the source is the authoritative base template.
+- **Prominent Header & Confirmation Prompt**: Clearly shows source and target paths and requires `Y/n` confirmation before any action.
 - **Automated Brand Translation**: Stages the template into `.template-staging` and renames it to match the downstream project name, eliminating false-positive diffs on `namespace` or directory paths.
 - **TemplateGuard Protection**: Strictly protects all `*.Custom.cs` partial classes and files decorated with `[BaseModification]`, while auto-updating unmodified base files and locking the updated `.basefiles.json`.
 
