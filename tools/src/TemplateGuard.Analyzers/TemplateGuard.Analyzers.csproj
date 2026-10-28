@@ -8,7 +8,20 @@
     <NoWarn>$(NoWarn);RS1036;RS2008;RS1038;RS1035</NoWarn>
     <RootNamespace>TemplateGuard.Analyzers</RootNamespace>
     <AssemblyName>TemplateGuard.Analyzers</AssemblyName>
+
+    <!-- NuGet Analyzer Package Configuration -->
+    <PackageId>BlazorEnterprise.TemplateGuard</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>BlazorEnterprise Team</Authors>
+    <Description>Roslyn code analyzers and architectural governance guards enforcing base file integrity and Clean Architecture conventions.</Description>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)\TemplateGuard.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />

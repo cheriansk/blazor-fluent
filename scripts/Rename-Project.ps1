@@ -381,52 +381,98 @@ if ($Mode -eq "ClientDistribution") {
         }
     }
 
-    # Also strip RulesEngine, Api, and TemplateGuard.Tool project entries from solution file
+    # Also strip RulesEngine and Api project entries from solution file in ClientDistribution mode
     $slnxFiles = Get-ChildItem -Path $RepoRoot -Filter "*.slnx" -File
     foreach ($slnx in $slnxFiles) {
         $slnxContent = Get-Content -Path $slnx.FullName -Raw
         $newSlnx = $slnxContent -replace '(?m)^\s*<Project Path="[^"]*RulesEngine[^"]*"\s*/>\r?\n', ''
         $newSlnx = $newSlnx -replace '(?m)^\s*<Project Path="[^"]*Api\.csproj[^"]*"\s*/>\r?\n', ''
-        $newSlnx = $newSlnx -replace '(?m)^\s*<Project Path="[^"]*TemplateGuard\.Tool[^"]*"\s*/>\r?\n', ''
         if (-not $DryRun) {
             Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline
-            Write-Host "  Updated solution file: $($slnx.Name) (removed proprietary & authoring projects)" -ForegroundColor Green
-        }
-    }
-
-    # Clean up TemplateGuard.Tool generator and manifest update scripts (locks downstream against base regeneration)
-    $toolDir = Join-Path $RepoRoot "tools\src\TemplateGuard.Tool"
-    if (Test-Path $toolDir) {
-        if (-not $DryRun) {
-            Remove-Item -Path $toolDir -Recurse -Force
-            Write-Host "  Removed TemplateGuard.Tool generator (prevent downstream base regeneration)." -ForegroundColor Green
-        } else {
-            Write-Host "  [DRY RUN] Would remove: tools/src/TemplateGuard.Tool" -ForegroundColor Magenta
-        }
-    }
-
-    $genScript = Join-Path $RepoRoot "scripts\generate-base-manifest.ps1"
-    if (Test-Path $genScript) {
-        if (-not $DryRun) {
-            Remove-Item -Path $genScript -Force
-            Write-Host "  Removed scripts/generate-base-manifest.ps1." -ForegroundColor Green
-        } else {
-            Write-Host "  [DRY RUN] Would remove: scripts/generate-base-manifest.ps1" -ForegroundColor Magenta
-        }
-    }
-
-    # Lock .basefiles.json as read-only on disk
-    $manifestFile = Join-Path $RepoRoot "tools\TemplateGuard\.basefiles.json"
-    if (Test-Path $manifestFile) {
-        if (-not $DryRun) {
-            Set-ItemProperty -Path $manifestFile -Name IsReadOnly -Value $true
-            Write-Host "  Locked tools/TemplateGuard/.basefiles.json as ReadOnly." -ForegroundColor Green
-        } else {
-            Write-Host "  [DRY RUN] Would set .basefiles.json to ReadOnly." -ForegroundColor Magenta
+            Write-Host "  Updated solution file: $($slnx.Name) (removed proprietary projects)" -ForegroundColor Green
         }
     }
     Write-Host ""
 }
+
+# =============================================================================
+# PHASE 4.6: Purge Template Authoring Generator Tools (All Distributions)
+# =============================================================================
+Write-Host "=== Phase 4.6: Purging Template Authoring Generator Tools ===" -ForegroundColor Cyan
+
+# 1. Clean up TemplateGuard.Tool generator and manifest update scripts (locks downstream against base regeneration)
+$toolDir = Join-Path $RepoRoot "tools\src\TemplateGuard.Tool"
+if (Test-Path $toolDir) {
+    if (-not $DryRun) {
+        Remove-Item -Path $toolDir -Recurse -Force
+        Write-Host "  Removed TemplateGuard.Tool generator (prevent downstream base regeneration)." -ForegroundColor Green
+    } else {
+        Write-Host "  [DRY RUN] Would remove: tools/src/TemplateGuard.Tool" -ForegroundColor Magenta
+    }
+}
+
+$genScript = Join-Path $RepoRoot "scripts\generate-base-manifest.ps1"
+if (Test-Path $genScript) {
+    if (-not $DryRun) {
+        Remove-Item -Path $genScript -Force
+        Write-Host "  Removed scripts/generate-base-manifest.ps1." -ForegroundColor Green
+    } else {
+        Write-Host "  [DRY RUN] Would remove: scripts/generate-base-manifest.ps1" -ForegroundColor Magenta
+    }
+}
+
+$buildTgScript = Join-Path $RepoRoot "scripts\build-templateguard.ps1"
+if (Test-Path $buildTgScript) {
+    if (-not $DryRun) {
+        Remove-Item -Path $buildTgScript -Force
+        Write-Host "  Removed scripts/build-templateguard.ps1." -ForegroundColor Green
+    } else {
+        Write-Host "  [DRY RUN] Would remove: scripts/build-templateguard.ps1" -ForegroundColor Magenta
+    }
+}
+
+# 2. Strip TemplateGuard.Tool project entry from solution file
+$slnxFiles = Get-ChildItem -Path $RepoRoot -Filter "*.slnx" -File
+foreach ($slnx in $slnxFiles) {
+    $slnxContent = Get-Content -Path $slnx.FullName -Raw
+    if ($slnxContent -match 'TemplateGuard\.Tool') {
+        $newSlnx = $slnxContent -replace '(?m)^\s*<Project Path="[^"]*TemplateGuard\.Tool[^"]*"\s*/>\r?\n', ''
+        if (-not $DryRun) {
+            Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline
+            Write-Host "  Updated solution file: $($slnx.Name) (removed TemplateGuard.Tool authoring project)" -ForegroundColor Green
+        } else {
+            Write-Host "  [DRY RUN] Would remove TemplateGuard.Tool from $($slnx.Name)" -ForegroundColor Magenta
+        }
+    }
+}
+
+# 3. Strip AutoUpdateBaseManifestOnBuild target from Directory.Build.targets
+$buildTargetsPath = Join-Path $RepoRoot "Directory.Build.targets"
+if (Test-Path $buildTargetsPath) {
+    $targetsContent = Get-Content -Path $buildTargetsPath -Raw
+    if ($targetsContent -match 'AutoUpdateBaseManifestOnBuild') {
+        # Strip AutoUpdate target and UpToDateCheck items for basefiles.json
+        $newTargets = $targetsContent -replace '(?s)\s*<!-- Visual Studio FastUpToDateCheck.*?AutoUpdateBaseManifestOnBuild.*?</Target>', ''
+        if (-not $DryRun) {
+            Set-Content -Path $buildTargetsPath -Value $newTargets -NoNewline
+            Write-Host "  Removed AutoUpdateBaseManifestOnBuild target from Directory.Build.targets." -ForegroundColor Green
+        } else {
+            Write-Host "  [DRY RUN] Would remove AutoUpdateBaseManifestOnBuild target from Directory.Build.targets." -ForegroundColor Magenta
+        }
+    }
+}
+
+# 4. Lock .basefiles.json as read-only on disk
+$manifestFile = Join-Path $RepoRoot "tools\TemplateGuard\.basefiles.json"
+if (Test-Path $manifestFile) {
+    if (-not $DryRun) {
+        Set-ItemProperty -Path $manifestFile -Name IsReadOnly -Value $true
+        Write-Host "  Locked tools/TemplateGuard/.basefiles.json as ReadOnly." -ForegroundColor Green
+    } else {
+        Write-Host "  [DRY RUN] Would set .basefiles.json to ReadOnly." -ForegroundColor Magenta
+    }
+}
+Write-Host ""
 
 # =============================================================================
 # PHASE 5: Post-rename verification

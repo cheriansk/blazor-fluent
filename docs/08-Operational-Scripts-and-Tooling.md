@@ -15,6 +15,7 @@
 | **`scripts/Generate-DataModelDocs.ps1`**| Generates interactive HTML documentation and Markdown schema references. | Whenever database entities or configurations change. |
 | **`scripts/verify-fluent-v5.ps1`** | Roslyn AST scanner verifying 100% compliance with Microsoft Fluent UI Blazor V5. | Run locally before committing or in CI/CD pull request gates. |
 | **`scripts/Download-Quill.ps1`** | Downloads air-gapped Quill.js rich text editor assets into `wwwroot`. | When setting up air-gapped environments without external CDNs. |
+| **`scripts/Sync-UpstreamTemplate.ps1`** | Synchronizes updates from a local base template folder into renamed downstream projects via Beyond Compare or AutoApply. | When taking updates from the template. |
 | **`Scripts.txt`** | Quick CLI cheat-sheet for data model document regeneration. | Reference cheat-sheet. |
 
 ---
@@ -110,5 +111,28 @@ For secure enterprise environments that prohibit loading assets from external CD
 ```powershell
 pwsh scripts/Download-Quill.ps1
 ```
+
+---
+
+## 🔄 7. Template Synchronization (`scripts/Sync-UpstreamTemplate.ps1`)
+
+Synchronizes updates from your local template folder directly into your renamed downstream project:
+
+```powershell
+# 1. Compare local template folder against this downstream project in Beyond Compare (1:1 folder & namespace match)
+pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent"
+
+# 2. Dry run preview of new template files and safe updates
+pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent" -Mode AutoApply -DryRun
+
+# 3. Automatically apply safe base updates while protecting *.Custom.cs and [BaseModification] files
+pwsh scripts/Sync-UpstreamTemplate.ps1 -TemplateFolder "C:\Users\cheri\source\repos\BlazorFluent" -Mode AutoApply
+```
+
+### Safety Features:
+- **No Git / Remote Dependency**: Works directly against any local directory path.
+- **Automated Brand Translation**: Stages the template into `.template-staging` and renames it to match the downstream project name, eliminating false-positive diffs on `namespace` or directory paths.
+- **TemplateGuard Protection**: Strictly protects all `*.Custom.cs` partial classes and files decorated with `[BaseModification]`, while auto-updating unmodified base files and locking the updated `.basefiles.json`.
+
 
 Downloads pinned, hash-verified versions of Quill.js CSS and JavaScript bundles into `src/BlazorEnterprise.Web/wwwroot/lib/quill/`, enabling 100% offline rich-text editing.
