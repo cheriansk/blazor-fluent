@@ -105,7 +105,7 @@ $webDevJsonPath = "src/BlazorEnterprise.Web/appsettings.Development.json"
 $existingWebDevJson = $null
 if (Test-Path $webDevJsonPath) {
     try {
-        $existingWebDevJson = Get-Content $webDevJsonPath -Raw | ConvertFrom-Json
+        $existingWebDevJson = Get-Content $webDevJsonPath -Raw -Encoding utf8 | ConvertFrom-Json
     } catch {}
 }
 
@@ -113,7 +113,7 @@ $apiDevJsonPath = "src/BlazorEnterprise.Api/appsettings.Development.json"
 $existingApiDevJson = $null
 if (Test-Path $apiDevJsonPath) {
     try {
-        $existingApiDevJson = Get-Content $apiDevJsonPath -Raw | ConvertFrom-Json
+        $existingApiDevJson = Get-Content $apiDevJsonPath -Raw -Encoding utf8 | ConvertFrom-Json
     } catch {}
 }
 

@@ -235,7 +235,7 @@ foreach ($ext in $extensions) {
 $targetFiles = $targetFiles | Sort-Object FullName -Unique
 
 foreach ($file in $targetFiles) {
-    $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
+    $content = Get-Content -Path $file.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
     if (-not $content) { continue }
 
     $original = $content
@@ -264,7 +264,7 @@ Write-Host ""
 # Flip TemplateGuard to DownstreamEnforce mode
 $buildProps = Join-Path $RepoRoot "Directory.Build.props"
 if (Test-Path $buildProps) {
-    $propsContent = Get-Content $buildProps -Raw
+    $propsContent = Get-Content $buildProps -Raw -Encoding utf8
     if ($propsContent -match "<TemplateGuardMode>TemplateAuthoring</TemplateGuardMode>") {
         $propsContent = $propsContent.Replace("<TemplateGuardMode>TemplateAuthoring</TemplateGuardMode>", "<TemplateGuardMode>DownstreamEnforce</TemplateGuardMode>")
         if (-not $DryRun) {
@@ -384,11 +384,11 @@ if ($Mode -eq "ClientDistribution") {
     # Also strip RulesEngine and Api project entries from solution file in ClientDistribution mode
     $slnxFiles = Get-ChildItem -Path $RepoRoot -Filter "*.slnx" -File
     foreach ($slnx in $slnxFiles) {
-        $slnxContent = Get-Content -Path $slnx.FullName -Raw
+        $slnxContent = Get-Content -Path $slnx.FullName -Raw -Encoding utf8
         $newSlnx = $slnxContent -replace '(?m)^\s*<Project Path="[^"]*RulesEngine[^"]*"\s*/>\r?\n', ''
         $newSlnx = $newSlnx -replace '(?m)^\s*<Project Path="[^"]*Api\.csproj[^"]*"\s*/>\r?\n', ''
         if (-not $DryRun) {
-            Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline
+            Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline -Encoding utf8
             Write-Host "  Updated solution file: $($slnx.Name) (removed proprietary projects)" -ForegroundColor Green
         }
     }
@@ -396,18 +396,18 @@ if ($Mode -eq "ClientDistribution") {
 }
 
 # =============================================================================
-# PHASE 4.6: Purge Template Authoring Generator Tools (All Distributions)
+# PHASE 4.6: Purge Template Authoring Generator & Analyzer Projects (All Distributions)
 # =============================================================================
-Write-Host "=== Phase 4.6: Purging Template Authoring Generator Tools ===" -ForegroundColor Cyan
+Write-Host "=== Phase 4.6: Purging Template Authoring Generator & Analyzer Projects ===" -ForegroundColor Cyan
 
-# 1. Clean up TemplateGuard.Tool generator and manifest update scripts (locks downstream against base regeneration)
-$toolDir = Join-Path $RepoRoot "tools\src\TemplateGuard.Tool"
-if (Test-Path $toolDir) {
+# 1. Clean up TemplateGuard source projects (Tool & Analyzers) so downstream only consumes the compiled DLL
+$toolsSrcDir = Join-Path $RepoRoot "tools\src"
+if (Test-Path $toolsSrcDir) {
     if (-not $DryRun) {
-        Remove-Item -Path $toolDir -Recurse -Force
-        Write-Host "  Removed TemplateGuard.Tool generator (prevent downstream base regeneration)." -ForegroundColor Green
+        Remove-Item -Path $toolsSrcDir -Recurse -Force
+        Write-Host "  Removed tools/src (TemplateGuard source projects purged for downstream)." -ForegroundColor Green
     } else {
-        Write-Host "  [DRY RUN] Would remove: tools/src/TemplateGuard.Tool" -ForegroundColor Magenta
+        Write-Host "  [DRY RUN] Would remove: tools/src (TemplateGuard source projects)" -ForegroundColor Magenta
     }
 }
 
@@ -431,17 +431,26 @@ if (Test-Path $buildTgScript) {
     }
 }
 
-# 2. Strip TemplateGuard.Tool project entry from solution file
+# 2. Strip TemplateGuard source project entries from solution file
 $slnxFiles = Get-ChildItem -Path $RepoRoot -Filter "*.slnx" -File
 foreach ($slnx in $slnxFiles) {
-    $slnxContent = Get-Content -Path $slnx.FullName -Raw
-    if ($slnxContent -match 'TemplateGuard\.Tool') {
-        $newSlnx = $slnxContent -replace '(?m)^\s*<Project Path="[^"]*TemplateGuard\.Tool[^"]*"\s*/>\r?\n', ''
+    $slnxContent = Get-Content -Path $slnx.FullName -Raw -Encoding utf8
+    $newSlnx = $slnxContent
+    if ($newSlnx -match 'TemplateGuard\.Tool') {
+        $newSlnx = $newSlnx -replace '(?m)^\s*<Project Path="[^"]*TemplateGuard\.Tool[^"]*"\s*/>\r?\n', ''
+    }
+    if ($newSlnx -match 'TemplateGuard\.Analyzers') {
+        $newSlnx = $newSlnx -replace '(?m)^\s*<Project Path="[^"]*TemplateGuard\.Analyzers[^"]*"\s*/>\r?\n', ''
+    }
+    # Clean up empty /src/ folder tag if all projects inside were removed
+    $newSlnx = $newSlnx -replace '(?m)^\s*<Folder Name="/src/">\s*<File Path="Scripts\.txt" />\s*</Folder>\r?\n', ''
+
+    if ($newSlnx -ne $slnxContent) {
         if (-not $DryRun) {
-            Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline
-            Write-Host "  Updated solution file: $($slnx.Name) (removed TemplateGuard.Tool authoring project)" -ForegroundColor Green
+            Set-Content -Path $slnx.FullName -Value $newSlnx -NoNewline -Encoding utf8
+            Write-Host "  Updated solution file: $($slnx.Name) (removed TemplateGuard authoring projects)" -ForegroundColor Green
         } else {
-            Write-Host "  [DRY RUN] Would remove TemplateGuard.Tool from $($slnx.Name)" -ForegroundColor Magenta
+            Write-Host "  [DRY RUN] Would remove TemplateGuard projects from $($slnx.Name)" -ForegroundColor Magenta
         }
     }
 }
@@ -449,12 +458,12 @@ foreach ($slnx in $slnxFiles) {
 # 3. Strip AutoUpdateBaseManifestOnBuild target from Directory.Build.targets
 $buildTargetsPath = Join-Path $RepoRoot "Directory.Build.targets"
 if (Test-Path $buildTargetsPath) {
-    $targetsContent = Get-Content -Path $buildTargetsPath -Raw
+    $targetsContent = Get-Content -Path $buildTargetsPath -Raw -Encoding utf8
     if ($targetsContent -match 'AutoUpdateBaseManifestOnBuild') {
         # Strip AutoUpdate target and UpToDateCheck items for basefiles.json
         $newTargets = $targetsContent -replace '(?s)\s*<!-- Visual Studio FastUpToDateCheck.*?AutoUpdateBaseManifestOnBuild.*?</Target>', ''
         if (-not $DryRun) {
-            Set-Content -Path $buildTargetsPath -Value $newTargets -NoNewline
+            Set-Content -Path $buildTargetsPath -Value $newTargets -NoNewline -Encoding utf8
             Write-Host "  Removed AutoUpdateBaseManifestOnBuild target from Directory.Build.targets." -ForegroundColor Green
         } else {
             Write-Host "  [DRY RUN] Would remove AutoUpdateBaseManifestOnBuild target from Directory.Build.targets." -ForegroundColor Magenta
@@ -490,7 +499,7 @@ if ($DryRun) {
                 -not (Should-Exclude $rel) -and ($_.Name -ne $currentScriptName)
             }
         foreach ($f in $found) {
-            $c = Get-Content -Path $f.FullName -Raw -ErrorAction SilentlyContinue
+            $c = Get-Content -Path $f.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
             if ($c -and ($c -cmatch [regex]::Escape($OldName))) {
                 $remainingHits += $f.FullName.Substring($RepoRoot.Length + 1)
             }

@@ -13,7 +13,6 @@
 | **`scripts/build-templateguard.ps1`** | Compiles the TemplateGuard Roslyn Analyzer and the AST Manifest Tool. | Before running manifest generation or analyzer packaging. |
 | **`scripts/generate-base-manifest.ps1`**| Scans all C# and Razor files to update the locked `.basefiles.json` manifest. | When authoring new baseline features in TemplateAuthoring mode. |
 | **`scripts/Generate-DataModelDocs.ps1`**| Generates interactive HTML documentation and Markdown schema references. | Whenever database entities or configurations change. |
-| **`scripts/verify-fluent-v5.ps1`** | Roslyn AST scanner verifying 100% compliance with Microsoft Fluent UI Blazor V5. | Run locally before committing or in CI/CD pull request gates. |
 | **`scripts/Download-Quill.ps1`** | Downloads air-gapped Quill.js rich text editor assets into `wwwroot`. | When setting up air-gapped environments without external CDNs. |
 | **`scripts/Sync-UpstreamTemplate.ps1`** | Synchronizes updates from a local base template folder into renamed downstream projects via Beyond Compare or AutoApply. | When taking updates from the template. |
 | **`Scripts.txt`** | Quick CLI cheat-sheet for data model document regeneration. | Reference cheat-sheet. |
@@ -88,28 +87,22 @@ pwsh scripts/Generate-DataModelDocs.ps1 -Format Markdown
 
 ---
 
-## 🔍 5. Fluent UI V5 Compliance Scanner (`scripts/verify-fluent-v5.ps1`)
-
-Guarantees that no deprecated Fluent UI V3/V4 components or attributes exist in the codebase:
-
-```powershell
-pwsh scripts/verify-fluent-v5.ps1
-```
-
-### Verified Rules:
-- Banned legacy controls: `<FluentTextField>`, `<FluentNumberField>`, `<FluentTextArea>`.
-- Deprecated attributes: `Appearance="Appearance.Accent"`, `Appearance="Appearance.Neutral"`.
-- Missing required attributes: `@bind-Value` vs `Value` usage in form components.
-- Returns exit code `0` on 100% compliance; returns non-zero exit code with line numbers if violations are detected.
-
----
-
-## 🌐 6. Air-Gapped Asset Downloader (`scripts/Download-Quill.ps1`)
+## 🌐 5. Air-Gapped Asset Downloader (`scripts/Download-Quill.ps1`)
 
 For secure enterprise environments that prohibit loading assets from external CDNs:
 
 ```powershell
 pwsh scripts/Download-Quill.ps1
+```
+
+---
+
+## 🔒 6. Zero-Trust Hardcoding Scanner (`scripts/verify-no-hardcode.ps1`)
+
+Scans solution source files and configuration for hardcoded secrets, plain-text passwords, or hardcoded GUID literals:
+
+```powershell
+pwsh scripts/verify-no-hardcode.ps1
 ```
 
 ---

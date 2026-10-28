@@ -28,8 +28,10 @@
                              Strictly enforces TG001, TG002, TG003, and TG004 as fatal build errors.
     -->
     <TemplateGuardMode Condition="'$(TemplateGuardMode)' == ''">TemplateAuthoring</TemplateGuardMode>
+    <RunHeavyScansOnRebuild Condition="'$(RunHeavyScansOnRebuild)' == ''">true</RunHeavyScansOnRebuild>
     <SkipBaseManifestUpdate Condition="'$(SkipBaseManifestUpdate)' == ''">false</SkipBaseManifestUpdate>
     <NoWarn Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring'">$(NoWarn);TG001;TG002;TG003;TG004</NoWarn>
+    <WarningsAsErrors Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce'">$(WarningsAsErrors);TG001;TG002;TG003;TG004</WarningsAsErrors>
   </PropertyGroup>
 
   <!-- Solution Explorer file nesting for downstream .Custom.cs files -->
