@@ -121,16 +121,16 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
             _availableTenants = TenantContext.AllowedTenants
                 .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
+                .Select(t => new TenantFilterOption(t.Slug, t.Name))
                 .ToList();
 
-            if (_availableTenants.Count == 0 && TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty)
+            if (_availableTenants.Count == 0 && TenantContext.HasActiveTenant && !string.IsNullOrWhiteSpace(TenantContext.TenantSlug))
             {
-                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantId.ToString(), TenantContext.TenantName ?? string.Empty));
+                _availableTenants.Add(new TenantFilterOption(TenantContext.TenantSlug, TenantContext.TenantName ?? string.Empty));
             }
         }
 
-        var defaultSlug = TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty ? TenantContext.TenantId.ToString() : _availableTenants.FirstOrDefault()?.Id;
+        var defaultSlug = TenantContext.HasActiveTenant && !string.IsNullOrWhiteSpace(TenantContext.TenantSlug) ? TenantContext.TenantSlug : _availableTenants.FirstOrDefault()?.Id;
         if (!string.IsNullOrWhiteSpace(defaultSlug))
         {
             await OnTenantSelectedAsync(defaultSlug);

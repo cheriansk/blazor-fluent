@@ -13,7 +13,7 @@
             <CskLabel Typo="Typography.H3">Tenant Directory</CskLabel>
             <CskLabel Typo="Typography.Body">Manage tenant contracts, email domains, and user directories.</CskLabel>
         </div>
-        @if (IsRootAdmin || _canEditTenants)
+        @if (IsRootAdmin)
         {
             <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@StartAddTenant">
                 Add Tenant

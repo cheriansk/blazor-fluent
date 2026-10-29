@@ -1,0 +1,78 @@
+{
+  "description": "Manifest of originating Razor components and C# classes (e.g. batch jobs, services) to generate Antigravity-optimized .requirements.md specifications and end-to-end Mermaid flow diagrams for.",
+  "agentRuntime": {
+    "thinking_strategy": "zero_waste_discovery_focused_planning",
+    "execution_workflow": "two_step_plan_then_approve",
+    "agent_mode": "targeted_surgical_edit",
+    "token_budget_policy": "minimal_context_reads",
+    "do_not_run_commands": [
+      "dotnet build",
+      "dotnet test"
+    ]
+  },
+  "component_discovery": {
+    "ignore_prefixes": [
+      "Fluent",
+      "Csk",
+      "Mud",
+      "EditForm",
+      "DataAnnotations",
+      "Validation",
+      "Input",
+      "Authorize",
+      "Cascading",
+      "Router",
+      "Route",
+      "FocusOnNavigate",
+      "PageTitle",
+      "HeadContent",
+      "SectionOutlet",
+      "SectionContent",
+      "Virtualize",
+      "ErrorBoundary"
+    ],
+    "ignore_components": [
+      "PageHeaderComp",
+      "RedirectToLogin"
+    ]
+  },
+  "targets": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Root Settings shell managing navigation tabs and lazy-loaded administration panels.",
+      "enabled": true,
+      "children": [
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor",
+          "category": "Settings UI",
+          "thinking_level": "low",
+          "description": "Tenant Directory, Initial Admin Provisioning, User Directory, Programs, and Executive Governance Tasks/Risks.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsProjectsTab.razor",
+          "category": "Settings UI",
+          "thinking_level": "low",
+          "description": "Project Workspaces management, Program filtering, and per-project RBAC Role Assignments.",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/LoginPage.razor",
+      "category": "Authentication UI",
+      "thinking_level": "low",
+      "description": "Zero-Trust authentication entry point, local dev email login, and multi-tenant session establishment.",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Jobs/Listeners/BatchJobQueueListener.cs",
+      "category": "Batch & Background Jobs",
+      "thinking_level": "medium",
+      "description": "Background channel listener that dequeues and executes asynchronous tenant-scoped batch jobs.",
+      "enabled": true
+    }
+  ]
+}

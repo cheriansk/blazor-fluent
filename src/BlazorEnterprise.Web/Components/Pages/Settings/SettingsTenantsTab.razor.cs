@@ -124,8 +124,20 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         _isLoading = true;
         try
         {
-            var result = await TenantService.GetAllTenantsAsync();
-            _tenants = result.ToList();
+            if (IsRootAdmin)
+            {
+                var result = await TenantService.GetAllTenantsAsync();
+                _tenants = result.ToList();
+            }
+            else if (TenantContext.HasActiveTenant && !string.IsNullOrWhiteSpace(TenantContext.TenantSlug))
+            {
+                var activeTenant = await TenantService.GetTenantByIdentifierAsync(TenantContext.TenantSlug);
+                _tenants = activeTenant != null ? [activeTenant] : [];
+            }
+            else
+            {
+                _tenants = [];
+            }
         }
         finally
         {
@@ -413,7 +425,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
     // --- Tenant User Management ---
     private async Task OpenUserManagement(TenantEntity tenant)
     {
-        if (!IsRootAdmin) return;
+        if (!IsRootAdmin && !_canEditTenants) return;
 
         _managingUsersTenant = tenant;
         _showAddUserForm = false;
@@ -535,7 +547,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
 
     private async Task CreateTenantUserAsync()
     {
-        if (!IsRootAdmin || _managingUsersTenant is null || !IsUserFormValid) return;
+        if ((!IsRootAdmin && !_canEditTenants) || _managingUsersTenant is null || !IsUserFormValid) return;
 
         var result = await TenantService.AddTenantUserAsync(
             _managingUsersTenant.Slug,

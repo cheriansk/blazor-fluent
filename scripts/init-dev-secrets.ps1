@@ -238,6 +238,11 @@ $webDevSettings = [ordered]@{
             "BlazorEnterprise.Components" = "Debug"
         }
     }
+    Engine = @{
+        Mode = if ($existingWebDevJson -and $existingWebDevJson.Engine -and $existingWebDevJson.Engine.Mode) { $existingWebDevJson.Engine.Mode } else { "Remote" }
+        ApiBaseUrl = if ($existingWebDevJson -and $existingWebDevJson.Engine -and $existingWebDevJson.Engine.ApiBaseUrl) { $existingWebDevJson.Engine.ApiBaseUrl } else { "https://localhost:7150" }
+        LicenseKey = if ($existingWebDevJson -and $existingWebDevJson.Engine -and $existingWebDevJson.Engine.LicenseKey) { $existingWebDevJson.Engine.LicenseKey } else { "" }
+    }
 }
 $webDevPath = "$webProject/appsettings.Development.json"
 $webDevSettings | ConvertTo-Json -Depth 10 | Set-Content $webDevPath -Encoding UTF8

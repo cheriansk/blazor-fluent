@@ -13,6 +13,7 @@
 | **`scripts/build-templateguard.ps1`** | Compiles the TemplateGuard Roslyn Analyzer and the AST Manifest Tool. | Before running manifest generation or analyzer packaging. |
 | **`scripts/generate-base-manifest.ps1`**| Scans all C# and Razor files to update the locked `.basefiles.json` manifest. | When authoring new baseline features in TemplateAuthoring mode. |
 | **`scripts/Generate-DataModelDocs.ps1`**| Generates interactive HTML documentation and Markdown schema references. | Whenever database entities or configurations change. |
+| **`scripts/Generate-Specs.ps1`** | Generates Antigravity/Gemini-optimized `.requirements.md` specifications, end-to-end Mermaid sequence diagrams, and an interactive HTML explorer from `docs/specs/specs-manifest.json`. | Whenever UI pages, batch jobs, or services change, or before spec-driven AI edits. |
 | **`scripts/Download-Quill.ps1`** | Downloads air-gapped Quill.js rich text editor assets into `wwwroot`. | When setting up air-gapped environments without external CDNs. |
 | **`scripts/Sync-UpstreamTemplate.ps1`** | Synchronizes updates from a local base template folder into renamed downstream projects via Beyond Compare or AutoApply. | When taking updates from the template. |
 | **`Scripts.txt`** | Quick CLI cheat-sheet for data model document regeneration. | Reference cheat-sheet. |
@@ -112,24 +113,47 @@ pwsh scripts/verify-no-hardcode.ps1
 Executed directly from the **Base Template project** to compare or synchronize changes into a renamed downstream project:
 
 ```powershell
-# 1. Interactive mode: Prompts for downstream project folder and confirms before running
+# 1. Interactive mode: Prompts for downstream project folder and displays comparison paths
 pwsh scripts/Sync-UpstreamTemplate.ps1
 
 # 2. Specify downstream folder directly:
 pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal"
 
-# 3. Dry run preview without making changes:
+# 3. Optional: Automatically launch Beyond Compare GUI:
+pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal" -LaunchBeyondCompare
+
+# 4. Dry run preview without making changes:
 pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal" -Mode AutoApply -DryRun
 
-# 4. Auto-apply safe base updates while protecting *.Custom.cs and [BaseModification] files:
+# 5. Auto-apply safe base updates while protecting *.Custom.cs and [BaseModification] files:
 pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\repos\AcmePortal" -Mode AutoApply
 ```
 
 ### Safety Features:
 - **Always Runs from Base Template**: Guarantees the source is the authoritative base template.
 - **Prominent Header & Confirmation Prompt**: Clearly shows source and target paths and requires `Y/n` confirmation before any action.
-- **Automated Brand Translation**: Stages the template into `.template-staging` and renames it to match the downstream project name, eliminating false-positive diffs on `namespace` or directory paths.
+- **Automated Brand Translation**: Stages the template into `.template-staging` (inside the template directory) and renames it to match the downstream project name, eliminating false-positive diffs on `namespace` or directory paths.
+- **Clean Comparison Paths**: Emits exact Source and Target paths and the CLI command (`bcompare "<source>" "<target>"`) without forcing a GUI popup, and automatically removes any stale `.template-staging` directories from downstream repositories.
 - **TemplateGuard Protection**: Strictly protects all `*.Custom.cs` partial classes and files decorated with `[BaseModification]`, while auto-updating unmodified base files and locking the updated `.basefiles.json`.
 
+---
 
-Downloads pinned, hash-verified versions of Quill.js CSS and JavaScript bundles into `src/BlazorEnterprise.Web/wwwroot/lib/quill/`, enabling 100% offline rich-text editing.
+## 📐 8. Antigravity Specification & Flow Generator (`scripts/Generate-Specs.ps1`)
+
+Generates **Google Antigravity / Gemini-optimized** `.requirements.md` specification files, end-to-end Mermaid sequence diagrams (from UI/caller → Service → Security Gates → `AppDbContext` DbSets & `IAuditService`), and an interactive HTML explorer (`docs/specs/index.html`) for target `.razor` and `.cs` files registered in `docs/specs/specs-manifest.json`.
+
+### Syntax & Parameters:
+```powershell
+# Generate specs for all active targets in docs/specs/specs-manifest.json
+pwsh scripts/Generate-Specs.ps1
+
+# Generate spec for a single target file (matched by name or path)
+pwsh scripts/Generate-Specs.ps1 -TargetFilter "SettingsTenantsTab"
+```
+
+### Key Features:
+1. **Manifest-Driven Target Selection (`docs/specs/specs-manifest.json`)**: Avoids scanning and generating clutter across the entire repository; only generates specs for the `.razor` components, batch jobs, or `.cs` services explicitly listed in the manifest.
+2. **`[SYSTEM / AGENT RUNTIME]` Top Header**: Places `thinking_level`, `agent_mode: targeted_surgical_edit`, `token_budget_policy: minimal_context_reads`, `do_not_run_commands`, generation timestamps (`generated_at_utc` & `generated_at_local`), and `source_hash_sha256` at line 1 of every `.requirements.md` file.
+3. **Agent Quick-Jump & Line-Range Map**: Provides exact `file:///...#Lstart-Lend` coordinates for every component method and downstream `*Service.cs` method so Antigravity can make surgical line-range reads instead of full-file scans.
+4. **Non-Destructive Regeneration**: Preserves user-authored `<!-- BEGIN PENDING CHANGES -->` and `<!-- BEGIN CUSTOM BUSINESS RULES -->` blocks across regenerations, and automatically rescues any inline `[CHANGE: ...]` or `[TODO: ...]` tags written outside those blocks.
+
