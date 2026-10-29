@@ -62,9 +62,14 @@ $rootDir = (Resolve-Path (Join-Path $scriptDir "..")).Path
 $srcDir = Join-Path $rootDir "src"
 $resolvedManifest = if ([System.IO.Path]::IsPathRooted($ManifestPath)) { $ManifestPath } else { Join-Path $rootDir $ManifestPath }
 $specsDir = Split-Path -Parent $resolvedManifest
+$indexDir = Join-Path $specsDir "index"
+$historyDir = Join-Path $specsDir "history"
+$validationDir = Join-Path $specsDir "validation"
 
-if (-not (Test-Path $specsDir)) {
-    New-Item -ItemType Directory -Path $specsDir -Force | Out-Null
+foreach ($d in @($specsDir, $indexDir, $historyDir, $validationDir)) {
+    if (-not (Test-Path $d)) {
+        New-Item -ItemType Directory -Path $d -Force | Out-Null
+    }
 }
 
 # Remove stale index.html when HTML generation is suppressed
@@ -237,20 +242,27 @@ if ($EnsureFresh -and -not $ArchiveCompleted -and -not $GenerateHtml) {
         $fPath = Resolve-FullSourcePath $te.path
         $bName = [System.IO.Path]::GetFileNameWithoutExtension($fPath)
         $sFile = "$bName.requirements.md"
+        $iFile = "$bName.index.md"
         $sFullPath = Join-Path $specsDir $sFile
+        $iFullPath = Join-Path $indexDir $iFile
         $liveHash = Get-TargetSourceHash -FullSourcePath $fPath
         $storedHash = ""
-        if (Test-Path $sFullPath) {
+        if (Test-Path $iFullPath) {
+            $headerSample = [System.IO.File]::ReadAllText($iFullPath, [System.Text.Encoding]::UTF8)
+            if ($headerSample -match 'source_hash_sha256:\s*(?<h>[0-9a-fA-F]{16})') {
+                $storedHash = $Matches['h'].ToLowerInvariant()
+            }
+        } elseif (Test-Path $sFullPath) {
             $headerSample = [System.IO.File]::ReadAllText($sFullPath, [System.Text.Encoding]::UTF8)
             if ($headerSample -match 'source_hash_sha256:\s*(?<h>[0-9a-fA-F]{16})') {
                 $storedHash = $Matches['h'].ToLowerInvariant()
             }
         }
-        if ([string]::IsNullOrWhiteSpace($storedHash) -or ($storedHash -ne $liveHash)) {
-            Write-Host "  [SYNC] External source changes detected for '$sFile' (stored: '$storedHash' -> live: '$liveHash'). Regenerating spec & line numbers while preserving Section 1 Pending Changes..." -ForegroundColor Yellow
+        if ([string]::IsNullOrWhiteSpace($storedHash) -or ($storedHash -ne $liveHash) -or -not (Test-Path $iFullPath)) {
+            Write-Host "  [SYNC] External source changes detected for '$sFile' (stored: '$storedHash' -> live: '$liveHash'). Regenerating index & line numbers while preserving Section 1 Pending Changes..." -ForegroundColor Yellow
             $staleEntries.Add($te)
         } else {
-            Write-Host "  [OK] Spec '$sFile' is already in sync with live source files (hash: $liveHash). Skipping regeneration." -ForegroundColor Green
+            Write-Host "  [OK] Spec '$sFile' and 'index/$iFile' are already in sync with live source files (hash: $liveHash). Skipping regeneration." -ForegroundColor Green
         }
     }
     if ($staleEntries.Count -eq 0) {
@@ -379,13 +391,14 @@ function Get-CSharpMethods {
     return $methods
 }
 
-# --- Helper: Build Human-Readable Overview + Technical Agent Tree from Razor Lines ---
+# --- Helper: Build Human-Readable Overview + Compact UI Map Table from Razor Lines ---
 function Get-RazorLayoutSummaryAndTree {
     param([string[]]$RazorLines)
     $humanLines = [System.Collections.Generic.List[string]]::new()
     $treeLines = [System.Collections.Generic.List[string]]::new()
+    $uiMapRows = [System.Collections.Generic.List[string]]::new()
     if (-not $RazorLines -or $RazorLines.Count -eq 0) {
-        return [PSCustomObject]@{ HumanOverview = $humanLines; AgentTree = $treeLines }
+        return [PSCustomObject]@{ HumanOverview = $humanLines; AgentTree = $treeLines; UiMapRows = $uiMapRows }
     }
 
     function Get-FullTagBlock {
@@ -541,19 +554,21 @@ function Get-RazorLayoutSummaryAndTree {
             $humanLines.Add("- **$($sec.Title)**: $($hParts -join ' | ')")
         }
 
-        # Build Agent Technical Tree Line
-        $gateSuffix = if (-not [string]::IsNullOrWhiteSpace($sec.Gate)) { " — Gate: ``@if ($($sec.Gate))``" } else { "" }
-        $treeLines.Add("  - ``[L$($sec.StartLine)-L$($sec.EndLine)]`` **$($sec.Title)**$gateSuffix")
-        if ($tabs.Count -gt 0) { $treeLines.Add("    - **Tabs**: $($tabs -join ', ')") }
-        if ($gates.Count -gt 0) { $treeLines.Add("    - **Inner Gates**: $($gates -join ', ')") }
-        if ($inputs.Count -gt 0) { $treeLines.Add("    - **Inputs**: $($inputs -join ', ')") }
-        if ($buttons.Count -gt 0) { $treeLines.Add("    - **Buttons**: $($buttons -join ', ')") }
-        if ($grids.Count -gt 0) { $treeLines.Add("    - **DataGrids**: $($grids -join ', ')") }
+        # Build Compact UI Map Table Row (for .index.md)
+        $gateCell = if (-not [string]::IsNullOrWhiteSpace($sec.Gate)) { "``@if ($($sec.Gate))``" } elseif ($gates.Count -gt 0) { ($gates -join ', ') } else { "Unconditional" }
+        $ctrlParts = [System.Collections.Generic.List[string]]::new()
+        if ($tabs.Count -gt 0) { $ctrlParts.Add("Tabs: $($tabs -join ', ')") }
+        if ($inputs.Count -gt 0) { $ctrlParts.Add("Inputs: $($inputs -join ', ')") }
+        if ($buttons.Count -gt 0) { $ctrlParts.Add("Buttons: $($buttons -join ', ')") }
+        if ($grids.Count -gt 0) { $ctrlParts.Add("Grids: $($grids -join ', ')") }
+        $ctrlCell = if ($ctrlParts.Count -gt 0) { ($ctrlParts -join " <br> ") } else { "-" }
+        $uiMapRows.Add("| **$($sec.Title)** | ``L$($sec.StartLine)-L$($sec.EndLine)`` | $gateCell | $ctrlCell |")
     }
 
     return [PSCustomObject]@{
         HumanOverview = $humanLines
         AgentTree     = $treeLines
+        UiMapRows     = $uiMapRows
     }
 }
 
@@ -636,9 +651,13 @@ foreach ($targetEntry in $targetEntries) {
     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($fullPath)
     $isRazor = ($fileName -match '\.razor$')
     $specFileName = "$baseName.requirements.md"
+    $indexFileName = "$baseName.index.md"
+    $historyFileName = "$baseName.history.md"
     $specFullPath = Join-Path $specsDir $specFileName
+    $indexFullPath = Join-Path $indexDir $indexFileName
+    $historyFullPath = Join-Path $historyDir $historyFileName
 
-    Write-Host "==> Generating lean spec for: $cleanRelPath -> docs/specs/$specFileName" -ForegroundColor Cyan
+    Write-Host "==> Generating lean spec + index for: $cleanRelPath -> docs/specs/$specFileName + docs/specs/index/$indexFileName" -ForegroundColor Cyan
 
     # Compute SHA-256 hash of source file(s)
     $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -657,12 +676,20 @@ foreach ($targetEntry in $targetEntries) {
     }
     $sourceHash = ([System.BitConverter]::ToString($sha.ComputeHash($sourceBytes))).Replace("-", "").ToLowerInvariant().Substring(0, 16)
 
-    # --- Preserve Existing Protected User Blocks & Rescue Inline [CHANGE: ...] Tags ---
+    # --- Preserve Existing Protected User Blocks & Externalize Change History ---
     $defaultPendingPlaceholder = "- [ ] *(Add new/modified requirements here, then prompt: ``Implement @[docs/specs/$specFileName]``)*"
     $defaultChangeHistoryPlaceholder = "*(No archived changes yet. Completed requirements are automatically moved here with a date/time stamp when ``-ArchiveCompleted`` is run.)*"
     $preservedPendingChanges = $defaultPendingPlaceholder
     $preservedBusinessRules = "- *(Permanent domain invariants preserved across regenerations)*"
     $preservedChangeHistory = $defaultChangeHistoryPlaceholder
+
+    if (Test-Path $historyFullPath) {
+        $existingHist = [System.IO.File]::ReadAllText($historyFullPath, [System.Text.Encoding]::UTF8)
+        $hMatch = [regex]::Match($existingHist, '(?s)<!-- BEGIN CHANGE HISTORY -->\s*(?<content>.*?)\s*<!-- END CHANGE HISTORY -->')
+        if ($hMatch.Success -and -not [string]::IsNullOrWhiteSpace($hMatch.Groups['content'].Value)) {
+            $preservedChangeHistory = $hMatch.Groups['content'].Value.Trim()
+        }
+    }
 
     if (Test-Path $specFullPath) {
         $existingSpec = [System.IO.File]::ReadAllText($specFullPath, [System.Text.Encoding]::UTF8)
@@ -676,9 +703,13 @@ foreach ($targetEntry in $targetEntries) {
             $preservedBusinessRules = $brMatch.Groups['content'].Value.Trim()
         }
 
+        # Migrate any inline <!-- BEGIN CHANGE HISTORY --> from legacy .requirements.md into history/<BaseName>.history.md
         $chMatch = [regex]::Match($existingSpec, '(?s)<!-- BEGIN CHANGE HISTORY -->\s*(?<content>.*?)\s*<!-- END CHANGE HISTORY -->')
         if ($chMatch.Success -and -not [string]::IsNullOrWhiteSpace($chMatch.Groups['content'].Value)) {
-            $preservedChangeHistory = $chMatch.Groups['content'].Value.Trim()
+            $legacyHist = $chMatch.Groups['content'].Value.Trim()
+            if ($legacyHist -notmatch '^\*\(No archived changes yet' -and $preservedChangeHistory -match '^\*\(No archived changes yet') {
+                $preservedChangeHistory = $legacyHist
+            }
         }
 
         # Rescue any inline [CHANGE: ...] or [TODO: ...] written outside the protected blocks
@@ -701,15 +732,17 @@ foreach ($targetEntry in $targetEntries) {
             }
         }
 
-        # If -ArchiveCompleted is passed, move active Pending Changes into Change History with today's date/time stamp
+        # If -ArchiveCompleted is passed, move active Pending Changes into docs/specs/history/<BaseName>.history.md with today's date/time stamp
         if ($ArchiveCompleted) {
             $activeLines = [System.Collections.Generic.List[string]]::new()
             foreach ($pLine in ($preservedPendingChanges -split "`r?`n")) {
                 $trimmedLine = $pLine.Trim()
                 if ([string]::IsNullOrWhiteSpace($trimmedLine)) { continue }
-                if ($trimmedLine -match '\*\(Add new/modified requirements here') { continue }
-                # Normalize checkboxes or numbered/bulleted lines into completed [x] items
-                if ($trimmedLine -match '^-\s*\[\s*\]\s*(.+)$') {
+                if ($trimmedLine -match '\*\(Add (?:new/modified|pending) ') { continue }
+                # Preserve Acceptance Criteria sub-indents or normalize top-level items into completed [x] items
+                if ($pLine -match '^\s{2,}(.+)$' -or $trimmedLine -match '^Acceptance Criteria:') {
+                    $activeLines.Add("  $trimmedLine")
+                } elseif ($trimmedLine -match '^-\s*\[\s*\]\s*(.+)$') {
                     $activeLines.Add("- [x] $($Matches[1])")
                 } elseif ($trimmedLine -match '^-\s*\[x\]\s*(.+)$') {
                     $activeLines.Add("- [x] $($Matches[1])")
@@ -721,7 +754,7 @@ foreach ($targetEntry in $targetEntries) {
             }
 
             if ($activeLines.Count -gt 0) {
-                $stampHeader = "#### $((Get-Date).ToString('yyyy-MM-dd HH:mm'))"
+                $stampHeader = "### $((Get-Date).ToString('yyyy-MM-dd HH:mm'))"
                 $newHistoryEntry = $stampHeader + "`n" + ($activeLines -join "`n")
                 if ([string]::IsNullOrWhiteSpace($preservedChangeHistory) -or $preservedChangeHistory -match '^\*\(No archived changes yet') {
                     $preservedChangeHistory = $newHistoryEntry
@@ -729,10 +762,21 @@ foreach ($targetEntry in $targetEntries) {
                     $preservedChangeHistory = $newHistoryEntry + "`n`n" + $preservedChangeHistory
                 }
                 $preservedPendingChanges = $defaultPendingPlaceholder
-                Write-Host "    [+] Archived $($activeLines.Count) completed requirement(s) into CHANGE HISTORY ($stampHeader)." -ForegroundColor Green
+                Write-Host "    [+] Archived $($activeLines.Count) completed line(s) into docs/specs/history/$historyFileName ($stampHeader)." -ForegroundColor Green
             }
         }
     }
+
+    # Write / Update docs/specs/history/<BaseName>.history.md (Zero token overhead during normal spec implementation)
+    $histSb = [System.Text.StringBuilder]::new()
+    [void]$histSb.AppendLine("# Completed Change History: ``$baseName``")
+    [void]$histSb.AppendLine("")
+    [void]$histSb.AppendLine("> **Active Spec**: [$specFileName](../$specFileName) | **Navigation Index**: [$indexFileName](../index/$indexFileName)")
+    [void]$histSb.AppendLine("")
+    [void]$histSb.AppendLine("<!-- BEGIN CHANGE HISTORY -->")
+    [void]$histSb.AppendLine($preservedChangeHistory)
+    [void]$histSb.AppendLine("<!-- END CHANGE HISTORY -->")
+    [System.IO.File]::WriteAllText($historyFullPath, $histSb.ToString(), $utf8Bom)
 
     # --- Parse Source File(s) ---
     $routes = [System.Collections.Generic.List[string]]::new()
@@ -905,11 +949,14 @@ foreach ($targetEntry in $targetEntries) {
     }
 
     if ($unregisteredChildUsages.Count -gt 0) {
-        Write-Host "    [!] ALERT: $($unregisteredChildUsages.Count) UNREGISTERED child component(s) found in $cleanRelPath : $(($unregisteredChildUsages.ComponentName) -join ', ')" -ForegroundColor Red
+        Write-Host "    [!] WARNING: $($unregisteredChildUsages.Count) UNREGISTERED child component(s) found in $cleanRelPath : $(($unregisteredChildUsages.ComponentName) -join ', ')" -ForegroundColor Red
         $globalUnregisteredAlerts.Add([PSCustomObject]@{
-            ParentPath = $cleanRelPath
-            SpecFile   = "docs/specs/$specFileName"
-            Children   = @($unregisteredChildUsages)
+            ParentPath     = $cleanRelPath
+            ParentFileName = $fileName
+            Category       = $targetEntry.category
+            ThinkingLevel  = $targetEntry.thinking_level
+            SpecFile       = "docs/specs/$specFileName"
+            Children       = @($unregisteredChildUsages)
         })
     }
 
@@ -969,18 +1016,21 @@ foreach ($targetEntry in $targetEntries) {
         })
     }
 
-    # --- Build Ultra-Lean Token-Optimized Pure-ASCII .requirements.md Content ---
+    # --- Build Ultra-Lean Token-Optimized Pure-ASCII .requirements.md + index/<BaseName>.index.md ---
     $nowUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     $nowLocal = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss zzz")
     $sb = [System.Text.StringBuilder]::new()
+    $idxSb = [System.Text.StringBuilder]::new()
 
-    # 1. [SYSTEM / AGENT RUNTIME] Header at Line 1 (with explicit 5-rule minimal-token reading & execution protocol)
+    # 1. [SYSTEM / AGENT RUNTIME] Header at Line 1 of .requirements.md (with 100% of Copilot docs/17 + Remaining Delta rules)
     [void]$sb.AppendLine("<!-- ===========================================================================")
     [void]$sb.AppendLine("[SYSTEM / AGENT RUNTIME - STRICT MINIMAL-TOKEN READING & EXECUTION PROTOCOL]")
     [void]$sb.AppendLine("thinking_strategy: zero_waste_discovery_focused_planning")
     [void]$sb.AppendLine("thinking_level_hint: $($targetEntry.thinking_level) (0% wasted on file/line search; 100% focused on planning UI/logic changes)")
     [void]$sb.AppendLine("agent_mode: $defaultAgentMode")
     [void]$sb.AppendLine("token_budget_policy: $defaultTokenPolicy")
+    [void]$sb.AppendLine("navigation_index: docs/specs/index/$indexFileName")
+    [void]$sb.AppendLine("change_history: docs/specs/history/$historyFileName")
     [void]$sb.AppendLine("source_file: src/$cleanRelPath")
     if ($hasCodeBehind) {
         [void]$sb.AppendLine("code_behind: src/$codeBehindCleanPath")
@@ -988,127 +1038,95 @@ foreach ($targetEntry in $targetEntries) {
     if (-not [string]::IsNullOrWhiteSpace($targetEntry.parentSpecFile)) {
         [void]$sb.AppendLine("parent_spec: docs/specs/$($targetEntry.parentSpecFile) (src/$($targetEntry.parentPath))")
     }
-    [void]$sb.AppendLine("generated_at_utc: $nowUtc")
-    [void]$sb.AppendLine("source_hash_sha256: $sourceHash")
     [void]$sb.AppendLine("")
     [void]$sb.AppendLine("MANDATORY AGENT RULES (READ BEFORE TAKING ANY ACTION):")
-    [void]$sb.AppendLine("  RULE 0 [PRE-FLIGHT FRESHNESS & LINE-NUMBER SYNC]: Before reading source slices or planning, verify the spec's line numbers are in sync with live code by running: pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter '$baseName' -EnsureFresh (exits in <50ms if unchanged, or refreshes line numbers while preserving Section 1 Pending Changes if external edits occurred). If it regenerates, re-read the updated Agent Code Index.")
-    [void]$sb.AppendLine("  RULE 1 [WHAT TO READ IN THIS MD FILE]: Read ONLY '## 1. What I Want Changed' (and 'Permanent Rules') plus the 'Agent Code Index' (Sections A, B, C at the bottom). Use '## 2. Current Page Overview' only for quick orientation.")
-    [void]$sb.AppendLine("  RULE 2 [WHAT TO SKIP IN THIS MD FILE]: Completely IGNORE the 'Change History (Completed Requirements by Date)' block unless the user explicitly asks about historical changes.")
-    [void]$sb.AppendLine("  RULE 3 [SURGICAL LINE-SLICE READS ONLY - NEVER READ FULL SOURCE FILES]: Do NOT call read_file on the entire .razor, .razor.cs, or service .cs files, and do NOT run broad codebase searches. Look up the exact [Lstart-Lend] range in the 'Agent Code Index' below and call read_file ONLY with explicit StartLine and EndLine (+/- 10 lines of context) for the specific section or method being modified.")
-    [void]$sb.AppendLine("  RULE 4 [PHASE 1 - PLAN FIRST & STOP FOR APPROVAL]: Map each plain-English requirement in Section 1 to the exact target file, line range, @bind property, and C# method from the Agent Code Index. Output a concise 3-6 bullet 'Execution Plan' in chat and STOP. Wait for the user to reply 'yes' / click Proceed before editing any files.")
-    [void]$sb.AppendLine("  RULE 5 [PHASE 2 - SURGICAL EDIT, AUTO-ARCHIVE & FORBIDDEN COMMANDS]: Once approved, apply targeted edit_file calls, then immediately run: pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter '$baseName' -ArchiveCompleted (moves completed items to Change History with date/time and refreshes line numbers). NEVER run: [`"$forbiddenCmds`"].")
+    [void]$sb.AppendLine("  RULE 0 [PRE-FLIGHT FRESHNESS & LINE-NUMBER SYNC]: Before reading source slices or planning, verify the navigation index line numbers are in sync with live code by running: pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter '$baseName' -EnsureFresh (exits in <50ms if unchanged, or refreshes docs/specs/index/$indexFileName while preserving Section 1 Pending Changes if external edits occurred).")
+    [void]$sb.AppendLine("  RULE 1 [READ THE NAVIGATION INDEX]: Read 'docs/specs/index/$indexFileName' to get the UI Map [Lstart-Lend], Method Map, Service Map, and Validation Rules. Completely IGNORE 'docs/specs/history/$historyFileName' and 'docs/specs/validation/' unless explicitly asked.")
+    [void]$sb.AppendLine("  RULE 2 [SURGICAL LINE-SLICE READS ONLY - NEVER READ FULL SOURCE FILES]: Do NOT call read_file on the entire .razor, .razor.cs, or service .cs files, and do NOT run broad codebase searches. Look up the exact [Lstart-Lend] range in 'docs/specs/index/$indexFileName' and call read_file ONLY with explicit StartLine and EndLine (+/- 10 lines of context) for the specific section or method being modified.")
+    [void]$sb.AppendLine("  RULE 3 [REUSE-FIRST, NO-NEW-ARCHITECTURE & CHANGE BOUNDARY]: Reuse existing components (Csk*, DataListSelect, EntityHistoryButton), dialogs/modals, DTOs, validators, and services first. Do NOT introduce new services, repositories, or abstractions unless required. Modify ONLY referenced files and methods — do NOT refactor unrelated code, rename symbols, or perform opportunistic cleanup.")
+    [void]$sb.AppendLine("  RULE 4 [CONDITIONAL PLANNING & COMPLEXITY CLASSIFICATION]:")
+    [void]$sb.AppendLine("    - Small / Medium Change (<= 3 files modified, UI/validation updates, existing method/service updates): Implement immediately without waiting for plan approval.")
+    [void]$sb.AppendLine("    - Large Change (> 3 files modified, DB schema changes, security model changes, new architecture, or new services/repositories): Output a concise 3-6 bullet 'Execution Plan' first and STOP for user approval ('yes' / Proceed).")
+    [void]$sb.AppendLine("  RULE 5 [SURGICAL EDIT, AUTO-ARCHIVE & OUTPUT CONTRACT]: After applying edit_file calls, immediately run: pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter '$baseName' -ArchiveCompleted (moves completed items to docs/specs/history/$historyFileName with date/time and refreshes line numbers). NEVER run: [`"$forbiddenCmds`"]. Return the standardized Output Contract: (1) Files Modified, (2) Change Summary, (3) Validation Performed, (4) Risks.")
     [void]$sb.AppendLine("============================================================================ -->")
     [void]$sb.AppendLine("# Spec: ``$baseName``")
     [void]$sb.AppendLine("")
 
-    # 2. [WHAT I WANT CHANGED (PLAIN ENGLISH)] Block
-    [void]$sb.AppendLine("## 1. What I Want Changed (Write in Plain English)")
-    [void]$sb.AppendLine("<!-- Write your requirements in plain English below (no line numbers or code syntax needed), then prompt: Implement @[docs/specs/$specFileName] -->")
+    # 2. [WHAT I WANT CHANGED (PLAIN ENGLISH + OPTIONAL TAGS/ACCEPTANCE CRITERIA)] Block
+    [void]$sb.AppendLine("## 1. Pending Changes (Write in Plain English)")
+    [void]$sb.AppendLine("<!-- Write plain English below. For complex items, optionally prefix with [UI], [DATA], [SECURITY], [VALIDATION], [BUGFIX], or [PERFORMANCE] and add 'Acceptance Criteria:' bullets. Then prompt: Implement @[docs/specs/$specFileName] -->")
     [void]$sb.AppendLine("<!-- BEGIN PENDING CHANGES -->")
     [void]$sb.AppendLine($preservedPendingChanges)
     [void]$sb.AppendLine("<!-- END PENDING CHANGES -->")
     [void]$sb.AppendLine("")
-    [void]$sb.AppendLine("### Permanent Rules (Optional)")
+    [void]$sb.AppendLine("## 2. Permanent & Implementation Rules")
     [void]$sb.AppendLine("<!-- BEGIN CUSTOM BUSINESS RULES -->")
     [void]$sb.AppendLine($preservedBusinessRules)
     [void]$sb.AppendLine("<!-- END CUSTOM BUSINESS RULES -->")
+    [void]$sb.AppendLine("- **Reuse-First**: Reuse existing UI components, modals, DTOs, validators, and services before creating new code.")
+    [void]$sb.AppendLine("- **No New Architecture**: Prefer extending existing methods; do not introduce new services, repositories, or abstractions unless explicitly requested.")
+    [void]$sb.AppendLine("- **Change Boundary**: Modify only referenced files and methods. Do not refactor unrelated code, rename symbols, or perform opportunistic cleanup.")
+    [void]$sb.AppendLine("- **Conditional Planning**: Implement Small/Medium changes (`<= 3` files, UI/validation/existing method updates) immediately; generate a plan and wait for approval only on Large changes (`> 3` files, DB schema, security model, or new services/architecture).")
     [void]$sb.AppendLine("")
 
-    # 2b. RED ALERT SECTION FOR UNREGISTERED CHILD COMPONENTS (If any)
-    if ($unregisteredChildUsages.Count -gt 0) {
-        [void]$sb.AppendLine("## [ALERT] <span style=`"color:#ef4444`">UNREGISTERED CHILD COMPONENTS DETECTED - REVIEW REQUIRED</span>")
-        [void]$sb.AppendLine("> [!CAUTION]")
-        [void]$sb.AppendLine("> **$($unregisteredChildUsages.Count) Unregistered Child Component(s) in ``$fileName``!** Copy desired entries below into ``""children""`` of ``$cleanRelPath`` in ``docs/specs/specs-manifest.json`` (or add to ``ignore_components``).")
-        [void]$sb.AppendLine("")
-        [void]$sb.AppendLine('```json')
-        $jsonReviewItems = [System.Collections.Generic.List[string]]::new()
-        foreach ($ucu in $unregisteredChildUsages) {
-            $itemJson = @"
-    {
-      "path": "$($ucu.CleanPath)",
-      "category": "$($targetEntry.category)",
-      "thinking_level": "$($targetEntry.thinking_level)",
-      "description": "Child component <$($ucu.ComponentName) /> rendered by $fileName at L$($ucu.Line) (Gate: $($ucu.GateCondition)).",
-      "enabled": true
-    }
-"@
-            $jsonReviewItems.Add($itemJson)
-        }
-        [void]$sb.AppendLine('"children": [')
-        [void]$sb.AppendLine(($jsonReviewItems -join ",`n"))
-        [void]$sb.AppendLine(']')
-        [void]$sb.AppendLine('```')
-        [void]$sb.AppendLine("")
-    }
-
-    # 3. Human-First Plain-English Page Overview
+    # 3. Ultra-Concise Business Context (Single Source of Truth for UI Map lives in index/<BaseName>.index.md)
     $razorSummaryObj = if ($isRazor) { Get-RazorLayoutSummaryAndTree -RazorLines $razorLines } else { $null }
-    [void]$sb.AppendLine("## 2. Current Page Overview (Plain-English Summary)")
+    [void]$sb.AppendLine("## 3. Business Context")
     if (-not [string]::IsNullOrWhiteSpace($targetEntry.description)) {
         [void]$sb.AppendLine("- **Purpose**: $($targetEntry.description)")
     }
-    if ($routes.Count -gt 0) {
-        [void]$sb.AppendLine("- **Page Route**: ``$($routes -join '``, ``')``")
-    }
-    if ($registeredChildUsages.Count -gt 0) {
-        $childLinks = $registeredChildUsages | ForEach-Object { "[``<$($_.ComponentName) />``](./$($_.SpecFile))" }
-        [void]$sb.AppendLine("- **Child Tabs / Components**: $($childLinks -join ', ')")
-    }
-    if ($razorSummaryObj -and $razorSummaryObj.HumanOverview.Count -gt 0) {
-        foreach ($hl in $razorSummaryObj.HumanOverview) {
-            [void]$sb.AppendLine($hl)
-        }
-    } elseif (-not $isRazor) {
-        $mNames = $csMethods | ForEach-Object { "``$($_.Name)``" }
-        [void]$sb.AppendLine("- **Methods**: $($mNames -join ', ')")
-    }
     [void]$sb.AppendLine("")
 
-    # 4. Collapsible Change History (Date-Stamped Archive of Completed Requirements)
-    [void]$sb.AppendLine("<details>")
-    [void]$sb.AppendLine("<summary><b>Change History (Completed Requirements by Date)</b></summary>")
-    [void]$sb.AppendLine("")
-    [void]$sb.AppendLine("<!-- BEGIN CHANGE HISTORY -->")
-    [void]$sb.AppendLine($preservedChangeHistory)
-    [void]$sb.AppendLine("<!-- END CHANGE HISTORY -->")
-    [void]$sb.AppendLine("</details>")
-    [void]$sb.AppendLine("")
+    # Write the ultra-lean human .requirements.md file with UTF-8 BOM
+    [System.IO.File]::WriteAllText($specFullPath, $sb.ToString(), $utf8Bom)
 
-    # 5. Collapsible Agent Code Index (Hidden from Human View, Used by AI Agent for Surgical Line Reads)
-    [void]$sb.AppendLine("<details>")
-    [void]$sb.AppendLine("<summary><b>Agent Code Index (Auto-Generated Line Numbers, Bindings & Service Map - For AI Only)</b></summary>")
-    [void]$sb.AppendLine("")
-    [void]$sb.AppendLine("### A. Technical UI Layout & Binding Tree (``$fileName``)")
+    # --- Build Auto-Generated AI Navigation Index: docs/specs/index/<BaseName>.index.md ---
+    [void]$idxSb.AppendLine("<!-- ===========================================================================")
+    [void]$idxSb.AppendLine("[AI NAVIGATION INDEX - AUTO-GENERATED BY scripts/Generate-Specs.ps1]")
+    [void]$idxSb.AppendLine("target_spec: docs/specs/$specFileName")
+    [void]$idxSb.AppendLine("source_file: src/$cleanRelPath")
+    if ($hasCodeBehind) {
+        [void]$idxSb.AppendLine("code_behind: src/$codeBehindCleanPath")
+    }
+    [void]$idxSb.AppendLine("generated_at_utc: $nowUtc")
+    [void]$idxSb.AppendLine("source_hash_sha256: $sourceHash")
+    [void]$idxSb.AppendLine("============================================================================ -->")
+    [void]$idxSb.AppendLine("# AI Navigation Index: ``$baseName``")
+    [void]$idxSb.AppendLine("")
+
+    # A. Compact UI Map Table
+    [void]$idxSb.AppendLine("## 1. UI Map (``$fileName``)")
     if ($authAttributes.Count -gt 0) {
-        [void]$sb.AppendLine("- **Auth**: ``$($authAttributes -join '``, ``')``")
+        [void]$idxSb.AppendLine("- **Auth**: ``$($authAttributes -join '``, ``')``")
     }
     if ($injectedServices.Count -gt 0) {
         $injPairs = [System.Collections.Generic.List[string]]::new()
         foreach ($kvp in $injectedServices.GetEnumerator()) {
             $injPairs.Add("``$($kvp.Key):$($kvp.Value)``")
         }
-        [void]$sb.AppendLine("- **Injected**: $($injPairs -join ', ')")
+        [void]$idxSb.AppendLine("- **Injected**: $($injPairs -join ', ')")
     }
     if ($registeredChildUsages.Count -gt 0) {
-        [void]$sb.AppendLine("- **Registered Child Components**:")
+        [void]$idxSb.AppendLine("- **Registered Child Components**:")
         foreach ($rcu in $registeredChildUsages) {
-            [void]$sb.AppendLine("  - ``<$($rcu.ComponentName) />`` @ ``L$($rcu.Line)`` | Gate: ``$($rcu.GateCondition)`` | Params: ``$($rcu.Parameters)`` | Spec: [$($rcu.SpecFile)](./$($rcu.SpecFile))")
+            [void]$idxSb.AppendLine("  - ``<$($rcu.ComponentName) />`` @ ``L$($rcu.Line)`` | Gate: ``$($rcu.GateCondition)`` | Params: ``$($rcu.Parameters)`` | Spec: [$($rcu.SpecFile)](../$($rcu.SpecFile))")
         }
     }
-    if ($razorSummaryObj -and $razorSummaryObj.AgentTree.Count -gt 0) {
-        [void]$sb.AppendLine("- **UI Sections, Inputs (`@bind`), Buttons (`OnClick`) & DataGrids**:")
-        foreach ($ltl in $razorSummaryObj.AgentTree) {
-            [void]$sb.AppendLine($ltl)
+    if ($razorSummaryObj -and $razorSummaryObj.UiMapRows.Count -gt 0) {
+        [void]$idxSb.AppendLine("")
+        [void]$idxSb.AppendLine("| UI Section | Lines | Visibility Gate | Fields (`@bind`), Buttons (`OnClick`) & Grids |")
+        [void]$idxSb.AppendLine("| :--- | :--- | :--- | :--- |")
+        foreach ($row in $razorSummaryObj.UiMapRows) {
+            [void]$idxSb.AppendLine($row)
         }
     }
-    [void]$sb.AppendLine("")
+    [void]$idxSb.AppendLine("")
 
     # B. Compact Method Map & End-to-End Call Chains
     $methodTargetFile = if ($hasCodeBehind) { $codeBehindCleanPath } else { $cleanRelPath }
-    [void]$sb.AppendLine("### B. Method Map & End-to-End Call Chains (``$methodTargetFile``)")
-    [void]$sb.AppendLine("| Method | Lines | Role / Trigger | End-to-End Call Chain (`[PreGates] -> Service.Method[Gates](DB/Audit)`) |")
-    [void]$sb.AppendLine("| :--- | :--- | :--- | :--- |")
+    [void]$idxSb.AppendLine("## 2. Method Map (``$methodTargetFile``)")
+    [void]$idxSb.AppendLine("| Method | Lines | Role / Trigger | End-to-End Call Chain (`[PreGates] -> Service.Method[Gates](DB/Audit)`) |")
+    [void]$idxSb.AppendLine("| :--- | :--- | :--- | :--- |")
 
     foreach ($mt in $methodTraces) {
         $m = $mt.Method
@@ -1159,11 +1177,11 @@ foreach ($targetEntry in $targetEntries) {
             $chainStr += " | Fails: ``$($m.Failures -join '; ')``"
         }
 
-        [void]$sb.AppendLine("| ``$($m.Name)`` | ``L$($m.StartLine)-L$($m.EndLine)`` | $roleTrigger | $chainStr |")
+        [void]$idxSb.AppendLine("| ``$($m.Name)`` | ``L$($m.StartLine)-L$($m.EndLine)`` | $roleTrigger | $chainStr |")
     }
-    [void]$sb.AppendLine("")
+    [void]$idxSb.AppendLine("")
 
-    # C. Compact Downstream Service Endpoints & Validation Rules
+    # C. Compact Downstream Service Map & Validation Rules
     $uniqueResolvedServices = [System.Collections.Generic.Dictionary[string, PSObject]]::new()
     foreach ($mt in $methodTraces) {
         foreach ($sc in $mt.ServiceCalls) {
@@ -1177,9 +1195,9 @@ foreach ($targetEntry in $targetEntries) {
     }
 
     if ($uniqueResolvedServices.Count -gt 0) {
-        [void]$sb.AppendLine("### C. Downstream Service Endpoints & Validation Rules")
-        [void]$sb.AppendLine("| Service Method | Source Location | Security Gates | DB & Audit | `Result.Failure` Conditions |")
-        [void]$sb.AppendLine("| :--- | :--- | :--- | :--- | :--- |")
+        [void]$idxSb.AppendLine("## 3. Service Map")
+        [void]$idxSb.AppendLine("| Service Method | Source Location | Security Gates | DB & Audit |")
+        [void]$idxSb.AppendLine("| :--- | :--- | :--- | :--- |")
         foreach ($rk in $uniqueResolvedServices.Keys) {
             $rs = $uniqueResolvedServices[$rk]
             $gatesCell = if ($rs.SecurityGates.Count -gt 0) { "``$($rs.SecurityGates -join ', ')``" } else { "-" }
@@ -1192,16 +1210,32 @@ foreach ($targetEntry in $targetEntries) {
                 $dbAuditParts.Add("``Audit: $($rs.Audits -join ',')``")
             }
             $dbAuditCell = if ($dbAuditParts.Count -gt 0) { $dbAuditParts -join " " } else { "In-Memory" }
-            $failCell = if ($rs.Failures.Count -gt 0) { ($rs.Failures | ForEach-Object { "``$_``" }) -join "; " } else { "-" }
-            [void]$sb.AppendLine("| ``$($rs.ClassName).$($rs.MethodName)`` | ``$($rs.FilePath)#L$($rs.StartLine)-L$($rs.EndLine)`` | $gatesCell | $dbAuditCell | $failCell |")
+            [void]$idxSb.AppendLine("| ``$($rs.ClassName).$($rs.MethodName)`` | ``$($rs.FilePath)#L$($rs.StartLine)-L$($rs.EndLine)`` | $gatesCell | $dbAuditCell |")
         }
-        [void]$sb.AppendLine("")
-    }
-    [void]$sb.AppendLine("</details>")
-    [void]$sb.AppendLine("")
+        [void]$idxSb.AppendLine("")
 
-    # Write the ultra-lean .requirements.md file with UTF-8 BOM
-    [System.IO.File]::WriteAllText($specFullPath, $sb.ToString(), $utf8Bom)
+        # D. Grouped Validation Rules (Only emit methods that contain validation failures)
+        $methodsWithFailures = @($uniqueResolvedServices.Values | Where-Object { $_.Failures -and $_.Failures.Count -gt 0 })
+        if ($methodsWithFailures.Count -gt 0) {
+            [void]$idxSb.AppendLine("## 4. Validation Rules")
+            [void]$idxSb.AppendLine("")
+            foreach ($mwf in $methodsWithFailures) {
+                [void]$idxSb.AppendLine("### $($mwf.ClassName).$($mwf.MethodName)")
+                [void]$idxSb.AppendLine("")
+                foreach ($fRule in $mwf.Failures) {
+                    $cleanRule = $fRule.Trim()
+                    if ($cleanRule.StartsWith('$"')) { $cleanRule = $cleanRule.Substring(2) }
+                    elseif ($cleanRule.StartsWith('"')) { $cleanRule = $cleanRule.Substring(1) }
+                    if ($cleanRule.EndsWith('"')) { $cleanRule = $cleanRule.Substring(0, $cleanRule.Length - 1) }
+                    [void]$idxSb.AppendLine("- $cleanRule")
+                }
+                [void]$idxSb.AppendLine("")
+            }
+        }
+    }
+
+    # Write docs/specs/index/<BaseName>.index.md with UTF-8 BOM
+    [System.IO.File]::WriteAllText($indexFullPath, $idxSb.ToString(), $utf8Bom)
 
     # --- If -GenerateHtml is requested, build rich Mermaid diagrams for the HTML viewer only ---
     if ($GenerateHtml) {
@@ -1348,48 +1382,54 @@ $readmeSb = [System.Text.StringBuilder]::new()
 [void]$readmeSb.AppendLine("")
 [void]$readmeSb.AppendLine("## Generated Target Specifications")
 [void]$readmeSb.AppendLine("")
-[void]$readmeSb.AppendLine("| Spec File | Originating Source | Parent Spec | Category | Thinking | Methods / Services | Unregistered Children | Summary |")
-[void]$readmeSb.AppendLine("| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :--- |")
+[void]$readmeSb.AppendLine("| Spec File (Human) | AI Navigation Index | History by Date | Originating Source | Parent Spec | Category | Unregistered Children | Summary |")
+[void]$readmeSb.AppendLine("| :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- |")
 
 foreach ($item in $generatedSpecsSummary) {
     $srcDocLink = Get-RelativeDocLink -CleanSourcePath $item.SourceCleanPath
     $parentCell = if (-not [string]::IsNullOrWhiteSpace($item.ParentSpecFile)) { "[$($item.ParentSpecFile)](./$($item.ParentSpecFile))" } else { "*(Root)*" }
-    $unregCell = if ($item.UnregisteredCount -gt 0) { "**[ALERT: $($item.UnregisteredCount) Review Required]**" } else { "OK (0)" }
-    [void]$readmeSb.AppendLine("| [**$($item.SpecFile)**](./$($item.SpecFile)) | [``$($item.SourceCleanPath)``]($srcDocLink) | $parentCell | $($item.Category) | ``$($item.ThinkingLevel)`` | $($item.MethodsCount) / $($item.ServicesCount) | $unregCell | $($item.Description) |")
+    $unregCell = if ($item.UnregisteredCount -gt 0) { "[**[ALERT: $($item.UnregisteredCount) Review]**](./validation/ComponentRegistrationWarnings.md)" } else { "OK (0)" }
+    $idxLink = "[``$($item.Name).index.md``](./index/$($item.Name).index.md)"
+    $histLink = "[``$($item.Name).history.md``](./history/$($item.Name).history.md)"
+    [void]$readmeSb.AppendLine("| [**$($item.SpecFile)**](./$($item.SpecFile)) | $idxLink | $histLink | [``$($item.SourceCleanPath)``]($srcDocLink) | $parentCell | $($item.Category) | $unregCell | $($item.Description) |")
 }
 
 [void]$readmeSb.AppendLine("")
 [void]$readmeSb.AppendLine("---")
 [void]$readmeSb.AppendLine("")
-[void]$readmeSb.AppendLine("## How to Write Requirements (Plain English Only!)")
+[void]$readmeSb.AppendLine("## Clean 4-Tier Architecture (`docs/specs/`)")
 [void]$readmeSb.AppendLine("")
-[void]$readmeSb.AppendLine("You **never** need to write line numbers, control names, or technical syntax. Each ``.requirements.md`` file is organized into:")
-[void]$readmeSb.AppendLine("1. **Top Half (For YOU - Plain English)**:")
-[void]$readmeSb.AppendLine("   - ``## 1. What I Want Changed (Write in Plain English)``: Write normal everyday sentences describing what you want added, removed, or changed.")
-[void]$readmeSb.AppendLine("   - ``## 2. Current Page Overview (Plain-English Summary)``: Clean summary of the cards, fields, buttons, and tables currently on the page.")
-[void]$readmeSb.AppendLine("2. **Bottom Half (Collapsed `<details>` - For the AI Agent Only)**:")
-[void]$readmeSb.AppendLine("   - Contains the auto-generated line numbers, ``@bind`` mappings, method call chains, and service endpoints so Antigravity knows exactly where to edit the code.")
+[void]$readmeSb.AppendLine("1. **`docs/specs/<Page>.requirements.md` (For YOU — Pure Requirements & Business Context)**:")
+[void]$readmeSb.AppendLine("   - Contains **only** `## 1. Pending Changes (Write in Plain English)`, `## 2. Permanent & Implementation Rules`, and `## 3. Business Context` (~40 lines total).")
+[void]$readmeSb.AppendLine("   - **Zero clutter**: No UI inventory duplication, no technical line-number tables, no validation warnings, and no old history logs inside `.requirements.md`!")
+[void]$readmeSb.AppendLine("2. **`docs/specs/index/<Page>.index.md` (Single Source of Truth for AI Navigation Coordinates)**:")
+[void]$readmeSb.AppendLine("   - Auto-generated compact **1. UI Map**, **2. Method Map**, **3. Service Map**, and **4. Validation Rules** (grouped by `### Service.Method`) with exact `[Lstart-Lend]` line coordinates.")
+[void]$readmeSb.AppendLine("3. **`docs/specs/history/<Page>.history.md` (Completed History Archive by Date)**:")
+[void]$readmeSb.AppendLine("   - Stores all completed requirements under `### YYYY-MM-DD HH:mm` date stamps so historical logs consume **0 tokens** during active code generation.")
+[void]$readmeSb.AppendLine("4. **`docs/specs/validation/ComponentRegistrationWarnings.md` (Unregistered Child Component Validation)**:")
+[void]$readmeSb.AppendLine("   - Holds any unregistered child Razor component alerts and ready-to-paste `"children`" JSON outside of `.requirements.md`.")
 [void]$readmeSb.AppendLine("")
 [void]$readmeSb.AppendLine("### Example: 4-Step Smart Plan-Then-Execute Lifecycle (Optimal Token & Thinking Usage)")
-[void]$readmeSb.AppendLine("1. **Write Changes in Plain English**: Open ``docs/specs/SettingsTenantsTab.requirements.md`` and write plain English inside ``<!-- BEGIN PENDING CHANGES -->``:")
+[void]$readmeSb.AppendLine("1. **Write Changes in Plain English (with Optional Tags & Acceptance Criteria for Complex Tasks)**: Open ``docs/specs/SettingsTenantsTab.requirements.md`` and write inside ``<!-- BEGIN PENDING CHANGES -->``:")
 [void]$readmeSb.AppendLine('```markdown')
 [void]$readmeSb.AppendLine("<!-- BEGIN PENDING CHANGES -->")
-[void]$readmeSb.AppendLine("1. Remove Programs, Users, Tasks & Risks, and Dates buttons from the tenant row in the Tenant Directory table.")
-[void]$readmeSb.AppendLine("2. When clicking a tenant, open a popup and show all the details in edit mode.")
-[void]$readmeSb.AppendLine("3. Inside the popup, show tabs for Dates, Users, Programs, and Tasks & Risks.")
+[void]$readmeSb.AppendLine("1. [UI] Remove Programs, Users, Tasks & Risks, and Dates buttons from the tenant row in the Tenant Directory table.")
+[void]$readmeSb.AppendLine("2. [UI] When clicking a tenant, open a popup and show all the details in edit mode.")
+[void]$readmeSb.AppendLine("   Acceptance Criteria:")
+[void]$readmeSb.AppendLine("   - Slug, Name, and Domains remain read-only; Start Date and End Date are editable.")
+[void]$readmeSb.AppendLine("   - Inside the popup, show tabs for Dates, Users, Programs, and Tasks & Risks.")
 [void]$readmeSb.AppendLine("<!-- END PENDING CHANGES -->")
 [void]$readmeSb.AppendLine('```')
 [void]$readmeSb.AppendLine("2. **Phase 1 — Automatic Pre-Flight Sync (`-EnsureFresh`) & Focused Planning**: Prompt Antigravity:")
 [void]$readmeSb.AppendLine("   > ``Implement @[docs/specs/SettingsTenantsTab.requirements.md]``")
-[void]$readmeSb.AppendLine("   - **RULE 0 (`-EnsureFresh`)**: The agent first runs `pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter 'SettingsTenantsTab' -EnsureFresh` (<50ms SHA-256 check). If external code changes occurred, it refreshes line numbers while keeping your Section 1 text intact.")
-[void]$readmeSb.AppendLine("   - Because the **Agent Code Index** already gives the AI every line number, `@bind` variable, and service call, the AI spends **0% of its thinking tokens** searching for files and **100% of its thinking tokens** designing a clean **Execution Plan**.")
-[void]$readmeSb.AppendLine("   - The AI presents the concise **Execution Plan** (mapping your plain-English points to exact lines/methods) and **pauses for your approval**.")
+[void]$readmeSb.AppendLine("   - **RULE 0 (`-EnsureFresh`)**: The agent first runs `pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter 'SettingsTenantsTab' -EnsureFresh` (<50ms SHA-256 check). If external code changes occurred, it refreshes `index/SettingsTenantsTab.index.md` while keeping your Section 1 text intact.")
+[void]$readmeSb.AppendLine("   - **RULE 1–4**: The agent reads `docs/specs/index/SettingsTenantsTab.index.md`, reads only the exact `[Lstart-Lend]` slices needed, applies **Reuse-First** & **No-New-Architecture** rules, outputs a concise **Execution Plan**, and **pauses for your approval**.")
 [void]$readmeSb.AppendLine("3. **Phase 2 — Approve & Surgical Execution**: Reply ``yes`` (or click **Proceed**) to apply the exact surgical code edits.")
-[void]$readmeSb.AppendLine("4. **Automatic Date-Stamped Archival & Refresh**: Once edits are applied, the agent automatically runs:")
+[void]$readmeSb.AppendLine("4. **Automatic Date-Stamped Archival & Output Contract**: Once edits are applied, the agent automatically runs:")
 [void]$readmeSb.AppendLine('```powershell')
 [void]$readmeSb.AppendLine("pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter 'SettingsTenantsTab' -ArchiveCompleted")
 [void]$readmeSb.AppendLine('```')
-[void]$readmeSb.AppendLine("   This moves your completed items from **Section 1 (What I Want Changed)** into the collapsible **Change History (Completed Requirements by Date)** block stamped with ``#### YYYY-MM-DD HH:mm``, resets Section 1 for your next change, and refreshes Section 2 (Page Overview) and the Agent Code Index line numbers.")
+[void]$readmeSb.AppendLine("   This moves your completed items from **Section 1** into [`docs/specs/history/SettingsTenantsTab.history.md`](./history/SettingsTenantsTab.history.md) stamped with ``### YYYY-MM-DD HH:mm``, resets Section 1, refreshes the Navigation Index line numbers, and outputs the standardized **Output Contract** (`Files Modified`, `Change Summary`, `Validation Performed`, `Risks`).")
 [void]$readmeSb.AppendLine("")
 [void]$readmeSb.AppendLine("### Viewing Full Visual Mermaid Sequence Diagrams (Optional)")
 [void]$readmeSb.AppendLine('```powershell')
@@ -1476,22 +1516,72 @@ if ($GenerateHtml) {
     [System.IO.File]::WriteAllText($htmlPath, $htmlContent, $utf8Bom)
 }
 
-# --- 6. Prominent Red Console Summary for Unregistered Child Components ---
+# --- 6. Write docs/specs/validation/ComponentRegistrationWarnings.md & Emit Prominent Console Warning/Error ---
+$validationWarningsPath = Join-Path $validationDir "ComponentRegistrationWarnings.md"
+$valSb = [System.Text.StringBuilder]::new()
+[void]$valSb.AppendLine("# Component Registration Warnings (Validation Report)")
+[void]$valSb.AppendLine("")
+[void]$valSb.AppendLine("> **Last Generated**: ``$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz'))``  ")
+[void]$valSb.AppendLine("> **Manifest**: [specs-manifest.json](../specs-manifest.json) | **Catalog**: [README.md](../README.md)")
+[void]$valSb.AppendLine("")
+
 if ($globalUnregisteredAlerts.Count -gt 0) {
+    $totalUnreg = ($globalUnregisteredAlerts | ForEach-Object { $_.Children.Count } | Measure-Object -Sum).Sum
+    [void]$valSb.AppendLine("> [!CAUTION]")
+    [void]$valSb.AppendLine("> **$totalUnreg Unregistered Child Component(s) detected across $($globalUnregisteredAlerts.Count) parent component(s)!** Copy desired entries below into ``""children""`` of the respective parent in ``docs/specs/specs-manifest.json`` (or add shared UI widgets to ``component_discovery.ignore_components``).")
+    [void]$valSb.AppendLine("")
+
+    foreach ($alert in $globalUnregisteredAlerts) {
+        [void]$valSb.AppendLine("## Parent: ``$($alert.ParentPath)`` ([$($alert.SpecFile)](../../$($alert.SpecFile)))")
+        [void]$valSb.AppendLine("")
+        [void]$valSb.AppendLine("| Unregistered Component | Source Path | Line | Gate Condition |")
+        [void]$valSb.AppendLine("| :--- | :--- | :--- | :--- |")
+        $jsonReviewItems = [System.Collections.Generic.List[string]]::new()
+        foreach ($ch in $alert.Children) {
+            [void]$valSb.AppendLine("| ``<$($ch.ComponentName) />`` | ``$($ch.CleanPath)`` | ``L$($ch.Line)`` | ``$($ch.GateCondition)`` |")
+            $safeGate = $ch.GateCondition -replace '"', "'"
+            $itemJson = @"
+    {
+      "path": "$($ch.CleanPath)",
+      "category": "$($alert.Category)",
+      "thinking_level": "$($alert.ThinkingLevel)",
+      "description": "Child component <$($ch.ComponentName) /> rendered by $($alert.ParentFileName) at L$($ch.Line) (Gate: $safeGate).",
+      "enabled": true
+    }
+"@
+            $jsonReviewItems.Add($itemJson)
+        }
+        [void]$valSb.AppendLine("")
+        [void]$valSb.AppendLine("### Ready-to-Paste JSON for ``$($alert.ParentFileName)``")
+        [void]$valSb.AppendLine('```json')
+        [void]$valSb.AppendLine('"children": [')
+        [void]$valSb.AppendLine(($jsonReviewItems -join ",`n"))
+        [void]$valSb.AppendLine(']')
+        [void]$valSb.AppendLine('```')
+        [void]$valSb.AppendLine("")
+    }
+
+    [System.IO.File]::WriteAllText($validationWarningsPath, $valSb.ToString(), $utf8Bom)
+
     Write-Host ""
+    Write-Warning "ComponentRegistrationWarnings.md was updated with $totalUnreg unregistered child component(s)! Review: docs/specs/validation/ComponentRegistrationWarnings.md"
     Write-Host "================================================================================" -ForegroundColor Red
-    Write-Host "  [!] ACTION REQUIRED: UNREGISTERED CHILD RAZOR COMPONENTS DETECTED             " -ForegroundColor Red
+    Write-Host "  [!] WARNING / ACTION REQUIRED: ComponentRegistrationWarnings.md UPDATED!      " -ForegroundColor Red
+    Write-Host "  Validation File : docs/specs/validation/ComponentRegistrationWarnings.md      " -ForegroundColor Yellow
     Write-Host "================================================================================" -ForegroundColor Red
     foreach ($alert in $globalUnregisteredAlerts) {
         Write-Host "  Parent Component : $($alert.ParentPath)" -ForegroundColor Red
-        Write-Host "  Review in Spec   : $($alert.SpecFile)" -ForegroundColor Yellow
         foreach ($ch in $alert.Children) {
             Write-Host "    -> <$($ch.ComponentName) /> ($($ch.CleanPath)) at Line $($ch.Line)" -ForegroundColor Red
         }
     }
-    Write-Host "  Copy the ready-to-paste `"children`" JSON from the spec file(s) above into" -ForegroundColor Yellow
-    Write-Host "  docs/specs/specs-manifest.json (or add to component_discovery.ignore_components)." -ForegroundColor Yellow
+    Write-Host "  Open docs/specs/validation/ComponentRegistrationWarnings.md and copy the" -ForegroundColor Yellow
+    Write-Host "  ready-to-paste `"children`" JSON into docs/specs/specs-manifest.json" -ForegroundColor Yellow
+    Write-Host "  (or add shared widgets to component_discovery.ignore_components)." -ForegroundColor Yellow
     Write-Host "================================================================================" -ForegroundColor Red
+} else {
+    [void]$valSb.AppendLine("All discovered child Razor components are registered in ``specs-manifest.json`` or listed in ``component_discovery.ignore_components``.")
+    [System.IO.File]::WriteAllText($validationWarningsPath, $valSb.ToString(), $utf8Bom)
 }
 
 Write-Host ""
