@@ -157,3 +157,21 @@ pwsh scripts/Generate-Specs.ps1 -TargetFilter "SettingsTenantsTab"
 3. **Agent Quick-Jump & Line-Range Map**: Provides exact `file:///...#Lstart-Lend` coordinates for every component method and downstream `*Service.cs` method so Antigravity can make surgical line-range reads instead of full-file scans.
 4. **Non-Destructive Regeneration**: Preserves user-authored `<!-- BEGIN PENDING CHANGES -->` and `<!-- BEGIN CUSTOM BUSINESS RULES -->` blocks across regenerations, and automatically rescues any inline `[CHANGE: ...]` or `[TODO: ...]` tags written outside those blocks.
 
+
+
+## TemplateGuard: base-file governance (TG001–TG004, TG020, TG021)
+
+In `DownstreamEnforce` mode (set by `Rename-Project.ps1`) these are build errors:
+
+| Rule | Covers | Unlock / fix |
+|---|---|---|
+| TG001/TG002/TG003 | Base `.cs` members/methods | Use `*.Custom.cs` partials or `[BaseModification]` |
+| TG004 | Base `.razor` markup | `@attribute [BaseModification(Author=..., Reason=..., Ticket=...)]` |
+| TG021 | Base `.css` / `.js` | Tag comment with a non-empty `Reason`: CSS `/* [BaseModification Author="x" Reason="y" Ticket="z"] */`, JS `// [BaseModification Author="x" Reason="y" Ticket="z"]`; or add a new `*.Custom.css` / `*.Custom.js` |
+| TG020 | Missing/corrupt analyzer DLL or `.basefiles.json` | Restore `tools/TemplateGuard/*` (git checkout or `Sync-UpstreamTemplate.ps1`) |
+
+New files that are not in the base manifest are always allowed. Minified (`*.min.*`), `wwwroot/lib/**`, `node_modules`, `bin`/`obj` and `Migrations` are not locked.
+
+**Local escape hatch (last resort only):** `dotnet build -p:TemplateGuardAllowMissing=true` or env `TEMPLATEGUARD_ALLOW_MISSING=true` downgrades TG020 to a warning. CI must never set it.
+
+**Maintaining the baseline (template authors):** run `scripts/build-templateguard.ps1` (regenerates `.basefiles.json`, rebuilds the analyzer so the manifest is embedded), then commit `tools/TemplateGuard/*`. `Rename-Project.ps1` re-baselines against the renamed source before purging `tools/src`.

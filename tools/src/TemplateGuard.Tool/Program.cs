@@ -32,6 +32,8 @@ public static class Program
 
         var layers = new[] { "Shared", "Core", "Persistence", "Infrastructure", "Jobs", "Web", "Shared.UI", "RulesEngine", "Api", "ServiceDefaults", "AppHost" };
 
+        manifest.Layers = layers.ToList();
+
         foreach (var file in csFiles)
         {
             var layerRelPath = GetLayerRelativePath(file, layers);
@@ -119,6 +121,35 @@ public static class Program
             manifest.Files[layerRelPath] = entry;
         }
 
+        var staticAssetFiles = Directory.GetFiles(srcDir, "*.*", SearchOption.AllDirectories)
+            .Where(f => (f.EndsWith(".css", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".js", StringComparison.OrdinalIgnoreCase)) &&
+                        !f.EndsWith(".min.css", StringComparison.OrdinalIgnoreCase) &&
+                        !f.EndsWith(".min.js", StringComparison.OrdinalIgnoreCase) &&
+                        !f.EndsWith(".Custom.css", StringComparison.OrdinalIgnoreCase) &&
+                        !f.EndsWith(".Custom.js", StringComparison.OrdinalIgnoreCase))
+            .Where(f =>
+            {
+                var n = f.Replace('\\', '/');
+                return !n.Contains("/bin/") && !n.Contains("/obj/") && !n.Contains("/node_modules/") &&
+                       !n.Contains("/wwwroot/lib/") && !n.Contains("/Migrations/");
+            })
+            .OrderBy(f => f)
+            .ToList();
+
+        foreach (var file in staticAssetFiles)
+        {
+            var layerRelPath = GetLayerRelativePath(file, layers);
+            if (layerRelPath == null) continue;
+
+            var normalizedText = NormalizeRazorContent(File.ReadAllText(file));
+            using var sha = SHA256.Create();
+            var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(normalizedText))).Replace("-", "").ToLowerInvariant();
+
+            var entry = new BaseFileEntry { RelativePath = layerRelPath };
+            entry.MemberSyntaxHashes["$Content"] = hash;
+            manifest.Files[layerRelPath] = entry;
+        }
+
         var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
         
         if (File.Exists(outputFile) && File.ReadAllText(outputFile) == json)
@@ -128,7 +159,7 @@ public static class Program
         else
         {
             File.WriteAllText(outputFile, json);
-            Console.WriteLine($"==> Successfully indexed {manifest.Files.Count} files ({csFiles.Count()} C#, {razorFiles.Count()} Razor) in {outputFile}");
+            Console.WriteLine($"==> Successfully indexed {manifest.Files.Count} files ({csFiles.Count()} C#, {razorFiles.Count()} Razor, {staticAssetFiles.Count} CSS/JS) in {outputFile}");
         }
     }
 

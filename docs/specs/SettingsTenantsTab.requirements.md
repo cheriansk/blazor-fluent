@@ -25,12 +25,13 @@ MANDATORY AGENT RULES (READ BEFORE TAKING ANY ACTION):
 ## 1. Pending Changes (Write in Plain English)
 <!-- Write plain English below. For complex items, optionally prefix with [UI], [DATA], [SECURITY], [VALIDATION], [BUGFIX], or [PERFORMANCE] and add 'Acceptance Criteria:' bullets. Then prompt: Implement @[docs/specs/SettingsTenantsTab.requirements.md] -->
 <!-- BEGIN PENDING CHANGES -->
-- [ ] *(Add pending change requests here. Then prompt Antigravity: `Implement the pending changes in @[docs/specs/SettingsTenantsTab.requirements.md]`)*
+- [ ] *(Add new/modified requirements here, then prompt: `Implement @[docs/specs/SettingsTenantsTab.requirements.md]`)*
 <!-- END PENDING CHANGES -->
 
 ## 2. Permanent & Implementation Rules
 <!-- BEGIN CUSTOM BUSINESS RULES -->
-- *(Document permanent domain invariants or custom business rules here. Preserved across regenerations.)*
+- **Tenant Immutability**: Tenant Slug, Name, Internal Email Domains, and External Email Domains are permanent infrastructure identifiers and must never be editable from the UI once provisioned.
+- **Status Governance**: Tenant active/inactive status transitions are governed via backend admin operations and must not be toggled casually from inline grid switches.
 <!-- END CUSTOM BUSINESS RULES -->
 - **Reuse-First**: Reuse existing UI components, modals, DTOs, validators, and services before creating new code.
 - **No New Architecture**: Prefer extending existing methods; do not introduce new services, repositories, or abstractions unless explicitly requested.

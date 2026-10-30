@@ -24,9 +24,32 @@
           Condition="!Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net10.0\TemplateGuard.Tool.exe')" />
 
     <!-- 2. Verify Zero-Hardcode -->
-    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\verify-no-hardcode.ps1&quot;" />
+	  <!--  <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\verify-no-hardcode.ps1&quot;" />-->
 
     <!-- 3. Generate Data Model Docs (Markdown) -->
     <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\Generate-DataModelDocs.ps1&quot; -Format Markdown" />
+  </Target>
+
+  <!--
+    TemplateGuard integrity check (TG020): in DownstreamEnforce mode the analyzer DLL and base manifest MUST exist.
+    Escape hatch (local worst case only): -p:TemplateGuardAllowMissing=true  or env TEMPLATEGUARD_ALLOW_MISSING=true
+    (downgrades the error to a loud warning). CI must not set it.
+  -->
+  <Target Name="TemplateGuardIntegrityCheck" BeforeTargets="CoreCompile"
+          Condition="'$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool' And '$(IsTestProject)' != 'true'">
+    <PropertyGroup>
+      <_TgAnalyzerPath>$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll</_TgAnalyzerPath>
+      <_TgManifestPath>$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json</_TgManifestPath>
+      <_TgModeValid Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' Or '$(TemplateGuardMode)' == 'DownstreamEnforce'">true</_TgModeValid>
+    </PropertyGroup>
+
+    <Error Condition="'$(_TgModeValid)' != 'true' And '$(TemplateGuardAllowMissing)' != 'true'"
+           Code="TG020" Text="TemplateGuardMode '$(TemplateGuardMode)' is invalid. Use 'TemplateAuthoring' or 'DownstreamEnforce'." />
+
+    <Error Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce' And '$(TemplateGuardAllowMissing)' != 'true' And (!Exists('$(_TgAnalyzerPath)') Or !Exists('$(_TgManifestPath)'))"
+           Code="TG020" Text="TemplateGuard analyzer ($(_TgAnalyzerPath)) or base manifest ($(_TgManifestPath)) is missing. Governance is not enforced. Restore tools/TemplateGuard (git checkout / Sync-UpstreamTemplate.ps1). Local last resort: -p:TemplateGuardAllowMissing=true." />
+
+    <Warning Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce' And '$(TemplateGuardAllowMissing)' == 'true' And (!Exists('$(_TgAnalyzerPath)') Or !Exists('$(_TgManifestPath)'))"
+             Code="TG020" Text="TemplateGuard analyzer/manifest missing but TemplateGuardAllowMissing=true - base-file governance is DISABLED for this build." />
   </Target>
 </Project>

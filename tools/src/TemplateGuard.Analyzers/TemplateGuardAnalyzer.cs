@@ -207,7 +207,28 @@ namespace TemplateGuard.Analyzers
             ImmutableArray.Create(
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
                 RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
-                RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018, RuleTg019);
+                RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018, RuleTg019,
+                RuleTg020, RuleTg021);
+
+        public static readonly DiagnosticDescriptor RuleTg020 = new(
+            id: "TG020",
+            title: "TemplateGuard base manifest is missing or unreadable",
+            messageFormat: "TemplateGuard could not load a valid base manifest ('.basefiles.json' embedded or as AdditionalFile) while running in DownstreamEnforce mode. Base-file governance (TG001/TG002/TG004/TG021) is NOT being enforced. ALLOWED APPROACH: restore tools/TemplateGuard/.basefiles.json and TemplateGuard.Analyzers.dll. Local last resort: build with -p:TemplateGuardAllowMissing=true.",
+            category: "Governance",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "In DownstreamEnforce mode a missing or corrupt manifest must fail the build instead of silently disabling governance.",
+            helpLinkUri: HelpBaseUrl + "#tg020");
+
+        public static readonly DiagnosticDescriptor RuleTg021 = new(
+            id: "TG021",
+            title: "Modified base CSS/JS file is missing [BaseModification] tag",
+            messageFormat: "Base file '{0}' was modified without the required [BaseModification] tag. ALLOWED APPROACH: add a tag comment (CSS: /* [BaseModification Author=\"...\" Reason=\"...\" Ticket=\"...\"] */, JS: // [BaseModification Author=\"...\" Reason=\"...\" Ticket=\"...\"]) or put your styles/scripts in a new '*.Custom.css' / '*.Custom.js' file.",
+            category: "Governance",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Direct modifications to locked template CSS and JS files must be audited via a [BaseModification] tag with a non-empty Reason.",
+            helpLinkUri: HelpBaseUrl + "#tg021");
 
         public static readonly DiagnosticDescriptor RuleTg019 = new(
             id: "TG019",
@@ -367,25 +388,48 @@ namespace TemplateGuard.Analyzers
                     }
                 }
 
-                if (string.IsNullOrEmpty(manifestJson)) return;
-
-                BaseManifestModel? manifest;
-                try
+                bool isEnforceMode = false;
+                bool allowMissing = false;
+                var globalOptions = compilationContext.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
+                if (globalOptions.TryGetValue("build_property.TemplateGuardMode", out var guardMode))
                 {
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    manifest = JsonSerializer.Deserialize<BaseManifestModel>(manifestJson!, options);
+                    isEnforceMode = string.Equals(guardMode, "DownstreamEnforce", StringComparison.OrdinalIgnoreCase);
                 }
-                catch
+                if (globalOptions.TryGetValue("build_property.TemplateGuardAllowMissing", out var allowMissingRaw))
                 {
+                    allowMissing = string.Equals(allowMissingRaw, "true", StringComparison.OrdinalIgnoreCase);
+                }
+
+                bool reportMissingManifest = isEnforceMode && !allowMissing;
+
+                BaseManifestModel? manifest = null;
+                if (!string.IsNullOrEmpty(manifestJson))
+                {
+                    try
+                    {
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        manifest = JsonSerializer.Deserialize<BaseManifestModel>(manifestJson!, options);
+                    }
+                    catch
+                    {
+                        manifest = null;
+                    }
+                }
+
+                if (manifest?.Files == null)
+                {
+                    if (reportMissingManifest)
+                    {
+                        compilationContext.RegisterCompilationEndAction(endCtx =>
+                            endCtx.ReportDiagnostic(Diagnostic.Create(RuleTg020, Location.None)));
+                    }
                     return;
                 }
-
-                if (manifest?.Files == null) return;
 
                 compilationContext.RegisterSymbolAction(ctx => AnalyzeMember(ctx, manifest),
                     SymbolKind.Method, SymbolKind.Property, SymbolKind.Field);
 
-                compilationContext.RegisterAdditionalFileAction(fileCtx => AnalyzeAdditionalFile(fileCtx, manifest));
+                compilationContext.RegisterAdditionalFileAction(fileCtx => AnalyzeAdditionalFile(fileCtx, manifest, assemblyName));
             });
         }
 
@@ -420,7 +464,7 @@ namespace TemplateGuard.Analyzers
                 context.ReportDiagnostic(Diagnostic.Create(RuleTg003, location, symbol.Name, fileName));
             }
 
-            var layerRelPath = NormalizeToLayerRelativePath(fullPath!);
+            var layerRelPath = NormalizeToLayerRelativePath(fullPath!, manifest.Layers);
             BaseFileEntry? matchedEntry = null;
             if (layerRelPath != null)
             {
@@ -473,10 +517,13 @@ namespace TemplateGuard.Analyzers
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
         }
 
-        private static string? NormalizeToLayerRelativePath(string fullPath)
+        private static readonly string[] DefaultLayers =
+            { "Shared", "Core", "Persistence", "Infrastructure", "Jobs", "Web", "Shared.UI", "RulesEngine", "Api", "ServiceDefaults", "AppHost" };
+
+        private static string? NormalizeToLayerRelativePath(string fullPath, IList<string>? manifestLayers)
         {
             var normalized = fullPath.Replace('\\', '/');
-            var layers = new[] { "Shared.UI", "Core", "Persistence", "Infrastructure", "Jobs", "Web" };
+            IEnumerable<string> layers = (manifestLayers != null && manifestLayers.Count > 0) ? manifestLayers : DefaultLayers;
             foreach (var layer in layers)
             {
                 var marker = "." + layer + "/";
@@ -496,17 +543,29 @@ namespace TemplateGuard.Analyzers
             return null;
         }
 
-        private void AnalyzeAdditionalFile(AdditionalFileAnalysisContext context, BaseManifestModel manifest)
+        private void AnalyzeAdditionalFile(AdditionalFileAnalysisContext context, BaseManifestModel manifest, string assemblyName)
         {
             var file = context.AdditionalFile;
-            if (!file.Path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)) return;
+            var isRazor = file.Path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase);
+            var isCss = file.Path.EndsWith(".css", StringComparison.OrdinalIgnoreCase);
+            var isJs = file.Path.EndsWith(".js", StringComparison.OrdinalIgnoreCase);
+            if (!isRazor && !isCss && !isJs) return;
 
-            var layerRelPath = NormalizeToLayerRelativePath(file.Path);
+            // CSS/JS files are added as AdditionalFiles to several projects; only the owning project reports them.
+            if ((isCss || isJs) && file.Path.Replace('\\', '/').IndexOf("/" + assemblyName + "/", StringComparison.OrdinalIgnoreCase) < 0) return;
+
+            var fileNameOnly = Path.GetFileName(file.Path);
+            if (fileNameOnly.EndsWith(".Custom.css", StringComparison.OrdinalIgnoreCase) ||
+                fileNameOnly.EndsWith(".Custom.js", StringComparison.OrdinalIgnoreCase) ||
+                fileNameOnly.EndsWith(".Custom.razor", StringComparison.OrdinalIgnoreCase)) return;
+
+            var layerRelPath = NormalizeToLayerRelativePath(file.Path, manifest.Layers);
             if (layerRelPath == null) return;
 
             if (!manifest.Files.TryGetValue(layerRelPath, out var matchedEntry) || matchedEntry == null) return;
 
-            if (!matchedEntry.MemberSyntaxHashes.TryGetValue("$Markup", out var baseMarkupHash) || string.IsNullOrEmpty(baseMarkupHash)) return;
+            var hashKey = isRazor ? "$Markup" : "$Content";
+            if (!matchedEntry.MemberSyntaxHashes.TryGetValue(hashKey, out var baseHash) || string.IsNullOrEmpty(baseHash)) return;
 
             var text = file.GetText(context.CancellationToken);
             if (text == null) return;
@@ -514,16 +573,31 @@ namespace TemplateGuard.Analyzers
             var rawContent = text.ToString();
             var currentHash = ComputeRazorHash(rawContent);
 
-            if (!string.Equals(currentHash, baseMarkupHash, StringComparison.Ordinal))
+            if (string.Equals(currentHash, baseHash, StringComparison.Ordinal)) return;
+
+            var location = Location.Create(file.Path, new TextSpan(0, 0), new LinePositionSpan(new LinePosition(0, 0), new LinePosition(0, 0)));
+
+            if (isRazor)
             {
                 var hasBaseMod = rawContent.IndexOf("[BaseModification", StringComparison.OrdinalIgnoreCase) >= 0;
                 if (!hasBaseMod)
                 {
-                    var fileName = Path.GetFileName(file.Path);
-                    var location = Location.Create(file.Path, new TextSpan(0, 0), new LinePositionSpan(new LinePosition(0, 0), new LinePosition(0, 0)));
-                    context.ReportDiagnostic(Diagnostic.Create(RuleTg004, location, fileName));
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg004, location, fileNameOnly));
                 }
+                return;
             }
+
+            if (!HasValidBaseModificationTag(rawContent))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(RuleTg021, location, fileNameOnly));
+            }
+        }
+
+        // Accepts '/* [BaseModification ... Reason="x" ...] */' (CSS) or '// [BaseModification ... Reason="x" ...]' (JS); Reason must be non-empty.
+        private static bool HasValidBaseModificationTag(string content)
+        {
+            var match = Regex.Match(content, "\\[BaseModification[^\\]]*Reason\\s*=\\s*\"([^\"]+)\"", RegexOptions.IgnoreCase);
+            return match.Success && !string.IsNullOrWhiteSpace(match.Groups[1].Value);
         }
 
         private static string ComputeRazorHash(string content)

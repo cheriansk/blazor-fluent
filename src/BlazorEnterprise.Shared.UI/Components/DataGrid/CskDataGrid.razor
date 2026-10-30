@@ -7,6 +7,22 @@
         @ChildContent
     </CascadingValue>
 
+    @if (Searchable)
+    {
+        <div class="csk-datagrid-toolbar">
+            <svg class="csk-datagrid-search-icon" viewBox="0 0 24 24"><path d="@CskIcons.DocumentSearch" /></svg>
+            <input type="text"
+                   class="csk-datagrid-search-input"
+                   placeholder="@SearchPlaceholder"
+                   value="@SearchText"
+                   @oninput="OnSearchInputAsync" />
+            @if (!string.IsNullOrEmpty(SearchText))
+            {
+                <button type="button" class="csk-datagrid-search-clear" title="Clear search" @onclick="ClearSearchAsync">&#10005;</button>
+            }
+        </div>
+    }
+
     <div class="csk-datagrid-responsive">
         <table class="csk-datagrid-table @(Dense ? "csk-datagrid-dense" : "") @(Hover ? "csk-datagrid-hover" : "")">
             <thead>

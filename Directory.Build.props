@@ -28,11 +28,24 @@
                              Strictly enforces TG001, TG002, TG003, and TG004 as fatal build errors.
     -->
     <TemplateGuardMode Condition="'$(TemplateGuardMode)' == ''">TemplateAuthoring</TemplateGuardMode>
+    <!--
+      Last-resort local escape hatch for the TG020 / integrity check (missing analyzer or manifest).
+      Use only on a developer machine: dotnet build -p:TemplateGuardAllowMissing=true
+      or set env var TEMPLATEGUARD_ALLOW_MISSING=true. CI must NOT set this.
+    -->
+    <TemplateGuardAllowMissing Condition="'$(TemplateGuardAllowMissing)' == '' And '$(TEMPLATEGUARD_ALLOW_MISSING)' == 'true'">true</TemplateGuardAllowMissing>
+    <TemplateGuardAllowMissing Condition="'$(TemplateGuardAllowMissing)' == ''">false</TemplateGuardAllowMissing>
     <RunHeavyScansOnRebuild Condition="'$(RunHeavyScansOnRebuild)' == ''">true</RunHeavyScansOnRebuild>
     <SkipBaseManifestUpdate Condition="'$(SkipBaseManifestUpdate)' == ''">false</SkipBaseManifestUpdate>
-    <NoWarn Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring'">$(NoWarn);TG001;TG002;TG003;TG004</NoWarn>
-    <WarningsAsErrors Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce'">$(WarningsAsErrors);TG001;TG002;TG003;TG004</WarningsAsErrors>
+    <NoWarn Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring'">$(NoWarn);TG001;TG002;TG003;TG004;TG020;TG021</NoWarn>
+    <WarningsAsErrors Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce'">$(WarningsAsErrors);TG001;TG002;TG003;TG004;TG020;TG021</WarningsAsErrors>
   </PropertyGroup>
+
+  <!-- Expose governance properties to the TemplateGuard analyzer (TG020 / mode detection) -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="TemplateGuardMode" />
+    <CompilerVisibleProperty Include="TemplateGuardAllowMissing" />
+  </ItemGroup>
 
   <!-- Solution Explorer file nesting for downstream .Custom.cs files -->
   <ItemGroup>
@@ -48,6 +61,7 @@
                      Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')" />
     <AdditionalFiles Include="**\*.razor" />
     <AdditionalFiles Include="**\*.css" />
+    <AdditionalFiles Include="**\*.js" Exclude="**\node_modules\**;**\wwwroot\lib\**;**\bin\**;**\obj\**;**\*.min.js" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Web\wwwroot\**\*.css"
                      Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Web'" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Shared.UI\**\*.css"
