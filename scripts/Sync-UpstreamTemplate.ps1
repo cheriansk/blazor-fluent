@@ -26,7 +26,10 @@
     Base template brand name. Auto-detected from *.slnx in TemplateFolder (defaults to 'BlazorEnterprise').
 
 .PARAMETER Mode
-    Sync mode: 'BeyondCompare' (default), 'StageOnly', or 'AutoApply'.
+    Sync mode: 'Compare' (default - provides comparison paths), 'StageOnly', or 'AutoApply'.
+
+.PARAMETER LaunchBeyondCompare
+    If specified, automatically launches Beyond Compare (BCompare.exe) GUI. Default is false (outputs paths only).
 
 .PARAMETER BeyondCompareExe
     Optional path to BCompare.exe. Auto-detected if omitted.
@@ -35,7 +38,7 @@
     Skips interactive confirmation prompts.
 
 .PARAMETER KeepStaging
-    If specified, preserves .template-staging after Beyond Compare exits.
+    If specified, preserves .template-staging.
 
 .PARAMETER DryRun
     Simulates the operations and displays the file classification report without modifying files.
@@ -47,7 +50,7 @@
     pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\Users\cheri\source\repos\AcmePortal"
 
 .EXAMPLE
-    pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\Users\cheri\source\repos\AcmePortal" -Mode AutoApply -DryRun
+    pwsh scripts/Sync-UpstreamTemplate.ps1 -DownstreamFolder "C:\Users\cheri\source\repos\AcmePortal" -LaunchBeyondCompare
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -65,8 +68,11 @@ param(
     [string]$TemplateName = "",
 
     [Parameter(Mandatory = $false)]
-    [ValidateSet("BeyondCompare", "StageOnly", "AutoApply")]
-    [string]$Mode = "BeyondCompare",
+    [ValidateSet("Compare", "BeyondCompare", "StageOnly", "AutoApply")]
+    [string]$Mode = "Compare",
+
+    [Parameter(Mandatory = $false, HelpMessage = "Explicitly launch Beyond Compare GUI")]
+    [switch]$LaunchBeyondCompare,
 
     [Parameter(Mandatory = $false, HelpMessage = "Path to BCompare.exe")]
     [string]$BeyondCompareExe = "",
@@ -173,34 +179,11 @@ if (-not $Force -and -not $DryRun) {
     Write-Host ""
 }
 
-# --- 6. Locate Beyond Compare if in BeyondCompare Mode ---
-if ($Mode -eq "BeyondCompare") {
-    if (-not $BeyondCompareExe) {
-        $candidatePaths = @(
-            "C:\Program Files\Beyond Compare 5\BCompare.exe",
-            "C:\Program Files\Beyond Compare 4\BCompare.exe",
-            "$env:LOCALAPPDATA\Programs\Beyond Compare 5\BCompare.exe",
-            "$env:LOCALAPPDATA\Programs\Beyond Compare 4\BCompare.exe"
-        )
-        foreach ($cand in $candidatePaths) {
-            if (Test-Path $cand) {
-                $BeyondCompareExe = $cand
-                break
-            }
-        }
-        if (-not $BeyondCompareExe) {
-            $cmd = Get-Command BCompare.exe -ErrorAction SilentlyContinue
-            if ($cmd) { $BeyondCompareExe = $cmd.Source }
-        }
-    }
-
-    if (-not $BeyondCompareExe -or -not (Test-Path $BeyondCompareExe)) {
-        Write-Host "  WARNING: Beyond Compare (BCompare.exe) was not found on this system." -ForegroundColor Yellow
-        Write-Host "  Switching mode to 'StageOnly'. You can inspect the staged folder manually." -ForegroundColor Yellow
-        $Mode = "StageOnly"
-    } else {
-        Write-Host "  Beyond Compare Found  : $BeyondCompareExe" -ForegroundColor Green
-    }
+# --- 6. Clean Up Any Stale Downstream Staging Workspace ---
+$downstreamStaging = Join-Path $DownstreamFolder ".template-staging"
+if (Test-Path $downstreamStaging) {
+    Write-Host "==> Cleaning stale .template-staging found in downstream project: $downstreamStaging" -ForegroundColor Yellow
+    Remove-Item -Path $downstreamStaging -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 # --- 7. Prepare Staging Workspace inside Template Project ---
@@ -301,26 +284,60 @@ if ($protectedModifiedFiles.Count -gt 0) {
 
 # --- 10. Execute Selected Mode ---
 switch ($Mode) {
-    "BeyondCompare" {
-        Write-Host "==> Launching Beyond Compare..." -ForegroundColor Cyan
-        Write-Host "  Left  (Staged Base Template) : $stagingDir" -ForegroundColor DarkGray
-        Write-Host "  Right (Renamed Downstream)    : $DownstreamFolder" -ForegroundColor DarkGray
+    { $_ -in @("Compare", "BeyondCompare") } {
+        Write-Host "================================================================================" -ForegroundColor Cyan
+        Write-Host "                       DIFF / COMPARISON PATHS READY                             " -ForegroundColor Yellow
+        Write-Host "================================================================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  Source (Left  / Upstream Template):" -ForegroundColor Cyan
+        Write-Host "    $stagingDir" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Target (Right / Downstream Project):" -ForegroundColor Cyan
+        Write-Host "    $DownstreamFolder" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  To compare in Beyond Compare via command line:" -ForegroundColor DarkGray
+        Write-Host "    bcompare `"$stagingDir`" `"$DownstreamFolder`"" -ForegroundColor Green
+        Write-Host "================================================================================" -ForegroundColor Cyan
         Write-Host ""
 
-        # Launch Beyond Compare process
-        $bcArgs = @(
-            $stagingDir,
-            $DownstreamFolder,
-            "/title1=Base Template ($TemplateName -> $DownstreamName)",
-            "/title2=Renamed Downstream ($DownstreamName)"
-        )
+        if ($LaunchBeyondCompare) {
+            if (-not $BeyondCompareExe) {
+                $candidatePaths = @(
+                    "C:\Program Files\Beyond Compare 5\BCompare.exe",
+                    "C:\Program Files\Beyond Compare 4\BCompare.exe",
+                    "$env:LOCALAPPDATA\Programs\Beyond Compare 5\BCompare.exe",
+                    "$env:LOCALAPPDATA\Programs\Beyond Compare 4\BCompare.exe"
+                )
+                foreach ($cand in $candidatePaths) {
+                    if (Test-Path $cand) {
+                        $BeyondCompareExe = $cand
+                        break
+                    }
+                }
+                if (-not $BeyondCompareExe) {
+                    $cmd = Get-Command BCompare.exe -ErrorAction SilentlyContinue
+                    if ($cmd) { $BeyondCompareExe = $cmd.Source }
+                }
+            }
 
-        $proc = Start-Process -FilePath $BeyondCompareExe -ArgumentList $bcArgs -PassThru
+            if ($BeyondCompareExe -and (Test-Path $BeyondCompareExe)) {
+                Write-Host "==> Launching Beyond Compare GUI..." -ForegroundColor Cyan
+                $bcArgs = @(
+                    $stagingDir,
+                    $DownstreamFolder,
+                    "/title1=Base Template ($TemplateName -> $DownstreamName)",
+                    "/title2=Renamed Downstream ($DownstreamName)"
+                )
+                $proc = Start-Process -FilePath $BeyondCompareExe -ArgumentList $bcArgs -PassThru
+                Write-Host "Beyond Compare started (Process ID: $($proc.Id))." -ForegroundColor Green
+            } else {
+                Write-Host "  WARNING: BCompare.exe was not found. Please open Beyond Compare manually using the paths above." -ForegroundColor Yellow
+            }
+        }
 
         if (-not $KeepStaging) {
-            Write-Host "Beyond Compare is running (Process ID: $($proc.Id))." -ForegroundColor Green
-            Write-Host "Staging files are at: $stagingDir" -ForegroundColor DarkGray
-            Write-Host "Note: When you are done comparing, you can remove .template-staging." -ForegroundColor DarkGray
+            Write-Host "Staging files preserved at: $stagingDir" -ForegroundColor DarkGray
+            Write-Host "Note: When you are finished comparing, you can remove .template-staging." -ForegroundColor DarkGray
         } else {
             Write-Host "Staging workspace preserved at: $stagingDir" -ForegroundColor Green
         }

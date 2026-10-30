@@ -8,6 +8,7 @@ namespace BlazorEnterprise.Core.Contracts;
 public interface ITenantService
 {
     Task<IReadOnlyList<TenantEntity>> GetAllTenantsAsync(CancellationToken cancellationToken = default);
+    Task<TenantEntity?> GetTenantByIdentifierAsync(string identifier, CancellationToken cancellationToken = default);
     Task<Result<TenantEntity>> CreateTenantAsync(string slug, string displayName, IEnumerable<string> internalEmailDomains, IEnumerable<string> externalEmailDomains, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     Task<Result<TenantEntity>> CreateTenantAsync(string slug, string displayName, string internalEmailDomain, string externalEmailDomain, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     Task<Result<TenantEntity>> CreateTenantWithAdminAsync(string slug, string displayName, IEnumerable<string> internalEmailDomains, IEnumerable<string> externalEmailDomains, DateTime startDate, DateTime endDate, string adminFullName, string adminEmail, CancellationToken cancellationToken = default);

@@ -5,6 +5,7 @@ namespace TemplateGuard.Analyzers.Models
     public class BaseManifestModel
     {
         public string TemplateVersion { get; set; } = "1.0.0";
+        public List<string> Layers { get; set; } = new List<string>();
         public Dictionary<string, BaseFileEntry> Files { get; set; } = new Dictionary<string, BaseFileEntry>();
     }
 

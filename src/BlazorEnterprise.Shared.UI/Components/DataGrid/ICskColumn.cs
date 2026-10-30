@@ -11,6 +11,9 @@ public interface ICskColumn<TGridItem>
     bool Sortable { get; }
     string? Class { get; }
     GridSort<TGridItem>? SortDefinition { get; }
+
+    /// <summary>Returns the text used by the grid's built-in search for this column, or null when the column is not searchable.</summary>
+    Func<TGridItem, string?>? SearchTextSelector { get; }
     RenderFragment RenderHeader(bool isCurrentSort, bool isDescending);
     RenderFragment RenderCell(TGridItem item);
 }

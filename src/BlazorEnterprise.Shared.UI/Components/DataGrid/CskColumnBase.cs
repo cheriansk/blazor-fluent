@@ -19,7 +19,13 @@ public abstract class CskColumnBase<TGridItem> : ComponentBase, ICskColumn<TGrid
     [Parameter]
     public string? Class { get; set; }
 
+    /// <summary>Set to false to exclude this column from the grid's built-in search.</summary>
+    [Parameter]
+    public bool Searchable { get; set; } = true;
+
     public virtual GridSort<TGridItem>? SortDefinition => null;
+
+    public virtual Func<TGridItem, string?>? SearchTextSelector => null;
 
     protected override void OnInitialized()
     {

@@ -44,6 +44,24 @@ public class CskPropertyColumn<TGridItem, TProperty> : CskColumnBase<TGridItem>
         }
     }
 
+    public override Func<TGridItem, string?>? SearchTextSelector => Searchable && _compiledGetter != null ? GetText : null;
+
+    private string GetText(TGridItem item)
+    {
+        if (_compiledGetter == null || item == null)
+        {
+            return string.Empty;
+        }
+
+        var value = _compiledGetter(item);
+        return value switch
+        {
+            null => string.Empty,
+            IFormattable formattable when !string.IsNullOrEmpty(Format) => formattable.ToString(Format, null),
+            _ => value.ToString() ?? string.Empty
+        };
+    }
+
     public override RenderFragment RenderCell(TGridItem item) => builder =>
     {
         if (_compiledGetter == null || item == null)
@@ -51,15 +69,7 @@ public class CskPropertyColumn<TGridItem, TProperty> : CskColumnBase<TGridItem>
             return;
         }
 
-        var value = _compiledGetter(item);
-        string textValue = value switch
-        {
-            null => string.Empty,
-            IFormattable formattable when !string.IsNullOrEmpty(Format) => formattable.ToString(Format, null),
-            _ => value.ToString() ?? string.Empty
-        };
-
-        builder.AddContent(0, textValue);
+        builder.AddContent(0, GetText(item));
     };
 }
 

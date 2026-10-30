@@ -29,26 +29,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
     private bool _isError;
 
     // Search filters for Grids
-    private string _tenantSearchText = string.Empty;
     private string _userSearchText = string.Empty;
-
-    private IQueryable<TenantEntity> FilteredTenants
-    {
-        get
-        {
-            var query = _tenants.AsQueryable();
-            if (!string.IsNullOrWhiteSpace(_tenantSearchText))
-            {
-                var term = _tenantSearchText.Trim();
-                query = query.Where(t =>
-                    t.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    t.Slug.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    t.InternalEmailDomains.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    t.ExternalEmailDomains.Contains(term, StringComparison.OrdinalIgnoreCase));
-            }
-            return query;
-        }
-    }
 
     private IQueryable<UserEntity> FilteredTenantUsers
     {
@@ -80,8 +61,10 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
     private string _newAdminFullName = string.Empty;
     private string _newAdminEmail = string.Empty;
 
-    // Edit tenant modal state
-    private TenantEntity? _editingTenant;
+    // Edit / View tenant modal state
+    private CskDialog? _tenantDetailsDialog;
+    private TenantEntity? _selectedTenantModal;
+    private bool _isModalEditMode;
     private DateTime? _editStartDate;
     private DateTime? _editEndDate;
 
@@ -124,8 +107,20 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         _isLoading = true;
         try
         {
-            var result = await TenantService.GetAllTenantsAsync();
-            _tenants = result.ToList();
+            if (IsRootAdmin)
+            {
+                var result = await TenantService.GetAllTenantsAsync();
+                _tenants = result.ToList();
+            }
+            else if (TenantContext.HasActiveTenant && !string.IsNullOrWhiteSpace(TenantContext.TenantSlug))
+            {
+                var activeTenant = await TenantService.GetTenantByIdentifierAsync(TenantContext.TenantSlug);
+                _tenants = activeTenant != null ? [activeTenant] : [];
+            }
+            else
+            {
+                _tenants = [];
+            }
         }
         finally
         {
@@ -359,25 +354,39 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         }
     }
 
-    private void StartEdit(TenantEntity tenant)
+    private async Task OpenTenantModalAsync(TenantEntity tenant, bool isEdit)
     {
-        if (!IsRootAdmin) return;
+        if (isEdit && !IsRootAdmin && !_canEditTenants) return;
 
-        _editingTenant = tenant;
+        _selectedTenantModal = tenant;
+        _isModalEditMode = isEdit;
         _editStartDate = tenant.StartDate;
         _editEndDate = tenant.EndDate;
-        UnsavedChanges.RegisterChange("Settings > Tenants", $"Editing contract dates for '{tenant.Name}'");
+        if (isEdit)
+        {
+            UnsavedChanges.RegisterChange("Settings > Tenants", $"Editing contract dates for '{tenant.Name}'");
+        }
+
+        if (_tenantDetailsDialog is not null)
+        {
+            await _tenantDetailsDialog.ShowAsync();
+        }
     }
 
-    private void CancelEditDates()
+    private async Task CloseTenantModalAsync()
     {
-        _editingTenant = null;
+        if (_tenantDetailsDialog is not null)
+        {
+            await _tenantDetailsDialog.HideAsync();
+        }
+        _selectedTenantModal = null;
+        _isModalEditMode = false;
         UnsavedChanges.ClearChange("Settings > Tenants");
     }
 
     private async Task SaveDatesAsync()
     {
-        if (!IsRootAdmin || _editingTenant is null) return;
+        if ((!IsRootAdmin && !_canEditTenants) || _selectedTenantModal is null) return;
 
         if (!_editStartDate.HasValue || !_editEndDate.HasValue)
         {
@@ -393,15 +402,14 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
             return;
         }
 
-        var result = await TenantService.UpdateTenantDatesAsync(_editingTenant.Id, _editStartDate.Value, _editEndDate.Value);
+        var result = await TenantService.UpdateTenantDatesAsync(_selectedTenantModal.Id, _editStartDate.Value, _editEndDate.Value);
         if (result.Succeeded)
         {
-            _editingTenant.StartDate = _editStartDate.Value;
-            _editingTenant.EndDate = _editEndDate.Value;
-            _statusMessage = $"Contract dates updated successfully for '{_editingTenant.Name}'.";
+            _selectedTenantModal.StartDate = _editStartDate.Value;
+            _selectedTenantModal.EndDate = _editEndDate.Value;
+            _statusMessage = $"Contract dates updated successfully for '{_selectedTenantModal.Name}'.";
             _isError = false;
-            _editingTenant = null;
-            UnsavedChanges.ClearChange("Settings > Tenants");
+            await CloseTenantModalAsync();
         }
         else
         {
@@ -413,7 +421,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
     // --- Tenant User Management ---
     private async Task OpenUserManagement(TenantEntity tenant)
     {
-        if (!IsRootAdmin) return;
+        if (!IsRootAdmin && !_canEditTenants) return;
 
         _managingUsersTenant = tenant;
         _showAddUserForm = false;
@@ -535,7 +543,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
 
     private async Task CreateTenantUserAsync()
     {
-        if (!IsRootAdmin || _managingUsersTenant is null || !IsUserFormValid) return;
+        if ((!IsRootAdmin && !_canEditTenants) || _managingUsersTenant is null || !IsUserFormValid) return;
 
         var result = await TenantService.AddTenantUserAsync(
             _managingUsersTenant.Slug,

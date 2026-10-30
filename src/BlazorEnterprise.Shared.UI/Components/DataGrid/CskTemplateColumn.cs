@@ -13,7 +13,13 @@ public class CskTemplateColumn<TGridItem> : CskColumnBase<TGridItem>
     [Parameter]
     public RenderFragment<TGridItem>? ChildContent { get; set; }
 
+    /// <summary>Text used by the grid's built-in search. Without it this column is not searched.</summary>
+    [Parameter]
+    public Func<TGridItem, string?>? SearchBy { get; set; }
+
     public override GridSort<TGridItem>? SortDefinition => SortBy;
+
+    public override Func<TGridItem, string?>? SearchTextSelector => Searchable ? SearchBy : null;
 
     protected override void OnParametersSet()
     {

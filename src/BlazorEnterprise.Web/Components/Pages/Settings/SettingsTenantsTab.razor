@@ -13,7 +13,7 @@
             <CskLabel Typo="Typography.H3">Tenant Directory</CskLabel>
             <CskLabel Typo="Typography.Body">Manage tenant contracts, email domains, and user directories.</CskLabel>
         </div>
-        @if (IsRootAdmin || _canEditTenants)
+        @if (IsRootAdmin)
         {
             <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@StartAddTenant">
                 Add Tenant
@@ -167,26 +167,84 @@
             </CskCard>
         }
 
-        @* Edit Dates Modal (Slug, Name, and Domains are strictly locked) *@
-        @if (_editingTenant is not null)
-        {
-            <CskCard Class="mb-4 card-accent-border">
-                <CskLabel Typo="Typography.H5" Class="mb-3">Edit Contract Dates for @_editingTenant.Name (@_editingTenant.Slug)</CskLabel>
-                <div class="font-size-sm text-hint mb-3">
-                    Slug (<code>@_editingTenant.Slug</code>), Internal Domains (<code>@_editingTenant.InternalEmailDomains</code>), and External Domains (<code>@_editingTenant.ExternalEmailDomains</code>) are permanent and cannot be modified.
-                </div>
-                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
-                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16">
-                        <CskDatePicker Label="Start Date" @bind-Value="_editStartDate" Required="true" />
-                        <CskDatePicker Label="End Date" @bind-Value="_editEndDate" Required="true" />
-                    </CskStack>
-                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-2">
+        @* Separate View / Edit Tenant Details Modal Window *@
+        <CskDialog @ref="_tenantDetailsDialog" Modal="true" Class="dialog-confirm-width">
+            <CskDialogBody>
+                <TitleTemplate>
+                    @if (_selectedTenantModal is not null)
+                    {
+                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="w-full">
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                                <CskIcon Icon="@(_isModalEditMode ? CskIcons.Edit : CskIcons.Eye)" Class="csk-icon-primary csk-icon-lg" />
+                                <div>
+                                    <CskLabel Typo="Typography.H6">@(_isModalEditMode ? "Edit Tenant Contract" : "Tenant Details")</CskLabel>
+                                    <span class="text-hint font-size-sm">@_selectedTenantModal.Name (@_selectedTenantModal.Slug)</span>
+                                </div>
+                            </CskStack>
+                            <CskBadge Appearance="@(_selectedTenantModal.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                                      Color="@(_selectedTenantModal.IsActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                                @(_selectedTenantModal.IsActive ? "Active" : "Inactive")
+                            </CskBadge>
+                        </CskStack>
+                    }
+                </TitleTemplate>
+                <ChildContent>
+                    @if (_selectedTenantModal is not null)
+                    {
+                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12" Class="pt-2 pb-2">
+                            <div class="font-size-sm text-hint">
+                                Slug (<code>@_selectedTenantModal.Slug</code>), Internal Domains, and External Domains are permanent configuration parameters.
+                            </div>
+
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Wrap="true">
+                                <div><strong>Slug:</strong> <code>@_selectedTenantModal.Slug</code></div>
+                                <div><strong>Name:</strong> @_selectedTenantModal.Name</div>
+                            </CskStack>
+
+                            <div class="font-size-sm">
+                                <strong>Internal Domains:</strong>
+                                @foreach (var d in _selectedTenantModal.GetInternalDomains())
+                                {
+                                    <CskBadge Appearance="BadgeAppearance.Filled" Class="mr-1">@d</CskBadge>
+                                }
+                            </div>
+
+                            <div class="font-size-sm">
+                                <strong>External Domains:</strong>
+                                @foreach (var d in _selectedTenantModal.GetExternalDomains())
+                                {
+                                    <CskBadge Appearance="BadgeAppearance.Tint" Class="mr-1">@d</CskBadge>
+                                }
+                            </div>
+
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="mt-2">
+                                @if (_isModalEditMode)
+                                {
+                                    <CskDatePicker Label="Start Date" @bind-Value="_editStartDate" Required="true" />
+                                    <CskDatePicker Label="End Date" @bind-Value="_editEndDate" Required="true" />
+                                }
+                                else
+                                {
+                                    <div><strong>Start Date:</strong> @_selectedTenantModal.StartDate.ToString("yyyy-MM-dd")</div>
+                                    <div><strong>End Date:</strong> @(_selectedTenantModal.EndDate?.ToString("yyyy-MM-dd") ?? "None")</div>
+                                }
+                            </CskStack>
+                        </CskStack>
+                    }
+                </ChildContent>
+                <ActionTemplate>
+                    @if (_isModalEditMode)
+                    {
                         <CskButton Variant="CskButtonVariant.Filled" OnClick="@SaveDatesAsync">Save Dates</CskButton>
-                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelEditDates">Cancel</CskButton>
-                    </CskStack>
-                </CskStack>
-            </CskCard>
-        }
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseTenantModalAsync">Cancel</CskButton>
+                    }
+                    else
+                    {
+                        <CskButton Variant="CskButtonVariant.Filled" OnClick="@CloseTenantModalAsync">Close</CskButton>
+                    }
+                </ActionTemplate>
+            </CskDialogBody>
+        </CskDialog>
 
         @* Tenant User Management Panel *@
         @if (_managingUsersTenant is not null)
@@ -702,57 +760,33 @@
             </CskCard>
         }
 
-        @* Search & Filter Toolbar for Tenants *@
-        <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
-            <CskTextInput Placeholder="Filter tenants by name, code, slug, or domain..."
-                          @bind-Value="_tenantSearchText"
-                          @bind-Value:after="StateHasChanged"
-                          Class="w-360" >
-                    <StartTemplate>    
-                        <CskIcon Icon="@CskIcons.Search" />
-                    </StartTemplate>
-                </CskTextInput>
-            <span class="font-size-sm text-hint">
-                Showing @FilteredTenants.Count() of @_tenants.Count tenants
-            </span>
-        </CskStack>
-
-        @* Tenants Table *@
+        @* Tenants Table (built-in grid search) *@
         @if (_isLoading)
         {
             <CskSpinner Class="m-auto" />
         }
         else
         {
-            <CskDataGrid Items="@FilteredTenants" ResizableColumns="true" GridTemplateColumns="140px 1.5fr 150px 150px 100px 110px 110px 210px">
+            <CskDataGrid Items="@_tenants.AsQueryable()" Searchable="true" SearchPlaceholder="Filter tenants by name, code, slug, or domain..." ResizableColumns="true" GridTemplateColumns="140px 1.5fr 150px 150px 100px 110px 110px 210px">
                 <CskPropertyColumn Property="@(t => t.Slug)" Title="Slug" Sortable="true" />
                 <CskPropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true" />
-                <CskTemplateColumn Title="Internal Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.InternalEmailDomains))">
+                <CskTemplateColumn Title="Internal Domains" SearchBy="@(t => t.InternalEmailDomains)" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.InternalEmailDomains))">
                     @foreach (var d in context.GetInternalDomains())
                     {
                         <CskBadge Appearance="BadgeAppearance.Filled" Class="mr-1 font-size-xs">@d</CskBadge>
                     }
                 </CskTemplateColumn>
-                <CskTemplateColumn Title="External Domains" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.ExternalEmailDomains))">
+                <CskTemplateColumn Title="External Domains" SearchBy="@(t => t.ExternalEmailDomains)" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.ExternalEmailDomains))">
                     @foreach (var d in context.GetExternalDomains())
                     {
                         <CskBadge Appearance="BadgeAppearance.Tint" Class="mr-1 font-size-xs">@d</CskBadge>
                     }
                 </CskTemplateColumn>
                 <CskTemplateColumn Title="Status" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.IsActive))">
-                    @if (IsRootAdmin || _canEditTenants)
-                    {
-                        <CskSwitch Value="@context.IsActive"
-                                      ValueChanged="@((bool val) => ToggleStatusAsync(context, val))"
-                                      Label="@(context.IsActive ? "Active" : "Inactive")" />
-                    }
-                    else
-                    {
-                        <CskBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
-                                     Color="@(context.IsActive ? BadgeColor.Success : BadgeColor.Subtle)">
-                            @(context.IsActive ? "Active" : "Inactive")
-                        </CskBadge>
-                    }
+                    <CskBadge Appearance="@(context.IsActive ? BadgeAppearance.Filled : BadgeAppearance.Tint)"
+                              Color="@(context.IsActive ? BadgeColor.Success : BadgeColor.Subtle)">
+                        @(context.IsActive ? "Active" : "Inactive")
+                    </CskBadge>
                 </CskTemplateColumn>
                 <CskTemplateColumn Title="Start Date" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.StartDate))">
                     @context.StartDate.ToString("yyyy-MM-dd")
@@ -762,20 +796,10 @@
                 </CskTemplateColumn>
                 <CskTemplateColumn Title="Actions">
                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
-                        <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Folder" Title="Manage Programs" OnClick="@(() => OpenProgramManagement(context))">
-                            Programs
-                        </CskButton>
-                        <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.People" Title="Manage Users" OnClick="@(() => OpenUserManagement(context))">
-                            Users
-                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Eye" Title="View Tenant Details" OnClick="@(() => OpenTenantModalAsync(context, isEdit: false))" />
                         @if (IsRootAdmin || _canEditTenants)
                         {
-                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Checkmark" Title="Tenant Tasks & Risks" OnClick="@(() => OpenTenantTasksManagement(context))">
-                                Tasks & Risks
-                            </CskButton>
-                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Edit" Title="Edit Dates" OnClick="@(() => StartEdit(context))">
-                                Dates
-                            </CskButton>
+                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Edit" Title="Edit Tenant Dates" OnClick="@(() => OpenTenantModalAsync(context, isEdit: true))" />
                         }
                         <EntityHistoryButton EntityName="TenantEntity" EntityId="@context.Id.ToString()" Tooltip="View tenant change history" />
                     </CskStack>

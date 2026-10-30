@@ -143,7 +143,7 @@ public partial class SettingsProjectsTab : ComponentBase, IDisposable
             _availableTenants = TenantContext.AllowedTenants
                 .Where(t => t.IsActive && t.Slug != "default")
                 .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
+                .Select(t => new TenantFilterOption(t.Slug, t.Name))
                 .ToList();
         }
 

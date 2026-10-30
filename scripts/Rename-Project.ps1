@@ -274,6 +274,13 @@ if (Test-Path $buildProps) {
             Write-Host "  [DRY RUN] Would switch TemplateGuard to DownstreamEnforce mode." -ForegroundColor Magenta
         }
     }
+    if (-not $DryRun) {
+        $verifyProps = Get-Content $buildProps -Raw -Encoding utf8
+        if ($verifyProps -notmatch "<TemplateGuardMode[^>]*>DownstreamEnforce</TemplateGuardMode>") {
+            Write-Host "  [ERROR] TemplateGuardMode is not DownstreamEnforce in Directory.Build.props. Base-file governance (TG001-TG004, TG020, TG021) would NOT be enforced. Fix manually and re-run." -ForegroundColor Red
+            exit 1
+        }
+    }
 }
 Write-Host ""
 
@@ -399,6 +406,30 @@ if ($Mode -eq "ClientDistribution") {
 # PHASE 4.6: Purge Template Authoring Generator & Analyzer Projects (All Distributions)
 # =============================================================================
 Write-Host "=== Phase 4.6: Purging Template Authoring Generator & Analyzer Projects ===" -ForegroundColor Cyan
+
+# 0. Re-baseline TemplateGuard against the RENAMED source BEFORE the authoring projects are purged.
+#    (Otherwise the manifest/embedded manifest still hold hashes of the un-renamed template.)
+$tgToolProj     = Join-Path $RepoRoot "tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj"
+$tgAnalyzerProj = Join-Path $RepoRoot "tools\src\TemplateGuard.Analyzers\TemplateGuard.Analyzers.csproj"
+$tgOutDir       = Join-Path $RepoRoot "tools\TemplateGuard"
+if ((Test-Path $tgToolProj) -and (Test-Path $tgAnalyzerProj)) {
+    if (-not $DryRun) {
+        $manifestPath = Join-Path $tgOutDir ".basefiles.json"
+        if (Test-Path $manifestPath) { Set-ItemProperty -Path $manifestPath -Name IsReadOnly -Value $false }
+
+        Write-Host "  Regenerating base manifest from renamed source..." -ForegroundColor Cyan
+        dotnet run --project $tgToolProj -- $RepoRoot
+        if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Manifest regeneration failed." -ForegroundColor Red; exit 1 }
+
+        Write-Host "  Rebuilding TemplateGuard analyzer (embeds the new manifest)..." -ForegroundColor Cyan
+        dotnet build $tgAnalyzerProj -c Release -o $tgOutDir
+        if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Analyzer rebuild failed." -ForegroundColor Red; exit 1 }
+    } else {
+        Write-Host "  [DRY RUN] Would regenerate base manifest and rebuild TemplateGuard analyzer before purging tools/src." -ForegroundColor Magenta
+    }
+} else {
+    Write-Host "  [WARN] TemplateGuard source projects not found - cannot re-baseline. Governance baseline may be stale." -ForegroundColor Yellow
+}
 
 # 1. Clean up TemplateGuard source projects (Tool & Analyzers) so downstream only consumes the compiled DLL
 $toolsSrcDir = Join-Path $RepoRoot "tools\src"

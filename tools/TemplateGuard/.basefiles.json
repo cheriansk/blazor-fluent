@@ -13980,8 +13980,8 @@
         "CskGridItem.GetColumnClasses()": "5a043891a0c191cf353896856159c762f2b5c45c9dd9b2931559562a3cf4180e"
       }
     },
-    "Shared.UI/Components/Icon/CskIcons.cs": {
-      "RelativePath": "Shared.UI/Components/Icon/CskIcons.cs",
+    "Shared.UI/Components/Icons/CskIcons.cs": {
+      "RelativePath": "Shared.UI/Components/Icons/CskIcons.cs",
       "KnownMembers": [
         "Add",
         "CskIcons.Add",
@@ -15990,9 +15990,9 @@
         "CskWizardModal\u003CTState\u003E.RequestCloseAsync()": "a571b7bc3b99e7e552581c1c934d4fd8ae80da42cb51a653e4d25939363965bd",
         "CskWizardModal\u003CTState\u003E.ConfirmDiscardAsync()": "aee466c53241954360b0ef0a3df42efd2fde79556645b2c81b12efae11508f5c",
         "CskWizardModal\u003CTState\u003E.CloseModalAsync()": "4669d7e1cbc6b8c1c251352d44012ff6ae2e273c11d693ff6494a39ef904a878",
-        "CskWizardModal\u003CTState\u003E.GoNextAsync()": "5d29ad40e5d854f62873ccbc7e1b63aa208439b2e22c5ae9d0279b5a7ef013a1",
+        "CskWizardModal\u003CTState\u003E.GoNextAsync()": "f1b2d44577ff002807d7ea3b630ff052a3da11587eebd8f9ae887b48afa7eae2",
         "CskWizardModal\u003CTState\u003E.GoPreviousAsync()": "0ffcc87c08b7ea1ae6588ad719ac7584c6e1f58f3a604c520b45068a5de84030",
-        "CskWizardModal\u003CTState\u003E.HandleFinishAsync()": "03af5f5395afeceae610d314b4a9ee4c4ec51664246efb0728ebd438157b35e7",
+        "CskWizardModal\u003CTState\u003E.HandleFinishAsync()": "870da330bdb71b825fdaa557ba512d1f25358d6ede4d4142f2dd8a885c24bdad",
         "CskWizardModal\u003CTState\u003E.Dispose()": "e9dafc3f68a0a412e9fee5c400bad21bb28ad92970b37def2419ab82c90d1305"
       }
     },
@@ -16365,18 +16365,31 @@
         "Result.Error",
         "get_Error",
         "Result.Error.get",
+        "\u003CDiagnosticOrigin\u003Ek__BackingField",
+        "Result.DiagnosticOrigin.field",
+        "DiagnosticOrigin",
+        "Result.DiagnosticOrigin",
+        "get_DiagnosticOrigin",
+        "Result.DiagnosticOrigin.get",
+        "set_DiagnosticOrigin",
+        "Result.DiagnosticOrigin.set",
         "Success",
         "Result.Success(string?)",
         "Failure",
-        "Result.Failure(string)",
-        "Result.Failure(IEnumerable\u003Cstring\u003E)",
+        "Result.Failure(string, string, int, string)",
+        "Result.Failure(IEnumerable\u003Cstring\u003E, string, int, string)",
         "Ok",
         "Result.Ok(string?)",
         "Result.Ok\u003CT\u003E(T, string?)",
         "Fail",
-        "Result.Fail(string)",
-        "Result.Fail\u003CT\u003E(string)",
-        "Result.Fail\u003CT\u003E(IEnumerable\u003Cstring\u003E)",
+        "Result.Fail(string, string, int, string)",
+        "Result.Fail(IEnumerable\u003Cstring\u003E, string, int, string)",
+        "Result.Fail\u003CT\u003E(string, string, int, string)",
+        "Result.Fail\u003CT\u003E(IEnumerable\u003Cstring\u003E, string, int, string)",
+        "FormatOrigin",
+        "Result.FormatOrigin(string, int, string)",
+        "FormatErrorWithOrigin",
+        "Result.FormatErrorWithOrigin(string, string?)",
         ".ctor",
         "Result.Result()",
         "\u003CData\u003Ek__BackingField",
@@ -16392,28 +16405,31 @@
         "get_Value",
         "Result\u003CT\u003E.Value.get",
         "Result\u003CT\u003E.Success(T, string?)",
-        "Result\u003CT\u003E.Failure(string)",
-        "Result\u003CT\u003E.Failure(IEnumerable\u003Cstring\u003E)",
+        "Result\u003CT\u003E.Failure(string, string, int, string)",
+        "Result\u003CT\u003E.Failure(IEnumerable\u003Cstring\u003E, string, int, string)",
         "Result\u003CT\u003E.Ok(T, string?)",
-        "Result\u003CT\u003E.Fail(string)",
-        "Result\u003CT\u003E.Fail(IEnumerable\u003Cstring\u003E)",
+        "Result\u003CT\u003E.Fail(string, string, int, string)",
+        "Result\u003CT\u003E.Fail(IEnumerable\u003Cstring\u003E, string, int, string)",
         "Result\u003CT\u003E.Result()"
       ],
       "MemberSyntaxHashes": {
         "Result.Success(string?)": "0137f54b638d7009b1c41ec51343518e89d3232f430fff8a672873eb6e51d291",
-        "Result.Failure(string)": "69cc7e4ea3c5cb332f44c9ed60e897ed14975471a1c54a4f89786803e19b2966",
-        "Result.Failure(IEnumerable\u003Cstring\u003E)": "770a1b2c01e6b6cb70e66a5ba3fde2487389da9a82165e9a95081614fc967f7b",
+        "Result.Failure(string, string, int, string)": "72c0e49d1f1b8d449c97940b02db4c4c76c370bcfab99f2e50a11f637d41ff5f",
+        "Result.Failure(IEnumerable\u003Cstring\u003E, string, int, string)": "ef0f474d2cff0f2b9080e42aeeeb2f76ca5d2a6dfa899ff0317f9d49e16c9acd",
         "Result.Ok(string?)": "08f0c3fbabde50f06a3e34ef861b8c38d27b73ff42cae86e85449d0de7da3f97",
         "Result.Ok\u003CT\u003E(T, string?)": "d37de220e8ac94889498962a54d54f708b668d533c4706a0bce95aa3363efe08",
-        "Result.Fail(string)": "2c019f602cd6faf0a470cba76995c5c5318d5c472a4cb2944e10561e27604951",
-        "Result.Fail\u003CT\u003E(string)": "9eac343a573d397f03258267601face4c218a6745f562fa9457423e33fe3c6e9",
-        "Result.Fail\u003CT\u003E(IEnumerable\u003Cstring\u003E)": "92435537cea03971bed876982a013c4aa19ed1349b3e84ff47f43a3ba309c41d",
+        "Result.Fail(string, string, int, string)": "c415e4ff922376615cde8a9edc61e2e298bb1ec0112455e899370267e806a849",
+        "Result.Fail(IEnumerable\u003Cstring\u003E, string, int, string)": "8fb3a8102d9523bb13f419e39a2d2239941a1c4486c6e50a6d04fc79cc11788a",
+        "Result.Fail\u003CT\u003E(string, string, int, string)": "0baab7257fcc56b87c75d7a2e73f1b06b12a4b3097f0e450e9b1d646bce06b52",
+        "Result.Fail\u003CT\u003E(IEnumerable\u003Cstring\u003E, string, int, string)": "2c88fc531d88bdefb7d5c7803e948988bf1d2441b07a59890d39c217dea1ffc3",
+        "Result.FormatOrigin(string, int, string)": "910629f72e2ef314b57e846f93d9e1a049e5e5c197aef3b44d53680042fa92fb",
+        "Result.FormatErrorWithOrigin(string, string?)": "bb51d7a6ba728db7b1bbddb533f274b3ff05044d9b71a8f64b9dbb73a337345f",
         "Result\u003CT\u003E.Success(T, string?)": "8c02cee53741d407c2dea99acb7830c1dc2ca7b9b0320088ff998cf29c741d42",
-        "Result\u003CT\u003E.Failure(string)": "81d4fad87ae0c8effe14a27708e59a051aa8d0eb84017d66296a1ef6ddd53557",
-        "Result\u003CT\u003E.Failure(IEnumerable\u003Cstring\u003E)": "59bf40eee3d540136fdd830a0ceeaaa6ec4022d372725c073815cb1621c74954",
+        "Result\u003CT\u003E.Failure(string, string, int, string)": "762863dada7ca091dd2464a85d35c9d47f81feea5d269a0c8b5a0d2d26461f58",
+        "Result\u003CT\u003E.Failure(IEnumerable\u003Cstring\u003E, string, int, string)": "b4aec8a598f7bace9ad60bf2b47d21b597d3ad94fa0c6b40bd4f59d3ebe3938c",
         "Result\u003CT\u003E.Ok(T, string?)": "126819bb221ded2fb6a9b32ddd7d1d90d082b1aba31d56a532f3e4d722d57824",
-        "Result\u003CT\u003E.Fail(string)": "610e99ac69ff37d468c43330269f073ff7ff39d672076d6f7ac5554b38fb487e",
-        "Result\u003CT\u003E.Fail(IEnumerable\u003Cstring\u003E)": "5e109172f3050b8dccc7121a1e9b212ca8253bcffde1a11be08a0743cb006df4"
+        "Result\u003CT\u003E.Fail(string, string, int, string)": "2a65b68026329d2424a51f788ed13a25d0296d2045d308795c570d324a1bc17b",
+        "Result\u003CT\u003E.Fail(IEnumerable\u003Cstring\u003E, string, int, string)": "a0e94c66cdc4d0c4f01a4c43c4b32521b50c635af1a5d25467b1087c41b7fecd"
       }
     },
     "Shared/Contracts/Common/DataFetchReqDto.cs": {
@@ -25363,8 +25379,8 @@
         "$Markup": "f058395deffe7de5a2d24e270229b5f2030c73158a11878076f8100bc7d41ded"
       }
     },
-    "Shared.UI/Components/Icon/CskIcon.razor": {
-      "RelativePath": "Shared.UI/Components/Icon/CskIcon.razor",
+    "Shared.UI/Components/Icons/CskIcon.razor": {
+      "RelativePath": "Shared.UI/Components/Icons/CskIcon.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Markup": "10d8e6476c3fe2478fb80b390acc1e52e26c480d001236291ecf8ea36fb814fe"
