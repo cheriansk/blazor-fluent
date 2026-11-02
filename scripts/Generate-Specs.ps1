@@ -405,7 +405,7 @@ function Get-RazorLayoutSummaryAndTree {
         param([int]$StartIdx)
         $acc = $RazorLines[$StartIdx].Trim()
         $endIdx = $StartIdx
-        while ($acc -notmatch '>' -and ($endIdx + 1) -lt $RazorLines.Count -and ($endIdx - $StartIdx) -lt 12) {
+        while (($acc -replace '=>', '') -notmatch '>' -and ($endIdx + 1) -lt $RazorLines.Count -and ($endIdx - $StartIdx) -lt 15) {
             $endIdx++
             $acc += " " + $RazorLines[$endIdx].Trim()
         }
@@ -453,6 +453,7 @@ function Get-RazorLayoutSummaryAndTree {
         $grids = [System.Collections.Generic.List[string]]::new()
         $tabs = [System.Collections.Generic.List[string]]::new()
         $gates = [System.Collections.Generic.List[string]]::new()
+        $components = [System.Collections.Generic.List[string]]::new()
 
         $humanFields = [System.Collections.Generic.List[string]]::new()
         $humanButtons = [System.Collections.Generic.List[string]]::new()
@@ -474,7 +475,7 @@ function Get-RazorLayoutSummaryAndTree {
                 $tabs.Add("``Tab[$tId] @L${lNum}``")
             }
 
-            if ($line -match '<(?<itag>CskTextInput|CskDatePicker|CskSwitch|CskTextArea|DataListSelect|CskSelect|InputText)\b') {
+            if ($line -match '<(?<itag>CskTextInput|CskDatePicker|CskSwitch|CskTextArea|DataListSelect|CskSelect|InputText|CskRadioGroup|CskCheckbox|CskSlider|CskSearchBox)\b') {
                 $iTag = $Matches['itag']
                 $blk = Get-FullTagBlock -StartIdx $idx
                 $bText = $blk.Text
@@ -532,16 +533,34 @@ function Get-RazorLayoutSummaryAndTree {
                 $cols = [System.Collections.Generic.List[string]]::new()
                 for ($gi = $idx + 1; $gi -lt [Math]::Min($idx + 80, $RazorLines.Count); $gi++) {
                     if ($RazorLines[$gi] -match '</CskDataGrid>') { break }
-                    if ($RazorLines[$gi] -match 'Title="(?<ctitle>[^"]+)"') {
+                    if ($RazorLines[$gi] -match '<(?:Csk)?(?:Property|Template)Column\b' -and $RazorLines[$gi] -match '\bTitle="(?<ctitle>[^"]+)"') {
                         $cols.Add($Matches['ctitle'])
                     }
                 }
                 $grids.Add("``CskDataGrid(Items=$gItems, Cols=[$($cols -join ', ')])@L${lNum}``")
                 $humanGrids.Add("Table ($($cols -join ', '))")
             }
+
+            if ($line -cmatch '^\s*<(?<ns>(?:[A-Za-z0-9_]+\.)*)(?<ctag>[A-Z][A-Za-z0-9_]*)\b') {
+                $cTag = $Matches['ctag']
+                if ($cTag -notmatch '^(Csk(Button|TextInput|DatePicker|Switch|TextArea|Select|Radio|RadioGroup|Link|Card|Stack|Label|Icon|Badge|Spinner|Tabs|Tab|MessageBar|DataGrid|PropertyColumn|TemplateColumn)|Fluent(DesignTheme|Icon|Button|Input|TextField|Card|Stack|Label|Badge|Spinner)|DataListSelect|InputText|AuthorizeView|Authorized|NotAuthorized|CascadingValue|DynamicComponent|ChildContent|TitleTemplate|ActionTemplate|StartTemplate|EndTemplate|EmptyContent|Steps|Content|HeaderTemplate|FooterTemplate)$') {
+                    $cBlk = Get-FullTagBlock -StartIdx $idx
+                    $cText = $cBlk.Text
+                    $cBinds = [System.Collections.Generic.List[string]]::new()
+                    foreach ($bm in [regex]::Matches($cText, '(?<k>[A-Za-z0-9_]+)="@(?<v>[^"]+)"')) {
+                        $k = $bm.Groups['k'].Value
+                        $v = $bm.Groups['v'].Value.Trim()
+                        if ($k -match '^IsOpenChanged$|^Class$|^Style$') { continue }
+                        if ($v -match '=>\s*(?<fn>[A-Za-z0-9_]+)\s*\(') { $v = $Matches['fn'] }
+                        $cBinds.Add("${k}=$v")
+                    }
+                    $cParamStr = if ($cBinds.Count -gt 0) { "($($cBinds -join ', '))" } else { "" }
+                    $components.Add("``${cTag}${cParamStr}@L${lNum}``")
+                }
+            }
         }
 
-        if ($inputs.Count -eq 0 -and $buttons.Count -eq 0 -and $grids.Count -eq 0 -and $gates.Count -eq 0 -and $tabs.Count -eq 0) {
+        if ($inputs.Count -eq 0 -and $buttons.Count -eq 0 -and $grids.Count -eq 0 -and $gates.Count -eq 0 -and $tabs.Count -eq 0 -and $components.Count -eq 0) {
             continue
         }
 
@@ -550,6 +569,7 @@ function Get-RazorLayoutSummaryAndTree {
         if ($humanFields.Count -gt 0) { $hParts.Add("Fields: $($humanFields -join ', ')") }
         if ($humanButtons.Count -gt 0) { $hParts.Add("Buttons: $($humanButtons -join ', ')") }
         if ($humanGrids.Count -gt 0) { $hParts.Add("$($humanGrids -join '; ')") }
+        if ($components.Count -gt 0) { $hParts.Add("Components: $($components -join ', ')") }
         if ($hParts.Count -gt 0) {
             $humanLines.Add("- **$($sec.Title)**: $($hParts -join ' | ')")
         }
@@ -561,6 +581,7 @@ function Get-RazorLayoutSummaryAndTree {
         if ($inputs.Count -gt 0) { $ctrlParts.Add("Inputs: $($inputs -join ', ')") }
         if ($buttons.Count -gt 0) { $ctrlParts.Add("Buttons: $($buttons -join ', ')") }
         if ($grids.Count -gt 0) { $ctrlParts.Add("Grids: $($grids -join ', ')") }
+        if ($components.Count -gt 0) { $ctrlParts.Add("Components: $($components -join ', ')") }
         $ctrlCell = if ($ctrlParts.Count -gt 0) { ($ctrlParts -join " <br> ") } else { "-" }
         $uiMapRows.Add("| **$($sec.Title)** | ``L$($sec.StartLine)-L$($sec.EndLine)`` | $gateCell | $ctrlCell |")
     }
@@ -734,6 +755,30 @@ foreach ($targetEntry in $targetEntries) {
 
         # If -ArchiveCompleted is passed, move active Pending Changes into docs/specs/history/<BaseName>.history.md with today's date/time stamp
         if ($ArchiveCompleted) {
+            # GUARD: Verify that the target source files have actual uncommitted or staged changes in git
+            # This prevents premature archiving when files were accidentally reverted or forgotten.
+            $relSourcePath = $fullSourcePath.Replace((Get-Location).Path, "").TrimStart("\/")
+            $gitStatus = git status --porcelain $fullSourcePath 2>$null
+            $codeBehindPath = [System.IO.Path]::ChangeExtension($fullSourcePath, ".razor.cs")
+            if (Test-Path $codeBehindPath) {
+                $codeBehindGitStatus = git status --porcelain $codeBehindPath 2>$null
+                if (-not [string]::IsNullOrWhiteSpace($codeBehindGitStatus)) {
+                    $gitStatus += "`n" + $codeBehindGitStatus
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($gitStatus)) {
+                # Check if the file is tracked and has commits; if it is completely clean relative to HEAD, block archive
+                $hasWorkingDiff = git diff HEAD --name-only -- $fullSourcePath 2>$null
+                if (-not $hasWorkingDiff -and (Test-Path $codeBehindPath)) {
+                    $hasWorkingDiff = git diff HEAD --name-only -- $codeBehindPath 2>$null
+                }
+                if (-not $hasWorkingDiff) {
+                    Write-Host "    [!] GUARD WARNING: Cannot archive requirements for '$baseName': No active code changes detected in git for '$relSourcePath'!" -ForegroundColor Red
+                    Write-Host "        Ensure your code edits are present in the working tree before archiving." -ForegroundColor Yellow
+                }
+            }
+
             $activeLines = [System.Collections.Generic.List[string]]::new()
             foreach ($pLine in ($preservedPendingChanges -split "`r?`n")) {
                 $trimmedLine = $pLine.Trim()
@@ -812,8 +857,8 @@ foreach ($targetEntry in $targetEntries) {
                 }
             }
 
-            # Detect PascalCase Child Razor Components
-            foreach ($tagMatch in [regex]::Matches($rLine, '<(?<tag>[A-Z][A-Za-z0-9_]*)\b(?<attrs>[^>]*?)(?:/>|>)')) {
+            # Detect PascalCase Child Razor Components (supports namespace-qualified & multi-line tags)
+            foreach ($tagMatch in [regex]::Matches($rLine, '<(?:[A-Za-z0-9_]+\.)*(?<tag>[A-Z][A-Za-z0-9_]*)\b')) {
                 $tagName = $tagMatch.Groups['tag'].Value
                 if ($tagName -eq $baseName) { continue }
 
@@ -831,7 +876,16 @@ foreach ($targetEntry in $targetEntries) {
 
                 if ($razorComponentIndex.ContainsKey($tagName)) {
                     $childCleanPath = $razorComponentIndex[$tagName]
-                    $rawAttrs = $tagMatch.Groups['attrs'].Value.Trim()
+                    $fullTagAcc = $rLine.Trim()
+                    $scanIdx = $li
+                    while (($fullTagAcc -replace '=>', '') -notmatch '>' -and ($scanIdx + 1) -lt $razorLines.Count -and ($scanIdx - $li) -lt 15) {
+                        $scanIdx++
+                        $fullTagAcc += " " + $razorLines[$scanIdx].Trim()
+                    }
+                    $rawAttrs = ""
+                    if ($fullTagAcc -match '<(?:[A-Za-z0-9_]+\.)*[A-Z][A-Za-z0-9_]*\b(?<attrs>[^>]*?)(?:/>|>)') {
+                        $rawAttrs = $Matches['attrs'].Trim()
+                    }
                     $alreadyCaptured = $discoveredChildUsages | Where-Object { $_.ComponentName -eq $tagName }
                     if (-not $alreadyCaptured) {
                         $discoveredChildUsages.Add([PSCustomObject]@{
@@ -851,7 +905,7 @@ foreach ($targetEntry in $targetEntries) {
                 $cols = [System.Collections.Generic.List[string]]::new()
                 for ($gi = $li + 1; $gi -lt [Math]::Min($li + 80, $razorLines.Count); $gi++) {
                     if ($razorLines[$gi] -match '</CskDataGrid>') { break }
-                    if ($razorLines[$gi] -match 'Title="(?<title>[^"]+)"') {
+                    if ($razorLines[$gi] -match '<(?:Csk)?(?:Property|Template)Column\b' -and $razorLines[$gi] -match '\bTitle="(?<title>[^"]+)"') {
                         $cols.Add($Matches['title'])
                     }
                 }
@@ -862,8 +916,8 @@ foreach ($targetEntry in $targetEntries) {
                 })
             }
 
-            # UI Event Bindings
-            foreach ($evMatch in [regex]::Matches($rLine, '(?<ev>OnClick|ValueChanged|OnValidSubmit|OnDismiss)="@(?<handler>[^"]+)"')) {
+            # UI Event Bindings (supports all On* EventCallbacks and *Changed bindings)
+            foreach ($evMatch in [regex]::Matches($rLine, '(?<ev>On[A-Z][A-Za-z0-9_]*|ValueChanged|[A-Za-z0-9_]+Changed)="@(?<handler>[^"]+)"')) {
                 $evType = $evMatch.Groups['ev'].Value
                 $rawHandler = $evMatch.Groups['handler'].Value.Trim()
                 $cleanHandler = $rawHandler

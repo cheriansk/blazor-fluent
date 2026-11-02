@@ -1,9 +1,10 @@
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Domain.Notifications;
 using BlazorEnterprise.Infrastructure.Notifications;
 using BlazorEnterprise.Shared.DataListTypes;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -17,14 +18,16 @@ public class EmailNotificationSenderTests
     public async Task SendEmailNotificationAsync_WhenRecipientIsEmpty_ReturnsFalse()
     {
         // Arrange
-        var inMemorySettings = new Dictionary<string, string?>
+        var options = Options.Create(new NotificationOptions
         {
-            ["Notifications:Email:Enabled"] = "true",
-            ["Notifications:Email:SmtpHost"] = "smtp.example.com",
-            ["Notifications:Email:SenderEmail"] = "noreply@example.com"
-        };
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-        var sender = new EmailNotificationSender(configuration, _loggerMock.Object);
+            Email = new EmailNotificationOptions
+            {
+                Enabled = true,
+                SmtpHost = "smtp.example.com",
+                SenderEmail = "noreply@example.com"
+            }
+        });
+        var sender = new EmailNotificationSender(options, _loggerMock.Object);
         var notification = new NotificationEntity
         {
             Id = Guid.NewGuid(),
@@ -45,13 +48,15 @@ public class EmailNotificationSenderTests
     public async Task SendEmailNotificationAsync_WhenDisabledInConfiguration_ReturnsFalse()
     {
         // Arrange
-        var inMemorySettings = new Dictionary<string, string?>
+        var options = Options.Create(new NotificationOptions
         {
-            ["Notifications:Email:Enabled"] = "false",
-            ["Notifications:Email:SmtpHost"] = "smtp.example.com"
-        };
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-        var sender = new EmailNotificationSender(configuration, _loggerMock.Object);
+            Email = new EmailNotificationOptions
+            {
+                Enabled = false,
+                SmtpHost = "smtp.example.com"
+            }
+        });
+        var sender = new EmailNotificationSender(options, _loggerMock.Object);
         var notification = new NotificationEntity
         {
             Id = Guid.NewGuid(),
@@ -72,13 +77,15 @@ public class EmailNotificationSenderTests
     public async Task SendEmailNotificationAsync_WhenSmtpHostMissing_ReturnsFalse()
     {
         // Arrange
-        var inMemorySettings = new Dictionary<string, string?>
+        var options = Options.Create(new NotificationOptions
         {
-            ["Notifications:Email:Enabled"] = "true",
-            ["Notifications:Email:SmtpHost"] = ""
-        };
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-        var sender = new EmailNotificationSender(configuration, _loggerMock.Object);
+            Email = new EmailNotificationOptions
+            {
+                Enabled = true,
+                SmtpHost = ""
+            }
+        });
+        var sender = new EmailNotificationSender(options, _loggerMock.Object);
         var notification = new NotificationEntity
         {
             Id = Guid.NewGuid(),
@@ -99,14 +106,16 @@ public class EmailNotificationSenderTests
     public async Task SendEmailNotificationAsync_WhenSenderEmailMissing_ReturnsFalse()
     {
         // Arrange
-        var inMemorySettings = new Dictionary<string, string?>
+        var options = Options.Create(new NotificationOptions
         {
-            ["Notifications:Email:Enabled"] = "true",
-            ["Notifications:Email:SmtpHost"] = "smtp.example.com",
-            ["Notifications:Email:SenderEmail"] = ""
-        };
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-        var sender = new EmailNotificationSender(configuration, _loggerMock.Object);
+            Email = new EmailNotificationOptions
+            {
+                Enabled = true,
+                SmtpHost = "smtp.example.com",
+                SenderEmail = ""
+            }
+        });
+        var sender = new EmailNotificationSender(options, _loggerMock.Object);
         var notification = new NotificationEntity
         {
             Id = Guid.NewGuid(),

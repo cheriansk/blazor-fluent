@@ -24,9 +24,12 @@
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
     display: flex;
     flex-direction: column;
+    width: 80vw;
+    height: 80vh;
+    min-width: 75vw;
+    min-height: 75vh;
+    max-width: 1400px;
     max-height: 90vh;
-    max-width: 900px;
-    width: 92%;
     overflow: hidden;
 }
 
@@ -75,15 +78,26 @@
 }
 
 .csk-wizard-step-node.active .step-badge {
-    background: var(--mat-primary, #6750A4);
+    background: var(--mat-primary, #1976D2);
     color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.25);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.25);
 }
 
 .csk-wizard-step-node.completed .step-badge {
     background: var(--mat-surface, #ffffff);
     border-color: var(--mat-success, #2e7d32);
     color: var(--mat-success, #2e7d32);
+}
+
+.csk-wizard-step-node.skipped .step-badge,
+.skipped {
+    background: var(--mat-surface, #ffffff);
+    border-color: var(--mat-outline-variant, #bdbdbd);
+    color: var(--mat-on-surface-variant, #757575);
+}
+
+.csk-wizard-step-node.skipped .step-title {
+    color: var(--mat-on-surface-variant, #757575);
 }
 
 .step-label {
@@ -98,7 +112,7 @@
 }
 
 .csk-wizard-step-node.active .step-title {
-    color: var(--mat-primary, #6750A4);
+    color: var(--mat-primary, #1976D2);
 }
 
 .step-summary {
@@ -123,6 +137,7 @@
     padding: 24px;
     overflow-y: auto;
     flex: 1 1 auto;
+    min-height: 0;
 }
 
 .csk-wizard-footer {
@@ -143,3 +158,18 @@
 
 .csk-wizard-step-node.pending { opacity: 0.75; }
 .font-weight-600 { font-weight: 600; }
+
+
+.step-optional-badge {
+    font-size: 10px;
+    font-weight: 500;
+    margin-left: 6px;
+    color: var(--mat-on-surface-variant, #777777);
+    background: var(--mat-surface-variant, #e8e8e8);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.csk-wizard-step-node.completed .step-badge .csk-icon-subtle {
+    color: var(--mat-on-surface-variant, #888888);
+}

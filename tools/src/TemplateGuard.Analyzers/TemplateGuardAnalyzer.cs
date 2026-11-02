@@ -208,7 +208,7 @@ namespace TemplateGuard.Analyzers
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
                 RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
                 RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018, RuleTg019,
-                RuleTg020, RuleTg021);
+                RuleTg020, RuleTg021, RuleTg022, RuleTg023, RuleTg024);
 
         public static readonly DiagnosticDescriptor RuleTg020 = new(
             id: "TG020",
@@ -219,6 +219,36 @@ namespace TemplateGuard.Analyzers
             isEnabledByDefault: true,
             description: "In DownstreamEnforce mode a missing or corrupt manifest must fail the build instead of silently disabling governance.",
             helpLinkUri: HelpBaseUrl + "#tg020");
+
+        public static readonly DiagnosticDescriptor RuleTg022 = new(
+            id: "TG022",
+            title: "Prohibit direct IConfiguration injection in business services (Options Pattern)",
+            messageFormat: "Class '{0}' directly injects 'IConfiguration'. Direct injection of IConfiguration violates the Options Pattern. ALLOWED APPROACH: Define a strongly-typed options class and inject IOptions<TOptions>, IOptionsSnapshot<TOptions>, or IOptionsMonitor<TOptions>.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Business services must inject strongly-typed IOptions<T> instead of raw IConfiguration for fail-fast validation and clear configuration schemas.",
+            helpLinkUri: HelpBaseUrl + "#tg022");
+
+        public static readonly DiagnosticDescriptor RuleTg023 = new(
+            id: "TG023",
+            title: "Direct queue dispatch prohibited without Outbox tracking (Outbox Pattern)",
+            messageFormat: "Type '{0}' references queue method or type '{1}'. Direct dispatch violates the Outbox Pattern. ALLOWED APPROACH: Record events to EventPublishTrackerEntity within the database transaction, allowing OutboxMessageDispatcher to reliably deliver them.",
+            category: "Reliability",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Direct dispatch to message queues or channels without Outbox tracking risks message loss on failure. Use the transactional Outbox pattern.",
+            helpLinkUri: HelpBaseUrl + "#tg023");
+
+        public static readonly DiagnosticDescriptor RuleTg024 = new(
+            id: "TG024",
+            title: "Business service mutation methods must return Result or Result<T> (Result Pattern)",
+            messageFormat: "Business service method '{0}.{1}' returns '{2}' instead of Result or Result<T>. ALLOWED APPROACH: Return Result or Result<T> to enforce explicit caller handling and avoid unhandled business exceptions.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: "Public mutation methods on business services should return Result or Result<T> instead of throwing domain exceptions.",
+            helpLinkUri: HelpBaseUrl + "#tg024");
 
         public static readonly DiagnosticDescriptor RuleTg021 = new(
             id: "TG021",
@@ -247,6 +277,8 @@ namespace TemplateGuard.Analyzers
 
             context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
             context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+            context.RegisterSyntaxNodeAction(AnalyzeConstructorDeclaration, SyntaxKind.ConstructorDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
             context.RegisterAdditionalFileAction(AnalyzeRazorCsp);
 
             context.RegisterCompilationStartAction(compilationContext =>
@@ -905,6 +937,149 @@ namespace TemplateGuard.Analyzers
                 {
                     var targetEnumName = methodSymbol.TypeArguments.FirstOrDefault()?.Name ?? "Enum";
                     context.ReportDiagnostic(Diagnostic.Create(RuleTg013, invocation.GetLocation(), methodSymbol.Name, targetEnumName));
+                }
+            }
+        }
+
+        private void AnalyzeConstructorDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            if (context.Node is not ConstructorDeclarationSyntax constructor) return;
+
+            var filePath = constructor.SyntaxTree.FilePath?.Replace('\\', '/');
+            if (filePath != null)
+            {
+                if (filePath.Contains("/Migrations/") ||
+                    filePath.Contains("/tests/") ||
+                    filePath.Contains(".Tests/") ||
+                    filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            var assemblyName = context.Compilation.AssemblyName ?? string.Empty;
+            if (assemblyName.IndexOf("Test", StringComparison.OrdinalIgnoreCase) >= 0) return;
+
+            var classDecl = constructor.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            if (classDecl == null) return;
+
+            var className = classDecl.Identifier.Text;
+            if (className.Equals("Program", StringComparison.OrdinalIgnoreCase) ||
+                className.Equals("Startup", StringComparison.OrdinalIgnoreCase) ||
+                className.IndexOf("Extension", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                className.IndexOf("Builder", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                className.IndexOf("Option", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                className.IndexOf("Migration", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return;
+            }
+
+            if (constructor.AttributeLists.SelectMany(a => a.Attributes)
+                .Any(attr => attr.Name.ToString().Contains("Obsolete") || attr.Name.ToString().Contains("Deprecated")))
+            {
+                return;
+            }
+
+            foreach (var parameter in constructor.ParameterList.Parameters)
+            {
+                if (parameter.Type == null) continue;
+                var paramTypeSymbol = context.SemanticModel.GetTypeInfo(parameter.Type, context.CancellationToken).Type;
+                if (paramTypeSymbol == null) continue;
+
+                var typeName = paramTypeSymbol.Name;
+                var fullTypeName = paramTypeSymbol.ToDisplayString();
+
+                if (typeName == "IConfiguration" || typeName == "IConfigurationRoot" ||
+                    fullTypeName == "Microsoft.Extensions.Configuration.IConfiguration" ||
+                    fullTypeName == "Microsoft.Extensions.Configuration.IConfigurationRoot")
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg022, parameter.GetLocation(), className));
+                }
+
+                if (typeName is "IJobEventQueue" or "IJobEventPublisher" or "ChannelJobEventQueue")
+                {
+                    bool isAllowedDispatcher = className.Contains("Outbox") ||
+                                               className.Contains("Job") ||
+                                               className.Contains("Queue") ||
+                                               className.Contains("Worker") ||
+                                               className.Contains("Listener") ||
+                                               assemblyName.EndsWith(".Jobs", StringComparison.OrdinalIgnoreCase) ||
+                                               assemblyName.EndsWith(".Worker", StringComparison.OrdinalIgnoreCase);
+
+                    if (!isAllowedDispatcher)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(RuleTg023, parameter.GetLocation(), className, typeName));
+                    }
+                }
+            }
+        }
+
+        private void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            if (context.Node is not MethodDeclarationSyntax methodDecl) return;
+
+            var filePath = methodDecl.SyntaxTree.FilePath?.Replace('\\', '/');
+            if (filePath != null)
+            {
+                if (filePath.Contains("/Migrations/") ||
+                    filePath.Contains("/tests/") ||
+                    filePath.Contains(".Tests/") ||
+                    filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            var assemblyName = context.Compilation.AssemblyName ?? string.Empty;
+            if (assemblyName.IndexOf("Test", StringComparison.OrdinalIgnoreCase) >= 0) return;
+
+            var classDecl = methodDecl.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            if (classDecl == null) return;
+
+            var className = classDecl.Identifier.Text;
+            if (!className.EndsWith("Service", StringComparison.Ordinal) &&
+                !className.EndsWith("Repository", StringComparison.Ordinal) &&
+                !className.EndsWith("Manager", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (className.Contains("Extension") || className.Contains("Listener") || className.Contains("Dispatcher") || className.Contains("Scheduler") || className.Contains("Migration"))
+            {
+                return;
+            }
+
+            if (!methodDecl.Modifiers.Any(SyntaxKind.PublicKeyword)) return;
+
+            var methodName = methodDecl.Identifier.Text;
+            bool isMutation = methodName.StartsWith("Create", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Update", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Delete", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Complete", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Cancel", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Toggle", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Reassign", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Resume", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Pause", StringComparison.Ordinal) ||
+                              methodName.StartsWith("Archive", StringComparison.Ordinal);
+
+            if (!isMutation) return;
+
+            var returnTypeSyntax = methodDecl.ReturnType;
+            if (returnTypeSyntax == null) return;
+
+            var returnTypeText = returnTypeSyntax.ToString();
+            bool returnsResult = returnTypeText.StartsWith("Result") ||
+                                 returnTypeText.StartsWith("Task<Result") ||
+                                 returnTypeText.StartsWith("ValueTask<Result") ||
+                                 returnTypeText.Contains("<Result") ||
+                                 returnTypeText.Contains("<Result<");
+
+            if (!returnsResult)
+            {
+                if (filePath != null && (filePath.Contains("/Persistence/") || filePath.Contains("/Core/")))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(RuleTg024, methodDecl.ReturnType.GetLocation(), className, methodName, returnTypeText));
                 }
             }
         }

@@ -1,0 +1,42 @@
+.csk-wizard-step-container {
+    width: 100%;
+}
+
+.csk-entry-form-card {
+    padding: 1rem;
+    background-color: var(--csk-color-surface-container, #f8f9fa);
+    border-radius: 8px;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+}
+
+.csk-table-container {
+    background-color: var(--csk-color-surface, #ffffff);
+    border-radius: 6px;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+}
+
+.csk-empty-table-state {
+    color: var(--csk-color-text-hint, #6c757d);
+    font-size: 0.875rem;
+    padding: 1.5rem;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 6px;
+    background-color: var(--csk-color-surface, #ffffff);
+    text-align: center;
+}
+
+.csk-col-date {
+    width: 150px;
+}
+
+.csk-col-status {
+    width: 120px;
+}
+
+.csk-col-actions {
+    width: 150px;
+}
+
+.csk-font-medium {
+    font-weight: 500;
+}

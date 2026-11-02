@@ -50,6 +50,32 @@ try
             "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be explicitly configured when 'Jobs:EnableScheduler' is enabled.")
         .ValidateOnStart();
 
+    builder.Services.AddOptions<AuditOptions>()
+        .BindConfiguration(AuditOptions.SectionName);
+    builder.Services.AddOptions<SecurityOptions>()
+        .BindConfiguration(SecurityOptions.SectionName);
+    builder.Services.AddOptions<NotificationOptions>()
+        .BindConfiguration(NotificationOptions.SectionName);
+    builder.Services.AddOptions<EngineOptions>()
+        .BindConfiguration(EngineOptions.SectionName)
+        .PostConfigure<IConfiguration>((options, configuration) =>
+        {
+            if (string.IsNullOrWhiteSpace(options.LicenseKey) && !string.IsNullOrWhiteSpace(configuration["Tenant:LicenseKey"]))
+            {
+                options.LicenseKey = configuration["Tenant:LicenseKey"]!;
+            }
+            foreach (var tenant in configuration.GetSection("Tenants").GetChildren())
+            {
+                var lk = tenant["LicenseKey"];
+                if (!string.IsNullOrWhiteSpace(lk))
+                {
+                    options.TenantLicenseKeys[tenant.Key] = lk;
+                }
+            }
+        });
+    builder.Services.AddOptions<StorageOptions>()
+        .BindConfiguration(StorageOptions.SectionName);
+
     // 4. Persistence, Infrastructure, and Engine Gateway Client
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
@@ -60,7 +86,8 @@ try
     var enableScheduler = builder.Configuration.GetValue<bool>("Jobs:EnableScheduler", true);
     builder.Services.AddBackgroundJobs(enableListener: enableListener, enableScheduler: enableScheduler);
 
-    var host = builder.Build();
+    var host = builder.Build();
+
     BlazorEnterprise.Core.Utilities.SystemIdentityUtility.SetCurrent(host.Services.GetRequiredService<BlazorEnterprise.Core.Contracts.ISystemIdentity>());
 
     Log.Information("BlazorEnterprise.Worker host built successfully. Starting background listener (Listener={EnableListener}, Scheduler={EnableScheduler})...",

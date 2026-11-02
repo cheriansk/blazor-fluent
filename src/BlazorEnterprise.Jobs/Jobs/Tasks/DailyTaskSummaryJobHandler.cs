@@ -5,7 +5,8 @@ using BlazorEnterprise.Core.Domain.Notifications;
 using BlazorEnterprise.Jobs.Abstractions;
 using BlazorEnterprise.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Jobs.Jobs.Tasks;
@@ -19,18 +20,18 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 {
     private readonly AppDbContext _dbContext;
     private readonly ITeamsNotificationSender _teamsSender;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<NotificationOptions> _notificationOptions;
     private readonly ILogger<DailyTaskSummaryJobHandler> _logger;
 
     public DailyTaskSummaryJobHandler(
         AppDbContext dbContext,
         ITeamsNotificationSender teamsSender,
-        IConfiguration configuration,
+        IOptions<NotificationOptions> notificationOptions,
         ILogger<DailyTaskSummaryJobHandler> logger)
     {
         _dbContext = dbContext;
         _teamsSender = teamsSender;
-        _configuration = configuration;
+        _notificationOptions = notificationOptions;
         _logger = logger;
     }
 
@@ -42,7 +43,7 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
         var tomorrow = today.AddDays(1);
         var in2Days = today.AddDays(2);
 
-        var globalWebhook = _configuration["Teams:DefaultWebhookUrl"];
+        var globalWebhook = _notificationOptions.Value.Teams.DefaultWebhookUrl;
 
         // Query active projects for the scoped tenant
         var projects = await _dbContext.Projects

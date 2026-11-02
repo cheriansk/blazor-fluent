@@ -1,4 +1,4 @@
-@typeparam TGridItem
+﻿@typeparam TGridItem
 @attribute [CascadingTypeParameter(nameof(TGridItem))]
 @namespace BlazorEnterprise.Shared.UI.Components
 
@@ -53,6 +53,10 @@
                                 </td>
                             }
                         </tr>
+                        @if (DetailTemplate != null)
+                        {
+                            @DetailTemplate(item)
+                        }
                     }
                 }
                 else

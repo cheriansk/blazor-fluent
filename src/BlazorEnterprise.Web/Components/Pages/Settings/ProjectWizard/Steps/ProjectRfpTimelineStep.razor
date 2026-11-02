@@ -1,0 +1,196 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+@implements IWizardStepComponent<CreateProjectWizardState>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
+    <div class="font-size-sm text-hint">
+        Specify the solicitation milestones, proposal evaluation dates, and target contract award window.
+    </div>
+
+    @if (!_isReadOnly)
+    {
+        <CskCard Class="p-3 card-accent-border">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.End" Wrap="true">
+                    <div class="flex-2 min-w-180">
+                        <CskTextInput Label="Step Description" @bind-Value="_newStepName" Placeholder="e.g. RFP Clarification Window" Class="full-width" />
+                    </div>
+                    <div class="flex-1 min-w-140">
+                        <CskDatePicker Label="Start Date" @bind-Value="_newStartDate" Class="full-width" />
+                    </div>
+                    <div class="flex-1 min-w-140">
+                        <CskDatePicker Label="End Date" @bind-Value="_newEndDate" Class="full-width" />
+                    </div>
+                    <div class="flex-1 min-w-140">
+                        <CskSelect TOption="string"
+                                   TValue="string"
+                                   Label="Status"
+                                   Items="@_statusOptions"
+                                   OptionText="@(s => s)"
+                                   OptionValue="@(s => s)"
+                                   @bind-Value="_newStatus"
+                                   Class="full-width" />
+                    </div>
+                </CskStack>
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               IconStart="@(_editingRowId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
+                               Disabled="@(string.IsNullOrWhiteSpace(_newStepName))"
+                               OnClick="@SaveRfpStep">
+                        @(_editingRowId.HasValue ? "Update Step" : "Add Step")
+                    </CskButton>
+
+                    @if (_editingRowId.HasValue)
+                    {
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelEdit">
+                            Cancel
+                        </CskButton>
+                    }
+                </CskStack>
+            </CskStack>
+        </CskCard>
+    }
+
+    @if (Context?.State.RfpTimelineRows.Count > 0)
+    {
+        <table class="csk-datagrid-table mt-2">
+            <thead>
+                <tr class="csk-datagrid-header-row">
+                    <th class="csk-datagrid-th">Step Description</th>
+                    <th class="csk-datagrid-th">Start Date</th>
+                    <th class="csk-datagrid-th">End Date</th>
+                    <th class="csk-datagrid-th">Status</th>
+                    <th class="csk-datagrid-th">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Context.State.RfpTimelineRows)
+                {
+                    <tr class="csk-datagrid-row">
+                        <td class="csk-datagrid-td">@row.StepName</td>
+                        <td class="csk-datagrid-td">@(row.StartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">@(row.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(row.Status)">
+                                @row.Status
+                            </CskBadge>
+                        </td>
+                        <td class="csk-datagrid-td">
+                            @if (!_isReadOnly)
+                            {
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Edit" OnClick="@(() => StartEdit(row))">
+                                        Edit
+                                    </CskButton>
+                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Delete" OnClick="@(() => RemoveRfpStep(row))" />
+                                </CskStack>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-hint font-size-sm p-4 text-center">
+            No RFP timeline steps added yet. Add a step above or click Next/Skip.
+        </div>
+    }
+
+    @if (Context != null && Context.HasError("RfpRows"))
+    {
+        <span class="text-danger font-size-xs">@Context.StepErrors["RfpRows"]</span>
+    }
+</CskStack>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? Context { get; set; }
+
+    private readonly List<string> _statusOptions = new() { "Planned", "In Review", "Awarded", "Closed" };
+
+    private Guid? _editingRowId;
+    private string _newStepName = string.Empty;
+    private DateTime? _newStartDate = DateTime.UtcNow.Date;
+    private DateTime? _newEndDate = DateTime.UtcNow.Date.AddDays(14);
+    private string _newStatus = "Planned";
+
+    private bool _isReadOnly => Context?.IsReadOnly ?? false;
+
+    private void StartEdit(RfpTimelineRowDto row)
+    {
+        _editingRowId = row.Id;
+        _newStepName = row.StepName;
+        _newStartDate = row.StartDate;
+        _newEndDate = row.EndDate;
+        _newStatus = string.IsNullOrWhiteSpace(row.Status) ? "Planned" : row.Status;
+    }
+
+    private void CancelEdit()
+    {
+        _editingRowId = null;
+        _newStepName = string.Empty;
+        _newStartDate = DateTime.UtcNow.Date;
+        _newEndDate = DateTime.UtcNow.Date.AddDays(14);
+        _newStatus = "Planned";
+    }
+
+    private void SaveRfpStep()
+    {
+        if (Context != null && !string.IsNullOrWhiteSpace(_newStepName))
+        {
+            if (_editingRowId.HasValue)
+            {
+                var existing = Context.State.RfpTimelineRows.FirstOrDefault(r => r.Id == _editingRowId.Value);
+                if (existing != null)
+                {
+                    existing.StepName = _newStepName.Trim();
+                    existing.StartDate = _newStartDate;
+                    existing.EndDate = _newEndDate;
+                    existing.Status = _newStatus;
+                }
+            }
+            else
+            {
+                Context.State.RfpTimelineRows.Add(new RfpTimelineRowDto
+                {
+                    Id = Guid.NewGuid(),
+                    StepName = _newStepName.Trim(),
+                    StartDate = _newStartDate,
+                    EndDate = _newEndDate,
+                    Status = _newStatus
+                });
+            }
+
+            CancelEdit();
+            Context.ClearErrors("RfpRows");
+        }
+    }
+
+    private void RemoveRfpStep(RfpTimelineRowDto row)
+    {
+        Context?.State.RfpTimelineRows.Remove(row);
+        if (_editingRowId == row.Id)
+        {
+            CancelEdit();
+        }
+    }
+
+    private BadgeColor GetStatusBadgeColor(string status) => status switch
+    {
+        "Awarded" => BadgeColor.Success,
+        "In Review" => BadgeColor.Warning,
+        "Closed" => BadgeColor.Informative,
+        _ => BadgeColor.Informative
+    };
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("RfpRows");
+        return Task.FromResult(true);
+    }
+}

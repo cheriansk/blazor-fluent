@@ -13,14 +13,15 @@ using BlazorEnterprise.Persistence.Context;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Persistence.Interceptors;
 
 public class AuditableEntityInterceptor : SaveChangesInterceptor
 {
-    private readonly IConfiguration? _configuration;
+    private readonly IOptions<SecurityOptions>? _securityOptions;
     private readonly ILogger<AuditableEntityInterceptor> _logger;
 
     public const string CreatedProperty = "Created";
@@ -33,10 +34,10 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
         ["password", "secret", "token", "apikey", "key", "connectionstring", "securitystamp"];
 
     public AuditableEntityInterceptor(
-        IConfiguration? configuration = null,
+        IOptions<SecurityOptions>? securityOptions = null,
         ILogger<AuditableEntityInterceptor>? logger = null)
     {
-        _configuration = configuration;
+        _securityOptions = securityOptions;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<AuditableEntityInterceptor>.Instance;
     }
 
@@ -156,7 +157,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             // Automatically recompute HMAC-SHA256 signature for all IHmacSignableEntity records on insert or update
             if (entry.Entity is IHmacSignableEntity hmacSignable && entry.State is EntityState.Added or EntityState.Modified)
             {
-                var secret = _configuration?["Security:IntegritySecret"];
+                var secret = _securityOptions?.Value.IntegritySecret;
                 if (!string.IsNullOrWhiteSpace(secret) && !secret.StartsWith("__SET_VIA_"))
                 {
                     hmacSignable.RowSignature = hmacSignable.ComputeIntegritySignature(secret);

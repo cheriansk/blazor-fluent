@@ -11,7 +11,7 @@ public partial class SettingsPage : ComponentBase
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private IHierarchyAuthorizationService HierarchyAuth { get; set; } = default!;
 
-    private string _activeTabId = "projects";
+    private string _activeTabId = "programs";
     private readonly HashSet<string> _visitedTabs = new(StringComparer.OrdinalIgnoreCase);
     private bool _canViewTenantTab;
     private bool _canViewProgramTab;
@@ -42,32 +42,32 @@ public partial class SettingsPage : ComponentBase
             }
         }
 
-        _activeTabId = CanViewTenantTab ? "tenants" : (CanViewProgramTab ? "programs" : "projects");
+        _activeTabId = CanViewTenantTab ? "tenants" : "programs";
 
         if (!string.IsNullOrWhiteSpace(SettingsNav.InitialTab))
         {
-            _activeTabId = SettingsNav.InitialTab;
+            _activeTabId = SettingsNav.InitialTab.Equals("projects", StringComparison.OrdinalIgnoreCase) ? "programs" : SettingsNav.InitialTab;
             SettingsNav.InitialTab = null;
         }
 
         if (_activeTabId.Equals("tenants", StringComparison.OrdinalIgnoreCase) && !CanViewTenantTab)
         {
-            _activeTabId = CanViewProgramTab ? "programs" : "projects";
+            _activeTabId = CanViewProgramTab ? "programs" : "jobs";
         }
 
         if (_activeTabId.Equals("programs", StringComparison.OrdinalIgnoreCase) && !CanViewProgramTab)
         {
-            _activeTabId = "projects";
+            _activeTabId = "jobs";
         }
 
         if (_activeTabId.Equals("sessions", StringComparison.OrdinalIgnoreCase) && !CurrentUser.IsRootAdmin)
         {
-            _activeTabId = "projects";
+            _activeTabId = "programs";
         }
 
         if (_activeTabId.Equals("auditing", StringComparison.OrdinalIgnoreCase) && !CanViewAuditTrail)
         {
-            _activeTabId = "projects";
+            _activeTabId = "programs";
         }
 
         _visitedTabs.Add(_activeTabId);

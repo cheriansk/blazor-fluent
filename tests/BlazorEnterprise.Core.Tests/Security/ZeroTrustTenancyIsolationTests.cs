@@ -65,15 +65,13 @@ public class ZeroTrustTenancyIsolationTests
         var correlationId = "corr-" + Guid.NewGuid();
         var licenseKey = OpaqueIdUtility.GenerateSecureLicenseKey();
 
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                [$"Tenants:{tenantId}:LicenseKey"] = licenseKey
-            })
-            .Build();
+        var engineOptions = Microsoft.Extensions.Options.Options.Create(new BlazorEnterprise.Core.Configuration.EngineOptions
+        {
+            TenantLicenseKeys = { [tenantId] = licenseKey }
+        });
 
         var correlationContext = new CorrelationContext { CorrelationId = correlationId };
-        var tokenService = new TenantTokenService(config, correlationContext);
+        var tokenService = new TenantTokenService(engineOptions, correlationContext);
         var token = tokenService.GenerateS2SToken(tenantId, "BatchWorker");
 
         token.Should().NotBeNullOrWhiteSpace();
@@ -104,9 +102,9 @@ public class ZeroTrustTenancyIsolationTests
     [Fact]
     public void TenantTokenService_ThrowsInvalidOperationException_WhenTenantKeyMissing()
     {
-        var config = new ConfigurationBuilder().Build(); // No tenant keys configured
+        var engineOptions = Microsoft.Extensions.Options.Options.Create(new BlazorEnterprise.Core.Configuration.EngineOptions());
         var correlationContext = new CorrelationContext { CorrelationId = "corr-1" };
-        var tokenService = new TenantTokenService(config, correlationContext);
+        var tokenService = new TenantTokenService(engineOptions, correlationContext);
 
         var act = () => tokenService.GenerateS2SToken("unconfigured_tenant", "BatchWorker");
 

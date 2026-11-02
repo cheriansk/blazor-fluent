@@ -54,6 +54,31 @@ builder.Services.AddHybridCache(options =>
 builder.Services.AddSingleton<BaseCloudProcessor, TaskCloudProcessor>();
 builder.Services.AddSingleton<CloudProcessorDispatcher>();
 
+// Strongly-typed options registration
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AuthOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.AuthOptions.SectionName);
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AdminOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.AdminOptions.SectionName);
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.EngineOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.EngineOptions.SectionName)
+    .PostConfigure<IConfiguration>((options, configuration) =>
+    {
+        if (string.IsNullOrWhiteSpace(options.LicenseKey) && !string.IsNullOrWhiteSpace(configuration["Tenant:LicenseKey"]))
+        {
+            options.LicenseKey = configuration["Tenant:LicenseKey"]!;
+        }
+        foreach (var tenant in configuration.GetSection("Tenants").GetChildren())
+        {
+            var lk = tenant["LicenseKey"];
+            if (!string.IsNullOrWhiteSpace(lk))
+            {
+                options.TenantLicenseKeys[tenant.Key] = lk;
+            }
+        }
+    });
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions.SectionName);
+
 // 5. JWT Bearer Authentication (Zero-Trust Fail-Fast Configuration Validation)
 var authIssuer = builder.Configuration["Auth:Issuer"];
 if (string.IsNullOrWhiteSpace(authIssuer))
@@ -110,7 +135,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
 
                 // Also allow the central Cloud Master Signing Key for user login tokens
-                keys.Add(new SymmetricSecurityKey(keyBytes));
+                var currentSigningKey = builder.Configuration["Auth:SigningKey"] ?? authSigningKey;
+                keys.Add(new SymmetricSecurityKey(SHA256.HashData(Encoding.UTF8.GetBytes(currentSigningKey))));
                 return keys;
             },
             ClockSkew = TimeSpan.FromMinutes(1)
@@ -139,13 +165,24 @@ if (allowedOrigins.Length == 0 && builder.Environment.IsProduction())
     throw new InvalidOperationException("Zero-Trust Security Violation: 'AllowedOrigins' must contain at least one explicit origin in production. Open CORS is strictly prohibited.");
 }
 
-builder.Services.AddCors(options =>
+builder.Services.AddCors();
+builder.Services.AddOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>().Configure<IConfiguration>((options, configuration) =>
 {
+    var origins = configuration.GetSection("AllowedOrigins").Get<string[]>();
+    if (origins == null || origins.Length == 0)
+    {
+        origins = configuration.GetSection("AllowedOrigins").GetChildren().Select(c => c.Value).Where(v => !string.IsNullOrEmpty(v)).ToArray()!;
+    }
+    if (origins == null || origins.Length == 0)
+    {
+        origins = allowedOrigins;
+    }
+
     options.AddDefaultPolicy(policy =>
     {
-        if (allowedOrigins.Length > 0)
+        if (origins.Length > 0)
         {
-            policy.WithOrigins(allowedOrigins)
+            policy.WithOrigins(origins)
                 .WithMethods("POST", "GET", "PUT", "DELETE", "OPTIONS")
                 .WithHeaders("Authorization", "Content-Type", "X-Correlation-Id", "X-Tenant-Id", "X-License-Key")
                 .AllowCredentials()
@@ -233,7 +270,7 @@ app.MapGet("/", (ICorrelationContext context) => new
     status = "Healthy",
     correlationId = context.CorrelationId,
     timestamp = DateTime.UtcNow
-}).AllowAnonymous();
+}).RequireCors().AllowAnonymous();
 
 app.Run();
 

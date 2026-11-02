@@ -17,21 +17,36 @@
 }
 
 /* Gaps */
-.csk-stack-gap-none {
+.csk-stack-gap-none,
+.csk-gap-none {
     gap: 0;
 }
 
-.csk-stack-gap-sm {
+.csk-stack-gap-sm,
+.csk-gap-sm {
     gap: 0.5rem; /* 8px */
 }
 
-.csk-stack-gap-md {
+.csk-stack-gap-md,
+.csk-gap-md {
     gap: 1rem; /* 16px */
 }
 
-.csk-stack-gap-lg {
+.csk-stack-gap-lg,
+.csk-gap-lg {
     gap: 1.5rem; /* 24px */
 }
+
+/* Numeric Gaps */
+.csk-stack.gap-4 { gap: 4px; }
+.csk-stack.gap-6 { gap: 6px; }
+.csk-stack.gap-8 { gap: 8px; }
+.csk-stack.gap-10 { gap: 10px; }
+.csk-stack.gap-12 { gap: 12px; }
+.csk-stack.gap-14 { gap: 14px; }
+.csk-stack.gap-16 { gap: 16px; }
+.csk-stack.gap-20 { gap: 20px; }
+.csk-stack.gap-24 { gap: 24px; }
 
 /* Horizontal alignment (for row: justify-content; for column: align-items) */
 .csk-stack-horizontal.csk-stack-h-left {

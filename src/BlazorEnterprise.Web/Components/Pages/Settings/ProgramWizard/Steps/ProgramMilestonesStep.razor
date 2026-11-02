@@ -1,0 +1,227 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Contracts
+@implements IWizardStepComponent<CreateProgramWizardState>
+@inject IUserTimeZoneService TimeZoneService
+
+<div class="csk-wizard-step-container">
+    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+        @if (!string.IsNullOrWhiteSpace(_validationError))
+        {
+            <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _validationError = null)">
+                @_validationError
+            </CskMessageBar>
+        }
+
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Define high-level program milestones, release targets, and critical governance gates.
+        </CskLabel>
+
+        @if (!_isReadOnly)
+        {
+            <div class="csk-milestone-form-card">
+                <CskLabel Typo="Typography.H6" Class="mb-3">
+                    @(_editingId.HasValue ? "Edit Program Milestone" : "Add Program Milestone")
+                </CskLabel>
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                        <CskTextInput Label="Milestone Name"
+                                      @bind-Value="_newMilestoneName"
+                                      Placeholder="e.g. Architecture Baseline Sign-off"
+                                      Class="flex-2" />
+
+                        <CskDatePicker Label="Target Date"
+                                       @bind-Value="_newMilestoneDate"
+                                       Class="flex-1" />
+
+                        <CskSelect TOption="string"
+                                   TValue="string"
+                                   Label="Status"
+                                   Items="@_statusOptions"
+                                   OptionText="@(s => s)"
+                                   OptionValue="@(s => s)"
+                                   @bind-Value="_newMilestoneStatus"
+                                   Class="flex-1" />
+                    </CskStack>
+
+                    <CskTextInput Label="Description / Deliverable (Optional)"
+                                  @bind-Value="_newMilestoneDesc"
+                                  Placeholder="Key deliverables or acceptance criteria..."
+                                  Class="full-width" />
+
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@(_editingId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
+                                   Disabled="@(string.IsNullOrWhiteSpace(_newMilestoneName))"
+                                   OnClick="@SaveMilestone">
+                            @(_editingId.HasValue ? "Update Milestone" : "Add Milestone")
+                        </CskButton>
+
+                        @if (_editingId.HasValue)
+                        {
+                            <CskButton Variant="CskButtonVariant.Text"
+                                       Size="CskButtonSize.Small"
+                                       OnClick="@CancelEdit">
+                                Cancel
+                            </CskButton>
+                        }
+                    </CskStack>
+                </CskStack>
+            </div>
+        }
+
+        @if (_milestones.Count == 0)
+        {
+            <div class="csk-milestones-empty-state">
+                No milestones added yet. (Optional) You can add critical checkpoints now or configure them later in the Program Calendar.
+            </div>
+        }
+        else
+        {
+            <table class="csk-datagrid-table csk-datagrid-dense csk-milestone-table-container">
+                <thead>
+                    <tr class="csk-datagrid-header-row">
+                        <th class="csk-datagrid-th">Milestone</th>
+                        <th class="csk-datagrid-th csk-milestone-date-col">Target Date</th>
+                        <th class="csk-datagrid-th">Description</th>
+                        <th class="csk-datagrid-th csk-milestone-status-col">Status</th>
+                        <th class="csk-datagrid-th csk-milestone-action-col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in _milestones)
+                    {
+                        <tr class="csk-datagrid-row">
+                            <td class="csk-datagrid-td csk-font-medium">@m.Name</td>
+                            <td class="csk-datagrid-td font-size-sm">@TimeZoneService.FormatDate(m.TargetDate)</td>
+                            <td class="csk-datagrid-td font-size-sm text-hint">@(string.IsNullOrWhiteSpace(m.Description) ? "—" : m.Description)</td>
+                            <td class="csk-datagrid-td">
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(m.Status)">
+                                    @m.Status
+                                </CskBadge>
+                            </td>
+                            <td class="csk-datagrid-td">
+                                @if (!_isReadOnly)
+                                {
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                   Size="CskButtonSize.Small"
+                                                   IconStart="@CskIcons.Edit"
+                                                   OnClick="@(() => StartEdit(m))">
+                                            Edit
+                                        </CskButton>
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                   Size="CskButtonSize.Small"
+                                                   IconStart="@CskIcons.Delete"
+                                                   OnClick="@(() => RemoveMilestone(m.Id))" />
+                                    </CskStack>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </CskStack>
+</div>
+
+@code {
+    [Parameter]
+    public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    private List<ProgramMilestoneDto> _milestones = new();
+    private readonly List<string> _statusOptions = new() { "Scheduled", "InProgress", "Completed", "AtRisk" };
+
+    private Guid? _editingId;
+    private string _newMilestoneName = string.Empty;
+    private DateTime? _newMilestoneDate = DateTime.UtcNow.Date.AddMonths(1);
+    private string _newMilestoneDesc = string.Empty;
+    private string _newMilestoneStatus = "Scheduled";
+
+    private string? _validationError;
+    private bool _isReadOnly;
+
+    protected override void OnInitialized()
+    {
+        if (Context != null)
+        {
+            _milestones = Context.State.Milestones ?? new();
+            _isReadOnly = Context.IsReadOnly;
+        }
+    }
+
+    private void StartEdit(ProgramMilestoneDto m)
+    {
+        _editingId = m.Id;
+        _newMilestoneName = m.Name;
+        _newMilestoneDate = m.TargetDate;
+        _newMilestoneDesc = m.Description ?? string.Empty;
+        _newMilestoneStatus = string.IsNullOrWhiteSpace(m.Status) ? "Scheduled" : m.Status;
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _newMilestoneName = string.Empty;
+        _newMilestoneDesc = string.Empty;
+        _newMilestoneDate = DateTime.UtcNow.Date.AddMonths(1);
+        _newMilestoneStatus = "Scheduled";
+    }
+
+    private void SaveMilestone()
+    {
+        if (string.IsNullOrWhiteSpace(_newMilestoneName)) return;
+
+        if (_editingId.HasValue)
+        {
+            var existing = _milestones.FirstOrDefault(m => m.Id == _editingId.Value);
+            if (existing != null)
+            {
+                existing.Name = _newMilestoneName.Trim();
+                existing.TargetDate = _newMilestoneDate ?? DateTime.UtcNow.Date;
+                existing.Description = string.IsNullOrWhiteSpace(_newMilestoneDesc) ? null : _newMilestoneDesc.Trim();
+                existing.Status = _newMilestoneStatus;
+            }
+        }
+        else
+        {
+            _milestones.Add(new ProgramMilestoneDto
+            {
+                Id = Guid.NewGuid(),
+                Name = _newMilestoneName.Trim(),
+                TargetDate = _newMilestoneDate ?? DateTime.UtcNow.Date,
+                Description = string.IsNullOrWhiteSpace(_newMilestoneDesc) ? null : _newMilestoneDesc.Trim(),
+                Status = _newMilestoneStatus
+            });
+        }
+
+        CancelEdit();
+    }
+
+    private void RemoveMilestone(Guid id)
+    {
+        _milestones.RemoveAll(m => m.Id == id);
+        if (_editingId == id)
+        {
+            CancelEdit();
+        }
+    }
+
+    private BadgeColor GetStatusBadgeColor(string status) => status switch
+    {
+        "Completed" => BadgeColor.Success,
+        "InProgress" => BadgeColor.Informative,
+        "AtRisk" => BadgeColor.Danger,
+        "Scheduled" => BadgeColor.Informative,
+        _ => BadgeColor.Informative
+    };
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
+    {
+        context.State.Milestones = _milestones;
+        return Task.FromResult(true);
+    }
+}

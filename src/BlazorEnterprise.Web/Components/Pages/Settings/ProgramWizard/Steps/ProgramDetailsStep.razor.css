@@ -1,0 +1,30 @@
+.csk-wizard-step-container {
+    width: 100%;
+}
+
+.csk-status-select-container {
+    max-width: 300px;
+}
+
+.csk-admin-empty-state {
+    color: var(--csk-color-text-hint, #6c757d);
+    font-size: 0.875rem;
+    padding: 0.75rem;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 6px;
+    background-color: var(--csk-color-surface, #ffffff);
+}
+
+.csk-admin-table-container {
+    background-color: var(--csk-color-surface, #ffffff);
+    border-radius: 6px;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+}
+
+.csk-admin-action-col {
+    width: 100px;
+}
+
+.csk-font-medium {
+    font-weight: 500;
+}

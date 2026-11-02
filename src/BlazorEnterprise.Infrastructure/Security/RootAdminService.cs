@@ -1,17 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BlazorEnterprise.Infrastructure.Security;
 
 /// <summary>
-/// Singleton service providing access to root super-administrators and root tenant parameters parsed from configuration/KeyVault.
-/// Enforces a strict limit of 3 administrators and zero hardcoded fallbacks (Fail-Closed).
+/// Authoritative, Zero-Trust root-administration service reading directly from strongly typed AdminOptions.
 /// </summary>
-public sealed class RootAdminService : IRootAdminService
+public class RootAdminService : IRootAdminService
 {
     private readonly IReadOnlyList<string> _adminEmails;
     private readonly ILogger<RootAdminService> _logger;
@@ -20,34 +17,36 @@ public sealed class RootAdminService : IRootAdminService
     public string RootTenantSlug { get; }
     public string RootTenantName { get; }
 
-    public RootAdminService(IConfiguration configuration, ILogger<RootAdminService> logger)
+    public RootAdminService(IOptions<AdminOptions> adminOptions, ILogger<RootAdminService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(adminOptions);
 
-        // Resolve Root Tenant metadata strictly from Configuration / KeyVault
-        var rawTenantId = configuration["Admin:RootTenantId"];
+        var opts = adminOptions.Value;
+
+        // Resolve Root Tenant metadata strictly from AdminOptions / KeyVault
+        var rawTenantId = opts.RootTenantId;
         if (string.IsNullOrWhiteSpace(rawTenantId) || !Guid.TryParse(rawTenantId, out var parsedId) || parsedId == Guid.Empty)
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: Configuration 'Admin:RootTenantId' is required and must be a valid, non-empty GUID (Fail-Closed).");
         }
         RootTenantId = parsedId;
 
-        var rawSlug = configuration["Admin:RootTenantSlug"];
+        var rawSlug = opts.RootTenantSlug;
         if (string.IsNullOrWhiteSpace(rawSlug))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: Configuration 'Admin:RootTenantSlug' is required and cannot be empty (Fail-Closed).");
         }
         RootTenantSlug = rawSlug.Trim().ToLowerInvariant();
 
-        var rawName = configuration["Admin:RootTenantName"];
+        var rawName = opts.RootTenantName;
         if (string.IsNullOrWhiteSpace(rawName))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: Configuration 'Admin:RootTenantName' is required and cannot be empty (Fail-Closed).");
         }
         RootTenantName = rawName.Trim();
 
-        var rawAdmins = configuration["Admin:RootAdmins"];
+        var rawAdmins = opts.RootAdmins;
         if (string.IsNullOrWhiteSpace(rawAdmins))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: Configuration 'Admin:RootAdmins' is required and must contain at least one administrator email address (Fail-Closed).");

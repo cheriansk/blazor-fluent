@@ -250,9 +250,9 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
     [Fact]
     public async Task ProcessApi_WithWorkerS2SToken_SignedWithTenantLicenseKey_Returns200Ok()
     {
-        var config = _factory.Services.GetRequiredService<IConfiguration>();
+        var engineOptions = _factory.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<BlazorEnterprise.Core.Configuration.EngineOptions>>();
         var correlationContext = new CorrelationContext { CorrelationId = "CORR-WORKER-001" };
-        var tokenService = new TenantTokenService(config, correlationContext);
+        var tokenService = new TenantTokenService(engineOptions, correlationContext);
 
         var s2sToken = tokenService.GenerateS2SToken(ApiTestWebApplicationFactory.ValidTenantId, "BatchWorker");
         var encryptionKey = PayloadEncryptionUtility.DeriveTenantKey(ApiTestWebApplicationFactory.ValidLicenseKey, ApiTestWebApplicationFactory.ValidTenantId);

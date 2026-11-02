@@ -20,10 +20,11 @@ public static class JobsExtensions
         services.TryAddSingleton<IJobEventQueue>(sp => sp.GetRequiredService<ChannelJobEventQueue>());
         services.TryAddSingleton<IJobEventPublisher>(sp => sp.GetRequiredService<ChannelJobEventQueue>());
 
-        // 2. Register the Queue Listener background worker if enabled
+        // 2. Register the Queue Listener and Transactional Outbox background workers if enabled
         if (enableListener)
         {
             services.AddHostedService<BatchJobQueueListener>();
+            services.AddHostedService<OutboxMessageDispatcher>();
         }
 
         // 3. Register the Periodic Scheduler if enabled

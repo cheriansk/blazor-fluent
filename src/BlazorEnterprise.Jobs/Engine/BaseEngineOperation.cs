@@ -1,6 +1,7 @@
 using BlazorEnterprise.Infrastructure.EngineGateway;
 using BlazorEnterprise.Shared.Common;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Jobs.Engine;
@@ -12,18 +13,18 @@ namespace BlazorEnterprise.Jobs.Engine;
 public abstract class BaseEngineOperation<TReq, TResp>
 {
     protected readonly IRemoteEngineGateway _remoteGateway;
-    protected readonly IConfiguration _config;
+    protected readonly IOptions<EngineOptions> _engineOptions;
     protected readonly ILogger _logger;
     protected readonly string _route;
 
     protected BaseEngineOperation(
         IRemoteEngineGateway remoteGateway,
-        IConfiguration config,
+        IOptions<EngineOptions> engineOptions,
         ILogger logger,
         string route)
     {
         _remoteGateway = remoteGateway;
-        _config = config;
+        _engineOptions = engineOptions;
         _logger = logger;
         _route = route;
     }
@@ -55,7 +56,7 @@ public abstract class BaseEngineOperation<TReq, TResp>
             // STEP 3: Mode Decision (Local-Only client vs Remote ProcessAPI)
             // -------------------------------------------------------------
             TResp response;
-            var mode = _config.GetValue<string>("Engine:Mode") ?? "Remote";
+            var mode = _engineOptions.Value.Mode ?? "Remote";
 
             if (string.Equals(mode, "LocalOnly", StringComparison.OrdinalIgnoreCase))
             {

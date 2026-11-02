@@ -36,4 +36,7 @@
 		<ProjectReference Include="..\BlazorEnterprise.Shared.UI\BlazorEnterprise.Shared.UI.csproj" />
 	</ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BlazorEnterprise.Web.Tests" />
+  </ItemGroup>
 </Project>

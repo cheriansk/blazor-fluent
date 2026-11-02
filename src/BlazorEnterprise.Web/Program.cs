@@ -610,14 +610,49 @@ try
 
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions>()
-
         .BindConfiguration(BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions.SectionName)
-
         .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
-
             "Zero-Trust Security Violation: 'Seed' cannot be enabled outside Development environment.")
-
         .ValidateOnStart();
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AdminOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.AdminOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.NotificationOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.NotificationOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.EngineOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.EngineOptions.SectionName)
+        .PostConfigure<IConfiguration>((options, configuration) =>
+        {
+            if (string.IsNullOrWhiteSpace(options.LicenseKey) && !string.IsNullOrWhiteSpace(configuration["Tenant:LicenseKey"]))
+            {
+                options.LicenseKey = configuration["Tenant:LicenseKey"]!;
+            }
+            foreach (var tenant in configuration.GetSection("Tenants").GetChildren())
+            {
+                var lk = tenant["LicenseKey"];
+                if (!string.IsNullOrWhiteSpace(lk))
+                {
+                    options.TenantLicenseKeys[tenant.Key] = lk;
+                }
+            }
+        });
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AuditOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.AuditOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DateTimeSettingsOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.DateTimeSettingsOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.TeamsAlertOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.TeamsAlertOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.StorageOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.StorageOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions.SectionName);
 
 
 

@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,22 +45,22 @@ public class WorkflowService : IWorkflowService
         _logger = logger;
     }
 
-    public async Task<WorkflowEntity> CreateWorkflowAsync(CreateWorkflowReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> CreateWorkflowAsync(CreateWorkflowReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         if (request.Steps == null || request.Steps.Count == 0)
         {
-            throw new ArgumentException("A workflow requires at least one sequential step.", nameof(request));
+            return Result.Fail<WorkflowEntity>("A workflow requires at least one sequential step.");
         }
 
         if (request.Level == TaskLevelEnum.Program && (!request.ProgramId.HasValue || request.ProgramId == Guid.Empty))
         {
-            throw new ArgumentException("A valid Program ID is required for Program-scoped workflows.", nameof(request));
+            return Result.Fail<WorkflowEntity>("A valid Program ID is required for Program-scoped workflows.");
         }
 
         if (request.Level == TaskLevelEnum.Project && (!request.ProjectId.HasValue || request.ProjectId == Guid.Empty))
         {
-            throw new ArgumentException("A valid Project ID is required for Project-scoped workflows.", nameof(request));
+            return Result.Fail<WorkflowEntity>("A valid Project ID is required for Project-scoped workflows.");
         }
 
         var callerEmail = !string.IsNullOrWhiteSpace(_currentUser.Email) 
@@ -71,7 +72,7 @@ public class WorkflowService : IWorkflowService
         if (!canManage)
         {
             _logger.LogWarning("SECURITY ALERT: User '{User}' denied permission to create {Level} workflow.", callerEmail, request.Level);
-            throw new UnauthorizedAccessException($"Zero Trust Violation: Only designated administrators can create workflows at the {request.Level} level.");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can create workflows at the {request.Level} level.");
         }
 
         var workflowOwner = !string.IsNullOrWhiteSpace(request.WorkflowOwnerEmail)
@@ -108,11 +109,12 @@ public class WorkflowService : IWorkflowService
                 var existing = await _dbContext.Tasks
                     .Include(t => t.SubTasks)
                     .FirstOrDefaultAsync(t => t.Id == stepDto.ExistingTaskId.Value && t.TenantId == tenantId, ct)
-                    ?? throw new InvalidOperationException($"Existing task '{stepDto.ExistingTaskId.Value}' not found.");
+                    ;
+                if (existing == null) return Result.Fail<WorkflowEntity>($"Existing task '{stepDto.ExistingTaskId.Value}' not found.");
 
                 if (existing.WorkflowId.HasValue && existing.WorkflowId != Guid.Empty && existing.WorkflowId != workflow.Id)
                 {
-                    throw new InvalidOperationException($"Task '{existing.Title}' already belongs to another workflow.");
+                    return Result.Fail<WorkflowEntity>($"Task '{existing.Title}' already belongs to another workflow.");
                 }
 
                 existing.WorkflowId = workflow.Id;
@@ -219,10 +221,10 @@ public class WorkflowService : IWorkflowService
                 ct: ct);
         }
 
-        return workflow;
+        return Result.Success(workflow);
     }
 
-    public async Task<WorkflowEntity> CompleteStepAsync(CompleteWorkflowStepReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> CompleteStepAsync(CompleteWorkflowStepReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
@@ -231,15 +233,17 @@ public class WorkflowService : IWorkflowService
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found in active tenant.");
+            ;
+        if (workflow == null) return Result.Fail<WorkflowEntity>($"Workflow '{request.WorkflowId}' not found in active tenant.");
 
         var activeStep = workflow.Steps.FirstOrDefault(s => s.Id == request.StepId)
-            ?? throw new InvalidOperationException($"Step Task '{request.StepId}' not found in workflow.");
+            ;
+        if (activeStep == null) return Result.Fail<WorkflowEntity>($"Step Task '{request.StepId}' not found in workflow.");
 
         // Zero Trust Gate 1: Step must be currently active
         if (activeStep.Status != TaskStatusEnum.InProgress || workflow.CurrentStepId != activeStep.Id)
         {
-            throw new InvalidOperationException($"Zero Trust Violation: Step '{activeStep.Title}' is not in Active status (Current status: {activeStep.Status}).");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Step '{activeStep.Title}' is not in Active status (Current status: {activeStep.Status}).");
         }
 
         var isStepOwner = string.Equals(callerEmail, activeStep.AssigneeEmails, StringComparison.OrdinalIgnoreCase) ||
@@ -252,7 +256,7 @@ public class WorkflowService : IWorkflowService
         {
             _logger.LogWarning("SECURITY ALERT: Caller '{Caller}' attempted unauthorized completion of workflow step '{StepId}' assigned to '{Owner}'",
                 callerEmail, activeStep.Id, activeStep.AssigneeEmails);
-            throw new UnauthorizedAccessException($"Zero Trust Violation: You are not authorized to complete step '{activeStep.Title}'. Assigned owner: {activeStep.AssigneeEmails}.");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: You are not authorized to complete step '{activeStep.Title}'. Assigned owner: {activeStep.AssigneeEmails}.");
         }
 
         // Auto-close any remaining open subtasks under this step
@@ -368,10 +372,10 @@ public class WorkflowService : IWorkflowService
             }
         }
 
-        return workflow;
+        return Result.Success(workflow);
     }
 
-    public async Task<WorkflowEntity> ReassignStepAsync(ReassignWorkflowStepReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> ReassignStepAsync(ReassignWorkflowStepReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
@@ -380,10 +384,12 @@ public class WorkflowService : IWorkflowService
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found.");
+            ;
+        if (workflow == null) return Result.Fail<WorkflowEntity>($"Workflow '{request.WorkflowId}' not found.");
 
         var targetStep = workflow.Steps.FirstOrDefault(s => s.Id == request.StepId)
-            ?? throw new InvalidOperationException($"Step '{request.StepId}' not found.");
+            ;
+        if (targetStep == null) return Result.Fail<WorkflowEntity>($"Step '{request.StepId}' not found.");
 
         var isStepOwner = string.Equals(callerEmail, targetStep.AssigneeEmails, StringComparison.OrdinalIgnoreCase) ||
                           targetStep.GetParsedAssigneeEmails().Contains(callerEmail, StringComparer.OrdinalIgnoreCase);
@@ -393,7 +399,7 @@ public class WorkflowService : IWorkflowService
 
         if (!isStepOwner && !isWorkflowOwner && !isAdmin)
         {
-            throw new UnauthorizedAccessException("Zero Trust Violation: Only the Step Owner, Workflow Owner, or an Admin can reassign a workflow step.");
+            return Result.Fail<WorkflowEntity>("Zero Trust Violation: Only the Step Owner, Workflow Owner, or an Admin can reassign a workflow step.");
         }
 
         var priorOwner = targetStep.AssigneeEmails;
@@ -437,10 +443,10 @@ public class WorkflowService : IWorkflowService
                 ct: ct);
         }
 
-        return workflow;
+        return Result.Success(workflow);
     }
 
-    public async Task<SubTaskEntity> AddSubTaskToStepAsync(AddSubTaskToStepReqDto request, CancellationToken ct = default)
+    public async Task<Result<SubTaskEntity>> AddSubTaskToStepAsync(AddSubTaskToStepReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
@@ -449,10 +455,12 @@ public class WorkflowService : IWorkflowService
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found.");
+            ;
+        if (workflow == null) return Result.Fail<SubTaskEntity>($"Workflow '{request.WorkflowId}' not found.");
 
         var stepTask = workflow.Steps.FirstOrDefault(s => s.Id == request.StepTaskId)
-            ?? throw new InvalidOperationException($"Step Task '{request.StepTaskId}' not found in workflow.");
+            ;
+        if (stepTask == null) return Result.Fail<SubTaskEntity>($"Step Task '{request.StepTaskId}' not found in workflow.");
 
         var isStepOwner = string.Equals(callerEmail, stepTask.AssigneeEmails, StringComparison.OrdinalIgnoreCase) ||
                           stepTask.GetParsedAssigneeEmails().Contains(callerEmail, StringComparer.OrdinalIgnoreCase);
@@ -462,7 +470,7 @@ public class WorkflowService : IWorkflowService
 
         if (!isStepOwner && !isWorkflowOwner && !isAdmin)
         {
-            throw new UnauthorizedAccessException("Zero Trust Violation: Only the Step Owner, Workflow Owner, or an Admin can delegate subtasks.");
+            return Result.Fail<SubTaskEntity>("Zero Trust Violation: Only the Step Owner, Workflow Owner, or an Admin can delegate subtasks.");
         }
 
         var subTask = new SubTaskEntity
@@ -502,22 +510,23 @@ public class WorkflowService : IWorkflowService
                 ct: ct);
         }
 
-        return subTask;
+        return Result.Success(subTask);
     }
 
-    public async Task<SubTaskEntity> ToggleSubTaskStatusAsync(ToggleSubTaskStatusReqDto request, CancellationToken ct = default)
+    public async Task<Result<SubTaskEntity>> ToggleSubTaskStatusAsync(ToggleSubTaskStatusReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
 
         var subTask = await _dbContext.SubTasks
             .FirstOrDefaultAsync(s => s.Id == request.SubTaskId && s.TenantId == tenantId, ct)
-            ?? throw new InvalidOperationException($"SubTask '{request.SubTaskId}' not found.");
+            ;
+        if (subTask == null) return Result.Fail<SubTaskEntity>($"SubTask '{request.SubTaskId}' not found.");
 
         subTask.Status = request.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open;
         subTask.EndDate = request.IsClosed ? DateTime.UtcNow : null;
 
         await _dbContext.SaveChangesAsync(ct);
-        return subTask;
+        return Result.Success(subTask);
     }
 
     public async Task<IReadOnlyList<WorkflowEntity>> GetWorkflowsAsync(WorkflowFilterDto filter, CancellationToken ct = default)
@@ -595,21 +604,22 @@ public class WorkflowService : IWorkflowService
         };
     }
 
-    public async Task<WorkflowEntity> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found.");
+            ;
+        if (workflow == null) return Result.Fail<WorkflowEntity>($"Workflow '{request.WorkflowId}' not found.");
 
         var canManage = await CanUserManageWorkflowAsync(workflow.Level, workflow.ProgramId, workflow.ProjectId, ct);
         if (!canManage)
         {
             _logger.LogWarning("SECURITY ALERT: Caller '{Caller}' denied permission to edit workflow '{WorkflowId}' at {Level} level.",
                 _currentUser.Email, workflow.Id, workflow.Level);
-            throw new UnauthorizedAccessException($"Zero Trust Violation: Only designated administrators can edit this {workflow.Level} workflow.");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can edit this {workflow.Level} workflow.");
         }
 
         workflow.Title = request.Title.Trim();
@@ -627,36 +637,38 @@ public class WorkflowService : IWorkflowService
 
         await _dbContext.SaveChangesAsync(ct);
         _logger.LogInformation("Admin '{Admin}' updated metadata for workflow '{Title}' ({Id})", _currentUser.Email, workflow.Title, workflow.Id);
-        return workflow;
+        return Result.Success(workflow);
     }
 
-    public async Task<WorkflowEntity> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found.");
+            ;
+        if (workflow == null) return Result.Fail<WorkflowEntity>($"Workflow '{request.WorkflowId}' not found.");
 
         var canManage = await CanUserManageWorkflowAsync(workflow.Level, workflow.ProgramId, workflow.ProjectId, ct);
         if (!canManage)
         {
             _logger.LogWarning("SECURITY ALERT: Caller '{Caller}' denied permission to cancel step in workflow '{WorkflowId}'.",
                 _currentUser.Email, workflow.Id);
-            throw new UnauthorizedAccessException($"Zero Trust Violation: Only designated administrators can cancel steps on this {workflow.Level} workflow.");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can cancel steps on this {workflow.Level} workflow.");
         }
 
         var step = workflow.Steps.FirstOrDefault(s => s.Id == request.StepTaskId)
-            ?? throw new InvalidOperationException($"Step task '{request.StepTaskId}' not found in workflow.");
+            ;
+        if (step == null) return Result.Fail<WorkflowEntity>($"Step task '{request.StepTaskId}' not found in workflow.");
 
         if (step.Status == TaskStatusEnum.Closed)
         {
-            throw new InvalidOperationException("Completed steps cannot be cancelled.");
+            return Result.Fail<WorkflowEntity>("Completed steps cannot be cancelled.");
         }
         if (step.Status == TaskStatusEnum.Cancelled)
         {
-            return workflow;
+            return Result.Success(workflow);
         }
 
         var wasActive = step.Status == TaskStatusEnum.InProgress;
@@ -691,22 +703,23 @@ public class WorkflowService : IWorkflowService
         }
 
         await _dbContext.SaveChangesAsync(ct);
-        return workflow;
+        return Result.Success(workflow);
     }
 
-    public async Task<WorkflowEntity> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found.");
+            ;
+        if (workflow == null) return Result.Fail<WorkflowEntity>($"Workflow '{request.WorkflowId}' not found.");
 
         var canManage = await CanUserManageWorkflowAsync(workflow.Level, workflow.ProgramId, workflow.ProjectId, ct);
         if (!canManage)
         {
-            throw new UnauthorizedAccessException($"Zero Trust Violation: Only designated administrators can resume this {workflow.Level} workflow.");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can resume this {workflow.Level} workflow.");
         }
 
         TaskEntity? stepToActivate = null;
@@ -747,22 +760,23 @@ public class WorkflowService : IWorkflowService
         await _dbContext.SaveChangesAsync(ct);
         _logger.LogInformation("Admin '{Admin}' resumed workflow '{Title}' ({Id}). Active step: {StepId}",
             _currentUser.Email, workflow.Title, workflow.Id, workflow.CurrentStepId);
-        return workflow;
+        return Result.Success(workflow);
     }
 
-    public async Task<WorkflowEntity> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default)
+    public async Task<Result<WorkflowEntity>> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
-            ?? throw new InvalidOperationException($"Workflow '{request.WorkflowId}' not found.");
+            ;
+        if (workflow == null) return Result.Fail<WorkflowEntity>($"Workflow '{request.WorkflowId}' not found.");
 
         var canManage = await CanUserManageWorkflowAsync(workflow.Level, workflow.ProgramId, workflow.ProjectId, ct);
         if (!canManage)
         {
-            throw new UnauthorizedAccessException($"Zero Trust Violation: Only designated administrators can add steps to this {workflow.Level} workflow.");
+            return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can add steps to this {workflow.Level} workflow.");
         }
 
         var maxOrder = workflow.Steps.Count > 0 ? workflow.Steps.Max(s => s.WorkflowStepOrder ?? 0) : 0;
@@ -786,11 +800,12 @@ public class WorkflowService : IWorkflowService
             var existing = await _dbContext.Tasks
                 .Include(t => t.SubTasks)
                 .FirstOrDefaultAsync(t => t.Id == request.ExistingTaskId.Value && t.TenantId == tenantId, ct)
-                ?? throw new InvalidOperationException($"Task '{request.ExistingTaskId}' not found.");
+                ;
+            if (existing == null) return Result.Fail<WorkflowEntity>($"Task '{request.ExistingTaskId}' not found.");
 
             if (existing.WorkflowId.HasValue && existing.WorkflowId != Guid.Empty && existing.WorkflowId != workflow.Id)
             {
-                throw new InvalidOperationException($"Task '{existing.Title}' already belongs to another workflow.");
+                return Result.Fail<WorkflowEntity>($"Task '{existing.Title}' already belongs to another workflow.");
             }
 
             existing.WorkflowId = workflow.Id;
@@ -832,7 +847,7 @@ public class WorkflowService : IWorkflowService
         await _dbContext.SaveChangesAsync(ct);
         _logger.LogInformation("Admin '{Admin}' added step #{Order} ('{Title}') to workflow '{WorkflowTitle}' ({WorkflowId})",
             _currentUser.Email, targetOrder, stepTask.Title, workflow.Title, workflow.Id);
-        return workflow;
+        return Result.Success(workflow);
     }
 
     public async Task<IReadOnlyList<TaskEntity>> GetAvailableTasksForWorkflowAsync(TaskSearchFilterDto filter, CancellationToken ct = default)

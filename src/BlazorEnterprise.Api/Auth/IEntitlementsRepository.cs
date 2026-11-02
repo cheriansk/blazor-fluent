@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,13 +21,13 @@ public class InMemoryEntitlementsRepository : IEntitlementsRepository
 {
     private readonly ConcurrentDictionary<string, EntitlementUser> _users = new(StringComparer.OrdinalIgnoreCase);
 
-    public InMemoryEntitlementsRepository(IConfiguration? configuration = null)
+    public InMemoryEntitlementsRepository(IOptions<AdminOptions>? adminOptions = null)
     {
         // Pre-authorize configured root administrators without hardcoded user records
-        if (configuration != null)
+        if (adminOptions?.Value != null)
         {
-            var rawAdmins = configuration["Admin:RootAdmins"];
-            var rootTenantId = configuration["Admin:RootTenantId"] ?? string.Empty;
+            var rawAdmins = adminOptions.Value.RootAdmins;
+            var rootTenantId = adminOptions.Value.RootTenantId ?? string.Empty;
 
             if (!string.IsNullOrWhiteSpace(rawAdmins))
             {

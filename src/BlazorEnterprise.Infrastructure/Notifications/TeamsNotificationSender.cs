@@ -72,7 +72,7 @@ public class TeamsNotificationSender : ITeamsNotificationSender
             };
 
             var json = JsonSerializer.Serialize(card);
-            using var client = _httpClientFactory.CreateClient("TeamsWebhook");
+            var client = _httpClientFactory.CreateClient("TeamsWebhook");
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await client.PostAsync(webhookUrl, content, ct);

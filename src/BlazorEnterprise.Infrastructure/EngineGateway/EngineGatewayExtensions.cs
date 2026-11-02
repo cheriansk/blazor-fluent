@@ -21,6 +21,22 @@ public static class EngineGatewayExtensions
         // Register S2S Tenant Token Service
         services.AddScoped<BlazorEnterprise.Infrastructure.Security.ITenantTokenService, BlazorEnterprise.Infrastructure.Security.TenantTokenService>();
 
+        services.PostConfigure<BlazorEnterprise.Core.Configuration.EngineOptions>(options =>
+        {
+            if (string.IsNullOrWhiteSpace(options.LicenseKey) && !string.IsNullOrWhiteSpace(configuration["Tenant:LicenseKey"]))
+            {
+                options.LicenseKey = configuration["Tenant:LicenseKey"]!;
+            }
+            foreach (var tenant in configuration.GetSection("Tenants").GetChildren())
+            {
+                var lk = tenant["LicenseKey"];
+                if (!string.IsNullOrWhiteSpace(lk))
+                {
+                    options.TenantLicenseKeys[tenant.Key] = lk;
+                }
+            }
+        });
+
         // Register HttpClient for ProcessAPI
         var rawBaseUrl = configuration["Engine:ApiBaseUrl"];
         var apiBaseUrl = rawBaseUrl.Trim();

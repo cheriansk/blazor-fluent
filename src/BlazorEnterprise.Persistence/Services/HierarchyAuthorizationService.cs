@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Utilities;
 ﻿using BlazorEnterprise.Core.Contracts;
 
@@ -41,40 +43,29 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     private readonly IAuditService _auditService;
 
-    private readonly IConfiguration _configuration;
+    private readonly SecurityOptions _securityOptions;
 
     private readonly ILogger<HierarchyAuthorizationService> _logger;
 
 
 
     public HierarchyAuthorizationService(
-
         AppDbContext context,
-
         ICurrentUser currentUser,
         ITenantContext tenantContext,
-
-
         IAuditService auditService,
-
-        IConfiguration configuration,
-
-        ILogger<HierarchyAuthorizationService> logger)
-
+        ILogger<HierarchyAuthorizationService> logger,
+        IOptions<SecurityOptions>? securityOptions = null)
     {
-
         _context = context;
-
         _currentUser = currentUser;
         _tenantContext = tenantContext;
-
-
         _auditService = auditService;
-
-        _configuration = configuration;
-
         _logger = logger;
-
+        _securityOptions = securityOptions?.Value ?? new SecurityOptions
+        {
+            IntegritySecret = string.Empty
+        };
     }
 
 
@@ -117,7 +108,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !tenantUser.VerifyIntegritySignature(integritySecret))
 
@@ -233,7 +224,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !programRole.VerifyIntegritySignature(integritySecret))
 
@@ -325,7 +316,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !projectRole.VerifyIntegritySignature(integritySecret))
 
@@ -471,7 +462,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !tenantUser.VerifyIntegritySignature(integritySecret))
 
@@ -585,7 +576,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !programRole.VerifyIntegritySignature(integritySecret))
 
@@ -697,7 +688,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !projectRole.VerifyIntegritySignature(integritySecret))
 
@@ -913,7 +904,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !projectRoleEntity.VerifyIntegritySignature(integritySecret))
 
@@ -965,7 +956,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             {
 
-                var integritySecret = _configuration["Security:IntegritySecret"];
+                var integritySecret = _securityOptions.IntegritySecret;
 
                 if (string.IsNullOrWhiteSpace(integritySecret) || programRoleEntity.VerifyIntegritySignature(integritySecret))
 
@@ -1075,7 +1066,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-        var integritySecret = _configuration["Security:IntegritySecret"];
+        var integritySecret = _securityOptions.IntegritySecret;
 
         if (!string.IsNullOrWhiteSpace(integritySecret) && !user.VerifyIntegritySignature(integritySecret))
 
@@ -1213,7 +1204,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             return string.IsNullOrWhiteSpace(integritySecret) || programRole.VerifyIntegritySignature(integritySecret);
 
@@ -1285,7 +1276,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
         {
 
-            var integritySecret = _configuration["Security:IntegritySecret"];
+            var integritySecret = _securityOptions.IntegritySecret;
 
             return string.IsNullOrWhiteSpace(integritySecret) || projectRole.VerifyIntegritySignature(integritySecret);
 

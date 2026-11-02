@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using System.Net.Http.Headers;
 using BlazorEnterprise.Shared.Common;
 using BlazorEnterprise.Shared.Contracts.Engine.Client;
@@ -15,19 +17,19 @@ public class CorrelationIdDelegatingHandler : DelegatingHandler
 {
     private readonly ICorrelationContext _correlationContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<EngineOptions>? _engineOptions;
     private readonly ILogger<CorrelationIdDelegatingHandler> _logger;
 
     public CorrelationIdDelegatingHandler(
         ICorrelationContext correlationContext,
         IHttpContextAccessor httpContextAccessor,
-        IConfiguration configuration,
-        ILogger<CorrelationIdDelegatingHandler> logger)
+        ILogger<CorrelationIdDelegatingHandler> logger,
+        IOptions<EngineOptions>? engineOptions = null)
     {
         _correlationContext = correlationContext;
         _httpContextAccessor = httpContextAccessor;
-        _configuration = configuration;
         _logger = logger;
+        _engineOptions = engineOptions;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -62,7 +64,7 @@ public class CorrelationIdDelegatingHandler : DelegatingHandler
         request.Headers.Add(EngineHeaderConstants.CorrelationId, sanitizedCorrelationId);
 
         // 2. Attach Tenant License Key
-        var licenseKey = _configuration["Engine:LicenseKey"] ?? _configuration["Tenant:LicenseKey"];
+        var licenseKey = _engineOptions?.Value.LicenseKey;
         if (!string.IsNullOrWhiteSpace(licenseKey))
         {
             request.Headers.Remove(EngineHeaderConstants.LicenseKey);

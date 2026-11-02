@@ -64,18 +64,7 @@ public enum CskTypography
     PageTitle
 }
 
-public enum CskColor
-{
-    Inherit,
-    Default,
-    Primary,
-    Secondary,
-    Success,
-    Warning,
-    Error,
-    Info,
-    Hint
-}
+// CskColor moved to Components/Common/CskColor.cs
 
 public enum Color
 {

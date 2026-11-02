@@ -1,23 +1,24 @@
 using System.Net;
 using System.Net.Mail;
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Notifications;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BlazorEnterprise.Infrastructure.Notifications;
 
 public class EmailNotificationSender : IEmailNotificationSender
 {
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<NotificationOptions> _options;
     private readonly ILogger<EmailNotificationSender> _logger;
 
     public EmailNotificationSender(
-        IConfiguration configuration,
+        IOptions<NotificationOptions> options,
         ILogger<EmailNotificationSender> logger)
     {
-        _configuration = configuration;
+        _options = options;
         _logger = logger;
     }
 
@@ -29,8 +30,9 @@ public class EmailNotificationSender : IEmailNotificationSender
             return false;
         }
 
-        var isEnabled = _configuration.GetValue<bool>("Notifications:Email:Enabled");
-        var smtpHost = _configuration["Notifications:Email:SmtpHost"];
+        var emailOpts = _options.Value.Email;
+        var isEnabled = emailOpts.Enabled;
+        var smtpHost = emailOpts.SmtpHost;
         if (!isEnabled || string.IsNullOrWhiteSpace(smtpHost))
         {
             _logger.LogInformation("Email notification disabled or SmtpHost unconfigured. Skipping email dispatch to {Mailbox}", recipientMailbox);
@@ -39,17 +41,17 @@ public class EmailNotificationSender : IEmailNotificationSender
 
         try
         {
-            var smtpPort = _configuration.GetValue<int>("Notifications:Email:SmtpPort", 587);
-            var useSsl = _configuration.GetValue<bool>("Notifications:Email:UseSsl", true);
-            var senderEmail = _configuration["Notifications:Email:SenderEmail"];
+            var smtpPort = emailOpts.SmtpPort;
+            var useSsl = emailOpts.UseSsl;
+            var senderEmail = emailOpts.SenderEmail;
             if (string.IsNullOrWhiteSpace(senderEmail))
             {
                 _logger.LogError("Zero-Trust Security Violation: 'Notifications:Email:SenderEmail' is unconfigured. Aborting email dispatch to {Mailbox}.", recipientMailbox);
                 return false;
             }
-            var senderName = _configuration["Notifications:Email:SenderName"] ?? "BlazorEnterprise Notifications";
-            var username = _configuration["Notifications:Email:Username"];
-            var password = _configuration["Notifications:Email:Password"];
+            var senderName = !string.IsNullOrWhiteSpace(emailOpts.SenderName) ? emailOpts.SenderName : "BlazorEnterprise Notifications";
+            var username = emailOpts.Username;
+            var password = emailOpts.Password;
 
             using var client = new SmtpClient(smtpHost, smtpPort)
             {
@@ -64,41 +66,47 @@ public class EmailNotificationSender : IEmailNotificationSender
 
             var colorHex = notification.Severity switch
             {
-                NotificationSeverityEnum.Success => "#107c41",
-                NotificationSeverityEnum.Warning => "#d83b01",
-                NotificationSeverityEnum.Error => "#a80000",
-                _ => "#0076d7"
+                NotificationSeverityEnum.Error => "#BA1A1A",
+                NotificationSeverityEnum.Warning => "#FFBA08",
+                NotificationSeverityEnum.Success => "#12B76A",
+                _ => "#005FB8"
             };
 
-            var htmlBody = $@"
-<div style=""font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e1dfdd; border-radius: 6px; overflow: hidden;"">
-    <div style=""background-color: {colorHex}; color: #ffffff; padding: 16px 20px;"">
-        <h2 style=""margin: 0; font-size: 18px;"">[{notification.Severity.ToString().ToUpperInvariant()}] {notification.Title}</h2>
-    </div>
-    <div style=""padding: 20px; background-color: #ffffff; color: #323130;"">
-        <p style=""font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;"">{System.Net.WebUtility.HtmlEncode(notification.Message)}</p>
-        <p style=""font-size: 12px; color: #605e5c; margin: 0 0 16px 0;"">Tenant: <strong>{notification.TenantId}</strong> | Time: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
-        {(string.IsNullOrWhiteSpace(notification.LinkUrl) ? "" : $@"<div style=""margin-top: 20px;""><a href=""{notification.LinkUrl}"" style=""background-color: {colorHex}; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: 600; display: inline-block;"">View in App</a></div>")}
-    </div>
-</div>";
+            var body = $@"<html>
+<head>
+<style>
+  body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #212529; }}
+  .container {{ max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; border-left: 6px solid {colorHex}; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 24px; }}
+  .title {{ font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #111827; }}
+  .content {{ font-size: 14px; line-height: 1.5; color: #4b5563; margin-bottom: 20px; }}
+  .footer {{ font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }}
+</style>
+</head>
+<body>
+  <div class='container'>
+    <div class='title'>{WebUtility.HtmlEncode(notification.Title)}</div>
+    <div class='content'>{WebUtility.HtmlEncode(notification.Message)}</div>
+    <div class='footer'>Sent by BlazorEnterprise | Automated System Alert</div>
+  </div>
+</body>
+</html>";
 
             using var mailMessage = new MailMessage
             {
                 From = new MailAddress(senderEmail, senderName),
                 Subject = $"[{notification.Severity}] {notification.Title}",
-                Body = htmlBody,
+                Body = body,
                 IsBodyHtml = true
             };
-
-            mailMessage.To.Add(recipientMailbox);
+            mailMessage.To.Add(recipientMailbox.Trim());
 
             await client.SendMailAsync(mailMessage, ct);
-            _logger.LogInformation("Email notification sent to mailbox '{Mailbox}' for '{Title}'", recipientMailbox, notification.Title);
+            _logger.LogInformation("Successfully sent email notification to {Mailbox} for alert '{Title}'", recipientMailbox, notification.Title);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email notification to mailbox: {Mailbox}", recipientMailbox);
+            _logger.LogError(ex, "Failed to send email notification to {Mailbox} for alert '{Title}'", recipientMailbox, notification.Title);
             return false;
         }
     }

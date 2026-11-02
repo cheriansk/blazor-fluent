@@ -21,7 +21,7 @@
         </div>
         @if (_isTenantAdmin || CurrentUser.IsRootAdmin)
         {
-            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@OpenCreateProgramModal">
+            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@OpenCreateProgramWizard">
                 Add Program
             </CskButton>
         }
@@ -34,72 +34,7 @@
         </CskMessageBar>
     }
 
-    <!-- Tenant Selection Toolbar -->
-    <CskCard Class="p-4">
-        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16" Wrap="true">
-            <CskSelect TOption="TenantFilterOption"
-                          TValue="string"
-                          Items="@_availableTenants"
-                          OptionText="@(t => t.Name)"
-                          OptionValue="@(t => t.Id)"
-                          Value="@_selectedTenantId"
-                          ValueChanged="@OnTenantSelectedAsync"
-                          Disabled="@(_availableTenants.Count <= 1)"
-                          Label="Filter by Tenant"
-                          Placeholder="-- Select a tenant --"
-                          Class="min-w-300" />
 
-            @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
-            {
-                <CskButton Variant="CskButtonVariant.Text"
-                              IconStart="@CskIcons.ArrowSync"
-                              OnClick="@LoadProgramsAsync">
-                    Refresh
-                </CskButton>
-            }
-        </CskStack>
-    </CskCard>
-
-    @* Add / Edit Program Form Card *@
-    @if (_showProgramModal)
-    {
-        <CskCard Class="card-accent-border p-5">
-            <CskLabel Typo="Typography.H5" Class="mb-3">
-                @(_editingProgramId.HasValue ? $"Edit Program: {_programFormName}" : "Create New Program")
-            </CskLabel>
-
-            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14">
-                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
-                    <CskTextInput Label="Program Code" @bind-Value="_programFormCode" Required="true" Class="flex-1" Placeholder="e.g. PRG-CORE" Disabled="@_editingProgramId.HasValue" />
-                    <CskTextInput Label="Program Name" @bind-Value="_programFormName" Required="true" Class="flex-2" Placeholder="e.g. Cloud Modernization Program" />
-                </CskStack>
-
-                <div>
-                    <CskLabel Typo="Typography.Body" Class="mb-1">Description / Strategic Scope</CskLabel>
-                    <CskTextArea @bind-Value="_programFormDescription" Placeholder="Enter the high-level scope, strategic objectives, and milestones..." Rows="3" Class="full-width" />
-                </div>
-
-                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
-                    <CskDatePicker Label="Start Date" @bind-Value="_programFormStartDate" Class="flex-1" />
-                    <CskDatePicker Label="Target Completion Date" @bind-Value="_programFormTargetEndDate" Class="flex-1" />
-                    <div class="flex-1">
-                        <DataListSelect TEnum="ProgramStatusEnum" TValue="ProgramStatusEnum" Label="Status" @bind-Value="_programFormStatus" Class="full-width" />
-                    </div>
-                </CskStack>
-
-                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-2">
-                    <CskButton Variant="CskButtonVariant.Filled"
-                                  Disabled="@(!IsProgramFormValid)"
-                                  OnClick="@SaveProgramAsync">
-                        @(_editingProgramId.HasValue ? "Update Program" : "Create Program")
-                    </CskButton>
-                    <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseProgramModal">
-                        Cancel
-                    </CskButton>
-                </CskStack>
-            </CskStack>
-        </CskCard>
-    }
 
     @* Programs DataGrid *@
     <CskCard Class="p-5">
@@ -135,7 +70,15 @@
         }
         else
         {
-            <CskDataGrid Items="@FilteredPrograms" ResizableColumns="true" GridTemplateColumns="120px 1.5fr 110px 140px 100px 220px">
+            <CskDataGrid Items="@FilteredPrograms" ResizableColumns="true" GridTemplateColumns="48px 120px 1.5fr 110px 140px 100px 300px">
+                <ChildContent>
+                <CskTemplateColumn Title="">
+                    <CskButton Variant="CskButtonVariant.Text"
+                               Size="CskButtonSize.Small"
+                               IconStart="@(_expandedProgramIds.Contains(context.Id) ? CskIcons.ChevronDown : CskIcons.ChevronRight)"
+                               Title="@(_expandedProgramIds.Contains(context.Id) ? "Collapse Projects" : "Expand Projects")"
+                               OnClick="@(() => ToggleProgramExpanded(context.Id))" />
+                </CskTemplateColumn>
                 <CskPropertyColumn Property="@(p => p.Code)" Title="Code" Sortable="true" />
                 <CskPropertyColumn Property="@(p => p.Name)" Title="Program Name" Sortable="true" />
                 <CskTemplateColumn Title="Status" SortBy="@(GridSort<ProgramEntity>.ByAscending(p => p.Status))">
@@ -168,24 +111,106 @@
                 </CskTemplateColumn>
                 <CskTemplateColumn Title="Actions">
                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
-                        <CskButton Appearance="@(_selectedProgram?.Id == context.Id ? CskButtonVariant.Filled : CskButtonVariant.Outlined)"
-                                      Size="CskButtonSize.Small"
-                                      IconStart="@CskIcons.Checkmark"
-                                      OnClick="@(() => SelectProgramAsync(context))">
-                            @(_selectedProgram?.Id == context.Id ? "Selected" : "Select")
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@CskIcons.Add"
+                                   Title="Add Project to Program"
+                                   OnClick="@(() => OpenCreateProjectWizard(context))">
+                            Add Project
+                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Text"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@CskIcons.Eye"
+                                   Title="View Program Details"
+                                   OnClick="@(() => OpenViewProgramWizard(context))">
+                            View
                         </CskButton>
                         @if (_isTenantAdmin || CurrentUser.IsRootAdmin || _programAdminIds.Contains(context.Id))
                         {
                             <CskButton Variant="CskButtonVariant.Text"
-                                          Size="CskButtonSize.Small"
-                                          IconStart="@CskIcons.Edit"
-                                          OnClick="@(() => OpenEditProgramModal(context))">
+                                       Size="CskButtonSize.Small"
+                                       IconStart="@CskIcons.Edit"
+                                       Title="Edit Program"
+                                       OnClick="@(() => OpenEditProgramWizard(context))">
                                 Edit
                             </CskButton>
                         }
                         <EntityHistoryButton EntityName="ProgramEntity" EntityId="@context.Id.ToString()" Tooltip="View program history" />
                     </CskStack>
                 </CskTemplateColumn>
+                </ChildContent>
+                <DetailTemplate>
+                    @if (_expandedProgramIds.Contains(context.Id))
+                    {
+                        <tr class="csk-programs-detail-row">
+                            <td colspan="7" class="csk-programs-detail-cell">
+                                <div class="csk-programs-detail-panel">
+
+                                    @if (context.Projects.Count == 0)
+                                    {
+                                        <div class="csk-projects-empty-state">
+                                            No projects currently assigned to this program. Click &ldquo;Add Project&rdquo; to launch the wizard.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <table class="csk-datagrid-table csk-datagrid-dense csk-projects-table-container">
+                                            <thead>
+                                                <tr class="csk-datagrid-header-row">
+                                                    <th class="csk-datagrid-th csk-project-col-code">Project Code</th>
+                                                    <th class="csk-datagrid-th">Project Name</th>
+                                                    <th class="csk-datagrid-th csk-project-col-status">Status</th>
+                                                    <th class="csk-datagrid-th csk-project-col-timeline">Timeline</th>
+                                                    <th class="csk-datagrid-th csk-project-col-actions">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var proj in context.Projects)
+                                                {
+                                                    <tr class="csk-datagrid-row">
+                                                        <td class="csk-datagrid-td">
+                                                            <code>@proj.ShortCode</code>
+                                                        </td>
+                                                        <td class="csk-datagrid-td csk-font-medium">
+                                                            @proj.Name
+                                                        </td>
+                                                        <td class="csk-datagrid-td">
+                                                            <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetProjectStatusBadgeColor(proj.Status)">
+                                                                @proj.Status
+                                                            </CskBadge>
+                                                        </td>
+                                                        <td class="csk-datagrid-td font-size-sm text-hint">
+                                                            @TimeZoneService.FormatDate(proj.StartDate) ~ @TimeZoneService.FormatDate(proj.EndDate ?? proj.DueDate)
+                                                        </td>
+                                                        <td class="csk-datagrid-td">
+                                                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                                                <CskButton Variant="CskButtonVariant.Text"
+                                                                           Size="CskButtonSize.Small"
+                                                                           IconStart="@CskIcons.Eye"
+                                                                           OnClick="@(() => OpenViewProjectWizard(proj))">
+                                                                    View
+                                                                </CskButton>
+                                                                <CskButton Variant="CskButtonVariant.Text"
+                                                                           Size="CskButtonSize.Small"
+                                                                           IconStart="@CskIcons.Edit"
+                                                                           OnClick="@(() => OpenEditProjectWizard(proj))">
+                                                                    Edit
+                                                                </CskButton>
+                                                                <CskLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{proj.Id}/tasks")" Class="font-size-sm">
+                                                                    Tasks &rarr;
+                                                                </CskLink>
+                                                            </CskStack>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </DetailTemplate>
             </CskDataGrid>
         }
     </CskCard>
@@ -568,4 +593,23 @@
             </CskTabs>
         </CskCard>
     }
+
+    <!-- Create/View/Edit Program Wizard Modal -->
+    <BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.CreateProgramWizardModal
+        IsOpen="@_showCreateProgramWizard"
+        IsOpenChanged="@((val) => _showCreateProgramWizard = val)"
+        IsReadOnly="@_isProgramWizardReadOnly"
+        IsEditMode="@_isProgramWizardEditMode"
+        Title="@_programWizardTitle"
+        InitialState="@_programWizardInitialState"
+        OnProgramCreated="@OnProgramWizardSavedAsync" />
+    <!-- Create/View/Edit Project Wizard Modal -->
+    <BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.CreateProjectWizardModal
+        IsOpen="@_showCreateProjectWizard"
+        IsOpenChanged="@((val) => _showCreateProjectWizard = val)"
+        IsReadOnly="@_isWizardReadOnly"
+        IsEditMode="@_isWizardEditMode"
+        Title="@_wizardTitle"
+        InitialState="@_wizardInitialState"
+        OnProjectCreated="@OnProjectWizardSavedAsync" />
 </CskStack>

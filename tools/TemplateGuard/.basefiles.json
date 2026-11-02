@@ -1,5 +1,18 @@
 {
   "TemplateVersion": "1.0.0",
+  "Layers": [
+    "Shared",
+    "Core",
+    "Persistence",
+    "Infrastructure",
+    "Jobs",
+    "Web",
+    "Shared.UI",
+    "RulesEngine",
+    "Api",
+    "ServiceDefaults",
+    "AppHost"
+  ],
   "Files": {
     "Api/Admin/AdminSecurityService.cs": {
       "RelativePath": "Api/Admin/AdminSecurityService.cs",
@@ -1967,6 +1980,8 @@
       "KnownMembers": [
         "GetAllTenantsAsync",
         "ITenantService.GetAllTenantsAsync(CancellationToken)",
+        "GetTenantByIdentifierAsync",
+        "ITenantService.GetTenantByIdentifierAsync(string, CancellationToken)",
         "CreateTenantAsync",
         "ITenantService.CreateTenantAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, CancellationToken)",
         "ITenantService.CreateTenantAsync(string, string, string, string, DateTime, DateTime, CancellationToken)",
@@ -2007,6 +2022,7 @@
       ],
       "MemberSyntaxHashes": {
         "ITenantService.GetAllTenantsAsync(CancellationToken)": "993c1547f63c7565eb1657abd1ffc0fda75ae64618618a92a48677617ff89e99",
+        "ITenantService.GetTenantByIdentifierAsync(string, CancellationToken)": "c0efd162dbe8370897f1b2b49b8d903a547d8f14faf76c7f6d07e15fdc0a1d31",
         "ITenantService.CreateTenantAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, CancellationToken)": "40ec9aee184520419769c39352cb462e26dba5abeb0400590bec4d9e77abc298",
         "ITenantService.CreateTenantAsync(string, string, string, string, DateTime, DateTime, CancellationToken)": "f3d6583aefb0f61e26165ce4c2b826513e257fbb43ad53489cb29f1573b19f9a",
         "ITenantService.CreateTenantWithAdminAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, string, string, CancellationToken)": "149301f1046fc04261dd8cc7683b189abb6e0b6a954ca1ed9f4dcb90307be07d",
@@ -6233,6 +6249,211 @@
         "Address.Address(Address)"
       ],
       "MemberSyntaxHashes": {}
+    },
+    "Core/Dtos/CreateProjectWizardState.cs": {
+      "RelativePath": "Core/Dtos/CreateProjectWizardState.cs",
+      "KnownMembers": [
+        "\u003CStepName\u003Ek__BackingField",
+        "RfpTimelineRowDto.StepName.field",
+        "StepName",
+        "RfpTimelineRowDto.StepName",
+        "get_StepName",
+        "RfpTimelineRowDto.StepName.get",
+        "set_StepName",
+        "RfpTimelineRowDto.StepName.set",
+        "\u003CStartDate\u003Ek__BackingField",
+        "RfpTimelineRowDto.StartDate.field",
+        "StartDate",
+        "RfpTimelineRowDto.StartDate",
+        "get_StartDate",
+        "RfpTimelineRowDto.StartDate.get",
+        "set_StartDate",
+        "RfpTimelineRowDto.StartDate.set",
+        "\u003CEndDate\u003Ek__BackingField",
+        "RfpTimelineRowDto.EndDate.field",
+        "EndDate",
+        "RfpTimelineRowDto.EndDate",
+        "get_EndDate",
+        "RfpTimelineRowDto.EndDate.get",
+        "set_EndDate",
+        "RfpTimelineRowDto.EndDate.set",
+        "\u003CDetails\u003Ek__BackingField",
+        "RfpTimelineRowDto.Details.field",
+        "Details",
+        "RfpTimelineRowDto.Details",
+        "get_Details",
+        "RfpTimelineRowDto.Details.get",
+        "set_Details",
+        "RfpTimelineRowDto.Details.set",
+        ".ctor",
+        "RfpTimelineRowDto.RfpTimelineRowDto()",
+        "\u003CPhaseName\u003Ek__BackingField",
+        "ProjectPhaseDto.PhaseName.field",
+        "PhaseName",
+        "ProjectPhaseDto.PhaseName",
+        "get_PhaseName",
+        "ProjectPhaseDto.PhaseName.get",
+        "set_PhaseName",
+        "ProjectPhaseDto.PhaseName.set",
+        "ProjectPhaseDto.StartDate.field",
+        "ProjectPhaseDto.StartDate",
+        "ProjectPhaseDto.StartDate.get",
+        "ProjectPhaseDto.StartDate.set",
+        "\u003CTargetDate\u003Ek__BackingField",
+        "ProjectPhaseDto.TargetDate.field",
+        "TargetDate",
+        "ProjectPhaseDto.TargetDate",
+        "get_TargetDate",
+        "ProjectPhaseDto.TargetDate.get",
+        "set_TargetDate",
+        "ProjectPhaseDto.TargetDate.set",
+        "ProjectPhaseDto.ProjectPhaseDto()",
+        "\u003CTitle\u003Ek__BackingField",
+        "ProjectMilestoneDto.Title.field",
+        "Title",
+        "ProjectMilestoneDto.Title",
+        "get_Title",
+        "ProjectMilestoneDto.Title.get",
+        "set_Title",
+        "ProjectMilestoneDto.Title.set",
+        "\u003CDueDate\u003Ek__BackingField",
+        "ProjectMilestoneDto.DueDate.field",
+        "DueDate",
+        "ProjectMilestoneDto.DueDate",
+        "get_DueDate",
+        "ProjectMilestoneDto.DueDate.get",
+        "set_DueDate",
+        "ProjectMilestoneDto.DueDate.set",
+        "\u003CDeliverable\u003Ek__BackingField",
+        "ProjectMilestoneDto.Deliverable.field",
+        "Deliverable",
+        "ProjectMilestoneDto.Deliverable",
+        "get_Deliverable",
+        "ProjectMilestoneDto.Deliverable.get",
+        "set_Deliverable",
+        "ProjectMilestoneDto.Deliverable.set",
+        "ProjectMilestoneDto.ProjectMilestoneDto()",
+        "\u003CFullName\u003Ek__BackingField",
+        "ProjectRosterMemberDto.FullName.field",
+        "FullName",
+        "ProjectRosterMemberDto.FullName",
+        "get_FullName",
+        "ProjectRosterMemberDto.FullName.get",
+        "set_FullName",
+        "ProjectRosterMemberDto.FullName.set",
+        "\u003CEmail\u003Ek__BackingField",
+        "ProjectRosterMemberDto.Email.field",
+        "Email",
+        "ProjectRosterMemberDto.Email",
+        "get_Email",
+        "ProjectRosterMemberDto.Email.get",
+        "set_Email",
+        "ProjectRosterMemberDto.Email.set",
+        "\u003CRole\u003Ek__BackingField",
+        "ProjectRosterMemberDto.Role.field",
+        "Role",
+        "ProjectRosterMemberDto.Role",
+        "get_Role",
+        "ProjectRosterMemberDto.Role.get",
+        "set_Role",
+        "ProjectRosterMemberDto.Role.set",
+        "ProjectRosterMemberDto.ProjectRosterMemberDto()",
+        "\u003CSelectedTemplateId\u003Ek__BackingField",
+        "CreateProjectWizardState.SelectedTemplateId.field",
+        "SelectedTemplateId",
+        "CreateProjectWizardState.SelectedTemplateId",
+        "get_SelectedTemplateId",
+        "CreateProjectWizardState.SelectedTemplateId.get",
+        "set_SelectedTemplateId",
+        "CreateProjectWizardState.SelectedTemplateId.set",
+        "\u003CProgramId\u003Ek__BackingField",
+        "CreateProjectWizardState.ProgramId.field",
+        "ProgramId",
+        "CreateProjectWizardState.ProgramId",
+        "get_ProgramId",
+        "CreateProjectWizardState.ProgramId.get",
+        "set_ProgramId",
+        "CreateProjectWizardState.ProgramId.set",
+        "\u003CName\u003Ek__BackingField",
+        "CreateProjectWizardState.Name.field",
+        "Name",
+        "CreateProjectWizardState.Name",
+        "get_Name",
+        "CreateProjectWizardState.Name.get",
+        "set_Name",
+        "CreateProjectWizardState.Name.set",
+        "\u003CShortCode\u003Ek__BackingField",
+        "CreateProjectWizardState.ShortCode.field",
+        "ShortCode",
+        "CreateProjectWizardState.ShortCode",
+        "get_ShortCode",
+        "CreateProjectWizardState.ShortCode.get",
+        "set_ShortCode",
+        "CreateProjectWizardState.ShortCode.set",
+        "\u003CScopeSummary\u003Ek__BackingField",
+        "CreateProjectWizardState.ScopeSummary.field",
+        "ScopeSummary",
+        "CreateProjectWizardState.ScopeSummary",
+        "get_ScopeSummary",
+        "CreateProjectWizardState.ScopeSummary.get",
+        "set_ScopeSummary",
+        "CreateProjectWizardState.ScopeSummary.set",
+        "\u003CRfpTimelineRows\u003Ek__BackingField",
+        "CreateProjectWizardState.RfpTimelineRows.field",
+        "RfpTimelineRows",
+        "CreateProjectWizardState.RfpTimelineRows",
+        "get_RfpTimelineRows",
+        "CreateProjectWizardState.RfpTimelineRows.get",
+        "set_RfpTimelineRows",
+        "CreateProjectWizardState.RfpTimelineRows.set",
+        "CreateProjectWizardState.StartDate.field",
+        "CreateProjectWizardState.StartDate",
+        "CreateProjectWizardState.StartDate.get",
+        "CreateProjectWizardState.StartDate.set",
+        "CreateProjectWizardState.EndDate.field",
+        "CreateProjectWizardState.EndDate",
+        "CreateProjectWizardState.EndDate.get",
+        "CreateProjectWizardState.EndDate.set",
+        "\u003CPhases\u003Ek__BackingField",
+        "CreateProjectWizardState.Phases.field",
+        "Phases",
+        "CreateProjectWizardState.Phases",
+        "get_Phases",
+        "CreateProjectWizardState.Phases.get",
+        "set_Phases",
+        "CreateProjectWizardState.Phases.set",
+        "\u003CMilestones\u003Ek__BackingField",
+        "CreateProjectWizardState.Milestones.field",
+        "Milestones",
+        "CreateProjectWizardState.Milestones",
+        "get_Milestones",
+        "CreateProjectWizardState.Milestones.get",
+        "set_Milestones",
+        "CreateProjectWizardState.Milestones.set",
+        "\u003CRoster\u003Ek__BackingField",
+        "CreateProjectWizardState.Roster.field",
+        "Roster",
+        "CreateProjectWizardState.Roster",
+        "get_Roster",
+        "CreateProjectWizardState.Roster.get",
+        "set_Roster",
+        "CreateProjectWizardState.Roster.set",
+        "\u003CCustomStepData\u003Ek__BackingField",
+        "CreateProjectWizardState.CustomStepData.field",
+        "CustomStepData",
+        "CreateProjectWizardState.CustomStepData",
+        "get_CustomStepData",
+        "CreateProjectWizardState.CustomStepData.get",
+        "GetCustom",
+        "CreateProjectWizardState.GetCustom\u003CT\u003E(string, T)",
+        "SetCustom",
+        "CreateProjectWizardState.SetCustom\u003CT\u003E(string, T)",
+        "CreateProjectWizardState.CreateProjectWizardState()"
+      ],
+      "MemberSyntaxHashes": {
+        "CreateProjectWizardState.GetCustom\u003CT\u003E(string, T)": "d780e3a3aef7ec66033d60cef8dd1154e88dfb0b98fd170e213ad6999748d3ca",
+        "CreateProjectWizardState.SetCustom\u003CT\u003E(string, T)": "c493ecccfaf2fcb282b328cbfa013336dfa23c67e40738dd78ba5110d3db86c0"
+      }
     },
     "Core/Dtos/Imports/ImportDtos.cs": {
       "RelativePath": "Core/Dtos/Imports/ImportDtos.cs",
@@ -12171,10 +12392,16 @@
         "TenantService._tenantContext",
         "_logger",
         "TenantService._logger",
+        "FindTenantByIdentifierAsync",
+        "TenantService.FindTenantByIdentifierAsync(string?, bool, CancellationToken)",
+        "IsAuthorizedForTenant",
+        "TenantService.IsAuthorizedForTenant(TenantEntity, bool)",
         ".ctor",
         "TenantService.TenantService(AppDbContext, IAuditService, ITenantCacheService, IConfiguration, IRootAdminService, ICurrentUser, ITenantContext, ILogger\u003CTenantService\u003E)",
         "GetAllTenantsAsync",
         "TenantService.GetAllTenantsAsync(CancellationToken)",
+        "GetTenantByIdentifierAsync",
+        "TenantService.GetTenantByIdentifierAsync(string, CancellationToken)",
         "CreateTenantAsync",
         "TenantService.CreateTenantAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, CancellationToken)",
         "CreateTenantWithAdminAsync",
@@ -12218,20 +12445,23 @@
         "TenantService.TenantService()"
       ],
       "MemberSyntaxHashes": {
+        "TenantService.FindTenantByIdentifierAsync(string?, bool, CancellationToken)": "fae69bff116abe76399703ec22e1b6cc226cfbeb804f437d3e0cc41066aa0ed3",
+        "TenantService.IsAuthorizedForTenant(TenantEntity, bool)": "3ca8b2dc8c76f6d83803bb79d56b7aca7abd87052667d3f8484016991d755ca5",
         "TenantService.GetAllTenantsAsync(CancellationToken)": "b9545eae171222d913d8cce8320a66baa8e1e37774d2f93d5f824a7dd973828f",
+        "TenantService.GetTenantByIdentifierAsync(string, CancellationToken)": "fe279ef9c9a9846ec465df2bcb340e7a9eb5d44b51fdb23e09a34bc9d838f86e",
         "TenantService.CreateTenantAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, CancellationToken)": "270d7193bdc7569c50dd230205cea94361aa1aafbd3408004840a8591eb6833c",
         "TenantService.CreateTenantWithAdminAsync(string, string, IEnumerable\u003Cstring\u003E, IEnumerable\u003Cstring\u003E, DateTime, DateTime, string, string, CancellationToken)": "bbc58b62bb8b86f08b30f530ad913340bf90575277dee3957b77dcb0b8c6d341",
         "TenantService.CreateTenantAsync(string, string, string, string, DateTime, DateTime, CancellationToken)": "cbabdfd6d7d21f781d648d139df30d109b182ef86c69681717214e0e57841d40",
-        "TenantService.GetTenantUsersAsync(string, CancellationToken)": "c7fef00d6e46658cc481d3ec5d0b1c9fbd61e25f032b1a681ee5399413d3a6a8",
-        "TenantService.AddTenantUserAsync(string, string, string, DateTime, DateTime, bool, CancellationToken)": "5c8eac7040316c61e7e820cc272c5a3adf169d021ae002d4141606ad1f0f2658",
-        "TenantService.UpdateTenantUserAsync(string, Guid, string, string, DateTime, DateTime, bool, CancellationToken)": "144e42b68242f5cc0a3a87c2df4b41dd0c120b37e59562ba429329d6e8607652",
-        "TenantService.AssignTenantAdminRoleAsync(string, Guid, bool, CancellationToken)": "7d3326e2621f41d873f0f2644526a6f2fc891781717f973124781422cb697f27",
+        "TenantService.GetTenantUsersAsync(string, CancellationToken)": "f88ba0f39d9cf7849e3dc5d889e79f3cf05fdddeead9fc0c4c0762ed2120f9d2",
+        "TenantService.AddTenantUserAsync(string, string, string, DateTime, DateTime, bool, CancellationToken)": "e55b86fa7173b49708062754ce743c0cf719a0402f5fd83e839620cea05980bf",
+        "TenantService.UpdateTenantUserAsync(string, Guid, string, string, DateTime, DateTime, bool, CancellationToken)": "a574f891eb92adfc8362512606bf0ca080c0d4d2825d68472cb06624f57545fe",
+        "TenantService.AssignTenantAdminRoleAsync(string, Guid, bool, CancellationToken)": "0d34709f6ffa2907d4112547bf52c90e32eafde308543c4562e4b8fa11d0b5a4",
         "TenantService.UpdateTenantStatusAsync(Guid, bool, CancellationToken)": "b70fce3b91b5f0d5b84b6f253f1c815de41f622d3def1f03eaf900643b210409",
         "TenantService.UpdateTenantDatesAsync(Guid, DateTime, DateTime, CancellationToken)": "b8a2d820d5dd6a1a818352b9cc841d90e43c10f75a1fc7cf90ac72f09073304b",
-        "TenantService.GetTenantProjectsAsync(string, CancellationToken)": "8e2d0d1e6ed2dcdbdffc06437328b345ace76cc1502cf494a63e1dd5307d52cd",
-        "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "907136f622c85dd2a027a4c12a9d5b5d20f8f239ec9f33e50cd4f98230239abd",
-        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "38315de9fc72d175def0987553d8a93dec450b10b91a6ed583ff3d1cef6c7b06",
-        "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "558c25590b169d980d52e2b5fb5e8ee36de18c416071f159b2e78e08b8f6349f",
+        "TenantService.GetTenantProjectsAsync(string, CancellationToken)": "78aa1bb0cd38b8616a4d66554adbad94c8d54972e57316d0d546cfa1ea04585d",
+        "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "8fa4e8fd953b89cba45ffdd73d8c70a0a7c4a7f2e544c747ceaaa26431607282",
+        "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "2026eb526060e7fe74ad3285105b45e75789c1a3f397a60a4f7e9720000701b9",
+        "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "82f612bd04fe663c99cb81b5fd990c081ccb8a81e075463448f06c03fc55318f",
         "TenantService.GetTenantDaemonUserAsync(Guid, CancellationToken)": "c8df50706b637a9bb855c8adf3fd4c5136f65000446871ff7e510122c167c0f0",
         "TenantService.IsTenantDaemonActiveAsync(Guid, CancellationToken)": "e7eb4850db3acd2563fd3a00158aedd1d1719d54c5f0953a14894764b2a5a4b6",
         "TenantService.SetTenantDaemonActiveAsync(Guid, bool, CancellationToken)": "354f090d682e2c7f577797402dd16400df809ac2fd87d48c1142d96ab99735d1",
@@ -13278,10 +13508,22 @@
         "CskColumnBase\u003CTGridItem\u003E.Class.get",
         "set_Class",
         "CskColumnBase\u003CTGridItem\u003E.Class.set",
+        "\u003CSearchable\u003Ek__BackingField",
+        "CskColumnBase\u003CTGridItem\u003E.Searchable.field",
+        "Searchable",
+        "CskColumnBase\u003CTGridItem\u003E.Searchable",
+        "get_Searchable",
+        "CskColumnBase\u003CTGridItem\u003E.Searchable.get",
+        "set_Searchable",
+        "CskColumnBase\u003CTGridItem\u003E.Searchable.set",
         "SortDefinition",
         "CskColumnBase\u003CTGridItem\u003E.SortDefinition",
         "get_SortDefinition",
         "CskColumnBase\u003CTGridItem\u003E.SortDefinition.get",
+        "SearchTextSelector",
+        "CskColumnBase\u003CTGridItem\u003E.SearchTextSelector",
+        "get_SearchTextSelector",
+        "CskColumnBase\u003CTGridItem\u003E.SearchTextSelector.get",
         "OnInitialized",
         "CskColumnBase\u003CTGridItem\u003E.OnInitialized()",
         "RenderHeader",
@@ -13309,6 +13551,8 @@
         "CskDataGrid\u003CTGridItem\u003E._currentSortColumn",
         "_sortDescending",
         "CskDataGrid\u003CTGridItem\u003E._sortDescending",
+        "_searchCts",
+        "CskDataGrid\u003CTGridItem\u003E._searchCts",
         "\u003CItems\u003Ek__BackingField",
         "CskDataGrid\u003CTGridItem\u003E.Items.field",
         "Items",
@@ -13317,6 +13561,46 @@
         "CskDataGrid\u003CTGridItem\u003E.Items.get",
         "set_Items",
         "CskDataGrid\u003CTGridItem\u003E.Items.set",
+        "\u003CSearchable\u003Ek__BackingField",
+        "CskDataGrid\u003CTGridItem\u003E.Searchable.field",
+        "Searchable",
+        "CskDataGrid\u003CTGridItem\u003E.Searchable",
+        "get_Searchable",
+        "CskDataGrid\u003CTGridItem\u003E.Searchable.get",
+        "set_Searchable",
+        "CskDataGrid\u003CTGridItem\u003E.Searchable.set",
+        "\u003CSearchPlaceholder\u003Ek__BackingField",
+        "CskDataGrid\u003CTGridItem\u003E.SearchPlaceholder.field",
+        "SearchPlaceholder",
+        "CskDataGrid\u003CTGridItem\u003E.SearchPlaceholder",
+        "get_SearchPlaceholder",
+        "CskDataGrid\u003CTGridItem\u003E.SearchPlaceholder.get",
+        "set_SearchPlaceholder",
+        "CskDataGrid\u003CTGridItem\u003E.SearchPlaceholder.set",
+        "\u003CSearchDebounceMs\u003Ek__BackingField",
+        "CskDataGrid\u003CTGridItem\u003E.SearchDebounceMs.field",
+        "SearchDebounceMs",
+        "CskDataGrid\u003CTGridItem\u003E.SearchDebounceMs",
+        "get_SearchDebounceMs",
+        "CskDataGrid\u003CTGridItem\u003E.SearchDebounceMs.get",
+        "set_SearchDebounceMs",
+        "CskDataGrid\u003CTGridItem\u003E.SearchDebounceMs.set",
+        "\u003CSearchText\u003Ek__BackingField",
+        "CskDataGrid\u003CTGridItem\u003E.SearchText.field",
+        "SearchText",
+        "CskDataGrid\u003CTGridItem\u003E.SearchText",
+        "get_SearchText",
+        "CskDataGrid\u003CTGridItem\u003E.SearchText.get",
+        "set_SearchText",
+        "CskDataGrid\u003CTGridItem\u003E.SearchText.set",
+        "\u003CSearchTextChanged\u003Ek__BackingField",
+        "CskDataGrid\u003CTGridItem\u003E.SearchTextChanged.field",
+        "SearchTextChanged",
+        "CskDataGrid\u003CTGridItem\u003E.SearchTextChanged",
+        "get_SearchTextChanged",
+        "CskDataGrid\u003CTGridItem\u003E.SearchTextChanged.get",
+        "set_SearchTextChanged",
+        "CskDataGrid\u003CTGridItem\u003E.SearchTextChanged.set",
         "\u003CResizableColumns\u003Ek__BackingField",
         "CskDataGrid\u003CTGridItem\u003E.ResizableColumns.field",
         "ResizableColumns",
@@ -13403,6 +13687,14 @@
         "CskDataGrid\u003CTGridItem\u003E.RemoveColumn(ICskColumn\u003CTGridItem\u003E)",
         "HandleHeaderClickAsync",
         "CskDataGrid\u003CTGridItem\u003E.HandleHeaderClickAsync(ICskColumn\u003CTGridItem\u003E)",
+        "OnSearchInputAsync",
+        "CskDataGrid\u003CTGridItem\u003E.OnSearchInputAsync(ChangeEventArgs)",
+        "ClearSearchAsync",
+        "CskDataGrid\u003CTGridItem\u003E.ClearSearchAsync()",
+        "SetSearchTextAsync",
+        "CskDataGrid\u003CTGridItem\u003E.SetSearchTextAsync(string)",
+        "GetFilteredItems",
+        "CskDataGrid\u003CTGridItem\u003E.GetFilteredItems()",
         "GetSortedItems",
         "CskDataGrid\u003CTGridItem\u003E.GetSortedItems()",
         ".ctor",
@@ -13413,7 +13705,11 @@
         "CskDataGrid\u003CTGridItem\u003E.AddColumn(ICskColumn\u003CTGridItem\u003E)": "b11a5fdd9f660a18064e600904d01aa984a48a9662c874c459bdfdaadcffcd15",
         "CskDataGrid\u003CTGridItem\u003E.RemoveColumn(ICskColumn\u003CTGridItem\u003E)": "85710c4174eb6be61add7715abfb9a25e994574653bf007a246a3e8090bae105",
         "CskDataGrid\u003CTGridItem\u003E.HandleHeaderClickAsync(ICskColumn\u003CTGridItem\u003E)": "c615b99a7605eec0214f0020399e74bbcba04cdc437baa8d88edc94c7dfdea31",
-        "CskDataGrid\u003CTGridItem\u003E.GetSortedItems()": "9a2855843bf170138a683b22eeb6e35fc649bc8b4f4f9055d16f7981621e3157"
+        "CskDataGrid\u003CTGridItem\u003E.OnSearchInputAsync(ChangeEventArgs)": "29769e30a8292e9cc6e2c4d6c29715a937b35a72f58997f3ae90ba65dec3737c",
+        "CskDataGrid\u003CTGridItem\u003E.ClearSearchAsync()": "b1c2e8f5ed662b92453271b619d4c7d786268cf0f0877936fa13bf613582e1d6",
+        "CskDataGrid\u003CTGridItem\u003E.SetSearchTextAsync(string)": "61a70e0ed0e3d2a1819f9990e03a43838bb80af753390e59efe3648268bf45cd",
+        "CskDataGrid\u003CTGridItem\u003E.GetFilteredItems()": "9a6c45d590a08a179bc6e06b67be7c3cb0ff1dac1aadf1f42ffa2f4409a6ce36",
+        "CskDataGrid\u003CTGridItem\u003E.GetSortedItems()": "01b1a2347446560de18d3a78653079037d244fbc695839a220949f3dfe840ffa"
       }
     },
     "Shared.UI/Components/DataGrid/CskPropertyColumn.cs": {
@@ -13445,6 +13741,12 @@
         "CskPropertyColumn\u003CTGridItem, TProperty\u003E.SortDefinition.get",
         "OnParametersSet",
         "CskPropertyColumn\u003CTGridItem, TProperty\u003E.OnParametersSet()",
+        "SearchTextSelector",
+        "CskPropertyColumn\u003CTGridItem, TProperty\u003E.SearchTextSelector",
+        "get_SearchTextSelector",
+        "CskPropertyColumn\u003CTGridItem, TProperty\u003E.SearchTextSelector.get",
+        "GetText",
+        "CskPropertyColumn\u003CTGridItem, TProperty\u003E.GetText(TGridItem)",
         "RenderCell",
         "CskPropertyColumn\u003CTGridItem, TProperty\u003E.RenderCell(TGridItem)",
         ".ctor",
@@ -13453,7 +13755,8 @@
       ],
       "MemberSyntaxHashes": {
         "CskPropertyColumn\u003CTGridItem, TProperty\u003E.OnParametersSet()": "f3ec50c94a086255f13959abc41267ca800b8bc51efa93e629feb386be888ddb",
-        "CskPropertyColumn\u003CTGridItem, TProperty\u003E.RenderCell(TGridItem)": "0c21ccb2bc3c2b14c95d499e999b1a5206e9198fc04aa32dd1d74e173cfab57e"
+        "CskPropertyColumn\u003CTGridItem, TProperty\u003E.GetText(TGridItem)": "98e2f8af06bef4e1012b1bca30da4d770eddc77aec1b9a7bd8f68f401f769a4e",
+        "CskPropertyColumn\u003CTGridItem, TProperty\u003E.RenderCell(TGridItem)": "7e8aac1d560eca677df49687cd9c835283ae559ef6d4f317321575b0abafe6bd"
       }
     },
     "Shared.UI/Components/DataGrid/CskTemplateColumn.cs": {
@@ -13475,10 +13778,22 @@
         "CskTemplateColumn\u003CTGridItem\u003E.ChildContent.get",
         "set_ChildContent",
         "CskTemplateColumn\u003CTGridItem\u003E.ChildContent.set",
+        "\u003CSearchBy\u003Ek__BackingField",
+        "CskTemplateColumn\u003CTGridItem\u003E.SearchBy.field",
+        "SearchBy",
+        "CskTemplateColumn\u003CTGridItem\u003E.SearchBy",
+        "get_SearchBy",
+        "CskTemplateColumn\u003CTGridItem\u003E.SearchBy.get",
+        "set_SearchBy",
+        "CskTemplateColumn\u003CTGridItem\u003E.SearchBy.set",
         "SortDefinition",
         "CskTemplateColumn\u003CTGridItem\u003E.SortDefinition",
         "get_SortDefinition",
         "CskTemplateColumn\u003CTGridItem\u003E.SortDefinition.get",
+        "SearchTextSelector",
+        "CskTemplateColumn\u003CTGridItem\u003E.SearchTextSelector",
+        "get_SearchTextSelector",
+        "CskTemplateColumn\u003CTGridItem\u003E.SearchTextSelector.get",
         "OnParametersSet",
         "CskTemplateColumn\u003CTGridItem\u003E.OnParametersSet()",
         "RenderCell",
@@ -13549,6 +13864,10 @@
         "ICskColumn\u003CTGridItem\u003E.SortDefinition",
         "get_SortDefinition",
         "ICskColumn\u003CTGridItem\u003E.SortDefinition.get",
+        "SearchTextSelector",
+        "ICskColumn\u003CTGridItem\u003E.SearchTextSelector",
+        "get_SearchTextSelector",
+        "ICskColumn\u003CTGridItem\u003E.SearchTextSelector.get",
         "RenderHeader",
         "ICskColumn\u003CTGridItem\u003E.RenderHeader(bool, bool)",
         "RenderCell",
@@ -15905,6 +16224,14 @@
         "CskWizardModal\u003CTState\u003E.InitialState.get",
         "set_InitialState",
         "CskWizardModal\u003CTState\u003E.InitialState.set",
+        "\u003CInitialTemplateId\u003Ek__BackingField",
+        "CskWizardModal\u003CTState\u003E.InitialTemplateId.field",
+        "InitialTemplateId",
+        "CskWizardModal\u003CTState\u003E.InitialTemplateId",
+        "get_InitialTemplateId",
+        "CskWizardModal\u003CTState\u003E.InitialTemplateId.get",
+        "set_InitialTemplateId",
+        "CskWizardModal\u003CTState\u003E.InitialTemplateId.set",
         "\u003COnFinish\u003Ek__BackingField",
         "CskWizardModal\u003CTState\u003E.OnFinish.field",
         "OnFinish",
@@ -15929,6 +16256,14 @@
         "CskWizardModal\u003CTState\u003E.Steps.get",
         "set_Steps",
         "CskWizardModal\u003CTState\u003E.Steps.set",
+        "\u003CFlowDefinition\u003Ek__BackingField",
+        "CskWizardModal\u003CTState\u003E.FlowDefinition.field",
+        "FlowDefinition",
+        "CskWizardModal\u003CTState\u003E.FlowDefinition",
+        "get_FlowDefinition",
+        "CskWizardModal\u003CTState\u003E.FlowDefinition.get",
+        "set_FlowDefinition",
+        "CskWizardModal\u003CTState\u003E.FlowDefinition.set",
         "\u003CContext\u003Ek__BackingField",
         "CskWizardModal\u003CTState\u003E.Context.field",
         "Context",
@@ -15937,8 +16272,12 @@
         "CskWizardModal\u003CTState\u003E.Context.get",
         "set_Context",
         "CskWizardModal\u003CTState\u003E.Context.set",
-        "_steps",
-        "CskWizardModal\u003CTState\u003E._steps",
+        "_declarativeSteps",
+        "CskWizardModal\u003CTState\u003E._declarativeSteps",
+        "_resolvedFlowSteps",
+        "CskWizardModal\u003CTState\u003E._resolvedFlowSteps",
+        "_dynamicStepComponentRef",
+        "CskWizardModal\u003CTState\u003E._dynamicStepComponentRef",
         "_currentStepIndex",
         "CskWizardModal\u003CTState\u003E._currentStepIndex",
         "_isBusy",
@@ -15951,14 +16290,40 @@
         "CskWizardModal\u003CTState\u003E.CurrentStepIndex",
         "get_CurrentStepIndex",
         "CskWizardModal\u003CTState\u003E.CurrentStepIndex.get",
+        "ActiveStepCount",
+        "CskWizardModal\u003CTState\u003E.ActiveStepCount",
+        "get_ActiveStepCount",
+        "CskWizardModal\u003CTState\u003E.ActiveStepCount.get",
+        "CurrentActiveStep",
+        "CskWizardModal\u003CTState\u003E.CurrentActiveStep",
+        "get_CurrentActiveStep",
+        "CskWizardModal\u003CTState\u003E.CurrentActiveStep.get",
+        "IsCurrentStepOptional",
+        "CskWizardModal\u003CTState\u003E.IsCurrentStepOptional",
+        "get_IsCurrentStepOptional",
+        "CskWizardModal\u003CTState\u003E.IsCurrentStepOptional.get",
         "OnInitialized",
         "CskWizardModal\u003CTState\u003E.OnInitialized()",
         "OnParametersSet",
         "CskWizardModal\u003CTState\u003E.OnParametersSet()",
+        "HandleTemplateChanged",
+        "CskWizardModal\u003CTState\u003E.HandleTemplateChanged(string?)",
+        "RecomputeFlowSteps",
+        "CskWizardModal\u003CTState\u003E.RecomputeFlowSteps()",
         "RegisterStep",
         "CskWizardModal\u003CTState\u003E.RegisterStep(WizardStep)",
         "UnregisterStep",
         "CskWizardModal\u003CTState\u003E.UnregisterStep(WizardStep)",
+        "GetStepTitle",
+        "CskWizardModal\u003CTState\u003E.GetStepTitle(int)",
+        "GetStepSummary",
+        "CskWizardModal\u003CTState\u003E.GetStepSummary(int)",
+        "IsStepOptional",
+        "CskWizardModal\u003CTState\u003E.IsStepOptional(int)",
+        "IsStepSkipped",
+        "CskWizardModal\u003CTState\u003E.IsStepSkipped(int)",
+        "GetStepParameters",
+        "CskWizardModal\u003CTState\u003E.GetStepParameters()",
         "HandleContextStateChanged",
         "CskWizardModal\u003CTState\u003E.HandleContextStateChanged()",
         "HandleBackdropClick",
@@ -15969,8 +16334,12 @@
         "CskWizardModal\u003CTState\u003E.ConfirmDiscardAsync()",
         "CloseModalAsync",
         "CskWizardModal\u003CTState\u003E.CloseModalAsync()",
+        "ValidateCurrentStepAsync",
+        "CskWizardModal\u003CTState\u003E.ValidateCurrentStepAsync()",
         "GoNextAsync",
         "CskWizardModal\u003CTState\u003E.GoNextAsync()",
+        "GoSkipAsync",
+        "CskWizardModal\u003CTState\u003E.GoSkipAsync()",
         "GoPreviousAsync",
         "CskWizardModal\u003CTState\u003E.GoPreviousAsync()",
         "HandleFinishAsync",
@@ -15981,19 +16350,28 @@
         "CskWizardModal\u003CTState\u003E.CskWizardModal()"
       ],
       "MemberSyntaxHashes": {
-        "CskWizardModal\u003CTState\u003E.OnInitialized()": "dbab535178c2c6c8601aa2945401e3d27d1a0bd60651f118119bd4baee27961d",
-        "CskWizardModal\u003CTState\u003E.OnParametersSet()": "711b1d8bc8101dc315dfbc82c48cc21669f5940ff31a5a4f5d64bd22b8c476de",
-        "CskWizardModal\u003CTState\u003E.RegisterStep(WizardStep)": "4a36a83034c269afe774ceb8048d9764e188ca07dc7a49a8e1320cee8d5894a4",
-        "CskWizardModal\u003CTState\u003E.UnregisterStep(WizardStep)": "a35795b18102341316ded6b831d701126dca84d1f27ee71e4b412052da2c2a9b",
+        "CskWizardModal\u003CTState\u003E.OnInitialized()": "ed7b8b719461097fc98d21d25efc3451055e3b5fb92b36ba2809e609e8434e0e",
+        "CskWizardModal\u003CTState\u003E.OnParametersSet()": "d185c913f558872f7339dfa6f76b8947741842022e8a17826b603fb5fd2c1d33",
+        "CskWizardModal\u003CTState\u003E.HandleTemplateChanged(string?)": "d6bad116e635e8befeb67153c9861ae0ba7e5cd45d28deb93ccd5a70a00f2a9a",
+        "CskWizardModal\u003CTState\u003E.RecomputeFlowSteps()": "02fe5a48bdd9ed779d9f4d4b4eee247956aca85cb8bcd2b34d39cbdce272136b",
+        "CskWizardModal\u003CTState\u003E.RegisterStep(WizardStep)": "70f1908d01bc3f7e7d35f454bf33d2a7b271a0350bc500bd1e967717b28e7c74",
+        "CskWizardModal\u003CTState\u003E.UnregisterStep(WizardStep)": "02fc101f297f3e7edc59d2bef6a68d014666355ba304a422a9e4bc17c5dbcdcb",
+        "CskWizardModal\u003CTState\u003E.GetStepTitle(int)": "bdad3800be79c7d02e2a9a5c9205548f38c6f4bce3fe02df910b624254d4a553",
+        "CskWizardModal\u003CTState\u003E.GetStepSummary(int)": "8d8b8d9d5f4fb3f90f177f5909447bc7ede277c7d7a6783ce574b99c2035f5a0",
+        "CskWizardModal\u003CTState\u003E.IsStepOptional(int)": "0c161a44c8f2e063460935224f6e620f25feb0c715278950709b79070203f858",
+        "CskWizardModal\u003CTState\u003E.IsStepSkipped(int)": "f3f5994b213ff1c15f4531acd6e60d64ca11603cbbc2c78c1a7c4d600eefc08a",
+        "CskWizardModal\u003CTState\u003E.GetStepParameters()": "bbc6392ebf67a6e0ae14f2064814e42813562d26e0adddac700a701b56c6895b",
         "CskWizardModal\u003CTState\u003E.HandleContextStateChanged()": "e8bc9afafeb729d8cec5a0263a1fe9b1d82346d2a39c3ec9a4eb716b7d955b66",
         "CskWizardModal\u003CTState\u003E.HandleBackdropClick()": "e4e8cd05aba51cf5697b0bdb6d1225590ce8d8b2d027fc8a1b72df4fc90b3e17",
         "CskWizardModal\u003CTState\u003E.RequestCloseAsync()": "a571b7bc3b99e7e552581c1c934d4fd8ae80da42cb51a653e4d25939363965bd",
         "CskWizardModal\u003CTState\u003E.ConfirmDiscardAsync()": "aee466c53241954360b0ef0a3df42efd2fde79556645b2c81b12efae11508f5c",
         "CskWizardModal\u003CTState\u003E.CloseModalAsync()": "4669d7e1cbc6b8c1c251352d44012ff6ae2e273c11d693ff6494a39ef904a878",
-        "CskWizardModal\u003CTState\u003E.GoNextAsync()": "f1b2d44577ff002807d7ea3b630ff052a3da11587eebd8f9ae887b48afa7eae2",
+        "CskWizardModal\u003CTState\u003E.ValidateCurrentStepAsync()": "8d826469caab95d82bad14d19d73c5cec122f1a03ab8d0bd9955e3eefd2e775e",
+        "CskWizardModal\u003CTState\u003E.GoNextAsync()": "37cc0e50b7128939cdcf5731c9fa8363f42ecc862b5c0ac462e22bb661b45b7c",
+        "CskWizardModal\u003CTState\u003E.GoSkipAsync()": "764291663ad2103fe032063e519ee3972b45754f8925e9a3d14a42416cb398a3",
         "CskWizardModal\u003CTState\u003E.GoPreviousAsync()": "0ffcc87c08b7ea1ae6588ad719ac7584c6e1f58f3a604c520b45068a5de84030",
-        "CskWizardModal\u003CTState\u003E.HandleFinishAsync()": "870da330bdb71b825fdaa557ba512d1f25358d6ede4d4142f2dd8a885c24bdad",
-        "CskWizardModal\u003CTState\u003E.Dispose()": "e9dafc3f68a0a412e9fee5c400bad21bb28ad92970b37def2419ab82c90d1305"
+        "CskWizardModal\u003CTState\u003E.HandleFinishAsync()": "051b773f6af8e9965256fa5d64c50424c1195954c7f53eff0d209001667db78c",
+        "CskWizardModal\u003CTState\u003E.Dispose()": "a8635838a51c4c161a9a660bc1fd7696c48a76a383f1a7ab7483cb95175aa661"
       }
     },
     "Shared.UI/Wizards/IWizardHost.cs": {
@@ -16011,6 +16389,19 @@
       "MemberSyntaxHashes": {
         "IWizardHost.RegisterStep(WizardStep)": "0d935d416e52b0e1367d0df7d5600386335d98c72a2d3c36d43e0724e240acf7",
         "IWizardHost.UnregisterStep(WizardStep)": "c049675c6805ca6a0c1df0bdc1b16919f4262071ed178f2228c1a4e2671b7e81"
+      }
+    },
+    "Shared.UI/Wizards/IWizardStepComponent.cs": {
+      "RelativePath": "Shared.UI/Wizards/IWizardStepComponent.cs",
+      "KnownMembers": [
+        "ValidateStepAsync",
+        "IWizardStepComponent\u003CTState\u003E.ValidateStepAsync(WizardContext\u003CTState\u003E)",
+        "OnStepSkippedAsync",
+        "IWizardStepComponent\u003CTState\u003E.OnStepSkippedAsync(WizardContext\u003CTState\u003E)"
+      ],
+      "MemberSyntaxHashes": {
+        "IWizardStepComponent\u003CTState\u003E.ValidateStepAsync(WizardContext\u003CTState\u003E)": "7f6cd88c63ccf6b4c76aa7dd7426a6190def048416d53a5c3f132ef84d097bb5",
+        "IWizardStepComponent\u003CTState\u003E.OnStepSkippedAsync(WizardContext\u003CTState\u003E)": "13661d102ff9d9da8ecc548172372572da6adcb19ac0f37c28cae943fed4c0ca"
       }
     },
     "Shared.UI/Wizards/WizardContext.cs": {
@@ -16056,6 +16447,20 @@
         "WizardContext\u003CTState\u003E.IsDirty.get",
         "set_IsDirty",
         "WizardContext\u003CTState\u003E.IsDirty.set",
+        "\u003CSelectedTemplateId\u003Ek__BackingField",
+        "WizardContext\u003CTState\u003E.SelectedTemplateId.field",
+        "SelectedTemplateId",
+        "WizardContext\u003CTState\u003E.SelectedTemplateId",
+        "get_SelectedTemplateId",
+        "WizardContext\u003CTState\u003E.SelectedTemplateId.get",
+        "set_SelectedTemplateId",
+        "WizardContext\u003CTState\u003E.SelectedTemplateId.set",
+        "\u003CSkippedStepIds\u003Ek__BackingField",
+        "WizardContext\u003CTState\u003E.SkippedStepIds.field",
+        "SkippedStepIds",
+        "WizardContext\u003CTState\u003E.SkippedStepIds",
+        "get_SkippedStepIds",
+        "WizardContext\u003CTState\u003E.SkippedStepIds.get",
         "\u003CStepErrors\u003Ek__BackingField",
         "WizardContext\u003CTState\u003E.StepErrors.field",
         "StepErrors",
@@ -16068,8 +16473,20 @@
         "WizardContext\u003CTState\u003E.OnStateChanged.remove",
         "OnStateChanged",
         "WizardContext\u003CTState\u003E.OnStateChanged",
+        "add_OnTemplateChanged",
+        "WizardContext\u003CTState\u003E.OnTemplateChanged.add",
+        "remove_OnTemplateChanged",
+        "WizardContext\u003CTState\u003E.OnTemplateChanged.remove",
+        "OnTemplateChanged",
+        "WizardContext\u003CTState\u003E.OnTemplateChanged",
         ".ctor",
-        "WizardContext\u003CTState\u003E.WizardContext(TState)",
+        "WizardContext\u003CTState\u003E.WizardContext(TState, string?)",
+        "SetTemplate",
+        "WizardContext\u003CTState\u003E.SetTemplate(string?)",
+        "MarkStepSkipped",
+        "WizardContext\u003CTState\u003E.MarkStepSkipped(string, bool)",
+        "IsStepSkipped",
+        "WizardContext\u003CTState\u003E.IsStepSkipped(string)",
         "MarkDirty",
         "WizardContext\u003CTState\u003E.MarkDirty(bool)",
         "NotifyStateChanged",
@@ -16082,12 +16499,258 @@
         "WizardContext\u003CTState\u003E.HasError(string)"
       ],
       "MemberSyntaxHashes": {
+        "WizardContext\u003CTState\u003E.SetTemplate(string?)": "a20deba8785a5c3d38c6036691992b3dad858ee7325cb79d0d04cffce05c306e",
+        "WizardContext\u003CTState\u003E.MarkStepSkipped(string, bool)": "0b89cc662cb8c92f000e0cc2a90aab3bcacd32aa76fee9734d57beed0028717b",
+        "WizardContext\u003CTState\u003E.IsStepSkipped(string)": "816b28118261ed2243334353cc4b7e8db9c68476fbd20161beb6a40fde17485c",
         "WizardContext\u003CTState\u003E.MarkDirty(bool)": "83960b7c0dd3157ea94ccc566cb7f2c28089ff3cd3c71fd7185cf4915caf0668",
         "WizardContext\u003CTState\u003E.NotifyStateChanged()": "2bec710718387e07cb3eceee157140bccb0a24c4d3b41dac0a99c266bb9e4408",
         "WizardContext\u003CTState\u003E.ClearErrors(string?)": "1a15084349bf71e7fbb66940ca617683c813b90f64b372d0187effb6766cd57a",
         "WizardContext\u003CTState\u003E.SetError(string, string)": "77cbaaee52a5d685a14f4baaf7f36a9fbe6feb08bb45803e6cd39b745a171a31",
         "WizardContext\u003CTState\u003E.HasError(string)": "835d0cf2b6003d04bbd89e92627e78e28913c6f9e3ab78d7d245ac6cecf5aecd"
       }
+    },
+    "Shared.UI/Wizards/WizardFlowBuilder.cs": {
+      "RelativePath": "Shared.UI/Wizards/WizardFlowBuilder.cs",
+      "KnownMembers": [
+        "_template",
+        "WizardTemplateRuleBuilder\u003CTState\u003E._template",
+        ".ctor",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.WizardTemplateRuleBuilder(WizardTemplateDefinition\u003CTState\u003E)",
+        "MakeMandatory",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.MakeMandatory(string)",
+        "MakeOptional",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.MakeOptional(string)",
+        "Disable",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.Disable(string)",
+        "SetDefaults",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.SetDefaults(Action\u003CTState\u003E)",
+        "\u003CSteps\u003Ek__BackingField",
+        "WizardFlowDefinition\u003CTState\u003E.Steps.field",
+        "Steps",
+        "WizardFlowDefinition\u003CTState\u003E.Steps",
+        "get_Steps",
+        "WizardFlowDefinition\u003CTState\u003E.Steps.get",
+        "\u003CTemplates\u003Ek__BackingField",
+        "WizardFlowDefinition\u003CTState\u003E.Templates.field",
+        "Templates",
+        "WizardFlowDefinition\u003CTState\u003E.Templates",
+        "get_Templates",
+        "WizardFlowDefinition\u003CTState\u003E.Templates.get",
+        "DefaultTemplateId",
+        "WizardFlowDefinition\u003CTState\u003E.DefaultTemplateId",
+        "get_DefaultTemplateId",
+        "WizardFlowDefinition\u003CTState\u003E.DefaultTemplateId.get",
+        "ResolveActiveSteps",
+        "WizardFlowDefinition\u003CTState\u003E.ResolveActiveSteps(string?, TState)",
+        "WizardFlowDefinition\u003CTState\u003E.WizardFlowDefinition()",
+        "\u003CDescriptor\u003Ek__BackingField",
+        "ActiveStepInfo\u003CTState\u003E.Descriptor.field",
+        "Descriptor",
+        "ActiveStepInfo\u003CTState\u003E.Descriptor",
+        "get_Descriptor",
+        "ActiveStepInfo\u003CTState\u003E.Descriptor.get",
+        "set_Descriptor",
+        "ActiveStepInfo\u003CTState\u003E.Descriptor.init",
+        "\u003CRequirement\u003Ek__BackingField",
+        "ActiveStepInfo\u003CTState\u003E.Requirement.field",
+        "Requirement",
+        "ActiveStepInfo\u003CTState\u003E.Requirement",
+        "get_Requirement",
+        "ActiveStepInfo\u003CTState\u003E.Requirement.get",
+        "set_Requirement",
+        "ActiveStepInfo\u003CTState\u003E.Requirement.init",
+        "ActiveStepInfo\u003CTState\u003E.ActiveStepInfo()",
+        "_flow",
+        "WizardFlowBuilder\u003CTState\u003E._flow",
+        "AddStep",
+        "WizardFlowBuilder\u003CTState\u003E.AddStep\u003CTStepComponent\u003E(string, string, string?, string?, int, WizardStepRequirement, Func\u003CTState, bool\u003E?)",
+        "AddStepAfter",
+        "WizardFlowBuilder\u003CTState\u003E.AddStepAfter\u003CTStepComponent\u003E(string, string, string, string?, string?, WizardStepRequirement, Func\u003CTState, bool\u003E?)",
+        "AddStepBefore",
+        "WizardFlowBuilder\u003CTState\u003E.AddStepBefore\u003CTStepComponent\u003E(string, string, string, string?, string?, WizardStepRequirement, Func\u003CTState, bool\u003E?)",
+        "AddTemplate",
+        "WizardFlowBuilder\u003CTState\u003E.AddTemplate(string, string, string?, bool, Action\u003CWizardTemplateRuleBuilder\u003CTState\u003E\u003E?)",
+        "ModifyTemplate",
+        "WizardFlowBuilder\u003CTState\u003E.ModifyTemplate(string, Action\u003CWizardTemplateRuleBuilder\u003CTState\u003E\u003E)",
+        "Build",
+        "WizardFlowBuilder\u003CTState\u003E.Build()",
+        "WizardFlowBuilder\u003CTState\u003E.WizardFlowBuilder()"
+      ],
+      "MemberSyntaxHashes": {
+        "WizardTemplateRuleBuilder\u003CTState\u003E.MakeMandatory(string)": "eebb2e7ad3a376995db2e55ef0d3c37b4ec5e52a293d6fa60f626771f127a5cb",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.MakeOptional(string)": "a9f913d680613c7153ce30e79996e89cc5052e707b99d8fec61fca9bbf8d4b54",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.Disable(string)": "f0fc5e080c5f89110d47f84e40db03c19a6e16679502bb16d1b4588f6493589e",
+        "WizardTemplateRuleBuilder\u003CTState\u003E.SetDefaults(Action\u003CTState\u003E)": "67b36f8ac9e18a0fc9aaa948952522ebda0c91857b0dbd279d5db0c66972b0db",
+        "WizardFlowDefinition\u003CTState\u003E.ResolveActiveSteps(string?, TState)": "f6474b4280e7652f68bd910736da12980e69cb788fc5fdecf4105a6b3a24541e",
+        "WizardFlowBuilder\u003CTState\u003E.AddStep\u003CTStepComponent\u003E(string, string, string?, string?, int, WizardStepRequirement, Func\u003CTState, bool\u003E?)": "a82a2efcc184068001deed3dd06d1334e3cef1c0334a455adfb2650d90f80278",
+        "WizardFlowBuilder\u003CTState\u003E.AddStepAfter\u003CTStepComponent\u003E(string, string, string, string?, string?, WizardStepRequirement, Func\u003CTState, bool\u003E?)": "6e22ebe3d4214ceea0501faba244fadf460f2aa48a98cbb03cf4700e30f09719",
+        "WizardFlowBuilder\u003CTState\u003E.AddStepBefore\u003CTStepComponent\u003E(string, string, string, string?, string?, WizardStepRequirement, Func\u003CTState, bool\u003E?)": "dca76ec0e6673c17f522f018b452d7a68429b6aefc5f4090a5d46d042badb2de",
+        "WizardFlowBuilder\u003CTState\u003E.AddTemplate(string, string, string?, bool, Action\u003CWizardTemplateRuleBuilder\u003CTState\u003E\u003E?)": "c2226ff92beba8c5767281c7ae304b29c0b60d7755302a48a262e4496b30b6fb",
+        "WizardFlowBuilder\u003CTState\u003E.ModifyTemplate(string, Action\u003CWizardTemplateRuleBuilder\u003CTState\u003E\u003E)": "ebd684b7a367721e80ee097ee141cd5df35bdc99651040a848d08a4578f07a4c",
+        "WizardFlowBuilder\u003CTState\u003E.Build()": "1200ded4ba1170f4645d772ae3f4b439409e933bd56b598919f80d76131bfa35"
+      }
+    },
+    "Shared.UI/Wizards/WizardStepDescriptor.cs": {
+      "RelativePath": "Shared.UI/Wizards/WizardStepDescriptor.cs",
+      "KnownMembers": [
+        "get_EqualityContract",
+        "WizardStepDescriptor\u003CTState\u003E.EqualityContract.get",
+        "EqualityContract",
+        "WizardStepDescriptor\u003CTState\u003E.EqualityContract",
+        "\u003CStepId\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.StepId.field",
+        "StepId",
+        "WizardStepDescriptor\u003CTState\u003E.StepId",
+        "get_StepId",
+        "WizardStepDescriptor\u003CTState\u003E.StepId.get",
+        "set_StepId",
+        "WizardStepDescriptor\u003CTState\u003E.StepId.init",
+        "\u003CTitle\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.Title.field",
+        "Title",
+        "WizardStepDescriptor\u003CTState\u003E.Title",
+        "get_Title",
+        "WizardStepDescriptor\u003CTState\u003E.Title.get",
+        "set_Title",
+        "WizardStepDescriptor\u003CTState\u003E.Title.init",
+        "\u003CSummary\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.Summary.field",
+        "Summary",
+        "WizardStepDescriptor\u003CTState\u003E.Summary",
+        "get_Summary",
+        "WizardStepDescriptor\u003CTState\u003E.Summary.get",
+        "set_Summary",
+        "WizardStepDescriptor\u003CTState\u003E.Summary.init",
+        "\u003CIcon\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.Icon.field",
+        "Icon",
+        "WizardStepDescriptor\u003CTState\u003E.Icon",
+        "get_Icon",
+        "WizardStepDescriptor\u003CTState\u003E.Icon.get",
+        "set_Icon",
+        "WizardStepDescriptor\u003CTState\u003E.Icon.init",
+        "\u003CComponentType\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.ComponentType.field",
+        "ComponentType",
+        "WizardStepDescriptor\u003CTState\u003E.ComponentType",
+        "get_ComponentType",
+        "WizardStepDescriptor\u003CTState\u003E.ComponentType.get",
+        "set_ComponentType",
+        "WizardStepDescriptor\u003CTState\u003E.ComponentType.init",
+        "\u003COrder\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.Order.field",
+        "Order",
+        "WizardStepDescriptor\u003CTState\u003E.Order",
+        "get_Order",
+        "WizardStepDescriptor\u003CTState\u003E.Order.get",
+        "set_Order",
+        "WizardStepDescriptor\u003CTState\u003E.Order.init",
+        "\u003CDefaultRequirement\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.DefaultRequirement.field",
+        "DefaultRequirement",
+        "WizardStepDescriptor\u003CTState\u003E.DefaultRequirement",
+        "get_DefaultRequirement",
+        "WizardStepDescriptor\u003CTState\u003E.DefaultRequirement.get",
+        "set_DefaultRequirement",
+        "WizardStepDescriptor\u003CTState\u003E.DefaultRequirement.init",
+        "\u003CIsVisiblePredicate\u003Ek__BackingField",
+        "WizardStepDescriptor\u003CTState\u003E.IsVisiblePredicate.field",
+        "IsVisiblePredicate",
+        "WizardStepDescriptor\u003CTState\u003E.IsVisiblePredicate",
+        "get_IsVisiblePredicate",
+        "WizardStepDescriptor\u003CTState\u003E.IsVisiblePredicate.get",
+        "set_IsVisiblePredicate",
+        "WizardStepDescriptor\u003CTState\u003E.IsVisiblePredicate.init",
+        "ToString",
+        "WizardStepDescriptor\u003CTState\u003E.ToString()",
+        "PrintMembers",
+        "WizardStepDescriptor\u003CTState\u003E.PrintMembers(StringBuilder)",
+        "op_Inequality",
+        "WizardStepDescriptor\u003CTState\u003E.operator !=(WizardStepDescriptor\u003CTState\u003E?, WizardStepDescriptor\u003CTState\u003E?)",
+        "op_Equality",
+        "WizardStepDescriptor\u003CTState\u003E.operator ==(WizardStepDescriptor\u003CTState\u003E?, WizardStepDescriptor\u003CTState\u003E?)",
+        "GetHashCode",
+        "WizardStepDescriptor\u003CTState\u003E.GetHashCode()",
+        "Equals",
+        "WizardStepDescriptor\u003CTState\u003E.Equals(object?)",
+        "WizardStepDescriptor\u003CTState\u003E.Equals(WizardStepDescriptor\u003CTState\u003E?)",
+        "\u003CClone\u003E$",
+        "WizardStepDescriptor\u003CTState\u003E.\u003CClone\u003E$()",
+        ".ctor",
+        "WizardStepDescriptor\u003CTState\u003E.WizardStepDescriptor(WizardStepDescriptor\u003CTState\u003E)",
+        "WizardStepDescriptor\u003CTState\u003E.WizardStepDescriptor()",
+        "\u003CTemplateId\u003Ek__BackingField",
+        "WizardTemplateDefinition\u003CTState\u003E.TemplateId.field",
+        "TemplateId",
+        "WizardTemplateDefinition\u003CTState\u003E.TemplateId",
+        "get_TemplateId",
+        "WizardTemplateDefinition\u003CTState\u003E.TemplateId.get",
+        "set_TemplateId",
+        "WizardTemplateDefinition\u003CTState\u003E.TemplateId.init",
+        "\u003CName\u003Ek__BackingField",
+        "WizardTemplateDefinition\u003CTState\u003E.Name.field",
+        "Name",
+        "WizardTemplateDefinition\u003CTState\u003E.Name",
+        "get_Name",
+        "WizardTemplateDefinition\u003CTState\u003E.Name.get",
+        "set_Name",
+        "WizardTemplateDefinition\u003CTState\u003E.Name.init",
+        "\u003CDescription\u003Ek__BackingField",
+        "WizardTemplateDefinition\u003CTState\u003E.Description.field",
+        "Description",
+        "WizardTemplateDefinition\u003CTState\u003E.Description",
+        "get_Description",
+        "WizardTemplateDefinition\u003CTState\u003E.Description.get",
+        "set_Description",
+        "WizardTemplateDefinition\u003CTState\u003E.Description.init",
+        "\u003CIsDefault\u003Ek__BackingField",
+        "WizardTemplateDefinition\u003CTState\u003E.IsDefault.field",
+        "IsDefault",
+        "WizardTemplateDefinition\u003CTState\u003E.IsDefault",
+        "get_IsDefault",
+        "WizardTemplateDefinition\u003CTState\u003E.IsDefault.get",
+        "set_IsDefault",
+        "WizardTemplateDefinition\u003CTState\u003E.IsDefault.init",
+        "\u003CStepOverrides\u003Ek__BackingField",
+        "WizardTemplateDefinition\u003CTState\u003E.StepOverrides.field",
+        "StepOverrides",
+        "WizardTemplateDefinition\u003CTState\u003E.StepOverrides",
+        "get_StepOverrides",
+        "WizardTemplateDefinition\u003CTState\u003E.StepOverrides.get",
+        "\u003CApplyDefaults\u003Ek__BackingField",
+        "WizardTemplateDefinition\u003CTState\u003E.ApplyDefaults.field",
+        "ApplyDefaults",
+        "WizardTemplateDefinition\u003CTState\u003E.ApplyDefaults",
+        "get_ApplyDefaults",
+        "WizardTemplateDefinition\u003CTState\u003E.ApplyDefaults.get",
+        "set_ApplyDefaults",
+        "WizardTemplateDefinition\u003CTState\u003E.ApplyDefaults.set",
+        "WizardTemplateDefinition\u003CTState\u003E.WizardTemplateDefinition()"
+      ],
+      "MemberSyntaxHashes": {}
+    },
+    "Shared.UI/Wizards/WizardStepRequirement.cs": {
+      "RelativePath": "Shared.UI/Wizards/WizardStepRequirement.cs",
+      "KnownMembers": [
+        "Mandatory",
+        "WizardStepRequirement.Mandatory",
+        "Optional",
+        "WizardStepRequirement.Optional",
+        "Disabled",
+        "WizardStepRequirement.Disabled",
+        ".ctor",
+        "WizardStepRequirement.WizardStepRequirement()",
+        "Pending",
+        "WizardStepStatus.Pending",
+        "Active",
+        "WizardStepStatus.Active",
+        "Completed",
+        "WizardStepStatus.Completed",
+        "Skipped",
+        "WizardStepStatus.Skipped",
+        "WizardStepStatus.WizardStepStatus()"
+      ],
+      "MemberSyntaxHashes": {}
     },
     "Shared/Attributes/BaseModificationAttribute.cs": {
       "RelativePath": "Shared/Attributes/BaseModificationAttribute.cs",
@@ -16423,7 +17086,7 @@
         "Result.Fail\u003CT\u003E(string, string, int, string)": "0baab7257fcc56b87c75d7a2e73f1b06b12a4b3097f0e450e9b1d646bce06b52",
         "Result.Fail\u003CT\u003E(IEnumerable\u003Cstring\u003E, string, int, string)": "2c88fc531d88bdefb7d5c7803e948988bf1d2441b07a59890d39c217dea1ffc3",
         "Result.FormatOrigin(string, int, string)": "910629f72e2ef314b57e846f93d9e1a049e5e5c197aef3b44d53680042fa92fb",
-        "Result.FormatErrorWithOrigin(string, string?)": "bb51d7a6ba728db7b1bbddb533f274b3ff05044d9b71a8f64b9dbb73a337345f",
+        "Result.FormatErrorWithOrigin(string, string?)": "57bceb6467400636ca1f0b059d740f9ebdb4ee3470dfb7d02f47610527fe961d",
         "Result\u003CT\u003E.Success(T, string?)": "8c02cee53741d407c2dea99acb7830c1dc2ca7b9b0320088ff998cf29c741d42",
         "Result\u003CT\u003E.Failure(string, string, int, string)": "762863dada7ca091dd2464a85d35c9d47f81feea5d269a0c8b5a0d2d26461f58",
         "Result\u003CT\u003E.Failure(IEnumerable\u003Cstring\u003E, string, int, string)": "b4aec8a598f7bace9ad60bf2b47d21b597d3ad94fa0c6b40bd4f59d3ebe3938c",
@@ -21885,6 +22548,31 @@
         "LoginPage.CompleteLoginAsync(AuthUserResult, Guid, string, string)": "425a030cba040b6759dca08657491c62a5bf1488ed332f4caf9ffb8fdadbbc86"
       }
     },
+    "Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardFlow.cs": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardFlow.cs",
+      "KnownMembers": [
+        "StepIds",
+        "CreateProjectWizardFlow.StepIds",
+        "CreateFlow",
+        "CreateProjectWizardFlow.CreateFlow()",
+        "ConfigureCustom",
+        "CreateProjectWizardFlow.ConfigureCustom(WizardFlowBuilder\u003CCreateProjectWizardState\u003E)",
+        "BasicDetails",
+        "CreateProjectWizardFlow.StepIds.BasicDetails",
+        "RfpTimeline",
+        "CreateProjectWizardFlow.StepIds.RfpTimeline",
+        "ProjectTimeline",
+        "CreateProjectWizardFlow.StepIds.ProjectTimeline",
+        "MilestoneCalendar",
+        "CreateProjectWizardFlow.StepIds.MilestoneCalendar",
+        "TeamRoster",
+        "CreateProjectWizardFlow.StepIds.TeamRoster"
+      ],
+      "MemberSyntaxHashes": {
+        "CreateProjectWizardFlow.CreateFlow()": "538b249c9239377f30cb10d949d198de22ed49fadd1dd18502fa46dee7482da8",
+        "CreateProjectWizardFlow.ConfigureCustom(WizardFlowBuilder\u003CCreateProjectWizardState\u003E)": "ad3797524faa137ce49030e5dfa5395d430b8202daca67da9f0cd3803246c6c6"
+      }
+    },
     "Web/Components/Pages/Settings/SettingsAuditTab.razor.cs": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsAuditTab.razor.cs",
       "KnownMembers": [
@@ -22903,7 +23591,7 @@
       ],
       "MemberSyntaxHashes": {
         "SettingsProgramsTab.OnInitializedAsync()": "bfcb2a47e67f07a0f1b02d088da7b75e79fd6d5922e4c6fe3227646130da4153",
-        "SettingsProgramsTab.LoadAvailableTenantsAsync()": "97c7a1225ce340941777bac0a3b52c53c3f5c2163cd8eccd2fdf9a94debe84b0",
+        "SettingsProgramsTab.LoadAvailableTenantsAsync()": "184f4dfe16dd5cd3134d5aabebf9a2a078aae0e14872b53377d557558d5e9cb8",
         "SettingsProgramsTab.OnTenantSelectedAsync(string?)": "87ffa6c2883b70e6e50c5ca2338a620a398c089333d9b25df9a47a687ca278d7",
         "SettingsProgramsTab.LoadProgramsAsync()": "5e5d58659c4ca7229468d5a36f9cbfa0d072f557a4437a8936a0c16fe7b654c6",
         "SettingsProgramsTab.SelectProgramAsync(ProgramEntity)": "264d5a695808a5599a950b99743e405fd39e5e66cfb24637f36e3fb6a5131d98",
@@ -23039,6 +23727,8 @@
         "SettingsProjectsTab._statusMessage",
         "_isError",
         "SettingsProjectsTab._isError",
+        "_showCreateProjectWizard",
+        "SettingsProjectsTab._showCreateProjectWizard",
         "_selectedProject",
         "SettingsProjectsTab._selectedProject",
         "_activeProjectTab",
@@ -23149,6 +23839,10 @@
         "SettingsProjectsTab.StartImpersonationAsync()",
         "HandleTimeZoneChanged",
         "SettingsProjectsTab.HandleTimeZoneChanged()",
+        "OpenCreateProjectWizard",
+        "SettingsProjectsTab.OpenCreateProjectWizard()",
+        "OnProjectCreatedAsync",
+        "SettingsProjectsTab.OnProjectCreatedAsync(Core.Dtos.CreateProjectWizardState)",
         "Dispose",
         "SettingsProjectsTab.Dispose()",
         ".ctor",
@@ -23216,7 +23910,7 @@
       ],
       "MemberSyntaxHashes": {
         "SettingsProjectsTab.OnInitializedAsync()": "e2aea264604ee37c9ace5fcd913286039ff28e36b511be1a3dad9dfb5445c1a3",
-        "SettingsProjectsTab.LoadAvailableTenantsAsync()": "4d65534a479fa3818b41d4005ba43e615f99a9fde944fa6c4359c57bb16343ef",
+        "SettingsProjectsTab.LoadAvailableTenantsAsync()": "a0ff866f34338e6752a81c1f7ac38aa67fdfb77ab3638f8b404a947d71914351",
         "SettingsProjectsTab.OnProgramSelected(string?)": "b6a90297fd5ea11af4dc31f45817c5d41135d56129b649cbe60a3b142327ed91",
         "SettingsProjectsTab.ClearProgramFilter()": "26af9f85b138972b3f3f1a28b8f8c6ba0a47723efd162b1d3dbf4f5ae294e17f",
         "SettingsProjectsTab.OnTenantSelected(string?)": "49518ac5891ea2e9495f893d5ce6e9b9b7340aa03dd0c84c5bbc2c46d76be409",
@@ -23236,6 +23930,8 @@
         "SettingsProjectsTab.PromptImpersonation(ProjectUserRoleEntity)": "e4170bdfd529999482216550d1c1bf42a1e17be404bb3d9b807fa1a643b68c09",
         "SettingsProjectsTab.StartImpersonationAsync()": "4caaccdef529bdc573a258c789415a21e2308f44126de60287e54d6b230b2099",
         "SettingsProjectsTab.HandleTimeZoneChanged()": "a807801f7e2ef3f461a348209d068857455c4652fc0b84fe6e75d56c45fd2a5c",
+        "SettingsProjectsTab.OpenCreateProjectWizard()": "04bdaea6fb2ab8ecc8210de801a0c280c9f755e1a0173e751ca1b6776cb0c48d",
+        "SettingsProjectsTab.OnProjectCreatedAsync(Core.Dtos.CreateProjectWizardState)": "82abd6ccad2573a09eff91481ab287f085b04e7e8493412fab188a37de07b664",
         "SettingsProjectsTab.Dispose()": "21e4fe3a25723da2461d9de4af775079afd36ac8eb226196f95a04f4505e1442"
       }
     },
@@ -23458,14 +24154,8 @@
         "SettingsTenantsTab._statusMessage",
         "_isError",
         "SettingsTenantsTab._isError",
-        "_tenantSearchText",
-        "SettingsTenantsTab._tenantSearchText",
         "_userSearchText",
         "SettingsTenantsTab._userSearchText",
-        "FilteredTenants",
-        "SettingsTenantsTab.FilteredTenants",
-        "get_FilteredTenants",
-        "SettingsTenantsTab.FilteredTenants.get",
         "FilteredTenantUsers",
         "SettingsTenantsTab.FilteredTenantUsers",
         "get_FilteredTenantUsers",
@@ -23494,8 +24184,12 @@
         "SettingsTenantsTab._newAdminFullName",
         "_newAdminEmail",
         "SettingsTenantsTab._newAdminEmail",
-        "_editingTenant",
-        "SettingsTenantsTab._editingTenant",
+        "_tenantDetailsDialog",
+        "SettingsTenantsTab._tenantDetailsDialog",
+        "_selectedTenantModal",
+        "SettingsTenantsTab._selectedTenantModal",
+        "_isModalEditMode",
+        "SettingsTenantsTab._isModalEditMode",
         "_editStartDate",
         "SettingsTenantsTab._editStartDate",
         "_editEndDate",
@@ -23564,10 +24258,10 @@
         "SettingsTenantsTab.CancelAdd()",
         "ToggleStatusAsync",
         "SettingsTenantsTab.ToggleStatusAsync(TenantEntity, bool)",
-        "StartEdit",
-        "SettingsTenantsTab.StartEdit(TenantEntity)",
-        "CancelEditDates",
-        "SettingsTenantsTab.CancelEditDates()",
+        "OpenTenantModalAsync",
+        "SettingsTenantsTab.OpenTenantModalAsync(TenantEntity, bool)",
+        "CloseTenantModalAsync",
+        "SettingsTenantsTab.CloseTenantModalAsync()",
         "SaveDatesAsync",
         "SettingsTenantsTab.SaveDatesAsync()",
         "OpenUserManagement",
@@ -23695,7 +24389,7 @@
       ],
       "MemberSyntaxHashes": {
         "SettingsTenantsTab.OnInitializedAsync()": "175db6326a215588e28e6544424108990c1c8713ed02d0c7bb3b60a0e6802104",
-        "SettingsTenantsTab.LoadTenantsAsync()": "bc8ca8517c2f2a71cb7f5f10a52945a974f03a09b7e1408ac54af5771151b876",
+        "SettingsTenantsTab.LoadTenantsAsync()": "bb090047c685c5def12e10c70183dc9e958f67d45b08293af9120579dc6fdcba",
         "SettingsTenantsTab.NormalizeDomain(string)": "ad9b0e60ec74382cff0e102dc51cc8af7707aa2a44e8dffd5b545326ae0172fe",
         "SettingsTenantsTab.AddInternalDomain()": "9594d0944c0e88e1f15ef56259b70411409183753f9deb2137b172fa5761ed7e",
         "SettingsTenantsTab.RemoveInternalDomain(string)": "8910ab540c0ca2019e28d26fd842759ee1ff6b9595f519c893dcdf80cc641a8e",
@@ -23706,17 +24400,17 @@
         "SettingsTenantsTab.StartAddTenant()": "dd94c8ea749c581734aba98e029e449d50f8835b076274771dd3adf9411d5eeb",
         "SettingsTenantsTab.CancelAdd()": "476514a6f928a36f03213968c4dc6a6853b63df676fcf754750a70e1b29db9ea",
         "SettingsTenantsTab.ToggleStatusAsync(TenantEntity, bool)": "3225cb93c9be535af1a2d626e1e7b924cf2df6637ea5016a07e6e5da2ab90c50",
-        "SettingsTenantsTab.StartEdit(TenantEntity)": "c31e0b46f66b39e04e9f96f254c37433f1aaf961729d24b0c13d695e9d60aa2c",
-        "SettingsTenantsTab.CancelEditDates()": "a170e19aa08ff2d1a61e6ca54427756add71c0272a52abb48a930219390b8393",
-        "SettingsTenantsTab.SaveDatesAsync()": "8c316b7e2183eff27c7ebba997804e965f9ec50ea8e7c19b43aa92b32061c4cd",
-        "SettingsTenantsTab.OpenUserManagement(TenantEntity)": "dfed9a27c554160a00185bfcb2136d32b90a3c65ec2cfd7e6b1d9557c43a6426",
+        "SettingsTenantsTab.OpenTenantModalAsync(TenantEntity, bool)": "5d0bee7a56b5f65ef1f669ef3b8a185b16bd14e5452db2444e94ca1e6adf2a14",
+        "SettingsTenantsTab.CloseTenantModalAsync()": "ee0e5f78403fd66831ea041012b490f76c14b399a753c94ec2e2328cc4c25abf",
+        "SettingsTenantsTab.SaveDatesAsync()": "fc5425944b377795e04f2883ab5bdf7cb39bc40eb398f60546b8c35a5956864f",
+        "SettingsTenantsTab.OpenUserManagement(TenantEntity)": "9da537420ec3b6ddfa2cf5107151e187679c8a43374df633d739cc86527d74a5",
         "SettingsTenantsTab.OpenAddUserForm()": "879e6f9986aad18771b54b0b1fca3d48fa8b5860321ef678cd57411fdd788484",
         "SettingsTenantsTab.CloseUserManagement()": "e074149a1b792a57e44c1b2d35969171087332dbe607b5ebeeed5076120e383a",
         "SettingsTenantsTab.LoadTenantUsersAsync()": "a152f13720e673b41560cf5f2b2fc0ad077c3a848bf3adfca2eb436bf177d2d1",
         "SettingsTenantsTab.ToggleDaemonStatusAsync(bool)": "0014f28066f18e6e8426b37ed4b4c5c21623050eca8a2a5bba0333e130e9c84a",
         "SettingsTenantsTab.OnUserEmailChanged(string?)": "aed5767720c70c3949c5e26a4a917b92ccc2ee1170c07c632bcb666f217bab2c",
         "SettingsTenantsTab.GetUserTypeDisplay()": "0cbf9110835098c5289281189d8c1ae1662f1ca97f4a712dbc2ea635b37a8ae5",
-        "SettingsTenantsTab.CreateTenantUserAsync()": "9e3ec5916f567a10143bdb13da102c79a441552a107dfc10932fcc7f809cbdfe",
+        "SettingsTenantsTab.CreateTenantUserAsync()": "48276af429e355833030684a73493250395d34466d1a47011e23d430d84fb179",
         "SettingsTenantsTab.StartEditUser(UserEntity)": "c294782881d7241d632b0eaaa660477a0134c4e6d7640ec99c6f183b26e75263",
         "SettingsTenantsTab.OnEditUserEmailChanged(string?)": "bd2ebb7257031bcb546611db5e0208d9156a090b3c0be14cf74a9b222a3cd55e",
         "SettingsTenantsTab.GetEditUserTypeDisplay()": "1434a7e99f2b76d19a890249a9ce2d9b7aa06504bbfe8af7088de9900a4346be",
@@ -25334,7 +26028,7 @@
       "RelativePath": "Shared.UI/Components/DataGrid/CskDataGrid.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "a45831c0f4035b199fbd61d7f60e28ec3d9fed8ce16f44ce14d58d4887283fcd"
+        "$Markup": "85a0f949bec1b245093f6a36ae504e8674886076c0f4ccc34f6047d3cd91cbf2"
       }
     },
     "Shared.UI/Components/DatePicker/CskDatePicker.razor": {
@@ -25523,7 +26217,7 @@
       "RelativePath": "Shared.UI/Wizards/CskWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "246dc7de815dacd644514c9ed0ed17be9a6a5d68533bbc90e608275f81b707ca"
+        "$Markup": "d52babe548a90e48935cde64a34d14f4ad5671228e18fb7342f82c74ada509ee"
       }
     },
     "Shared.UI/Wizards/WizardStep.razor": {
@@ -25799,6 +26493,48 @@
         "$Markup": "8fde947d954de7106b8f795c2c5f13f2134bf6755eb9597c5e505c14557d3d0c"
       }
     },
+    "Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardModal.razor": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardModal.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "d67517009d370450d0cd7fe30409c02d324cb804ebc26752991ca2be92f46192"
+      }
+    },
+    "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectBasicDetailsStep.razor": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectBasicDetailsStep.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "46e1f5def9cf3b28c17aaa5328c780b800817821c1a2f11644707ec636ea02d2"
+      }
+    },
+    "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectMilestoneCalendarStep.razor": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectMilestoneCalendarStep.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "9b48131ff29c212693215cd9aae14937ed1060072aa71cbacb6f20c8c86e8414"
+      }
+    },
+    "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectRfpTimelineStep.razor": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectRfpTimelineStep.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "dde101305f1c3261b27a54174b87dba952127be2acfc0b038b7ce5abfb2e832d"
+      }
+    },
+    "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTeamRosterStep.razor": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTeamRosterStep.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "5ca5894f999a68493faf92a836df709e3a55c2c01987b3021fb787c4d659b39a"
+      }
+    },
+    "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTimelineStep.razor": {
+      "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTimelineStep.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "10f253d9d024531aa93cd22205868eef085cf7e80601f0669998f31315c06271"
+      }
+    },
     "Web/Components/Pages/Settings/SettingsAuditTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsAuditTab.razor",
       "KnownMembers": [],
@@ -25845,7 +26581,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsProjectsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "18be158c7fe7af10353d49a0403dba560eb8ac58036b9fe556c637152fd09795"
+        "$Markup": "a0baebf45c2c5418098d1378cc9063f7608f0cbeed2ab9d8e4457ae5815cb6de"
       }
     },
     "Web/Components/Pages/Settings/SettingsSessionsTab.razor": {
@@ -25859,7 +26595,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsTenantsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e18488d8206161b58b1fd1c9aa95d4d035ff82aa0e2e0c8402439712ac8188bc"
+        "$Markup": "bdc9410dfbf45265989721f962c8b4849fa35430e27cbbb2850b98fde1e6f953"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor": {
@@ -25972,6 +26708,510 @@
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Markup": "23fb8742fa710333085790a005907b7b186a0c35ea2f445a16b995abb38a8b4e"
+      }
+    },
+    "Shared.UI/Components/Badge/CskBadge.razor.css": {
+      "RelativePath": "Shared.UI/Components/Badge/CskBadge.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "1c74897c1b1a4c1b217bf8a04aa6926819922933537f9267f452f7bf6a7529ad"
+      }
+    },
+    "Shared.UI/Components/Button/CskButton.razor.css": {
+      "RelativePath": "Shared.UI/Components/Button/CskButton.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "a9853f177eeb891b08806b03543f627affeb1b681df1bbc47a217b8ed65d6d5b"
+      }
+    },
+    "Shared.UI/Components/Card/CskCard.razor.css": {
+      "RelativePath": "Shared.UI/Components/Card/CskCard.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "60dae89e3fd66081886401278d46e2c8c7cdc4a4be6df514f647fa079c156067"
+      }
+    },
+    "Shared.UI/Components/Checkbox/CskCheckbox.razor.css": {
+      "RelativePath": "Shared.UI/Components/Checkbox/CskCheckbox.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "f218f41efde43fe2c103daea4f748c623a29e8bc215f016dc403411f4670b5bb"
+      }
+    },
+    "Shared.UI/Components/DataGrid/CskDataGrid.razor.css": {
+      "RelativePath": "Shared.UI/Components/DataGrid/CskDataGrid.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "7a9ae3ec9c6710f797fa056285e6433ffea859e0f1dffb598915c685f020d0d6"
+      }
+    },
+    "Shared.UI/Components/DatePicker/CskDatePicker.razor.css": {
+      "RelativePath": "Shared.UI/Components/DatePicker/CskDatePicker.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "1730a3523a24b9997e6bea641cc1ca862d8b0aabc8c9d2ab3ae22f785e76db80"
+      }
+    },
+    "Shared.UI/Components/Dialog/CskDialog.razor.css": {
+      "RelativePath": "Shared.UI/Components/Dialog/CskDialog.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "333b630f9c2deed09ac4bacb020a4797dc812f576fd7783ae5e23623aa3c030e"
+      }
+    },
+    "Shared.UI/Components/Divider/CskDivider.razor.css": {
+      "RelativePath": "Shared.UI/Components/Divider/CskDivider.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "51b7ff3a63029dcb4b6efc0456b3640a010ba57ef880ede9f144a099b95f724c"
+      }
+    },
+    "Shared.UI/Components/Grid/CskGrid.razor.css": {
+      "RelativePath": "Shared.UI/Components/Grid/CskGrid.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "9a25931a0a4cee57fa0295970a4786eb4b7e7261821d5aa7232af7dfb225f34f"
+      }
+    },
+    "Shared.UI/Components/Grid/CskGridItem.razor.css": {
+      "RelativePath": "Shared.UI/Components/Grid/CskGridItem.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "64ccafe5710f82217785bc8736e8f0d1b9eef950db4a6305815b5b8890a75583"
+      }
+    },
+    "Shared.UI/Components/Icons/CskIcon.razor.css": {
+      "RelativePath": "Shared.UI/Components/Icons/CskIcon.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "21b287bbab5c9cf7316eff5498dab207b6afd81b0da7409965f7c61542e1ebf5"
+      }
+    },
+    "Shared.UI/Components/Label/CskLabel.razor.css": {
+      "RelativePath": "Shared.UI/Components/Label/CskLabel.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "8c8fd15a830ac137f56e1d0fdd98d889b7fb9db071abee0f98a53d312620f631"
+      }
+    },
+    "Shared.UI/Components/Link/CskLink.razor.css": {
+      "RelativePath": "Shared.UI/Components/Link/CskLink.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "74ca696249844dbd59a8698fc4fb05e9451d3e2c428926aaf6c2fcea62ca61c8"
+      }
+    },
+    "Shared.UI/Components/MessageBar/CskMessageBar.razor.css": {
+      "RelativePath": "Shared.UI/Components/MessageBar/CskMessageBar.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "5cf4cf2a09d69a31481d6d29aa7a586617dd8a431cfd6c796c4575b7499c9cb4"
+      }
+    },
+    "Shared.UI/Components/MetricCard/CskMetricCard.razor.css": {
+      "RelativePath": "Shared.UI/Components/MetricCard/CskMetricCard.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "626154f1691466aa44fa4364384bb2d9a9d7d7cbe4e5a4eb6a7544dcabdb7349"
+      }
+    },
+    "Shared.UI/Components/ProgressBar/CskProgressBar.razor.css": {
+      "RelativePath": "Shared.UI/Components/ProgressBar/CskProgressBar.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "bdce73680a400a2be0cee870fd66fdc9ee10c9a4aa0adf65a4f235f5dfb3a1e0"
+      }
+    },
+    "Shared.UI/Components/Radio/CskRadio.razor.css": {
+      "RelativePath": "Shared.UI/Components/Radio/CskRadio.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "1f4a6b3c8d96a1e016cbd11b8f0a97fb2c1316aa8c564c011e5d55ab61575347"
+      }
+    },
+    "Shared.UI/Components/Radio/CskRadioGroup.razor.css": {
+      "RelativePath": "Shared.UI/Components/Radio/CskRadioGroup.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "3484f063ab9ae737e2106f16774fe1bc8993977842a171c49c917f47d36ec44a"
+      }
+    },
+    "Shared.UI/Components/SectionHeader/CskSectionHeader.razor.css": {
+      "RelativePath": "Shared.UI/Components/SectionHeader/CskSectionHeader.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "a968514533b6bef07f29bd497ef89266705224cb8244edf5076b90b258a88d87"
+      }
+    },
+    "Shared.UI/Components/Select/CskSelect.razor.css": {
+      "RelativePath": "Shared.UI/Components/Select/CskSelect.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "15d703b99189b0806105876190e1f880a61985a1fc13d96b1d7abf300f26ee19"
+      }
+    },
+    "Shared.UI/Components/Spinner/CskSpinner.razor.css": {
+      "RelativePath": "Shared.UI/Components/Spinner/CskSpinner.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "3a3f630b7cb88a4c1a41a386a23542e285f451014c7a375163ab99028312bc53"
+      }
+    },
+    "Shared.UI/Components/Stack/CskSpacer.razor.css": {
+      "RelativePath": "Shared.UI/Components/Stack/CskSpacer.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "073606c539338c9ea63f8987a2b1d88df27e2a03165afb9d32a3b588a9665e85"
+      }
+    },
+    "Shared.UI/Components/Stack/CskStack.razor.css": {
+      "RelativePath": "Shared.UI/Components/Stack/CskStack.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "f8f1f61fc5f052e84377f5a9d801e0c685649587f244b2d6a9d909d1170d6bcc"
+      }
+    },
+    "Shared.UI/Components/StatusChip/CskStatusChip.razor.css": {
+      "RelativePath": "Shared.UI/Components/StatusChip/CskStatusChip.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "97827a38d819de1bcb274ce175c55215c2bae2ffbef3105779320d4d8a97264a"
+      }
+    },
+    "Shared.UI/Components/Switch/CskSwitch.razor.css": {
+      "RelativePath": "Shared.UI/Components/Switch/CskSwitch.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "033e5492ec2b7aa803f03dcdb65591a24830880fdf6563bddacccd9c4186be7f"
+      }
+    },
+    "Shared.UI/Components/Tabs/CskTabs.razor.css": {
+      "RelativePath": "Shared.UI/Components/Tabs/CskTabs.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "684c5b533536feeec1ef4d9fc71f6e88fa84fde368d328a080fcdc713694a97c"
+      }
+    },
+    "Shared.UI/Components/TextArea/CskTextArea.razor.css": {
+      "RelativePath": "Shared.UI/Components/TextArea/CskTextArea.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "7afed737dd2f6476929780a152bf6a371374909f7aa2b66c2f598f3ff2959a2d"
+      }
+    },
+    "Shared.UI/Components/TextInput/CskTextInput.razor.css": {
+      "RelativePath": "Shared.UI/Components/TextInput/CskTextInput.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "08cce444170c633aa2fcf4adb0831134ed4e5046b2a7c637ae99376c64116390"
+      }
+    },
+    "Shared.UI/Components/Tooltip/CskTooltip.razor.css": {
+      "RelativePath": "Shared.UI/Components/Tooltip/CskTooltip.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "a91705748983fc66c5fecd24f2f43943bbd36a6e214e053dd71331b258c096a2"
+      }
+    },
+    "Shared.UI/Wizards/CskWizardModal.razor.css": {
+      "RelativePath": "Shared.UI/Wizards/CskWizardModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "7cc4913106f0a8b74c1af1934ff554614e1dd0e409386fa16195006a870c5709"
+      }
+    },
+    "Shared.UI/wwwroot/css/material-theme.css": {
+      "RelativePath": "Shared.UI/wwwroot/css/material-theme.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "f6030040520adea3d3ac593bd31b390313317e854b1dd39796d27690245967e3"
+      }
+    },
+    "Web/Components/Common/AppErrorBoundaryComp.razor.css": {
+      "RelativePath": "Web/Components/Common/AppErrorBoundaryComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "33d35597f8774c90ad0d7d20a645dbea1428347914a034cfc4168e109ea9612a"
+      }
+    },
+    "Web/Components/Common/ConfirmDialogModal.razor.css": {
+      "RelativePath": "Web/Components/Common/ConfirmDialogModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "7f4dc76aca16580edd093313cf8a3841a010b0cec910b2bb37596fb69f02b5a2"
+      }
+    },
+    "Web/Components/Common/CreateWorkflowWizardModal.razor.css": {
+      "RelativePath": "Web/Components/Common/CreateWorkflowWizardModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "15571e445f9a73f68cae16006660661539e3150ff49ab98b88b41a361b20436a"
+      }
+    },
+    "Web/Components/Common/EmptyStateComp.razor.css": {
+      "RelativePath": "Web/Components/Common/EmptyStateComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "84458b336e1327b8c35a8afbc3bbd7fb6af10f21cb8bd92450720a61b8d06863"
+      }
+    },
+    "Web/Components/Common/EntityHistoryViewerDrawer.razor.css": {
+      "RelativePath": "Web/Components/Common/EntityHistoryViewerDrawer.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "04f624b18e5291272590de77f363c0f8c7dbfec63b7f1bc782fc045385e346fd"
+      }
+    },
+    "Web/Components/Common/FluentCalendarScheduleComp.razor.css": {
+      "RelativePath": "Web/Components/Common/FluentCalendarScheduleComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "8d75e546fa5cd6ecd9d29451dad5df973242aaacc3c8c2253eed7f2e583c10d2"
+      }
+    },
+    "Web/Components/Common/FluentRichTextEditor.razor.css": {
+      "RelativePath": "Web/Components/Common/FluentRichTextEditor.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "88177688ec955e392782e2b032cb9878a81d87124b538257bcde924e383e11fc"
+      }
+    },
+    "Web/Components/Common/FluentSwimlaneBoardComp.razor.css": {
+      "RelativePath": "Web/Components/Common/FluentSwimlaneBoardComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "2180a0efe8caafbe2f1a1a6a47d7db5ccd8473bfa8989d3f01a9f7850d819763"
+      }
+    },
+    "Web/Components/Common/FluentTagInput.razor.css": {
+      "RelativePath": "Web/Components/Common/FluentTagInput.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "4bb2db78292b0177e300f40aad7ac50b6334f7e1e418a67f460284030d87da94"
+      }
+    },
+    "Web/Components/Common/ImpersonationBannerComp.razor.css": {
+      "RelativePath": "Web/Components/Common/ImpersonationBannerComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "16099de7ea076fd10e4c300ba485f22c02194cfc6810f6d59ed42c1d58729149"
+      }
+    },
+    "Web/Components/Common/ProjectAccessDeniedCardComp.razor.css": {
+      "RelativePath": "Web/Components/Common/ProjectAccessDeniedCardComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "e7c379f7706b9fb5174681cfbac4d547be0b2f362e642c6d5732d8985202f81b"
+      }
+    },
+    "Web/Components/Common/SessionRevokedModal.razor.css": {
+      "RelativePath": "Web/Components/Common/SessionRevokedModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "d59101b328d6141725905179c1da3ce58d3887c931f33508a5a23a223e0f8cab"
+      }
+    },
+    "Web/Components/Common/SessionTimeoutModal.razor.css": {
+      "RelativePath": "Web/Components/Common/SessionTimeoutModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "ca71ad78e7d4a2bf3f495775c518d7f05786d348f851a54da4ff820fa5efee4b"
+      }
+    },
+    "Web/Components/Common/TaskDependencyLinkModal.razor.css": {
+      "RelativePath": "Web/Components/Common/TaskDependencyLinkModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "cb09b31c821521c48b5bfe00944574f3fdbf761d92d5b04bf5b72c4e90033f56"
+      }
+    },
+    "Web/Components/Common/WorkflowStepperComp.razor.css": {
+      "RelativePath": "Web/Components/Common/WorkflowStepperComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "57ed495f23fce982aa9747c452f58287796f4493d2f303679599c9a310a4043d"
+      }
+    },
+    "Web/Components/Layout/MainLayout.razor.css": {
+      "RelativePath": "Web/Components/Layout/MainLayout.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "c5664dbbb37677d13e08eceebc03f1afd45af81ee7a377bb9070b386dee3824f"
+      }
+    },
+    "Web/Components/Layout/NavMenuComp.razor.css": {
+      "RelativePath": "Web/Components/Layout/NavMenuComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "cef35e2357404cba54226e695e57fecb66d672d618c971f2c707efcfd77d32d2"
+      }
+    },
+    "Web/Components/Layout/NotificationBellPopup.razor.css": {
+      "RelativePath": "Web/Components/Layout/NotificationBellPopup.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "8ac3e8c0082b578db7858bd5aaa44087df6afe736594851757a87cf9baaf00f3"
+      }
+    },
+    "Web/Components/Layout/PendingChangesIndicatorComp.razor.css": {
+      "RelativePath": "Web/Components/Layout/PendingChangesIndicatorComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "37faf8f30e52fbe6fbae26e1f3e827038136a4e39bf9a8d38a5bdec7bf4f11bb"
+      }
+    },
+    "Web/Components/Layout/ReconnectModal.razor.css": {
+      "RelativePath": "Web/Components/Layout/ReconnectModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "d38877514a75e7f019f6dd9a768cd856e2ff232f93954f401902b607b7d842a2"
+      }
+    },
+    "Web/Components/Layout/ReconnectModal.razor.js": {
+      "RelativePath": "Web/Components/Layout/ReconnectModal.razor.js",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "01eb27ae8775cc2bb384c273ece4bcd4a37334814b9652f8865e96657c27d981"
+      }
+    },
+    "Web/Components/Layout/TenantAndProjectSwitcherComp.razor.css": {
+      "RelativePath": "Web/Components/Layout/TenantAndProjectSwitcherComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "b318cde0dbe0b6a9c13c12bae3e1c6e473397038f7d3c1e54738f07dd28357a5"
+      }
+    },
+    "Web/Components/Layout/TenantSwitcherComp.razor.css": {
+      "RelativePath": "Web/Components/Layout/TenantSwitcherComp.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "48644de160590c682fa09900c03e6907e7d7a9a36af43e2aa5f804cd75297f13"
+      }
+    },
+    "Web/Components/Pages/AuthErrorPage.razor.css": {
+      "RelativePath": "Web/Components/Pages/AuthErrorPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "f3e1bcea1e0c9ece3ad3cd0fa6bdbb234c18187029e3cdae92b2f6e4f305d302"
+      }
+    },
+    "Web/Components/Pages/ErrorPage.razor.css": {
+      "RelativePath": "Web/Components/Pages/ErrorPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "bcdc0c88b575b135797b9d94eaa349b75f471ed19d0191989b8c6f01940aee7e"
+      }
+    },
+    "Web/Components/Pages/HomePage.razor.css": {
+      "RelativePath": "Web/Components/Pages/HomePage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "9a347da10f0864d44a0ea1fade669b4da98c5dadb618fa2ccb0aa6ade1c27fa2"
+      }
+    },
+    "Web/Components/Pages/LoginPage.razor.css": {
+      "RelativePath": "Web/Components/Pages/LoginPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "28e4d7842a09ff5de2afd77c3d14a0089f82904dc528043047cd73ac3b5dcd3b"
+      }
+    },
+    "Web/Components/Pages/Settings/SettingsNotificationsTab.razor.css": {
+      "RelativePath": "Web/Components/Pages/Settings/SettingsNotificationsTab.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "54eb086ce1229f89e457f441043d94df73716b1e0d39f859a92f72c384660878"
+      }
+    },
+    "Web/Components/Pages/Settings/SettingsPage.razor.css": {
+      "RelativePath": "Web/Components/Pages/Settings/SettingsPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "b9d5f86c53c5f320ecdc5510252eec198afe4e75cc58734598907fa864aeab23"
+      }
+    },
+    "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor.css": {
+      "RelativePath": "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "5206d8be7d045fc684290a628deb0e1f5e6cb84ccc36c21d174c94628624aebd"
+      }
+    },
+    "Web/Components/Pages/Settings/SettingsUserTab.razor.css": {
+      "RelativePath": "Web/Components/Pages/Settings/SettingsUserTab.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "e2f1050e19acaf5a2741d3e711e0fa7dac7ba40a14d296657a88ddc71df56f2d"
+      }
+    },
+    "Web/Modules/Imports/Components/ImportErrorsModal.razor.css": {
+      "RelativePath": "Web/Modules/Imports/Components/ImportErrorsModal.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "09448fbbe45d168af4265d675e7f64070d6ea2e7367ff1c8e7be7136991114cb"
+      }
+    },
+    "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor.css": {
+      "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "73e8192b03905cf1c8bfdd083099d06b9b7619ceb3cd6d7a4a2786717229a94c"
+      }
+    },
+    "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor.css": {
+      "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "63a1a48033e5b11e90097f2c0836e93ff469785acfbe075218c4773af75c4a42"
+      }
+    },
+    "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleViewPage.razor.css": {
+      "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleViewPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "535f8e11918bc1eb8a35a06e86680c4b09adeab9a5995ae64dde9e6528b597a7"
+      }
+    },
+    "Web/Modules/Tenancy/Pages/ProjectTasksBoardPage.razor.css": {
+      "RelativePath": "Web/Modules/Tenancy/Pages/ProjectTasksBoardPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "4ff0f8436609867228f688ccab1a260d90f5dc0b5d8c2d2edefad315103543f4"
+      }
+    },
+    "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor.css": {
+      "RelativePath": "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "b7a7df626717cec13899ed136febb1ff11b261c8e0c0ec68102ab714b645eeb5"
+      }
+    },
+    "Web/wwwroot/app.css": {
+      "RelativePath": "Web/wwwroot/app.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "ddd0b9209faa84c3c54b87087da535d432d274ed5282ee8d7771448e8172a64c"
+      }
+    },
+    "Web/wwwroot/js/quill-interop.js": {
+      "RelativePath": "Web/wwwroot/js/quill-interop.js",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "568b97c370704f077954a118c09b71ba949a65180bd1c454c7efdc92a4393fbd"
+      }
+    },
+    "Web/wwwroot/js/responsive-interop.js": {
+      "RelativePath": "Web/wwwroot/js/responsive-interop.js",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "dc285f4f9653f0d69460a4d5590ba4c57c260a730fff21e246d3730f4910b73c"
+      }
+    },
+    "Web/wwwroot/js/session-tracker.js": {
+      "RelativePath": "Web/wwwroot/js/session-tracker.js",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "2580c03b4d6d401c7b6eab6c9cdc594423b90895754311269e6a46b37aa756de"
       }
     }
   }
