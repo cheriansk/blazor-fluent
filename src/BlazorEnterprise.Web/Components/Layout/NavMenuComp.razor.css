@@ -2,82 +2,159 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    transition: width 0.2s ease-in-out;
-}
-
-.nav-expanded {
-    width: 260px;
-}
-
-.nav-collapsed {
-    width: 54px;
-}
-
-.nav-toggle-row {
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--mat-outline-variant, #e0e0e0);
-    height: 48px;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
     box-sizing: border-box;
-}
-
-.nav-expanded .nav-toggle-row {
-    justify-content: space-between;
-    padding: 0 12px;
-}
-
-.nav-collapsed .nav-toggle-row {
-    justify-content: center;
-    padding: 0;
-}
-
-.nav-header-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--mat-on-surface-variant, #616161);
+    user-select: none;
 }
 
 .csk-nav-menu {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 6px;
+    height: 100%;
+    padding: 12px 0;
+    box-sizing: border-box;
 }
 
-.csk-nav-item {
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-section-spacer {
+    flex: 1 1 auto;
+}
+
+.nav-section-bottom {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
+}
+
+.nav-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mat-secondary, #455A64);
+    padding: 8px 24px 4px 24px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-rail-divider {
+    height: 1px;
+    margin: 6px 12px;
+    background-color: var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
+}
+
+/* ==========================================================================
+   Material Design 3 Navigation Drawer Item (Expanded)
+   ========================================================================== */
+.nav-expanded .csk-nav-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    color: var(--mat-on-surface, #1e1e1e);
+    gap: 16px;
+    height: 48px;
+    margin: 2px 12px;
+    padding: 0 16px;
+    border-radius: 24px;
+    color: var(--mat-on-surface, #1E1E1E);
     text-decoration: none;
     font-size: 0.875rem;
     font-weight: 500;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    letter-spacing: 0.01em;
+    transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s ease;
     white-space: nowrap;
     overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
 }
 
-.csk-nav-item:hover {
-    background-color: var(--mat-surface-container-high, #ebebeb);
+.nav-expanded .csk-nav-item:hover {
+    background-color: var(--mat-surface-variant, #F4F6F9);
+    color: var(--mat-primary-hover, #1565C0);
 }
 
-.csk-nav-item.active {
-    background-color: var(--mat-secondary-container, #e8def8);
-    color: var(--mat-on-secondary-container, #1d192b);
+.nav-expanded .csk-nav-item.active {
+    background-color: var(--mat-primary-container, #E3F2FD);
+    color: var(--mat-on-primary-container, #0D47A1);
     font-weight: 600;
 }
 
-.csk-nav-icon {
-    width: 20px;
-    height: 20px;
+.nav-expanded .csk-nav-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
 }
 
+.nav-expanded .csk-nav-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    transition: fill 0.18s ease;
+}
+
+.nav-expanded .csk-nav-item.active .csk-nav-icon {
+    fill: var(--mat-on-primary-container, #0D47A1);
+}
+
+.nav-expanded .csk-nav-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 auto;
+}
+
+/* ==========================================================================
+   Material Design 3 Navigation Rail Item (Collapsed)
+   ========================================================================== */
 .nav-collapsed .csk-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding: 10px 0;
+    width: 56px;
+    height: 52px;
+    margin: 4px auto;
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--mat-on-surface, #1E1E1E);
+    transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.nav-collapsed .csk-nav-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 32px;
+    border-radius: 16px;
+    transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-collapsed .csk-nav-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.nav-collapsed .csk-nav-item:hover .csk-nav-indicator {
+    background-color: var(--mat-surface-variant, #F4F6F9);
+}
+
+.nav-collapsed .csk-nav-item.active .csk-nav-indicator {
+    background-color: var(--mat-primary-container, #E3F2FD);
+}
+
+.nav-collapsed .csk-nav-item.active .csk-nav-icon {
+    fill: var(--mat-on-primary-container, #0D47A1);
 }

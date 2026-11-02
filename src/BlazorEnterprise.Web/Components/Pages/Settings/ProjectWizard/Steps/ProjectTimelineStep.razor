@@ -6,23 +6,100 @@
 
 <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
     <div class="font-size-sm text-hint">
-        Define overall project start and target completion dates for team delivery.
+        Define overall project delivery timeline and phase breakdown for team execution.
     </div>
 
-    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Wrap="true">
-        <div class="flex-1 min-w-180">
-            <CskDatePicker Label="Project Start Date *"
-                           @bind-Value="@Context!.State.StartDate"
-                           Required="true"
-                           Class="full-width" />
+    @if (!_isReadOnly)
+    {
+        <div class="csk-timeline-step-card">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                    <div class="flex-2">
+                        <CskTextInput Label="Phase Title / Scope" @bind-Value="_phaseName" Placeholder="e.g. Iteration 1 - Core Backend" Class="full-width" />
+                    </div>
+                    <div class="flex-1">
+                        <CskDatePicker Label="Start Date" @bind-Value="_phaseStartDate" Class="full-width" />
+                    </div>
+                    <div class="flex-1">
+                        <CskDatePicker Label="End Date" @bind-Value="_phaseEndDate" Class="full-width" />
+                    </div>
+                    <div class="flex-1">
+                        <CskSelect TOption="string"
+                                   TValue="string"
+                                   Label="Status"
+                                   Items="@_statusOptions"
+                                   OptionText="@(s => s)"
+                                   OptionValue="@(s => s)"
+                                   @bind-Value="_phaseStatus"
+                                   Class="full-width" />
+                    </div>
+                </CskStack>
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               IconStart="@(_editingPhaseId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
+                               Disabled="@(string.IsNullOrWhiteSpace(_phaseName))"
+                               OnClick="@SavePhase">
+                        @(_editingPhaseId.HasValue ? "Update Phase" : "Add Phase")
+                    </CskButton>
+
+                    @if (_editingPhaseId.HasValue)
+                    {
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelEdit">
+                            Cancel
+                        </CskButton>
+                    }
+                </CskStack>
+            </CskStack>
         </div>
-        <div class="flex-1 min-w-180">
-            <CskDatePicker Label="Target Completion Date *"
-                           @bind-Value="@Context!.State.EndDate"
-                           Required="true"
-                           Class="full-width" />
+    }
+
+    @if (Context?.State.Phases.Count > 0)
+    {
+        <table class="csk-datagrid-table csk-timeline-step-table mt-2">
+            <thead>
+                <tr class="csk-datagrid-header-row">
+                    <th class="csk-datagrid-th">Title</th>
+                    <th class="csk-datagrid-th csk-col-date">Start Date</th>
+                    <th class="csk-datagrid-th csk-col-date">End Date</th>
+                    <th class="csk-datagrid-th csk-col-status">Status</th>
+                    <th class="csk-datagrid-th csk-col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var phase in Context.State.Phases)
+                {
+                    <tr class="csk-datagrid-row">
+                        <td class="csk-datagrid-td csk-font-medium">@phase.PhaseName</td>
+                        <td class="csk-datagrid-td font-size-sm">@(phase.StartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td font-size-sm">@(phase.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">
+                            <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(phase.Status)">
+                                @phase.Status
+                            </CskBadge>
+                        </td>
+                        <td class="csk-datagrid-td">
+                            @if (!_isReadOnly)
+                            {
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Edit" OnClick="@(() => StartEdit(phase))">
+                                        Edit
+                                    </CskButton>
+                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Delete" OnClick="@(() => RemovePhase(phase))" />
+                                </CskStack>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-hint font-size-sm p-4 text-center">
+            No project timeline phases defined yet. Add execution phases above.
         </div>
-    </CskStack>
+    }
 
     @if (Context != null && Context.HasError("Timeline"))
     {
@@ -34,20 +111,115 @@
     [CascadingParameter]
     public WizardContext<CreateProjectWizardState>? Context { get; set; }
 
+    private readonly List<string> _statusOptions = new() { "Planned", "Active", "On Hold", "Completed" };
+
+    private Guid? _editingPhaseId;
+    private string _phaseName = string.Empty;
+    private DateTime? _phaseStartDate = DateTime.UtcNow.Date;
+    private DateTime? _phaseEndDate = DateTime.UtcNow.Date.AddMonths(2);
+    private string _phaseStatus = "Planned";
+
+    private bool _isReadOnly => Context?.IsReadOnly ?? false;
+
+    protected override void OnInitialized()
+    {
+        if (Context != null && Context.State.Phases.Count == 0 && Context.State.StartDate.HasValue)
+        {
+            Context.State.Phases.Add(new ProjectPhaseDto
+            {
+                Id = Guid.NewGuid(),
+                PhaseName = "Main Delivery Window",
+                StartDate = Context.State.StartDate,
+                EndDate = Context.State.EndDate ?? Context.State.StartDate.Value.AddMonths(6),
+                Status = "Active"
+            });
+        }
+    }
+
+    private void StartEdit(ProjectPhaseDto phase)
+    {
+        _editingPhaseId = phase.Id;
+        _phaseName = phase.PhaseName;
+        _phaseStartDate = phase.StartDate;
+        _phaseEndDate = phase.EndDate;
+        _phaseStatus = string.IsNullOrWhiteSpace(phase.Status) ? "Planned" : phase.Status;
+    }
+
+    private void CancelEdit()
+    {
+        _editingPhaseId = null;
+        _phaseName = string.Empty;
+        _phaseStartDate = DateTime.UtcNow.Date;
+        _phaseEndDate = DateTime.UtcNow.Date.AddMonths(2);
+        _phaseStatus = "Planned";
+    }
+
+    private void SavePhase()
+    {
+        if (Context != null && !string.IsNullOrWhiteSpace(_phaseName))
+        {
+            if (_phaseStartDate.HasValue && _phaseEndDate.HasValue && _phaseEndDate.Value.Date < _phaseStartDate.Value.Date)
+            {
+                Context.SetError("Timeline", "Phase End Date cannot precede Start Date.");
+                return;
+            }
+
+            if (_editingPhaseId.HasValue)
+            {
+                var existing = Context.State.Phases.FirstOrDefault(p => p.Id == _editingPhaseId.Value);
+                if (existing != null)
+                {
+                    existing.PhaseName = _phaseName.Trim();
+                    existing.StartDate = _phaseStartDate;
+                    existing.EndDate = _phaseEndDate;
+                    existing.Status = _phaseStatus;
+                }
+            }
+            else
+            {
+                Context.State.Phases.Add(new ProjectPhaseDto
+                {
+                    Id = Guid.NewGuid(),
+                    PhaseName = _phaseName.Trim(),
+                    StartDate = _phaseStartDate,
+                    EndDate = _phaseEndDate,
+                    Status = _phaseStatus
+                });
+            }
+
+            CancelEdit();
+            Context.ClearErrors("Timeline");
+        }
+    }
+
+    private void RemovePhase(ProjectPhaseDto phase)
+    {
+        Context?.State.Phases.Remove(phase);
+        if (_editingPhaseId == phase.Id)
+        {
+            CancelEdit();
+        }
+    }
+
+    private BadgeColor GetStatusBadgeColor(string status) => status switch
+    {
+        "Active" => BadgeColor.Success,
+        "Planned" => BadgeColor.Informative,
+        "On Hold" => BadgeColor.Warning,
+        "Completed" => BadgeColor.Informative,
+        _ => BadgeColor.Informative
+    };
+
     public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
     {
         context.ClearErrors("Timeline");
 
-        if (!context.State.StartDate.HasValue || !context.State.EndDate.HasValue)
+        if (context.State.Phases.Any())
         {
-            context.SetError("Timeline", "Both Start Date and Target Completion Date are required.");
-            return Task.FromResult(false);
-        }
-
-        if (context.State.EndDate.Value < context.State.StartDate.Value)
-        {
-            context.SetError("Timeline", "Target Completion Date cannot precede Project Start Date.");
-            return Task.FromResult(false);
+            var minStart = context.State.Phases.Where(p => p.StartDate.HasValue).Min(p => p.StartDate);
+            var maxEnd = context.State.Phases.Where(p => p.EndDate.HasValue).Max(p => p.EndDate);
+            if (minStart.HasValue) context.State.StartDate = minStart;
+            if (maxEnd.HasValue) context.State.EndDate = maxEnd;
         }
 
         return Task.FromResult(true);

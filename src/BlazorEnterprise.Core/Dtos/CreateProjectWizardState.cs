@@ -2,31 +2,41 @@ namespace BlazorEnterprise.Core.Dtos;
 
 public class RfpTimelineRowDto
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string StepName { get; set; } = string.Empty;
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
+    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
+    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddDays(14);
     public string Details { get; set; } = string.Empty;
+    public string Status { get; set; } = "Planned";
 }
 
 public class ProjectPhaseDto
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string PhaseName { get; set; } = string.Empty;
-    public DateTime? StartDate { get; set; }
-    public DateTime? TargetDate { get; set; }
+    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
+    public DateTime? TargetDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
+    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
+    public string Status { get; set; } = "Planned";
 }
 
 public class ProjectMilestoneDto
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string Title { get; set; } = string.Empty;
-    public DateTime? DueDate { get; set; }
+    public DateTime? DueDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
     public string Deliverable { get; set; } = string.Empty;
+    public string Status { get; set; } = "Scheduled";
 }
 
 public class ProjectRosterMemberDto
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
+    public DateTime? EndDate { get; set; }
 }
 
 public partial class CreateProjectWizardState

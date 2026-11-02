@@ -3,8 +3,8 @@
 target_spec: docs/specs/SettingsProgramsTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor.cs
-generated_at_utc: 2026-10-30T21:59:20Z
-source_hash_sha256: e1ce91e3dfb3ef48
+generated_at_utc: 2026-11-02T01:49:02Z
+source_hash_sha256: d334b867fd1d9c07
 ============================================================================ -->
 # AI Navigation Index: `SettingsProgramsTab`
 
@@ -60,11 +60,11 @@ source_hash_sha256: e1ce91e3dfb3ef48
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L94-L116` | `IsRootAdmin` | `DB[R]: Tenants` |
+| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L99-L121` | `IsRootAdmin` | `DB[R]: Tenants` |
 | `ProgramService.GetProgramsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L41-L70` | - | `DB[R]: Tenants,Programs` |
-| `HierarchyAuthorizationService.IsTenantAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L154-L182` | `TenantAdminGate` | `DB[R]: Tenants` |
-| `HierarchyAuthorizationService.GetAccessibleProgramIdsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L822-L838` | - | `DB[R]: Tenants` |
-| `HierarchyAuthorizationService.IsProgramAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L186-L266` | `TenantAdminGate, ProgramAccessGate, HmacRowSignature` | `DB[R]: Programs,ProgramUserRoles` `Audit: LogSecurityEventAsync` |
+| `HierarchyAuthorizationService.IsTenantAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L145-L173` | `TenantAdminGate` | `DB[R]: Tenants` |
+| `HierarchyAuthorizationService.GetAccessibleProgramIdsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L813-L829` | - | `DB[R]: Tenants` |
+| `HierarchyAuthorizationService.IsProgramAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L177-L257` | `TenantAdminGate, ProgramAccessGate, HmacRowSignature` | `DB[R]: Programs,ProgramUserRoles` `Audit: LogSecurityEventAsync` |
 | `ProgramService.GetProgramRisksAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L351-L358` | - | `DB[R]: Risks` |
 | `ProgramService.GetProgramAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L360-L367` | - | `DB[R]: Assumptions` |
 | `ProgramService.GetProgramIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L369-L376` | - | `DB[R]: Issues` |
@@ -76,8 +76,8 @@ source_hash_sha256: e1ce91e3dfb3ef48
 | `UnsavedChangesStateService.ClearChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L26-L34` | - | In-Memory |
 | `ProgramService.UpdateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L160-L218` | `ProgramAccessGate` | `DB[W]: Programs` `Audit: LogUserActivityAsync` |
 | `ProgramService.CreateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L94-L158` | `TenantAdminGate` | `DB[W]: Tenants,Programs` `Audit: LogUserActivityAsync` |
-| `TenantService.CreateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L771-L854` | `TenantBoundaryGate` | `DB[W]: Projects` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
-| `TenantService.UpdateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L856-L938` | - | `DB[W]: Projects` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
+| `TenantService.CreateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L776-L859` | `TenantBoundaryGate` | `DB[W]: Projects` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
+| `TenantService.UpdateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L861-L943` | - | `DB[W]: Projects` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
 
 ## 4. Validation Rules
 

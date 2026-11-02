@@ -2,7 +2,9 @@
 @using BlazorEnterprise.Shared.UI.Wizards
 @using BlazorEnterprise.Shared.UI.Components
 @using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Contracts
 @implements IWizardStepComponent<CreateProgramWizardState>
+@inject IUserTimeZoneService TimeZoneService
 
 <div class="csk-wizard-step-container">
     <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
@@ -14,20 +16,114 @@
         }
 
         <CskLabel Typo="Typography.Body" Class="text-hint">
-            Specify the strategic delivery window and planned completion timeline for this program.
+            Specify the overall delivery schedule and milestone phases for this enterprise program.
         </CskLabel>
 
-        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
-            <CskDatePicker Label="Program Start Date"
-                           @bind-Value="_startDate"
-                           Disabled="@_isReadOnly"
-                           Class="flex-1" />
+        @if (!_isReadOnly)
+        {
+            <div class="csk-entry-form-card">
+                <CskLabel Typo="Typography.H6" Class="mb-3">
+                    @(_editingRowId.HasValue ? "Edit Timeline Row" : "Add Timeline Row")
+                </CskLabel>
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                        <CskTextInput Label="Timeline Title / Phase"
+                                      @bind-Value="_inputTitle"
+                                      Placeholder="e.g. Phase 1 - Architecture & Design"
+                                      Class="flex-2" />
 
-            <CskDatePicker Label="Target Completion Date"
-                           @bind-Value="_endDate"
-                           Disabled="@_isReadOnly"
-                           Class="flex-1" />
-        </CskStack>
+                        <CskDatePicker Label="Start Date"
+                                       @bind-Value="_inputStartDate"
+                                       Class="flex-1" />
+
+                        <CskDatePicker Label="End Date"
+                                       @bind-Value="_inputEndDate"
+                                       Class="flex-1" />
+
+                        <CskSelect TOption="string"
+                                   TValue="string"
+                                   Label="Status"
+                                   Items="@_statusOptions"
+                                   OptionText="@(s => s)"
+                                   OptionValue="@(s => s)"
+                                   @bind-Value="_inputStatus"
+                                   Class="flex-1" />
+                    </CskStack>
+
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@(_editingRowId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
+                                   Disabled="@(string.IsNullOrWhiteSpace(_inputTitle))"
+                                   OnClick="@SaveTimelineRow">
+                            @(_editingRowId.HasValue ? "Update Row" : "Add Row")
+                        </CskButton>
+
+                        @if (_editingRowId.HasValue)
+                        {
+                            <CskButton Variant="CskButtonVariant.Text"
+                                       Size="CskButtonSize.Small"
+                                       OnClick="@CancelEdit">
+                                Cancel
+                            </CskButton>
+                        }
+                    </CskStack>
+                </CskStack>
+            </div>
+        }
+
+        @if (_timelineRows.Count == 0)
+        {
+            <div class="csk-empty-table-state">
+                No timeline rows defined yet. Add a timeline phase or schedule row above.
+            </div>
+        }
+        else
+        {
+            <table class="csk-datagrid-table csk-datagrid-dense csk-table-container">
+                <thead>
+                    <tr class="csk-datagrid-header-row">
+                        <th class="csk-datagrid-th">Title</th>
+                        <th class="csk-datagrid-th csk-col-date">Start Date</th>
+                        <th class="csk-datagrid-th csk-col-date">End Date</th>
+                        <th class="csk-datagrid-th csk-col-status">Status</th>
+                        <th class="csk-datagrid-th csk-col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _timelineRows)
+                    {
+                        <tr class="csk-datagrid-row">
+                            <td class="csk-datagrid-td csk-font-medium">@row.Title</td>
+                            <td class="csk-datagrid-td font-size-sm">@TimeZoneService.FormatDate(row.StartDate)</td>
+                            <td class="csk-datagrid-td font-size-sm">@TimeZoneService.FormatDate(row.EndDate)</td>
+                            <td class="csk-datagrid-td">
+                                <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(row.Status)">
+                                    @row.Status
+                                </CskBadge>
+                            </td>
+                            <td class="csk-datagrid-td">
+                                @if (!_isReadOnly)
+                                {
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                   Size="CskButtonSize.Small"
+                                                   IconStart="@CskIcons.Edit"
+                                                   OnClick="@(() => StartEdit(row))">
+                                            Edit
+                                        </CskButton>
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                   Size="CskButtonSize.Small"
+                                                   IconStart="@CskIcons.Delete"
+                                                   OnClick="@(() => RemoveRow(row.Id))" />
+                                    </CskStack>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </CskStack>
 </div>
 
@@ -35,8 +131,15 @@
     [Parameter]
     public WizardContext<CreateProgramWizardState>? Context { get; set; }
 
-    private DateTime? _startDate;
-    private DateTime? _endDate;
+    private List<ProgramTimelineRowDto> _timelineRows = new();
+    private readonly List<string> _statusOptions = new() { "Planned", "Active", "On Hold", "Completed" };
+
+    private Guid? _editingRowId;
+    private string _inputTitle = string.Empty;
+    private DateTime? _inputStartDate = DateTime.UtcNow.Date;
+    private DateTime? _inputEndDate = DateTime.UtcNow.Date.AddMonths(3);
+    private string _inputStatus = "Planned";
+
     private string? _validationError;
     private bool _isReadOnly;
 
@@ -44,24 +147,109 @@
     {
         if (Context != null)
         {
-            _startDate = Context.State.StartDate;
-            _endDate = Context.State.EndDate;
+            _timelineRows = Context.State.TimelineRows ?? new();
             _isReadOnly = Context.IsReadOnly;
+
+            // Pre-seed an initial row if timeline was previously just StartDate/EndDate
+            if (_timelineRows.Count == 0 && Context.State.StartDate.HasValue)
+            {
+                _timelineRows.Add(new ProgramTimelineRowDto
+                {
+                    Title = "Primary Program Execution Window",
+                    StartDate = Context.State.StartDate,
+                    EndDate = Context.State.EndDate ?? Context.State.StartDate.Value.AddYears(1),
+                    Status = "Active"
+                });
+            }
         }
     }
+
+    private void StartEdit(ProgramTimelineRowDto row)
+    {
+        _editingRowId = row.Id;
+        _inputTitle = row.Title;
+        _inputStartDate = row.StartDate;
+        _inputEndDate = row.EndDate;
+        _inputStatus = row.Status;
+    }
+
+    private void CancelEdit()
+    {
+        _editingRowId = null;
+        _inputTitle = string.Empty;
+        _inputStartDate = DateTime.UtcNow.Date;
+        _inputEndDate = DateTime.UtcNow.Date.AddMonths(3);
+        _inputStatus = "Planned";
+    }
+
+    private void SaveTimelineRow()
+    {
+        if (string.IsNullOrWhiteSpace(_inputTitle)) return;
+
+        if (_inputStartDate.HasValue && _inputEndDate.HasValue && _inputEndDate.Value.Date < _inputStartDate.Value.Date)
+        {
+            _validationError = "End Date cannot precede Start Date.";
+            return;
+        }
+
+        _validationError = null;
+
+        if (_editingRowId.HasValue)
+        {
+            var existing = _timelineRows.FirstOrDefault(r => r.Id == _editingRowId.Value);
+            if (existing != null)
+            {
+                existing.Title = _inputTitle.Trim();
+                existing.StartDate = _inputStartDate;
+                existing.EndDate = _inputEndDate;
+                existing.Status = _inputStatus;
+            }
+        }
+        else
+        {
+            _timelineRows.Add(new ProgramTimelineRowDto
+            {
+                Id = Guid.NewGuid(),
+                Title = _inputTitle.Trim(),
+                StartDate = _inputStartDate,
+                EndDate = _inputEndDate,
+                Status = _inputStatus
+            });
+        }
+
+        CancelEdit();
+    }
+
+    private void RemoveRow(Guid id)
+    {
+        _timelineRows.RemoveAll(r => r.Id == id);
+        if (_editingRowId == id)
+        {
+            CancelEdit();
+        }
+    }
+
+    private BadgeColor GetStatusBadgeColor(string status) => status switch
+    {
+        "Active" => BadgeColor.Success,
+        "Planned" => BadgeColor.Informative,
+        "On Hold" => BadgeColor.Warning,
+        "Completed" => BadgeColor.Informative,
+        _ => BadgeColor.Informative
+    };
 
     public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
     {
         _validationError = null;
+        context.State.TimelineRows = _timelineRows;
 
-        if (_startDate.HasValue && _endDate.HasValue && _endDate.Value.Date < _startDate.Value.Date)
+        if (_timelineRows.Any())
         {
-            _validationError = "Target Completion Date cannot precede Program Start Date.";
-            return Task.FromResult(false);
+            var minStart = _timelineRows.Where(r => r.StartDate.HasValue).Min(r => r.StartDate);
+            var maxEnd = _timelineRows.Where(r => r.EndDate.HasValue).Max(r => r.EndDate);
+            if (minStart.HasValue) context.State.StartDate = minStart;
+            if (maxEnd.HasValue) context.State.EndDate = maxEnd;
         }
-
-        context.State.StartDate = _startDate;
-        context.State.EndDate = _endDate;
 
         return Task.FromResult(true);
     }

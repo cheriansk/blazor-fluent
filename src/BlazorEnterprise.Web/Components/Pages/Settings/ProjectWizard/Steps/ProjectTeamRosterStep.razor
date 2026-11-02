@@ -6,33 +6,57 @@
 
 <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
     <div class="font-size-sm text-hint">
-        Assign initial project governance leads and team member responsibilities.
+        Assign initial project governance leads and team member responsibilities with delivery timeframes.
     </div>
 
-    <CskCard Class="p-3 card-accent-border">
-        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.End" Wrap="true">
-            <div class="flex-2 min-w-150">
-                <CskTextInput Label="Full Name" @bind-Value="_newMemberName" Placeholder="e.g. Jane Doe" Class="full-width" />
-            </div>
-            <div class="flex-2 min-w-170">
-                <CskTextInput Label="Email Address" @bind-Value="_newMemberEmail" Placeholder="jane.doe@company.local" Class="full-width" />
-            </div>
-            <div class="flex-15 min-w-130">
-                <CskTextInput Label="Role" @bind-Value="_newMemberRole" Placeholder="Lead / Contributor" Class="full-width" />
-            </div>
-            <div>
-                <CskButton Variant="CskButtonVariant.Filled" OnClick="@AddMember">Add Member</CskButton>
-            </div>
-        </CskStack>
-    </CskCard>
+    @if (!_isReadOnly)
+    {
+        <CskCard Class="p-3 card-accent-border">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.End" Wrap="true">
+                    <div class="flex-2 min-w-150">
+                        <CskTextInput Label="Member Name" @bind-Value="_newMemberName" Placeholder="e.g. Jane Doe" Class="full-width" />
+                    </div>
+                    <div class="flex-2 min-w-160">
+                        <CskTextInput Label="Email Address" @bind-Value="_newMemberEmail" Placeholder="jane.doe@company.local" Class="full-width" />
+                    </div>
+                    <div class="flex-1 min-w-140">
+                        <CskDatePicker Label="Start Date" @bind-Value="_newMemberStartDate" Class="full-width" />
+                    </div>
+                    <div class="flex-1 min-w-140">
+                        <CskDatePicker Label="End Date" @bind-Value="_newMemberEndDate" Class="full-width" />
+                    </div>
+                    <div class="flex-15 min-w-130">
+                        <CskTextInput Label="Role" @bind-Value="_newMemberRole" Placeholder="Lead / Contributor" Class="full-width" />
+                    </div>
+                </CskStack>
+
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               IconStart="@(_editingMemberId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
+                               OnClick="@SaveMember">
+                        @(_editingMemberId.HasValue ? "Update Member" : "Add Member")
+                    </CskButton>
+
+                    @if (_editingMemberId.HasValue)
+                    {
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@CancelEdit">
+                            Cancel
+                        </CskButton>
+                    }
+                </CskStack>
+            </CskStack>
+        </CskCard>
+    }
 
     @if (Context?.State.Roster.Count > 0)
     {
         <table class="csk-datagrid-table mt-2">
             <thead>
                 <tr class="csk-datagrid-header-row">
-                    <th class="csk-datagrid-th">Name</th>
-                    <th class="csk-datagrid-th">Email</th>
+                    <th class="csk-datagrid-th">Member Name</th>
+                    <th class="csk-datagrid-th">Start Date</th>
+                    <th class="csk-datagrid-th">End Date</th>
                     <th class="csk-datagrid-th">Role</th>
                     <th class="csk-datagrid-th">Actions</th>
                 </tr>
@@ -41,13 +65,25 @@
                 @foreach (var mem in Context.State.Roster)
                 {
                     <tr class="csk-datagrid-row">
-                        <td class="csk-datagrid-td">@mem.FullName</td>
-                        <td class="csk-datagrid-td">@mem.Email</td>
-                        <td class="csk-datagrid-td">@mem.Role</td>
                         <td class="csk-datagrid-td">
-                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" OnClick="@(() => Context.State.Roster.Remove(mem))">
-                                Remove
-                            </CskButton>
+                            <div>@mem.FullName</div>
+                            <span class="text-hint font-size-xs">@mem.Email</span>
+                        </td>
+                        <td class="csk-datagrid-td font-size-sm">@(mem.StartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td font-size-sm">@(mem.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">
+                            <CskBadge Appearance="BadgeAppearance.Tint">@mem.Role</CskBadge>
+                        </td>
+                        <td class="csk-datagrid-td">
+                            @if (!_isReadOnly)
+                            {
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Edit" OnClick="@(() => StartEdit(mem))">
+                                        Edit
+                                    </CskButton>
+                                    <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" IconStart="@CskIcons.Delete" OnClick="@(() => RemoveMember(mem))" />
+                                </CskStack>
+                            }
                         </td>
                     </tr>
                 }
@@ -71,23 +107,75 @@
     [CascadingParameter]
     public WizardContext<CreateProjectWizardState>? Context { get; set; }
 
+    private Guid? _editingMemberId;
     private string _newMemberName = string.Empty;
     private string _newMemberEmail = string.Empty;
     private string _newMemberRole = "Contributor";
+    private DateTime? _newMemberStartDate = DateTime.UtcNow.Date;
+    private DateTime? _newMemberEndDate;
 
-    private void AddMember()
+    private bool _isReadOnly => Context?.IsReadOnly ?? false;
+
+    private void StartEdit(ProjectRosterMemberDto mem)
+    {
+        _editingMemberId = mem.Id;
+        _newMemberName = mem.FullName;
+        _newMemberEmail = mem.Email;
+        _newMemberRole = mem.Role;
+        _newMemberStartDate = mem.StartDate;
+        _newMemberEndDate = mem.EndDate;
+    }
+
+    private void CancelEdit()
+    {
+        _editingMemberId = null;
+        _newMemberName = string.Empty;
+        _newMemberEmail = string.Empty;
+        _newMemberRole = "Contributor";
+        _newMemberStartDate = DateTime.UtcNow.Date;
+        _newMemberEndDate = null;
+    }
+
+    private void SaveMember()
     {
         if (Context != null && !string.IsNullOrWhiteSpace(_newMemberName) && !string.IsNullOrWhiteSpace(_newMemberEmail))
         {
-            Context.State.Roster.Add(new ProjectRosterMemberDto
+            if (_editingMemberId.HasValue)
             {
-                FullName = _newMemberName,
-                Email = _newMemberEmail,
-                Role = _newMemberRole
-            });
-            _newMemberName = string.Empty;
-            _newMemberEmail = string.Empty;
+                var existing = Context.State.Roster.FirstOrDefault(m => m.Id == _editingMemberId.Value);
+                if (existing != null)
+                {
+                    existing.FullName = _newMemberName.Trim();
+                    existing.Email = _newMemberEmail.Trim();
+                    existing.Role = _newMemberRole.Trim();
+                    existing.StartDate = _newMemberStartDate;
+                    existing.EndDate = _newMemberEndDate;
+                }
+            }
+            else
+            {
+                Context.State.Roster.Add(new ProjectRosterMemberDto
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = _newMemberName.Trim(),
+                    Email = _newMemberEmail.Trim(),
+                    Role = _newMemberRole.Trim(),
+                    StartDate = _newMemberStartDate,
+                    EndDate = _newMemberEndDate
+                });
+            }
+
+            CancelEdit();
             Context.ClearErrors("Roster");
+        }
+    }
+
+    private void RemoveMember(ProjectRosterMemberDto mem)
+    {
+        Context?.State.Roster.Remove(mem);
+        if (_editingMemberId == mem.Id)
+        {
+            CancelEdit();
         }
     }
 

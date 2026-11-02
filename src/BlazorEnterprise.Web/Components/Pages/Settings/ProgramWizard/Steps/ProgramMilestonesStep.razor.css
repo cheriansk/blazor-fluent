@@ -5,6 +5,8 @@
 .csk-milestone-form-card {
     padding: 1rem;
     background-color: var(--csk-color-surface-container, #f8f9fa);
+    border-radius: 8px;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
 }
 
 .csk-milestones-empty-state {
@@ -24,11 +26,15 @@
 }
 
 .csk-milestone-date-col {
-    width: 160px;
+    width: 150px;
+}
+
+.csk-milestone-status-col {
+    width: 130px;
 }
 
 .csk-milestone-action-col {
-    width: 80px;
+    width: 150px;
 }
 
 .csk-font-medium {
