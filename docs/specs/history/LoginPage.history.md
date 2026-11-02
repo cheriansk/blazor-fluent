@@ -1,4 +1,4 @@
-﻿# Completed Change History: `LoginPage`
+# Completed Change History: `LoginPage`
 
 > **Active Spec**: [LoginPage.requirements.md](../LoginPage.requirements.md) | **Navigation Index**: [LoginPage.index.md](../index/LoginPage.index.md)
 

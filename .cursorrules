@@ -26,5 +26,5 @@ When creating new components, services, entities, or background jobs, consult th
 
 ## 🛡️ 3. Operational Guardrails
 - **Git Safety**: Never execute `git add`, `git commit`, `git reset`, or `git restore`. Leave all changes unstaged in the working tree for the developer.
-- **Build Discipline**: Do NOT run `dotnet build`, `dotnet run`, or `msbuild` proactively unless the user explicitly requests compilation.
+- **Build & Test Discipline**: Do NOT run dotnet build, dotnet test, dotnet run, or msbuild proactively unless the user explicitly requests compilation or testing. Always ask for user confirmation before running any build or test commands.
 - **Fluent UI V5 Syntax**: Use Fluent UI Blazor V5 idioms (e.g. `FluentSelect` with `TOption` and `TValue`, `Value`/`ValueChanged`, `FluentTextInput` instead of `FluentTextField`).

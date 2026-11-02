@@ -1,4 +1,4 @@
-﻿# Component Registration Warnings (Validation Report)
+# Component Registration Warnings (Validation Report)
 
 > **Last Generated**: `2026-11-01 21:06:44 -05:00`  
 > **Manifest**: [specs-manifest.json](../specs-manifest.json) | **Catalog**: [README.md](../README.md)

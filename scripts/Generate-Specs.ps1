@@ -54,8 +54,8 @@ param(
 Set-StrictMode -Off
 $ErrorActionPreference = "Stop"
 
-# Always use UTF-8 with BOM so Windows PowerShell 5.1, pwsh 7+, and Visual Studio never misread encoding
-$utf8Bom = New-Object System.Text.UTF8Encoding($true)
+# Always use UTF-8 without BOM so Git, diff tools, and modern editors never display mojibake (ï»¿)
+$utf8Bom = New-Object System.Text.UTF8Encoding($false)
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootDir = (Resolve-Path (Join-Path $scriptDir "..")).Path

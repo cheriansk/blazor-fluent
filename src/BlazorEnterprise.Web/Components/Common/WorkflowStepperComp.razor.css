@@ -1,4 +1,4 @@
-﻿.workflow-stepper-card {
+.workflow-stepper-card {
         background: var(--neutral-layer-card-container, #ffffff);
         border: 1px solid var(--neutral-stroke-subtle, #e0e0e0);
         border-radius: 8px;

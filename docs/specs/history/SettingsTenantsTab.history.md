@@ -1,4 +1,4 @@
-﻿# Completed Change History: `SettingsTenantsTab`
+# Completed Change History: `SettingsTenantsTab`
 
 > **Active Spec**: [SettingsTenantsTab.requirements.md](../SettingsTenantsTab.requirements.md) | **Navigation Index**: [SettingsTenantsTab.index.md](../index/SettingsTenantsTab.index.md)
 
