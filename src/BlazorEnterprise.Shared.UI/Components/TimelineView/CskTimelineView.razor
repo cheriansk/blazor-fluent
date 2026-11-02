@@ -1,0 +1,202 @@
+@namespace BlazorEnterprise.Shared.UI.Components.TimelineView
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-timeline-card @Class">
+    @if (!string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Subtitle))
+    {
+        <div class="csk-timeline-header">
+            @if (!string.IsNullOrWhiteSpace(Title))
+            {
+                <h2 class="csk-timeline-title">@Title</h2>
+            }
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p class="csk-timeline-subtitle">@Subtitle</p>
+            }
+        </div>
+    }
+
+    <div class="csk-timeline-viewport">
+        @* 1. Milestone Pins Track *@
+        @if (Milestones != null && Milestones.Any())
+        {
+            <div class="csk-timeline-pins-track">
+                @foreach (var milestone in Milestones)
+                {
+                    var posPercent = ComputePositionPercent(milestone.Date);
+                    var leftClass = $"pos-left-{Math.Clamp((int)Math.Round(posPercent), 0, 100)}";
+
+                    <div class="csk-milestone-pin @leftClass"
+                         @onclick="@(() => OnMilestoneClick.InvokeAsync(milestone))"
+                         title="@($"{milestone.Title} ({milestone.Date:MMM d, yyyy})")">
+                        <div class="csk-milestone-label">
+                            <span class="csk-milestone-title">@milestone.Title</span>
+                            <span class="csk-milestone-date">@milestone.Date.ToString("MMM d")</span>
+                        </div>
+                        <div class="csk-milestone-stem csk-milestone-stem-@milestone.Color.ToLowerInvariant()">
+                            <div class="csk-milestone-dot csk-milestone-dot-@milestone.Color.ToLowerInvariant()"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* 2. Monthly Axis Track *@
+        @{
+            var colsCount = Math.Clamp(_computedMonths.Count, 1, 24);
+            var gridColsClass = $"grid-cols-{colsCount}";
+        }
+        <div class="csk-timeline-axis-track @gridColsClass">
+            @for (int i = 0; i < _computedMonths.Count; i++)
+            {
+                var month = _computedMonths[i];
+                var colorBand = (i % 12) + 1;
+                <div class="csk-timeline-month-cell csk-month-band-@colorBand">
+                    @month.ToString("MMM")
+                </div>
+            }
+        </div>
+
+        @* 3. Phases / Gantt Chevrons Track *@
+        <div class="csk-timeline-body">
+            @if (ShowGridLines)
+            {
+                <div class="csk-timeline-gridlines @gridColsClass">
+                    @for (int i = 0; i < _computedMonths.Count; i++)
+                    {
+                        <div class="csk-timeline-gridline-col"></div>
+                    }
+                </div>
+            }
+
+            @if (Phases != null && Phases.Any())
+            {
+                <div class="csk-timeline-phases-list">
+                    @for (int i = 0; i < Phases.Count; i++)
+                    {
+                        var phase = Phases[i];
+                        var (leftPercent, widthPercent) = ComputePhaseDimensions(phase.StartDate, phase.EndDate);
+                        var leftClass = $"pos-left-{Math.Clamp((int)Math.Round(leftPercent), 0, 100)}";
+                        var widthClass = $"pos-width-{Math.Clamp((int)Math.Round(widthPercent), 1, 100)}";
+                        var isFirst = i == 0;
+                        var colorClass = $"csk-phase-color-{phase.Color.ToLowerInvariant()}";
+
+                        <div class="csk-phase-row">
+                            <div class="csk-phase-bar-wrapper @leftClass @widthClass">
+                                <div class="csk-phase-chevron @(isFirst ? "csk-phase-chevron-first" : "") @colorClass"
+                                     @onclick="@(() => OnPhaseClick.InvokeAsync(phase))"
+                                     title="@($"{phase.Title} ({(string.IsNullOrWhiteSpace(phase.DateRangeText) ? $"{phase.StartDate:MMM d} - {phase.EndDate:MMM d}" : phase.DateRangeText)})")">
+                                    <span class="csk-phase-label">
+                                        @phase.Title
+                                        @if (!string.IsNullOrWhiteSpace(phase.Subtitle))
+                                        {
+                                            <span> (@phase.Subtitle)</span>
+                                        }
+                                    </span>
+                                </div>
+                                <span class="csk-phase-date-badge">
+                                    @(string.IsNullOrWhiteSpace(phase.DateRangeText) ? $"{phase.StartDate:MMM d} - {phase.EndDate:MMM d}" : phase.DateRangeText)
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public DateTime? StartDate { get; set; }
+    [Parameter] public DateTime? EndDate { get; set; }
+    [Parameter] public IReadOnlyList<TimelineMilestone> Milestones { get; set; } = [];
+    [Parameter] public IReadOnlyList<TimelinePhase> Phases { get; set; } = [];
+    [Parameter] public bool ShowGridLines { get; set; } = true;
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public EventCallback<TimelinePhase> OnPhaseClick { get; set; }
+    [Parameter] public EventCallback<TimelineMilestone> OnMilestoneClick { get; set; }
+
+    private List<DateTime> _computedMonths = [];
+    private DateTime _timelineStart;
+    private DateTime _timelineEnd;
+    private double _totalDays = 1;
+
+    protected override void OnParametersSet()
+    {
+        CalculateTimelineRange();
+    }
+
+    private void CalculateTimelineRange()
+    {
+        DateTime minDate = StartDate ?? DateTime.MaxValue;
+        DateTime maxDate = EndDate ?? DateTime.MinValue;
+
+        if (!StartDate.HasValue || !EndDate.HasValue)
+        {
+            if (Milestones != null && Milestones.Any())
+            {
+                foreach (var m in Milestones)
+                {
+                    if (m.Date < minDate) minDate = m.Date;
+                    if (m.Date > maxDate) maxDate = m.Date;
+                }
+            }
+
+            if (Phases != null && Phases.Any())
+            {
+                foreach (var p in Phases)
+                {
+                    if (p.StartDate < minDate) minDate = p.StartDate;
+                    if (p.EndDate > maxDate) maxDate = p.EndDate;
+                }
+            }
+        }
+
+        if (minDate == DateTime.MaxValue || maxDate == DateTime.MinValue || minDate > maxDate)
+        {
+            minDate = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            maxDate = minDate.AddMonths(8);
+        }
+
+        // Align timeline to the start of the min month and end of the max month
+        _timelineStart = new DateTime(minDate.Year, minDate.Month, 1);
+        var lastDayOfMonth = DateTime.DaysInMonth(maxDate.Year, maxDate.Month);
+        _timelineEnd = new DateTime(maxDate.Year, maxDate.Month, lastDayOfMonth, 23, 59, 59);
+
+        // Compute month segments
+        _computedMonths.Clear();
+        var current = _timelineStart;
+        while (current <= _timelineEnd)
+        {
+            _computedMonths.Add(current);
+            current = current.AddMonths(1);
+        }
+
+        _totalDays = Math.Max(1, (_timelineEnd - _timelineStart).TotalDays);
+    }
+
+    private double ComputePositionPercent(DateTime date)
+    {
+        if (date <= _timelineStart) return 0;
+        if (date >= _timelineEnd) return 100;
+        return ((date - _timelineStart).TotalDays / _totalDays) * 100.0;
+    }
+
+    private (double left, double width) ComputePhaseDimensions(DateTime start, DateTime end)
+    {
+        var clampedStart = start < _timelineStart ? _timelineStart : start;
+        var clampedEnd = end > _timelineEnd ? _timelineEnd : end;
+
+        if (clampedEnd < clampedStart) clampedEnd = clampedStart;
+
+        var left = ((clampedStart - _timelineStart).TotalDays / _totalDays) * 100.0;
+        var width = ((clampedEnd - clampedStart).TotalDays / _totalDays) * 100.0;
+
+        // Ensure a visible minimum width (e.g. 5%)
+        width = Math.Max(5.0, Math.Min(100.0 - left, width));
+
+        return (left, width);
+    }
+}

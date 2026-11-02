@@ -15,7 +15,13 @@ public class WizardContext<TState>
 
     public bool IsSubmitting { get; internal set; } = false;
 
+    public bool IsReadOnly { get; set; } = false;
+
     public bool IsDirty { get; internal set; } = false;
+
+    public string? SelectedTemplateId { get; private set; }
+
+    public HashSet<string> SkippedStepIds { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Key-value dictionary of validation error messages keyed by step index or field name.
@@ -23,11 +29,38 @@ public class WizardContext<TState>
     public Dictionary<string, string> StepErrors { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public event Action? OnStateChanged;
+    public event Action<string?>? OnTemplateChanged;
 
-    public WizardContext(TState initialState)
+    public WizardContext(TState initialState, string? initialTemplateId = null)
     {
         State = initialState;
+        SelectedTemplateId = initialTemplateId;
     }
+
+    public void SetTemplate(string? templateId)
+    {
+        if (!string.Equals(SelectedTemplateId, templateId, StringComparison.OrdinalIgnoreCase))
+        {
+            SelectedTemplateId = templateId;
+            OnTemplateChanged?.Invoke(templateId);
+            NotifyStateChanged();
+        }
+    }
+
+    public void MarkStepSkipped(string stepId, bool skipped = true)
+    {
+        if (skipped)
+        {
+            SkippedStepIds.Add(stepId);
+        }
+        else
+        {
+            SkippedStepIds.Remove(stepId);
+        }
+        NotifyStateChanged();
+    }
+
+    public bool IsStepSkipped(string stepId) => SkippedStepIds.Contains(stepId);
 
     /// <summary>
     /// Flags the wizard state as dirty (user modified inputs), arming the unsaved changes confirmation modal.

@@ -1,0 +1,48 @@
+.csk-programs-detail-row {
+    background-color: transparent;
+}
+
+.csk-programs-detail-cell {
+    padding: 0;
+}
+
+.csk-programs-detail-panel {
+    padding: 1.5rem;
+    background-color: var(--csk-color-surface-container, #f8f9fa);
+    border-bottom: 2px solid var(--csk-color-border, #e0e0e0);
+}
+
+.csk-projects-empty-state {
+    color: var(--csk-color-text-hint, #6c757d);
+    font-size: 0.875rem;
+    padding: 0.75rem;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 6px;
+    background-color: var(--csk-color-surface, #ffffff);
+}
+
+.csk-projects-table-container {
+    background-color: var(--csk-color-surface, #ffffff);
+    border-radius: 6px;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+}
+
+.csk-project-col-code {
+    width: 140px;
+}
+
+.csk-project-col-status {
+    width: 120px;
+}
+
+.csk-project-col-timeline {
+    width: 180px;
+}
+
+.csk-project-col-actions {
+    width: 220px;
+}
+
+.csk-font-medium {
+    font-weight: 500;
+}

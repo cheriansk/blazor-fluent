@@ -1,0 +1,144 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Contracts
+@implements IWizardStepComponent<CreateProgramWizardState>
+@inject IUserTimeZoneService TimeZoneService
+
+<div class="csk-wizard-step-container">
+    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+        @if (!string.IsNullOrWhiteSpace(_validationError))
+        {
+            <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _validationError = null)">
+                @_validationError
+            </CskMessageBar>
+        }
+
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Define high-level program milestones, release targets, and critical governance gates.
+        </CskLabel>
+
+        @if (!_isReadOnly)
+        {
+            <CskCard Class="csk-milestone-form-card">
+                <CskLabel Typo="Typography.H6" Class="mb-3">Add Program Milestone</CskLabel>
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                        <CskTextInput Label="Milestone Name"
+                                      @bind-Value="_newMilestoneName"
+                                      Placeholder="e.g. Architecture Baseline Sign-off"
+                                      Class="flex-2" />
+
+                        <CskDatePicker Label="Target Date"
+                                       @bind-Value="_newMilestoneDate"
+                                       Class="flex-1" />
+                    </CskStack>
+
+                    <CskTextInput Label="Description / Deliverable (Optional)"
+                                  @bind-Value="_newMilestoneDesc"
+                                  Placeholder="Key deliverables or acceptance criteria..."
+                                  Class="full-width" />
+
+                    <div>
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@CskIcons.Add"
+                                   Disabled="@(string.IsNullOrWhiteSpace(_newMilestoneName))"
+                                   OnClick="@AddMilestone">
+                            Add Milestone
+                        </CskButton>
+                    </div>
+                </CskStack>
+            </CskCard>
+        }
+
+        @if (_milestones.Count == 0)
+        {
+            <div class="csk-milestones-empty-state">
+                No milestones added yet. (Optional) You can add critical checkpoints now or configure them later in the Program Calendar.
+            </div>
+        }
+        else
+        {
+            <table class="csk-datagrid-table csk-datagrid-dense csk-milestone-table-container">
+                <thead>
+                    <tr class="csk-datagrid-header-row">
+                        <th class="csk-datagrid-th">Milestone</th>
+                        <th class="csk-datagrid-th csk-milestone-date-col">Target Date</th>
+                        <th class="csk-datagrid-th">Description</th>
+                        <th class="csk-datagrid-th csk-milestone-action-col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in _milestones)
+                    {
+                        <tr class="csk-datagrid-row">
+                            <td class="csk-datagrid-td csk-font-medium">@m.Name</td>
+                            <td class="csk-datagrid-td font-size-sm">@TimeZoneService.FormatDate(m.TargetDate)</td>
+                            <td class="csk-datagrid-td font-size-sm text-hint">@(string.IsNullOrWhiteSpace(m.Description) ? "—" : m.Description)</td>
+                            <td class="csk-datagrid-td">
+                                @if (!_isReadOnly)
+                                {
+                                    <CskButton Variant="CskButtonVariant.Text"
+                                               Size="CskButtonSize.Small"
+                                               IconStart="@CskIcons.Delete"
+                                               OnClick="@(() => RemoveMilestone(m.Id))" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </CskStack>
+</div>
+
+@code {
+    [Parameter]
+    public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    private List<ProgramMilestoneDto> _milestones = new();
+    private string _newMilestoneName = string.Empty;
+    private DateTime? _newMilestoneDate = DateTime.UtcNow.Date.AddMonths(1);
+    private string _newMilestoneDesc = string.Empty;
+    private string? _validationError;
+    private bool _isReadOnly;
+
+    protected override void OnInitialized()
+    {
+        if (Context != null)
+        {
+            _milestones = Context.State.Milestones ?? new();
+            _isReadOnly = Context.IsReadOnly;
+        }
+    }
+
+    private void AddMilestone()
+    {
+        if (string.IsNullOrWhiteSpace(_newMilestoneName)) return;
+
+        _milestones.Add(new ProgramMilestoneDto
+        {
+            Id = Guid.NewGuid(),
+            Name = _newMilestoneName.Trim(),
+            TargetDate = _newMilestoneDate ?? DateTime.UtcNow.Date,
+            Description = string.IsNullOrWhiteSpace(_newMilestoneDesc) ? null : _newMilestoneDesc.Trim()
+        });
+
+        _newMilestoneName = string.Empty;
+        _newMilestoneDesc = string.Empty;
+        _newMilestoneDate = DateTime.UtcNow.Date.AddMonths(1);
+    }
+
+    private void RemoveMilestone(Guid id)
+    {
+        _milestones.RemoveAll(m => m.Id == id);
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
+    {
+        context.State.Milestones = _milestones;
+        return Task.FromResult(true);
+    }
+}

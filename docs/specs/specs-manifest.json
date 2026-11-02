@@ -51,13 +51,13 @@
           "description": "Tenant Directory, Initial Admin Provisioning, User Directory, Programs, and Executive Governance Tasks/Risks.",
           "enabled": true
         },
-        {
-          "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsProjectsTab.razor",
-          "category": "Settings UI",
-          "thinking_level": "low",
-          "description": "Project Workspaces management, Program filtering, and per-project RBAC Role Assignments.",
-          "enabled": true
-        }
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsProgramsTab /> rendered by SettingsPage.razor at L99 (Gate: _activeTabId == 'programs' && _visitedTabs.Contains('programs')).",
+      "enabled": true
+    }
       ]
     },
     {

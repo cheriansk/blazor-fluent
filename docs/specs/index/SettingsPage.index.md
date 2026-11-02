@@ -3,8 +3,8 @@
 target_spec: docs/specs/SettingsPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor.cs
-generated_at_utc: 2026-10-29T16:57:06Z
-source_hash_sha256: e4482aa5bd4e0df0
+generated_at_utc: 2026-10-30T20:41:37Z
+source_hash_sha256: da2366616f26f5bd
 ============================================================================ -->
 # AI Navigation Index: `SettingsPage`
 
@@ -12,19 +12,20 @@ source_hash_sha256: e4482aa5bd4e0df0
 - **Auth**: `Authorize`
 - **Injected**: `SettingsNav:ISettingsNavigationState`, `TenantContext:ITenantContext`, `CurrentUser:ICurrentUser`, `HierarchyAuth:IHierarchyAuthorizationService`
 - **Registered Child Components**:
-  - `<SettingsTenantsTab />` @ `L95` | Gate: `_activeTabId == "tenants" && _visitedTabs.Contains("tenants")` | Params: `None` | Spec: [SettingsTenantsTab.requirements.md](../SettingsTenantsTab.requirements.md)
-  - `<SettingsProjectsTab />` @ `L103` | Gate: `_activeTabId == "projects" && _visitedTabs.Contains("projects")` | Params: `None` | Spec: [SettingsProjectsTab.requirements.md](../SettingsProjectsTab.requirements.md)
+  - `<SettingsTenantsTab />` @ `L89` | Gate: `_activeTabId == "tenants" && _visitedTabs.Contains("tenants")` | Params: `None` | Spec: [SettingsTenantsTab.requirements.md](../SettingsTenantsTab.requirements.md)
+  - `<SettingsProgramsTab />` @ `L93` | Gate: `_activeTabId == "programs" && _visitedTabs.Contains("programs")` | Params: `None` | Spec: [SettingsProgramsTab.requirements.md](../SettingsProgramsTab.requirements.md)
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Modern Native CSK Tabs Navigation Bar** | `L16-L90` | `L18: @if (CanViewTenantTab)`, `L27: @if (CanViewProgramTab)`, `L54: @if (CanViewAuditTrail)`, `L63: @if (CurrentUser.IsRootAdmin)` | Buttons: `Btn("Tenants" -> SelectTab)@L20`, `Btn("Programs" -> SelectTab)@L29`, `Btn("Projects" -> SelectTab)@L36`, `Btn("Jobs" -> SelectTab)@L42`, `Btn("Events" -> SelectTab)@L48`, `Btn("Audit Trail" -> SelectTab)@L56`, `Btn("Sessions" -> SelectTab)@L65`, `Btn("User" -> SelectTab)@L72`, `Btn("My Calendar" -> SelectTab)@L78`, `Btn("Notifications" -> SelectTab)@L84` |
-| **Active Tab Content Area with Lazy Load Preservation** | `L91-L134` | `L93: @if (_activeTabId == "tenants" && _visitedTabs.Contains("tenants"))`, `L97: @if (_activeTabId == "programs" && _visitedTabs.Contains("programs"))`, `L101: @if (_activeTabId == "projects" && _visitedTabs.Contains("projects"))`, `L105: @if (_activeTabId == "jobs" && _visitedTabs.Contains("jobs"))`, `L109: @if (_activeTabId == "events" && _visitedTabs.Contains("events"))`, `L113: @if (_activeTabId == "auditing" && _visitedTabs.Contains("auditing"))`, `L117: @if (_activeTabId == "sessions" && _visitedTabs.Contains("sessions"))`, `L121: @if (_activeTabId == "user" && _visitedTabs.Contains("user"))`, `L125: @if (_activeTabId == "calendar" && _visitedTabs.Contains("calendar"))`, `L129: @if (_activeTabId == "notifications" && _visitedTabs.Contains("notifications"))` | - |
+| **Header & Top-Level Controls** | `L1-L15` | Unconditional | Components: `PageTitle@L10`, `PageHeaderComp@L12` |
+| **Modern Native CSK Tabs Navigation Bar** | `L16-L84` | `L18: @if (CanViewTenantTab)`, `L27: @if (CanViewProgramTab)`, `L48: @if (CanViewAuditTrail)`, `L57: @if (CurrentUser.IsRootAdmin)` | Buttons: `Btn("Tenants" -> SelectTab)@L20`, `Btn("Programs" -> SelectTab)@L29`, `Btn("Jobs" -> SelectTab)@L36`, `Btn("Events" -> SelectTab)@L42`, `Btn("Audit Trail" -> SelectTab)@L50`, `Btn("Sessions" -> SelectTab)@L59`, `Btn("User" -> SelectTab)@L66`, `Btn("My Calendar" -> SelectTab)@L72`, `Btn("Notifications" -> SelectTab)@L78` |
+| **Active Tab Content Area with Lazy Load Preservation** | `L85-L124` | `L87: @if (_activeTabId == "tenants" && _visitedTabs.Contains("tenants"))`, `L91: @if (_activeTabId == "programs" && _visitedTabs.Contains("programs"))`, `L95: @if (_activeTabId == "jobs" && _visitedTabs.Contains("jobs"))`, `L99: @if (_activeTabId == "events" && _visitedTabs.Contains("events"))`, `L103: @if (_activeTabId == "auditing" && _visitedTabs.Contains("auditing"))`, `L107: @if (_activeTabId == "sessions" && _visitedTabs.Contains("sessions"))`, `L111: @if (_activeTabId == "user" && _visitedTabs.Contains("user"))`, `L115: @if (_activeTabId == "calendar" && _visitedTabs.Contains("calendar"))`, `L119: @if (_activeTabId == "notifications" && _visitedTabs.Contains("notifications"))` | Components: `SettingsTenantsTab@L89`, `SettingsProgramsTab@L93`, `SettingsJobsTab@L97`, `SettingsEventsTab@L101`, `SettingsAuditTab@L105`, `SettingsSessionsTab@L109`, `SettingsUserTab@L113`, `SettingsUserCalendarTab@L117`, `SettingsNotificationsTab@L121` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
 | `OnInitializedAsync` | `L26-L74` | [INIT] | `[IsRootAdmin,TenantBoundaryGate]` -> `HierarchyAuth.CanViewTenantSettingsAsync(DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` |
-| `SelectTab` | `L76-L80` | OnClick@L22, OnClick@L31, OnClick@L38, OnClick@L44, OnClick@L50, OnClick@L58, OnClick@L67, OnClick@L74, OnClick@L80, OnClick@L86 | Local UI State |
+| `SelectTab` | `L76-L80` | OnClick@L22, OnClick@L31, OnClick@L38, OnClick@L44, OnClick@L52, OnClick@L61, OnClick@L68, OnClick@L74, OnClick@L80 | Local UI State |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |

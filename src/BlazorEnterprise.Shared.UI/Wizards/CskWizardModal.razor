@@ -29,18 +29,28 @@
 
                 @* Visual Stepper Pipeline *@
                 <div class="csk-wizard-stepper">
-                    @for (int i = 0; i < _steps.Count; i++)
+                    @for (int i = 0; i < ActiveStepCount; i++)
                     {
                         var index = i;
-                        var step = _steps[index];
                         var isCompleted = index < _currentStepIndex;
                         var isCurrent = index == _currentStepIndex;
+                        var stepTitle = GetStepTitle(index);
+                        var stepSummary = GetStepSummary(index);
+                        var isOptional = IsStepOptional(index);
+                        var isSkipped = IsStepSkipped(index);
 
-                        <div class="csk-wizard-step-node @(isCurrent ? "active" : isCompleted ? "completed" : "pending")">
+                        <div class="csk-wizard-step-node @(isCurrent ? "active" : isCompleted ? (isSkipped ? "skipped" : "completed") : "pending")">
                             <div class="step-badge">
                                 @if (isCompleted)
                                 {
-                                    <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm csk-icon-success" />
+                                    @if (isSkipped)
+                                    {
+                                        <CskIcon Icon="@CskIcons.ArrowRight" Class="csk-icon-sm csk-icon-subtle" />
+                                    }
+                                    else
+                                    {
+                                        <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm csk-icon-success" />
+                                    }
                                 }
                                 else
                                 {
@@ -48,15 +58,21 @@
                                 }
                             </div>
                             <div class="step-label">
-                                <div class="step-title">@step.Title</div>
-                                @if (!string.IsNullOrWhiteSpace(step.Summary))
+                                <div class="step-title">
+                                    @stepTitle
+                                    @if (isOptional)
+                                    {
+                                        <span class="step-optional-badge">(Optional)</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(stepSummary))
                                 {
-                                    <div class="step-summary">@step.Summary</div>
+                                    <div class="step-summary">@stepSummary</div>
                                 }
                             </div>
                         </div>
 
-                        @if (index < _steps.Count - 1)
+                        @if (index < ActiveStepCount - 1)
                         {
                             <div class="step-connector @(index < _currentStepIndex ? "completed" : "")"></div>
                         }
@@ -75,7 +91,16 @@
 
                 <CascadingValue Value="@this" IsFixed="true">
                     <CascadingValue Value="@Context">
-                        @Steps
+                        @if (FlowDefinition != null && CurrentActiveStep != null)
+                        {
+                            <DynamicComponent Type="@CurrentActiveStep.Descriptor.ComponentType"
+                                              Parameters="@GetStepParameters()"
+                                              @ref="_dynamicStepComponentRef" />
+                        }
+                        else
+                        {
+                            @Steps
+                        }
                     </CascadingValue>
                 </CascadingValue>
             </div>
@@ -101,7 +126,16 @@
                         </CskButton>
                     }
 
-                    @if (_currentStepIndex < _steps.Count - 1)
+                    @if (IsCurrentStepOptional)
+                    {
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                   OnClick="@GoSkipAsync"
+                                   Disabled="@_isBusy">
+                            Skip Step
+                        </CskButton>
+                    }
+
+                    @if (_currentStepIndex < ActiveStepCount - 1)
                     {
                         <CskButton Variant="CskButtonVariant.Filled"
                                    IconEnd="@CskIcons.ArrowRight"

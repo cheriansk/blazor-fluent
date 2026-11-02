@@ -1,0 +1,36 @@
+.csk-wizard-step-container {
+    width: 100%;
+}
+
+.csk-milestone-form-card {
+    padding: 1rem;
+    background-color: var(--csk-color-surface-container, #f8f9fa);
+}
+
+.csk-milestones-empty-state {
+    color: var(--csk-color-text-hint, #6c757d);
+    font-size: 0.875rem;
+    padding: 1.5rem;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 6px;
+    background-color: var(--csk-color-surface, #ffffff);
+    text-align: center;
+}
+
+.csk-milestone-table-container {
+    background-color: var(--csk-color-surface, #ffffff);
+    border-radius: 6px;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+}
+
+.csk-milestone-date-col {
+    width: 160px;
+}
+
+.csk-milestone-action-col {
+    width: 80px;
+}
+
+.csk-font-medium {
+    font-weight: 500;
+}

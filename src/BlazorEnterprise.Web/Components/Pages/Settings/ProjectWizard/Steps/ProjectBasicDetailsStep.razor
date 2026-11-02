@@ -1,0 +1,100 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+@implements IWizardStepComponent<CreateProjectWizardState>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="16" Class="w-full">
+    <div class="form-full-width">
+        <label class="font-size-sm font-weight-600 mb-1 d-block">Project Template *</label>
+        <CskSelect TOption="WizardTemplateOption"
+                   TValue="string"
+                   Items="@_templateOptions"
+                   OptionText="@(t => t.Label)"
+                   OptionValue="@(t => t.Id)"
+                   Value="@Context?.SelectedTemplateId"
+                   ValueChanged="@OnTemplateChanged"
+                   Class="full-width" />
+        <span class="text-hint font-size-xs mt-1 d-block">
+            Determines the active and optional steps required for this project lifecycle.
+        </span>
+    </div>
+
+    <div class="form-full-width">
+        <CskTextInput Label="Project Name *"
+                      @bind-Value="@Context!.State.Name"
+                      Placeholder="e.g. ERP Cloud Modernization"
+                      Class="full-width" />
+        @if (Context.HasError("Name"))
+        {
+            <span class="text-danger font-size-xs mt-1 d-block">@Context.StepErrors["Name"]</span>
+        }
+    </div>
+
+    <div class="form-full-width">
+        <CskTextInput Label="Project Short Code *"
+                      @bind-Value="@Context!.State.ShortCode"
+                      Placeholder="e.g. PRJ-ERP-01"
+                      Class="full-width" />
+        @if (Context.HasError("ShortCode"))
+        {
+            <span class="text-danger font-size-xs mt-1 d-block">@Context.StepErrors["ShortCode"]</span>
+        }
+    </div>
+
+    <div class="form-full-width">
+        <CskTextArea Label="Scope Summary"
+                     @bind-Value="@Context!.State.ScopeSummary"
+                     Placeholder="Brief executive summary and target objectives..."
+                     Rows="3"
+                     Class="full-width" />
+    </div>
+</CskStack>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? Context { get; set; }
+
+    public class WizardTemplateOption
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+    }
+
+    private List<WizardTemplateOption> _templateOptions =
+    [
+        new() { Id = "base", Label = "Base Template (Standard 5 Steps)" },
+        new() { Id = "internal-fast-track", Label = "Internal Fast-Track (RFP Timeline Disabled, Milestones Optional)" },
+        new() { Id = "enterprise-rfp", Label = "Enterprise RFP (RFP Mandatory, Milestone Optional)" }
+    ];
+
+    private void OnTemplateChanged(string? templateId)
+    {
+        if (Context != null && !string.IsNullOrWhiteSpace(templateId))
+        {
+            Context.State.SelectedTemplateId = templateId;
+            Context.SetTemplate(templateId);
+        }
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("Name");
+        context.ClearErrors("ShortCode");
+
+        bool isValid = true;
+        if (string.IsNullOrWhiteSpace(context.State.Name))
+        {
+            context.SetError("Name", "Project Name is required.");
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(context.State.ShortCode))
+        {
+            context.SetError("ShortCode", "Project Short Code is required.");
+            isValid = false;
+        }
+
+        return Task.FromResult(isValid);
+    }
+}

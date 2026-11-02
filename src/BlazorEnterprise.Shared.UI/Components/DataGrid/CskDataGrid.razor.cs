@@ -55,6 +55,10 @@ public partial class CskDataGrid<TGridItem> : ComponentBase
     [Parameter]
     public RenderFragment? EmptyContent { get; set; }
 
+    /// <summary>Optional template rendered below an item for hierarchical or drill-down details.</summary>
+    [Parameter]
+    public RenderFragment<TGridItem>? DetailTemplate { get; set; }
+
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 

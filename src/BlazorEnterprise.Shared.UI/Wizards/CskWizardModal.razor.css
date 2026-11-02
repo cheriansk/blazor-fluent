@@ -86,6 +86,17 @@
     color: var(--mat-success, #2e7d32);
 }
 
+.csk-wizard-step-node.skipped .step-badge,
+.skipped {
+    background: var(--mat-surface, #ffffff);
+    border-color: var(--mat-outline-variant, #bdbdbd);
+    color: var(--mat-on-surface-variant, #757575);
+}
+
+.csk-wizard-step-node.skipped .step-title {
+    color: var(--mat-on-surface-variant, #757575);
+}
+
 .step-label {
     display: flex;
     flex-direction: column;
@@ -143,3 +154,18 @@
 
 .csk-wizard-step-node.pending { opacity: 0.75; }
 .font-weight-600 { font-weight: 600; }
+
+
+.step-optional-badge {
+    font-size: 10px;
+    font-weight: 500;
+    margin-left: 6px;
+    color: var(--mat-on-surface-variant, #777777);
+    background: var(--mat-surface-variant, #e8e8e8);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.csk-wizard-step-node.completed .step-badge .csk-icon-subtle {
+    color: var(--mat-on-surface-variant, #888888);
+}

@@ -1,0 +1,55 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+@implements IWizardStepComponent<CreateProjectWizardState>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
+    <div class="font-size-sm text-hint">
+        Define overall project start and target completion dates for team delivery.
+    </div>
+
+    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Wrap="true">
+        <div class="flex-1 min-w-180">
+            <CskDatePicker Label="Project Start Date *"
+                           @bind-Value="@Context!.State.StartDate"
+                           Required="true"
+                           Class="full-width" />
+        </div>
+        <div class="flex-1 min-w-180">
+            <CskDatePicker Label="Target Completion Date *"
+                           @bind-Value="@Context!.State.EndDate"
+                           Required="true"
+                           Class="full-width" />
+        </div>
+    </CskStack>
+
+    @if (Context != null && Context.HasError("Timeline"))
+    {
+        <span class="text-danger font-size-xs">@Context.StepErrors["Timeline"]</span>
+    }
+</CskStack>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? Context { get; set; }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("Timeline");
+
+        if (!context.State.StartDate.HasValue || !context.State.EndDate.HasValue)
+        {
+            context.SetError("Timeline", "Both Start Date and Target Completion Date are required.");
+            return Task.FromResult(false);
+        }
+
+        if (context.State.EndDate.Value < context.State.StartDate.Value)
+        {
+            context.SetError("Timeline", "Target Completion Date cannot precede Project Start Date.");
+            return Task.FromResult(false);
+        }
+
+        return Task.FromResult(true);
+    }
+}

@@ -1,0 +1,102 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.DataListTypes
+@implements IWizardStepComponent<CreateProgramWizardState>
+@inject IUserTimeZoneService TimeZoneService
+
+<div class="csk-wizard-step-container">
+    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Please review the program configuration before finalizing.
+        </CskLabel>
+
+        <!-- Summary Card -->
+        <CskCard Class="p-4">
+            <div class="csk-review-header">
+                <div>
+                    <CskLabel Typo="Typography.H5">@Context?.State.Name</CskLabel>
+                    <span class="text-hint font-size-sm">Code: <code>@Context?.State.Code</code></span>
+                </div>
+                <div>
+                    <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">
+                        @Context?.State.Status
+                    </CskBadge>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Context?.State.Description))
+            {
+                <div class="csk-review-desc">
+                    @Context?.State.Description
+                </div>
+            }
+
+            <div class="csk-review-grid">
+                <div>
+                    <span class="csk-review-metric-title">Timeline Window</span>
+                    <span class="csk-review-metric-val">
+                        @TimeZoneService.FormatDate(Context?.State.StartDate) ~ @TimeZoneService.FormatDate(Context?.State.EndDate)
+                    </span>
+                </div>
+                <div>
+                    <span class="csk-review-metric-title">Program Administrators</span>
+                    <span class="csk-review-metric-val">
+                        @(Context?.State.AdminUsers?.Count ?? 0) user(s) assigned
+                    </span>
+                </div>
+            </div>
+
+            <!-- Administrators List -->
+            @if (Context?.State.AdminUsers != null && Context.State.AdminUsers.Count > 0)
+            {
+                <div class="mt-2 mb-3">
+                    <span class="font-size-sm font-weight-600 mb-1 d-block">Designated Admins:</span>
+                    <div class="csk-admin-badge-list">
+                        @foreach (var admin in Context.State.AdminUsers)
+                        {
+                            <span class="csk-admin-badge">
+                                @admin.DisplayName (@admin.Email)
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Milestones List -->
+            @if (Context?.State.Milestones != null && Context.State.Milestones.Count > 0)
+            {
+                <div class="mt-2">
+                    <span class="font-size-sm font-weight-600 mb-1 d-block">Planned Milestones (@Context.State.Milestones.Count):</span>
+                    <ul class="csk-milestones-list">
+                        @foreach (var m in Context.State.Milestones)
+                        {
+                            <li class="csk-milestone-item">
+                                <div>
+                                    <span class="csk-review-metric-val">@m.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(m.Description))
+                                    {
+                                        <div class="font-size-sm text-hint">@m.Description</div>
+                                    }
+                                </div>
+                                <span class="font-size-sm text-muted">@TimeZoneService.FormatDate(m.TargetDate)</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </CskCard>
+    </CskStack>
+</div>
+
+@code {
+    [Parameter]
+    public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
+    {
+        return Task.FromResult(true);
+    }
+}

@@ -1,0 +1,114 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+@implements IWizardStepComponent<CreateProjectWizardState>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
+    <div class="font-size-sm text-hint">
+        Specify the solicitation milestones, proposal evaluation dates, and target contract award window.
+    </div>
+
+    <CskCard Class="p-3 card-accent-border">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.End" Wrap="true">
+            <div class="flex-2 min-w-180">
+                <CskTextInput Label="Step Description" @bind-Value="_newStepName" Placeholder="e.g. RFP Clarification Window" Class="full-width" />
+            </div>
+            <div class="flex-1 min-w-140">
+                <CskDatePicker Label="Start Date" @bind-Value="_newStartDate" Class="full-width" />
+            </div>
+            <div class="flex-1 min-w-140">
+                <CskDatePicker Label="End Date" @bind-Value="_newEndDate" Class="full-width" />
+            </div>
+            <div>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="@AddRfpStep">Add Step</CskButton>
+            </div>
+        </CskStack>
+    </CskCard>
+
+    @if (Context?.State.RfpTimelineRows.Count > 0)
+    {
+        <table class="csk-datagrid-table mt-2">
+            <thead>
+                <tr class="csk-datagrid-header-row">
+                    <th class="csk-datagrid-th">Step Description</th>
+                    <th class="csk-datagrid-th">Start Date</th>
+                    <th class="csk-datagrid-th">End Date</th>
+                    <th class="csk-datagrid-th">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Context.State.RfpTimelineRows)
+                {
+                    <tr class="csk-datagrid-row">
+                        <td class="csk-datagrid-td">@row.StepName</td>
+                        <td class="csk-datagrid-td">@(row.StartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">@(row.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">
+                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" OnClick="@(() => RemoveRfpStep(row))">
+                                Remove
+                            </CskButton>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-hint font-size-sm p-4 text-center">
+            No RFP timeline steps added yet. Add a step above or click Next/Skip.
+        </div>
+    }
+
+    @if (Context != null && Context.HasError("RfpRows"))
+    {
+        <span class="text-danger font-size-xs">@Context.StepErrors["RfpRows"]</span>
+    }
+</CskStack>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? Context { get; set; }
+
+    private string _newStepName = string.Empty;
+    private DateTime? _newStartDate = DateTime.UtcNow.Date;
+    private DateTime? _newEndDate = DateTime.UtcNow.Date.AddDays(14);
+
+    private void AddRfpStep()
+    {
+        if (Context != null && !string.IsNullOrWhiteSpace(_newStepName))
+        {
+            Context.State.RfpTimelineRows.Add(new RfpTimelineRowDto
+            {
+                StepName = _newStepName,
+                StartDate = _newStartDate,
+                EndDate = _newEndDate
+            });
+            _newStepName = string.Empty;
+            Context.ClearErrors("RfpRows");
+        }
+    }
+
+    private void RemoveRfpStep(RfpTimelineRowDto row)
+    {
+        Context?.State.RfpTimelineRows.Remove(row);
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("RfpRows");
+        if (context.State.RfpTimelineRows.Count == 0)
+        {
+            context.SetError("RfpRows", "At least one RFP timeline step is required when this step is mandatory.");
+            return Task.FromResult(false);
+        }
+        return Task.FromResult(true);
+    }
+
+    public Task OnStepSkippedAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("RfpRows");
+        return Task.CompletedTask;
+    }
+}

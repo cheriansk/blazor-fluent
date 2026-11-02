@@ -1,0 +1,99 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+@implements IWizardStepComponent<CreateProjectWizardState>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
+    <div class="font-size-sm text-hint">
+        Assign initial project governance leads and team member responsibilities.
+    </div>
+
+    <CskCard Class="p-3 card-accent-border">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.End" Wrap="true">
+            <div class="flex-2 min-w-150">
+                <CskTextInput Label="Full Name" @bind-Value="_newMemberName" Placeholder="e.g. Jane Doe" Class="full-width" />
+            </div>
+            <div class="flex-2 min-w-170">
+                <CskTextInput Label="Email Address" @bind-Value="_newMemberEmail" Placeholder="jane.doe@company.local" Class="full-width" />
+            </div>
+            <div class="flex-15 min-w-130">
+                <CskTextInput Label="Role" @bind-Value="_newMemberRole" Placeholder="Lead / Contributor" Class="full-width" />
+            </div>
+            <div>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="@AddMember">Add Member</CskButton>
+            </div>
+        </CskStack>
+    </CskCard>
+
+    @if (Context?.State.Roster.Count > 0)
+    {
+        <table class="csk-datagrid-table mt-2">
+            <thead>
+                <tr class="csk-datagrid-header-row">
+                    <th class="csk-datagrid-th">Name</th>
+                    <th class="csk-datagrid-th">Email</th>
+                    <th class="csk-datagrid-th">Role</th>
+                    <th class="csk-datagrid-th">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var mem in Context.State.Roster)
+                {
+                    <tr class="csk-datagrid-row">
+                        <td class="csk-datagrid-td">@mem.FullName</td>
+                        <td class="csk-datagrid-td">@mem.Email</td>
+                        <td class="csk-datagrid-td">@mem.Role</td>
+                        <td class="csk-datagrid-td">
+                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" OnClick="@(() => Context.State.Roster.Remove(mem))">
+                                Remove
+                            </CskButton>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-hint font-size-sm p-4 text-center">
+            No roster members assigned yet. Add team members above or complete the project setup.
+        </div>
+    }
+
+    @if (Context != null && Context.HasError("Roster"))
+    {
+        <span class="text-danger font-size-xs">@Context.StepErrors["Roster"]</span>
+    }
+</CskStack>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? Context { get; set; }
+
+    private string _newMemberName = string.Empty;
+    private string _newMemberEmail = string.Empty;
+    private string _newMemberRole = "Contributor";
+
+    private void AddMember()
+    {
+        if (Context != null && !string.IsNullOrWhiteSpace(_newMemberName) && !string.IsNullOrWhiteSpace(_newMemberEmail))
+        {
+            Context.State.Roster.Add(new ProjectRosterMemberDto
+            {
+                FullName = _newMemberName,
+                Email = _newMemberEmail,
+                Role = _newMemberRole
+            });
+            _newMemberName = string.Empty;
+            _newMemberEmail = string.Empty;
+            Context.ClearErrors("Roster");
+        }
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("Roster");
+        return Task.FromResult(true);
+    }
+}

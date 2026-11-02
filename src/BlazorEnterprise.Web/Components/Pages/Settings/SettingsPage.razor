@@ -33,12 +33,6 @@
             </CskButton>
         }
 
-        <CskButton Variant="@(_activeTabId == "projects" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
-                   IconStart="@CskIcons.BuildingMultiple"
-                   OnClick="@(() => SelectTab("projects"))">
-            Projects
-        </CskButton>
-
         <CskButton Variant="@(_activeTabId == "jobs" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
                    IconStart="@CskIcons.Clock"
                    OnClick="@(() => SelectTab("jobs"))">
@@ -97,10 +91,6 @@
         else if (_activeTabId == "programs" && _visitedTabs.Contains("programs"))
         {
             <SettingsProgramsTab />
-        }
-        else if (_activeTabId == "projects" && _visitedTabs.Contains("projects"))
-        {
-            <SettingsProjectsTab />
         }
         else if (_activeTabId == "jobs" && _visitedTabs.Contains("jobs"))
         {

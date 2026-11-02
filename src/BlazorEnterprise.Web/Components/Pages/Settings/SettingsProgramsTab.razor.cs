@@ -34,6 +34,22 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
     private string? _statusMessage;
     private bool _isError;
     private string _programSearchText = string.Empty;
+    private readonly HashSet<Guid> _expandedProgramIds = new();
+
+    // Program Wizard Integration State
+    private bool _showCreateProgramWizard;
+    private bool _isProgramWizardReadOnly;
+    private bool _isProgramWizardEditMode;
+    private string? _programWizardTitle;
+    private BlazorEnterprise.Core.Dtos.CreateProgramWizardState? _programWizardInitialState;
+
+    // Project Wizard Integration State
+    private bool _showCreateProjectWizard;
+    private bool _isWizardReadOnly;
+    private bool _isWizardEditMode;
+    private string? _wizardTitle;
+    private Guid? _editingProjectId;
+    private BlazorEnterprise.Core.Dtos.CreateProjectWizardState? _wizardInitialState;
 
     private ProgramEntity? _selectedProgram;
     private string _activeProgramTab = "tab-health";
@@ -439,6 +455,295 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
         {
             _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to add project.";
             _isError = true;
+        }
+    }
+
+    private void OpenCreateProgramWizard()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        _editingProgramId = null;
+        _isProgramWizardEditMode = false;
+        _isProgramWizardReadOnly = false;
+        _programWizardTitle = "Create Enterprise Program";
+        _programWizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProgramWizardState
+        {
+            Status = ProgramStatusEnum.Planning,
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddYears(1)
+        };
+        _showCreateProgramWizard = true;
+    }
+
+    private void OpenViewProgramWizard(ProgramEntity program)
+    {
+        _editingProgramId = program.Id;
+        _isProgramWizardEditMode = false;
+        _isProgramWizardReadOnly = true;
+        _programWizardTitle = $"View Program: {program.Name}";
+        _programWizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProgramWizardState
+        {
+            ProgramId = program.Id,
+            Code = program.Code,
+            Name = program.Name,
+            Description = program.Description ?? string.Empty,
+            Status = program.Status,
+            StartDate = program.StartDate,
+            EndDate = program.EndDate ?? program.DueDate,
+            AdminUsers = program.UserRoles
+                .Where(r => !r.IsDeleted && r.Role == ProgramRoleEnum.Admin)
+                .Select(r => new BlazorEnterprise.Core.Dtos.ProgramAdminUserDto
+                {
+                    UserId = r.UserEntityId,
+                    DisplayName = r.User != null ? (string.IsNullOrWhiteSpace(r.User.FullName) ? r.User.Email : r.User.FullName) : r.UserEntityId.ToString(),
+                    Email = r.User?.Email ?? string.Empty
+                })
+                .ToList()
+        };
+        _showCreateProgramWizard = true;
+    }
+
+    private void OpenEditProgramWizard(ProgramEntity program)
+    {
+        _editingProgramId = program.Id;
+        _isProgramWizardEditMode = true;
+        _isProgramWizardReadOnly = false;
+        _programWizardTitle = $"Edit Program: {program.Name}";
+        _programWizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProgramWizardState
+        {
+            ProgramId = program.Id,
+            Code = program.Code,
+            Name = program.Name,
+            Description = program.Description ?? string.Empty,
+            Status = program.Status,
+            StartDate = program.StartDate,
+            EndDate = program.EndDate ?? program.DueDate,
+            AdminUsers = program.UserRoles
+                .Where(r => !r.IsDeleted && r.Role == ProgramRoleEnum.Admin)
+                .Select(r => new BlazorEnterprise.Core.Dtos.ProgramAdminUserDto
+                {
+                    UserId = r.UserEntityId,
+                    DisplayName = r.User != null ? (string.IsNullOrWhiteSpace(r.User.FullName) ? r.User.Email : r.User.FullName) : r.UserEntityId.ToString(),
+                    Email = r.User?.Email ?? string.Empty
+                })
+                .ToList()
+        };
+        _showCreateProgramWizard = true;
+    }
+
+    private async Task OnProgramWizardSavedAsync(BlazorEnterprise.Core.Dtos.CreateProgramWizardState state)
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            if (_isProgramWizardEditMode && _editingProgramId.HasValue)
+            {
+                var updateResult = await ProgramService.UpdateProgramAsync(
+                    _editingProgramId.Value,
+                    state.Name,
+                    state.Code,
+                    state.Description,
+                    state.StartDate,
+                    state.EndDate,
+                    state.Status,
+                    isActive: true);
+
+                if (updateResult.Succeeded && updateResult.Data is not null)
+                {
+                    _statusMessage = $"Program '{updateResult.Data.Name}' updated successfully.";
+                    _isError = false;
+                    await LoadProgramsAsync();
+                    if (_selectedProgram?.Id == _editingProgramId)
+                    {
+                        await SelectProgramAsync(updateResult.Data);
+                    }
+                }
+                else
+                {
+                    _statusMessage = updateResult.Errors.FirstOrDefault() ?? "Failed to update program.";
+                    _isError = true;
+                }
+            }
+            else
+            {
+                var createResult = await ProgramService.CreateProgramAsync(
+                    _selectedTenantId,
+                    state.Name,
+                    state.Code,
+                    state.Description,
+                    state.StartDate,
+                    state.EndDate,
+                    state.Status);
+
+                if (createResult.Succeeded && createResult.Data is not null)
+                {
+                    _statusMessage = $"Program '{createResult.Data.Name}' created successfully.";
+                    _isError = false;
+                    await LoadProgramsAsync();
+                    await SelectProgramAsync(createResult.Data);
+                }
+                else
+                {
+                    _statusMessage = createResult.Errors.FirstOrDefault() ?? "Failed to create program.";
+                    _isError = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"An error occurred while saving the program: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleProgramExpanded(Guid programId)
+    {
+        if (_expandedProgramIds.Contains(programId))
+        {
+            _expandedProgramIds.Remove(programId);
+        }
+        else
+        {
+            _expandedProgramIds.Add(programId);
+        }
+    }
+
+    private static BadgeColor GetProjectStatusBadgeColor(ProjectStatusEnum status) => status switch
+    {
+        ProjectStatusEnum.Active => BadgeColor.Success,
+        ProjectStatusEnum.OnHold => BadgeColor.Warning,
+        _ => BadgeColor.Neutral
+    };
+
+    private void OpenCreateProjectWizard(ProgramEntity program)
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+        _editingProjectId = null;
+        _isWizardEditMode = false;
+        _isWizardReadOnly = false;
+        _wizardTitle = $"Create Strategic Project for {program.Name}";
+        _wizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProjectWizardState
+        {
+            ProgramId = program.Id
+        };
+        _showCreateProjectWizard = true;
+    }
+
+    private void OpenViewProjectWizard(ProjectEntity project)
+    {
+        _editingProjectId = project.Id;
+        _isWizardEditMode = false;
+        _isWizardReadOnly = true;
+        _wizardTitle = $"View Project: {project.Name}";
+        _wizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProjectWizardState
+        {
+            ProgramId = project.ProgramId,
+            Name = project.Name,
+            ShortCode = project.ShortCode ?? string.Empty,
+            ScopeSummary = project.ScopeSummary ?? project.Description ?? string.Empty,
+            StartDate = project.StartDate,
+            EndDate = project.EndDate ?? project.DueDate
+        };
+        _showCreateProjectWizard = true;
+    }
+
+    private void OpenEditProjectWizard(ProjectEntity project)
+    {
+        _editingProjectId = project.Id;
+        _isWizardEditMode = true;
+        _isWizardReadOnly = false;
+        _wizardTitle = $"Edit Project: {project.Name}";
+        _wizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProjectWizardState
+        {
+            ProgramId = project.ProgramId,
+            Name = project.Name,
+            ShortCode = project.ShortCode ?? string.Empty,
+            ScopeSummary = project.ScopeSummary ?? project.Description ?? string.Empty,
+            StartDate = project.StartDate,
+            EndDate = project.EndDate ?? project.DueDate
+        };
+        _showCreateProjectWizard = true;
+    }
+
+    private async Task OnProjectWizardSavedAsync(BlazorEnterprise.Core.Dtos.CreateProjectWizardState state)
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
+
+        _isLoading = true;
+        StateHasChanged();
+
+        if (_isWizardEditMode && _editingProjectId.HasValue)
+        {
+            var existingProject = _programs.SelectMany(p => p.Projects).FirstOrDefault(pr => pr.Id == _editingProjectId.Value);
+            var status = existingProject?.Status ?? ProjectStatusEnum.New;
+            var location = existingProject?.Location;
+
+            var result = await TenantService.UpdateTenantProjectAsync(
+                tenantSlug: _selectedTenantId,
+                projectId: _editingProjectId.Value,
+                name: state.Name,
+                shortCode: state.ShortCode,
+                location: location,
+                startDate: state.StartDate,
+                endDate: state.EndDate,
+                scopeSummary: state.ScopeSummary,
+                status: status,
+                programId: state.ProgramId);
+
+            if (result.Succeeded)
+            {
+                _statusMessage = $"Project '{result.Data.Name}' updated successfully.";
+                _isError = false;
+                await LoadProgramsAsync();
+                if (state.ProgramId.HasValue)
+                {
+                    _expandedProgramIds.Add(state.ProgramId.Value);
+                }
+            }
+            else
+            {
+                _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to update project.";
+                _isError = true;
+                _isLoading = false;
+            }
+        }
+        else
+        {
+            var result = await TenantService.CreateTenantProjectAsync(
+                tenantSlug: _selectedTenantId,
+                name: state.Name,
+                shortCode: state.ShortCode,
+                location: null,
+                startDate: state.StartDate,
+                endDate: state.EndDate,
+                scopeSummary: state.ScopeSummary,
+                status: ProjectStatusEnum.New,
+                programId: state.ProgramId);
+
+            if (result.Succeeded)
+            {
+                _statusMessage = $"Project '{result.Data.Name}' ({result.Data.ShortCode}) created successfully.";
+                _isError = false;
+                await LoadProgramsAsync();
+                if (state.ProgramId.HasValue)
+                {
+                    _expandedProgramIds.Add(state.ProgramId.Value);
+                }
+            }
+            else
+            {
+                _statusMessage = result.Errors.FirstOrDefault() ?? "Failed to create project.";
+                _isError = true;
+                _isLoading = false;
+            }
         }
     }
 

@@ -1,0 +1,99 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.UI.Components
+@implements IWizardStepComponent<CreateProjectWizardState>
+
+<CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="w-full">
+    <div class="font-size-sm text-hint">
+        Schedule stage gates and strategic milestone deliverable checkpoints.
+    </div>
+
+    <CskCard Class="p-3 card-accent-border">
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.End" Wrap="true">
+            <div class="flex-2 min-w-160">
+                <CskTextInput Label="Milestone Title" @bind-Value="_newTitle" Placeholder="e.g. Architecture Signoff" Class="full-width" />
+            </div>
+            <div class="flex-1 min-w-140">
+                <CskDatePicker Label="Due Date" @bind-Value="_newDueDate" Class="full-width" />
+            </div>
+            <div class="flex-2 min-w-160">
+                <CskTextInput Label="Deliverable Artifact" @bind-Value="_newDeliverable" Placeholder="e.g. HLD Document" Class="full-width" />
+            </div>
+            <div>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="@AddMilestone">Add Milestone</CskButton>
+            </div>
+        </CskStack>
+    </CskCard>
+
+    @if (Context?.State.Milestones.Count > 0)
+    {
+        <table class="csk-datagrid-table mt-2">
+            <thead>
+                <tr class="csk-datagrid-header-row">
+                    <th class="csk-datagrid-th">Milestone</th>
+                    <th class="csk-datagrid-th">Due Date</th>
+                    <th class="csk-datagrid-th">Deliverable</th>
+                    <th class="csk-datagrid-th">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Context.State.Milestones)
+                {
+                    <tr class="csk-datagrid-row">
+                        <td class="csk-datagrid-td">@m.Title</td>
+                        <td class="csk-datagrid-td">@(m.DueDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td class="csk-datagrid-td">@m.Deliverable</td>
+                        <td class="csk-datagrid-td">
+                            <CskButton Variant="CskButtonVariant.Text" Size="CskButtonSize.Small" OnClick="@(() => Context.State.Milestones.Remove(m))">
+                                Remove
+                            </CskButton>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-hint font-size-sm p-4 text-center">
+            No milestones added yet. Add a milestone above or skip this step.
+        </div>
+    }
+
+    @if (Context != null && Context.HasError("Milestones"))
+    {
+        <span class="text-danger font-size-xs">@Context.StepErrors["Milestones"]</span>
+    }
+</CskStack>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? Context { get; set; }
+
+    private string _newTitle = string.Empty;
+    private DateTime? _newDueDate = DateTime.UtcNow.Date.AddMonths(1);
+    private string _newDeliverable = string.Empty;
+
+    private void AddMilestone()
+    {
+        if (Context != null && !string.IsNullOrWhiteSpace(_newTitle))
+        {
+            Context.State.Milestones.Add(new ProjectMilestoneDto
+            {
+                Title = _newTitle,
+                DueDate = _newDueDate,
+                Deliverable = _newDeliverable
+            });
+            _newTitle = string.Empty;
+            _newDeliverable = string.Empty;
+            Context.ClearErrors("Milestones");
+        }
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProjectWizardState> context)
+    {
+        context.ClearErrors("Milestones");
+        return Task.FromResult(true);
+    }
+}

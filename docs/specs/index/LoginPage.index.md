@@ -3,7 +3,7 @@
 target_spec: docs/specs/LoginPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor.cs
-generated_at_utc: 2026-10-29T16:57:07Z
+generated_at_utc: 2026-10-30T20:41:38Z
 source_hash_sha256: 1d8e8a35b3137345
 ============================================================================ -->
 # AI Navigation Index: `LoginPage`
@@ -14,9 +14,11 @@ source_hash_sha256: 1d8e8a35b3137345
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L23` | `L22: @if (_isSelectingTenant && _pendingAuth != null)` | - |
-| **Tenant Selection Step (Immediately after verified credentials)** | `L24-L84` | `L61: @if (_isLoading)` | Inputs: `CskSelect()@L47` <br> Buttons: `Btn(submit)@L57`, `Btn("Sign in with a different account" -> submit)@L73` |
-| **Primary Sign In Button** | `L116-L177` | `L121: @if (_isLoading)`, `L133: @if (!string.IsNullOrEmpty(_infoMessage))`, `L140: @if (!string.IsNullOrEmpty(_errorMessage))`, `L147: @if (HostEnvironment.IsDevelopment() && DevLoginOptions.Value.Enabled)`, `L160: @if (_isLoading)` | Inputs: `CskTextInput("Email Address (Local Dev ...": _localLoginEmail)@L152` <br> Buttons: `Btn(submit)@L117`, `Btn(submit)@L156` |
+| **Header & Top-Level Controls** | `L1-L23` | `L22: @if (_isSelectingTenant && _pendingAuth != null)` | Components: `PageTitle@L19` |
+| **Tenant Selection Step (Immediately after verified credentials)** | `L24-L84` | `L61: @if (_isLoading)` | Inputs: `CskSelect("-- Select an organization --": _selectedTenantSlug)@L47` <br> Buttons: `Btn(submit)@L57`, `Btn("Sign in with a different account" -> submit)@L73` <br> Components: `CskDivider@L40` |
+| **Brand Header** | `L85-L97` | Unconditional | Components: `CskDivider@L96` |
+| **Mandatory Checkbox** | `L110-L115` | Unconditional | Inputs: `CskCheckbox("I acknowledge and agree t...": _isAcknowledged)@L112` <br> Components: `CskCheckbox@L112` |
+| **Primary Sign In Button** | `L116-L177` | `L121: @if (_isLoading)`, `L133: @if (!string.IsNullOrEmpty(_infoMessage))`, `L140: @if (!string.IsNullOrEmpty(_errorMessage))`, `L147: @if (HostEnvironment.IsDevelopment() && DevLoginOptions.Value.Enabled)`, `L160: @if (_isLoading)` | Inputs: `CskTextInput("Email Address (Local Dev ...": _localLoginEmail)@L152` <br> Buttons: `Btn(submit)@L117`, `Btn(submit)@L156` <br> Components: `CskDivider@L149` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/LoginPage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |

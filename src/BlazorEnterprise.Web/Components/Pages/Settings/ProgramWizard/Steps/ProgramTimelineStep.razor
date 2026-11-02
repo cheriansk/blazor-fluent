@@ -1,0 +1,68 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+@implements IWizardStepComponent<CreateProgramWizardState>
+
+<div class="csk-wizard-step-container">
+    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+        @if (!string.IsNullOrWhiteSpace(_validationError))
+        {
+            <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _validationError = null)">
+                @_validationError
+            </CskMessageBar>
+        }
+
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Specify the strategic delivery window and planned completion timeline for this program.
+        </CskLabel>
+
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+            <CskDatePicker Label="Program Start Date"
+                           @bind-Value="_startDate"
+                           Disabled="@_isReadOnly"
+                           Class="flex-1" />
+
+            <CskDatePicker Label="Target Completion Date"
+                           @bind-Value="_endDate"
+                           Disabled="@_isReadOnly"
+                           Class="flex-1" />
+        </CskStack>
+    </CskStack>
+</div>
+
+@code {
+    [Parameter]
+    public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private string? _validationError;
+    private bool _isReadOnly;
+
+    protected override void OnInitialized()
+    {
+        if (Context != null)
+        {
+            _startDate = Context.State.StartDate;
+            _endDate = Context.State.EndDate;
+            _isReadOnly = Context.IsReadOnly;
+        }
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
+    {
+        _validationError = null;
+
+        if (_startDate.HasValue && _endDate.HasValue && _endDate.Value.Date < _startDate.Value.Date)
+        {
+            _validationError = "Target Completion Date cannot precede Program Start Date.";
+            return Task.FromResult(false);
+        }
+
+        context.State.StartDate = _startDate;
+        context.State.EndDate = _endDate;
+
+        return Task.FromResult(true);
+    }
+}

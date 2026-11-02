@@ -1,0 +1,73 @@
+.csk-wizard-step-container {
+    width: 100%;
+}
+
+.csk-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.csk-review-desc {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: var(--csk-color-surface-container, #f8f9fa);
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.csk-review-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.csk-review-metric-title {
+    font-size: 0.875rem;
+    color: var(--csk-color-text-hint, #6c757d);
+    display: block;
+}
+
+.csk-review-metric-val {
+    font-weight: 500;
+}
+
+.csk-admin-badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.csk-admin-badge {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8125rem;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    background-color: var(--csk-color-surface-container, #f8f9fa);
+    color: var(--csk-color-text-primary, #212529);
+    border-radius: 4px;
+}
+
+.csk-milestones-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.csk-milestone-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--csk-color-border, #e0e0e0);
+    background-color: var(--csk-color-surface, #ffffff);
+}
+
+.csk-milestone-item:last-child {
+    border-bottom: none;
+}

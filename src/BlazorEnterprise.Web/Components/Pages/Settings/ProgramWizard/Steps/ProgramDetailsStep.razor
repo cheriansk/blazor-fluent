@@ -1,0 +1,226 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Identity
+@implements IWizardStepComponent<CreateProgramWizardState>
+@inject ITenantService TenantService
+@inject ITenantContext TenantContext
+
+<div class="csk-wizard-step-container">
+    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+        @if (!string.IsNullOrWhiteSpace(_validationError))
+        {
+            <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _validationError = null)">
+                @_validationError
+            </CskMessageBar>
+        }
+
+        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
+            <CskTextInput Label="Program Code"
+                          @bind-Value="_code"
+                          Required="true"
+                          Disabled="@(_isReadOnly || _isEditMode)"
+                          Class="flex-1"
+                          Placeholder="e.g. PRG-CORE" />
+
+            <CskTextInput Label="Program Name"
+                          @bind-Value="_name"
+                          Required="true"
+                          Disabled="@_isReadOnly"
+                          Class="flex-2"
+                          Placeholder="e.g. Cloud Modernization Program" />
+        </CskStack>
+
+        <div>
+            <CskLabel Typo="Typography.Body" Class="mb-1">Summary / Strategic Scope</CskLabel>
+            <CskTextArea @bind-Value="_description"
+                         Disabled="@_isReadOnly"
+                         Placeholder="High-level vision, objectives, and cross-project deliverables..."
+                         Rows="3"
+                         Class="full-width" />
+        </div>
+
+        <div class="csk-status-select-container">
+            <DataListSelect TEnum="ProgramStatusEnum"
+                            TValue="ProgramStatusEnum"
+                            Label="Status"
+                            @bind-Value="_status"
+                            Disabled="@_isReadOnly"
+                            Class="full-width" />
+        </div>
+
+        <!-- Admin Users Selection Card -->
+        <CskCard Class="p-4 mt-2">
+            <CskLabel Typo="Typography.H6" Class="mb-2">Program Administrators (Required)</CskLabel>
+            <CskLabel Typo="Typography.Body" Class="text-hint mb-3">
+                Select users who have administrative oversight over this program, its member projects, and RAID logs.
+            </CskLabel>
+
+            @if (!_isReadOnly)
+            {
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-3">
+                    <CskSelect TOption="UserOption"
+                               TValue="string"
+                               Items="@_availableTenantUsers"
+                               OptionText="@(u => $"{u.Name} ({u.Email})")"
+                               OptionValue="@(u => u.Id)"
+                               @bind-Value="_selectedUserIdToAdd"
+                               Placeholder="-- Select a tenant user --"
+                               Class="flex-1" />
+
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               Size="CskButtonSize.Small"
+                               IconStart="@CskIcons.Add"
+                               Disabled="@(string.IsNullOrWhiteSpace(_selectedUserIdToAdd))"
+                               OnClick="@AddSelectedAdmin">
+                        Add Admin
+                    </CskButton>
+                </CskStack>
+            }
+
+            @if (_adminUsers.Count == 0)
+            {
+                <div class="csk-admin-empty-state">
+                    No administrators assigned yet. At least one program admin is required.
+                </div>
+            }
+            else
+            {
+                <table class="csk-datagrid-table csk-datagrid-dense csk-admin-table-container">
+                    <thead>
+                        <tr class="csk-datagrid-header-row">
+                            <th class="csk-datagrid-th">Name</th>
+                            <th class="csk-datagrid-th">Email</th>
+                            <th class="csk-datagrid-th csk-admin-action-col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var admin in _adminUsers)
+                        {
+                            <tr class="csk-datagrid-row">
+                                <td class="csk-datagrid-td csk-font-medium">@admin.DisplayName</td>
+                                <td class="csk-datagrid-td">@admin.Email</td>
+                                <td class="csk-datagrid-td">
+                                    @if (!_isReadOnly)
+                                    {
+                                        <CskButton Variant="CskButtonVariant.Text"
+                                                   Size="CskButtonSize.Small"
+                                                   IconStart="@CskIcons.Delete"
+                                                   OnClick="@(() => RemoveAdmin(admin.UserId))" />
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </CskCard>
+    </CskStack>
+</div>
+
+@code {
+    public record UserOption(string Id, string Name, string Email);
+
+    [Parameter]
+    public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    private string _code = string.Empty;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private ProgramStatusEnum _status = ProgramStatusEnum.Planning;
+    private List<ProgramAdminUserDto> _adminUsers = new();
+    private List<UserOption> _availableTenantUsers = new();
+    private string? _selectedUserIdToAdd;
+    private string? _validationError;
+    private bool _isReadOnly;
+    private bool _isEditMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Context != null)
+        {
+            _code = Context.State.Code;
+            _name = Context.State.Name;
+            _description = Context.State.Description;
+            _status = Context.State.Status;
+            _adminUsers = Context.State.AdminUsers ?? new();
+            _isReadOnly = Context.IsReadOnly;
+            _isEditMode = Context.State.ProgramId.HasValue;
+        }
+
+        if (TenantContext.HasActiveTenant)
+        {
+            try
+            {
+                var users = await TenantService.GetTenantUsersByIdAsync(TenantContext.TenantId);
+                _availableTenantUsers = users
+                    .Select(u => new UserOption(u.Id.ToString(), string.IsNullOrWhiteSpace(u.FullName) ? u.Email : u.FullName, u.Email))
+                    .ToList();
+            }
+            catch
+            {
+                _availableTenantUsers = new();
+            }
+        }
+    }
+
+    private void AddSelectedAdmin()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedUserIdToAdd)) return;
+        var opt = _availableTenantUsers.FirstOrDefault(u => u.Id == _selectedUserIdToAdd);
+        if (opt != null && Guid.TryParse(opt.Id, out var uid))
+        {
+            if (!_adminUsers.Any(a => a.UserId == uid))
+            {
+                _adminUsers.Add(new ProgramAdminUserDto
+                {
+                    UserId = uid,
+                    DisplayName = opt.Name,
+                    Email = opt.Email
+                });
+            }
+        }
+        _selectedUserIdToAdd = null;
+    }
+
+    private void RemoveAdmin(Guid userId)
+    {
+        _adminUsers.RemoveAll(a => a.UserId == userId);
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
+    {
+        _validationError = null;
+        if (string.IsNullOrWhiteSpace(_code))
+        {
+            _validationError = "Program Code is required.";
+            return Task.FromResult(false);
+        }
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _validationError = "Program Name is required.";
+            return Task.FromResult(false);
+        }
+        if (_name.Length > 255)
+        {
+            _validationError = "Program Name cannot exceed 255 characters.";
+            return Task.FromResult(false);
+        }
+        if (_adminUsers.Count == 0)
+        {
+            _validationError = "At least one Program Administrator must be assigned.";
+            return Task.FromResult(false);
+        }
+
+        context.State.Code = _code.Trim().ToUpperInvariant();
+        context.State.Name = _name.Trim();
+        context.State.Description = _description?.Trim() ?? string.Empty;
+        context.State.Status = _status;
+        context.State.AdminUsers = _adminUsers;
+
+        return Task.FromResult(true);
+    }
+}

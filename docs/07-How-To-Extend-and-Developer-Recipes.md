@@ -514,3 +514,43 @@ Bind to UI dropdowns using cached reflection helper `DataListExtensions.GetDataL
 - [ ] Roslyn analyzer rule **`TG006`** passes cleanly without compilation errors.
 
 
+
+
+---
+
+## Recipe 11: Extend or Customize a Wizard Flow with TemplateGuard (`.Custom.cs`)
+
+When customizing standard wizards (such as `CreateProjectWizardFlow`), downstream teams must **never edit the base `.razor` or `.cs` wizard files** to stay 100% compliant with TemplateGuard (`TG001`–`TG004`, `TG021`).
+
+Instead, author a **`CreateProjectWizardFlow.Custom.cs`** partial class to add steps, disable base steps, or create new project templates.
+
+### Example: Insert a Step after Step 4 & Define a Custom Template
+
+```csharp
+namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard;
+
+public static partial class CreateProjectWizardFlow
+{
+    static partial void ConfigureCustom(WizardFlowBuilder<CreateProjectWizardState> flow)
+    {
+        // 1. Insert a custom step after Milestone Calendar (Step 4).
+        //    Team Roster (Step 5) shifts automatically to Step 6.
+        flow.AddStepAfter<CustomSecurityGateStep>(
+            targetStepId: StepIds.MilestoneCalendar,
+            newStepId: "security-gate",
+            title: "Security & Compliance Gate",
+            summary: "FedRAMP & classification review",
+            defaultRequirement: WizardStepRequirement.Disabled);
+
+        // 2. Register a new Template that enables the new step and makes RFP Timeline optional
+        flow.AddTemplate(
+            templateId: "regulated-defense",
+            name: "Regulated / Defense Project",
+            description: "Enforces security compliance gate prior to team roster.",
+            configure: rules => rules
+                .MakeOptional(StepIds.RfpTimeline)
+                .MakeMandatory("security-gate")
+                .MakeMandatory(StepIds.TeamRoster));
+    }
+}
+```
