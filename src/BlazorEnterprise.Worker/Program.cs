@@ -50,6 +50,15 @@ try
             "Zero-Trust Security Violation: 'Jobs:CronServiceAccountEmail' must be explicitly configured when 'Jobs:EnableScheduler' is enabled.")
         .ValidateOnStart();
 
+    builder.Services.AddOptions<AuditOptions>()
+        .BindConfiguration(AuditOptions.SectionName);
+    builder.Services.AddOptions<SecurityOptions>()
+        .BindConfiguration(SecurityOptions.SectionName);
+    builder.Services.AddOptions<NotificationOptions>()
+        .BindConfiguration(NotificationOptions.SectionName);
+    builder.Services.AddOptions<EngineOptions>()
+        .BindConfiguration(EngineOptions.SectionName);
+
     // 4. Persistence, Infrastructure, and Engine Gateway Client
     builder.Services.AddPersistence(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);

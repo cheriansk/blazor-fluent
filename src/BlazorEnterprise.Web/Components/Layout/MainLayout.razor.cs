@@ -1,7 +1,6 @@
 using BlazorEnterprise.Shared.UI.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Dtos;
@@ -19,7 +18,6 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     [Inject] private IUserSessionService SessionService { get; set; } = default!;
     [Inject] private ICircuitSessionTracker CircuitTracker { get; set; } = default!;
     [Inject] private IInternalAuthenticationService AuthVerificationService { get; set; } = default!;
-    [Inject] private IConfiguration Configuration { get; set; } = default!;
     [Inject] private ILogger<MainLayout> Logger { get; set; } = default!;
     [Inject] private INavigationStateService NavState { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;

@@ -19,6 +19,7 @@ public partial class LoginPage : ComponentBase
 {
     [Inject] private IInternalAuthenticationService AuthVerificationService { get; set; } = default!;
     [Inject] private IConfiguration Configuration { get; set; } = default!;
+    [Inject] private IOptions<SecurityOptions> SecurityOptions { get; set; } = default!;
     [Inject] private IWebHostEnvironment HostEnvironment { get; set; } = default!;
     [Inject] private IOptions<DevLoginOptions> DevLoginOptions { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
@@ -63,7 +64,7 @@ public partial class LoginPage : ComponentBase
             };
         }
 
-        _secretKey = Configuration["Security:IntegritySecret"] ?? string.Empty;
+        _secretKey = !string.IsNullOrWhiteSpace(SecurityOptions.Value.IntegritySecret) ? SecurityOptions.Value.IntegritySecret : (Configuration["Security:IntegritySecret"] ?? string.Empty);
         if (string.IsNullOrWhiteSpace(_secretKey) || _secretKey.StartsWith("__SET_VIA_"))
         {
             Logger.LogError("CRITICAL SECURITY ERROR: 'Security:IntegritySecret' is missing or unconfigured.");

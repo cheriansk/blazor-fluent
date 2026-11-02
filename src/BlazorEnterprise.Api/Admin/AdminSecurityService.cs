@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 namespace BlazorEnterprise.Api.Admin;
 
 public interface IAdminSecurityService
@@ -9,25 +11,35 @@ public interface IAdminSecurityService
 
 public class AdminSecurityService : IAdminSecurityService
 {
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration? _configuration;
+    private readonly IOptions<AdminOptions>? _adminOptions;
     private readonly ILogger<AdminSecurityService> _logger;
 
     public AdminSecurityService(
         IConfiguration configuration,
         ILogger<AdminSecurityService> logger)
+        : this(logger, null, configuration)
     {
-        _configuration = configuration;
+    }
+
+    public AdminSecurityService(
+        ILogger<AdminSecurityService> logger,
+        IOptions<AdminOptions>? adminOptions = null,
+        IConfiguration? configuration = null)
+    {
         _logger = logger;
+        _adminOptions = adminOptions;
+        _configuration = configuration;
     }
 
     public string GetAllowedDomain() =>
-        _configuration["Admin:AllowedDomain"]
+        (!string.IsNullOrWhiteSpace(_adminOptions?.Value.AllowedDomain) ? _adminOptions.Value.AllowedDomain : _configuration?["Admin:AllowedDomain"])
         ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Admin:AllowedDomain' must be explicitly configured.");
 
     public IReadOnlyList<string> GetConfiguredAdmins()
     {
         // Loaded from Azure Key Vault in production or appsettings in development
-        var rawAdmins = _configuration["Admin:KeyVaultUsers"]
+        var rawAdmins = (!string.IsNullOrWhiteSpace(_adminOptions?.Value.KeyVaultUsers) ? _adminOptions.Value.KeyVaultUsers : (!string.IsNullOrWhiteSpace(_adminOptions?.Value.AuthorizedEmails) ? _adminOptions.Value.AuthorizedEmails : _configuration?["Admin:KeyVaultUsers"]))
             ?? _configuration["Admin:AuthorizedEmails"]
             ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Admin:KeyVaultUsers' must be explicitly configured.");
 

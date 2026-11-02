@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BlazorEnterprise.RulesEngine\BlazorEnterprise.RulesEngine.csproj" />
     <ProjectReference Include="..\BlazorEnterprise.Shared\BlazorEnterprise.Shared.csproj" />
+    <ProjectReference Include="..\BlazorEnterprise.Core\BlazorEnterprise.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

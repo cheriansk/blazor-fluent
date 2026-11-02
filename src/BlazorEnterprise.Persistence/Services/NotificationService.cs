@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Notifications;
@@ -18,7 +20,8 @@ public class NotificationService : INotifyService
     private readonly ITenantContext _tenantContext;
     private readonly ITeamsNotificationSender _teamsSender;
     private readonly IEmailNotificationSender _emailSender;
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration? _configuration;
+    private readonly NotificationOptions _options;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
@@ -27,16 +30,18 @@ public class NotificationService : INotifyService
         ITenantContext tenantContext,
         ITeamsNotificationSender teamsSender,
         IEmailNotificationSender emailSender,
-        IConfiguration configuration,
-        ILogger<NotificationService> logger)
+        ILogger<NotificationService> logger,
+        IOptions<NotificationOptions>? notificationOptions = null,
+        IConfiguration? configuration = null)
     {
         _scopeFactory = scopeFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _teamsSender = teamsSender;
         _emailSender = emailSender;
-        _configuration = configuration;
         _logger = logger;
+        _configuration = configuration;
+        _options = notificationOptions?.Value ?? new NotificationOptions();
     }
     /// <summary>
     /// Handles background notification operations within an isolated dependency injection scope.
@@ -477,29 +482,41 @@ public class NotificationService : INotifyService
 
     private string? ResolveTeamsWebhook(Guid projectId)
     {
-        var isEnabled = _configuration.GetValue<bool>("Notifications:Teams:Enabled");
-        if (!isEnabled) return null;
+        if (!_options.Teams.Enabled && !(_configuration?.GetValue<bool>("Notifications:Teams:Enabled") ?? false))
+            return null;
 
         if (projectId != Guid.Empty)
         {
-            var projectWebhook = _configuration[$"Notifications:Teams:ProjectWebhooks:{projectId}"];
-            if (!string.IsNullOrWhiteSpace(projectWebhook)) return projectWebhook;
+            var projectKey = projectId.ToString();
+            if (_options.Teams.ProjectWebhooks.TryGetValue(projectKey, out var webhook) && !string.IsNullOrWhiteSpace(webhook))
+                return webhook;
+
+            var configWebhook = _configuration?[$"Notifications:Teams:ProjectWebhooks:{projectId}"];
+            if (!string.IsNullOrWhiteSpace(configWebhook)) return configWebhook;
         }
 
-        return _configuration["Notifications:Teams:DefaultWebhookUrl"];
+        return !string.IsNullOrWhiteSpace(_options.Teams.DefaultWebhookUrl)
+            ? _options.Teams.DefaultWebhookUrl
+            : _configuration?["Notifications:Teams:DefaultWebhookUrl"];
     }
 
     private string? ResolveProjectMailbox(Guid projectId)
     {
-        var isEnabled = _configuration.GetValue<bool>("Notifications:Email:Enabled");
-        if (!isEnabled) return null;
+        if (!_options.Email.Enabled && !(_configuration?.GetValue<bool>("Notifications:Email:Enabled") ?? false))
+            return null;
 
         if (projectId != Guid.Empty)
         {
-            var projectMailbox = _configuration[$"Notifications:Email:ProjectMailboxes:{projectId}"];
-            if (!string.IsNullOrWhiteSpace(projectMailbox)) return projectMailbox;
+            var projectKey = projectId.ToString();
+            if (_options.Email.ProjectMailboxes.TryGetValue(projectKey, out var mailbox) && !string.IsNullOrWhiteSpace(mailbox))
+                return mailbox;
+
+            var configMailbox = _configuration?[$"Notifications:Email:ProjectMailboxes:{projectId}"];
+            if (!string.IsNullOrWhiteSpace(configMailbox)) return configMailbox;
         }
 
-        return _configuration["Notifications:Email:DefaultMailbox"];
+        return !string.IsNullOrWhiteSpace(_options.Email.DefaultMailbox)
+            ? _options.Email.DefaultMailbox
+            : _configuration?["Notifications:Email:DefaultMailbox"];
     }
 }

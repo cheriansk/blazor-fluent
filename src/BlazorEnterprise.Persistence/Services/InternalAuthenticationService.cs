@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Identity;
@@ -31,23 +33,29 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             ctx.Users.AsNoTracking().FirstOrDefault(u => u.Email.ToLower() == email && !u.IsDeleted));
 
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration? _configuration;
+    private readonly SecurityOptions _securityOptions;
     private readonly IRootAdminService _rootAdminService;
     private readonly ISystemIdentity _systemIdentity;
     private readonly ILogger<InternalAuthenticationService> _logger;
 
     public InternalAuthenticationService(
         IServiceScopeFactory scopeFactory,
-        IConfiguration configuration,
         IRootAdminService rootAdminService,
         ISystemIdentity systemIdentity,
-        ILogger<InternalAuthenticationService> logger)
+        ILogger<InternalAuthenticationService> logger,
+        IOptions<SecurityOptions>? securityOptions = null,
+        IConfiguration? configuration = null)
     {
         _scopeFactory = scopeFactory;
-        _configuration = configuration;
         _rootAdminService = rootAdminService;
         _systemIdentity = systemIdentity;
         _logger = logger;
+        _configuration = configuration;
+        _securityOptions = securityOptions?.Value ?? new SecurityOptions
+        {
+            IntegritySecret = configuration?["Security:IntegritySecret"] ?? string.Empty
+        };
     }
 
     public async Task<Result<AuthUserResult>> VerifyLoginCredentialsAsync(string email, CancellationToken ct = default)
@@ -104,7 +112,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("System daemon and bot accounts are non-interactive identities and cannot log in.");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"];
+        var secretKey = _securityOptions.IntegritySecret;
         if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' is not configured in KeyVault, environment, or User Secrets.");
@@ -233,7 +241,7 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             return Result<AuthUserResult>.Failure("User account is no longer valid or has been removed.");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"];
+        var secretKey = _securityOptions.IntegritySecret;
         if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' is not configured in KeyVault, environment, or User Secrets.");

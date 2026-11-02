@@ -23,8 +23,9 @@ public class PeriodicBatchScheduler : BackgroundService
 {
     private readonly IJobEventQueue _queue;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration? _configuration;
     private readonly IOptions<JobsOptions> _jobsOptions;
+    private readonly IOptions<AuditOptions>? _auditOptions;
     private readonly ILogger<PeriodicBatchScheduler> _logger;
 
     private sealed record ScheduleEntry(
@@ -35,15 +36,17 @@ public class PeriodicBatchScheduler : BackgroundService
     public PeriodicBatchScheduler(
         IJobEventQueue queue,
         IServiceScopeFactory scopeFactory,
-        IConfiguration configuration,
         IOptions<JobsOptions> jobsOptions,
-        ILogger<PeriodicBatchScheduler> logger)
+        ILogger<PeriodicBatchScheduler> logger,
+        IOptions<AuditOptions>? auditOptions = null,
+        IConfiguration? configuration = null)
     {
         _queue = queue;
         _scopeFactory = scopeFactory;
-        _configuration = configuration;
         _jobsOptions = jobsOptions;
         _logger = logger;
+        _auditOptions = auditOptions;
+        _configuration = configuration;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -109,7 +112,7 @@ public class PeriodicBatchScheduler : BackgroundService
                 var cronServiceEmail = _jobsOptions.Value.CronServiceAccountEmail;
                 if (string.IsNullOrWhiteSpace(cronServiceEmail))
                 {
-                    cronServiceEmail = _configuration["Jobs:CronServiceAccountEmail"];
+                    cronServiceEmail = !string.IsNullOrWhiteSpace(_jobsOptions.Value.CronServiceAccountEmail) ? _jobsOptions.Value.CronServiceAccountEmail : _configuration?["Jobs:CronServiceAccountEmail"];
                 }
 
                 if (string.IsNullOrWhiteSpace(cronServiceEmail))
@@ -164,8 +167,8 @@ public class PeriodicBatchScheduler : BackgroundService
     {
         var entries = new List<ScheduleEntry>();
 
-        var auditPurgeCron = _configuration["Jobs:Schedules:AuditPurgeJob"] ?? "0 2 * * *";
-        var retentionDays = int.TryParse(_configuration["Audit:RetentionDays"], out var days) ? days : 365;
+        var auditPurgeCron = (_jobsOptions.Value.Schedules.TryGetValue("AuditPurgeJob", out var apc) ? apc : _configuration?["Jobs:Schedules:AuditPurgeJob"]) ?? "0 2 * * *";
+        var retentionDays = _auditOptions?.Value.RetentionDays ?? (int.TryParse(_configuration?["Audit:RetentionDays"], out var days) ? days : 365);
         if (TryParseCron("AuditPurgeJob", auditPurgeCron, out var parsedPurge))
         {
             entries.Add(new ScheduleEntry(
@@ -181,7 +184,7 @@ public class PeriodicBatchScheduler : BackgroundService
                     RetentionDays: retentionDays)));
         }
 
-        var dailyTaskCron = _configuration["Jobs:Schedules:DailyTaskSummaryJob"] ?? "0 18 * * *";
+        var dailyTaskCron = (_jobsOptions.Value.Schedules.TryGetValue("DailyTaskSummaryJob", out var dtc) ? dtc : _configuration?["Jobs:Schedules:DailyTaskSummaryJob"]) ?? "0 18 * * *";
         if (TryParseCron("DailyTaskSummaryJob", dailyTaskCron, out var parsedTaskCron))
         {
             entries.Add(new ScheduleEntry(
@@ -196,7 +199,7 @@ public class PeriodicBatchScheduler : BackgroundService
                     SenderUserEmail: email)));
         }
 
-        var cadenceCron = _configuration["Jobs:Schedules:TaskCadenceAlertJob"] ?? "0 8 * * *";
+        var cadenceCron = (_jobsOptions.Value.Schedules.TryGetValue("TaskCadenceAlertJob", out var cac) ? cac : _configuration?["Jobs:Schedules:TaskCadenceAlertJob"]) ?? "0 8 * * *";
         if (TryParseCron("TaskCadenceAlertJob", cadenceCron, out var parsedCadenceCron))
         {
             entries.Add(new ScheduleEntry(

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Identity;
@@ -26,7 +28,8 @@ public class TenantService : ITenantService
     private readonly AppDbContext _dbContext;
     private readonly IAuditService _auditService;
     private readonly ITenantCacheService _cacheService;
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration? _configuration;
+    private readonly SecurityOptions _securityOptions;
     private readonly IRootAdminService _rootAdminService;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
@@ -75,20 +78,25 @@ public class TenantService : ITenantService
         AppDbContext dbContext,
         IAuditService auditService,
         ITenantCacheService cacheService,
-        IConfiguration configuration,
         IRootAdminService rootAdminService,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
-        ILogger<TenantService> logger)
+        ILogger<TenantService> logger,
+        IOptions<SecurityOptions>? securityOptions = null,
+        IConfiguration? configuration = null)
     {
         _dbContext = dbContext;
         _auditService = auditService;
         _cacheService = cacheService;
-        _configuration = configuration;
         _rootAdminService = rootAdminService;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _logger = logger;
+        _configuration = configuration;
+        _securityOptions = securityOptions?.Value ?? new SecurityOptions
+        {
+            IntegritySecret = configuration?["Security:IntegritySecret"] ?? string.Empty
+        };
     }
 
     public async Task<IReadOnlyList<TenantEntity>> GetAllTenantsAsync(CancellationToken cancellationToken = default)
@@ -208,7 +216,7 @@ public class TenantService : ITenantService
 
         _dbContext.Tenants.Add(tenant);
 
-        var secretKey = _configuration["Security:IntegritySecret"];
+        var secretKey = _securityOptions.IntegritySecret;
         var daemonEmail = $"daemon@{tenant.Slug.ToLowerInvariant()}.internal";
         var daemonUser = new UserEntity
         {
@@ -300,7 +308,7 @@ public class TenantService : ITenantService
                 $"Administrator email '{normalizedAdminEmail}' does not match any configured Internal domain ({string.Join(", ", internalList)}) or External domain ({string.Join(", ", externalList)}).");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"];
+        var secretKey = _securityOptions.IntegritySecret;
         if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
@@ -469,7 +477,7 @@ public class TenantService : ITenantService
             return Result<UserEntity>.Failure($"A user with email '{normalizedEmail}' already exists.");
         }
 
-        var secretKey = _configuration["Security:IntegritySecret"];
+        var secretKey = _securityOptions.IntegritySecret;
         if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
@@ -597,7 +605,7 @@ public class TenantService : ITenantService
         user.EndDate = endDate.ToUniversalTime();
         user.IsActive = isActive;
 
-        var secretKey = _configuration["Security:IntegritySecret"];
+        var secretKey = _securityOptions.IntegritySecret;
         if (string.IsNullOrWhiteSpace(secretKey) || secretKey.StartsWith("__SET_VIA_"))
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:IntegritySecret' must be configured in KeyVault, environment, or User Secrets.");
@@ -1028,7 +1036,7 @@ public class TenantService : ITenantService
         user.IsActive = isActive;
         daemonMembership.IsActive = isActive;
 
-        var integrityKey = _configuration["Security:IntegritySecret"];
+        var integrityKey = _securityOptions.IntegritySecret;
         if (!string.IsNullOrWhiteSpace(integrityKey) && !integrityKey.StartsWith("__SET_VIA_"))
         {
             user.RowSignature = user.ComputeIntegritySignature(integrityKey);

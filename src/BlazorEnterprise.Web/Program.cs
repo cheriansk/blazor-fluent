@@ -610,14 +610,28 @@ try
 
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions>()
-
         .BindConfiguration(BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions.SectionName)
-
         .Validate(o => !o.Enabled || builder.Environment.IsDevelopment(),
-
             "Zero-Trust Security Violation: 'Seed' cannot be enabled outside Development environment.")
-
         .ValidateOnStart();
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AdminOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.AdminOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.NotificationOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.NotificationOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.EngineOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.EngineOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AuditOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.AuditOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DateTimeSettingsOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.DateTimeSettingsOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.TeamsAlertOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.TeamsAlertOptions.SectionName);
 
 
 

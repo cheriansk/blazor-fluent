@@ -54,6 +54,16 @@ builder.Services.AddHybridCache(options =>
 builder.Services.AddSingleton<BaseCloudProcessor, TaskCloudProcessor>();
 builder.Services.AddSingleton<CloudProcessorDispatcher>();
 
+// Strongly-typed options registration
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AuthOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.AuthOptions.SectionName);
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AdminOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.AdminOptions.SectionName);
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.EngineOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.EngineOptions.SectionName);
+builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions>()
+    .BindConfiguration(BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions.SectionName);
+
 // 5. JWT Bearer Authentication (Zero-Trust Fail-Fast Configuration Validation)
 var authIssuer = builder.Configuration["Auth:Issuer"];
 if (string.IsNullOrWhiteSpace(authIssuer))
