@@ -1,4 +1,4 @@
-﻿# Completed Change History: `BatchJobQueueListener`
+# Completed Change History: `BatchJobQueueListener`
 
 > **Active Spec**: [BatchJobQueueListener.requirements.md](../BatchJobQueueListener.requirements.md) | **Navigation Index**: [BatchJobQueueListener.index.md](../index/BatchJobQueueListener.index.md)
 

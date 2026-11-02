@@ -1,4 +1,4 @@
-﻿# Completed Change History: `SettingsProgramsTab`
+# Completed Change History: `SettingsProgramsTab`
 
 > **Active Spec**: [SettingsProgramsTab.requirements.md](../SettingsProgramsTab.requirements.md) | **Navigation Index**: [SettingsProgramsTab.index.md](../index/SettingsProgramsTab.index.md)
 

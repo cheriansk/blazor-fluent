@@ -1,4 +1,4 @@
-﻿<!-- ===========================================================================
+<!-- ===========================================================================
 [SYSTEM / AGENT RUNTIME - STRICT MINIMAL-TOKEN READING & EXECUTION PROTOCOL]
 thinking_strategy: zero_waste_discovery_focused_planning
 thinking_level_hint: low (0% wasted on file/line search; 100% focused on planning UI/logic changes)

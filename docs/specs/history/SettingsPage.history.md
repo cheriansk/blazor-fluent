@@ -1,4 +1,4 @@
-﻿# Completed Change History: `SettingsPage`
+# Completed Change History: `SettingsPage`
 
 > **Active Spec**: [SettingsPage.requirements.md](../SettingsPage.requirements.md) | **Navigation Index**: [SettingsPage.index.md](../index/SettingsPage.index.md)
 

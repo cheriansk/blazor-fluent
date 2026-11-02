@@ -1,4 +1,4 @@
-﻿# Antigravity Ultra-Lean Specifications Catalog
+# Antigravity Ultra-Lean Specifications Catalog
 
 > **Last Generated**: `2026-11-01 21:06:44 -05:00`  
 > **Manifest Source**: [specs-manifest.json](./specs-manifest.json)  
