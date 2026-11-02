@@ -3,7 +3,7 @@
 target_spec: docs/specs/SettingsPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor.cs
-generated_at_utc: 2026-10-30T20:41:37Z
+generated_at_utc: 2026-11-02T02:06:44Z
 source_hash_sha256: da2366616f26f5bd
 ============================================================================ -->
 # AI Navigation Index: `SettingsPage`
@@ -30,6 +30,6 @@ source_hash_sha256: da2366616f26f5bd
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `HierarchyAuthorizationService.CanViewTenantSettingsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L394-L410` | - | `DB[R]: Tenants` |
-| `HierarchyAuthorizationService.GetAccessibleProgramIdsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L822-L838` | - | `DB[R]: Tenants` |
+| `HierarchyAuthorizationService.CanViewTenantSettingsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L385-L401` | - | `DB[R]: Tenants` |
+| `HierarchyAuthorizationService.GetAccessibleProgramIdsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L813-L829` | - | `DB[R]: Tenants` |
 

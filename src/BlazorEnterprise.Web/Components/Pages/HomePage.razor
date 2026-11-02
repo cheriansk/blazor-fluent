@@ -5,191 +5,420 @@
 <PageTitle>Dashboard — BlazorEnterprise Material</PageTitle>
 
 <div class="homepage-container">
+    @if (_isRootAdminOnly)
+    {
+        <!-- Platform Root Admin Notice -->
+        <div class="root-admin-banner">
+            <div class="banner-icon">
+                <CskIcon Icon="@CskIcons.ShieldCheck" Class="csk-icon-primary" />
+            </div>
+            <div class="banner-content">
+                <div class="banner-title">Root Administrator Context Active</div>
+                <div class="banner-subtitle">
+                    You are signed in as a platform Root Administrator. Program and Project delivery workspaces require an active tenant user membership. Use the Tenant Settings or Switcher above to manage tenant configurations.
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Material Section Header & Action Toolbar -->
     <CskSectionHeader Title="Operations Executive Dashboard"
-                      Subtitle="Real-time multi-tenant operations, rules engine throughput, and forensic audit trail."
+                      Subtitle="Real-time multi-tenant operations, program delivery governance, and member projects."
                       Icon="@CskIcons.Apps">
         <Actions>
-            <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@NavigateToTasks">
-                New Task
-            </CskButton>
+            @if (_userProjects.Count > 0)
+            {
+                <CskButton Variant="CskButtonVariant.Filled" IconStart="@CskIcons.Add" OnClick="@NavigateToTasks">
+                    New Task
+                </CskButton>
+            }
             <CskButton Variant="CskButtonVariant.Outlined" IconStart="@CskIcons.ArrowSync" OnClick="@RefreshDataAsync">
                 Refresh
             </CskButton>
         </Actions>
     </CskSectionHeader>
 
-    <!-- Top KPI Metric Cards Grid -->
-    <div class="mat-metric-grid">
-        <CskMetricCard Title="Active Projects"
-                       Value="@_projectCountText"
-                       Icon="@CskIcons.Folder"
-                       AvatarColorClass="csk-avatar-primary"
-                       TrendText="+2 this month"
-                       TrendPositive="true"
-                       Subtext="Across enterprise portfolio" />
-
-        <CskMetricCard Title="Task Completion"
-                       Value="@_completionRateText"
-                       Icon="@CskIcons.Checkmark"
-                       AvatarColorClass="csk-avatar-success"
-                       TrendText="+5.3% efficiency"
-                       TrendPositive="true"
-                       Subtext="@($"{_completedTasksCount} of {_totalTasksCount} tasks closed")" />
-
-        <CskMetricCard Title="Zero-Trust Score"
-                       Value="100% (A+)"
-                       Icon="@CskIcons.ShieldCheck"
-                       AvatarColorClass="csk-avatar-primary"
-                       TrendText="Audited"
-                       TrendPositive="true"
-                       Subtext="PureStrict Nonced CSP Active" />
-
-        <CskMetricCard Title="Engine Throughput"
-                       Value="3,420 ops/s"
-                       Icon="@CskIcons.Bolt"
-                       AvatarColorClass="csk-avatar-warning"
-                       TrendText="+14.8% throughput"
-                       TrendPositive="true"
-                       Subtext="100% in-memory CPU engine" />
-    </div>
-
-    <!-- Main Content Area: Kanban Workflow Board & Recent Activity -->
-    <div class="dashboard-columns-grid">
-        <!-- Left: Material Kanban Workflow Task Board -->
-        <div class="dashboard-kanban-panel">
-            <div class="panel-header">
-                <div class="panel-title-group">
-                    <h3 class="panel-title">
-                        <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-primary" />
-                        <span>Active Workflow Kanban</span>
-                    </h3>
-                    <span class="panel-subtitle">Current sprint deliverables and review gates</span>
-                </div>
-                <span class="column-count">@_kanbanTasks.Count Active</span>
-            </div>
-
-            <div class="kanban-swimlanes">
-                <!-- Column: To Do / Backlog -->
-                <div class="kanban-column">
-                    <div class="kanban-column-header">
-                        <span class="column-name">To Do</span>
-                        <span class="column-count">@_kanbanTasks.Count(t => t.Column == "ToDo")</span>
-                    </div>
-                    <div class="kanban-cards-stack">
-                        @foreach (var task in _kanbanTasks.Where(t => t.Column == "ToDo"))
-                        {
-                            <div class="mat-kanban-card" @onclick="NavigateToTasks">
-                                <div class="task-card-header">
-                                    <span class="task-key">@task.Key</span>
-                                    <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
-                                </div>
-                                <div class="task-card-title">@task.Title</div>
-                                <div class="task-card-footer">
-                                    <span class="task-assignee">
-                                        <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
-                                        <span>@task.Assignee</span>
-                                    </span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Column: In Progress -->
-                <div class="kanban-column">
-                    <div class="kanban-column-header">
-                        <span class="column-name">In Progress</span>
-                        <span class="column-count">@_kanbanTasks.Count(t => t.Column == "InProgress")</span>
-                    </div>
-                    <div class="kanban-cards-stack">
-                        @foreach (var task in _kanbanTasks.Where(t => t.Column == "InProgress"))
-                        {
-                            <div class="mat-kanban-card" @onclick="NavigateToTasks">
-                                <div class="task-card-header">
-                                    <span class="task-key">@task.Key</span>
-                                    <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
-                                </div>
-                                <div class="task-card-title">@task.Title</div>
-                                <div class="task-card-footer">
-                                    <span class="task-assignee">
-                                        <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
-                                        <span>@task.Assignee</span>
-                                    </span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Column: Done -->
-                <div class="kanban-column">
-                    <div class="kanban-column-header">
-                        <span class="column-name">Completed</span>
-                        <span class="column-count">@_kanbanTasks.Count(t => t.Column == "Done")</span>
-                    </div>
-                    <div class="kanban-cards-stack">
-                        @foreach (var task in _kanbanTasks.Where(t => t.Column == "Done"))
-                        {
-                            <div class="mat-kanban-card" @onclick="NavigateToTasks">
-                                <div class="task-card-header">
-                                    <span class="task-key">@task.Key</span>
-                                    <CskStatusChip Text="Resolved" Variant="CskStatusChip.ChipVariant.Success" />
-                                </div>
-                                <div class="task-card-title task-done">@task.Title</div>
-                                <div class="task-card-footer">
-                                    <span class="task-assignee">
-                                        <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" />
-                                        <span>@task.Assignee</span>
-                                    </span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
+    @if (_isLoading)
+    {
+        <div class="dashboard-loading-state">
+            <CskSpinner Size="CskSpinnerSize.Large" />
+            <span class="loading-label">Loading real-time executive dashboard...</span>
         </div>
-
-        <!-- Right: Recent Activity Audit Trail -->
-        <div class="dashboard-activity-panel">
-            <div class="panel-header">
-                <div class="panel-title-group">
-                    <h3 class="panel-title">
-                        <CskIcon Icon="@CskIcons.History" Class="csk-icon-primary" />
-                        <span>Forensic Audit Trail</span>
-                    </h3>
-                    <span class="panel-subtitle">Chronological ledger of security and tenant actions</span>
+    }
+    else if (!_isRootAdminOnly)
+    {
+        <!-- Program-Level Executive Summary Card -->
+        <div class="mat-program-summary-card">
+            <div class="program-summary-header">
+                <div class="program-title-group">
+                    <div class="program-eyebrow">
+                        <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-sm" />
+                        <span>PROGRAM EXECUTIVE SUMMARY</span>
+                    </div>
+                    @if (_programHealth != null)
+                    {
+                        <h2 class="program-name">
+                            @_programHealth.ProgramName
+                            @if (!string.IsNullOrWhiteSpace(_programHealth.ProgramCode))
+                            {
+                                <span class="program-code">(@_programHealth.ProgramCode)</span>
+                            }
+                        </h2>
+                    }
+                    else
+                    {
+                        <h2 class="program-name">Portfolio Programs Overview</h2>
+                    }
                 </div>
-            </div>
 
-            <div class="mat-activity-list">
-                @if (_auditActivities.Count == 0)
+                @if (_programs.Count > 1)
                 {
-                    <div class="mat-activity-item">
-                        <div class="mat-activity-content">
-                            <div class="mat-activity-title">No recent audit logs</div>
-                            <div class="mat-activity-time">Activity events will stream here automatically.</div>
-                        </div>
+                    <!-- Multi-program switcher pills -->
+                    <div class="program-pills">
+                        @foreach (var prog in _programs)
+                        {
+                            var isSelected = prog.Id == _selectedProgramId;
+                            <button type="button"
+                                    class="program-pill-btn @(isSelected ? "active" : "")"
+                                    @onclick="@(() => OnProgramSelectedAsync(prog.Id))">
+                                @prog.Name
+                            </button>
+                        }
                     </div>
                 }
-                else
+
+                @if (_programHealth != null)
                 {
-                    @foreach (var audit in _auditActivities)
+                    <div class="program-badges-group">
+                        <CskStatusChip Text="@_programHealth.Status.ToString()"
+                                       Variant="CskStatusChip.ChipVariant.Primary" />
+                        <CskStatusChip Text="@($"Health: {_programHealth.Health}")"
+                                       Variant="@GetProgramHealthVariant(_programHealth.Health)" />
+                    </div>
+                }
+            </div>
+
+            @if (_programHealth != null)
+            {
+                <div class="program-summary-body">
+                    <!-- Progress Bar & Percentage -->
+                    <div class="program-progress-section">
+                        <div class="progress-labels">
+                            <span class="progress-title">Overall Program Progress</span>
+                            <span class="progress-value">@_programHealth.ProgressPercentage%</span>
+                        </div>
+                        <CskProgressBar Value="@((int)Math.Round(_programHealth.ProgressPercentage))" Max="100" />
+                        <div class="progress-details">
+                            <span>@_programHealth.CompletedTasks of @_programHealth.TotalTasks deliverables closed</span>
+                            @if (_programHealth.OverdueTasks > 0)
+                            {
+                                <span class="text-danger">(@_programHealth.OverdueTasks overdue)</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Program Roll-Up Metric Tiles -->
+                    <div class="program-metrics-tiles">
+                        <div class="metric-tile">
+                            <span class="tile-label">Member Projects</span>
+                            <span class="tile-val">@_programHealth.TotalProjects</span>
+                            <span class="tile-sub">@_programHealth.ActiveProjects Active</span>
+                        </div>
+                        <div class="metric-tile">
+                            <span class="tile-label">Open Tasks</span>
+                            <span class="tile-val">@_programHealth.OpenTasks</span>
+                            <span class="tile-sub">Sprint in progress</span>
+                        </div>
+                        <div class="metric-tile">
+                            <span class="tile-label">Cross-Project Blockers</span>
+                            <span class="tile-val @(_programHealth.CrossProjectBlockersCount > 0 ? "tile-val-alert" : "")">
+                                @_programHealth.CrossProjectBlockersCount
+                            </span>
+                            <span class="tile-sub">Dependency gates</span>
+                        </div>
+                        <div class="metric-tile">
+                            <span class="tile-label">Projects At Risk</span>
+                            <span class="tile-val @(_programHealth.ProjectsAtRisk > 0 ? "tile-val-warning" : "")">
+                                @_programHealth.ProjectsAtRisk
+                            </span>
+                            <span class="tile-sub">Schedule variance</span>
+                        </div>
+                    </div>
+
+                    @if (_programHealth.RiskReasons.Count > 0)
                     {
-                        <div class="mat-activity-item">
-                            <div class="mat-activity-icon">
-                                <CskIcon Icon="@audit.Icon" Class="csk-icon-sm" />
+                        <div class="program-risk-strip">
+                            <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                            <div class="risk-reasons-list">
+                                @foreach (var reason in _programHealth.RiskReasons)
+                                {
+                                    <span class="risk-reason-item">• @reason</span>
+                                }
                             </div>
-                            <div class="mat-activity-content">
-                                <div class="mat-activity-title">@audit.Title</div>
-                                <div class="mat-activity-description">@audit.Description</div>
-                                <div class="mat-activity-time">@audit.TimeAgo • @audit.User</div>
-                            </div>
-                            <CskStatusChip Text="@audit.BadgeText" Variant="@audit.BadgeVariant" />
                         </div>
                     }
-                }
+                </div>
+            }
+            else
+            {
+                <div class="program-empty-state">
+                    <CskIcon Icon="@CskIcons.Info" Class="csk-icon-sm" />
+                    <span>No programs currently configured for this tenant.</span>
+                </div>
+            }
+        </div>
+
+        <!-- My Projects Card Grid Section -->
+        <div class="dashboard-section">
+            <div class="section-title-row">
+                <div class="section-title-group">
+                    <h3 class="section-heading">
+                        <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-primary" />
+                        <span>My Projects</span>
+                    </h3>
+                    <span class="section-subheading">Projects where you have active team membership</span>
+                </div>
+                <span class="section-count-badge">@_userProjects.Count Projects</span>
+            </div>
+
+            @if (_userProjects.Count == 0)
+            {
+                <div class="mat-empty-projects">
+                    <div class="empty-icon-circle">
+                        <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-lg" />
+                    </div>
+                    <h4 class="empty-title">No Assigned Projects</h4>
+                    <p class="empty-desc">
+                        You do not hold an active role in any project within this tenant. Reach out to your Project Administrator or Tenant Admin to be assigned to a project team.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="mat-project-grid">
+                    @foreach (var proj in _userProjects)
+                    {
+                        <div class="mat-project-card" @onclick="@(() => OpenProjectTasks(proj.Id))">
+                            <!-- Card Header: Title, ShortCode, Role -->
+                            <div class="project-card-header">
+                                <div class="project-identity">
+                                    <span class="project-code">@proj.ShortCode</span>
+                                    <h4 class="project-name" title="@proj.Name">@proj.Name</h4>
+                                    @if (!string.IsNullOrWhiteSpace(proj.ProgramName))
+                                    {
+                                        <span class="project-program-tag">
+                                            <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-xs" />
+                                            <span>@proj.ProgramName</span>
+                                        </span>
+                                    }
+                                </div>
+                                @if (proj.UserRole.HasValue)
+                                {
+                                    <CskStatusChip Text="@proj.UserRole.Value.ToString()"
+                                                   Variant="@GetRoleVariant(proj.UserRole)" />
+                                }
+                            </div>
+
+                            <!-- Status & Health Row -->
+                            <div class="project-badges-row">
+                                <CskStatusChip Text="@proj.Status.ToString()"
+                                               Variant="@GetProjectStatusVariant(proj.Status)" />
+                                <CskStatusChip Text="@($"Health: {proj.Health}")"
+                                               Variant="@GetProjectHealthVariant(proj.Health)" />
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="project-progress-box">
+                                <div class="progress-split">
+                                    <span class="progress-percent-label">@proj.ProgressPercentage% Complete</span>
+                                    <span class="tasks-counter-label">@proj.CompletedTasks / @proj.TotalTasks Tasks</span>
+                                </div>
+                                <CskProgressBar Value="@((int)Math.Round(proj.ProgressPercentage))" Max="100" />
+                            </div>
+
+                            <!-- Deliverables & Alerts Strip -->
+                            <div class="project-metrics-strip">
+                                <span class="metric-chip">
+                                    <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-xs" />
+                                    <span>@proj.InProgressTasks in progress</span>
+                                </span>
+                                @if (proj.OverdueTasks > 0)
+                                {
+                                    <span class="metric-chip chip-alert">
+                                        <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-xs" />
+                                        <span>@proj.OverdueTasks overdue</span>
+                                    </span>
+                                }
+                                @if (proj.ActiveBlockersCount > 0)
+                                {
+                                    <span class="metric-chip chip-warning">
+                                        <CskIcon Icon="@CskIcons.LockClosed" Class="csk-icon-xs" />
+                                        <span>@proj.ActiveBlockersCount blockers</span>
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Footer / Action -->
+                            <div class="project-card-footer">
+                                @if (proj.DueDate.HasValue)
+                                {
+                                    <span class="due-date-text">
+                                        Due @proj.DueDate.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="due-date-text">No target date</span>
+                                }
+                                <CskButton Variant="CskButtonVariant.Outlined"
+                                           IconEnd="@CskIcons.ChevronRight"
+                                           OnClick="@(() => OpenProjectTasks(proj.Id))">
+                                    Open
+                                </CskButton>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Bottom Content Area: Kanban Workflow Board & Recent Activity -->
+        <div class="dashboard-columns-grid">
+            <!-- Left: Material Kanban Workflow Task Board -->
+            <div class="dashboard-kanban-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <h3 class="panel-title">
+                            <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-primary" />
+                            <span>Sprint Deliverables</span>
+                        </h3>
+                        <span class="panel-subtitle">Tasks across your active member projects</span>
+                    </div>
+                    <span class="column-count">@_kanbanTasks.Count Active</span>
+                </div>
+
+                <div class="kanban-swimlanes">
+                    <!-- Column: To Do / Backlog -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="column-name">To Do</span>
+                            <span class="column-count">@_kanbanTasks.Count(t => t.Column == "ToDo")</span>
+                        </div>
+                        <div class="kanban-cards-stack">
+                            @foreach (var task in _kanbanTasks.Where(t => t.Column == "ToDo"))
+                            {
+                                <div class="mat-kanban-card" @onclick="NavigateToTasks">
+                                    <div class="task-card-header">
+                                        <span class="task-key">@task.Key</span>
+                                        <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
+                                    </div>
+                                    <div class="task-card-title">@task.Title</div>
+                                    <div class="task-card-footer">
+                                        <span class="task-assignee">
+                                            <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                                            <span>@task.Assignee</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Column: In Progress -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="column-name">In Progress</span>
+                            <span class="column-count">@_kanbanTasks.Count(t => t.Column == "InProgress")</span>
+                        </div>
+                        <div class="kanban-cards-stack">
+                            @foreach (var task in _kanbanTasks.Where(t => t.Column == "InProgress"))
+                            {
+                                <div class="mat-kanban-card" @onclick="NavigateToTasks">
+                                    <div class="task-card-header">
+                                        <span class="task-key">@task.Key</span>
+                                        <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
+                                    </div>
+                                    <div class="task-card-title">@task.Title</div>
+                                    <div class="task-card-footer">
+                                        <span class="task-assignee">
+                                            <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                                            <span>@task.Assignee</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Column: Done -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header">
+                            <span class="column-name">Completed</span>
+                            <span class="column-count">@_kanbanTasks.Count(t => t.Column == "Done")</span>
+                        </div>
+                        <div class="kanban-cards-stack">
+                            @foreach (var task in _kanbanTasks.Where(t => t.Column == "Done"))
+                            {
+                                <div class="mat-kanban-card" @onclick="NavigateToTasks">
+                                    <div class="task-card-header">
+                                        <span class="task-key">@task.Key</span>
+                                        <CskStatusChip Text="Resolved" Variant="CskStatusChip.ChipVariant.Success" />
+                                    </div>
+                                    <div class="task-card-title task-done">@task.Title</div>
+                                    <div class="task-card-footer">
+                                        <span class="task-assignee">
+                                            <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" />
+                                            <span>@task.Assignee</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Recent Activity Audit Trail -->
+            <div class="dashboard-activity-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <h3 class="panel-title">
+                            <CskIcon Icon="@CskIcons.History" Class="csk-icon-primary" />
+                            <span>Forensic Audit Trail</span>
+                        </h3>
+                        <span class="panel-subtitle">Chronological ledger of security and tenant actions</span>
+                    </div>
+                </div>
+
+                <div class="mat-activity-list">
+                    @if (_auditActivities.Count == 0)
+                    {
+                        <div class="mat-activity-item">
+                            <div class="mat-activity-content">
+                                <div class="mat-activity-title">No recent audit logs</div>
+                                <div class="mat-activity-time">Activity events will stream here automatically.</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var audit in _auditActivities)
+                        {
+                            <div class="mat-activity-item">
+                                <div class="mat-activity-icon">
+                                    <CskIcon Icon="@audit.Icon" Class="csk-icon-sm" />
+                                </div>
+                                <div class="mat-activity-content">
+                                    <div class="mat-activity-title">@audit.Title</div>
+                                    <div class="mat-activity-description">@audit.Description</div>
+                                    <div class="mat-activity-time">@audit.TimeAgo • @audit.User</div>
+                                </div>
+                                <CskStatusChip Text="@audit.BadgeText" Variant="@audit.BadgeVariant" />
+                            </div>
+                        }
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    }
 </div>

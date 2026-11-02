@@ -1,27 +1,51 @@
 using Microsoft.AspNetCore.Components;
 using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Domain.Tenancy;
 using BlazorEnterprise.Core.Dtos.Response;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Shared.UI.Components;
+using BlazorEnterprise.Web.Models.Dashboard;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Components.Pages;
 
 public partial class HomePage : ComponentBase
 {
-    [Inject] private ITenantService TenantService { get; set; } = default!;
-    [Inject] private IUserTaskService TaskService { get; set; } = default!;
-    [Inject] private IAuditService AuditService { get; set; } = default!;
-    [Inject] private ITenantContext TenantContext { get; set; } = default!;
-    [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
-    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] internal ITenantService TenantService { get; set; } = default!;
+    [Inject] internal IUserTaskService TaskService { get; set; } = default!;
+    [Inject] internal IAuditService AuditService { get; set; } = default!;
+    [Inject] internal ITenantContext TenantContext { get; set; } = default!;
+    [Inject] internal ICurrentUser CurrentUser { get; set; } = default!;
+    [Inject] internal NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] internal IProgramService ProgramService { get; set; } = default!;
+    [Inject] internal IProjectAuthorizationService ProjectAuthService { get; set; } = default!;
+    [Inject] internal IProjectHealthService ProjectHealthService { get; set; } = default!;
+    [Inject] internal IProjectContext ProjectContext { get; set; } = default!;
+    [Inject] internal ILogger<HomePage> Logger { get; set; } = default!;
+
+    private bool _isLoading = true;
+    private bool _isRootAdminOnly;
+
+    private List<ProgramEntity> _programs = new();
+    private Guid? _selectedProgramId;
+    private ProgramHealthSummaryDto? _programHealth;
+
+    private List<ProjectCardItemDto> _userProjects = new();
 
     private string _projectCountText = "0";
-    private string _completionRateText = "100%";
+    private string _completionRateText = "0%";
     private int _completedTasksCount = 0;
     private int _totalTasksCount = 0;
 
     private List<KanbanTaskItem> _kanbanTasks = new();
     private List<AuditActivityItem> _auditActivities = new();
+
+    internal bool IsLoading => _isLoading;
+    internal bool IsRootAdminOnly => _isRootAdminOnly;
+    internal IReadOnlyList<ProgramEntity> Programs => _programs;
+    internal ProgramHealthSummaryDto? ProgramHealth => _programHealth;
+    internal IReadOnlyList<ProjectCardItemDto> UserProjects => _userProjects;
+    internal Task InitializeForTestAsync() => LoadDashboardDataAsync();
 
     protected override async Task OnInitializedAsync()
     {
@@ -33,82 +57,158 @@ public partial class HomePage : ComponentBase
         await LoadDashboardDataAsync();
     }
 
+    private async Task OnProgramSelectedAsync(Guid programId)
+    {
+        _selectedProgramId = programId;
+        _programHealth = await ProgramService.GetProgramHealthAsync(programId);
+    }
+
+    private void OpenProjectTasks(Guid projectId)
+    {
+        ProjectContext.SetActiveProject(projectId);
+        NavigationManager.NavigateTo($"/projects/{projectId}/tasks");
+    }
+
     private async Task LoadDashboardDataAsync()
     {
         try
         {
-            // 1. Projects Count
-            var projects = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
-            var realProjectCount = projects.Count;
-            _projectCountText = realProjectCount > 0 ? realProjectCount.ToString() : "14";
+            _isLoading = true;
 
-            // 2. Tasks Aggregation
+            // Zero-Trust check: Root Admin is for platform administration only
+            if (!CurrentUser.IsAuthenticated_RegularTenant_User)
+            {
+                _isRootAdminOnly = CurrentUser.IsAuthenticated_RootTenant_User;
+                _userProjects.Clear();
+                _programs.Clear();
+                _kanbanTasks.Clear();
+                _auditActivities.Clear();
+                _projectCountText = "0";
+                _completionRateText = "0%";
+                _totalTasksCount = 0;
+                _completedTasksCount = 0;
+                return;
+            }
+
+            _isRootAdminOnly = false;
+            var tenantSlug = TenantContext.TenantSlug;
+
+            // 1. Load Programs & Program Health Summary
+            var programs = await ProgramService.GetProgramsAsync(tenantSlug);
+            _programs = programs.ToList();
+
+            if (_programs.Count > 0)
+            {
+                if (!_selectedProgramId.HasValue || !_programs.Any(p => p.Id == _selectedProgramId.Value))
+                {
+                    _selectedProgramId = _programs[0].Id;
+                }
+
+                _programHealth = await ProgramService.GetProgramHealthAsync(_selectedProgramId.Value);
+            }
+            else
+            {
+                _selectedProgramId = null;
+                _programHealth = null;
+            }
+
+            // 2. Load User's Authorized Projects
+            var authorizedProjectIds = await ProjectAuthService.GetAuthorizedProjectIdsAsync(ProjectRoleEnum.ReadOnly);
+            var allTenantProjects = await TenantService.GetTenantProjectsAsync(tenantSlug);
+
+            var userProjectEntities = allTenantProjects
+                .Where(p => authorizedProjectIds.Contains(p.Id) && !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToList();
+
+            _projectCountText = userProjectEntities.Count.ToString();
+
+            var projectCardList = new List<ProjectCardItemDto>();
+            foreach (var proj in userProjectEntities)
+            {
+                var role = await ProjectAuthService.GetCurrentUserProjectRoleAsync(proj.Id);
+                var healthSummary = await ProjectHealthService.GetProjectHealthAsync(proj.Id);
+
+                projectCardList.Add(new ProjectCardItemDto
+                {
+                    Id = proj.Id,
+                    Name = proj.Name,
+                    ShortCode = proj.ShortCode,
+                    Description = proj.Description,
+                    ProgramId = proj.ProgramId,
+                    ProgramName = proj.Program?.Name,
+                    Status = proj.Status,
+                    Health = healthSummary.Health,
+                    UserRole = role,
+                    ProgressPercentage = healthSummary.ProgressPercentage,
+                    CompletedTasks = healthSummary.CompletedTasks,
+                    TotalTasks = healthSummary.TotalTasks,
+                    InProgressTasks = healthSummary.InProgressTasks,
+                    OpenTasks = healthSummary.OpenTasks,
+                    OverdueTasks = healthSummary.OverdueTasks,
+                    ActiveBlockersCount = healthSummary.ActiveBlockersCount,
+                    DueDate = proj.DueDate != default ? proj.DueDate : null
+                });
+            }
+            _userProjects = projectCardList;
+
+            // 3. Tasks Aggregation across authorized projects
             var tasks = await TaskService.GetRecentTasksAsync(30);
-            if (tasks.Count > 0)
-            {
-                _totalTasksCount = tasks.Count;
-                _completedTasksCount = tasks.Count(t => t.Status == TaskStatusEnum.Closed);
-                var rate = _totalTasksCount > 0 ? (double)_completedTasksCount / _totalTasksCount * 100 : 100;
-                _completionRateText = $"{rate:0.#}%";
+            var authorizedTasks = tasks.Where(t => authorizedProjectIds.Contains(t.ProjectId)).ToList();
 
-                _kanbanTasks = tasks.Take(9).Select(t => new KanbanTaskItem
+            _totalTasksCount = authorizedTasks.Count;
+            _completedTasksCount = authorizedTasks.Count(t => t.Status == TaskStatusEnum.Closed);
+            var rate = _totalTasksCount > 0 ? (double)_completedTasksCount / _totalTasksCount * 100 : 0;
+            _completionRateText = _totalTasksCount > 0 ? $"{rate:0.#}%" : "0%";
+
+            _kanbanTasks = authorizedTasks.Take(9).Select(t => new KanbanTaskItem
+            {
+                Key = $"TSK-{t.Id.ToString()[..4].ToUpper()}",
+                Title = t.Title,
+                Column = t.Status == TaskStatusEnum.Closed ? "Done" : (t.Status == TaskStatusEnum.InProgress ? "InProgress" : "ToDo"),
+                PriorityText = t.Priority.ToString(),
+                PriorityVariant = t.Priority switch
                 {
-                    Key = $"TSK-{t.Id.ToString()[..4].ToUpper()}",
-                    Title = t.Title,
-                    Column = t.Status == TaskStatusEnum.Closed ? "Done" : (t.Status == TaskStatusEnum.InProgress ? "InProgress" : "ToDo"),
-                    PriorityText = t.Priority.ToString(),
-                    PriorityVariant = t.Priority switch
-                    {
-                        TaskPriorityEnum.Urgent => CskStatusChip.ChipVariant.Error,
-                        TaskPriorityEnum.High => CskStatusChip.ChipVariant.Warning,
-                        _ => CskStatusChip.ChipVariant.Neutral
-                    },
-                    Assignee = "Engineering Team"
-                }).ToList();
-            }
-            else
-            {
-                _totalTasksCount = 18;
-                _completedTasksCount = 15;
-                _completionRateText = "94.8%";
-                _kanbanTasks = GetFallbackKanbanTasks();
-            }
+                    TaskPriorityEnum.Urgent => CskStatusChip.ChipVariant.Error,
+                    TaskPriorityEnum.High => CskStatusChip.ChipVariant.Warning,
+                    _ => CskStatusChip.ChipVariant.Neutral
+                },
+                Assignee = !string.IsNullOrWhiteSpace(t.AssigneeEmails) ? t.AssigneeEmails.Split(';')[0].Trim() : "Unassigned"
+            }).ToList();
 
-            // 3. Audit Records
+            // 4. Audit Records
             var auditTrail = await AuditService.GetAuditTrailAsync(new AuditTrailFilterReqDto { PageNumber = 1, PageSize = 5 });
-            var auditRecords = auditTrail.Items;
-
-            if (auditRecords.Count > 0)
+            _auditActivities = auditTrail.Items.Select(a => new AuditActivityItem
             {
-                _auditActivities = auditRecords.Select(a => new AuditActivityItem
+                Title = a.EventType.ToString(),
+                Description = a.Description ?? $"{a.EntityName} updated",
+                User = a.UserEmail ?? "system",
+                TimeAgo = FormatTimeAgo(a.Created),
+                BadgeText = a.Severity.ToString(),
+                BadgeVariant = a.Severity switch
                 {
-                    Title = a.EventType.ToString(),
-                    Description = a.Description ?? $"{a.EntityName} updated",
-                    User = a.UserEmail ?? "system",
-                    TimeAgo = FormatTimeAgo(a.Created),
-                    BadgeText = a.Severity.ToString(),
-                    BadgeVariant = a.Severity switch
-                    {
-                        AuditSeverityEnum.Critical => CskStatusChip.ChipVariant.Error,
-                        AuditSeverityEnum.Warning => CskStatusChip.ChipVariant.Warning,
-                        _ => CskStatusChip.ChipVariant.Info
-                    },
-                    Icon = CskIcons.ShieldCheck
-                }).ToList();
-            }
-            else
-            {
-                _auditActivities = GetFallbackAuditActivities();
-            }
+                    AuditSeverityEnum.Critical => CskStatusChip.ChipVariant.Error,
+                    AuditSeverityEnum.Warning => CskStatusChip.ChipVariant.Warning,
+                    _ => CskStatusChip.ChipVariant.Info
+                },
+                Icon = CskIcons.ShieldCheck
+            }).ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            _projectCountText = "14";
-            _completionRateText = "94.8%";
-            _totalTasksCount = 18;
-            _completedTasksCount = 15;
-            _kanbanTasks = GetFallbackKanbanTasks();
-            _auditActivities = GetFallbackAuditActivities();
+            Logger.LogError(ex, "Failed to load dashboard data for tenant '{TenantSlug}'", TenantContext.TenantSlug);
+            _userProjects.Clear();
+            _programs.Clear();
+            _kanbanTasks.Clear();
+            _auditActivities.Clear();
+            _projectCountText = "0";
+            _completionRateText = "0%";
+            _totalTasksCount = 0;
+            _completedTasksCount = 0;
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
@@ -122,23 +222,52 @@ public partial class HomePage : ComponentBase
 
     private void NavigateToTasks()
     {
-        NavigationManager.NavigateTo("tasks");
+        if (ProjectContext.ProjectId.HasValue)
+        {
+            NavigationManager.NavigateTo($"/projects/{ProjectContext.ProjectId.Value}/tasks");
+        }
+        else if (_userProjects.Count > 0)
+        {
+            OpenProjectTasks(_userProjects[0].Id);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("tasks");
+        }
     }
 
-    private static List<KanbanTaskItem> GetFallbackKanbanTasks() => new()
+    private static CskStatusChip.ChipVariant GetProgramHealthVariant(ProgramHealthRatingEnum health) => health switch
     {
-        new KanbanTaskItem { Key = "ENG-102", Title = "Verify Zero-Trust CSP nonce injection in SSR pipeline", Column = "InProgress", PriorityText = "High", PriorityVariant = CskStatusChip.ChipVariant.Warning, Assignee = "SecOps Lead" },
-        new KanbanTaskItem { Key = "ENG-108", Title = "Benchmark in-memory Rules Engine across 10k nodes", Column = "InProgress", PriorityText = "Medium", PriorityVariant = CskStatusChip.ChipVariant.Info, Assignee = "Perf Engineer" },
-        new KanbanTaskItem { Key = "PRJ-304", Title = "Configure PostgreSQL row-level multi-tenant filter policy", Column = "ToDo", PriorityText = "High", PriorityVariant = CskStatusChip.ChipVariant.Warning, Assignee = "Backend Team" },
-        new KanbanTaskItem { Key = "PRJ-310", Title = "Material 3 elevation and design tokens integration", Column = "Done", PriorityText = "Resolved", PriorityVariant = CskStatusChip.ChipVariant.Success, Assignee = "UI Architect" },
-        new KanbanTaskItem { Key = "SEC-402", Title = "Eliminate unsafe-inline style directives across layouts", Column = "Done", PriorityText = "Resolved", PriorityVariant = CskStatusChip.ChipVariant.Success, Assignee = "Enterprise InfoSec" }
+        ProgramHealthRatingEnum.OnTrack => CskStatusChip.ChipVariant.Success,
+        ProgramHealthRatingEnum.AtRisk => CskStatusChip.ChipVariant.Warning,
+        ProgramHealthRatingEnum.Critical => CskStatusChip.ChipVariant.Error,
+        _ => CskStatusChip.ChipVariant.Neutral
     };
 
-    private static List<AuditActivityItem> GetFallbackAuditActivities() => new()
+    private static CskStatusChip.ChipVariant GetProjectHealthVariant(ProjectHealthRatingEnum health) => health switch
     {
-        new AuditActivityItem { Title = "Security Token Audit", Description = "Per-request CSP nonces verified; zero unsafe-inline violations.", User = "infosec@enterprise.local", TimeAgo = "12m ago", BadgeText = "Audited", BadgeVariant = CskStatusChip.ChipVariant.Success, Icon = CskIcons.ShieldCheck },
-        new AuditActivityItem { Title = "Tenant Schema Migration", Description = "Multi-tenant tenant partition successfully migrated to EF Core 10.", User = "system", TimeAgo = "45m ago", BadgeText = "Success", BadgeVariant = CskStatusChip.ChipVariant.Info, Icon = CskIcons.ArrowSync },
-        new AuditActivityItem { Title = "Rules Engine Sync", Description = "Loaded 4,200 calculation rules into CPU memory.", User = "worker@engine.local", TimeAgo = "2h ago", BadgeText = "Info", BadgeVariant = CskStatusChip.ChipVariant.Neutral, Icon = CskIcons.Bolt }
+        ProjectHealthRatingEnum.OnTrack => CskStatusChip.ChipVariant.Success,
+        ProjectHealthRatingEnum.AtRisk => CskStatusChip.ChipVariant.Warning,
+        ProjectHealthRatingEnum.Critical => CskStatusChip.ChipVariant.Error,
+        _ => CskStatusChip.ChipVariant.Neutral
+    };
+
+    private static CskStatusChip.ChipVariant GetProjectStatusVariant(ProjectStatusEnum status) => status switch
+    {
+        ProjectStatusEnum.Done => CskStatusChip.ChipVariant.Success,
+        ProjectStatusEnum.Active => CskStatusChip.ChipVariant.Primary,
+        ProjectStatusEnum.New => CskStatusChip.ChipVariant.Info,
+        ProjectStatusEnum.OnHold => CskStatusChip.ChipVariant.Warning,
+        _ => CskStatusChip.ChipVariant.Neutral
+    };
+
+    private static CskStatusChip.ChipVariant GetRoleVariant(ProjectRoleEnum? role) => role switch
+    {
+        ProjectRoleEnum.Admin => CskStatusChip.ChipVariant.Primary,
+        ProjectRoleEnum.ElevatedLead or ProjectRoleEnum.Lead => CskStatusChip.ChipVariant.Warning,
+        ProjectRoleEnum.Contribute => CskStatusChip.ChipVariant.Info,
+        ProjectRoleEnum.PMO => CskStatusChip.ChipVariant.Secondary,
+        _ => CskStatusChip.ChipVariant.Neutral
     };
 
     private sealed class KanbanTaskItem

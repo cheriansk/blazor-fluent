@@ -3,14 +3,14 @@
 target_spec: docs/specs/LoginPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor.cs
-generated_at_utc: 2026-10-30T20:41:38Z
-source_hash_sha256: 1d8e8a35b3137345
+generated_at_utc: 2026-11-02T02:06:44Z
+source_hash_sha256: c29cdc72d059428e
 ============================================================================ -->
 # AI Navigation Index: `LoginPage`
 
 ## 1. UI Map (`LoginPage.razor`)
 - **Auth**: `AllowAnonymous``, ``Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")`
-- **Injected**: `AuthVerificationService:IInternalAuthenticationService`, `Configuration:IConfiguration`, `HostEnvironment:IWebHostEnvironment`, `DevLoginOptions:IOptions<DevLoginOptions>`, `TenantContext:ITenantContext`, `CurrentUser:ICurrentUser`, `RootAdminService:IRootAdminService`, `SessionService:IUserSessionService`, `AuditService:IAuditService`, `SessionStorage:ProtectedSessionStorage`, `AuthStateProvider:CurrentUserAuthenticationStateProvider`, `TimeZoneService:IUserTimeZoneService`, `NavigationManager:NavigationManager`, `Logger:ILogger<LoginPage>`
+- **Injected**: `AuthVerificationService:IInternalAuthenticationService`, `Configuration:IConfiguration`, `SecurityOptions:IOptions<SecurityOptions>`, `HostEnvironment:IWebHostEnvironment`, `DevLoginOptions:IOptions<DevLoginOptions>`, `TenantContext:ITenantContext`, `CurrentUser:ICurrentUser`, `RootAdminService:IRootAdminService`, `SessionService:IUserSessionService`, `AuditService:IAuditService`, `SessionStorage:ProtectedSessionStorage`, `AuthStateProvider:CurrentUserAuthenticationStateProvider`, `TimeZoneService:IUserTimeZoneService`, `NavigationManager:NavigationManager`, `Logger:ILogger<LoginPage>`
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
@@ -23,14 +23,14 @@ source_hash_sha256: 1d8e8a35b3137345
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/LoginPage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitialized` | `L49-L71` | [INIT] | `HostEnvironment.IsDevelopment()` |
-| `HandleMicrosoftSignIn` | `L73-L85` | [HELPER] | `NavigationManager.NavigateTo()` |
-| `HandleLocalEmailSignInAsync` | `L87-L98` | [HELPER] | `local:TestSignInAsync()` -> `AuthVerificationService.VerifyLoginCredentialsAsync()` -> `NavigationManager.NavigateTo()` |
-| `TestSignInAsync` | `L100-L132` | [HELPER] | `local:ProcessAuthSuccessAsync()` -> `AuthVerificationService.VerifyLoginCredentialsAsync()` -> `NavigationManager.NavigateTo()` |
-| `ProcessAuthSuccessAsync` | `L134-L159` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
-| `HandleConfirmTenantSelectionAsync` | `L161-L169` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
-| `CancelTenantSelection` | `L171-L177` | [HELPER] | Local UI State |
-| `CompleteLoginAsync` | `L179-L254` | [HELPER] | `[IsRootAdmin]` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
+| `OnInitialized` | `L50-L72` | [INIT] | `HostEnvironment.IsDevelopment()` |
+| `HandleMicrosoftSignIn` | `L74-L86` | [HELPER] | `NavigationManager.NavigateTo()` |
+| `HandleLocalEmailSignInAsync` | `L88-L99` | [HELPER] | `local:TestSignInAsync()` -> `AuthVerificationService.VerifyLoginCredentialsAsync()` -> `NavigationManager.NavigateTo()` |
+| `TestSignInAsync` | `L101-L133` | [HELPER] | `local:ProcessAuthSuccessAsync()` -> `AuthVerificationService.VerifyLoginCredentialsAsync()` -> `NavigationManager.NavigateTo()` |
+| `ProcessAuthSuccessAsync` | `L135-L160` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
+| `HandleConfirmTenantSelectionAsync` | `L162-L170` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
+| `CancelTenantSelection` | `L172-L178` | [HELPER] | Local UI State |
+| `CompleteLoginAsync` | `L180-L255` | [HELPER] | `[IsRootAdmin]` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |

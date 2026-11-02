@@ -3,7 +3,7 @@
 target_spec: docs/specs/SettingsTenantsTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor.cs
-generated_at_utc: 2026-10-30T20:41:37Z
+generated_at_utc: 2026-11-02T02:06:44Z
 source_hash_sha256: b085ffad60854af6
 ============================================================================ -->
 # AI Navigation Index: `SettingsTenantsTab`
@@ -81,19 +81,19 @@ source_hash_sha256: b085ffad60854af6
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L94-L116` | `IsRootAdmin` | `DB[R]: Tenants` |
-| `TenantService.GetTenantByIdentifierAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L118-L131` | `TenantBoundaryGate` | In-Memory |
-| `HierarchyAuthorizationService.CanEditTenantSettingsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L426-L434` | `TenantAdminGate` | In-Memory |
-| `TenantService.CreateTenantWithAdminAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L261-L365` | `IsRootAdmin, HmacRowSignature` | `DB[W]: Users,TenantUsers` `Audit: LogUserActivityAsync` |
+| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L99-L121` | `IsRootAdmin` | `DB[R]: Tenants` |
+| `TenantService.GetTenantByIdentifierAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L123-L136` | `TenantBoundaryGate` | In-Memory |
+| `HierarchyAuthorizationService.CanEditTenantSettingsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L417-L425` | `TenantAdminGate` | In-Memory |
+| `TenantService.CreateTenantWithAdminAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L266-L370` | `IsRootAdmin, HmacRowSignature` | `DB[W]: Users,TenantUsers` `Audit: LogUserActivityAsync` |
 | `UnsavedChangesStateService.ClearChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L26-L34` | - | In-Memory |
 | `UnsavedChangesStateService.RegisterChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L18-L24` | - | In-Memory |
-| `TenantService.UpdateTenantStatusAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L680-L715` | `IsRootAdmin` | `DB[W]: Tenants` `Audit: LogSecurityEventAsync` |
-| `TenantService.UpdateTenantDatesAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L717-L749` | `IsRootAdmin` | `DB[W]: Tenants` `Audit: LogUserActivityAsync` |
-| `TenantService.GetTenantUsersAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L379-L399` | `TenantBoundaryGate` | `DB[R]: TenantUsers` |
-| `TenantService.IsTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L988-L996` | - | In-Memory |
-| `TenantService.SetTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L998-L1048` | `IsRootAdmin, HmacRowSignature` | `DB[W]: TenantUsers` `Audit: LogUserActivityAsync` |
-| `TenantService.AddTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L401-L513` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users` `Audit: LogUserActivityAsync` |
-| `TenantService.UpdateTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L515-L626` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users` `Audit: LogUserActivityAsync` |
+| `TenantService.UpdateTenantStatusAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L685-L720` | `IsRootAdmin` | `DB[W]: Tenants` `Audit: LogSecurityEventAsync` |
+| `TenantService.UpdateTenantDatesAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L722-L754` | `IsRootAdmin` | `DB[W]: Tenants` `Audit: LogUserActivityAsync` |
+| `TenantService.GetTenantUsersAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L384-L404` | `TenantBoundaryGate` | `DB[R]: TenantUsers` |
+| `TenantService.IsTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L993-L1001` | - | In-Memory |
+| `TenantService.SetTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1003-L1053` | `IsRootAdmin, HmacRowSignature` | `DB[W]: TenantUsers` `Audit: LogUserActivityAsync` |
+| `TenantService.AddTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L406-L518` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users` `Audit: LogUserActivityAsync` |
+| `TenantService.UpdateTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L520-L631` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users` `Audit: LogUserActivityAsync` |
 | `ProgramService.GetProgramsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L41-L70` | - | `DB[R]: Tenants,Programs` |
 | `ProgramService.CreateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L94-L158` | `TenantAdminGate` | `DB[W]: Tenants,Programs` `Audit: LogUserActivityAsync` |
 | `ProgramService.UpdateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L160-L218` | `ProgramAccessGate` | `DB[W]: Programs` `Audit: LogUserActivityAsync` |
