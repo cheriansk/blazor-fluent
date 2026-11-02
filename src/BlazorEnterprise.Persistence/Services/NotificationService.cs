@@ -20,7 +20,6 @@ public class NotificationService : INotifyService
     private readonly ITenantContext _tenantContext;
     private readonly ITeamsNotificationSender _teamsSender;
     private readonly IEmailNotificationSender _emailSender;
-    private readonly IConfiguration? _configuration;
     private readonly NotificationOptions _options;
     private readonly ILogger<NotificationService> _logger;
 
@@ -31,8 +30,7 @@ public class NotificationService : INotifyService
         ITeamsNotificationSender teamsSender,
         IEmailNotificationSender emailSender,
         ILogger<NotificationService> logger,
-        IOptions<NotificationOptions>? notificationOptions = null,
-        IConfiguration? configuration = null)
+        IOptions<NotificationOptions>? notificationOptions = null)
     {
         _scopeFactory = scopeFactory;
         _currentUser = currentUser;
@@ -40,7 +38,6 @@ public class NotificationService : INotifyService
         _teamsSender = teamsSender;
         _emailSender = emailSender;
         _logger = logger;
-        _configuration = configuration;
         _options = notificationOptions?.Value ?? new NotificationOptions();
     }
     /// <summary>
@@ -482,7 +479,7 @@ public class NotificationService : INotifyService
 
     private string? ResolveTeamsWebhook(Guid projectId)
     {
-        if (!_options.Teams.Enabled && !(_configuration?.GetValue<bool>("Notifications:Teams:Enabled") ?? false))
+        if (!_options.Teams.Enabled)
             return null;
 
         if (projectId != Guid.Empty)
@@ -491,18 +488,17 @@ public class NotificationService : INotifyService
             if (_options.Teams.ProjectWebhooks.TryGetValue(projectKey, out var webhook) && !string.IsNullOrWhiteSpace(webhook))
                 return webhook;
 
-            var configWebhook = _configuration?[$"Notifications:Teams:ProjectWebhooks:{projectId}"];
-            if (!string.IsNullOrWhiteSpace(configWebhook)) return configWebhook;
+
         }
 
         return !string.IsNullOrWhiteSpace(_options.Teams.DefaultWebhookUrl)
             ? _options.Teams.DefaultWebhookUrl
-            : _configuration?["Notifications:Teams:DefaultWebhookUrl"];
+            : null;
     }
 
     private string? ResolveProjectMailbox(Guid projectId)
     {
-        if (!_options.Email.Enabled && !(_configuration?.GetValue<bool>("Notifications:Email:Enabled") ?? false))
+        if (!_options.Email.Enabled)
             return null;
 
         if (projectId != Guid.Empty)
@@ -511,12 +507,11 @@ public class NotificationService : INotifyService
             if (_options.Email.ProjectMailboxes.TryGetValue(projectKey, out var mailbox) && !string.IsNullOrWhiteSpace(mailbox))
                 return mailbox;
 
-            var configMailbox = _configuration?[$"Notifications:Email:ProjectMailboxes:{projectId}"];
-            if (!string.IsNullOrWhiteSpace(configMailbox)) return configMailbox;
+
         }
 
         return !string.IsNullOrWhiteSpace(_options.Email.DefaultMailbox)
             ? _options.Email.DefaultMailbox
-            : _configuration?["Notifications:Email:DefaultMailbox"];
+            : null;
     }
 }

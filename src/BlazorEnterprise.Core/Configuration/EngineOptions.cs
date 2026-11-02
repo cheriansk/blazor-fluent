@@ -11,4 +11,11 @@ public class EngineOptions
     public string Mode { get; set; } = "Remote";
     public string ApiBaseUrl { get; set; } = string.Empty;
     public string LicenseKey { get; set; } = string.Empty;
+    public Dictionary<string, string> TenantLicenseKeys { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public string? GetTenantLicenseKey(string tenantId)
+    {
+        if (TenantLicenseKeys.TryGetValue(tenantId, out var key)) return key;
+        return null;
+    }
 }

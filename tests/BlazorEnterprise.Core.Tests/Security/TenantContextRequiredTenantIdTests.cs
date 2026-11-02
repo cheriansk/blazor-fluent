@@ -82,15 +82,13 @@ public class TenantContextRequiredTenantIdTests
         var tenantIdStr = tenantGuid.ToString();
         var licenseKey = OpaqueIdUtility.GenerateSecureLicenseKey();
 
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                [$"Tenants:{tenantIdStr}:LicenseKey"] = licenseKey
-            })
-            .Build();
+        var engineOptions = Microsoft.Extensions.Options.Options.Create(new BlazorEnterprise.Core.Configuration.EngineOptions
+        {
+            TenantLicenseKeys = { [tenantIdStr] = licenseKey }
+        });
 
         var correlationContext = new CorrelationContext { CorrelationId = "corr-" + Guid.NewGuid() };
-        var tokenService = new TenantTokenService(config, correlationContext);
+        var tokenService = new TenantTokenService(engineOptions, correlationContext);
 
         // Act
         var token = tokenService.GenerateS2SToken(tenantGuid, "BatchWorker");

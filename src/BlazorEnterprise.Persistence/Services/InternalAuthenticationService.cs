@@ -33,7 +33,6 @@ public class InternalAuthenticationService : IInternalAuthenticationService
             ctx.Users.AsNoTracking().FirstOrDefault(u => u.Email.ToLower() == email && !u.IsDeleted));
 
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IConfiguration? _configuration;
     private readonly SecurityOptions _securityOptions;
     private readonly IRootAdminService _rootAdminService;
     private readonly ISystemIdentity _systemIdentity;
@@ -44,17 +43,15 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         IRootAdminService rootAdminService,
         ISystemIdentity systemIdentity,
         ILogger<InternalAuthenticationService> logger,
-        IOptions<SecurityOptions>? securityOptions = null,
-        IConfiguration? configuration = null)
+        IOptions<SecurityOptions>? securityOptions = null)
     {
         _scopeFactory = scopeFactory;
         _rootAdminService = rootAdminService;
         _systemIdentity = systemIdentity;
         _logger = logger;
-        _configuration = configuration;
         _securityOptions = securityOptions?.Value ?? new SecurityOptions
         {
-            IntegritySecret = configuration?["Security:IntegritySecret"] ?? string.Empty
+            IntegritySecret = string.Empty
         };
     }
 

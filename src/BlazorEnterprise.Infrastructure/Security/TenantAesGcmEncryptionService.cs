@@ -2,7 +2,8 @@ using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
 using BlazorEnterprise.Core.Security;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Infrastructure.Security;
@@ -25,11 +26,11 @@ public class TenantAesGcmEncryptionService : ITenantEncryptionService
     private readonly byte[] _masterKey;
     private readonly ILogger<TenantAesGcmEncryptionService> _logger;
 
-    public TenantAesGcmEncryptionService(IConfiguration configuration, ILogger<TenantAesGcmEncryptionService> logger)
+    public TenantAesGcmEncryptionService(IOptions<SecurityOptions> securityOptions, ILogger<TenantAesGcmEncryptionService> logger)
     {
         _logger = logger;
 
-        var keyConfig = configuration["Security:MasterEncryptionKey"];
+        var keyConfig = securityOptions.Value.MasterEncryptionKey;
         if (string.IsNullOrWhiteSpace(keyConfig) || keyConfig.Length < 32 || keyConfig.StartsWith("__SET_VIA_"))
         {
             throw new InvalidOperationException(

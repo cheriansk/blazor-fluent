@@ -43,7 +43,6 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
     private readonly IAuditService _auditService;
 
-    private readonly IConfiguration? _configuration;
     private readonly SecurityOptions _securityOptions;
 
     private readonly ILogger<HierarchyAuthorizationService> _logger;
@@ -56,18 +55,16 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         ITenantContext tenantContext,
         IAuditService auditService,
         ILogger<HierarchyAuthorizationService> logger,
-        IOptions<SecurityOptions>? securityOptions = null,
-        IConfiguration? configuration = null)
+        IOptions<SecurityOptions>? securityOptions = null)
     {
         _context = context;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
         _logger = logger;
-        _configuration = configuration;
         _securityOptions = securityOptions?.Value ?? new SecurityOptions
         {
-            IntegritySecret = configuration?["Security:IntegritySecret"] ?? string.Empty
+            IntegritySecret = string.Empty
         };
     }
 

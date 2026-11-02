@@ -17,7 +17,6 @@ public class CorrelationIdDelegatingHandler : DelegatingHandler
 {
     private readonly ICorrelationContext _correlationContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IConfiguration? _configuration;
     private readonly IOptions<EngineOptions>? _engineOptions;
     private readonly ILogger<CorrelationIdDelegatingHandler> _logger;
 
@@ -25,14 +24,12 @@ public class CorrelationIdDelegatingHandler : DelegatingHandler
         ICorrelationContext correlationContext,
         IHttpContextAccessor httpContextAccessor,
         ILogger<CorrelationIdDelegatingHandler> logger,
-        IOptions<EngineOptions>? engineOptions = null,
-        IConfiguration? configuration = null)
+        IOptions<EngineOptions>? engineOptions = null)
     {
         _correlationContext = correlationContext;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
         _engineOptions = engineOptions;
-        _configuration = configuration;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -67,7 +64,7 @@ public class CorrelationIdDelegatingHandler : DelegatingHandler
         request.Headers.Add(EngineHeaderConstants.CorrelationId, sanitizedCorrelationId);
 
         // 2. Attach Tenant License Key
-        var licenseKey = _engineOptions?.Value.LicenseKey ?? _configuration?["Engine:LicenseKey"] ?? _configuration?["Tenant:LicenseKey"];
+        var licenseKey = _engineOptions?.Value.LicenseKey;
         if (!string.IsNullOrWhiteSpace(licenseKey))
         {
             request.Headers.Remove(EngineHeaderConstants.LicenseKey);

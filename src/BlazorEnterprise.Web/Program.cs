@@ -622,7 +622,22 @@ try
         .BindConfiguration(BlazorEnterprise.Core.Configuration.NotificationOptions.SectionName);
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.EngineOptions>()
-        .BindConfiguration(BlazorEnterprise.Core.Configuration.EngineOptions.SectionName);
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.EngineOptions.SectionName)
+        .PostConfigure<IConfiguration>((options, configuration) =>
+        {
+            if (string.IsNullOrWhiteSpace(options.LicenseKey) && !string.IsNullOrWhiteSpace(configuration["Tenant:LicenseKey"]))
+            {
+                options.LicenseKey = configuration["Tenant:LicenseKey"]!;
+            }
+            foreach (var tenant in configuration.GetSection("Tenants").GetChildren())
+            {
+                var lk = tenant["LicenseKey"];
+                if (!string.IsNullOrWhiteSpace(lk))
+                {
+                    options.TenantLicenseKeys[tenant.Key] = lk;
+                }
+            }
+        });
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.AuditOptions>()
         .BindConfiguration(BlazorEnterprise.Core.Configuration.AuditOptions.SectionName);
@@ -632,6 +647,12 @@ try
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.TeamsAlertOptions>()
         .BindConfiguration(BlazorEnterprise.Core.Configuration.TeamsAlertOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.StorageOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.StorageOptions.SectionName);
+
+    builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions>()
+        .BindConfiguration(BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions.SectionName);
 
 
 

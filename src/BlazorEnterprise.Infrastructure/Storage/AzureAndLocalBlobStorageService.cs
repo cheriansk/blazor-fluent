@@ -1,5 +1,6 @@
 using BlazorEnterprise.Core.Storage;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Infrastructure.Storage;
@@ -17,14 +18,14 @@ public class AzureAndLocalBlobStorageService : ITenantBlobStorageService
     private readonly ILogger<AzureAndLocalBlobStorageService> _logger;
 
     public AzureAndLocalBlobStorageService(
-        IConfiguration configuration,
+        IOptions<StorageOptions> options,
         ILogger<AzureAndLocalBlobStorageService> logger)
     {
         _logger = logger;
-        _azureConnectionString = configuration["Storage:AzureBlobConnectionString"];
-        _containerName = configuration["Storage:ContainerName"] ?? "imports";
+        _azureConnectionString = options.Value.AzureBlobConnectionString;
+        _containerName = options.Value.ContainerName ?? "imports";
 
-        var configuredLocal = configuration["Storage:LocalRootPath"];
+        var configuredLocal = options.Value.LocalRootPath;
         _localRoot = !string.IsNullOrWhiteSpace(configuredLocal)
             ? configuredLocal
             : Path.Combine(AppContext.BaseDirectory, "App_Data", "BlobStorage");

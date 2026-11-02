@@ -2,7 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BlazorEnterprise.Shared.Contracts.Engine.Client;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BlazorEnterprise.Infrastructure.Security;
@@ -16,12 +18,12 @@ namespace BlazorEnterprise.Infrastructure.Security;
 /// </summary>
 public class TenantTokenService : ITenantTokenService
 {
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<EngineOptions> _engineOptions;
     private readonly ICorrelationContext _correlationContext;
 
-    public TenantTokenService(IConfiguration configuration, ICorrelationContext correlationContext)
+    public TenantTokenService(IOptions<EngineOptions> engineOptions, ICorrelationContext correlationContext)
     {
-        _configuration = configuration;
+        _engineOptions = engineOptions;
         _correlationContext = correlationContext;
     }
 
@@ -42,7 +44,7 @@ public class TenantTokenService : ITenantTokenService
             throw new InvalidOperationException("Zero-Trust Security Violation: Cannot mint an S2S token without an established TenantId.");
         }
 
-        var licenseKey = _configuration[$"Tenants:{tenantId}:LicenseKey"];
+        var licenseKey = _engineOptions.Value.GetTenantLicenseKey(tenantId) ?? _engineOptions.Value.LicenseKey;
         if (string.IsNullOrWhiteSpace(licenseKey))
         {
             throw new InvalidOperationException($"Zero-Trust Security Violation: No license key configured for tenant '{tenantId}'. Shared fallback is strictly prohibited.");
@@ -63,7 +65,9 @@ public class TenantTokenService : ITenantTokenService
                 new Claim("tid", tenantId),
                 new Claim("tenant_id", tenantId),
                 new Claim("cid", correlationId),
-                new Claim("act", actorType)
+                new Claim("corr_id", correlationId),
+                new Claim("act", actorType),
+                new Claim("sub", actorType)
             }),
             Expires = DateTime.UtcNow.AddMinutes(5),
             SigningCredentials = new SigningCredentials(

@@ -1,29 +1,25 @@
 using BlazorEnterprise.Api.Admin;
+using BlazorEnterprise.Core.Configuration;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace BlazorEnterprise.Core.Tests.Api;
 
 public class ApiSecurityUnitTests
 {
-    private readonly IConfiguration _config;
     private readonly AdminSecurityService _securityService;
 
     public ApiSecurityUnitTests()
     {
-        var inMemorySettings = new Dictionary<string, string?>
+        var options = Options.Create(new AdminOptions
         {
-            ["Admin:AllowedDomain"] = "company.com",
-            ["Admin:KeyVaultUsers"] = "alice@company.com,bob@company.com,charlie@company.com,hacker@company.com" // hacker is 4th, ceiling is 3!
-        };
+            AllowedDomain = "company.com",
+            KeyVaultUsers = "alice@company.com,bob@company.com,charlie@company.com,hacker@company.com"
+        });
 
-        _config = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings)
-            .Build();
-
-        _securityService = new AdminSecurityService(_config, NullLogger<AdminSecurityService>.Instance);
+        _securityService = new AdminSecurityService(NullLogger<AdminSecurityService>.Instance, options);
     }
 
     [Theory]
@@ -51,9 +47,18 @@ public class ApiSecurityUnitTests
     {
         var admins = _securityService.GetConfiguredAdmins();
         admins.Should().HaveCount(3);
-        admins.Should().Contain("alice@company.com");
-        admins.Should().Contain("bob@company.com");
-        admins.Should().Contain("charlie@company.com");
-        admins.Should().NotContain("hacker@company.com");
+        admins.Should().ContainInOrder("alice@company.com", "bob@company.com", "charlie@company.com");
+    }
+
+    [Theory]
+    [InlineData("https://internal.antigravity.company", true)]
+    [InlineData("https://admin.antigravity.company", true)]
+    [InlineData("https://malicious.antigravity.company", false)]
+    [InlineData("https://evil.com", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsAllowedOrigin_ValidatesOriginAgainstAllowedList(string? origin, bool expected)
+    {
+        _securityService.IsAllowedOrigin(origin!).Should().Be(expected);
     }
 }

@@ -9,7 +9,8 @@ using BlazorEnterprise.Shared.Contracts.Engine.Client;
 using BlazorEnterprise.Shared.Contracts.Engine.Transforms;
 using BlazorEnterprise.Shared.Contracts.Engine.Workflows;
 using BlazorEnterprise.Shared.Security;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using BlazorEnterprise.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Infrastructure.EngineGateway;
@@ -21,18 +22,18 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
 {
     private readonly HttpClient _httpClient;
     private readonly ITenantContext _tenantContext;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<EngineOptions> _engineOptions;
     private readonly ILogger<RemoteEngineGateway> _logger;
 
     public RemoteEngineGateway(
         HttpClient httpClient,
         ITenantContext tenantContext,
-        IConfiguration configuration,
+        IOptions<EngineOptions> engineOptions,
         ILogger<RemoteEngineGateway> logger)
     {
         _httpClient = httpClient;
         _tenantContext = tenantContext;
-        _configuration = configuration;
+        _engineOptions = engineOptions;
         _logger = logger;
     }
 
@@ -43,7 +44,7 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
             var tenantId = _tenantContext.TenantId;
             var tenantIdStr = tenantId.ToString();
 
-            var licenseKey = _configuration[$"Tenants:{tenantIdStr}:LicenseKey"];
+            var licenseKey = _engineOptions.Value.GetTenantLicenseKey(tenantIdStr) ?? _engineOptions.Value.LicenseKey;
             if (string.IsNullOrWhiteSpace(licenseKey))
             {
                 _logger.LogError("Zero-Trust Security Violation: No dedicated license key configured for tenant '{TenantId}'. Shared fallback is strictly prohibited.", tenantIdStr);

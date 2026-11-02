@@ -35,7 +35,6 @@ public interface IAuthGatewayService
 public class AuthGatewayService : IAuthGatewayService
 {
     private readonly IEntitlementsRepository _entitlementsRepo;
-    private readonly IConfiguration? _configuration;
     private readonly IOptions<AuthOptions>? _authOptions;
     private readonly ILogger<AuthGatewayService> _logger;
     private static readonly ConcurrentDictionary<string, AuthCodeRecord> PendingCodes = new();
@@ -43,18 +42,16 @@ public class AuthGatewayService : IAuthGatewayService
     public AuthGatewayService(
         IEntitlementsRepository entitlementsRepo,
         ILogger<AuthGatewayService> logger,
-        IOptions<AuthOptions>? authOptions = null,
-        IConfiguration? configuration = null)
+        IOptions<AuthOptions>? authOptions = null)
     {
         _entitlementsRepo = entitlementsRepo;
         _logger = logger;
         _authOptions = authOptions;
-        _configuration = configuration;
     }
 
     private SymmetricSecurityKey GetSigningKey()
     {
-        var secret = !string.IsNullOrWhiteSpace(_authOptions?.Value.SigningKey) ? _authOptions.Value.SigningKey : _configuration?["Auth:SigningKey"];
+        var secret = _authOptions?.Value.SigningKey;
         if (string.IsNullOrWhiteSpace(secret) || secret.Length < 32)
         {
             throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:SigningKey' must be configured with at least 32 characters.");
@@ -127,9 +124,9 @@ public class AuthGatewayService : IAuthGatewayService
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        var issuer = (!string.IsNullOrWhiteSpace(_authOptions?.Value.Issuer) ? _authOptions.Value.Issuer : _configuration?["Auth:Issuer"])
+        var issuer = (!string.IsNullOrWhiteSpace(_authOptions?.Value.Issuer) ? _authOptions.Value.Issuer : null)
             ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Issuer' must be explicitly configured.");
-        var audience = (!string.IsNullOrWhiteSpace(_authOptions?.Value.Audience) ? _authOptions.Value.Audience : _configuration?["Auth:Audience"])
+        var audience = (!string.IsNullOrWhiteSpace(_authOptions?.Value.Audience) ? _authOptions.Value.Audience : null)
             ?? throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Audience' must be explicitly configured.");
 
         var tokenDescriptor = new SecurityTokenDescriptor

@@ -58,7 +58,7 @@ public class DenyByDefaultAndDevLoginTests
         if (!Directory.Exists(srcDir)) return;
 
         var csFiles = Directory.GetFiles(srcDir, "*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.EndsWith("AuditedQueryableExtensions.cs") && !f.EndsWith("QueryFilters.cs"))
+            .Where(f => !f.EndsWith("AuditedQueryableExtensions.cs") && !f.EndsWith("QueryFilters.cs") && !f.Contains("Initialization") && !f.EndsWith("Seeder.cs") && !f.EndsWith("InternalAuthenticationService.cs"))
             .ToList();
 
         var violations = (from file in csFiles

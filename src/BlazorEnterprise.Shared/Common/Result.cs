@@ -21,6 +21,7 @@ public class Result
     public string? DiagnosticOrigin { get; protected set; }
 
     public static Result Success(string? message = null) => new() { Succeeded = true, Message = message };
+    public static Result<T> Success<T>(T data, string? message = null) => Result<T>.Success(data, message);
 
     public static Result Failure(
         string error,
@@ -33,7 +34,7 @@ public class Result
         return new Result
         {
             Succeeded = false,
-            Errors = [displayError],
+            Errors = [error],
             DiagnosticOrigin = origin
         };
     }
@@ -49,7 +50,7 @@ public class Result
         return new Result
         {
             Succeeded = false,
-            Errors = displayErrors,
+            Errors = errors.ToList(),
             DiagnosticOrigin = origin
         };
     }
@@ -121,7 +122,7 @@ public class Result<T> : Result
         return new Result<T>
         {
             Succeeded = false,
-            Errors = [displayError],
+            Errors = [error],
             DiagnosticOrigin = origin
         };
     }
@@ -137,7 +138,7 @@ public class Result<T> : Result
         return new Result<T>
         {
             Succeeded = false,
-            Errors = displayErrors,
+            Errors = errors.ToList(),
             DiagnosticOrigin = origin
         };
     }

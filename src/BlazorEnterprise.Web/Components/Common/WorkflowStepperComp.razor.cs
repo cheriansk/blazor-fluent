@@ -78,7 +78,9 @@ public partial class WorkflowStepperComp : ComponentBase
     {
         try
         {
-            var updated = await WorkflowService.ToggleSubTaskStatusAsync(new ToggleSubTaskStatusReqDto(sub.Id, isClosed));
+            var result = await WorkflowService.ToggleSubTaskStatusAsync(new ToggleSubTaskStatusReqDto(sub.Id, isClosed));
+            if (!result.IsSuccess) { _errorMessage = result.Error; return; }
+            var updated = result.Value!;
             sub.Status = updated.Status;
             sub.EndDate = updated.EndDate;
             StateHasChanged();
@@ -128,7 +130,9 @@ public partial class WorkflowStepperComp : ComponentBase
                 _newSubtaskDueDate
             );
 
-            var created = await WorkflowService.AddSubTaskToStepAsync(req);
+            var result = await WorkflowService.AddSubTaskToStepAsync(req);
+            if (!result.IsSuccess) { _errorMessage = result.Error; return; }
+            var created = result.Value!;
             _targetStep.SubTasks.Add(created);
             _isAddSubtaskModalOpen = false;
             _targetStep = null;
@@ -175,11 +179,12 @@ public partial class WorkflowStepperComp : ComponentBase
                 _completionNotes
             );
 
-            var updated = await WorkflowService.CompleteStepAsync(req);
+            var result = await WorkflowService.CompleteStepAsync(req);
+            if (!result.IsSuccess) { _errorMessage = result.Error; return; }
             _isCompleteModalOpen = false;
             _targetStep = null;
 
-            await OnWorkflowUpdated.InvokeAsync(updated);
+            await OnWorkflowUpdated.InvokeAsync(result.Value!);
         }
         catch (Exception ex)
         {
@@ -229,11 +234,12 @@ public partial class WorkflowStepperComp : ComponentBase
                 _reassignReason
             );
 
-            var updated = await WorkflowService.ReassignStepAsync(req);
+            var result = await WorkflowService.ReassignStepAsync(req);
+            if (!result.IsSuccess) { _errorMessage = result.Error; return; }
             _isReassignModalOpen = false;
             _targetStep = null;
 
-            await OnWorkflowUpdated.InvokeAsync(updated);
+            await OnWorkflowUpdated.InvokeAsync(result.Value!);
         }
         catch (Exception ex)
         {
@@ -280,11 +286,12 @@ public partial class WorkflowStepperComp : ComponentBase
                 _cancelReason.Trim()
             );
 
-            var updated = await WorkflowService.CancelStepAsync(req);
+            var result = await WorkflowService.CancelStepAsync(req);
+            if (!result.IsSuccess) { _errorMessage = result.Error; return; }
             _isCancelModalOpen = false;
             _targetStep = null;
 
-            await OnWorkflowUpdated.InvokeAsync(updated);
+            await OnWorkflowUpdated.InvokeAsync(result.Value!);
         }
         catch (Exception ex)
         {
@@ -303,8 +310,9 @@ public partial class WorkflowStepperComp : ComponentBase
 
         try
         {
-            var updated = await WorkflowService.ResumePausedWorkflowAsync(new ResumePausedWorkflowReqDto(Workflow.Id));
-            await OnWorkflowUpdated.InvokeAsync(updated);
+            var result = await WorkflowService.ResumePausedWorkflowAsync(new ResumePausedWorkflowReqDto(Workflow.Id));
+            if (!result.IsSuccess) { _errorMessage = result.Error; return; }
+            await OnWorkflowUpdated.InvokeAsync(result.Value!);
         }
         catch (Exception ex)
         {

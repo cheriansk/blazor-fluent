@@ -28,5 +28,7 @@ public class EmailNotificationOptions
     public string SenderEmail { get; set; } = string.Empty;
     public string SenderName { get; set; } = "BlazorEnterprise Notifications";
     public string DefaultMailbox { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
     public Dictionary<string, string> ProjectMailboxes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

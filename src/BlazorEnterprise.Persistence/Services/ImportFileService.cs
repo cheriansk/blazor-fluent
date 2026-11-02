@@ -27,7 +27,7 @@ public class ImportFileService : IImportFileService
     private readonly ITenantContext _tenantContext;
     private readonly ITenantEncryptionService _encryptionService;
     private readonly ITenantBlobStorageService _blobStorageService;
-    private readonly IJobEventPublisher _eventPublisher;
+    private readonly IEventTrackerService _eventTracker;
     private readonly INotifyService _notificationService;
     private readonly ILogger<ImportFileService> _logger;
 
@@ -37,7 +37,7 @@ public class ImportFileService : IImportFileService
         ITenantContext tenantContext,
         ITenantEncryptionService encryptionService,
         ITenantBlobStorageService blobStorageService,
-        IJobEventPublisher eventPublisher,
+        IEventTrackerService eventTracker,
         INotifyService notificationService,
         ILogger<ImportFileService> logger)
     {
@@ -46,7 +46,7 @@ public class ImportFileService : IImportFileService
         _tenantContext = tenantContext;
         _encryptionService = encryptionService;
         _blobStorageService = blobStorageService;
-        _eventPublisher = eventPublisher;
+        _eventTracker = eventTracker;
         _notificationService = notificationService;
         _logger = logger;
     }
@@ -161,7 +161,7 @@ public class ImportFileService : IImportFileService
                 SenderUserId: senderUserId,
                 SenderUserEmail: senderUserEmail);
 
-            await _eventPublisher.PublishAsync(batchEvent, ct);
+            await _eventTracker.TrackPublishAsync(batchEvent, eventId: importId, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
 
             // 4. Send in-app notification to the uploader
             await SendNotificationAsync(

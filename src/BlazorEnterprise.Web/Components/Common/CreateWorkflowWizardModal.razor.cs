@@ -417,11 +417,13 @@ public partial class CreateWorkflowWizardModal : ComponentBase
 
         try
         {
-            var updated = await WorkflowService.CancelStepAsync(new CancelWorkflowStepReqDto(
+            var cancelResult = await WorkflowService.CancelStepAsync(new CancelWorkflowStepReqDto(
                 WorkflowToEdit.Id,
                 _stepToCancel.ExistingTaskId.Value,
                 _cancelStepReason.Trim()
             ));
+            if (!cancelResult.IsSuccess) { _cancelStepError = cancelResult.Error; return; }
+            var updated = cancelResult.Value!;
 
             _showCancelStepModal = false;
             _stepToCancel = null;
@@ -449,7 +451,9 @@ public partial class CreateWorkflowWizardModal : ComponentBase
                 DueDate = state.DueDate,
                 WatcherEmails = state.WatcherEmails
             };
-            var updated = await WorkflowService.EditWorkflowAsync(editReq);
+            var editResult = await WorkflowService.EditWorkflowAsync(editReq);
+            if (!editResult.IsSuccess) { _stepErrors["Global"] = editResult.Error ?? "Failed to edit workflow"; return; }
+            var updated = editResult.Value!;
 
             var existingStepIds = WorkflowToEdit.Steps.Select(s => s.Id).ToHashSet();
             var newSteps = state.Steps.Where(s => !s.ExistingTaskId.HasValue || !existingStepIds.Contains(s.ExistingTaskId.Value)).ToList();
@@ -470,8 +474,9 @@ public partial class CreateWorkflowWizardModal : ComponentBase
         }
         else
         {
-            var created = await WorkflowService.CreateWorkflowAsync(state);
-            await OnWorkflowCreated.InvokeAsync(created);
+            var createResult = await WorkflowService.CreateWorkflowAsync(state);
+            if (!createResult.IsSuccess) { _stepErrors["Global"] = createResult.Error ?? "Failed to create workflow"; return; }
+            await OnWorkflowCreated.InvokeAsync(createResult.Value!);
         }
 
         await IsOpenChanged.InvokeAsync(false);

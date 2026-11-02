@@ -28,7 +28,6 @@ public class TenantService : ITenantService
     private readonly AppDbContext _dbContext;
     private readonly IAuditService _auditService;
     private readonly ITenantCacheService _cacheService;
-    private readonly IConfiguration? _configuration;
     private readonly SecurityOptions _securityOptions;
     private readonly IRootAdminService _rootAdminService;
     private readonly ICurrentUser _currentUser;
@@ -82,8 +81,7 @@ public class TenantService : ITenantService
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         ILogger<TenantService> logger,
-        IOptions<SecurityOptions>? securityOptions = null,
-        IConfiguration? configuration = null)
+        IOptions<SecurityOptions>? securityOptions = null)
     {
         _dbContext = dbContext;
         _auditService = auditService;
@@ -92,10 +90,9 @@ public class TenantService : ITenantService
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _logger = logger;
-        _configuration = configuration;
         _securityOptions = securityOptions?.Value ?? new SecurityOptions
         {
-            IntegritySecret = configuration?["Security:IntegritySecret"] ?? string.Empty
+            IntegritySecret = string.Empty
         };
     }
 
