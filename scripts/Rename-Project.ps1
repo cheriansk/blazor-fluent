@@ -21,7 +21,7 @@
     Note: Hyphens (-) are disallowed because C# namespaces do not support hyphens.
 
 .PARAMETER OldName
-    The old project name to replace (defaults to "BlazorFluent").
+    The old project name to replace (defaults to "BlazorEnterprise").
     Allows renaming projects that have already been renamed once.
 
 .PARAMETER Force
@@ -265,8 +265,8 @@ Write-Host ""
 $buildProps = Join-Path $RepoRoot "Directory.Build.props"
 if (Test-Path $buildProps) {
     $propsContent = Get-Content $buildProps -Raw -Encoding utf8
-    if ($propsContent -match "<TemplateGuardMode>TemplateAuthoring</TemplateGuardMode>") {
-        $propsContent = $propsContent.Replace("<TemplateGuardMode>TemplateAuthoring</TemplateGuardMode>", "<TemplateGuardMode>DownstreamEnforce</TemplateGuardMode>")
+    if ($propsContent -match "<TemplateGuardMode([^>]*)>\s*TemplateAuthoring\s*</TemplateGuardMode>") {
+        $propsContent = $propsContent -replace "<TemplateGuardMode([^>]*)>\s*TemplateAuthoring\s*</TemplateGuardMode>", '<TemplateGuardMode$1>DownstreamEnforce</TemplateGuardMode>'
         if (-not $DryRun) {
             Set-Content -Path $buildProps -Value $propsContent -NoNewline -Encoding utf8
             Write-Host "  TemplateGuard switched to DownstreamEnforce mode." -ForegroundColor Green
@@ -490,7 +490,7 @@ foreach ($slnx in $slnxFiles) {
 $buildTargetsPath = Join-Path $RepoRoot "Directory.Build.targets"
 if (Test-Path $buildTargetsPath) {
     $targetsContent = Get-Content -Path $buildTargetsPath -Raw -Encoding utf8
-    if ($targetsContent -match 'AutoUpdateBaseManifestOnBuild') {
+    if ($targetsContent -match 'AutoUpdateBaseManifestOnBuild' -or $targetsContent -match 'OnRebuildGovernanceAndDocs') {
         # Strip AutoUpdate target and UpToDateCheck items for basefiles.json
         $newTargets = $targetsContent -replace '(?s)\s*<!-- Visual Studio FastUpToDateCheck.*?AutoUpdateBaseManifestOnBuild.*?</Target>', ''
         if (-not $DryRun) {
