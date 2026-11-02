@@ -1,8 +1,8 @@
 .csk-metric-card {
-    background-color: var(--mat-surface, #FDF8FD);
-    border: 1px solid var(--mat-outline-variant, #CAC4D0);
+    background-color: var(--mat-surface, #FFFFFF);
+    border: 1px solid var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
     border-radius: var(--mat-radius-card, 16px);
-    box-shadow: var(--mat-elevation-1, 0px 1px 3px rgba(0,0,0,0.12));
+    box-shadow: var(--mat-elevation-1, 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06));
     padding: 1.25rem 1.5rem;
     display: flex;
     flex-direction: column;
@@ -14,7 +14,7 @@
 
 .csk-metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--mat-elevation-2, 0px 2px 6px rgba(0,0,0,0.15));
+    box-shadow: var(--mat-elevation-2, 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06));
 }
 
 .csk-metric-top {
@@ -31,23 +31,23 @@
 }
 
 .csk-metric-title {
-    font-size: 0.8125rem;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
     color: var(--mat-on-surface-variant, #49454F);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
 .csk-metric-value {
-    font-size: 1.75rem;
+    font-size: 1.875rem;
     font-weight: 700;
     line-height: 1.2;
     color: var(--mat-on-surface, #1C1B1F);
 }
 
 .csk-metric-avatar {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -56,28 +56,28 @@
 }
 
 .csk-metric-avatar-icon {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
 }
 
 .csk-avatar-primary {
-    background-color: rgba(103, 80, 164, 0.12);
-    color: var(--mat-primary, #6750A4);
+    background-color: var(--mat-primary-container, #E3F2FD);
+    color: var(--mat-primary, #1976D2);
 }
 
 .csk-avatar-success {
-    background-color: rgba(46, 125, 50, 0.12);
+    background-color: var(--mat-success-container, #E8F5E9);
     color: var(--mat-success, #2E7D32);
 }
 
 .csk-avatar-warning {
-    background-color: rgba(237, 108, 2, 0.12);
+    background-color: var(--mat-warning-container, #FFF3E0);
     color: var(--mat-warning, #ED6C02);
 }
 
 .csk-avatar-error {
-    background-color: rgba(186, 26, 26, 0.12);
-    color: var(--mat-error, #BA1A1A);
+    background-color: var(--mat-error-container, #FFEBEE);
+    color: var(--mat-error, #D32F2F);
 }
 
 .csk-metric-bottom {
@@ -91,20 +91,20 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.2rem 0.6rem;
+    padding: 0.25rem 0.625rem;
     border-radius: var(--mat-radius-pill, 9999px);
     font-size: 0.75rem;
     font-weight: 600;
 }
 
 .csk-chip-success {
-    background-color: rgba(46, 125, 50, 0.12);
-    color: var(--mat-success, #2E7D32);
+    background-color: var(--mat-success-container, #E8F5E9);
+    color: var(--mat-on-success-container, #1B5E20);
 }
 
 .csk-chip-error {
-    background-color: rgba(186, 26, 26, 0.12);
-    color: var(--mat-error, #BA1A1A);
+    background-color: var(--mat-error-container, #FFEBEE);
+    color: var(--mat-on-error-container, #B71C1C);
 }
 
 .csk-metric-trend-icon {

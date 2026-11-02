@@ -7,6 +7,7 @@ public partial class CskButton : ComponentBase
 {
     [Parameter] public CskButtonVariant Variant { get; set; } = CskButtonVariant.Filled;
     [Parameter] public CskButtonSize Size { get; set; } = CskButtonSize.Medium;
+    [Parameter] public CskColor Color { get; set; } = CskColor.Primary;
     [Parameter] public string? IconStart { get; set; }
     [Parameter] public string? IconEnd { get; set; }
     [Parameter] public bool Disabled { get; set; }
@@ -36,6 +37,18 @@ public partial class CskButton : ComponentBase
         CskButtonVariant.Elevated => "csk-btn-elevated",
         CskButtonVariant.Tonal => "csk-btn-tonal",
         _ => "csk-btn-filled"
+    };
+
+    private string GetColorClass() => Color switch
+    {
+        CskColor.Secondary => "csk-btn-secondary",
+        CskColor.Success => "csk-btn-success",
+        CskColor.Warning => "csk-btn-warning",
+        CskColor.Error => "csk-btn-error",
+        CskColor.Info => "csk-btn-info",
+        CskColor.Dark => "csk-btn-dark",
+        CskColor.Default => "csk-btn-default",
+        _ => "csk-btn-primary"
     };
 
     private string GetSizeClass() => Size switch

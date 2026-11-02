@@ -27,15 +27,40 @@
 }
 
 .csk-spinner-track {
-    stroke: var(--csk-color-outline-variant, rgba(0, 0, 0, 0.12));
+    stroke: var(--mat-outline-variant, rgba(0, 0, 0, 0.12));
 }
 
 .csk-spinner-circle {
-    stroke: var(--csk-color-primary, #005fb8);
+    stroke: var(--mat-primary, #1976D2);
     stroke-linecap: round;
     stroke-dasharray: 80px, 200px;
     stroke-dashoffset: 0;
     animation: csk-spinner-dash 1.4s ease-in-out infinite;
+}
+
+/* Palette Variations */
+.csk-spinner.csk-color-secondary .csk-spinner-circle {
+    stroke: var(--mat-secondary, #455A64);
+}
+
+.csk-spinner.csk-color-success .csk-spinner-circle {
+    stroke: var(--mat-success, #2E7D32);
+}
+
+.csk-spinner.csk-color-warning .csk-spinner-circle {
+    stroke: var(--mat-warning, #ED6C02);
+}
+
+.csk-spinner.csk-color-error .csk-spinner-circle {
+    stroke: var(--mat-error, #D32F2F);
+}
+
+.csk-spinner.csk-color-info .csk-spinner-circle {
+    stroke: var(--mat-info, #0288D1);
+}
+
+.csk-spinner.csk-color-dark .csk-spinner-circle {
+    stroke: var(--mat-text-primary, #212121);
 }
 
 @keyframes csk-spinner-rotate {

@@ -1,79 +1,101 @@
 .csk-date-field {
     display: inline-flex;
     flex-direction: column;
-    gap: 4px;
-    font-family: var(--csk-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    gap: 0.35rem;
+    font-family: inherit;
     position: relative;
     box-sizing: border-box;
+    width: 100%;
 }
 
 .csk-field-label {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--csk-color-on-surface-variant, #49454f);
+    color: var(--mat-on-surface-variant, #49454F);
     display: inline-flex;
     align-items: center;
     gap: 2px;
+    transition: color 0.15s ease-in-out;
 }
 
 .csk-field-required {
-    color: var(--csk-color-error, #b3261e);
+    color: var(--mat-error, #D32F2F);
+    margin-left: 2px;
 }
 
 .csk-date-input-box {
     display: inline-flex;
     align-items: center;
     position: relative;
-    border: 1px solid var(--csk-color-outline, #79747e);
-    border-radius: var(--csk-shape-corner-small, 8px);
-    background: var(--csk-color-surface, #ffffff);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    padding: 0 12px;
-    height: 40px;
+    border: 1px solid var(--mat-outline, rgba(0, 0, 0, 0.16));
+    border-radius: var(--mat-radius-sm, 8px);
+    background-color: var(--mat-surface, #FFFFFF);
+    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0 0.875rem;
+    height: 48px;
     box-sizing: border-box;
 }
 
 .csk-date-input-box:focus-within {
-    border-color: var(--csk-color-primary, #005fb8);
-    box-shadow: 0 0 0 1px var(--csk-color-primary, #005fb8);
+    border-color: var(--mat-primary, #1976D2);
+    box-shadow: 0 0 0 1px var(--mat-primary, #1976D2);
+}
+
+.csk-date-input-box:focus-within + .csk-field-label,
+.csk-date-field:focus-within .csk-field-label {
+    color: var(--mat-primary, #1976D2);
 }
 
 .csk-date-input {
-    flex: 1;
+    flex: 1 1 auto;
     border: none;
     outline: none;
     background: transparent;
     font-family: inherit;
-    font-size: 0.875rem;
-    color: var(--csk-color-on-surface, #1d1b20);
+    font-size: 0.9375rem;
+    color: var(--mat-on-surface, #1C1B1F);
     padding: 0;
     margin: 0;
     height: 100%;
+    cursor: pointer;
 }
 
 .csk-date-calendar-icon {
     display: inline-flex;
     align-items: center;
-    color: var(--csk-color-on-surface-variant, #49454f);
+    justify-content: center;
+    color: var(--mat-primary, #1976D2);
     margin-left: 8px;
     pointer-events: none;
+    flex-shrink: 0;
 }
 
 .csk-field-disabled {
-    opacity: 0.5;
+    opacity: 0.38;
     pointer-events: none;
 }
 
+.csk-field-disabled .csk-date-input-box {
+    background-color: var(--mat-surface-variant, #F4F6F9);
+    border-color: var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
+}
+
 .csk-field-error .csk-date-input-box {
-    border-color: var(--csk-color-error, #b3261e);
+    border-color: var(--mat-error, #D32F2F);
+    box-shadow: 0 0 0 1px var(--mat-error, #D32F2F);
+}
+
+.csk-field-error .csk-field-label {
+    color: var(--mat-error, #D32F2F);
 }
 
 .csk-field-helper {
     font-size: 0.75rem;
-    color: var(--csk-color-on-surface-variant, #49454f);
+    color: var(--mat-on-surface-variant, #49454F);
     padding: 0 4px;
+    line-height: 1.25;
 }
 
 .csk-field-helper-error {
-    color: var(--csk-color-error, #b3261e);
+    color: var(--mat-error, #D32F2F);
 }

@@ -12,6 +12,7 @@
     public enum ChipVariant
     {
         Primary,
+        Secondary,
         Success,
         Warning,
         Error,
@@ -26,6 +27,7 @@
 
     private string GetColorClass() => Variant switch
     {
+        ChipVariant.Secondary => "csk-chip-secondary",
         ChipVariant.Success => "csk-chip-success",
         ChipVariant.Warning => "csk-chip-warning",
         ChipVariant.Error => "csk-chip-error",

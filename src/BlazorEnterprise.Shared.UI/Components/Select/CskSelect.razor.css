@@ -15,7 +15,7 @@
 }
 
 .csk-field-required {
-    color: var(--mat-error, #BA1A1A);
+    color: var(--mat-error, #D32F2F);
     margin-left: 2px;
 }
 
@@ -23,9 +23,9 @@
     position: relative;
     display: flex;
     align-items: center;
-    border: 1px solid var(--mat-outline, #79747E);
+    border: 1px solid var(--mat-outline, rgba(0, 0, 0, 0.12));
     border-radius: var(--mat-radius-sm, 8px);
-    background-color: var(--mat-surface, #FDF8FD);
+    background-color: var(--mat-surface, #FFFFFF);
     height: 48px;
     box-sizing: border-box;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
@@ -41,7 +41,7 @@
     background: transparent;
     font-family: inherit;
     font-size: 0.9375rem;
-    color: var(--mat-on-surface, #1C1B1F);
+    color: var(--mat-text-primary, #212121);
     padding: 0 2.25rem 0 0.875rem;
     margin: 0;
     height: 100%;
@@ -65,26 +65,26 @@
 
 /* Focused State */
 .csk-field-focused .csk-select-box {
-    border-color: var(--mat-primary, #6750A4);
-    box-shadow: 0 0 0 1px var(--mat-primary, #6750A4);
+    border-color: var(--mat-primary, #1976D2);
+    box-shadow: 0 0 0 1px var(--mat-primary, #1976D2);
 }
 
 .csk-field-focused .csk-field-label {
-    color: var(--mat-primary, #6750A4);
+    color: var(--mat-primary, #1976D2);
 }
 
 .csk-field-focused .csk-select-arrow {
-    color: var(--mat-primary, #6750A4);
+    color: var(--mat-primary, #1976D2);
 }
 
 /* Error State */
 .csk-field-error .csk-select-box {
-    border-color: var(--mat-error, #BA1A1A);
-    box-shadow: 0 0 0 1px var(--mat-error, #BA1A1A);
+    border-color: var(--mat-error, #D32F2F);
+    box-shadow: 0 0 0 1px var(--mat-error, #D32F2F);
 }
 
 .csk-field-error .csk-field-label {
-    color: var(--mat-error, #BA1A1A);
+    color: var(--mat-error, #D32F2F);
 }
 
 /* Disabled State */
@@ -94,8 +94,8 @@
 }
 
 .csk-field-disabled .csk-select-box {
-    background-color: var(--mat-surface-variant, #E7E0EC);
-    border-color: var(--mat-outline-variant, #CAC4D0);
+    background-color: var(--mat-surface-variant, #F4F6F9);
+    border-color: var(--mat-outline-variant, rgba(0, 0, 0, 0.06));
 }
 
 /* Helper Text */
@@ -107,5 +107,5 @@
 }
 
 .csk-field-helper-error {
-    color: var(--mat-error, #BA1A1A);
+    color: var(--mat-error, #D32F2F);
 }

@@ -75,9 +75,9 @@
 }
 
 .csk-wizard-step-node.active .step-badge {
-    background: var(--mat-primary, #6750A4);
+    background: var(--mat-primary, #1976D2);
     color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.25);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.25);
 }
 
 .csk-wizard-step-node.completed .step-badge {
@@ -109,7 +109,7 @@
 }
 
 .csk-wizard-step-node.active .step-title {
-    color: var(--mat-primary, #6750A4);
+    color: var(--mat-primary, #1976D2);
 }
 
 .step-summary {
