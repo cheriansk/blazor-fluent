@@ -1,25 +1,40 @@
+/*
+ * App shell: the container is locked to the viewport (was `min-height: 100vh`, which let the whole
+ * document grow with its content and pushed the footer below the fold). Header and footer keep their
+ * natural height, the body takes the remaining space, and only `main` scrolls (see .main below).
+ * 100dvh is used so mobile browser toolbars do not cut the layout off.
+ */
 .main-layout-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100dvh;
     background-color: var(--mat-background, #FEF7FF);
     color: var(--mat-on-background, #1D1B20);
 }
 
+/*
+ * `position: sticky; top: 0` was removed: the header is no longer inside a scrolling document, it is a fixed
+ * row of the flex shell (flex: 0 0 auto), so it can never scroll away. The gutter token keeps the padding
+ * consistent with .content and the footer.
+ */
 .main-layout-header {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 1rem;
     height: 60px;
-    padding: 0 1.5rem;
+    padding: 0 var(--layout-gutter);
     background-color: var(--mat-surface, #FDF8FD);
     border-bottom: 1px solid var(--mat-outline-variant, #CAC4D0);
-    position: sticky;
-    top: 0;
     z-index: 100;
 }
 
+/* min-width/overflow/ellipsis added so a long app name shrinks instead of pushing the header past the viewport. */
 .main-layout-logo {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 1.125rem;
     font-weight: 700;
     letter-spacing: -0.01em;
@@ -30,52 +45,72 @@
     margin-right: 0.25rem;
 }
 
+/* min-height: 0 lets this flex row shrink below its content so `main` (not the page) becomes the scroll container. */
 .main-layout-body {
     display: flex;
     flex: 1 1 auto;
+    min-height: 0;
 }
 
-.main-layout-nav-expanded {
-    width: 256px;
+/*
+ * The two sidebar states used to be separate rules with a fixed width (256px / 72px). A plain width on a flex
+ * item can still be shrunk by a wide dashboard (it rendered at 192px), so they now use `flex: 0 0 <basis>` driven by
+ * the --layout-nav-* tokens: the sidebar keeps its size, scales with viewport width via clamp(), and animates
+ * through `flex-basis`. overflow: hidden keeps the nav's own scrollbar (NavMenuComp) from leaking out of the aside.
+ */
+.main-layout-nav-expanded,
+.main-layout-nav-collapsed {
+    flex: 0 0 var(--layout-nav-width);
+    min-width: 0;
     background-color: var(--mat-surface, #FFFFFF);
     border-right: 1px solid var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: flex-basis 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .main-layout-nav-collapsed {
-    width: 72px;
-    background-color: var(--mat-surface, #FFFFFF);
-    border-right: 1px solid var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    flex-basis: var(--layout-nav-rail-width);
 }
 
+/*
+ * `main` is now the only scroll container of the shell (overflow-y: auto + min-height: 0), so the header, sidebar and
+ * footer stay in view. The colour is set here because the old app.css `.main` rule used the Fluent token
+ * --neutral-foreground-rest, which is not defined in this theme.
+ */
 .main {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    color: var(--mat-on-background, #1D1B20);
 }
 
+/*
+ * Padding and max-width now come from --layout-gutter / --layout-content-max (was a fixed 1.5rem and 1400px), so the
+ * content uses more of a large monitor and gets tighter padding on small screens. flex: 1 0 auto lets pages
+ * (e.g. the dashboard) fill the available height without being squeezed below their content.
+ */
 .content {
-    flex: 1 1 auto;
-    padding: 1.5rem;
-    max-width: 1400px;
+    flex: 1 0 auto;
+    padding: var(--layout-gutter);
+    max-width: var(--layout-content-max);
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
 }
 
+/* flex: 0 0 auto keeps the footer a fixed row at the bottom of the shell, always visible; gutter token matches .content. */
 .main-layout-footer {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     height: 48px;
-    padding: 0 1.5rem;
+    padding: 0 var(--layout-gutter);
     background-color: var(--mat-surface, #FDF8FD);
     border-top: 1px solid var(--mat-outline-variant, #CAC4D0);
     font-size: 0.8125rem;
@@ -103,4 +138,54 @@
 .main-layout-hint-label {
     font-size: 0.8125rem;
     color: var(--mat-on-surface-variant, #49454F);
+}
+
+/*
+ * ADDED: small-screen support. The header content needs roughly 800px on one row, so below 54rem (~864px) the header
+ * may grow (height: auto) and wrap instead of overflowing horizontally. The tenant/project switcher is a child
+ * component, so ::deep is required for its root element to receive this rule (see NavMenuComp.razor.css).
+ */
+@media (max-width: 54rem) {
+    .main-layout-header {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 60px;
+        row-gap: 0.25rem;
+        padding-block: 0.5rem;
+    }
+
+    .main-layout-header ::deep .tenant-project-bar {
+        order: 1;
+        flex: 1 1 100%;
+    }
+}
+
+/*
+ * ADDED: phones (<= 40rem / 640px). The logo text and the "Sign Out" label are hidden to save header width (the icon
+ * and tooltip remain). The expanded sidebar is taken out of the flow and floats over the content as a drawer, so opening
+ * it does not squeeze the page to a few pixels; the collapsed rail (the default, see NavigationStateService) stays in the flow.
+ */
+@media (max-width: 40rem) {
+    .main-layout-logo {
+        display: none;
+    }
+
+    .main-layout-header ::deep .main-layout-signout-btn .csk-btn-label {
+        display: none;
+    }
+
+    .main-layout-body {
+        position: relative;
+    }
+
+    .main-layout-nav-expanded {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 90;
+        flex: none;
+        width: min(var(--layout-nav-width), 85vw);
+        box-shadow: var(--mat-elevation-3);
+    }
 }

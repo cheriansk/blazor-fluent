@@ -58,14 +58,20 @@
   <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll') And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool' And '$(IsTestProject)' != 'true' And '$(MSBuildProjectName)' != 'BlazorEnterprise.Benchmarks'">
     <Analyzer Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\TemplateGuard.Analyzers.dll" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json" 
-                     Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')" />
+                     Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\.basefiles.json')">
+      <Visible>false</Visible>
+    </AdditionalFiles>
     <AdditionalFiles Include="**\*.razor" />
     <AdditionalFiles Include="**\*.css" />
     <AdditionalFiles Include="**\*.js" Exclude="**\node_modules\**;**\wwwroot\lib\**;**\bin\**;**\obj\**;**\*.min.js" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Web\wwwroot\**\*.css"
-                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Web'" />
+                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Web'">
+      <Visible>false</Visible>
+    </AdditionalFiles>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)src\BlazorEnterprise.Shared.UI\**\*.css"
-                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Shared.UI'" />
+                     Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.Shared.UI'">
+      <Visible>false</Visible>
+    </AdditionalFiles>
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'BlazorEnterprise.AppHost' And '$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool'">

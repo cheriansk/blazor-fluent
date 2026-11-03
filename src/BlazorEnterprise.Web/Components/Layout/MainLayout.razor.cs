@@ -121,9 +121,15 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
                             allowedTenants: verified.AllowedTenants,
                             tenantSlug: resolvedTenantSlug);
 
-                        if (data.ActiveProjectId.HasValue)
+                        if (data.ActiveProjectId.HasValue || data.ActiveProgramId.HasValue)
                         {
-                            ProjectContext.Initialize(data.ActiveProjectId.Value, null, null, Array.Empty<ProjectInfoDto>());
+                            ProjectContext.Initialize(
+                                data.ActiveProjectId,
+                                null,
+                                null,
+                                Array.Empty<ProjectInfoDto>(),
+                                data.ActiveProgramId,
+                                null);
                         }
 
                         AuthStateProvider.NotifyUserChanged();

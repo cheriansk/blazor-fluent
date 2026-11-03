@@ -4,7 +4,7 @@ namespace BlazorEnterprise.Services;
 
 public class NavigationStateService : INavigationStateService
 {
-    public bool IsCollapsed { get; private set; }
+    public bool IsCollapsed { get; private set; } = true;
 
     public event Action? OnChange;
 

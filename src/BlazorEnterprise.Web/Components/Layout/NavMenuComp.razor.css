@@ -1,7 +1,13 @@
+/*
+ * Sidebar container: `height: 100%` was replaced by `flex: 1 1 auto; min-height: 0`: the aside (MainLayout.razor.css) is a
+ * flex column with a definite height, so the nav fills it and scrolls internally (overflow-y: auto) only when its items
+ * genuinely do not fit, instead of depending on a percentage height.
+ */
 .navmenu-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
     overflow-x: hidden;
     overflow-y: auto;
@@ -9,11 +15,12 @@
     user-select: none;
 }
 
+/* flex: 1 0 auto (was height: 100%) fills the container so the Configuration section stays pinned to the bottom, but never shrinks below its content. */
 .csk-nav-menu {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding: 12px 0;
+    flex: 1 0 auto;
+    padding: 0.75rem 0;
     box-sizing: border-box;
 }
 
@@ -33,6 +40,11 @@
     border-top: 1px solid var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
 }
 
+/*
+ * EDITED: the title is now always in the DOM (see NavMenuComp.razor) and is collapsed here when the rail is narrow, instead of being
+ * removed and replaced by a divider line. Animating max-height/padding/opacity keeps the items below from jumping vertically and
+ * leaves only the section's own border-top as the divider. max-height (2rem) is just above the title's natural height (~1.75rem).
+ */
 .nav-section-title {
     font-size: 0.75rem;
     font-weight: 700;
@@ -44,25 +56,40 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-height: 2rem;
+    transition: max-height 0.2s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
 }
 
-.nav-rail-divider {
-    height: 1px;
-    margin: 6px 12px;
-    background-color: var(--mat-outline-variant, rgba(0, 0, 0, 0.08));
+.nav-collapsed .nav-section-title {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
 }
+
+/*
+ * REMOVED: .nav-rail-divider (a 1px line shown in place of the section titles when collapsed). It duplicated the border-top that
+ * .nav-section-bottom already draws, giving two lines above the Settings icon, and its swap with the title caused a vertical jump.
+ */
 
 /* ==========================================================================
    Material Design 3 Navigation Drawer Item (Expanded)
+
+   WHY ::deep: `.csk-nav-item` is applied to <NavLink>, whose rendered <a> belongs to the child component and does NOT
+   receive this file's CSS-isolation scope attribute (b-xxxx). Without ::deep none of these rules matched, and the links
+   rendered as default blue underlined anchors. ::deep keeps the rule scoped to this component's subtree (no global leak).
+   Sizes now use rem and `min-height` (was fixed px / height) so they follow the user's font size and never clip text.
    ========================================================================== */
-.nav-expanded .csk-nav-item {
+.nav-expanded ::deep .csk-nav-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    height: 48px;
-    margin: 2px 12px;
-    padding: 0 16px;
-    border-radius: 24px;
+    gap: 1rem;
+    min-height: 3rem;
+    margin: 2px 0.75rem;
+    /* EDITED: horizontal padding 1rem -> 0.75rem so the icon centre is 36px from the sidebar edge (0.75rem margin + 0.75rem padding
+       + half the 1.5rem icon box), the same X as in the collapsed rail. The icon no longer shifts sideways when toggling. */
+    padding: 0 0.75rem;
+    border-radius: 1.5rem;
     color: var(--mat-on-surface, #1E1E1E);
     text-decoration: none;
     font-size: 0.875rem;
@@ -75,35 +102,35 @@
     box-sizing: border-box;
 }
 
-.nav-expanded .csk-nav-item:hover {
+.nav-expanded ::deep .csk-nav-item:hover {
     background-color: var(--mat-surface-variant, #F4F6F9);
     color: var(--mat-primary-hover, #1565C0);
 }
 
-.nav-expanded .csk-nav-item.active {
+/* ADDED: keyboard focus indicator. The links previously had none because the browser default was the only styling. */
+.nav-expanded ::deep .csk-nav-item:focus-visible {
+    outline: 2px solid var(--mat-primary, #1976D2);
+    outline-offset: -2px;
+}
+
+.nav-expanded ::deep .csk-nav-item.active {
     background-color: var(--mat-primary-container, #E3F2FD);
     color: var(--mat-on-primary-container, #0D47A1);
     font-weight: 600;
 }
 
+/*
+ * REMOVED: the .csk-nav-icon fill overrides (.nav-expanded .csk-nav-item.active .csk-nav-icon { fill: ... } and the
+ * collapsed equivalent). CskIcon paints with fill: currentColor, so setting `color` on the link (hover / .active above)
+ * already recolours the icon; the extra rules were redundant and, being scoped, never matched the icon's <svg> anyway.
+ */
 .nav-expanded .csk-nav-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
     flex-shrink: 0;
-}
-
-.nav-expanded .csk-nav-icon {
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    transition: fill 0.18s ease;
-}
-
-.nav-expanded .csk-nav-item.active .csk-nav-icon {
-    fill: var(--mat-on-primary-container, #0D47A1);
 }
 
 .nav-expanded .csk-nav-text {
@@ -111,50 +138,79 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     flex: 1 1 auto;
+    animation: csk-nav-text-in 0.2s ease-out;
+}
+
+/* ADDED: labels are inserted into the DOM when the sidebar expands; fading them in avoids text popping in while the width animates. */
+@keyframes csk-nav-text-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* ==========================================================================
    Material Design 3 Navigation Rail Item (Collapsed)
+
+   Same ::deep reasoning as the expanded item above. The active state now sets `color` (icons use currentColor)
+   and the pill highlight on the indicator, replacing the removed icon fill rules.
    ========================================================================== */
-.nav-collapsed .csk-nav-item {
+.nav-collapsed ::deep .csk-nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 52px;
-    margin: 4px auto;
-    border-radius: 16px;
+    /* EDITED: the rail item now has the same min-height (3rem) and vertical margin (2px) as the expanded item, so rows keep the same
+       vertical pitch in both states instead of jumping apart (was 3.25rem / 4px). */
+    min-height: 3rem;
+    /* EDITED: margin 4px auto -> 2px auto centred the item in the still-wide sidebar at the start of the collapse, so each icon jumped
+       to the middle and slid back left as the width shrank (measured: x=40 -> 127 -> 36). A fixed left margin (0.5rem) puts the rail
+       icon at the same X (36px) as the expanded row, so icons stay put while only the width animates. */
+    margin: 2px 0 2px 0.5rem;
+    width: 3.5rem;
+    border-radius: 1rem;
     text-decoration: none;
     color: var(--mat-on-surface, #1E1E1E);
-    transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s ease;
     box-sizing: border-box;
+}
+
+.nav-collapsed ::deep .csk-nav-item:focus-visible {
+    outline: 2px solid var(--mat-primary, #1976D2);
+    outline-offset: -2px;
+}
+
+.nav-collapsed ::deep .csk-nav-item.active {
+    color: var(--mat-on-primary-container, #0D47A1);
 }
 
 .nav-collapsed .csk-nav-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 32px;
-    border-radius: 16px;
+    width: 3.25rem;
+    height: 2rem;
+    border-radius: 1rem;
     transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-collapsed .csk-nav-icon {
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-}
-
-.nav-collapsed .csk-nav-item:hover .csk-nav-indicator {
+.nav-collapsed ::deep .csk-nav-item:hover .csk-nav-indicator {
     background-color: var(--mat-surface-variant, #F4F6F9);
 }
 
-.nav-collapsed .csk-nav-item.active .csk-nav-indicator {
+.nav-collapsed ::deep .csk-nav-item.active .csk-nav-indicator {
     background-color: var(--mat-primary-container, #E3F2FD);
 }
 
-.nav-collapsed .csk-nav-item.active .csk-nav-icon {
-    fill: var(--mat-on-primary-container, #0D47A1);
+/*
+ * The icon is a child component root (CskIcon's <svg>), so it needs ::deep to receive this class. This single rule also
+ * defines `csk-nav-icon` for the TemplateGuard TG019 check, which requires every class used in markup to be defined.
+ * It replaces the two separate 24-sized .nav-expanded / .nav-collapsed .csk-nav-icon rules.
+ */
+.navmenu-container ::deep .csk-nav-icon {
+    width: 1.375rem;
+    height: 1.375rem;
+    flex-shrink: 0;
 }

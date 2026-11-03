@@ -12,14 +12,7 @@
         @if (CurrentUser.IsAuthenticated && TenantContext.HasActiveTenant)
         {
             <div class="nav-section">
-                @if (!NavState.IsCollapsed)
-                {
-                    <span class="nav-section-title">Workspace</span>
-                }
-                else
-                {
-                    <div class="nav-rail-divider"></div>
-                }
+                <span class="nav-section-title" aria-hidden="@(NavState.IsCollapsed ? "true" : "false")">Workspace</span>
 
                 <NavLink class="csk-nav-item" href="" Match="NavLinkMatch.All" title="Home">
                     <span class="csk-nav-indicator">
@@ -78,14 +71,7 @@
             <div class="nav-section-spacer"></div>
 
             <div class="nav-section nav-section-bottom">
-                @if (!NavState.IsCollapsed)
-                {
-                    <span class="nav-section-title">Configuration</span>
-                }
-                else
-                {
-                    <div class="nav-rail-divider"></div>
-                }
+                <span class="nav-section-title" aria-hidden="@(NavState.IsCollapsed ? "true" : "false")">Configuration</span>
 
                 <NavLink class="csk-nav-item" href="settings" title="Settings">
                     <span class="csk-nav-indicator">

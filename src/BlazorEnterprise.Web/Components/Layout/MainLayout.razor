@@ -19,13 +19,15 @@
         <CskSpacer />
         @if (HasActiveTenantSession)
         {
-            <TenantAndProjectSwitcherComp />
-        }
-        <CskSpacer />
-        @if (HasActiveTenantSession)
-        {
+            <CalendarQuickViewPopup />
+            <ProgramAndProjectSwitcherComp />
             <PendingChangesIndicatorComp />
             <NotificationBellPopup />
+            <CskButton Variant="CskButtonVariant.Text"
+                       IconStart="@CskIcons.Settings"
+                       Title="Settings"
+                       OnClick="@(() => NavigationManager.NavigateTo("/settings"))"
+                       Class="main-layout-header-btn" />
         }
         @if (CurrentUser.IsAuthenticated)
         {
@@ -90,12 +92,6 @@
 
     <footer class="main-layout-footer">
         <div class="main-layout-flex-row">
-            <CskButton Href="settings"
-                       Variant="CskButtonVariant.Text"
-                       Size="CskButtonSize.Small"
-                       IconStart="@CskIcons.Settings">
-                Settings
-            </CskButton>
             <CskSpacer />
             <CskButton Href="https://learn.microsoft.com/en-us/aspnet/core/blazor"
                        Target="_blank"
