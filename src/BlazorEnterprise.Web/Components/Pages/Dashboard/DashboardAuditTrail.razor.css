@@ -1,0 +1,129 @@
+.dashboard-activity-panel {
+    background-color: var(--mat-surface);
+    border: 1px solid var(--mat-outline-variant);
+    border-radius: var(--mat-radius-card);
+    box-shadow: var(--mat-elevation-1);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+    min-width: 280px;
+    min-height: 0;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.panel-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--mat-on-surface);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panel-subtitle {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.mat-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+@media (min-width: 1025px) {
+    /*
+     * ADDED: side-by-side layout only. contain: size stops the audit panel's content height from driving the row height,
+     * so the Kanban panel and available screen space decide it and the audit list scrolls inside its card instead.
+     * This is limited to wide layouts because when the panels stack (below) the audit panel has no row to be sized by.
+     */
+    .dashboard-activity-panel {
+        contain: size;
+        overflow: hidden;
+    }
+
+    .mat-activity-list {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 1024px) {
+    /* ADDED: when stacked, cap the audit list by viewport height so a long ledger does not dominate the page. */
+    .mat-activity-list {
+        max-height: clamp(14rem, 40vh, 28rem);
+        overflow-y: auto;
+    }
+}
+
+.mat-activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--mat-outline-variant);
+}
+
+.mat-activity-item:last-child {
+    border-bottom: none;
+}
+
+.mat-activity-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--mat-radius-circle);
+    background-color: var(--mat-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mat-primary);
+    flex-shrink: 0;
+}
+
+.mat-activity-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.mat-activity-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mat-on-surface);
+}
+
+.mat-activity-description {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface-variant);
+    margin: 0.15rem 0;
+}
+
+.mat-activity-time {
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.csk-icon-primary {
+    color: var(--mat-primary);
+}
+
+.csk-icon-sm {
+    width: 16px;
+    height: 16px;
+}

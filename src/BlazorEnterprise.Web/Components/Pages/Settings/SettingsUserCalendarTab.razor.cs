@@ -1,5 +1,5 @@
 using BlazorEnterprise.Shared.UI.Components;
-﻿using BlazorEnterprise.Components.Common;
+using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Calendar;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -14,7 +14,7 @@ public partial class SettingsUserCalendarTab : ComponentBase
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private ILogger<SettingsUserCalendarTab> Logger { get; set; } = default!;
 
-private bool _isLoading = true;
+    private bool _isLoading = true;
     private bool _isSaving;
     private string? _statusMessage;
     private bool _isError;

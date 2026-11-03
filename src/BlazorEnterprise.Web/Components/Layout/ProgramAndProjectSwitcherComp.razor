@@ -1,0 +1,157 @@
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Core.Dtos
+
+@if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty || TenantContext.IsRootTenant)
+{
+    @* Render nothing for unauthenticated / root admin context *@
+    return;
+}
+
+<div class="workspace-switcher-root">
+    @* Top Header Trigger Button *@
+    <button type="button"
+            class="workspace-trigger-btn @(_isOpen ? "active" : "")"
+            @onclick="ToggleModal"
+            title="Switch Program & Project Workspace">
+        <CskIcon Icon="@CskIcons.Folder" Class="workspace-icon" />
+        <span class="workspace-label">
+            @GetTriggerLabel()
+        </span>
+        @if (IsFullyLocked)
+        {
+            <span class="workspace-lock-badge" title="Locked to assigned workspace">🔒</span>
+        }
+        else
+        {
+            <CskIcon Icon="@CskIcons.ChevronDown" Class="workspace-caret" />
+        }
+    </button>
+
+    @* Switcher Modal Window *@
+    @if (_isOpen)
+    {
+        <div class="workspace-modal-backdrop" @onclick="CloseModal">
+            <div class="workspace-modal-card" @onclick:stopPropagation="true">
+                @* Modal Header *@
+                <div class="workspace-modal-header">
+                    <div class="header-title-group">
+                        <CskIcon Icon="@CskIcons.Flowchart" Class="csk-icon-primary" />
+                        <div>
+                            <h4 class="modal-title">Switch Workspace</h4>
+                            <p class="modal-subtitle">Select an active Program and Project for your session</p>
+                        </div>
+                    </div>
+                    <CskButton Variant="CskButtonVariant.Text"
+                               Size="CskButtonSize.Small"
+                               IconStart="@CskIcons.Dismiss"
+                               OnClick="CloseModal"
+                               Title="Close" />
+                </div>
+
+                @* Modal Body *@
+                <div class="workspace-modal-body">
+                    @if (_isLoading)
+                    {
+                        <div class="workspace-loading-state">
+                            <CskSpinner Size="CskSpinnerSize.Small" />
+                            <span>Loading workspaces...</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                        {
+                            <div class="workspace-error-banner">
+                                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-error" />
+                                <span>@_errorMessage</span>
+                            </div>
+                        }
+
+                        @* 1. Program Selector *@
+                        <div class="form-field-group">
+                            <label class="field-label">Program</label>
+                            @if (_programs.Count == 0)
+                            {
+                                <div class="field-static-readonly text-muted">
+                                    No programs available
+                                </div>
+                            }
+                            else if (_programs.Count == 1)
+                            {
+                                <div class="field-static-readonly">
+                                    <span class="item-name">@_programs[0].Name</span>
+                                    <span class="badge-locked">🔒 Only 1 Program</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <CskSelect TOption="ProgramEntity"
+                                           TValue="string"
+                                           Items="@_programs"
+                                           OptionValue="@(p => p.Id.ToString())"
+                                           OptionText="@(p => p.Name)"
+                                           Value="@(_pendingProgramId?.ToString() ?? string.Empty)"
+                                           ValueChanged="@OnProgramSelected"
+                                           Class="w-full"
+                                           Title="Select Program" />
+                            }
+                        </div>
+
+                        @* 2. Project Selector Under Program *@
+                        <div class="form-field-group">
+                            <label class="field-label">Project</label>
+                            @if (_filteredProjects.Count == 0)
+                            {
+                                <div class="field-static-readonly text-muted">
+                                    No projects in this program
+                                </div>
+                            }
+                            else if (_filteredProjects.Count == 1)
+                            {
+                                <div class="field-static-readonly">
+                                    <span class="item-name">@_filteredProjects[0].Name</span>
+                                    <span class="badge-locked">🔒 Only 1 Project</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <CskSelect TOption="ProjectInfoDto"
+                                           TValue="string"
+                                           Items="@_filteredProjects"
+                                           OptionValue="@(p => p.Id.ToString())"
+                                           OptionText="@(p => p.Name)"
+                                           Value="@(_pendingProjectId?.ToString() ?? string.Empty)"
+                                           ValueChanged="@OnProjectSelected"
+                                           Class="w-full"
+                                           Title="Select Project" />
+                            }
+                        </div>
+                    }
+                </div>
+
+                @* Modal Footer *@
+                <div class="workspace-modal-footer">
+                    <CskButton Variant="CskButtonVariant.Text"
+                               Size="CskButtonSize.Small"
+                               OnClick="CloseModal">
+                        Cancel
+                    </CskButton>
+
+                    @if (HasPendingChanges)
+                    {
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@CskIcons.Checkmark"
+                                   OnClick="ConfirmSwitchAsync">
+                            Confirm Switch
+                        </CskButton>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

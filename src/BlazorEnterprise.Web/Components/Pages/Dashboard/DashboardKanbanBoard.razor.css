@@ -1,0 +1,156 @@
+.dashboard-kanban-panel {
+    background-color: var(--mat-surface);
+    border: 1px solid var(--mat-outline-variant);
+    border-radius: var(--mat-radius-card);
+    box-shadow: var(--mat-elevation-1);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 2;
+    min-width: 0;
+    min-height: 0;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.panel-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--mat-on-surface);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panel-subtitle {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.column-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mat-on-surface-variant);
+    background-color: var(--mat-surface-variant);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--mat-radius-pill);
+}
+
+/*
+ * Kanban columns: the track minimum was a fixed 180px, so on narrow panels three columns wrapped onto a second row. It is now
+ * min(100%, 11rem), so a column can shrink to the panel width on small screens. flex: 1 1 auto lets the grid fill the panel
+ * height so the columns stretch instead of relying on a fixed min-height.
+ */
+.kanban-swimlanes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 1rem;
+    flex: 1 1 auto;
+}
+
+.kanban-column {
+    background-color: var(--mat-surface-variant);
+    border-radius: var(--mat-radius-md);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+}
+
+.kanban-column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0.25rem;
+}
+
+.column-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--mat-on-surface);
+}
+
+.kanban-cards-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.mat-kanban-card {
+    background-color: var(--mat-surface);
+    border: 1px solid var(--mat-outline-variant);
+    border-radius: var(--mat-radius-sm);
+    box-shadow: var(--mat-elevation-1);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mat-kanban-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--mat-elevation-2);
+}
+
+.task-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-key {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-primary);
+}
+
+.task-card-title {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface);
+    line-height: 1.35;
+    font-weight: 500;
+}
+
+.task-done {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.task-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant);
+    padding-top: 0.25rem;
+}
+
+.task-assignee {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.csk-icon-primary {
+    color: var(--mat-primary);
+}
+
+.csk-icon-sm {
+    width: 16px;
+    height: 16px;
+}

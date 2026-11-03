@@ -1,10 +1,37 @@
 # Component Registration Warnings (Validation Report)
 
-> **Last Generated**: `2026-11-01 21:06:44 -05:00`  
+> **Last Generated**: `2026-11-02 14:18:23 -05:00`  
 > **Manifest**: [specs-manifest.json](../specs-manifest.json) | **Catalog**: [README.md](../README.md)
 
 > [!CAUTION]
-> **13 Unregistered Child Component(s) detected across 3 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
+> **15 Unregistered Child Component(s) detected across 4 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
+
+## Parent: `BlazorEnterprise.Web/Components/Layout/MainLayout.razor` ([docs/specs/MainLayout.requirements.md](../../docs/specs/MainLayout.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<CalendarQuickViewPopup />` | `BlazorEnterprise.Web/Components/Layout/CalendarQuickViewPopup.razor` | `L22` | `HasActiveTenantSession` |
+| `<ProgramAndProjectSwitcherComp />` | `BlazorEnterprise.Web/Components/Layout/ProgramAndProjectSwitcherComp.razor` | `L23` | `HasActiveTenantSession` |
+
+### Ready-to-Paste JSON for `MainLayout.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/CalendarQuickViewPopup.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <CalendarQuickViewPopup /> rendered by MainLayout.razor at L22 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/ProgramAndProjectSwitcherComp.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <ProgramAndProjectSwitcherComp /> rendered by MainLayout.razor at L23 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    }
+]
+```
 
 ## Parent: `BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor` ([docs/specs/SettingsPage.requirements.md](../../docs/specs/SettingsPage.requirements.md))
 

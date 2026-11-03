@@ -1,0 +1,149 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Dashboard
+@using BlazorEnterprise.Core.Domain.Tenancy
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Models.Dashboard
+
+<div class="dashboard-section">
+    <div class="section-title-row">
+        <div class="section-title-group">
+            <h3 class="section-heading">
+                <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-primary" />
+                <span>My Projects</span>
+            </h3>
+            <span class="section-subheading">Projects where you have active team membership</span>
+        </div>
+        <span class="section-count-badge">@Projects.Count Projects</span>
+    </div>
+
+    @if (Projects.Count == 0)
+    {
+        <div class="mat-empty-projects">
+            <div class="empty-icon-circle">
+                <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-lg" />
+            </div>
+            <h4 class="empty-title">No Assigned Projects</h4>
+            <p class="empty-desc">
+                You do not hold an active role in any project within this tenant. Reach out to your Project Administrator or Tenant Admin to be assigned to a project team.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="mat-project-grid">
+            @foreach (var proj in Projects)
+            {
+                <div class="mat-project-card" @onclick="@(() => OnOpenProject.InvokeAsync(proj.Id))">
+                    <!-- Card Header: Title, ShortCode, Role -->
+                    <div class="project-card-header">
+                        <div class="project-identity">
+                            <span class="project-code">@proj.ShortCode</span>
+                            <h4 class="project-name" title="@proj.Name">@proj.Name</h4>
+                            @if (!string.IsNullOrWhiteSpace(proj.ProgramName))
+                            {
+                                <span class="project-program-tag">
+                                    <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-xs" />
+                                    <span>@proj.ProgramName</span>
+                                </span>
+                            }
+                        </div>
+                        @if (proj.UserRole.HasValue)
+                        {
+                            <CskStatusChip Text="@proj.UserRole.Value.ToString()"
+                                           Variant="@GetRoleVariant(proj.UserRole)" />
+                        }
+                    </div>
+
+                    <!-- Status & Health Row -->
+                    <div class="project-badges-row">
+                        <CskStatusChip Text="@proj.Status.ToString()"
+                                       Variant="@GetProjectStatusVariant(proj.Status)" />
+                        <CskStatusChip Text="@($"Health: {proj.Health}")"
+                                       Variant="@GetProjectHealthVariant(proj.Health)" />
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="project-progress-box">
+                        <div class="progress-split">
+                            <span class="progress-percent-label">@proj.ProgressPercentage% Complete</span>
+                            <span class="tasks-counter-label">@proj.CompletedTasks / @proj.TotalTasks Tasks</span>
+                        </div>
+                        <CskProgressBar Value="@((int)Math.Round(proj.ProgressPercentage))" Max="100" />
+                    </div>
+
+                    <!-- Deliverables & Alerts Strip -->
+                    <div class="project-metrics-strip">
+                        <span class="metric-chip">
+                            <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-xs" />
+                            <span>@proj.InProgressTasks in progress</span>
+                        </span>
+                        @if (proj.OverdueTasks > 0)
+                        {
+                            <span class="metric-chip chip-alert">
+                                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-xs" />
+                                <span>@proj.OverdueTasks overdue</span>
+                            </span>
+                        }
+                        @if (proj.ActiveBlockersCount > 0)
+                        {
+                            <span class="metric-chip chip-warning">
+                                <CskIcon Icon="@CskIcons.LockClosed" Class="csk-icon-xs" />
+                                <span>@proj.ActiveBlockersCount blockers</span>
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Footer / Action -->
+                    <div class="project-card-footer">
+                        @if (proj.DueDate.HasValue)
+                        {
+                            <span class="due-date-text">
+                                Due @proj.DueDate.Value.ToString("MMM dd, yyyy")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="due-date-text">No target date</span>
+                        }
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                   IconEnd="@CskIcons.ChevronRight"
+                                   OnClick="@(() => OnOpenProject.InvokeAsync(proj.Id))">
+                            Open
+                        </CskButton>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<ProjectCardItemDto> Projects { get; set; } = Array.Empty<ProjectCardItemDto>();
+    [Parameter] public EventCallback<Guid> OnOpenProject { get; set; }
+
+    private static CskStatusChip.ChipVariant GetProjectHealthVariant(ProjectHealthRatingEnum health) => health switch
+    {
+        ProjectHealthRatingEnum.OnTrack => CskStatusChip.ChipVariant.Success,
+        ProjectHealthRatingEnum.AtRisk => CskStatusChip.ChipVariant.Warning,
+        ProjectHealthRatingEnum.Critical => CskStatusChip.ChipVariant.Error,
+        _ => CskStatusChip.ChipVariant.Neutral
+    };
+
+    private static CskStatusChip.ChipVariant GetProjectStatusVariant(ProjectStatusEnum status) => status switch
+    {
+        ProjectStatusEnum.Done => CskStatusChip.ChipVariant.Success,
+        ProjectStatusEnum.Active => CskStatusChip.ChipVariant.Primary,
+        ProjectStatusEnum.New => CskStatusChip.ChipVariant.Info,
+        ProjectStatusEnum.OnHold => CskStatusChip.ChipVariant.Warning,
+        _ => CskStatusChip.ChipVariant.Neutral
+    };
+
+    private static CskStatusChip.ChipVariant GetRoleVariant(ProjectRoleEnum? role) => role switch
+    {
+        ProjectRoleEnum.Admin => CskStatusChip.ChipVariant.Primary,
+        ProjectRoleEnum.ElevatedLead or ProjectRoleEnum.Lead => CskStatusChip.ChipVariant.Warning,
+        ProjectRoleEnum.Contribute => CskStatusChip.ChipVariant.Info,
+        ProjectRoleEnum.PMO => CskStatusChip.ChipVariant.Secondary,
+        _ => CskStatusChip.ChipVariant.Neutral
+    };
+}

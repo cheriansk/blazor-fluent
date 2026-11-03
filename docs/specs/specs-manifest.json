@@ -38,6 +38,64 @@
   },
   "targets": [
     {
+      "path": "BlazorEnterprise.Web/Components/Layout/MainLayout.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Layout Pages",
+      "enabled": true,
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/ImpersonationBannerComp.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <ImpersonationBannerComp /> rendered by MainLayout.razor at L4 (Gate: Unconditional).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <SessionRevokedModal /> rendered by MainLayout.razor at L5 (Gate: Unconditional).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/SessionTimeoutModal.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <SessionTimeoutModal /> rendered by MainLayout.razor at L6 (Gate: Unconditional).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/PendingChangesIndicatorComp.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <PendingChangesIndicatorComp /> rendered by MainLayout.razor at L23 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/NotificationBellPopup.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <NotificationBellPopup /> rendered by MainLayout.razor at L24 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/NavMenuComp.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <NavMenuComp /> rendered by MainLayout.razor at L52 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/AppErrorBoundaryComp.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <AppErrorBoundaryComp /> rendered by MainLayout.razor at L57 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    }
+]      
+    },
+    {
       "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor",
       "category": "Settings UI",
       "thinking_level": "low",
@@ -73,6 +131,13 @@
       "thinking_level": "medium",
       "description": "Background channel listener that dequeues and executes asynchronous tenant-scoped batch jobs.",
       "enabled": true
-    }
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/HomePage.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Home Page",
+      "enabled": true
+    }    
   ]
 }

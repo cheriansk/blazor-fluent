@@ -1,0 +1,48 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Dashboard
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Models.Dashboard
+
+<div class="dashboard-activity-panel">
+    <div class="panel-header">
+        <div class="panel-title-group">
+            <h3 class="panel-title">
+                <CskIcon Icon="@CskIcons.History" Class="csk-icon-primary" />
+                <span>Forensic Audit Trail</span>
+            </h3>
+            <span class="panel-subtitle">Chronological ledger of security and tenant actions</span>
+        </div>
+    </div>
+
+    <div class="mat-activity-list">
+        @if (Activities.Count == 0)
+        {
+            <div class="mat-activity-item">
+                <div class="mat-activity-content">
+                    <div class="mat-activity-title">No recent audit logs</div>
+                    <div class="mat-activity-time">Activity events will stream here automatically.</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var audit in Activities)
+            {
+                <div class="mat-activity-item">
+                    <div class="mat-activity-icon">
+                        <CskIcon Icon="@audit.Icon" Class="csk-icon-sm" />
+                    </div>
+                    <div class="mat-activity-content">
+                        <div class="mat-activity-title">@audit.Title</div>
+                        <div class="mat-activity-description">@audit.Description</div>
+                        <div class="mat-activity-time">@audit.TimeAgo • @audit.User</div>
+                    </div>
+                    <CskStatusChip Text="@audit.BadgeText" Variant="@audit.BadgeVariant" />
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<AuditActivityItem> Activities { get; set; } = Array.Empty<AuditActivityItem>();
+}

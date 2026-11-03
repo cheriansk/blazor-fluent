@@ -1,0 +1,186 @@
+.mat-program-summary-card {
+    background-color: var(--mat-surface);
+    border: 1px solid var(--mat-outline-variant);
+    border-radius: var(--mat-radius-card);
+    box-shadow: var(--mat-elevation-1);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.program-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--mat-outline-variant);
+    padding-bottom: 0.75rem;
+}
+
+.program-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.program-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-primary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.program-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--mat-on-surface);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.program-code {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--mat-on-surface-variant);
+}
+
+.program-badges-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.program-summary-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.program-progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mat-on-surface);
+}
+
+.progress-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--mat-primary);
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.text-danger {
+    color: var(--mat-error, #b3261e);
+    font-weight: 600;
+}
+
+.program-metrics-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.metric-tile {
+    background-color: var(--mat-surface-variant);
+    border-radius: var(--mat-radius-md);
+    padding: 0.875rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tile-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mat-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.tile-val {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--mat-on-surface);
+}
+
+.tile-val-alert {
+    color: var(--mat-error, #b3261e);
+}
+
+.tile-val-warning {
+    color: #e65100;
+}
+
+.tile-sub {
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.program-risk-strip {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: rgba(230, 81, 0, 0.08);
+    border: 1px solid rgba(230, 81, 0, 0.25);
+    border-radius: var(--mat-radius-md);
+}
+
+.csk-icon-warning {
+    color: #e65100;
+    flex-shrink: 0;
+}
+
+.risk-reasons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.risk-reason-item {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface);
+    line-height: 1.4;
+}
+
+.program-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2rem 1rem;
+    color: var(--mat-on-surface-variant);
+    font-size: 0.875rem;
+    justify-content: center;
+}
+
+.csk-icon-sm {
+    width: 16px;
+    height: 16px;
+}

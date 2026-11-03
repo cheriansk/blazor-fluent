@@ -2,7 +2,7 @@ namespace BlazorEnterprise.Infrastructure.Security;
 
 /// <summary>
 /// Encrypted session payload stored in browser sessionStorage via ProtectedSessionStorage.
-/// Preserves session ID, active tenant, and active project across page refreshes (F5) within the same browser session.
+/// Preserves session ID, active tenant, active program, and active project across page refreshes (F5) within the same browser session.
 /// </summary>
 public record UserSessionStorageData(
     Guid SessionId,
@@ -11,4 +11,5 @@ public record UserSessionStorageData(
     string ActiveTenantId,
     Guid? ActiveProjectId = null,
     string? TimeZoneId = null,
-    DateTime? StartedAtUtc = null);
+    DateTime? StartedAtUtc = null,
+    Guid? ActiveProgramId = null);

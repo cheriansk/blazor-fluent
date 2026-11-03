@@ -1,0 +1,120 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Dashboard
+@using BlazorEnterprise.Core.Dtos.Response
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="mat-program-summary-card">
+    <div class="program-summary-header">
+        <div class="program-title-group">
+            <div class="program-eyebrow">
+                <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-sm" />
+                <span>PROGRAM EXECUTIVE SUMMARY</span>
+            </div>
+            @if (Health != null)
+            {
+                <h2 class="program-name">
+                    @Health.ProgramName
+                    @if (!string.IsNullOrWhiteSpace(Health.ProgramCode))
+                    {
+                        <span class="program-code">(@Health.ProgramCode)</span>
+                    }
+                </h2>
+            }
+            else
+            {
+                <h2 class="program-name">Portfolio Programs Overview</h2>
+            }
+        </div>
+
+        @if (Health != null)
+        {
+            <div class="program-badges-group">
+                <CskStatusChip Text="@Health.Status.ToString()"
+                               Variant="CskStatusChip.ChipVariant.Primary" />
+                <CskStatusChip Text="@($"Health: {Health.Health}")"
+                               Variant="@GetProgramHealthVariant(Health.Health)" />
+            </div>
+        }
+    </div>
+
+    @if (Health != null)
+    {
+        <div class="program-summary-body">
+            <!-- Progress Bar & Percentage -->
+            <div class="program-progress-section">
+                <div class="progress-labels">
+                    <span class="progress-title">Overall Program Progress</span>
+                    <span class="progress-value">@Health.ProgressPercentage%</span>
+                </div>
+                <CskProgressBar Value="@((int)Math.Round(Health.ProgressPercentage))" Max="100" />
+                <div class="progress-details">
+                    <span>@Health.CompletedTasks of @Health.TotalTasks deliverables closed</span>
+                    @if (Health.OverdueTasks > 0)
+                    {
+                        <span class="text-danger">(@Health.OverdueTasks overdue)</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Program Roll-Up Metric Tiles -->
+            <div class="program-metrics-tiles">
+                <div class="metric-tile">
+                    <span class="tile-label">Member Projects</span>
+                    <span class="tile-val">@Health.TotalProjects</span>
+                    <span class="tile-sub">@Health.ActiveProjects Active</span>
+                </div>
+                <div class="metric-tile">
+                    <span class="tile-label">Open Tasks</span>
+                    <span class="tile-val">@Health.OpenTasks</span>
+                    <span class="tile-sub">Sprint in progress</span>
+                </div>
+                <div class="metric-tile">
+                    <span class="tile-label">Cross-Project Blockers</span>
+                    <span class="tile-val @(Health.CrossProjectBlockersCount > 0 ? "tile-val-alert" : "")">
+                        @Health.CrossProjectBlockersCount
+                    </span>
+                    <span class="tile-sub">Dependency gates</span>
+                </div>
+                <div class="metric-tile">
+                    <span class="tile-label">Projects At Risk</span>
+                    <span class="tile-val @(Health.ProjectsAtRisk > 0 ? "tile-val-warning" : "")">
+                        @Health.ProjectsAtRisk
+                    </span>
+                    <span class="tile-sub">Schedule variance</span>
+                </div>
+            </div>
+
+            @if (Health.RiskReasons.Count > 0)
+            {
+                <div class="program-risk-strip">
+                    <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning" />
+                    <div class="risk-reasons-list">
+                        @foreach (var reason in Health.RiskReasons)
+                        {
+                            <span class="risk-reason-item">• @reason</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="program-empty-state">
+            <CskIcon Icon="@CskIcons.Info" Class="csk-icon-sm" />
+            <span>No programs currently configured for this tenant.</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public ProgramHealthSummaryDto? Health { get; set; }
+
+    private static CskStatusChip.ChipVariant GetProgramHealthVariant(ProgramHealthRatingEnum health) => health switch
+    {
+        ProgramHealthRatingEnum.OnTrack => CskStatusChip.ChipVariant.Success,
+        ProgramHealthRatingEnum.AtRisk => CskStatusChip.ChipVariant.Warning,
+        ProgramHealthRatingEnum.Critical => CskStatusChip.ChipVariant.Error,
+        _ => CskStatusChip.ChipVariant.Neutral
+    };
+}

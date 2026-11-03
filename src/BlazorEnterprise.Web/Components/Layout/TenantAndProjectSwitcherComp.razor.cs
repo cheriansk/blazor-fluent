@@ -38,7 +38,7 @@ public partial class TenantAndProjectSwitcherComp : ComponentBase
             _isLoadingProjects = true;
             var entities = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
             _projects = entities
-                .Select(e => new ProjectInfoDto(e.Id, e.Name, e.ShortCode, e.Status))
+                .Select(e => new ProjectInfoDto(e.Id, e.Name, e.ShortCode, e.Status, e.ProgramId))
                 .ToList();
 
             ProjectContext.Initialize(
