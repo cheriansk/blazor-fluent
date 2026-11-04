@@ -22,7 +22,7 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 public class ImportFileService : IImportFileService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly ITenantEncryptionService _encryptionService;
@@ -32,7 +32,7 @@ public class ImportFileService : IImportFileService
     private readonly ILogger<ImportFileService> _logger;
 
     public ImportFileService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         ITenantEncryptionService encryptionService,
@@ -41,7 +41,7 @@ public class ImportFileService : IImportFileService
         INotifyService notificationService,
         ILogger<ImportFileService> logger)
     {
-        _context = context;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _encryptionService = encryptionService;
@@ -53,6 +53,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<Result<Guid>> UploadBatchAndQueueAsync(UploadBatchRequest request, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var uploadedBlobPaths = new List<string>();
 
         try
@@ -203,6 +204,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<Result<Guid>> UploadAndQueueAsync(UploadFileRequest request, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var batchRequest = new UploadBatchRequest
         {
             ProjectId = request.ProjectId,
@@ -224,6 +226,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportHistoryAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         return await _context.ImportFiles
@@ -252,6 +255,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<IReadOnlyList<ImportFileSummaryDto>> GetImportFilesByBatchAsync(Guid projectId, Guid importId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         return await _context.ImportFiles
@@ -280,6 +284,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<ImportFileDetailsDto?> GetImportFileDetailsAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         var file = await _context.ImportFiles
@@ -322,6 +327,7 @@ public class ImportFileService : IImportFileService
 
     public async Task<Result<bool>> DeleteImportFileAsync(Guid projectId, Guid importFileId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         var file = await _context.ImportFiles.AsTracking().FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
@@ -345,6 +351,7 @@ public class ImportFileService : IImportFileService
 
     private async Task SendNotificationAsync(string title, string message, NotificationSeverityEnum severity, Guid projectId, CancellationToken ct)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var userId = _currentUser.UserId;

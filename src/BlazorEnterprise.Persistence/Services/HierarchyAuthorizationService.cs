@@ -15,11 +15,7 @@ using Microsoft.Extensions.Configuration;
 
 using Microsoft.Extensions.Logging;
 
-
-
 namespace BlazorEnterprise.Persistence.Services;
-
-
 
 /// <summary>
 
@@ -32,35 +28,23 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 
 public class HierarchyAuthorizationService : IHierarchyAuthorizationService
-
 {
-
-    private readonly AppDbContext _context;
-    private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
-
+        private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
-
-
     private readonly IAuditService _auditService;
-
     private readonly SecurityOptions _securityOptions;
-
     private readonly ILogger<HierarchyAuthorizationService> _logger;
 
-
-
     public HierarchyAuthorizationService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IAuditService auditService,
         ILogger<HierarchyAuthorizationService> logger,
-        IOptions<SecurityOptions>? securityOptions = null,
-        IDbContextFactory<AppDbContext>? dbContextFactory = null)
+        IOptions<SecurityOptions>? securityOptions = null)
     {
-        _context = context;
-        _dbContextFactory = dbContextFactory;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
@@ -71,21 +55,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         };
     }
 
-
-
     public async Task<bool> IsTenantAdminAsync(Guid tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || tenantId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         // Check explicit TenantUser membership
 
@@ -101,22 +77,14 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !u.IsDeleted, ct);
 
-
-
         if (tenantUser != null)
-
         {
-
             if (!tenantUser.IsActive) return false;
-
-
 
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !tenantUser.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedTenantAdminDetected",
@@ -128,70 +96,39 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return false;
-
             }
 
-
-
             return true;
-
         }
-
-
 
         return false;
-
     }
 
-
-
     public async Task<bool> IsTenantAdminAsync(string tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(userId)) return false;
 
-
-
         if (Guid.TryParse(tenantId.Trim(), out var guidTenant))
-
         {
-
             return await IsTenantAdminAsync(guidTenant, userId, ct);
-
         }
-
-
 
         var normalizedSlug = tenantId.Trim().ToLowerInvariant();
 
-        if (_dbContextFactory != null)
-        {
-            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
-            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
-            if (t == null) return false;
-            return await IsTenantAdminAsync(t.Id, userId, ct);
-        }
+        
 
         var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return false;
 
-
-
         return await IsTenantAdminAsync(tenant.Id, userId, ct);
-
     }
 
-
-
     public async Task<bool> IsProgramAdminAsync(Guid programId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
-
-
 
         var program = await _context.Programs
 
@@ -199,23 +136,14 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
 
-
-
         if (program == null) return false;
-
-
 
         // Parent Tenant Admin has full administrative governance rights over child programs
 
         if (await IsTenantAdminAsync(program.TenantId, userId, ct)) return true;
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var programRole = await _context.ProgramUserRoles
 
@@ -229,18 +157,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !r.IsDeleted, ct);
 
-
-
         if (programRole != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !programRole.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedProgramAdminDetected",
@@ -252,30 +174,18 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return false;
-
             }
 
-
-
             return true;
-
         }
 
-
-
         return false;
-
     }
 
-
-
     public async Task<bool> IsProjectAdminAsync(Guid projectId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (projectId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
-
-
 
         var project = await _context.Projects
 
@@ -283,31 +193,20 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(p => p.Id == projectId && !p.IsDeleted, ct);
 
-
-
         if (project == null) return false;
-
-
 
         // 1. Tenant Admin of the owning tenant has full access
 
         if (await IsTenantAdminAsync(project.TenantId, userId, ct)) return true;
 
-
-
         // 2. Parent Program Admin has full access
 
         if (project.ProgramId.HasValue && await IsProgramAdminAsync(project.ProgramId.Value, userId, ct)) return true;
 
-
-
         // 3. Project Admin role assignment
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var projectRole = await _context.ProjectUserRoles
 
@@ -321,18 +220,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !r.IsDeleted, ct);
 
-
-
         if (projectRole != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !projectRole.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedProjectAdminDetected",
@@ -344,38 +237,23 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return false;
-
             }
 
-
-
             return true;
-
         }
 
-
-
         return false;
-
     }
 
-
-
     public async Task<bool> CanViewTenantSettingsAsync(Guid tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (_currentUser.IsAuthenticated_RootTenant_User && tenantId == _currentUser.TenantId) return true;
 
         if (await IsTenantAdminAsync(tenantId, userId, ct)) return true;
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         return await _context.ProgramUserRoles
 
@@ -388,77 +266,48 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                            r.Role == ProgramRoleEnum.Admin &&
 
                            !r.IsDeleted, ct);
-
     }
 
-
-
     public async Task<bool> CanViewTenantSettingsAsync(string tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(tenantId)) return false;
 
         if (Guid.TryParse(tenantId.Trim(), out var guidTenant)) return await CanViewTenantSettingsAsync(guidTenant, userId, ct);
 
-
-
         var normalizedSlug = tenantId.Trim().ToLowerInvariant();
-        if (_dbContextFactory != null)
-        {
-            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
-            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
-            if (t == null) return false;
-            return await CanViewTenantSettingsAsync(t.Id, userId, ct);
-        }
+        
 
         var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return false;
 
         return await CanViewTenantSettingsAsync(tenant.Id, userId, ct);
-
     }
 
-
-
     public async Task<bool> CanEditTenantSettingsAsync(Guid tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (_currentUser.IsAuthenticated_RootTenant_User && tenantId == _currentUser.TenantId) return true;
 
         return await IsTenantAdminAsync(tenantId, userId, ct);
-
     }
 
-
-
     public async Task<bool> CanEditTenantSettingsAsync(string tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (_currentUser.IsAuthenticated_RootTenant_User && (string.Equals(tenantId.Trim(), _currentUser.TenantSlug, StringComparison.OrdinalIgnoreCase) || (Guid.TryParse(tenantId.Trim(), out var gt) && gt == _currentUser.TenantId))) return true;
 
         return await IsTenantAdminAsync(tenantId, userId, ct);
-
     }
 
-
-
     public async Task<bool> CanAccessTenantAsync(Guid tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (!SystemIdentityUtility.IsAuthenticatedTenantUser(_currentUser, _tenantContext) || tenantId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         // 1. Strict Tenant Roster Gate: Check active TenantUser record
 
@@ -472,22 +321,14 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !u.IsDeleted, ct);
 
-
-
         if (tenantUser != null)
-
         {
-
             if (!tenantUser.IsActive) return false; // Explicitly deactivated by Tenant Admin!
-
-
 
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !tenantUser.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedTenantUserDetected",
@@ -499,69 +340,40 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return false;
-
             }
 
-
-
             return true;
-
         }
-
-
 
         if (_currentUser.IsAuthenticated_RootTenant_User && tenantId == _currentUser.TenantId)
-
         {
-
             return true;
-
         }
 
-
-
         return false;
-
     }
 
-
-
     public async Task<bool> CanAccessTenantAsync(string tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(userId)) return false;
 
         if (Guid.TryParse(tenantId.Trim(), out var guidTenant)) return await CanAccessTenantAsync(guidTenant, userId, ct);
 
-
-
         var normalizedSlug = tenantId.Trim().ToLowerInvariant();
-        if (_dbContextFactory != null)
-        {
-            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
-            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
-            if (t == null) return false;
-            return await CanAccessTenantAsync(t.Id, userId, ct);
-        }
+        
 
         var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return false;
 
         return await CanAccessTenantAsync(tenant.Id, userId, ct);
-
     }
 
-
-
     public async Task<bool> CanAccessProgramAsync(Guid programId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
-
-
 
         var program = await _context.Programs
 
@@ -569,23 +381,14 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
 
-
-
         if (program == null) return false;
-
-
 
         // Tenant Admin can access all programs in the tenant
 
         if (await IsTenantAdminAsync(program.TenantId, userId, ct)) return true;
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         // Explicit Program Role
 
@@ -599,18 +402,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !r.IsDeleted, ct);
 
-
-
         if (programRole != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !programRole.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedProgramUserRoleDetected",
@@ -622,16 +419,10 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return false;
-
             }
 
-
-
             return true;
-
         }
-
-
 
         // Member of any project under this program
 
@@ -645,8 +436,6 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .ToListAsync(ct);
 
-
-
         return await _context.ProjectUserRoles
 
             .AsNoTracking()
@@ -656,18 +445,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                            ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
 
                            !r.IsDeleted, ct);
-
     }
 
-
-
     public async Task<bool> CanAccessProjectAsync(Guid projectId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (projectId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
-
-
 
         var project = await _context.Projects
 
@@ -675,31 +458,20 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(p => p.Id == projectId && !p.IsDeleted, ct);
 
-
-
         if (project == null) return false;
-
-
 
         // Tenant Admin has access
 
         if (await IsTenantAdminAsync(project.TenantId, userId, ct)) return true;
 
-
-
         // Parent Program Admin has access
 
         if (project.ProgramId.HasValue && await IsProgramAdminAsync(project.ProgramId.Value, userId, ct)) return true;
 
-
-
         // Explicit Project Role assignment
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var projectRole = await _context.ProjectUserRoles
 
@@ -711,18 +483,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !r.IsDeleted, ct);
 
-
-
         if (projectRole != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !projectRole.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedProjectUserRoleDetected",
@@ -734,35 +500,21 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return false;
-
             }
 
-
-
             return true;
-
         }
 
-
-
         return false;
-
     }
 
-
-
     public async Task<IReadOnlyList<Guid>> GetAccessibleProgramIdsAsync(Guid tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (tenantId == Guid.Empty) return [];
 
-
-
         if (await IsTenantAdminAsync(tenantId, userId, ct))
-
         {
-
             return await _context.Programs
 
                 .AsNoTracking()
@@ -772,16 +524,10 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                 .Select(p => p.Id)
 
                 .ToListAsync(ct);
-
         }
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var directlyAssignedProgramIds = await _context.ProgramUserRoles
 
@@ -797,8 +543,6 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .ToListAsync(ct);
 
-
-
         var projectIdsWithRoles = await _context.ProjectUserRoles
 
             .AsNoTracking()
@@ -813,8 +557,6 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .ToListAsync(ct);
 
-
-
         var programsFromProjects = await _context.Projects
 
             .AsNoTracking()
@@ -825,8 +567,6 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .ToListAsync(ct);
 
-
-
         return directlyAssignedProgramIds
 
             .Concat(programsFromProjects)
@@ -834,47 +574,27 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             .Distinct()
 
             .ToList();
-
     }
 
-
-
     public async Task<IReadOnlyList<Guid>> GetAccessibleProgramIdsAsync(string tenantId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(tenantId)) return [];
 
         if (Guid.TryParse(tenantId.Trim(), out var guidTenant)) return await GetAccessibleProgramIdsAsync(guidTenant, userId, ct);
 
-
-
         var normalizedSlug = tenantId.Trim().ToLowerInvariant();
-        if (_dbContextFactory != null)
-        {
-            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
-            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
-            if (t == null) return [];
-            return await GetAccessibleProgramIdsAsync(t.Id, userId, ct);
-        }
-
         var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return [];
 
         return await GetAccessibleProgramIdsAsync(tenant.Id, userId, ct);
-
     }
 
-
-
     public async Task<ProjectRoleEnum?> GetEffectiveProjectRoleAsync(Guid projectId, string? userId = null, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (projectId == Guid.Empty) return null;
-
-
 
         var targetUserId = !string.IsNullOrWhiteSpace(userId)
 
@@ -882,11 +602,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : _currentUser.Email);
 
-
-
         if (string.IsNullOrWhiteSpace(targetUserId)) return null;
-
-
 
         var project = await _context.Projects
 
@@ -898,29 +614,17 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(ct);
 
-
-
         if (project == null) return null;
-
-
 
         // Tenant Admin has overarching Admin rights on all child projects
 
         if (await IsTenantAdminAsync(project.TenantId, targetUserId, ct))
-
         {
-
             return ProjectRoleEnum.Admin;
-
         }
 
-
-
         var normalizedUser = targetUserId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         // 1. Check explicit ProjectUserRole assignment
 
@@ -936,18 +640,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(ct);
 
-
-
         if (projectRoleEntity != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             if (!string.IsNullOrWhiteSpace(integritySecret) && !projectRoleEntity.VerifyIntegritySignature(integritySecret))
-
             {
-
                 await _auditService.LogSecurityEventAsync(
 
                     "TamperedProjectUserRoleDetected",
@@ -959,23 +657,15 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                     ct);
 
                 return null;
-
             }
 
-
-
             return projectRoleEntity.Role;
-
         }
-
-
 
         // 2. Check parent Program membership (The "ReadOnly Floor" rule)
 
         if (project.ProgramId.HasValue)
-
         {
-
             var programRoleEntity = await _context.ProgramUserRoles
 
                 .AsNoTracking()
@@ -988,73 +678,46 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                 .FirstOrDefaultAsync(ct);
 
-
-
             if (programRoleEntity != null)
-
             {
-
                 var integritySecret = _securityOptions.IntegritySecret;
 
                 if (string.IsNullOrWhiteSpace(integritySecret) || programRoleEntity.VerifyIntegritySignature(integritySecret))
-
                 {
-
                     return ProjectRoleEnum.ReadOnly;
-
                 }
-
             }
-
         }
 
-
-
         return null;
-
     }
 
-
-
     public async Task<bool> HasProjectClearanceAsync(Guid projectId, ProjectRoleEnum minimumTier, string? userId = null, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var effectiveRole = await GetEffectiveProjectRoleAsync(projectId, userId, ct);
 
         return effectiveRole.HasValue && (int)effectiveRole.Value >= (int)minimumTier;
-
     }
 
-
-
     public async Task EnsureHasProjectClearanceAsync(Guid projectId, ProjectRoleEnum minimumTier, string? userId = null, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var targetUserId = !string.IsNullOrWhiteSpace(userId)
 
             ? userId
 
             : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : "anonymous");
 
-
-
         var effectiveRole = await GetEffectiveProjectRoleAsync(projectId, targetUserId, ct);
 
-
-
         if (!effectiveRole.HasValue || (int)effectiveRole.Value < (int)minimumTier)
-
         {
-
             _logger.LogWarning(
 
                 "AUDIT [Security]: Project clearance denied. UserId='{UserId}', ProjectId='{ProjectId}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
 
                 targetUserId, projectId, minimumTier, effectiveRole?.ToString() ?? "None");
-
-
 
             await _auditService.LogSecurityEventAsync(
 
@@ -1066,31 +729,19 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                 ct);
 
-
-
             throw new System.Security.SecurityException(
 
                 $"Zero Trust Security Violation: User lacks required clearance ({minimumTier}) for project {projectId}.");
-
         }
-
     }
 
-
-
     public async Task<bool> IsUserActiveAndProvisionedAsync(string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(userId)) return false;
 
-
-
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var user = await _context.Users
 
@@ -1098,18 +749,12 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(u => ((hasGuid && u.Id == userGuid) || u.Email.ToLower() == normalizedUser) && !u.IsDeleted, ct);
 
-
-
         if (user == null || !user.IsActive) return false;
-
-
 
         var integritySecret = _securityOptions.IntegritySecret;
 
         if (!string.IsNullOrWhiteSpace(integritySecret) && !user.VerifyIntegritySignature(integritySecret))
-
         {
-
             await _auditService.LogSecurityEventAsync(
 
                 "TamperedUserEntityDetected",
@@ -1121,16 +766,11 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
                 ct);
 
             return false;
-
         }
-
-
 
         var now = DateTime.UtcNow;
 
         if (!user.IsActiveAt(now)) return false;
-
-
 
         var hasProjectRole = await _context.ProjectUserRoles
 
@@ -1138,11 +778,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .AnyAsync(r => ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) && !r.IsDeleted, ct);
 
-
-
         if (hasProjectRole) return true;
-
-
 
         var hasProgramRole = await _context.ProgramUserRoles
 
@@ -1150,11 +786,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .AnyAsync(r => ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) && !r.IsDeleted, ct);
 
-
-
         if (hasProgramRole) return true;
-
-
 
         var hasTenantAdminRole = await _context.TenantUsers
 
@@ -1164,39 +796,24 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                            u.Role == TenantRoleEnum.TenantAdmin && u.IsActive && !u.IsDeleted, ct);
 
-
-
         return hasTenantAdminRole;
-
     }
-
-
 
     public Task<bool> CanManageTenantAdminsAsync(Guid tenantId, string userId, CancellationToken ct = default) =>
 
         CanManageTenantAdminsAsync(tenantId.ToString(), userId, ct);
 
-
-
     public Task<bool> CanManageTenantAdminsAsync(string tenantId, string userId, CancellationToken ct = default)
-
     {
-
         // Strictly App Administrators (Root Admins) can assign, modify, or revoke Tenant Admins
 
         return Task.FromResult(_currentUser.IsRootAdmin);
-
     }
 
-
-
     public async Task<bool> CanManageProgramAdminsAsync(Guid programId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
-
-
 
         var program = await _context.Programs
 
@@ -1204,25 +821,16 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
 
-
-
         if (program == null) return false;
-
-
 
         // Tenant Admin of the owning tenant can manage program admins
 
         if (await IsTenantAdminAsync(program.TenantId, userId, ct)) return true;
 
-
-
         // Existing Program Admin of this program can manage program admins
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var programRole = await _context.ProgramUserRoles
 
@@ -1236,33 +844,20 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !r.IsDeleted, ct);
 
-
-
         if (programRole != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             return string.IsNullOrWhiteSpace(integritySecret) || programRole.VerifyIntegritySignature(integritySecret);
-
         }
 
-
-
         return false;
-
     }
 
-
-
     public async Task<bool> CanManageProjectAdminsAsync(Guid projectId, string userId, CancellationToken ct = default)
-
     {
-
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (projectId == Guid.Empty || string.IsNullOrWhiteSpace(userId)) return false;
-
-
 
         var project = await _context.Projects
 
@@ -1270,31 +865,20 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .FirstOrDefaultAsync(p => p.Id == projectId && !p.IsDeleted, ct);
 
-
-
         if (project == null) return false;
-
-
 
         // 1. Tenant Admin of the owning tenant
 
         if (await IsTenantAdminAsync(project.TenantId, userId, ct)) return true;
 
-
-
         // 2. Parent Program Admin
 
         if (project.ProgramId.HasValue && await IsProgramAdminAsync(project.ProgramId.Value, userId, ct)) return true;
 
-
-
         // 3. Existing Project Admin of this project
 
         var normalizedUser = userId.Trim().ToLowerInvariant();
-
         var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
-
-
 
         var projectRole = await _context.ProjectUserRoles
 
@@ -1308,23 +892,13 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                                       !r.IsDeleted, ct);
 
-
-
         if (projectRole != null)
-
         {
-
             var integritySecret = _securityOptions.IntegritySecret;
 
             return string.IsNullOrWhiteSpace(integritySecret) || projectRole.VerifyIntegritySignature(integritySecret);
-
         }
 
-
-
         return false;
-
     }
-
 }
-

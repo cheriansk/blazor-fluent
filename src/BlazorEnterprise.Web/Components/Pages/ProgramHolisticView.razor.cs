@@ -8,9 +8,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace BlazorEnterprise.Web.Components.Pages;
 
-public partial class ProgramHolisticView : ComponentBase
+public partial class ProgramHolisticView : ComponentBase, IDisposable
 {
     private bool _isLoading = true;
+    private CancellationTokenSource? _loadCts;
     private ProgramHealthSummaryDto? _healthSummary;
     private IReadOnlyList<CalendarItemDto> _calendarEvents = Array.Empty<CalendarItemDto>();
     private IReadOnlyList<CalendarItemDto> _milestones = Array.Empty<CalendarItemDto>();
@@ -49,6 +50,15 @@ public partial class ProgramHolisticView : ComponentBase
             return;
         }
 
+        try
+        {
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+        }
+        catch (ObjectDisposedException) { }
+        _loadCts = new CancellationTokenSource();
+        var ct = _loadCts.Token;
+
         _isLoading = true;
         StateHasChanged();
 
@@ -57,33 +67,34 @@ public partial class ProgramHolisticView : ComponentBase
             var programId = ProjectContext.ProgramId.Value;
             var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId : Guid.Empty;
 
-            var healthTask = ProgramService.GetProgramHealthAsync(programId);
-            var risksTask = ProgramService.GetProgramRisksAsync(programId);
-            var assumptionsTask = ProgramService.GetProgramAssumptionsAsync(programId);
-            var issuesTask = ProgramService.GetProgramIssuesAsync(programId);
-            var blockersTask = ProgramService.GetProgramBlockersAsync(programId);
+            _healthSummary = await ProgramService.GetProgramHealthAsync(programId, ct);
+            ct.ThrowIfCancellationRequested();
+            _risks = await ProgramService.GetProgramRisksAsync(programId, ct);
+            ct.ThrowIfCancellationRequested();
+            _assumptions = await ProgramService.GetProgramAssumptionsAsync(programId, ct);
+            ct.ThrowIfCancellationRequested();
+            _issues = await ProgramService.GetProgramIssuesAsync(programId, ct);
+            ct.ThrowIfCancellationRequested();
+            _blockers = await ProgramService.GetProgramBlockersAsync(programId, ct);
+            ct.ThrowIfCancellationRequested();
 
             var now = DateTime.UtcNow;
-            var calendarTask = CalendarService.GetProgramCalendarAsync(
+            _calendarEvents = await CalendarService.GetProgramCalendarAsync(
                 tenantId,
                 programId,
                 now.AddYears(-1),
-                now.AddYears(2));
-
-            await Task.WhenAll(healthTask, risksTask, assumptionsTask, issuesTask, blockersTask, calendarTask);
-
-            _healthSummary = await healthTask;
-            _risks = await risksTask;
-            _assumptions = await assumptionsTask;
-            _issues = await issuesTask;
-            _blockers = await blockersTask;
-            _calendarEvents = await calendarTask;
+                now.AddYears(2),
+                ct);
 
             _milestones = _calendarEvents
                 .Where(e => string.Equals(e.ItemCategory, "Milestone", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             BuildTabs();
+        }
+        catch (OperationCanceledException)
+        {
+            // Navigation or new load cancelled in-flight query cleanly
         }
         catch (Exception)
         {
@@ -167,5 +178,11 @@ public partial class ProgramHolisticView : ComponentBase
     public void Dispose()
     {
         ProjectContext.OnChange -= HandleProjectContextChanged;
+        try
+        {
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+        }
+        catch (ObjectDisposedException) { }
     }
 }

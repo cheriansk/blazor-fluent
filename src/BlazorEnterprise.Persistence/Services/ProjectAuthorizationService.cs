@@ -16,7 +16,7 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 public class ProjectAuthorizationService : IProjectAuthorizationService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IHierarchyAuthorizationService _hierarchyAuth;
@@ -24,14 +24,14 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
     private readonly ILogger<ProjectAuthorizationService> _logger;
 
     public ProjectAuthorizationService(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IHierarchyAuthorizationService hierarchyAuth,
         IAuditService auditService,
         ILogger<ProjectAuthorizationService> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _hierarchyAuth = hierarchyAuth;
@@ -41,6 +41,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<ProjectRoleEnum?> GetCurrentUserProjectRoleAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return null;
         return await _hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, _currentUser.UserId, ct);
@@ -48,6 +49,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<bool> CanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return false;
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
@@ -55,6 +57,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<bool> CanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return false;
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
@@ -62,36 +65,43 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task EnsureCanVisitAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, string operation = "", CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanEditAsync(Guid projectId, ProjectRoleEnum minRole = ProjectRoleEnum.Contribute, string operation = "", CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, minRole, _currentUser.UserId, ct);
     }
 
     public async Task<bool> HasClearanceAsync(Guid projectId, ProjectRoleEnum minimumRole, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         return await _hierarchyAuth.HasProjectClearanceAsync(projectId, minimumRole, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanContributeAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Contribute, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanManageWorkflowAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Admin, _currentUser.UserId, ct);
     }
 
     public async Task EnsureCanManageAccessAsync(Guid projectId, string? operation = null, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         await _hierarchyAuth.EnsureHasProjectClearanceAsync(projectId, ProjectRoleEnum.Admin, _currentUser.UserId, ct);
     }
 
     public async Task<IReadOnlyList<Guid>> GetAuthorizedProjectIdsAsync(ProjectRoleEnum minRole = ProjectRoleEnum.ReadOnly, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (!_currentUser.IsAuthenticated_RegularTenant_User)
             return [];
 
@@ -129,6 +139,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<IReadOnlyList<ProjectUserRoleEntity>> GetProjectMembersAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _currentUser.TenantId;
 
         return await _dbContext.ProjectUserRoles
@@ -148,6 +159,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         ProjectRoleEnum role,
         CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         // Separation of duties: Appointing Project Admin requires CanManageProjectAdminsAsync
         if (role == ProjectRoleEnum.Admin)
         {
@@ -224,6 +236,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
     public async Task<Result> RevokeUserRoleAsync(Guid projectId, string userId, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var callerRole = await GetCurrentUserProjectRoleAsync(projectId, ct);
         if (callerRole is null || !callerRole.Value.CanManageAccess())
         {

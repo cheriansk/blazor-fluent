@@ -16,7 +16,7 @@ public partial class UserTaskService : IUserTaskService
     partial void OnBeforeCreateTask(TaskEntity task);
     partial void OnAfterCreateTask(TaskEntity task);
 
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
@@ -26,7 +26,7 @@ public partial class UserTaskService : IUserTaskService
     private readonly IEngineClient? _engineClient;
 
     public UserTaskService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         INotifyService notificationService,
@@ -35,7 +35,7 @@ public partial class UserTaskService : IUserTaskService
         ILogger<UserTaskService> logger,
         IEngineClient? engineClient = null)
     {
-        _context = context;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _notificationService = notificationService;
@@ -47,6 +47,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<TaskEntity>> GetTasksByProjectAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProject", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -66,6 +67,7 @@ public partial class UserTaskService : IUserTaskService
         Guid projectId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTasksByProjectStream", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -86,6 +88,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<TaskEntity?> GetTaskByIdAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskById", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -105,6 +108,7 @@ public partial class UserTaskService : IUserTaskService
 
     private async Task HydrateEncryptedTasksInMemoryAsync(IReadOnlyList<TaskEntity> tasks, CancellationToken ct)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (_engineClient is null || tasks.Count == 0)
         {
             return;
@@ -158,6 +162,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<TaskEntity>> CreateTaskAsync(TaskEntity task, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CreateTask", ct: ct);
@@ -196,6 +201,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<TaskEntity>> UpdateTaskAsync(TaskEntity updated, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -242,6 +248,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<bool>> CloseTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "CloseTask", ct: ct);
@@ -296,6 +303,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<bool>> ReopenTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "ReopenTask", ct: ct);
@@ -350,6 +358,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<bool>> CancelTaskAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "CancelTask", ct: ct);
@@ -377,6 +386,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<UserTaskCommentEntity>> AddCommentAsync(Guid projectId, Guid taskId, string commentText, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             if (string.IsNullOrWhiteSpace(commentText))
@@ -426,6 +436,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<UserTaskCommentEntity>> GetCommentsAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetComments", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -439,6 +450,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<TaskDependencyItemDto>> GetTaskDependenciesAsync(Guid projectId, Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetTaskDependencies", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -490,6 +502,7 @@ public partial class UserTaskService : IUserTaskService
         string? notes = null,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             if (taskId == dependsOnTaskId)
@@ -581,6 +594,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<bool>> RemoveTaskDependencyAsync(Guid projectId, Guid dependencyId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _projectAuth.EnsureCanEditAsync(projectId, operation: "RemoveTaskDependency", ct: ct);
@@ -617,6 +631,7 @@ public partial class UserTaskService : IUserTaskService
 
     private async Task NotifyAssigneesAsync(TaskEntity task, bool isNew, CancellationToken ct)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var emails = task.GetParsedAssigneeEmails();
         if (emails.Count == 0) return;
 
@@ -664,6 +679,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<SubTaskEntity>> GetSubTasksByTaskIdAsync(Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         return await _context.SubTasks
             .AsNoTracking()
@@ -675,6 +691,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<SubTaskEntity>> CreateSubTaskAsync(SubTaskEntity subTask, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -708,6 +725,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<SubTaskEntity>> UpdateSubTaskAsync(SubTaskEntity updated, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -741,6 +759,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<bool>> DeleteSubTaskAsync(Guid subTaskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -771,6 +790,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetTaskLinksAsync(Guid taskId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         return await _context.WorkDependencies
             .AsNoTracking()
@@ -790,6 +810,7 @@ public partial class UserTaskService : IUserTaskService
         string? watcherEmails = null,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             if (sourceTaskId == targetTaskId)
@@ -888,6 +909,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<bool>> RemoveTaskLinkAsync(Guid linkId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -918,6 +940,7 @@ public partial class UserTaskService : IUserTaskService
         Guid? targetProgramId,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -966,6 +989,7 @@ public partial class UserTaskService : IUserTaskService
 
     private async Task SendBlockerAlertAsync(string email, string title, string message, NotificationSeverityEnum severity, Guid projectId, CancellationToken ct)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var norm = email.Trim().ToLowerInvariant();
@@ -993,6 +1017,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<TaskEntity>> GetTenantTasksAsync(Guid tenantId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Tasks
             .AsNoTracking()
             .Where(t => t.TenantId == tenantId && t.Level == TaskLevelEnum.Tenant && !t.IsDeleted)
@@ -1002,6 +1027,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<RiskEntity>> GetTenantRisksAsync(Guid tenantId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Risks
             .AsNoTracking()
             .Where(r => r.TenantId == tenantId && r.Level == TaskLevelEnum.Tenant && !r.IsDeleted)
@@ -1011,6 +1037,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<Result<RiskEntity>> CreateRiskAsync(RiskEntity risk, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             _context.Risks.Add(risk);
@@ -1026,6 +1053,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<TaskEntity>> GetRecentTasksAsync(int limit = 30, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Tasks
             .AsNoTracking()
             .Where(t => !t.IsDeleted)
@@ -1036,6 +1064,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetProjectWorkDependenciesAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.WorkDependencies
             .AsNoTracking()
             .Where(d => d.ProjectId == projectId && !d.IsDeleted)

@@ -57,8 +57,6 @@ public class UserSessionService : IUserSessionService
 
         var tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
 
-
-
         // Enforce strict single-active-session policy per user
         await RevokePreviousSessionsAsync(userId, null, ct);
 

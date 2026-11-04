@@ -14,13 +14,13 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly IAuditService _auditService;
     private readonly ILogger<UnitOfWork> _logger;
 
-    public UnitOfWork(AppDbContext dbContext, IAuditService auditService, ILogger<UnitOfWork> logger)
+    public UnitOfWork(IDbContextFactory<AppDbContext> dbFactory, IAuditService auditService, ILogger<UnitOfWork> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _auditService = auditService;
         _logger = logger;
     }
@@ -30,6 +30,7 @@ public class UnitOfWork : IUnitOfWork
         string operationName,
         CancellationToken cancellationToken = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var strategy = _dbContext.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {

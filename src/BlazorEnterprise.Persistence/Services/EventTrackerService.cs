@@ -28,45 +28,27 @@ using System.Text.Json;
 
 using BlazorEnterprise.Persistence.Extensions;
 
-
-
 namespace BlazorEnterprise.Persistence.Services;
 
-
-
 public class EventTrackerService : IEventTrackerService
-
 {
-
     private static readonly JsonSerializerOptions JsonOptions = new()
-
     {
-
         WriteIndented = true,
 
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-
     };
 
-
-
-    private readonly AppDbContext _dbContext;
-
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
-
     private readonly ITenantContext _tenantContext;
-
     private readonly IAuditService _auditService;
-
     private readonly IOptions<JobsOptions> _jobsOptions;
-
     private readonly ILogger<EventTrackerService> _logger;
-
-
 
     public EventTrackerService(
 
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
 
         ICurrentUser currentUser,
 
@@ -77,24 +59,14 @@ public class EventTrackerService : IEventTrackerService
         IOptions<JobsOptions> jobsOptions,
 
         ILogger<EventTrackerService> logger)
-
     {
-
-        _dbContext = dbContext;
-
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
-
         _tenantContext = tenantContext;
-
         _auditService = auditService;
-
         _jobsOptions = jobsOptions;
-
         _logger = logger;
-
     }
-
-
 
     public async Task<Guid> TrackPublishAsync<TEvent>(
 
@@ -119,49 +91,32 @@ public class EventTrackerService : IEventTrackerService
         string? senderUserEmail = null,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         try
-
         {
-
             // Use runtime type so concrete derived event types (e.g. TaskCadenceAlertJobEvent) are captured accurately
 
             var runtimeType = @event?.GetType() ?? typeof(TEvent);
-
             var eventName = runtimeType.Name;
-
             var eventTypeFullName = runtimeType.FullName;
-
             var actualEventId = eventId ?? Guid.CreateVersion7();
-
-
 
             var isSystemOrCron = string.Equals(triggerSource, "Cron", StringComparison.OrdinalIgnoreCase) ||
 
                                  string.Equals(triggerSource, "System", StringComparison.OrdinalIgnoreCase);
 
-
-
             Guid tenantId;
 
             if (isSystemOrCron)
-
             {
-
                 tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
-
             }
 
             else
-
             {
-
                 if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty)
-
                 {
-
                     _logger.LogError("Mandatory tenant validation failed: User-triggered event '{EventType}' cannot be dispatched without an active tenant.", eventName);
 
                     throw new InvalidOperationException(
@@ -169,16 +124,10 @@ public class EventTrackerService : IEventTrackerService
                         $"Mandatory tenant validation failed: User-triggered event '{eventName}' cannot be dispatched " +
 
                         $"because TenantId is null or empty. Ensure the active tenant is properly initialized before dispatching events.");
-
                 }
 
-
-
                 tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
-
             }
-
-
 
             // Infer class name from source file path if not passed explicitly
 
@@ -192,86 +141,53 @@ public class EventTrackerService : IEventTrackerService
 
                     : "UnknownPublisher");
 
-
-
             // Serialize event payload using runtime type so derived properties are captured
 
             string payloadJson;
 
             try
-
             {
-
                 payloadJson = JsonSerializer.Serialize(@event, runtimeType, JsonOptions);
-
             }
 
             catch (Exception ex)
-
             {
-
                 _logger.LogError(ex, "Failed to serialize event payload of type {EventType}", eventName);
 
                 payloadJson = $"{{\"serializationError\": \"{ex.Message}\"}}";
-
             }
 
-
-
             var jobEvent = @event as IJobEvent;
-
             var resolvedSenderOrigin = senderOrigin ?? jobEvent?.SenderOrigin ?? triggerSource;
-
             var resolvedUserId = senderUserId ?? jobEvent?.SenderUserId ?? _currentUser.UserId;
-
             var resolvedUserEmail = senderUserEmail ?? jobEvent?.SenderUserEmail ?? _currentUser.Email;
 
-
-
             if (string.IsNullOrWhiteSpace(resolvedUserId) && isSystemOrCron)
-
             {
-
                 var daemonName = $"cron:{eventName.Replace("Event", string.Empty)}";
 
                 resolvedUserId = daemonName;
 
                 if (string.IsNullOrWhiteSpace(resolvedUserEmail))
-
                 {
-
                     resolvedUserEmail = _jobsOptions.Value.CronServiceAccountEmail;
-
                 }
-
             }
 
             else if (string.IsNullOrWhiteSpace(resolvedUserId) && string.IsNullOrWhiteSpace(resolvedUserEmail))
-
             {
-
                 resolvedUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"PublishEvent:{eventName}");
 
                 resolvedUserEmail = _currentUser.Email;
-
             }
-
-
 
             if (string.IsNullOrWhiteSpace(resolvedUserId) || string.IsNullOrWhiteSpace(resolvedUserEmail))
-
             {
-
                 throw new InvalidOperationException($"Zero-Trust Security Violation: Cannot track event publish for '{eventName}'. Sender identity is missing and no service account is configured.");
-
             }
 
-
-
             var record = new EventPublishTrackerEntity
-
             {
-
                 Id = Guid.CreateVersion7(),
 
                 EventId = actualEventId,
@@ -303,16 +219,11 @@ public class EventTrackerService : IEventTrackerService
                 Status = EventTrackerStatusEnum.Published,
 
                 ConsumerCount = 0
-
             };
-
-
 
             _dbContext.EventPublishTrackers.Add(record);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
-
-
 
             _logger.LogInformation(
 
@@ -320,35 +231,23 @@ public class EventTrackerService : IEventTrackerService
 
                 record.EventName, record.EventId, record.CorrelationId, record.SourceClass, record.SourceMethod, record.UserId);
 
-
-
             return record.Id;
-
         }
 
         catch (InvalidOperationException)
-
         {
-
             // Fail-fast security exception: do not swallow mandatory tenant violations
 
             throw;
-
         }
 
         catch (Exception ex)
-
         {
-
             _logger.LogError(ex, "Failed to record event publish tracking ledger for event type {EventType}", typeof(TEvent).Name);
 
             return Guid.Empty;
-
         }
-
     }
-
-
 
     public async Task<Guid> TrackConsumptionStartAsync(
 
@@ -361,13 +260,10 @@ public class EventTrackerService : IEventTrackerService
         int attemptCount = 1,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         try
-
         {
-
             // Lookup parent publication tracker by EventId or primary key Id with AsTracking
 
             var parent = await _dbContext.EventPublishTrackers
@@ -378,18 +274,11 @@ public class EventTrackerService : IEventTrackerService
 
                 .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"Event consumption worker tracking for EventId '{eventId}' ({consumerClass}.{consumerMethod})", cancellationToken);
 
-
-
             var tenantId = parent?.TenantId ?? (_tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId);
-
             var correlationId = parent?.CorrelationId ?? eventId.ToString("N")[..12];
 
-
-
             var consumption = new EventConsumptionTrackerEntity
-
             {
-
                 Id = Guid.CreateVersion7(),
 
                 EventPublishTrackerId = parent?.Id ?? Guid.Empty,
@@ -407,36 +296,21 @@ public class EventTrackerService : IEventTrackerService
                 Status = EventConsumptionStatusEnum.Running,
 
                 AttemptCount = attemptCount
-
             };
-
-
 
             _dbContext.EventConsumptionTrackers.Add(consumption);
 
-
-
             if (parent != null)
-
             {
-
                 if (parent.Status == EventTrackerStatusEnum.Published)
-
                 {
-
                     parent.Status = EventTrackerStatusEnum.InProgress;
-
                 }
 
                 _dbContext.EventPublishTrackers.Update(parent);
-
             }
 
-
-
             await _dbContext.SaveChangesAsync(cancellationToken);
-
-
 
             _logger.LogInformation(
 
@@ -444,25 +318,16 @@ public class EventTrackerService : IEventTrackerService
 
                 consumerClass, consumerMethod, eventId, attemptCount);
 
-
-
             return consumption.Id;
-
         }
 
         catch (Exception ex)
-
         {
-
             _logger.LogError(ex, "Failed to record consumption start for event {EventId}", eventId);
 
             return Guid.Empty;
-
         }
-
     }
-
-
 
     public async Task TrackConsumptionCompleteAsync(
 
@@ -477,17 +342,12 @@ public class EventTrackerService : IEventTrackerService
         string? exceptionDetails = null,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (consumptionTrackerId == Guid.Empty) return;
 
-
-
         try
-
         {
-
             var consumption = await _dbContext.EventConsumptionTrackers
 
                 .AsTracking()
@@ -498,19 +358,12 @@ public class EventTrackerService : IEventTrackerService
 
                 .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"Event consumption completion tracking for ConsumptionId '{consumptionTrackerId}'", cancellationToken);
 
-
-
             if (consumption is null)
-
             {
-
                 _logger.LogWarning("EventTracker: Consumption record {ConsumptionId} not found.", consumptionTrackerId);
 
                 return;
-
             }
-
-
 
             consumption.CompletedAtUtc = DateTime.UtcNow;
 
@@ -522,18 +375,12 @@ public class EventTrackerService : IEventTrackerService
 
             consumption.ExceptionDetails = exceptionDetails;
 
-
-
             _dbContext.EventConsumptionTrackers.Update(consumption);
-
-
 
             // Recalculate parent aggregate status based on all its consumptions
 
             if (consumption.PublishTracker != null)
-
             {
-
                 var siblingConsumptions = await _dbContext.EventConsumptionTrackers
 
                     .AsNoTracking()
@@ -542,84 +389,52 @@ public class EventTrackerService : IEventTrackerService
 
                     .ToListWithAuditedBypassAsync(_auditService, $"Event consumption status aggregation for ParentEvent '{consumption.EventPublishTrackerId}'", cancellationToken);
 
-
-
                 var total = siblingConsumptions.Count;
-
                 var succeededCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? isSuccess : c.Status == EventConsumptionStatusEnum.Succeeded);
-
                 var failedCount = siblingConsumptions.Count(c => c.Id == consumption.Id ? !isSuccess : c.Status == EventConsumptionStatusEnum.Failed);
-
-
 
                 consumption.PublishTracker.ConsumerCount = total;
 
-
-
                 if (failedCount > 0 && succeededCount > 0)
-
                 {
-
                     consumption.PublishTracker.Status = EventTrackerStatusEnum.PartiallyFailed;
-
                 }
 
                 else if (failedCount > 0)
-
                 {
-
                     consumption.PublishTracker.Status = EventTrackerStatusEnum.Failed;
-
                 }
 
                 else if (succeededCount == total)
-
                 {
-
                     consumption.PublishTracker.Status = EventTrackerStatusEnum.Completed;
-
                 }
 
-
-
                 _dbContext.EventPublishTrackers.Update(consumption.PublishTracker);
-
             }
 
-
-
             await _dbContext.SaveChangesAsync(cancellationToken);
-
-
 
             _logger.LogInformation(
 
                 "EventTracker [Consumption Completed]: Consumer {ConsumerClass}.{ConsumerMethod} finished in {Duration}ms. Status: {Status}",
 
                 consumption.ConsumerClass, consumption.ConsumerMethod, durationMs, consumption.Status);
-
         }
 
         catch (Exception ex)
-
         {
-
             _logger.LogError(ex, "Failed to record consumption completion for record {ConsumptionId}", consumptionTrackerId);
-
         }
-
     }
-
-
 
     public async Task<PagedResultRespDto<EventPublishTrackerEntity>> GetEventsAsync(
 
         EventTrackerFilterReqDto filter,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var query = _dbContext.EventPublishTrackers
 
             .Include(e => e.Consumptions)
@@ -628,98 +443,56 @@ public class EventTrackerService : IEventTrackerService
 
             .AsNoTracking();
 
-
-
         // Enforce tenant boundary unless user is host
 
         if (!_tenantContext.IsRootTenant)
-
         {
-
             var tenantId = _tenantContext.TenantId;
 
             query = query.Where(e => e.TenantId == tenantId);
-
         }
 
         else if (!string.IsNullOrWhiteSpace(filter.TenantId) && Guid.TryParse(filter.TenantId, out var filterTenantGuid))
-
         {
-
             query = query.Where(e => e.TenantId == filterTenantGuid);
-
         }
-
-
 
         if (filter.Status.HasValue)
-
         {
-
             query = query.Where(e => e.Status == filter.Status.Value);
-
         }
 
-
-
         if (!string.IsNullOrWhiteSpace(filter.EventName))
-
         {
-
             var name = filter.EventName.Trim();
 
             query = query.Where(e => e.EventName.Contains(name));
-
         }
 
-
-
         if (!string.IsNullOrWhiteSpace(filter.SourceClass))
-
         {
-
             var sc = filter.SourceClass.Trim();
 
             query = query.Where(e => e.SourceClass.Contains(sc));
-
         }
-
-
 
         if (!string.IsNullOrWhiteSpace(filter.UserId))
-
         {
-
             query = query.Where(e => e.UserId == filter.UserId);
-
         }
-
-
 
         if (filter.FromDate.HasValue)
-
         {
-
             query = query.Where(e => e.PublishedAtUtc >= filter.FromDate.Value);
-
         }
-
-
 
         if (filter.ToDate.HasValue)
-
         {
-
             query = query.Where(e => e.PublishedAtUtc <= filter.ToDate.Value);
-
         }
 
-
-
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-
         {
-
             var term = filter.SearchTerm.Trim().ToLower();
 
             query = query.Where(e =>
@@ -735,14 +508,9 @@ public class EventTrackerService : IEventTrackerService
                 (e.UserEmail != null && e.UserEmail.ToLower().Contains(term)) ||
 
                 (e.PayloadJson != null && e.PayloadJson.ToLower().Contains(term)));
-
         }
 
-
-
         var totalCount = await query.CountAsync(cancellationToken);
-
-
 
         var items = await query
 
@@ -754,47 +522,32 @@ public class EventTrackerService : IEventTrackerService
 
             .ToListAsync(cancellationToken);
 
-
-
         return PagedResultRespDto<EventPublishTrackerEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
-
     }
-
-
 
     public async Task<IReadOnlyList<EventConsumptionTrackerEntity>> GetConsumptionsAsync(
 
         Guid publishTrackerId,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var publishTracker = await _dbContext.EventPublishTrackers
 
             .AsNoTracking()
 
             .FirstOrDefaultAsync(e => e.Id == publishTrackerId, cancellationToken);
 
-
-
         if (publishTracker is null) return [];
 
-
-
         if (publishTracker.TenantId != _tenantContext.TenantId)
-
         {
-
             _logger.LogWarning("Security Violation: User '{UserId}' attempted to view consumption logs for event '{EventId}' in tenant '{EventTenant}' outside active tenant '{ActiveTenant}'.",
 
                 _currentUser.UserId, publishTrackerId, publishTracker.TenantId, _tenantContext.TenantId);
 
             return [];
-
         }
-
-
 
         return await _dbContext.EventConsumptionTrackers
 
@@ -805,19 +558,15 @@ public class EventTrackerService : IEventTrackerService
             .OrderBy(c => c.StartedAtUtc)
 
             .ToListAsync(cancellationToken);
-
     }
-
-
 
     public async Task<EventPublishTrackerEntity?> GetEventByIdAsync(
 
         Guid eventTrackerId,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var query = _dbContext.EventPublishTrackers
 
             .Include(e => e.Consumptions)
@@ -826,23 +575,13 @@ public class EventTrackerService : IEventTrackerService
 
             .AsNoTracking();
 
-
-
         if (!_tenantContext.IsRootTenant)
-
         {
-
             var activeTenant = _tenantContext.TenantId;
 
             query = query.Where(e => e.TenantId == activeTenant);
-
         }
 
-
-
         return await query.FirstOrDefaultAsync(e => e.Id == eventTrackerId || e.EventId == eventTrackerId, cancellationToken);
-
     }
-
 }
-

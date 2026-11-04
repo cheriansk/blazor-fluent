@@ -7,11 +7,11 @@ namespace BlazorEnterprise.Persistence.Services.Providers;
 
 public class SubTaskRollupProvider : IWorkItemRollupProvider
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public SubTaskRollupProvider(AppDbContext context)
+    public SubTaskRollupProvider(IDbContextFactory<AppDbContext> dbFactory)
     {
-        _context = context;
+        _dbFactory = dbFactory;
     }
 
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.SubTask;
@@ -25,6 +25,7 @@ public class SubTaskRollupProvider : IWorkItemRollupProvider
         DateTime endUtc,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var query = _context.SubTasks
             .AsNoTracking()
             .Where(s => s.TenantId == tenantId && !s.IsDeleted && s.DueDate >= startUtc && s.DueDate <= endUtc);

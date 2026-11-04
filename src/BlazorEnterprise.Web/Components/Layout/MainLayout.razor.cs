@@ -22,6 +22,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     [Inject] private INavigationStateService NavState { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;
     [Inject] private IUserTimeZoneService TimeZoneService { get; set; } = default!;
+    [Inject] private ICircuitActivityTracker CircuitActivity { get; set; } = default!;
 
     private bool HasActiveTenantSession => CurrentUser.IsAuthenticatedTenantUser;
 
@@ -38,6 +39,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     {
         NavState.OnChange += HandleNavStateChanged;
         TimeZoneService.OnChange += HandleTimeZoneChanged;
+        CircuitActivity.OnChange += HandleCircuitActivityChanged;
     }
 
     private void HandleNavStateChanged()
@@ -50,10 +52,24 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         InvokeAsync(StateHasChanged);
     }
 
+    
+    private void HandleCircuitActivityChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleBeforeInternalNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+    {
+        if (CircuitActivity.IsMutating)
+        {
+            context.PreventNavigation();
+        }
+    }
     public void Dispose()
     {
         NavState.OnChange -= HandleNavStateChanged;
         TimeZoneService.OnChange -= HandleTimeZoneChanged;
+        CircuitActivity.OnChange -= HandleCircuitActivityChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

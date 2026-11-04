@@ -208,7 +208,7 @@ namespace TemplateGuard.Analyzers
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
                 RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
                 RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018, RuleTg019,
-                RuleTg020, RuleTg021, RuleTg022, RuleTg023, RuleTg024);
+                RuleTg020, RuleTg021, RuleTg022, RuleTg023, RuleTg024, RuleTg025, RuleTg026);
 
         public static readonly DiagnosticDescriptor RuleTg020 = new(
             id: "TG020",
@@ -239,6 +239,24 @@ namespace TemplateGuard.Analyzers
             isEnabledByDefault: true,
             description: "Direct dispatch to message queues or channels without Outbox tracking risks message loss on failure. Use the transactional Outbox pattern.",
             helpLinkUri: HelpBaseUrl + "#tg023");
+
+        public static readonly DiagnosticDescriptor RuleTg026 = new(
+            id: "TG026",
+            title: "Task.WhenAll and parallel query execution is forbidden in Blazor UI components and Persistence services",
+            messageFormat: "Concurrent asynchronous execution via '{0}' is forbidden in Blazor UI components and persistence services. Concurrent queries exhaust connection pools and trigger EF Core ConcurrencyDetector InvalidOperationExceptions. ALLOWED APPROACH: Await service calls sequentially using clean 'await' statements.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Blazor Server circuits must execute service and database operations sequentially. Concurrent task execution via Task.WhenAll or Parallel causes context collision and connection exhaustion. Always await each call sequentially.");
+
+        public static readonly DiagnosticDescriptor RuleTg025 = new(
+            id: "TG025",
+            title: "Direct injection of DbContext is forbidden in Blazor Server",
+            messageFormat: "Type '{0}' directly injects '{1}'. Direct DbContext injection causes concurrency crashes in Blazor Server circuits. ALLOWED APPROACH: Inject IDbContextFactory<AppDbContext> and create short-lived contexts using 'await using var context = await _dbFactory.CreateDbContextAsync(ct);'.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Blazor Server circuits share scoped services across concurrent operations and async renders. Directly injecting AppDbContext causes EF Core ConcurrencyDetector InvalidOperationExceptions. Always inject IDbContextFactory<AppDbContext> instead.");
 
         public static readonly DiagnosticDescriptor RuleTg024 = new(
             id: "TG024",
@@ -988,6 +1006,20 @@ namespace TemplateGuard.Analyzers
 
                 var typeName = paramTypeSymbol.Name;
                 var fullTypeName = paramTypeSymbol.ToDisplayString();
+
+                if (filePath != null && !filePath.Contains("/BlazorEnterprise.Jobs/") &&
+                    (typeName is "AppDbContext" or "DbContext" ||
+                    fullTypeName.EndsWith(".AppDbContext", StringComparison.Ordinal) ||
+                    fullTypeName == "Microsoft.EntityFrameworkCore.DbContext"))
+                {
+                    // Allow in AppDbContext itself or Migration infrastructure
+                    if (!className.Equals("AppDbContext", StringComparison.OrdinalIgnoreCase) &&
+                        !className.Contains("Interceptor") &&
+                        !className.Contains("DbContextFactory"))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(RuleTg025, parameter.GetLocation(), className, typeName));
+                    }
+                }
 
                 if (typeName == "IConfiguration" || typeName == "IConfigurationRoot" ||
                     fullTypeName == "Microsoft.Extensions.Configuration.IConfiguration" ||

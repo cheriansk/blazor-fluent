@@ -10,7 +10,7 @@ namespace BlazorEnterprise.Persistence.Services;
 
 public class KnowledgeBaseService : IKnowledgeBaseService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
@@ -18,14 +18,14 @@ public class KnowledgeBaseService : IKnowledgeBaseService
     private readonly ILogger<KnowledgeBaseService> _logger;
 
     public KnowledgeBaseService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         INotifyService notificationService,
         IInputSanitizer inputSanitizer,
         ILogger<KnowledgeBaseService> logger)
     {
-        _context = context;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _notificationService = notificationService;
@@ -40,6 +40,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         bool? isGlobalOnly = null,
         CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             _logger.LogWarning("Unauthenticated user attempted to access knowledge base articles.");
@@ -114,6 +115,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             _logger.LogWarning("Unauthenticated user attempted to access knowledge base article '{ArticleId}'.", articleId);
@@ -165,6 +167,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<Guid> CreateArticleAsync(CreateArticleDto dto, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             throw new UnauthorizedAccessException("Only authenticated users can create knowledge articles.");
@@ -268,6 +271,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task UpdateArticleAsync(UpdateArticleDto dto, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             throw new UnauthorizedAccessException("Only authenticated users can update knowledge articles.");
@@ -319,6 +323,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<bool> ApproveArticleAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return false;
@@ -383,6 +388,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<bool> DeleteArticleAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return false;
@@ -404,6 +410,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<List<UserDto>> GetAvailableReviewersAsync(CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return new List<UserDto>();
@@ -425,6 +432,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<List<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return new List<string>();
