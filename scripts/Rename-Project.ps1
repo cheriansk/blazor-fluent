@@ -414,32 +414,15 @@ if ($Mode -eq "ClientDistribution") {
 # =============================================================================
 Write-Host "=== Phase 4.6: Purging Template Authoring Generator & Analyzer Projects ===" -ForegroundColor Cyan
 
-# 0. Re-baseline TemplateGuard against the RENAMED source BEFORE the authoring projects are purged.
-#    (Otherwise the manifest/embedded manifest still hold hashes of the un-renamed template.)
-$tgToolProj     = Join-Path $RepoRoot "tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj"
-$tgAnalyzerProj = Join-Path $RepoRoot "tools\src\TemplateGuard.Analyzers\TemplateGuard.Analyzers.csproj"
+# 0. Consumers consume pre-built TemplateGuard artifacts (.basefiles.json, TemplateGuard.Analyzers.dll, *.nupkg).
+#    Authoring projects (tools/src/) and authoring build scripts are purged without recompilation.
 $tgOutDir       = Join-Path $RepoRoot "tools\TemplateGuard"
-if ((Test-Path $tgToolProj) -and (Test-Path $tgAnalyzerProj)) {
-    if (-not $DryRun) {
-        $manifestPath = Join-Path $tgOutDir ".basefiles.json"
-        if (Test-Path $manifestPath) { Set-ItemProperty -Path $manifestPath -Name IsReadOnly -Value $false }
-
-        Write-Host "  Regenerating base manifest from renamed source..." -ForegroundColor Cyan
-        dotnet run --project $tgToolProj -- $RepoRoot
-        if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Manifest regeneration failed." -ForegroundColor Red; exit 1 }
-
-        Write-Host "  Rebuilding TemplateGuard analyzer (embeds the new manifest)..." -ForegroundColor Cyan
-        dotnet build $tgAnalyzerProj -c Release -o $tgOutDir
-        if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Analyzer rebuild failed." -ForegroundColor Red; exit 1 }
-
-        Write-Host "  Generating TemplateGuard NuGet package..." -ForegroundColor Cyan
-        dotnet pack $tgAnalyzerProj -c Release -o $tgOutDir --no-build
-        if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Analyzer package generation failed." -ForegroundColor Red; exit 1 }
-    } else {
-        Write-Host "  [DRY RUN] Would regenerate base manifest and rebuild TemplateGuard analyzer before purging tools/src." -ForegroundColor Magenta
-    }
+$manifestPath   = Join-Path $tgOutDir ".basefiles.json"
+$analyzerDll    = Join-Path $tgOutDir "TemplateGuard.Analyzers.dll"
+if ((Test-Path $manifestPath) -and (Test-Path $analyzerDll)) {
+    Write-Host "  Using pre-built TemplateGuard governance artifacts (.basefiles.json, TemplateGuard.Analyzers.dll)." -ForegroundColor Green
 } else {
-    Write-Host "  [WARN] TemplateGuard source projects not found - cannot re-baseline. Governance baseline may be stale." -ForegroundColor Yellow
+    Write-Host "  [WARN] Pre-built TemplateGuard artifacts not found in tools/TemplateGuard. Governance baseline may be missing." -ForegroundColor Yellow
 }
 
 # 1. Clean up TemplateGuard source projects (Tool & Analyzers) so downstream only consumes the compiled DLL
