@@ -17,6 +17,7 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\TemplateGuard</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
