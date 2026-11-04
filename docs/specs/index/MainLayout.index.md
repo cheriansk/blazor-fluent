@@ -3,8 +3,8 @@
 target_spec: docs/specs/MainLayout.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Layout/MainLayout.razor
 code_behind: src/BlazorEnterprise.Web/Components/Layout/MainLayout.razor.cs
-generated_at_utc: 2026-11-02T19:18:22Z
-source_hash_sha256: 4a14a0dae5ff4e12
+generated_at_utc: 2026-11-03T02:50:44Z
+source_hash_sha256: 81e6b74e062d224e
 ============================================================================ -->
 # AI Navigation Index: `MainLayout`
 
@@ -30,8 +30,8 @@ source_hash_sha256: 4a14a0dae5ff4e12
 | `HandleNavStateChanged` | `L43-L46` | [HELPER] | Local UI State |
 | `HandleTimeZoneChanged` | `L48-L51` | [HELPER] | Local UI State |
 | `Dispose` | `L53-L57` | [HELPER] | Local UI State |
-| `OnAfterRenderAsync` | `L59-L174` | [INIT] | `[IsRootAdmin,TenantBoundaryGate]` -> `TenantContext.Initialize()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.ToAbsoluteUri()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `AuthVerificationService.VerifyAndRehydrateSessionAsync()` -> `ProjectContext.Initialize()` -> `TimeZoneService.InitializeAsync` -> `TimeZoneService.ApplyUserTimeZone` |
-| `SignOut` | `L176-L202` | [HELPER] | `TenantContext.Reset()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `SessionService.RevokeSessionAsync(DB[W]:UserSessions)` -> `ProjectContext.Reset()` |
+| `OnAfterRenderAsync` | `L59-L180` | [INIT] | `[IsRootAdmin,TenantBoundaryGate]` -> `TenantContext.Initialize()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.ToAbsoluteUri()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `AuthVerificationService.VerifyAndRehydrateSessionAsync()` -> `ProjectContext.Initialize()` -> `TimeZoneService.InitializeAsync` -> `TimeZoneService.ApplyUserTimeZone` |
+| `SignOut` | `L182-L208` | [HELPER] | `TenantContext.Reset()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `SessionService.RevokeSessionAsync(DB[W]:UserSessions)` -> `ProjectContext.Reset()` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |

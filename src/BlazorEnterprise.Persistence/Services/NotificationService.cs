@@ -394,6 +394,7 @@ public class NotificationService : INotifyService
         var isHost = _tenantContext.IsRootTenant || _currentUser.IsRootAdmin;
 
         var query = db.Notifications
+            .AsTracking()
             .Where(n => !n.IsDeleted && !n.IsRead);
 
         if (!string.IsNullOrWhiteSpace(tenantId) && Guid.TryParse(tenantId, out var targetTenantId))

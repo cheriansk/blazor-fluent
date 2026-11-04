@@ -14,18 +14,18 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace BlazorEnterprise.Modules.Imports.Pages;
 
-public partial class FileImportPage : ComponentBase
+public partial class FileImportPage : ComponentBase, IDisposable
 {
     [Inject] private IImportFileService ImportService { get; set; } = default!;
     [Inject] private ITenantService TenantService { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
+    [Inject] private IProjectContext ProjectContext { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
-private ImportErrorsModal? _errorsModal;
+    private ImportErrorsModal? _errorsModal;
     private ConfirmDialogModal? _confirmDialog;
 
-    private List<ProjectEntity> _availableProjects = new();
     private ProjectEntity? _currentProject;
 
     private IReadOnlyList<DataListItem<ImportFileTypeEnum>> _fileTypeOptions = Array.Empty<DataListItem<ImportFileTypeEnum>>();
@@ -51,31 +51,37 @@ private ImportErrorsModal? _errorsModal;
     protected override async Task OnInitializedAsync()
     {
         _fileTypeOptions = DataListExtensions.GetDataListItems<ImportFileTypeEnum>();
+        ProjectContext.OnChange += HandleProjectContextChanged;
 
-        await LoadProjectsAsync();
+        await SyncActiveProjectAsync();
         await RefreshHistoryAsync();
     }
 
-    private async Task LoadProjectsAsync()
+    private void HandleProjectContextChanged()
     {
-        _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug))
-
-            .Where(p => p.IsActive && !p.IsDeleted)
-            .OrderBy(p => p.Name)
-            .ToList();
-
-        if (_availableProjects.Count > 0)
+        _ = InvokeAsync(async () =>
         {
-            _currentProject = _availableProjects[0];
-        }
+            await SyncActiveProjectAsync();
+            await RefreshHistoryAsync();
+            StateHasChanged();
+        });
     }
 
-    private async Task OnProjectChanged(string? newProjectIdStr)
+    public void Dispose()
     {
-        _currentProject = Guid.TryParse(newProjectIdStr, out var projId)
-            ? _availableProjects.FirstOrDefault(p => p.Id == projId)
-            : null;
-        await RefreshHistoryAsync();
+        ProjectContext.OnChange -= HandleProjectContextChanged;
+    }
+
+    private async Task SyncActiveProjectAsync()
+    {
+        if (!ProjectContext.ProjectId.HasValue || ProjectContext.ProjectId.Value == Guid.Empty)
+        {
+            _currentProject = null;
+            return;
+        }
+
+        var allProjects = await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug);
+        _currentProject = allProjects.FirstOrDefault(p => p.Id == ProjectContext.ProjectId.Value && p.IsActive && !p.IsDeleted);
     }
 
     private void HandleFilesSelected(InputFileChangeEventArgs e)

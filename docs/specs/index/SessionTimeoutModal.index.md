@@ -3,7 +3,7 @@
 target_spec: docs/specs/SessionTimeoutModal.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Common/SessionTimeoutModal.razor
 code_behind: src/BlazorEnterprise.Web/Components/Common/SessionTimeoutModal.razor.cs
-generated_at_utc: 2026-11-02T19:18:22Z
+generated_at_utc: 2026-11-03T02:50:45Z
 source_hash_sha256: 4ca88cea30f9d172
 ============================================================================ -->
 # AI Navigation Index: `SessionTimeoutModal`

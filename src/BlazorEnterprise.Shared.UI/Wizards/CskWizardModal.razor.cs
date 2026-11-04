@@ -14,7 +14,9 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
     [Parameter] public TState InitialState { get; set; } = default!;
     [Parameter] public string? InitialTemplateId { get; set; }
     [Parameter] public EventCallback<TState> OnFinish { get; set; }
+    [Parameter] public Func<TState, Task<string?>>? OnSaveAsync { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnEditRequested { get; set; }
     [Parameter] public RenderFragment? Steps { get; set; }
     [Parameter] public WizardFlowDefinition<TState>? FlowDefinition { get; set; }
 
@@ -26,6 +28,8 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
     private int _currentStepIndex = 0;
     private bool _isBusy = false;
     private bool _showDiscardConfirm = false;
+    private bool _wasOpen = false;
+    private bool _wasReadOnly = false;
     private string? _activeErrorMessage;
 
     public int CurrentStepIndex => _currentStepIndex;
@@ -42,6 +46,51 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
 
     protected override void OnInitialized()
     {
+        if (IsOpen)
+        {
+            InitializeContext();
+            _wasOpen = true;
+            _wasReadOnly = IsReadOnly;
+        }
+        RecomputeFlowSteps();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && (!_wasOpen || Context == null))
+        {
+            InitializeContext();
+            _currentStepIndex = 0;
+            _activeErrorMessage = null;
+        }
+        else if (Context != null)
+        {
+            var switchedFromReadOnlyToEdit = _wasReadOnly && !IsReadOnly;
+            Context.IsReadOnly = IsReadOnly;
+
+            // Only synchronize initial state if transitioning from ReadOnly to Edit mode
+            if (switchedFromReadOnlyToEdit && !EqualityComparer<TState>.Default.Equals(InitialState, default))
+            {
+                Context.State = InitialState;
+                Context.CaptureInitialSnapshot();
+                Context.MarkDirty(false);
+                Context.NotifyStateChanged();
+            }
+        }
+        _wasOpen = IsOpen;
+        _wasReadOnly = IsReadOnly;
+
+        RecomputeFlowSteps();
+    }
+
+    private void InitializeContext()
+    {
+        if (Context != null)
+        {
+            Context.OnStateChanged -= HandleContextStateChanged;
+            Context.OnTemplateChanged -= HandleTemplateChanged;
+        }
+
         var templateId = InitialTemplateId ?? FlowDefinition?.DefaultTemplateId;
         Context = new WizardContext<TState>(InitialState, templateId)
         {
@@ -49,23 +98,6 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
         };
         Context.OnStateChanged += HandleContextStateChanged;
         Context.OnTemplateChanged += HandleTemplateChanged;
-
-        RecomputeFlowSteps();
-    }
-
-    protected override void OnParametersSet()
-    {
-        if (Context != null)
-        {
-            Context.IsReadOnly = IsReadOnly;
-
-            if (!EqualityComparer<TState>.Default.Equals(InitialState, default) && !Context.IsDirty)
-            {
-                Context.State = InitialState;
-            }
-        }
-
-        RecomputeFlowSteps();
     }
 
     private void HandleTemplateChanged(string? newTemplateId)
@@ -158,7 +190,17 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
 
     private Dictionary<string, object> GetStepParameters()
     {
-        return new Dictionary<string, object>();
+        var parameters = new Dictionary<string, object>();
+        if (Context != null && CurrentActiveStep != null)
+        {
+            var compType = CurrentActiveStep.Descriptor.ComponentType;
+            var prop = compType.GetProperty("Context");
+            if (prop != null && prop.CanWrite && prop.PropertyType.IsAssignableFrom(Context.GetType()))
+            {
+                parameters["Context"] = Context;
+            }
+        }
+        return parameters;
     }
 
     private void HandleContextStateChanged()
@@ -171,9 +213,17 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
         await RequestCloseAsync();
     }
 
+    private async Task HandleEditRequestedAsync()
+    {
+        if (OnEditRequested.HasDelegate)
+        {
+            await OnEditRequested.InvokeAsync();
+        }
+    }
+
     private async Task RequestCloseAsync()
     {
-        if (Context.IsDirty)
+        if (HasUnsavedChanges())
         {
             _showDiscardConfirm = true;
         }
@@ -181,6 +231,19 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
         {
             await CloseModalAsync();
         }
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        if (IsReadOnly || Context == null) return false;
+        if (Context.IsDirty || Context.HasStateChanged()) return true;
+
+        if (_dynamicStepComponentRef?.Instance is IWizardStepComponent<TState> stepComp && stepComp.HasPendingChanges())
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private async Task ConfirmDiscardAsync()
@@ -327,10 +390,20 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
                 return;
             }
 
-            if (OnFinish.HasDelegate)
+            if (OnSaveAsync != null)
+            {
+                var error = await OnSaveAsync(Context.State);
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    _activeErrorMessage = error;
+                    return;
+                }
+            }
+            else if (OnFinish.HasDelegate)
             {
                 await OnFinish.InvokeAsync(Context.State);
             }
+
             await CloseModalAsync();
         }
         catch (Exception ex)

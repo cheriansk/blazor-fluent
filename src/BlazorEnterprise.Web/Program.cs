@@ -179,41 +179,10 @@ try
 
 
 
-    // 2. Configure Serilog using Host Integration, appsettings.json, and Timezone Settings
-
-    var useUtc = !bool.TryParse(builder.Configuration["DateTimeSettings:UseUtc"], out var parsedUtc) || parsedUtc;
-
-    var timestampFormat = useUtc ? "yyyy-MM-dd HH:mm:ss 'UTC'" : "yyyy-MM-dd HH:mm:ss";
-
-    var logOutputTemplate = $"[{{Timestamp:{timestampFormat}}}] [{{Level:u3}}] {{Message:lj}} {{Properties:j}}{{NewLine}}{{Exception}}";
-
-
-
-    builder.Host.UseSerilog((context, services, configuration) =>
-
+    // 2. Configure Serilog using Shared Serilog with cross-file Correlation ID and configurable splitting
+    builder.Host.UseSharedSerilog("BlazorEnterprise", configureExtraSinks: (wt, cfg) =>
     {
-
-        configuration
-
-            .ReadFrom.Configuration(context.Configuration)
-
-            .ReadFrom.Services(services)
-
-            .Enrich.FromLogContext()
-
-            .Enrich.WithSpan()
-
-            .WriteTo.StrictSeverity(wt =>
-            {
-                wt.Console(outputTemplate: logOutputTemplate);
-                wt.File(
-                    path: "logs/blazorenterprise-.log",
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 30,
-                    outputTemplate: logOutputTemplate);
-                wt.TeamsAlert(context.Configuration);
-            });
-
+        wt.TeamsAlert(cfg);
     });
 
 
@@ -275,6 +244,8 @@ try
     builder.Services.AddSharedUI();
 
     builder.Services.AddHttpContextAccessor();
+
+    builder.Services.AddScoped<BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext, BlazorEnterprise.Shared.Contracts.Engine.Client.CorrelationContext>();
 
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
 
@@ -850,6 +821,8 @@ try
     // 7. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
 
     app.UseSecurityHeaders();
+
+    app.UseMiddleware<BlazorEnterprise.Web.Infrastructure.Middleware.CorrelationIdMiddleware>();
 
 
 

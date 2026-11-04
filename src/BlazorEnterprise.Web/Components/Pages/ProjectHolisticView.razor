@@ -1,0 +1,67 @@
+@page "/projects/holistic"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Pages
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Components.Pages.ProjectHolisticViewTabs
+@using BlazorEnterprise.Web.Components.Shared
+@inject IProjectContext ProjectContext
+@inject IProjectHealthService ProjectHealthService
+@inject ICalendarService CalendarService
+@inject ITenantContext TenantContext
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<PageTitle>Project Holistic View — BlazorEnterprise</PageTitle>
+
+<div class="holistic-page-container">
+    <CskSectionHeader Title="@(string.IsNullOrWhiteSpace(ProjectContext.ProjectName) ? "Project Holistic View" : $"{ProjectContext.ProjectName} — Holistic View")"
+                      Subtitle="Comprehensive multi-tab project management: executive health, timeline schedules, milestone phase gates, and RAID log."
+                      Icon="@CskIcons.TaskList">
+        <Actions>
+            @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty)
+            {
+                <CskButton Variant="CskButtonVariant.Outlined"
+                           IconStart="@CskIcons.ArrowSync"
+                           OnClick="@RefreshProjectDataAsync">
+                    Refresh
+                </CskButton>
+            }
+        </Actions>
+    </CskSectionHeader>
+
+    @if (!ProjectContext.ProjectId.HasValue || ProjectContext.ProjectId.Value == Guid.Empty)
+    {
+        <div class="holistic-no-project-card">
+            <div class="no-project-icon-box">
+                <CskIcon Icon="@CskIcons.TaskList" Class="no-project-icon" />
+            </div>
+            <div class="no-project-content">
+                <h3 class="no-project-title">No Active Project Selected</h3>
+                <p class="no-project-desc">
+                    To view the project's executive summary, timeline, milestone tracking, and RAID log, please select an active project from the workspace switcher in the top navigation bar.
+                </p>
+                <CskButton Variant="CskButtonVariant.Filled"
+                           IconStart="@CskIcons.Apps"
+                           OnClick="@(() => NavigationManager.NavigateTo("/"))">
+                    Return to Dashboard
+                </CskButton>
+            </div>
+        </div>
+    }
+    else if (_isLoading)
+    {
+        <div class="holistic-loading-state">
+            <CskSpinner Size="CskSpinnerSize.Large" />
+            <span class="loading-label">Loading project holistic data...</span>
+        </div>
+    }
+    else
+    {
+        <TabContainerComp Tabs="@_tabs" />
+    }
+</div>

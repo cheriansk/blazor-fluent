@@ -28,7 +28,7 @@ public partial class SettingsUserCalendarTab : ComponentBase
     private string _newEventDescription = string.Empty;
     private string _newLocation = string.Empty;
     private DateTime? _newEventDate = DateTime.UtcNow.Date;
-    private CalendarEntryTypeEnum _newEntryType = CalendarEntryTypeEnum.General;
+    private CalendarEntryTypeEnum _newEntryType = CalendarEntryTypeEnum.Personal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,7 +63,7 @@ public partial class SettingsUserCalendarTab : ComponentBase
         _newEventDescription = string.Empty;
         _newLocation = string.Empty;
         _newEventDate = _selectedDate;
-        _newEntryType = CalendarEntryTypeEnum.General;
+        _newEntryType = CalendarEntryTypeEnum.Personal;
         _showEventModal = true;
     }
 
@@ -107,6 +107,7 @@ public partial class SettingsUserCalendarTab : ComponentBase
                 Title = _newEventTitle.Trim(),
                 Description = description,
                 StartDate = eventDate,
+                DueDate = eventDate.AddHours(1),
                 EndDate = eventDate.AddHours(1),
                 EntryType = _newEntryType,
                 Status = CalendarEntryStatusEnum.Confirmed

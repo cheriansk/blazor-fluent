@@ -28,4 +28,14 @@ public class ProjectCalendarEntity : BaseCalendarEntity
     public ProjectEntity? Project { get; set; }
     public ProgramEntity? Program { get; set; }
     public ProgramCalendarEntity? ParentProgramCalendar { get; set; }
+
+    /// <summary>
+    /// Governing parent timeline row when this entry is a Milestone.
+    /// </summary>
+    public ProjectCalendarEntity? ParentTimeline { get; set; }
+
+    /// <summary>
+    /// Child milestones scheduled under this timeline row.
+    /// </summary>
+    public ICollection<ProjectCalendarEntity> Milestones { get; set; } = new List<ProjectCalendarEntity>();
 }

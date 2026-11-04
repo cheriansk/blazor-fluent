@@ -8,6 +8,7 @@ navigation_index: docs/specs/index/TabContainerComp.index.md
 change_history: docs/specs/history/TabContainerComp.history.md
 source_file: src/BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor
 code_behind: src/BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor.cs
+parent_spec: docs/specs/ProgramHolisticView.requirements.md (src/BlazorEnterprise.Web/Components/Pages/ProgramHolisticView.razor)
 
 MANDATORY AGENT RULES (READ BEFORE TAKING ANY ACTION):
   RULE 0 [PRE-FLIGHT FRESHNESS & LINE-NUMBER SYNC]: Before reading source slices or planning, verify the navigation index line numbers are in sync with live code by running: pwsh -NoProfile -File scripts/Generate-Specs.ps1 -TargetFilter 'TabContainerComp' -EnsureFresh (exits in <50ms if unchanged, or refreshes docs/specs/index/TabContainerComp.index.md while preserving Section 1 Pending Changes if external edits occurred).
@@ -52,14 +53,11 @@ MANDATORY AGENT RULES (READ BEFORE TAKING ANY ACTION):
 - **Consistency**: Match existing MudBlazor styling and spacing patterns used in SettingsPage.razor
 - **State Management**: Component should maintain active tab ID and support external control via parameters
 <!-- END CUSTOM BUSINESS RULES -->
-- **Reuse-First**: Use MudBlazor Tab component; do not create custom tab rendering logic.
-- **No New Architecture**: Do not introduce new services or repositories for this component.
-- **Change Boundary**: Component is self-contained; modifications to parent pages should be minimal.
-- **Conditional Planning**: This is a Small/Medium change (new reusable UI component); implement immediately.
+- **Reuse-First**: Reuse existing UI components, modals, DTOs, validators, and services before creating new code.
+- **No New Architecture**: Prefer extending existing methods; do not introduce new services, repositories, or abstractions unless explicitly requested.
+- **Change Boundary**: Modify only referenced files and methods. Do not refactor unrelated code, rename symbols, or perform opportunistic cleanup.
+- **Conditional Planning**: Implement Small/Medium changes (<= 3 files, UI/validation/existing method updates) immediately; generate a plan and wait for approval only on Large changes (> 3 files, DB schema, security model, or new services/architecture).
 
 ## 3. Business Context
-- **Purpose**: Reusable component providing a consistent multi-tab container UI for Program Holistic View, Settings Page, and future dashboard pages
-- **Parent Components**: ProgramHolisticView.razor, SettingsPage.razor (potential future use)
-- **Related Files**: 
-  - src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor (reference for tab pattern)
-  - src/BlazorEnterprise.Web/Models/ (for TabDefinition model)
+- **Purpose**: Reusable lazy-loading MudTabs container component.
+

@@ -24,6 +24,25 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     public string? Description { get; set; }
 
     /// <summary>
+    /// Optional comments or execution notes.
+    /// </summary>
+    public string? Comments
+    {
+        get => Description;
+        set => Description = value;
+    }
+
+    /// <summary>
+    /// Semicolon-separated list of owner emails for Milestone entries.
+    /// </summary>
+    public string? OwnerEmails { get; set; }
+
+    /// <summary>
+    /// Optional foreign key pointing to the parent timeline row (when EntryType is Milestone).
+    /// </summary>
+    public Guid? ParentTimelineId { get; set; }
+
+    /// <summary>
     /// Effective start date in UTC (Date-level precision).
     /// </summary>
     public required DateTime StartDate { get; set; }
@@ -59,10 +78,7 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// </summary>
     public required CalendarEntryStatusEnum Status { get; set; }
 
-    /// <summary>
-    /// Optional foreign key to an associated work item (Task, Subtask, Risk, etc.).
-    /// </summary>
-    public Guid? AssociatedTaskId { get; set; }
+
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }

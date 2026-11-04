@@ -66,7 +66,7 @@ public interface IWorkflowService
     /// <summary>
     /// Retrieves a single workflow by ID, including its ordered child steps and subtasks.
     /// </summary>
-    Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default);
+    Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, bool forEdit = false, CancellationToken ct = default);
 
     /// <summary>
     /// Updates workflow metadata (title, description, owner, due date, priority, watchers).

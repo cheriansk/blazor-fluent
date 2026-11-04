@@ -1,0 +1,96 @@
+@namespace BlazorEnterprise.Web.Components.Pages.ProgramHolisticViewTabs
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Domain.Calendar
+
+<div class="holistic-timeline-root">
+    <div class="timeline-toolbar">
+        <div class="toolbar-stats">
+            <span class="stat-item"><strong>@TimelineRows.Count</strong> Timeline Stages</span>
+            <span class="stat-item"><strong>@TotalMilestonesCount</strong> Milestones</span>
+        </div>
+    </div>
+
+    @if (TimelineRows.Count == 0)
+    {
+        <div class="holistic-empty-box">
+            <CskIcon Icon="@CskIcons.Clock" Class="holistic-empty-icon" />
+            <p>No timeline rows configured for this program.</p>
+        </div>
+    }
+    else
+    {
+        <div class="timeline-tree">
+            @foreach (var row in TimelineRows)
+            {
+                var milestones = GetMilestonesForTimeline(row.Id);
+                <div class="timeline-stage-card">
+                    <div class="stage-header">
+                        <div class="stage-info">
+                            <div class="stage-title-row">
+                                <span class="stage-badge">Stage</span>
+                                <h4 class="stage-title">@row.Title</h4>
+                                <span class="stage-status-chip status-@row.Status.ToString().ToLowerInvariant()">@row.Status</span>
+                            </div>
+                            <div class="stage-dates">
+                                <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-sm" />
+                                <span>@row.StartUtc.ToString("MMM dd, yyyy") – @row.EndUtc.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(row.Comments ?? row.Description))
+                            {
+                                <p class="stage-comments">@(row.Comments ?? row.Description)</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="stage-milestones-container">
+                        <div class="milestones-header-bar">
+                            <span class="milestones-title">Milestones (@milestones.Count)</span>
+                        </div>
+                        @if (milestones.Count == 0)
+                        {
+                            <div class="milestones-empty-inline">
+                                <span>No milestones added under this stage yet.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="stage-milestones-grid">
+                                @foreach (var m in milestones)
+                                {
+                                    <div class="milestone-subcard @(m.IsOverdue ? "milestone-overdue" : "")">
+                                        <div class="milestone-subcard-header">
+                                            <div class="subcard-title-row">
+                                                <CskIcon Icon="@CskIcons.Flag" Class="milestone-flag-icon" />
+                                                <span class="subcard-title">@m.Title</span>
+                                            </div>
+                                            <span class="milestone-status-chip status-@m.Status.ToString().ToLowerInvariant()">
+                                                @(m.IsOverdue ? "Overdue" : m.Status)
+                                            </span>
+                                        </div>
+                                        <div class="milestone-meta-row">
+                                            <span class="meta-date">
+                                                <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-xs" />
+                                                @m.StartUtc.ToString("MMM dd") – @m.EndUtc.ToString("MMM dd, yyyy")
+                                            </span>
+                                        </div>
+                                        <div class="milestone-owners-row">
+                                            <CskIcon Icon="@CskIcons.Person" Class="csk-icon-xs" />
+                                            <span class="owner-emails" title="@m.OwnerEmails">
+                                                @(string.IsNullOrWhiteSpace(m.OwnerEmails) ? (m.OwnerOrAssignee ?? "Unassigned") : m.OwnerEmails)
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(m.Comments ?? m.Description))
+                                        {
+                                            <p class="milestone-comments">@(m.Comments ?? m.Description)</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

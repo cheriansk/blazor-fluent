@@ -167,14 +167,24 @@ public class UserSessionService : IUserSessionService
     public async Task<bool> IsSessionRevokedAsync(Guid sessionId, CancellationToken ct = default)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
+        // Use direct filter bypass for heartbeat status check to avoid generating audit log entries on routine ticks
         var isRevoked = await dbContext.UserSessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId)
-            .FirstOrDefaultWithAuditedBypassAsync(
-                _auditService,
-                "Session active status verification across tenants during circuit heartbeat validation.",
-                s => (bool?)s.IsRevoked,
+            .IgnoreQueryFilters()
+            .Select(s => (bool?)s.IsRevoked)
+            .FirstOrDefaultAsync(ct);
+
+        // Only log security audit entry if the session was explicitly revoked
+        if (isRevoked == true)
+        {
+            await _auditService.LogSecurityEventAsync(
+                "SessionRevocationDetected",
+                AuditSeverityEnum.Warning,
+                $"User session {sessionId} was validated and confirmed to be revoked.",
                 ct);
+        }
+
         return isRevoked is null or true;
     }
 

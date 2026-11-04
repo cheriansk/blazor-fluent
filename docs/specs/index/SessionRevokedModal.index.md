@@ -3,7 +3,7 @@
 target_spec: docs/specs/SessionRevokedModal.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor
 code_behind: src/BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor.cs
-generated_at_utc: 2026-11-02T19:18:22Z
+generated_at_utc: 2026-11-03T02:50:44Z
 source_hash_sha256: 66e369c1485fdedb
 ============================================================================ -->
 # AI Navigation Index: `SessionRevokedModal`

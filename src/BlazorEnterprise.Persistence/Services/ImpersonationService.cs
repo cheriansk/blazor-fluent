@@ -62,6 +62,7 @@ public class ImpersonationService : IImpersonationService
         // Revoke any previous active grants for this admin
         var adminId = _currentUser.UserId;
         var existingGrants = await _dbContext.ImpersonationGrants
+            .AsTracking()
             .Where(g => g.SourceAdminId == adminId && !g.IsRevoked)
             .ToListAsync(ct);
 
@@ -108,6 +109,7 @@ public class ImpersonationService : IImpersonationService
     {
         var adminId = _currentUser.UserId;
         var activeGrants = await _dbContext.ImpersonationGrants
+            .AsTracking()
             .Where(g => g.SourceAdminId == adminId && !g.IsRevoked)
             .ToListAsync(ct);
 

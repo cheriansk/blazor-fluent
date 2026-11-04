@@ -1,0 +1,180 @@
+@namespace BlazorEnterprise.Web.Components.Pages.ProjectHolisticViewTabs
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="holistic-raid-root">
+    <!-- RAID Sub-Category Selector Pills -->
+    <div class="raid-sub-tabs">
+        <button type="button"
+                class="raid-sub-tab-btn @(_selectedSection == RaidSection.Risks ? "active" : "")"
+                @onclick="() => SetSection(RaidSection.Risks)">
+            <CskIcon Icon="@CskIcons.Shield" Class="csk-icon-sm" />
+            <span>Risks (@Risks.Count)</span>
+        </button>
+        <button type="button"
+                class="raid-sub-tab-btn @(_selectedSection == RaidSection.Assumptions ? "active" : "")"
+                @onclick="() => SetSection(RaidSection.Assumptions)">
+            <CskIcon Icon="@CskIcons.FolderDocument" Class="csk-icon-sm" />
+            <span>Assumptions (@Assumptions.Count)</span>
+        </button>
+        <button type="button"
+                class="raid-sub-tab-btn @(_selectedSection == RaidSection.Issues ? "active" : "")"
+                @onclick="() => SetSection(RaidSection.Issues)">
+            <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-sm" />
+            <span>Issues (@Issues.Count)</span>
+        </button>
+        <button type="button"
+                class="raid-sub-tab-btn @(_selectedSection == RaidSection.Decisions ? "active" : "")"
+                @onclick="() => SetSection(RaidSection.Decisions)">
+            <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="csk-icon-sm" />
+            <span>Decisions & Blockers (@Blockers.Count)</span>
+        </button>
+    </div>
+
+    <!-- Section Content -->
+    @if (_selectedSection == RaidSection.Risks)
+    {
+        @if (Risks.Count == 0)
+        {
+            <div class="holistic-empty-box">
+                <CskIcon Icon="@CskIcons.ShieldCheck" Class="holistic-empty-icon" />
+                <p>No open risks identified for this project.</p>
+            </div>
+        }
+        else
+        {
+            <div class="raid-grid">
+                @foreach (var risk in Risks)
+                {
+                    <div class="raid-card">
+                        <div class="raid-card-header">
+                            <span class="exposure-badge @GetExposureBadgeClass(risk.ExposureScore)">
+                                Score: @risk.ExposureScore
+                            </span>
+                            <span class="raid-tag">@risk.Probability Prob. / @risk.Impact Impact</span>
+                        </div>
+                        <h4 class="raid-title">@risk.Title</h4>
+                        @if (!string.IsNullOrWhiteSpace(risk.Description))
+                        {
+                            <p class="raid-desc">@risk.Description</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(risk.MitigationStrategy))
+                        {
+                            <div class="mitigation-box">
+                                <span class="mitigation-label">Mitigation:</span>
+                                <span>@risk.MitigationStrategy</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (_selectedSection == RaidSection.Assumptions)
+    {
+        @if (Assumptions.Count == 0)
+        {
+            <div class="holistic-empty-box">
+                <CskIcon Icon="@CskIcons.FolderDocument" Class="holistic-empty-icon" />
+                <p>No active assumptions logged for this project.</p>
+            </div>
+        }
+        else
+        {
+            <div class="raid-grid">
+                @foreach (var item in Assumptions)
+                {
+                    <div class="raid-card">
+                        <div class="raid-card-header">
+                            <span class="raid-tag">Assumption</span>
+                            <span class="raid-status-chip">@(item.ValidationStatus == AssumptionValidationStatusEnum.Validated ? "Validated" : item.ValidationStatus.ToString())</span>
+                        </div>
+                        <h4 class="raid-title">@item.Title</h4>
+                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                        {
+                            <p class="raid-desc">@item.Description</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(item.ValidationCriteria))
+                        {
+                            <div class="mitigation-box">
+                                <span class="mitigation-label">Validation:</span>
+                                <span>@item.ValidationCriteria</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (_selectedSection == RaidSection.Issues)
+    {
+        @if (Issues.Count == 0)
+        {
+            <div class="holistic-empty-box">
+                <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="holistic-empty-icon" />
+                <p>No unresolved issues logged for this project.</p>
+            </div>
+        }
+        else
+        {
+            <div class="raid-grid">
+                @foreach (var issue in Issues)
+                {
+                    <div class="raid-card issue-card">
+                        <div class="raid-card-header">
+                            <span class="severity-chip @GetSeverityClass(issue.Severity)">
+                                @issue.Severity
+                            </span>
+                            <span class="raid-tag">Priority: @issue.Priority</span>
+                        </div>
+                        <h4 class="raid-title">@issue.Title</h4>
+                        @if (!string.IsNullOrWhiteSpace(issue.Description))
+                        {
+                            <p class="raid-desc">@issue.Description</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(issue.ResolutionStrategy))
+                        {
+                            <div class="mitigation-box">
+                                <span class="mitigation-label">Resolution:</span>
+                                <span>@issue.ResolutionStrategy</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (_selectedSection == RaidSection.Decisions)
+    {
+        @if (Blockers.Count == 0)
+        {
+            <div class="holistic-empty-box">
+                <CskIcon Icon="@CskIcons.CheckmarkCircle" Class="holistic-empty-icon" />
+                <p>No project blockers or dependencies currently active.</p>
+            </div>
+        }
+        else
+        {
+            <div class="raid-grid">
+                @foreach (var dep in Blockers)
+                {
+                    <div class="raid-card blocker-card">
+                        <div class="raid-card-header">
+                            <span class="blocker-badge">@dep.DependencyType</span>
+                            <span class="raid-status-chip">@(!dep.IsResolved ? "Blocking" : "Resolved")</span>
+                        </div>
+                        <h4 class="raid-title">Active Project Blocker</h4>
+                        @if (!string.IsNullOrWhiteSpace(dep.Description))
+                        {
+                            <p class="raid-desc">@dep.Description</p>
+                        }
+                        <div class="mitigation-box">
+                            <span class="mitigation-label">Due Date:</span>
+                            <span>@dep.DueDate.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

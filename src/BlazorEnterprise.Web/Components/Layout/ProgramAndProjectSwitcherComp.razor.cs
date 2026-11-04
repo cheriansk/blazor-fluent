@@ -5,6 +5,7 @@ using BlazorEnterprise.Infrastructure.Security;
 using BlazorEnterprise.Shared.DataListTypes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Web.Components.Layout;
@@ -13,9 +14,8 @@ public partial class ProgramAndProjectSwitcherComp : ComponentBase, IDisposable
 {
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;
-    [Inject] private IProgramService ProgramService { get; set; } = default!;
-    [Inject] private ITenantService TenantService { get; set; } = default!;
-    [Inject] private IProjectAuthorizationService ProjectAuthService { get; set; } = default!;
+    [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
+    [Inject] private IServiceScopeFactory ScopeFactory { get; set; } = default!;
     [Inject] private IAuditService AuditService { get; set; } = default!;
     [Inject] private ProtectedSessionStorage SessionStorage { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
@@ -75,13 +75,34 @@ public partial class ProgramAndProjectSwitcherComp : ComponentBase, IDisposable
             _errorMessage = null;
             var tenantSlug = TenantContext.TenantSlug;
 
+            using var scope = ScopeFactory.CreateScope();
+            var scopedTenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+            scopedTenantContext.SetTenant(TenantContext.TenantId, TenantContext.TenantSlug, TenantContext.TenantName);
+
+            var scopedCurrentUser = scope.ServiceProvider.GetService<AppCurrentUser>();
+            if (scopedCurrentUser != null)
+            {
+                if (CurrentUser.IsSystemDaemon)
+                {
+                    scopedCurrentUser.SetSystemDaemon(CurrentUser.UserName, CurrentUser.Email);
+                }
+                else if (CurrentUser.IsAuthenticated)
+                {
+                    scopedCurrentUser.SetUser(CurrentUser.UserId, CurrentUser.Email, CurrentUser.UserName, true);
+                }
+            }
+
+            var scopedProgramService = scope.ServiceProvider.GetRequiredService<IProgramService>();
+            var scopedProjectAuthService = scope.ServiceProvider.GetRequiredService<IProjectAuthorizationService>();
+            var scopedTenantService = scope.ServiceProvider.GetRequiredService<ITenantService>();
+
             // 1. Load tenant programs
-            var programs = await ProgramService.GetProgramsAsync(tenantSlug);
+            var programs = await scopedProgramService.GetProgramsAsync(tenantSlug);
             _programs = programs.Where(p => p.IsActive).OrderBy(p => p.Name).ToList();
 
             // 2. Load tenant projects authorized for current user
-            var authorizedProjectIds = await ProjectAuthService.GetAuthorizedProjectIdsAsync(ProjectRoleEnum.ReadOnly);
-            var projectEntities = await TenantService.GetTenantProjectsAsync(tenantSlug);
+            var authorizedProjectIds = await scopedProjectAuthService.GetAuthorizedProjectIdsAsync(ProjectRoleEnum.ReadOnly);
+            var projectEntities = await scopedTenantService.GetTenantProjectsAsync(tenantSlug);
 
             _allProjects = projectEntities
                 .Where(p => !p.IsDeleted && authorizedProjectIds.Contains(p.Id))

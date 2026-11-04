@@ -1,0 +1,57 @@
+@namespace BlazorEnterprise.Web.Components.Pages.ProgramHolisticViewTabs
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="holistic-milestone-root">
+    @if (Milestones == null || Milestones.Count == 0)
+    {
+        <div class="holistic-empty-box">
+            <CskIcon Icon="@CskIcons.Flag" Class="holistic-empty-icon" />
+            <p>No milestones configured for this program. Milestones are created under Timeline stages in the Timeline tab.</p>
+        </div>
+    }
+    else
+    {
+        <div class="milestones-grid">
+            @foreach (var m in Milestones)
+            {
+                var parentStage = GetParentTimelineTitle(m.ParentTimelineId);
+                <div class="milestone-card @(m.IsOverdue ? "milestone-card-overdue" : "")">
+                    <div class="milestone-card-header">
+                        <span class="milestone-icon-wrap">
+                            <CskIcon Icon="@CskIcons.Flag" Class="milestone-icon" />
+                        </span>
+                        <div class="milestone-title-group">
+                            <h4 class="milestone-title">@m.Title</h4>
+                            <span class="milestone-date">Target: @m.EndUtc.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        <span class="milestone-status-chip @GetStatusChipClass(m)">
+                            @(m.IsOverdue ? "Overdue" : m.Status)
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(parentStage))
+                    {
+                        <div class="parent-stage-tag">
+                            <span class="stage-label">Timeline Stage:</span>
+                            <span class="stage-value">@parentStage</span>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(m.Comments ?? m.Description))
+                    {
+                        <p class="milestone-desc">@(m.Comments ?? m.Description)</p>
+                    }
+
+                    <div class="milestone-card-footer">
+                        <span class="milestone-owner">
+                            <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                            <span>@(string.IsNullOrWhiteSpace(m.OwnerEmails) ? (m.OwnerOrAssignee ?? "Unassigned") : m.OwnerEmails)</span>
+                        </span>
+                        <span class="milestone-criticality">@m.PriorityOrCriticality Priority</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

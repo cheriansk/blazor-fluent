@@ -3,7 +3,7 @@
 target_spec: docs/specs/AppErrorBoundaryComp.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Common/AppErrorBoundaryComp.razor
 code_behind: src/BlazorEnterprise.Web/Components/Common/AppErrorBoundaryComp.razor.cs
-generated_at_utc: 2026-11-02T19:18:22Z
+generated_at_utc: 2026-11-03T02:50:45Z
 source_hash_sha256: e27d1e1b907f1d5a
 ============================================================================ -->
 # AI Navigation Index: `AppErrorBoundaryComp`

@@ -34,6 +34,16 @@ public class UserCalendarEntityConfiguration : IEntityTypeConfiguration<UserCale
         builder.Property(c => c.EndDate)
             .IsRequired(false);
 
+        builder.Property(c => c.DueDate)
+            .IsRequired();
+
+        builder.Property(c => c.OwnerEmails)
+            .HasMaxLength(1000)
+            .IsRequired(false);
+
+        builder.Property(c => c.ParentTimelineId)
+            .IsRequired(false);
+
         builder.Property(c => c.EntryType)
             .IsRequired()
             .HasConversion<int>();
@@ -41,9 +51,6 @@ public class UserCalendarEntityConfiguration : IEntityTypeConfiguration<UserCale
         builder.Property(c => c.Status)
             .IsRequired()
             .HasConversion<int>();
-
-        builder.Property(c => c.AssociatedTaskId)
-            .IsRequired(false);
 
         // Soft delete properties
         builder.Property(c => c.IsDeleted)
@@ -72,5 +79,8 @@ public class UserCalendarEntityConfiguration : IEntityTypeConfiguration<UserCale
 
         builder.HasIndex(c => new { c.UserId, c.StartDate, c.EndDate })
             .HasDatabaseName("IX_UserCalendars_User_Start_End");
+
+        builder.HasIndex(c => new { c.UserId, c.DueDate })
+            .HasDatabaseName("IX_UserCalendars_User_DueDate");
     }
 }

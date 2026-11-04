@@ -9,22 +9,42 @@ public record ProgramAdminUserDto
     public string Email { get; set; } = string.Empty;
 }
 
-public record ProgramTimelineRowDto
+public class ProgramMilestoneDto
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? ParentTimelineId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Name
+    {
+        get => Title;
+        set => Title = value;
+    }
+    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
+    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
+    public DateTime TargetDate
+    {
+        get => EndDate ?? StartDate ?? DateTime.UtcNow.Date;
+        set => EndDate = value;
+    }
+    public string OwnerEmails { get; set; } = string.Empty;
+    public string Status { get; set; } = "New";
+    public string? Comments { get; set; }
+    public string? Description
+    {
+        get => Comments;
+        set => Comments = value;
+    }
+}
+
+public class ProgramTimelineRowDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Title { get; set; } = string.Empty;
     public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
     public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(3);
-    public string Status { get; set; } = "Planned";
-}
-
-public record ProgramMilestoneDto
-{
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public string Name { get; set; } = string.Empty;
-    public DateTime TargetDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
-    public string? Description { get; set; }
-    public string Status { get; set; } = "Scheduled";
+    public string Status { get; set; } = "New";
+    public string? Comments { get; set; }
+    public List<ProgramMilestoneDto> Milestones { get; set; } = new();
 }
 
 public partial class CreateProgramWizardState

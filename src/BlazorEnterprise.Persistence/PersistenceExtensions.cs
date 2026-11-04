@@ -38,6 +38,9 @@ public static class PersistenceExtensions
         services.AddSingleton<AuditableEntityInterceptor>();
         services.AddSingleton<ProjectSecurityInterceptor>();
         services.AddSingleton<NoTrackingMutationGuardInterceptor>();
+        services.AddOptions<BlazorEnterprise.Core.Configuration.DatabaseLoggingOptions>()
+            .BindConfiguration(BlazorEnterprise.Core.Configuration.DatabaseLoggingOptions.SectionName);
+        services.AddSingleton<DbCommandLoggingInterceptor>();
 
         // 4b. Register DataProtectionKey entity validator for fail-closed Tier 2 entity validation
         services.AddSingleton<IValidator<Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey>, DataProtectionKeyValidator>();
@@ -68,6 +71,7 @@ public static class PersistenceExtensions
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
             var noTrackingGuard = sp.GetRequiredService<NoTrackingMutationGuardInterceptor>();
+            var dbCommandLoggingInterceptor = sp.GetRequiredService<DbCommandLoggingInterceptor>();
             var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
 
             options.UseExceptionProcessor();
@@ -79,7 +83,7 @@ public static class PersistenceExtensions
                     maxRetryDelay: TimeSpan.FromSeconds(5),
                     errorCodesToAdd: null);
             })
-            .AddInterceptors(zeroTrustInterceptor, connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard);
+            .AddInterceptors(zeroTrustInterceptor, connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard, dbCommandLoggingInterceptor);
         };
 
         services.AddDbContext<AppDbContext>(configureDbContext);

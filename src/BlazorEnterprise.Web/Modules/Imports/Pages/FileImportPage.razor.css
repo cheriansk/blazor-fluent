@@ -1,0 +1,52 @@
+/* Scoped stylesheet for FileImportPage */
+.workspace-target-display {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.workspace-target-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mat-on-surface-variant, #757575);
+}
+
+.workspace-target-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--mat-surface-container, #f5f5f5);
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    border-radius: 8px;
+}
+
+.workspace-target-name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--mat-on-surface, #212121);
+}
+
+.workspace-target-code {
+    font-size: 0.8125rem;
+    font-family: monospace;
+    color: var(--mat-primary, #1976d2);
+}
+
+.workspace-target-program {
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant, #616161);
+    margin-left: auto;
+}
+
+.csk-icon-primary {
+    fill: var(--mat-primary, #1976d2);
+}
+
+.csk-icon-sm {
+    width: 1rem;
+    height: 1rem;
+}

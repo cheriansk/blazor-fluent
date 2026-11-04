@@ -5,6 +5,7 @@
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject INavigationStateService NavState
+@inject IProjectContext ProjectContext
 @implements IDisposable
 
 <div class="navmenu-container @(NavState.IsCollapsed ? "nav-collapsed" : "nav-expanded")" aria-label="Main Navigation">
@@ -21,6 +22,26 @@
                     @if (!NavState.IsCollapsed)
                     {
                         <span class="csk-nav-text">Home</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="programs/holistic" title="Program Holistic View">
+                    <span class="csk-nav-indicator">
+                        <CskIcon Icon="@CskIcons.FolderDocument" Class="csk-nav-icon" />
+                    </span>
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Program Holistic View</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="projects/holistic" title="Project Holistic View">
+                    <span class="csk-nav-indicator">
+                        <CskIcon Icon="@CskIcons.TaskListSquare" Class="csk-nav-icon" />
+                    </span>
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Project Holistic View</span>
                     }
                 </NavLink>
 
@@ -91,6 +112,7 @@
     protected override void OnInitialized()
     {
         NavState.OnChange += HandleStateChanged;
+        ProjectContext.OnChange += HandleStateChanged;
     }
 
     private void HandleStateChanged()
@@ -101,5 +123,6 @@
     public void Dispose()
     {
         NavState.OnChange -= HandleStateChanged;
+        ProjectContext.OnChange -= HandleStateChanged;
     }
 }

@@ -1,10 +1,10 @@
 # Component Registration Warnings (Validation Report)
 
-> **Last Generated**: `2026-11-02 14:18:23 -05:00`  
+> **Last Generated**: `2026-11-02 21:50:49 -05:00`  
 > **Manifest**: [specs-manifest.json](../specs-manifest.json) | **Catalog**: [README.md](../README.md)
 
 > [!CAUTION]
-> **15 Unregistered Child Component(s) detected across 4 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
+> **19 Unregistered Child Component(s) detected across 5 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
 
 ## Parent: `BlazorEnterprise.Web/Components/Layout/MainLayout.razor` ([docs/specs/MainLayout.requirements.md](../../docs/specs/MainLayout.requirements.md))
 
@@ -165,6 +165,49 @@
       "category": "Settings UI",
       "thinking_level": "low",
       "description": "Child component <CreateProjectWizardModal /> rendered by SettingsProgramsTab.razor at L607 (Gate: context.IsResolved).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/HomePage.razor` ([docs/specs/HomePage.requirements.md](../../docs/specs/HomePage.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<ProgramSummaryCard />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/ProgramSummaryCard.razor` | `L52` | `!_isRootAdminOnly` |
+| `<MyProjectsGrid />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/MyProjectsGrid.razor` | `L55` | `!_isRootAdminOnly` |
+| `<DashboardKanbanBoard />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardKanbanBoard.razor` | `L59` | `!_isRootAdminOnly` |
+| `<DashboardAuditTrail />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardAuditTrail.razor` | `L60` | `!_isRootAdminOnly` |
+
+### Ready-to-Paste JSON for `HomePage.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/ProgramSummaryCard.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <ProgramSummaryCard /> rendered by HomePage.razor at L52 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/MyProjectsGrid.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <MyProjectsGrid /> rendered by HomePage.razor at L55 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardKanbanBoard.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <DashboardKanbanBoard /> rendered by HomePage.razor at L59 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardAuditTrail.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <DashboardAuditTrail /> rendered by HomePage.razor at L60 (Gate: !_isRootAdminOnly).",
       "enabled": true
     }
 ]

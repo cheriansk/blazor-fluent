@@ -34,6 +34,13 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
         builder.Property(c => c.EndDate)
             .IsRequired(false);
 
+        builder.Property(c => c.OwnerEmails)
+            .HasMaxLength(1000)
+            .IsRequired(false);
+
+        builder.Property(c => c.ParentTimelineId)
+            .IsRequired(false);
+
         builder.Property(c => c.EntryType)
             .IsRequired()
             .HasConversion<int>();
@@ -41,9 +48,6 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
         builder.Property(c => c.Status)
             .IsRequired()
             .HasConversion<int>();
-
-        builder.Property(c => c.AssociatedTaskId)
-            .IsRequired(false);
 
         // Soft delete properties
         builder.Property(c => c.IsDeleted)
@@ -63,6 +67,12 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
             .HasForeignKey(c => c.ProgramId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Self-referencing relationship: Timeline row -> Milestones
+        builder.HasOne(c => c.ParentTimeline)
+            .WithMany(t => t.Milestones)
+            .HasForeignKey(c => c.ParentTimelineId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Indexes
         builder.HasIndex(c => c.TenantId)
             .HasDatabaseName("IX_ProgramCalendars_TenantId");
@@ -72,5 +82,8 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
 
         builder.HasIndex(c => new { c.ProgramId, c.StartDate, c.EndDate })
             .HasDatabaseName("IX_ProgramCalendars_Program_Start_End");
+
+        builder.HasIndex(c => c.ParentTimelineId)
+            .HasDatabaseName("IX_ProgramCalendars_ParentTimelineId");
     }
 }

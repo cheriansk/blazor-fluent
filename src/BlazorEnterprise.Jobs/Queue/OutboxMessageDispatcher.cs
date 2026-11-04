@@ -3,6 +3,7 @@ using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Events;
 using BlazorEnterprise.Core.Events;
+using BlazorEnterprise.Core.Utilities;
 using BlazorEnterprise.Jobs.Abstractions;
 using BlazorEnterprise.Persistence.Context;
 using BlazorEnterprise.Persistence.Extensions;
@@ -85,6 +86,28 @@ public class OutboxMessageDispatcher : BackgroundService
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
+        // Ensure ambient system daemon and root tenant context are established for zero-trust query bypass
+        var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
+        var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
+        var systemIdentity = SystemIdentityUtility.Current;
+
+        if (currentUser != null && !currentUser.IsAuthenticated)
+        {
+            var daemonEmail = systemIdentity.FormatInternalDaemonEmail("OutboxMessageDispatcher");
+            currentUser.SetSystemDaemon("OutboxMessageDispatcher", daemonEmail);
+        }
+
+        if (tenantContext != null && !tenantContext.HasActiveTenant)
+        {
+            tenantContext.Initialize(
+                tenantId: systemIdentity.RootTenantId,
+                tenantName: systemIdentity.RootTenantName,
+                userType: UserTypeEnum.CompanyUser,
+                allowedTenants: [],
+                tenantSlug: systemIdentity.RootTenantSlug,
+                isRootTenant: true);
+        }
+
         // Recover events older than 15 seconds that are still marked as Published (not picked up by in-memory channel)
         var cutoffTime = DateTime.UtcNow.AddSeconds(-15);
         var batchSize = Math.Max(1, _options.Value.OutboxBatchSize);
@@ -94,12 +117,16 @@ public class OutboxMessageDispatcher : BackgroundService
             .OrderBy(e => e.PublishedAtUtc)
             .Take(batchSize);
 
-        var pendingEvents = await query.ToListWithAuditedBypassAsync(
-            auditService,
-            "Transactional Outbox recovery of unprocessed events across tenants",
-            cancellationToken);
+        // Direct query filter bypass on daemon context: only audit when actual unprocessed events are found
+        var pendingEvents = await query.IgnoreQueryFilters().ToListAsync(cancellationToken);
 
         if (pendingEvents.Count == 0) return;
+
+        await auditService.LogSecurityEventAsync(
+            "OutboxRecoveryDispatched",
+            AuditSeverityEnum.Information,
+            $"Transactional Outbox recovered {pendingEvents.Count} unprocessed event(s) across tenants.",
+            cancellationToken);
 
         _logger.LogInformation("Outbox Dispatcher found {Count} unprocessed published events.", pendingEvents.Count);
 

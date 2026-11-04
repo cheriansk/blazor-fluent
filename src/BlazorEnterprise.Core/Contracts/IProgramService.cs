@@ -13,7 +13,7 @@ public interface IProgramService
 {
     Task<IReadOnlyList<ProgramEntity>> GetProgramsAsync(string tenantSlug, CancellationToken ct = default);
 
-    Task<Result<ProgramEntity>> GetProgramByIdAsync(Guid programId, CancellationToken ct = default);
+    Task<Result<ProgramEntity>> GetProgramByIdAsync(Guid programId, bool forEdit = false, CancellationToken ct = default);
 
     Task<Result<ProgramEntity>> CreateProgramAsync(
         string tenantSlug,
@@ -35,6 +35,8 @@ public interface IProgramService
         ProgramStatusEnum status,
         bool isActive,
         CancellationToken ct = default);
+
+    Task<Result> SyncProgramAdminsAsync(Guid programId, IEnumerable<Guid> adminUserIds, CancellationToken ct = default);
 
     Task<IReadOnlyList<ProjectEntity>> GetProgramProjectsAsync(Guid programId, CancellationToken ct = default);
 

@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.DataListTypes;
 using FluentValidation;
 
 namespace BlazorEnterprise.Core.Domain.Calendar.Validators;
@@ -19,8 +20,19 @@ public class UserCalendarEntityValidator : AbstractValidator<UserCalendarEntity>
         RuleFor(x => x.StartDate)
             .NotEmpty().WithMessage("Start date is required.");
 
-        RuleFor(x => x.EndDate)
-            .NotNull().WithMessage("End date is required.")
-            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("End date cannot be before start date.");
+        // When EntryType == Personal: Title, StartDate, Status, and DueDate are mandatory. EndDate is optional.
+        When(x => x.EntryType == CalendarEntryTypeEnum.Personal, () =>
+        {
+            RuleFor(x => x.DueDate)
+                .NotEmpty().WithMessage("Due date is required for personal calendar entries.");
+
+            RuleFor(x => x.Status)
+                .IsInEnum().WithMessage("Valid status is required.");
+
+            RuleFor(x => x.EndDate)
+                .GreaterThanOrEqualTo(x => x.StartDate)
+                .When(x => x.EndDate.HasValue)
+                .WithMessage("End date cannot be before start date.");
+        });
     }
 }

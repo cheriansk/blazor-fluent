@@ -160,7 +160,7 @@ public sealed class TenantContext : ITenantContext
         _allowedTenants = allowedTenants?.ToList() ?? new();
         _isExplicitRootTenant = isRootTenant || (_rootAdminService != null && tenantId == _rootAdminService.RootTenantId);
 
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Tenant context initialized: TenantId={TenantId}, TenantSlug={TenantSlug}, TenantName={TenantName}, UserType={UserType}, IsRootTenant={IsRootTenant}, AllowedCount={AllowedCount}",
             _tenantId, _tenantSlug, _tenantName, _userType, IsRootTenant, _allowedTenants.Count);
     }

@@ -14,6 +14,11 @@ public class UserCalendarEntity : BaseCalendarEntity
     /// </summary>
     public Guid UserId { get; set; }
 
+    /// <summary>
+    /// Mandatory due date for personal calendar entries.
+    /// </summary>
+    public DateTime DueDate { get; set; }
+
     // --- Navigation Property ---
     public UserEntity? User { get; set; }
 }

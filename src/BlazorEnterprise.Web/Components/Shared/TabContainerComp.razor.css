@@ -1,0 +1,57 @@
+.csk-tab-container-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.csk-tab-header-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.csk-tab-header-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.csk-tab-header-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.csk-tab-badge {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--mat-radius-pill, 10px);
+    background-color: var(--mat-primary, #1976D2);
+    color: var(--mat-on-primary, #ffffff);
+    line-height: 1;
+}
+
+.csk-badge-secondary {
+    background-color: var(--mat-secondary, #455A64);
+    color: #ffffff;
+}
+
+.csk-badge-error {
+    background-color: var(--mat-error, #C62828);
+    color: #ffffff;
+}
+
+.csk-tab-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    gap: 0.75rem;
+    color: var(--mat-on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.csk-tab-loading-label {
+    font-size: 0.875rem;
+    color: var(--mat-on-surface-variant);
+}

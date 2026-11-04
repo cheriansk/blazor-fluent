@@ -3,8 +3,8 @@
 target_spec: docs/specs/HomePage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/HomePage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/HomePage.razor.cs
-generated_at_utc: 2026-11-02T19:18:23Z
-source_hash_sha256: 9e1b5628f4bd4d2b
+generated_at_utc: 2026-11-03T02:50:48Z
+source_hash_sha256: 8b4f5769c68f1462
 ============================================================================ -->
 # AI Navigation Index: `HomePage`
 
@@ -14,33 +14,22 @@ source_hash_sha256: 9e1b5628f4bd4d2b
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L9` | `L8: @if (_isRootAdminOnly)` | Components: `PageTitle@L5` |
-| **Material Section Header & Action Toolbar** | `L24-L103` | `L29: @if (_userProjects.Count > 0)`, `L41: @if (_isLoading)`, `L48: @if (!_isRootAdminOnly)`, `L58: @if (_programHealth != null)`, `L62: @if (!string.IsNullOrWhiteSpace(_programHealth.ProgramCode))`, `L74: @if (_programs.Count > 1)`, `L90: @if (_programHealth != null)`, `L101: @if (_programHealth != null)` | Buttons: `Btn("New Task" -> NavigateToTasks)@L31`, `Btn("Refresh" -> RefreshDataAsync)@L35` <br> Components: `CskSectionHeader(Icon=CskIcons.Apps)@L25`, `Actions@L28`, `CskStatusChip(Text=_programHealth.Status.ToString())@L93`, `CskStatusChip(Text=($, Variant=GetProgramHealthVariant(_programHealth.Health))@L95` |
-| **Progress Bar & Percentage** | `L104-L170` | `L113: @if (_programHealth.OverdueTasks > 0)`, `L148: @if (_programHealth.RiskReasons.Count > 0)` | Components: `CskProgressBar(Value=((int)Math.Round(_programHealth.ProgressPercentage)))@L110` |
-| **My Projects Card Grid Section** | `L171-L201` | `L184: @if (_userProjects.Count == 0)` | - |
-| **Card Header: Title, ShortCode, Role** | `L202-L221` | `L207: @if (!string.IsNullOrWhiteSpace(proj.ProgramName))`, `L215: @if (proj.UserRole.HasValue)` | Components: `CskStatusChip(Text=proj.UserRole.Value.ToString(), Variant=GetRoleVariant(proj.UserRole))@L217` |
-| **Status & Health Row** | `L222-L229` | Unconditional | Components: `CskStatusChip(Text=proj.Status.ToString(), Variant=GetProjectStatusVariant(proj.Status))@L224`, `CskStatusChip(Text=($, Variant=GetProjectHealthVariant(proj.Health))@L226` |
-| **Progress Bar** | `L230-L238` | Unconditional | Components: `CskProgressBar(Value=((int)Math.Round(proj.ProgressPercentage)))@L236` |
-| **Deliverables & Alerts Strip** | `L239-L260` | `L245: @if (proj.OverdueTasks > 0)`, `L252: @if (proj.ActiveBlockersCount > 0)` | - |
-| **Footer / Action** | `L261-L284` | `L263: @if (proj.DueDate.HasValue)` | Buttons: `Btn("Open" -> OpenProjectTasks)@L273` |
-| **Column: To Do / Backlog** | `L301-L326` | Unconditional | Components: `CskStatusChip(Text=task.PriorityText, Variant=task.PriorityVariant)@L313` |
-| **Column: In Progress** | `L327-L352` | Unconditional | Components: `CskStatusChip(Text=task.PriorityText, Variant=task.PriorityVariant)@L339` |
-| **Column: Done** | `L353-L380` | Unconditional | Components: `CskStatusChip@L365` |
-| **Right: Recent Activity Audit Trail** | `L381-L424` | `L394: @if (_auditActivities.Count == 0)` | Components: `CskStatusChip(Text=audit.BadgeText, Variant=audit.BadgeVariant)@L416` |
+| **Header & Top-Level Controls** | `L1-L10` | `L9: @if (_isRootAdminOnly)` | Components: `PageTitle@L6` |
+| **Material Section Header & Action Toolbar** | `L25-L53` | `L30: @if (_userProjects.Count > 0)`, `L42: @if (_isLoading)`, `L49: @if (!_isRootAdminOnly)` | Buttons: `Btn("New Task" -> NavigateToTasks)@L32`, `Btn("Refresh" -> RefreshDataAsync)@L36` <br> Components: `CskSectionHeader(Icon=CskIcons.Apps)@L26`, `Actions@L29`, `ProgramSummaryCard(Health=_programHealth)@L52` |
+| **2. My Projects Card Grid Section** | `L54-L56` | Unconditional | Components: `MyProjectsGrid(Projects=_userProjects, OnOpenProject=OpenProjectTasks)@L55` |
+| **3. Bottom Content Area: Kanban Workflow Board & Recent Activity** | `L57-L63` | Unconditional | Components: `DashboardKanbanBoard(Tasks=_kanbanTasks, OnNavigateToTasks=NavigateToTasks)@L59`, `DashboardAuditTrail(Activities=_auditActivities)@L60` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/HomePage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `InitializeForTestAsync` | `L48-L48` | [HELPER] | `local:LoadDashboardDataAsync()` |
-| `OnInitializedAsync` | `L50-L53` | [INIT] | `local:LoadDashboardDataAsync()` |
-| `RefreshDataAsync` | `L55-L58` | OnClick@L35 | `local:LoadDashboardDataAsync()` |
-| `OnProgramSelectedAsync` | `L60-L64` | [HELPER] | Local UI State |
-| `OpenProjectTasks` | `L66-L70` | OnClick@L275 | `NavigationManager.NavigateTo()` |
-| `LoadDashboardDataAsync` | `L72-L213` | [HELPER] | `[IsRootAdmin]` -> `local:FormatTimeAgo()` |
-| `FormatTimeAgo` | `L215-L221` | [HELPER] | Local UI State |
-| `NavigateToTasks` | `L223-L237` | OnClick@L31 | `local:OpenProjectTasks()` -> `NavigationManager.NavigateTo()` |
-| `GetProgramHealthVariant` | `L239-L245` | [HELPER] | Local UI State |
-| `GetProjectHealthVariant` | `L247-L253` | [HELPER] | Local UI State |
-| `GetProjectStatusVariant` | `L255-L262` | [HELPER] | Local UI State |
-| `GetRoleVariant` | `L264-L271` | [HELPER] | Local UI State |
+| `InitializeForTestAsync` | `L50-L50` | [HELPER] | `local:LoadDashboardDataAsync()` |
+| `OnInitializedAsync` | `L52-L56` | [INIT] | `local:LoadDashboardDataAsync()` |
+| `HandleProjectContextChanged` | `L58-L69` | [HELPER] | Local UI State |
+| `Dispose` | `L71-L74` | [HELPER] | Local UI State |
+| `RefreshDataAsync` | `L76-L79` | OnClick@L36 | `local:LoadDashboardDataAsync()` |
+| `OnProgramSelectedAsync` | `L81-L85` | [HELPER] | Local UI State |
+| `OpenProjectTasks` | `L87-L91` | OnOpenProject@L55 | `NavigationManager.NavigateTo()` |
+| `LoadDashboardDataAsync` | `L93-L236` | [HELPER] | `[IsRootAdmin]` -> `local:GetTimeAgo()` |
+| `NavigateToTasks` | `L238-L241` | OnClick@L32, OnNavigateToTasks@L59 | `NavigationManager.NavigateTo()` |
+| `GetTimeAgo` | `L243-L250` | [HELPER] | Local UI State |
 
