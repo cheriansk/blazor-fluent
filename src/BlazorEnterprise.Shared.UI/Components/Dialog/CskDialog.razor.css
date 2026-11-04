@@ -35,13 +35,7 @@
     font-weight: 500;
     line-height: 1.6;
     letter-spacing: 0.0075em;
-}
-
-.csk-dialog-body {
-    padding: 1.25rem 1.5rem;
-    overflow-y: auto;
     flex: 0 0 auto;
-    box-sizing: border-box;
 }
 
 .csk-dialog-actions {
