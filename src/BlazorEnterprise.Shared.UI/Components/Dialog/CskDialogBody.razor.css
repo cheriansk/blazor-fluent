@@ -1,0 +1,33 @@
+/* ADDED: this file. CskDialogBody renders the title, body and action elements, but the rules lived in CskDialog.razor.css.
+   Blazor CSS isolation only scopes a file to its own component's markup, so none of these styles reached CskDialogBody's elements
+   (this is also the cause of the TG019 "undefined CSS class" errors on CskDialogBody.razor). The rules are repeated here on purpose. */
+
+.csk-dialog-title {
+    /* Same values as the title rule in CskDialog.razor.css (Material 3: 24px gutter, weight 500). */
+    padding: 20px 24px 12px;
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0.0075em;
+    flex: 0 0 auto;
+}
+
+.csk-dialog-body {
+    /* ADDED: scrollable content area. flex: 1 + overflow-y lets only the body scroll while title and actions stay visible. */
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    padding: 8px 24px;
+    overflow-y: auto;
+    /* min-height: 0 lets the flex child shrink below its content height, otherwise overflow-y never kicks in inside a max-height surface. */
+    min-height: 0;
+}
+
+.csk-dialog-actions {
+    /* Same values as the actions rule in CskDialog.razor.css. */
+    padding: 12px 24px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}

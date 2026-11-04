@@ -2,9 +2,9 @@
 
 @if (_isOpen)
 {
-    <div class="csk-dialog-backdrop @(Modal ? "csk-dialog-modal" : "")"
+    <div class="csk-dialog-backdrop"
          @onclick="HandleBackdropClick">
-        <div class="csk-dialog-surface @Class"
+        <div class="csk-dialog-surface @Class" role="dialog" aria-modal="@(Modal ? "true" : "false")"
              @onclick:stopPropagation="true"
              @attributes="AdditionalAttributes">
             <CascadingValue Value="this" IsFixed="true">

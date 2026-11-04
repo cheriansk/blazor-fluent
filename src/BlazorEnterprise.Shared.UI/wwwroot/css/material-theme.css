@@ -52,7 +52,7 @@
 
     --layout-nav-width: clamp(14rem,18vw,16rem);
     --layout-nav-rail-width: 4.5rem;
-    --layout-gutter: cmalp(0.75rem,2vw,1.5rem);
+    --layout-gutter: clamp(0.75rem,2vw,1.5rem);
     --layout-content-max:120rem;
 
 

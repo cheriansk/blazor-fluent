@@ -1,56 +1,54 @@
 .csk-dialog-backdrop {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
+    inset:0;
+    padding: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing:border-box;
     z-index: 1300;
-    backdrop-filter: blur(2px);
-    transition: opacity 0.2s ease-in-out;
+    background-color:color-mix(in srgb, black 40%, transparent);
+    backdrop-filter: blur(4px);
 }
 
 .csk-dialog-surface {
     background-color: var(--mat-surface, #FFFFFF);
-    color: var(--mat-on-surface, #1C1B1F);
-    border-radius: var(--mat-radius-card, 12px);
-    box-shadow: 0 11px 15px -7px rgba(0,0,0,0.2), 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12);
+    color: inherit;
+    font-family:var(--mat-font-family, inherit);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: var(--mat-radius-card, 16px);
+    box-shadow: var(--mat-elevation-4);
     display: flex;
     flex-direction: column;
-    max-width: 90vw;
-    max-height: 90vh;
+    min-width:280px;
+    max-width: 100%;
+    max-height: 100%;
     overflow: hidden;
     box-sizing: border-box;
     outline: none;
 }
 
 .csk-dialog-title {
-    padding: 1.25rem 1.5rem 0.75rem 1.5rem;
+    padding: 20px 24px 12px;
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.6;
     letter-spacing: 0.0075em;
-    border-bottom: 1px solid var(--mat-outline-variant, #E0E0E0);
 }
 
 .csk-dialog-body {
     padding: 1.25rem 1.5rem;
     overflow-y: auto;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     box-sizing: border-box;
 }
 
 .csk-dialog-actions {
-    padding: 0.75rem 1.25rem;
+    padding: 12px 24px 20px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.5rem;
-    border-top: 1px solid var(--mat-outline-variant, #E0E0E0);
-    background-color: var(--mat-surface-variant, #FAFAFA);
+    gap: 8px;
+    flex: 0 0 auto;
 }
-
-.csk-dialog-modal { pointer-events: auto; }
