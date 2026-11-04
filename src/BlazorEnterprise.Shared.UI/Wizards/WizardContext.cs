@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace BlazorEnterprise.Shared.UI.Wizards;
 
 /// <summary>
@@ -7,6 +9,8 @@ namespace BlazorEnterprise.Shared.UI.Wizards;
 /// <typeparam name="TState">The strongly-typed wizard data model.</typeparam>
 public class WizardContext<TState>
 {
+    private string? _initialStateJson;
+
     public TState State { get; set; }
 
     public int CurrentStepIndex { get; internal set; } = 0;
@@ -35,6 +39,56 @@ public class WizardContext<TState>
     {
         State = initialState;
         SelectedTemplateId = initialTemplateId;
+        CaptureInitialSnapshot();
+    }
+
+    /// <summary>
+    /// Captures a deep serialized snapshot of the state to accurately detect modifications and render diffs.
+    /// </summary>
+    public void CaptureInitialSnapshot()
+    {
+        try
+        {
+            _initialStateJson = State != null ? JsonSerializer.Serialize(State) : null;
+        }
+        catch
+        {
+            _initialStateJson = null;
+        }
+    }
+
+    /// <summary>
+    /// Returns the deep baseline snapshot of the initial state.
+    /// </summary>
+    public TState? GetInitialStateSnapshot()
+    {
+        if (string.IsNullOrEmpty(_initialStateJson)) return default;
+        try
+        {
+            return JsonSerializer.Deserialize<TState>(_initialStateJson);
+        }
+        catch
+        {
+            return default;
+        }
+    }
+
+    /// <summary>
+    /// Checks whether the serialized state differs from the initial snapshot.
+    /// </summary>
+    public bool HasStateChanged()
+    {
+        if (IsDirty) return true;
+        if (string.IsNullOrEmpty(_initialStateJson)) return false;
+        try
+        {
+            var currentJson = State != null ? JsonSerializer.Serialize(State) : null;
+            return !string.Equals(_initialStateJson, currentJson, StringComparison.Ordinal);
+        }
+        catch
+        {
+            return IsDirty;
+        }
     }
 
     public void SetTemplate(string? templateId)

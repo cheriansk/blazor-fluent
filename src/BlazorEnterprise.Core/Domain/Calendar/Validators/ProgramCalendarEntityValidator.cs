@@ -1,9 +1,17 @@
+using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+using BlazorEnterprise.Shared.DataListTypes;
 using FluentValidation;
 
 namespace BlazorEnterprise.Core.Domain.Calendar.Validators;
 
 public class ProgramCalendarEntityValidator : AbstractValidator<ProgramCalendarEntity>
 {
+    private static readonly Regex EmailRegex = new(
+        @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     public ProgramCalendarEntityValidator()
     {
         RuleFor(x => x.ProgramId)
@@ -19,8 +27,38 @@ public class ProgramCalendarEntityValidator : AbstractValidator<ProgramCalendarE
         RuleFor(x => x.StartDate)
             .NotEmpty().WithMessage("Start date is required.");
 
-        RuleFor(x => x.EndDate)
-            .NotNull().WithMessage("End date is required.")
-            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("End date cannot be before start date.");
+        // When EntryType == Timeline: Title, StartDate, EndDate, Status are mandatory
+        When(x => x.EntryType == CalendarEntryTypeEnum.Timeline, () =>
+        {
+            RuleFor(x => x.EndDate)
+                .NotNull().WithMessage("End date is required for Timeline entries.")
+                .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("End date cannot be before start date.");
+
+            RuleFor(x => x.Status)
+                .IsInEnum().WithMessage("Valid status is required.");
+        });
+
+        // When EntryType == Milestone: Title, StartDate, EndDate, Status, OwnerEmails are mandatory
+        When(x => x.EntryType == CalendarEntryTypeEnum.Milestone, () =>
+        {
+            RuleFor(x => x.EndDate)
+                .NotNull().WithMessage("End date is required for Milestone entries.")
+                .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("End date cannot be before start date.");
+
+            RuleFor(x => x.Status)
+                .IsInEnum().WithMessage("Valid status is required.");
+
+            RuleFor(x => x.OwnerEmails)
+                .NotEmpty().WithMessage("At least one owner email is required for Milestone entries.")
+                .Must(ValidateSemicolonSeparatedEmails).WithMessage("One or more owner emails are invalid.");
+        });
+    }
+
+    private static bool ValidateSemicolonSeparatedEmails(string? ownerEmails)
+    {
+        if (string.IsNullOrWhiteSpace(ownerEmails)) return false;
+        var parts = ownerEmails.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) return false;
+        return parts.All(p => EmailRegex.IsMatch(p));
     }
 }

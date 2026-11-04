@@ -1,68 +1,85 @@
-@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard
-@using BlazorEnterprise.Shared.UI.Wizards
-@using BlazorEnterprise.Shared.UI.Components
-@using BlazorEnterprise.Core.Dtos
-
-<CskWizardModal TState="CreateProjectWizardState"
-                IsOpen="@IsOpen"
-                IsOpenChanged="@IsOpenChanged"
-                Title="@(Title ?? (IsReadOnly ? "View Strategic Project" : (IsEditMode ? "Edit Strategic Project" : "Create Strategic Project")))"
-                Subtitle="@(IsReadOnly ? "View project delivery initialization, timeline, milestones & governance" : "Step-by-step project delivery initialization, timeline, milestones & governance")"
-                InitialState="@_wizardState"
-                FlowDefinition="@_flowDefinition"
-                FinishButtonText="@(IsReadOnly ? "Close" : (IsEditMode ? "Save Changes" : "Create Project"))"
-                OnFinish="@HandleFinishAsync"
-                OnCancel="@HandleCancel">
-</CskWizardModal>
-
-@code {
-    [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
-    [Parameter] public bool IsReadOnly { get; set; }
-    [Parameter] public bool IsEditMode { get; set; }
-    [Parameter] public string? Title { get; set; }
-    [Parameter] public CreateProjectWizardState? InitialState { get; set; }
-    [Parameter] public EventCallback<CreateProjectWizardState> OnProjectCreated { get; set; }
-
-    private WizardFlowDefinition<CreateProjectWizardState> _flowDefinition = default!;
-    private CreateProjectWizardState _wizardState = new();
-    private bool _wasOpen;
-
-    protected override void OnInitialized()
-    {
-        _flowDefinition = CreateProjectWizardFlow.CreateFlow();
-        _wizardState = InitialState ?? new CreateProjectWizardState();
-    }
-
-    protected override void OnParametersSet()
-    {
-        if (IsOpen && !_wasOpen)
-        {
-            _wizardState = InitialState ?? new CreateProjectWizardState();
-        }
-        _wasOpen = IsOpen;
-    }
-
-    private async Task HandleFinishAsync(CreateProjectWizardState state)
-    {
-        if (!IsReadOnly && OnProjectCreated.HasDelegate)
-        {
-            await OnProjectCreated.InvokeAsync(state);
-        }
-        await CloseAsync();
-    }
-
-    private async Task HandleCancel()
-    {
-        await CloseAsync();
-    }
-
-    private async Task CloseAsync()
-    {
-        IsOpen = false;
-        if (IsOpenChanged.HasDelegate)
-        {
-            await IsOpenChanged.InvokeAsync(false);
-        }
-    }
-}
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+
+<CskWizardModal TState="CreateProjectWizardState"
+                IsOpen="@IsOpen"
+                IsOpenChanged="@IsOpenChanged"
+                IsReadOnly="@IsReadOnly"
+                OnEditRequested="@OnEditRequested"
+                Title="@(Title ?? (IsReadOnly ? "View Strategic Project" : (IsEditMode ? "Edit Strategic Project" : "Create Strategic Project")))"
+                Subtitle="@(IsReadOnly ? "View project delivery initialization, timeline, milestones & governance" : "Step-by-step project delivery initialization, timeline, milestones & governance")"
+                InitialState="@_wizardState"
+                FlowDefinition="@_flowDefinition"
+                FinishButtonText="@(IsReadOnly ? "Close" : (IsEditMode ? "Save Changes" : "Create Project"))"
+                OnSaveAsync="@HandleSaveAsync"
+                OnFinish="@HandleFinishAsync"
+                OnCancel="@HandleCancel">
+</CskWizardModal>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public CreateProjectWizardState? InitialState { get; set; }
+    [Parameter] public EventCallback<CreateProjectWizardState> OnProjectCreated { get; set; }
+    [Parameter] public Func<CreateProjectWizardState, Task<string?>>? OnSaveAsync { get; set; }
+    [Parameter] public EventCallback OnEditRequested { get; set; }
+
+    private WizardFlowDefinition<CreateProjectWizardState> _flowDefinition = default!;
+    private CreateProjectWizardState _wizardState = new();
+    private bool _wasOpen;
+
+    protected override void OnInitialized()
+    {
+        _flowDefinition = CreateProjectWizardFlow.CreateFlow();
+        _wizardState = InitialState ?? new CreateProjectWizardState();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && (!_wasOpen || InitialState != null))
+        {
+            _wizardState = InitialState ?? new CreateProjectWizardState();
+        }
+        _wasOpen = IsOpen;
+    }
+
+    private async Task<string?> HandleSaveAsync(CreateProjectWizardState state)
+    {
+        if (IsReadOnly) return null;
+
+        if (OnSaveAsync != null)
+        {
+            return await OnSaveAsync(state);
+        }
+
+        if (OnProjectCreated.HasDelegate)
+        {
+            await OnProjectCreated.InvokeAsync(state);
+        }
+        return null;
+    }
+
+    private async Task HandleFinishAsync(CreateProjectWizardState state)
+    {
+        await CloseAsync();
+    }
+
+    private async Task HandleCancel()
+    {
+        await CloseAsync();
+    }
+
+    private async Task CloseAsync()
+    {
+        IsOpen = false;
+        if (IsOpenChanged.HasDelegate)
+        {
+            await IsOpenChanged.InvokeAsync(false);
+        }
+    }
+}

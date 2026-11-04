@@ -1,3 +1,4 @@
+using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Contracts;
@@ -22,4 +23,24 @@ public interface IProjectHealthService
     /// Computes health summaries for all milestones within a project.
     /// </summary>
     Task<IReadOnlyList<MilestoneHealthSummaryDto>> GetProjectMilestonesHealthAsync(Guid projectId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all active risks scoped to a project.
+    /// </summary>
+    Task<IReadOnlyList<RiskEntity>> GetProjectRisksAsync(Guid projectId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all active assumptions scoped to a project.
+    /// </summary>
+    Task<IReadOnlyList<AssumptionEntity>> GetProjectAssumptionsAsync(Guid projectId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all active issues scoped to a project.
+    /// </summary>
+    Task<IReadOnlyList<IssueEntity>> GetProjectIssuesAsync(Guid projectId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all active blockers and dependencies scoped to a project.
+    /// </summary>
+    Task<IReadOnlyList<WorkDependencyEntity>> GetProjectBlockersAsync(Guid projectId, CancellationToken ct = default);
 }

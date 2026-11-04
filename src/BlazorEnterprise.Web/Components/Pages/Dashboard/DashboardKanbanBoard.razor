@@ -1,0 +1,101 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Dashboard
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Models.Dashboard
+
+<div class="dashboard-kanban-panel">
+    <div class="panel-header">
+        <div class="panel-title-group">
+            <h3 class="panel-title">
+                <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-primary" />
+                <span>Sprint Deliverables</span>
+            </h3>
+            <span class="panel-subtitle">Tasks across your active member projects</span>
+        </div>
+        <span class="column-count">@Tasks.Count Active</span>
+    </div>
+
+    <div class="kanban-swimlanes">
+        <!-- Column: To Do / Backlog -->
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <span class="column-name">To Do</span>
+                <span class="column-count">@Tasks.Count(t => t.Column == "ToDo")</span>
+            </div>
+            <div class="kanban-cards-stack">
+                @foreach (var task in Tasks.Where(t => t.Column == "ToDo"))
+                {
+                    <div class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
+                        <div class="task-card-header">
+                            <span class="task-key">@task.Key</span>
+                            <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
+                        </div>
+                        <div class="task-card-title">@task.Title</div>
+                        <div class="task-card-footer">
+                            <span class="task-assignee">
+                                <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                                <span>@task.Assignee</span>
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Column: In Progress -->
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <span class="column-name">In Progress</span>
+                <span class="column-count">@Tasks.Count(t => t.Column == "InProgress")</span>
+            </div>
+            <div class="kanban-cards-stack">
+                @foreach (var task in Tasks.Where(t => t.Column == "InProgress"))
+                {
+                    <div class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
+                        <div class="task-card-header">
+                            <span class="task-key">@task.Key</span>
+                            <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
+                        </div>
+                        <div class="task-card-title">@task.Title</div>
+                        <div class="task-card-footer">
+                            <span class="task-assignee">
+                                <CskIcon Icon="@CskIcons.Person" Class="csk-icon-sm" />
+                                <span>@task.Assignee</span>
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Column: Done -->
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <span class="column-name">Completed</span>
+                <span class="column-count">@Tasks.Count(t => t.Column == "Done")</span>
+            </div>
+            <div class="kanban-cards-stack">
+                @foreach (var task in Tasks.Where(t => t.Column == "Done"))
+                {
+                    <div class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
+                        <div class="task-card-header">
+                            <span class="task-key">@task.Key</span>
+                            <CskStatusChip Text="Resolved" Variant="CskStatusChip.ChipVariant.Success" />
+                        </div>
+                        <div class="task-card-title task-done">@task.Title</div>
+                        <div class="task-card-footer">
+                            <span class="task-assignee">
+                                <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" />
+                                <span>@task.Assignee</span>
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<KanbanTaskItem> Tasks { get; set; } = Array.Empty<KanbanTaskItem>();
+    [Parameter] public EventCallback OnNavigateToTasks { get; set; }
+}

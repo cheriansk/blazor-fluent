@@ -4,10 +4,13 @@
 @using Microsoft.AspNetCore.Components.Routing
 @using BlazorEnterprise.Components.Common
 @using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Shared.Contracts.Engine.Client
+@using Serilog.Context
 @inject NavigationManager NavigationManager
 @inject ILogger<Routes> Logger
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
+@inject ICorrelationContext CorrelationContext
 @implements IDisposable
 
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFoundPage)">
@@ -44,21 +47,30 @@
     protected override void OnInitialized()
     {
         NavigationManager.LocationChanged += HandleLocationChanged;
-        Logger.LogDebug("Razor Navigation Router Initialized: CurrentUri='{Uri}', AuthenticatedTenantUser={IsAuthenticatedTenantUser}, Tenant='{TenantId}', User='{UserId}'",
-            NavigationManager.Uri,
-            CurrentUser.IsAuthenticatedTenantUser,
-            TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "(no-active-tenant)",
-            CurrentUser.IsAuthenticated ? CurrentUser.UserId : "(unauthenticated)");
+        var corrId = CorrelationContext.Renew();
+        using (LogContext.PushProperty("CorrelationId", corrId))
+        {
+            Logger.LogDebug("Razor Navigation Router Initialized: CurrentUri='{Uri}', AuthenticatedTenantUser={IsAuthenticatedTenantUser}, Tenant='{TenantId}', User='{UserId}'",
+                NavigationManager.Uri,
+                CurrentUser.IsAuthenticatedTenantUser,
+                TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "(no-active-tenant)",
+                CurrentUser.IsAuthenticated ? CurrentUser.UserId : "(unauthenticated)");
+        }
     }
 
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        Logger.LogDebug("Razor Navigation: Target='{TargetUri}', Intercepted={IsIntercepted}, AuthenticatedTenantUser={IsAuthenticatedTenantUser}, Tenant='{TenantId}', User='{UserId}'",
-            e.Location,
-            e.IsNavigationIntercepted,
-            CurrentUser.IsAuthenticatedTenantUser,
-            TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "(no-active-tenant)",
-            CurrentUser.IsAuthenticated ? CurrentUser.UserId : "(unauthenticated)");
+        // Cycle CorrId on every page navigation so logs for the new view/page have their own discrete correlation
+        var corrId = CorrelationContext.Renew();
+        using (LogContext.PushProperty("CorrelationId", corrId))
+        {
+            Logger.LogDebug("Razor Navigation: Target='{TargetUri}', Intercepted={IsIntercepted}, AuthenticatedTenantUser={IsAuthenticatedTenantUser}, Tenant='{TenantId}', User='{UserId}'",
+                e.Location,
+                e.IsNavigationIntercepted,
+                CurrentUser.IsAuthenticatedTenantUser,
+                TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "(no-active-tenant)",
+                CurrentUser.IsAuthenticated ? CurrentUser.UserId : "(unauthenticated)");
+        }
     }
 
     public void Dispose()

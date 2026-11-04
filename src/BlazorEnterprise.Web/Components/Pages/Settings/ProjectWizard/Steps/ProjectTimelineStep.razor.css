@@ -1,28 +1,101 @@
-.csk-timeline-step-card {
-    padding: 1rem;
-    background-color: var(--csk-color-surface-container, #f8f9fa);
-    border-radius: 8px;
-    border: 1px solid var(--csk-color-border, #e0e0e0);
+.csk-wizard-step-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
-.csk-timeline-step-table {
-    background-color: var(--csk-color-surface, #ffffff);
-    border-radius: 6px;
-    border: 1px solid var(--csk-color-border, #e0e0e0);
+.csk-entry-form-card {
+    background-color: var(--mat-surface);
+    border: 1px solid var(--mat-outline-variant);
+    border-radius: var(--mat-radius-small, 6px);
+    padding: 1.25rem;
+}
+
+.csk-empty-table-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    gap: 0.75rem;
+    color: var(--mat-on-surface-variant);
+    border: 1px dashed var(--mat-outline-variant);
+    border-radius: var(--mat-radius-small, 6px);
+    background-color: var(--mat-surface);
+}
+
+.csk-empty-icon {
+    width: 40px;
+    height: 40px;
+    opacity: 0.5;
+}
+
+.timeline-step-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.row-comments-hint {
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant);
+    margin-top: 0.2rem;
+}
+
+.milestones-count-pill {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background-color: var(--mat-secondary-container, #f3f4f6);
+    color: var(--mat-on-secondary-container, #374151);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.table-container, .csk-table-container {
+    width: 100%;
+    overflow-x: auto;
 }
 
 .csk-col-date {
-    width: 150px;
-}
-
-.csk-col-status {
     width: 130px;
 }
 
+.csk-col-status {
+    width: 120px;
+}
+
 .csk-col-actions {
-    width: 150px;
+    width: 110px;
+    text-align: right;
 }
 
 .csk-font-medium {
     font-weight: 500;
+}
+
+.font-size-sm {
+    font-size: 0.875rem;
+}
+
+.text-hint {
+    color: var(--mat-on-surface-variant);
+}
+
+.full-width {
+    width: 100%;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.flex-2 {
+    flex: 2;
+}
+
+.mb-3 {
+    margin-bottom: 0.75rem;
 }

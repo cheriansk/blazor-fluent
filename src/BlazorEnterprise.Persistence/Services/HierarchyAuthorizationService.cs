@@ -36,6 +36,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 {
 
     private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext>? _dbContextFactory;
 
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
@@ -55,9 +56,11 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         ITenantContext tenantContext,
         IAuditService auditService,
         ILogger<HierarchyAuthorizationService> logger,
-        IOptions<SecurityOptions>? securityOptions = null)
+        IOptions<SecurityOptions>? securityOptions = null,
+        IDbContextFactory<AppDbContext>? dbContextFactory = null)
     {
         _context = context;
+        _dbContextFactory = dbContextFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
@@ -161,6 +164,14 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
         var normalizedSlug = tenantId.Trim().ToLowerInvariant();
+
+        if (_dbContextFactory != null)
+        {
+            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
+            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
+            if (t == null) return false;
+            return await IsTenantAdminAsync(t.Id, userId, ct);
+        }
 
         var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
@@ -392,7 +403,16 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId.Trim().ToLowerInvariant() && !t.IsDeleted, ct);
+        var normalizedSlug = tenantId.Trim().ToLowerInvariant();
+        if (_dbContextFactory != null)
+        {
+            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
+            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
+            if (t == null) return false;
+            return await CanViewTenantSettingsAsync(t.Id, userId, ct);
+        }
+
+        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return false;
 
@@ -516,7 +536,16 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId.Trim().ToLowerInvariant() && !t.IsDeleted, ct);
+        var normalizedSlug = tenantId.Trim().ToLowerInvariant();
+        if (_dbContextFactory != null)
+        {
+            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
+            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
+            if (t == null) return false;
+            return await CanAccessTenantAsync(t.Id, userId, ct);
+        }
+
+        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return false;
 
@@ -820,7 +849,16 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
 
 
-        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == tenantId.Trim().ToLowerInvariant() && !t.IsDeleted, ct);
+        var normalizedSlug = tenantId.Trim().ToLowerInvariant();
+        if (_dbContextFactory != null)
+        {
+            await using var isolatedContext = await _dbContextFactory.CreateDbContextAsync(ct);
+            var t = await isolatedContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Slug == normalizedSlug && !x.IsDeleted, ct);
+            if (t == null) return [];
+            return await GetAccessibleProgramIdsAsync(t.Id, userId, ct);
+        }
+
+        var tenant = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == normalizedSlug && !t.IsDeleted, ct);
 
         if (tenant == null) return [];
 

@@ -1,5 +1,5 @@
 using BlazorEnterprise.Shared.UI.Components;
-﻿using BlazorEnterprise.Components.Common;
+using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Calendar;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -14,7 +14,7 @@ public partial class SettingsUserCalendarTab : ComponentBase
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private ILogger<SettingsUserCalendarTab> Logger { get; set; } = default!;
 
-private bool _isLoading = true;
+    private bool _isLoading = true;
     private bool _isSaving;
     private string? _statusMessage;
     private bool _isError;
@@ -28,7 +28,7 @@ private bool _isLoading = true;
     private string _newEventDescription = string.Empty;
     private string _newLocation = string.Empty;
     private DateTime? _newEventDate = DateTime.UtcNow.Date;
-    private CalendarEntryTypeEnum _newEntryType = CalendarEntryTypeEnum.General;
+    private CalendarEntryTypeEnum _newEntryType = CalendarEntryTypeEnum.Personal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,7 +63,7 @@ private bool _isLoading = true;
         _newEventDescription = string.Empty;
         _newLocation = string.Empty;
         _newEventDate = _selectedDate;
-        _newEntryType = CalendarEntryTypeEnum.General;
+        _newEntryType = CalendarEntryTypeEnum.Personal;
         _showEventModal = true;
     }
 
@@ -107,6 +107,7 @@ private bool _isLoading = true;
                 Title = _newEventTitle.Trim(),
                 Description = description,
                 StartDate = eventDate,
+                DueDate = eventDate.AddHours(1),
                 EndDate = eventDate.AddHours(1),
                 EntryType = _newEntryType,
                 Status = CalendarEntryStatusEnum.Confirmed

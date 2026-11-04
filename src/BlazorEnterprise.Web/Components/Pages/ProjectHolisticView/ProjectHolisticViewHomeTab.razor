@@ -1,0 +1,102 @@
+@namespace BlazorEnterprise.Web.Components.Pages.ProjectHolisticViewTabs
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="holistic-home-root">
+    @if (HealthSummary == null)
+    {
+        <div class="holistic-empty-box">
+            <CskIcon Icon="@CskIcons.TaskList" Class="holistic-empty-icon" />
+            <p>No project health metrics available.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Executive KPI Metric Tiles -->
+        <div class="holistic-metrics-grid">
+            <div class="holistic-metric-card">
+                <span class="metric-label">Health Rating</span>
+                <div class="metric-value-row">
+                    <span class="health-chip @GetHealthClass(HealthSummary.Health)">
+                        @HealthSummary.Health
+                    </span>
+                </div>
+                <span class="metric-subtitle">Live delivery health status</span>
+            </div>
+
+            <div class="holistic-metric-card">
+                <span class="metric-label">Progress</span>
+                <div class="metric-value-row">
+                    <span class="metric-number">@HealthSummary.ProgressPercentage%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill @GetProgressClass(HealthSummary.ProgressPercentage)"></div>
+                </div>
+                <span class="metric-subtitle">@HealthSummary.CompletedTasks of @HealthSummary.TotalTasks tasks delivered</span>
+            </div>
+
+            <div class="holistic-metric-card">
+                <span class="metric-label">Milestones</span>
+                <div class="metric-value-row">
+                    <span class="metric-number">@HealthSummary.CompletedMilestones</span>
+                    <span class="metric-total">/ @HealthSummary.TotalMilestones</span>
+                </div>
+                <span class="metric-subtitle">Project phase gates achieved</span>
+            </div>
+
+            <div class="holistic-metric-card">
+                <span class="metric-label">Active Blockers</span>
+                <div class="metric-value-row">
+                    <span class="metric-number @(HealthSummary.ActiveBlockersCount > 0 ? "text-danger" : "text-success")">
+                        @HealthSummary.ActiveBlockersCount
+                    </span>
+                </div>
+                <span class="metric-subtitle">Critical blocking dependencies</span>
+            </div>
+        </div>
+
+        <!-- Task & Delivery Metrics Summary -->
+        <div class="holistic-details-grid">
+            <div class="holistic-summary-card">
+                <h4 class="card-heading">
+                    <CskIcon Icon="@CskIcons.TaskList" Class="csk-icon-primary" />
+                    <span>Task Velocity & Execution</span>
+                </h4>
+                <div class="task-stats-list">
+                    <div class="task-stat-item">
+                        <span class="stat-name">Open / Backlog Tasks</span>
+                        <span class="stat-val">@HealthSummary.OpenTasks</span>
+                    </div>
+                    <div class="task-stat-item">
+                        <span class="stat-name">In Progress</span>
+                        <span class="stat-val text-primary">@HealthSummary.InProgressTasks</span>
+                    </div>
+                    <div class="task-stat-item">
+                        <span class="stat-name">Completed Tasks</span>
+                        <span class="stat-val text-success">@HealthSummary.CompletedTasks</span>
+                    </div>
+                    <div class="task-stat-item">
+                        <span class="stat-name">Overdue Tasks</span>
+                        <span class="stat-val @(HealthSummary.OverdueTasks > 0 ? "text-danger" : "")">@HealthSummary.OverdueTasks</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (HealthSummary.RiskReasons.Count > 0)
+            {
+                <div class="holistic-summary-card risk-card">
+                    <h4 class="card-heading text-danger">
+                        <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-danger" />
+                        <span>Active Project Risks & Alerts (@HealthSummary.RiskReasons.Count)</span>
+                    </h4>
+                    <ul class="risk-list">
+                        @foreach (var risk in HealthSummary.RiskReasons)
+                        {
+                            <li class="risk-item">@risk</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+</div>

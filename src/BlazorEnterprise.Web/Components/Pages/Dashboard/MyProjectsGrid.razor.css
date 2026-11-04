@@ -1,0 +1,229 @@
+.dashboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.section-heading {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--mat-on-surface);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-subheading {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.section-count-badge {
+    background-color: var(--mat-surface-variant);
+    color: var(--mat-on-surface-variant);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--mat-radius-pill);
+    border: 1px solid var(--mat-outline-variant);
+}
+
+/* padding was a fixed 3rem; clamp() shrinks it on short screens so the empty state does not push the dashboard into a scrollbar. */
+.mat-empty-projects {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: clamp(1rem, 4vh, 3rem) 1.5rem;
+    background-color: var(--mat-surface);
+    border: 1px dashed var(--mat-outline-variant);
+    border-radius: var(--mat-radius-card);
+    gap: 0.75rem;
+}
+
+.empty-icon-circle {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--mat-radius-circle);
+    background-color: var(--mat-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mat-on-surface-variant);
+}
+
+.empty-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mat-on-surface);
+    margin: 0;
+}
+
+.empty-desc {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface-variant);
+    max-width: 480px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.mat-project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.mat-project-card {
+    background-color: var(--mat-surface);
+    border: 1px solid var(--mat-outline-variant);
+    border-radius: var(--mat-radius-card);
+    box-shadow: var(--mat-elevation-1);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.mat-project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mat-elevation-2);
+    border-color: var(--mat-primary);
+}
+
+.project-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.project-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.project-code {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-primary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.project-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mat-on-surface);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.project-program-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.project-badges-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.project-progress-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.progress-split {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.progress-percent-label {
+    font-weight: 600;
+    color: var(--mat-on-surface);
+}
+
+.tasks-counter-label {
+    color: var(--mat-on-surface-variant);
+}
+
+.project-metrics-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+}
+
+.metric-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.chip-alert {
+    color: var(--mat-error, #b3261e);
+    font-weight: 600;
+}
+
+.chip-warning {
+    color: #e65100;
+    font-weight: 600;
+}
+
+.project-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--mat-outline-variant);
+    margin-top: auto;
+}
+
+.due-date-text {
+    font-size: 0.75rem;
+    color: var(--mat-on-surface-variant);
+}
+
+.csk-icon-primary {
+    color: var(--mat-primary);
+}
+
+.csk-icon-xs {
+    width: 14px;
+    height: 14px;
+}
+
+.csk-icon-lg {
+    width: 32px;
+    height: 32px;
+}

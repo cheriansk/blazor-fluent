@@ -38,6 +38,64 @@
   },
   "targets": [
     {
+      "path": "BlazorEnterprise.Web/Components/Layout/MainLayout.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Layout Pages",
+      "enabled": true,
+      "children": [
+        {
+          "path": "BlazorEnterprise.Web/Components/Common/ImpersonationBannerComp.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <ImpersonationBannerComp /> rendered by MainLayout.razor at L4 (Gate: Unconditional).",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <SessionRevokedModal /> rendered by MainLayout.razor at L5 (Gate: Unconditional).",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Common/SessionTimeoutModal.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <SessionTimeoutModal /> rendered by MainLayout.razor at L6 (Gate: Unconditional).",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Layout/PendingChangesIndicatorComp.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <PendingChangesIndicatorComp /> rendered by MainLayout.razor at L23 (Gate: HasActiveTenantSession).",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Layout/NotificationBellPopup.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <NotificationBellPopup /> rendered by MainLayout.razor at L24 (Gate: HasActiveTenantSession).",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Layout/NavMenuComp.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <NavMenuComp /> rendered by MainLayout.razor at L52 (Gate: HasActiveTenantSession).",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Common/AppErrorBoundaryComp.razor",
+          "category": "Layout",
+          "thinking_level": "low",
+          "description": "Child component <AppErrorBoundaryComp /> rendered by MainLayout.razor at L57 (Gate: HasActiveTenantSession).",
+          "enabled": true
+        }
+      ]
+    },
+    {
       "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor",
       "category": "Settings UI",
       "thinking_level": "low",
@@ -51,13 +109,13 @@
           "description": "Tenant Directory, Initial Admin Provisioning, User Directory, Programs, and Executive Governance Tasks/Risks.",
           "enabled": true
         },
-    {
-      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor",
-      "category": "Settings UI",
-      "thinking_level": "low",
-      "description": "Child component <SettingsProgramsTab /> rendered by SettingsPage.razor at L99 (Gate: _activeTabId == 'programs' && _visitedTabs.Contains('programs')).",
-      "enabled": true
-    }
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor",
+          "category": "Settings UI",
+          "thinking_level": "low",
+          "description": "Child component <SettingsProgramsTab /> rendered by SettingsPage.razor at L99 (Gate: _activeTabId == 'programs' && _visitedTabs.Contains('programs')).",
+          "enabled": true
+        }
       ]
     },
     {
@@ -73,6 +131,101 @@
       "thinking_level": "medium",
       "description": "Background channel listener that dequeues and executes asynchronous tenant-scoped batch jobs.",
       "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/HomePage.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Home Page",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/ProgramHolisticView.razor",
+      "category": "Program Management UI",
+      "thinking_level": "low",
+      "description": "Comprehensive multi-tab holistic view of program status, executive health KPIs, chronological timelines, delivery milestones, and RAID logs.",
+      "enabled": true,
+      "children": [
+        {
+          "path": "BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor",
+          "category": "Shared UI",
+          "thinking_level": "low",
+          "description": "Reusable lazy-loading MudTabs container component.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewHomeTab.razor",
+          "category": "Program Management UI",
+          "thinking_level": "low",
+          "description": "Executive Summary tab displaying key program health metrics and alerts.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewTimelineTab.razor",
+          "category": "Program Management UI",
+          "thinking_level": "low",
+          "description": "Timeline tab showing chronological program events and milestones.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewMilestoneTab.razor",
+          "category": "Program Management UI",
+          "thinking_level": "low",
+          "description": "Milestone tab tracking program milestones with status indicators.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewRaidLogTab.razor",
+          "category": "Program Management UI",
+          "thinking_level": "low",
+          "description": "RAID log tab displaying program risks, assumptions, issues, and decisions.",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor",
+      "category": "Project Management UI",
+      "thinking_level": "low",
+      "description": "Comprehensive multi-tab holistic view of project status, executive health KPIs, chronological timelines, delivery milestones, and RAID logs.",
+      "enabled": true,
+      "children": [
+        {
+          "path": "BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor",
+          "category": "Shared UI",
+          "thinking_level": "low",
+          "description": "Reusable lazy-loading CskTabs container component.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor",
+          "category": "Project Management UI",
+          "thinking_level": "low",
+          "description": "Executive Summary tab displaying key project health metrics and alerts.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor",
+          "category": "Project Management UI",
+          "thinking_level": "low",
+          "description": "Timeline tab showing chronological project events and milestones.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor",
+          "category": "Project Management UI",
+          "thinking_level": "low",
+          "description": "Milestone tab tracking project milestones with status indicators.",
+          "enabled": true
+        },
+        {
+          "path": "BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewRaidLogTab.razor",
+          "category": "Project Management UI",
+          "thinking_level": "low",
+          "description": "RAID log tab displaying project risks, assumptions, issues, and decisions.",
+          "enabled": true
+        }
+      ]
     }
   ]
 }

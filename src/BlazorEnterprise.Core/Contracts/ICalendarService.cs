@@ -33,6 +33,19 @@ public interface ICalendarService
         DateTime endUtc,
         CancellationToken ct = default);
 
+    // --- Direct Entity Retrieval ---
+    Task<IReadOnlyList<ProgramCalendarEntity>> GetProgramCalendarEntitiesAsync(
+        Guid tenantId,
+        Guid programId,
+        bool forEdit = false,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<ProjectCalendarEntity>> GetProjectCalendarEntitiesAsync(
+        Guid tenantId,
+        Guid projectId,
+        bool forEdit = false,
+        CancellationToken ct = default);
+
     // --- Direct Calendar Operations ---
     Task<Result<ProgramCalendarEntity>> CreateProgramCalendarEntryAsync(ProgramCalendarEntity entry, CancellationToken ct = default);
     Task<Result<ProjectCalendarEntity>> CreateProjectCalendarEntryAsync(ProjectCalendarEntity entry, CancellationToken ct = default);

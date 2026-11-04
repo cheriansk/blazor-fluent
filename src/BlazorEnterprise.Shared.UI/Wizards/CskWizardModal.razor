@@ -20,11 +20,22 @@
                             <CskLabel Typo="CskTypography.Caption" Class="csk-wizard-subtitle">@Subtitle</CskLabel>
                         }
                     </div>
-                    <CskButton Variant="CskButtonVariant.Text"
-                               IconStart="@CskIcons.Dismiss"
-                               OnClick="@RequestCloseAsync"
-                               Disabled="@_isBusy"
-                               Title="Close Wizard" />
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8" VerticalAlignment="CskVerticalAlignment.Center">
+                        @if (IsReadOnly && OnEditRequested.HasDelegate)
+                        {
+                            <CskButton Variant="CskButtonVariant.Outlined"
+                                       IconStart="@CskIcons.Edit"
+                                       OnClick="@HandleEditRequestedAsync"
+                                       Disabled="@_isBusy">
+                                Edit
+                            </CskButton>
+                        }
+                        <CskButton Variant="CskButtonVariant.Text"
+                                   IconStart="@CskIcons.Dismiss"
+                                   OnClick="@RequestCloseAsync"
+                                   Disabled="@_isBusy"
+                                   Title="Close Wizard" />
+                    </CskStack>
                 </CskStack>
 
                 @* Visual Stepper Pipeline *@

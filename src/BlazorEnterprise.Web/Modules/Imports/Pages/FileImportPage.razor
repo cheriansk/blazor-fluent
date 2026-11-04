@@ -16,6 +16,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 
 
+
 <PageTitle>File Import & Processing — BlazorEnterprise</PageTitle>
 
 <PageHeaderComp Title="File Import & Batch Processing Pipeline"
@@ -39,36 +40,42 @@
                     Select single or multiple files. All files in a batch share a unified Batch ID and are client-side encrypted with AES-256-GCM.
                 </CskLabel>
 
-                <!-- Project Selector -->
-                @if (_availableProjects.Count > 1)
+                <!-- Target Project (Bound Strictly to Active Workspace) -->
+                @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty && _currentProject != null)
                 {
-                    <CskSelect TOption="ProjectEntity" TValue="string"
-                                  Items="@_availableProjects"
-                                  OptionText="@(p => p.Name)"
-                                  OptionValue="@(p => p.Id.ToString())"
-                                  Value="@(_currentProject?.Id.ToString())"
-                                  ValueChanged="@OnProjectChanged"
-                                  Label="Target Project Workspace"
-                                  Class="full-width" />
-                }
-                else if (_currentProject != null)
-                {
-                    <CskTextInput Value="@_currentProject.Name" ReadOnly="true" Label="Target Project Workspace" Class="full-width" />
+                    <div class="workspace-target-display">
+                        <span class="workspace-target-label">Target Project Workspace</span>
+                        <div class="workspace-target-box">
+                            <CskIcon Icon="@CskIcons.Folder" Class="csk-icon-sm csk-icon-primary" />
+                            <span class="workspace-target-name">@_currentProject.Name</span>
+                            @if (!string.IsNullOrWhiteSpace(_currentProject.ShortCode))
+                            {
+                                <span class="workspace-target-code">(@_currentProject.ShortCode)</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(ProjectContext.ProgramName))
+                            {
+                                <span class="workspace-target-program">Program: @ProjectContext.ProgramName</span>
+                            }
+                        </div>
+                    </div>
                 }
                 else
                 {
                     <CskMessageBar Intent="MessageBarIntent.Warning">
-                        No active projects found. Please create a project workspace first.
+                        No active project selected in workspace. Please select a project from the top navigation switcher to enable batch uploads.
                     </CskMessageBar>
                 }
 
-                <!-- Multi-File Picker Dropzone -->
-                <div class="file-drop-zone">
-                    <CskLabel Typo="Typography.Body" Class="mb-2 d-block">
-                        Choose one or more task files (.csv, .txt, .tsv)
-                    </CskLabel>
-                    <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" class="full-width" />
-                </div>
+                @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty && _currentProject != null)
+                {
+                    <!-- Multi-File Picker Dropzone -->
+                    <div class="file-drop-zone">
+                        <CskLabel Typo="Typography.Body" Class="mb-2 d-block">
+                            Choose one or more task files (.csv, .txt, .tsv)
+                        </CskLabel>
+                        <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" class="full-width" />
+                    </div>
+                }
 
                 <!-- Pending Files Table -->
                 @if (_pendingFiles.Count > 0)

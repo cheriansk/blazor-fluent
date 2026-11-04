@@ -1,0 +1,149 @@
+.calendar-quickview-root {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.calendar-trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--mat-radius-circle, 50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--mat-on-surface-variant, #49454F);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.calendar-trigger-btn:hover {
+    background-color: rgba(103, 80, 164, 0.08);
+    color: var(--mat-primary, #6750A4);
+}
+
+.calendar-trigger-btn.active {
+    background-color: rgba(103, 80, 164, 0.12);
+    color: var(--mat-primary, #6750A4);
+}
+
+.calendar-header-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Modal Backdrop */
+.calendar-quickview-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 3.5rem;
+    padding-bottom: 2rem;
+    z-index: 1050;
+    animation: fadeIn 0.15s ease-out;
+    overflow-y: auto;
+}
+
+/* Modal Card */
+.calendar-quickview-card {
+    background-color: var(--mat-surface, #FFFFFF);
+    color: var(--mat-on-surface, #1D1B20);
+    border: 1px solid var(--mat-outline-variant, #CAC4D0);
+    border-radius: var(--mat-radius-card, 16px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    width: 92%;
+    max-width: 980px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Modal Header */
+.calendar-quickview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--mat-outline-variant, #CAC4D0);
+    background-color: var(--mat-surface, #FFFFFF);
+}
+
+.header-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--mat-on-surface, #1D1B20);
+}
+
+.modal-subtitle {
+    font-size: 0.8125rem;
+    margin: 0;
+    color: var(--mat-on-surface-variant, #49454F);
+}
+
+/* Modal Body */
+.calendar-quickview-body {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.calendar-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 4rem 1rem;
+    color: var(--mat-on-surface-variant, #49454F);
+    font-size: 0.875rem;
+}
+
+.calendar-error-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: rgba(179, 38, 30, 0.1);
+    color: var(--mat-error, #B3261E);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

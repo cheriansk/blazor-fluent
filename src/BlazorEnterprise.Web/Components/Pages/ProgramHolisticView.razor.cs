@@ -1,0 +1,171 @@
+using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Domain.Tasks;
+using BlazorEnterprise.Shared.DataListTypes;
+using BlazorEnterprise.Shared.UI.Components;
+using BlazorEnterprise.Web.Components.Pages.ProgramHolisticViewTabs;
+using BlazorEnterprise.Web.Components.Shared;
+using Microsoft.AspNetCore.Components;
+
+namespace BlazorEnterprise.Web.Components.Pages;
+
+public partial class ProgramHolisticView : ComponentBase
+{
+    private bool _isLoading = true;
+    private ProgramHealthSummaryDto? _healthSummary;
+    private IReadOnlyList<CalendarItemDto> _calendarEvents = Array.Empty<CalendarItemDto>();
+    private IReadOnlyList<CalendarItemDto> _milestones = Array.Empty<CalendarItemDto>();
+    private IReadOnlyList<RiskEntity> _risks = Array.Empty<RiskEntity>();
+    private IReadOnlyList<AssumptionEntity> _assumptions = Array.Empty<AssumptionEntity>();
+    private IReadOnlyList<IssueEntity> _issues = Array.Empty<IssueEntity>();
+    private IReadOnlyList<WorkDependencyEntity> _blockers = Array.Empty<WorkDependencyEntity>();
+    private List<TabItemModel> _tabs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ProjectContext.OnChange += HandleProjectContextChanged;
+        await LoadDataAsync();
+    }
+
+    private void HandleProjectContextChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await LoadDataAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task RefreshProgramDataAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (!ProjectContext.ProgramId.HasValue || ProjectContext.ProgramId.Value == Guid.Empty)
+        {
+            _isLoading = false;
+            _tabs.Clear();
+            return;
+        }
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var programId = ProjectContext.ProgramId.Value;
+            var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId : Guid.Empty;
+
+            var healthTask = ProgramService.GetProgramHealthAsync(programId);
+            var risksTask = ProgramService.GetProgramRisksAsync(programId);
+            var assumptionsTask = ProgramService.GetProgramAssumptionsAsync(programId);
+            var issuesTask = ProgramService.GetProgramIssuesAsync(programId);
+            var blockersTask = ProgramService.GetProgramBlockersAsync(programId);
+
+            var now = DateTime.UtcNow;
+            var calendarTask = CalendarService.GetProgramCalendarAsync(
+                tenantId,
+                programId,
+                now.AddYears(-1),
+                now.AddYears(2));
+
+            await Task.WhenAll(healthTask, risksTask, assumptionsTask, issuesTask, blockersTask, calendarTask);
+
+            _healthSummary = await healthTask;
+            _risks = await risksTask;
+            _assumptions = await assumptionsTask;
+            _issues = await issuesTask;
+            _blockers = await blockersTask;
+            _calendarEvents = await calendarTask;
+
+            _milestones = _calendarEvents
+                .Where(e => string.Equals(e.ItemCategory, "Milestone", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            BuildTabs();
+        }
+        catch (Exception)
+        {
+            // Gracefully present tab shell
+            BuildTabs();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void BuildTabs()
+    {
+        var raidCount = _risks.Count + _assumptions.Count + _issues.Count + _blockers.Count;
+
+        _tabs = new List<TabItemModel>
+        {
+            new TabItemModel
+            {
+                Id = "home",
+                Name = "Executive Summary",
+                Icon = CskIcons.Apps,
+                Content = builder =>
+                {
+                    builder.OpenComponent<ProgramHolisticViewHomeTab>(0);
+                    builder.AddAttribute(1, nameof(ProgramHolisticViewHomeTab.HealthSummary), _healthSummary);
+                    builder.CloseComponent();
+                }
+            },
+            new TabItemModel
+            {
+                Id = "timeline",
+                Name = "Timeline",
+                Icon = CskIcons.Clock,
+                Content = builder =>
+                {
+                    builder.OpenComponent<ProgramHolisticViewTimelineTab>(0);
+                    builder.AddAttribute(1, nameof(ProgramHolisticViewTimelineTab.ProgramId), ProjectContext.ProgramId.Value);
+                    builder.AddAttribute(2, nameof(ProgramHolisticViewTimelineTab.TenantId), TenantContext.HasActiveTenant ? TenantContext.TenantId : Guid.Empty);
+                    builder.AddAttribute(3, nameof(ProgramHolisticViewTimelineTab.Events), _calendarEvents);
+                    builder.AddAttribute(4, nameof(ProgramHolisticViewTimelineTab.OnDataChanged), EventCallback.Factory.Create(this, RefreshProgramDataAsync));
+                    builder.CloseComponent();
+                }
+            },
+            new TabItemModel
+            {
+                Id = "milestones",
+                Name = "Milestones",
+                Icon = CskIcons.Flag,
+                Badge = _milestones.Count > 0 ? _milestones.Count : null,
+                BadgeClass = "csk-badge-secondary",
+                Content = builder =>
+                {
+                    builder.OpenComponent<ProgramHolisticViewMilestoneTab>(0);
+                    builder.AddAttribute(1, nameof(ProgramHolisticViewMilestoneTab.Milestones), _milestones);
+                    builder.AddAttribute(2, nameof(ProgramHolisticViewMilestoneTab.AllEvents), _calendarEvents);
+                    builder.CloseComponent();
+                }
+            },
+            new TabItemModel
+            {
+                Id = "raid",
+                Name = "RAID Log",
+                Icon = CskIcons.Shield,
+                Badge = raidCount > 0 ? raidCount : null,
+                BadgeClass = "csk-badge-error",
+                Content = builder =>
+                {
+                    builder.OpenComponent<ProgramHolisticViewRaidLogTab>(0);
+                    builder.AddAttribute(1, nameof(ProgramHolisticViewRaidLogTab.Risks), _risks);
+                    builder.AddAttribute(2, nameof(ProgramHolisticViewRaidLogTab.Assumptions), _assumptions);
+                    builder.AddAttribute(3, nameof(ProgramHolisticViewRaidLogTab.Issues), _issues);
+                    builder.AddAttribute(4, nameof(ProgramHolisticViewRaidLogTab.Blockers), _blockers);
+                    builder.CloseComponent();
+                }
+            }
+        };
+    }
+
+    public void Dispose()
+    {
+        ProjectContext.OnChange -= HandleProjectContextChanged;
+    }
+}

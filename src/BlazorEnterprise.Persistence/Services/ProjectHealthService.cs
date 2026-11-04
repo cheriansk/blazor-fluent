@@ -314,4 +314,51 @@ public class ProjectHealthService : IProjectHealthService
 
         return results;
     }
+
+    public async Task<IReadOnlyList<RiskEntity>> GetProjectRisksAsync(Guid projectId, CancellationToken ct = default)
+    {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectRisks", ct: ct);
+        var tenantId = _tenantContext.TenantId;
+        return await _context.Risks
+            .AsNoTracking()
+            .Where(r => r.TenantId == tenantId && r.ProjectId == projectId && !r.IsDeleted)
+            .OrderByDescending(r => r.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<AssumptionEntity>> GetProjectAssumptionsAsync(Guid projectId, CancellationToken ct = default)
+    {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectAssumptions", ct: ct);
+        var tenantId = _tenantContext.TenantId;
+        return await _context.Assumptions
+            .AsNoTracking()
+            .Where(a => a.TenantId == tenantId && a.ProjectId == projectId && !a.IsDeleted)
+            .OrderByDescending(a => a.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<IssueEntity>> GetProjectIssuesAsync(Guid projectId, CancellationToken ct = default)
+    {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectIssues", ct: ct);
+        var tenantId = _tenantContext.TenantId;
+        return await _context.Issues
+            .AsNoTracking()
+            .Where(i => i.TenantId == tenantId && i.ProjectId == projectId && !i.IsDeleted)
+            .OrderByDescending(i => i.Created)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<WorkDependencyEntity>> GetProjectBlockersAsync(Guid projectId, CancellationToken ct = default)
+    {
+        await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectBlockers", ct: ct);
+        var tenantId = _tenantContext.TenantId;
+        return await _context.WorkDependencies
+            .AsNoTracking()
+            .Where(d => d.TenantId == tenantId &&
+                        d.ProjectId == projectId &&
+                        d.DependencyType == TaskDependencyTypeEnum.Blocks &&
+                        !d.IsDeleted)
+            .OrderByDescending(d => d.Created)
+            .ToListAsync(ct);
+    }
 }

@@ -2,4 +2,4 @@ dotnet ef migrations add AddEventTrackingSystem --project BlazorFluent.Persisten
 
 dotnet ef database update --project BlazorFluent.Persistence --startup-project .
 
-dotnet ef migrations add <MigrationName>   --project src/BlazorFluent.Persistence   --startup-project src/BlazorFluent.Web  --context AppDbContext   --output-dir Migrations
+dotnet ef migrations add <MigrationName>   --project src/BlazorEnterprise.Persistence   --startup-project src/BlazorEnterprise.Web  --context AppDbContext   --output-dir Migrations

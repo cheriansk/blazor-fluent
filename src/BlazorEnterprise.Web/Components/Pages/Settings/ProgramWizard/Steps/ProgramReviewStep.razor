@@ -10,27 +10,27 @@
 <div class="csk-wizard-step-container">
     <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
         <CskLabel Typo="Typography.Body" Class="text-hint">
-            Please review the program configuration before finalizing.
+            Please review the program configuration before finalizing. All changes will be saved upon clicking Save / Finish.
         </CskLabel>
 
         <!-- Summary Card -->
         <CskCard Class="p-4">
             <div class="csk-review-header">
                 <div>
-                    <CskLabel Typo="Typography.H5">@Context?.State.Name</CskLabel>
-                    <span class="text-hint font-size-sm">Code: <code>@Context?.State.Code</code></span>
+                    <CskLabel Typo="Typography.H5">@EffectiveContext?.State.Name</CskLabel>
+                    <span class="text-hint font-size-sm">Code: <code>@EffectiveContext?.State.Code</code></span>
                 </div>
                 <div>
                     <CskBadge Appearance="BadgeAppearance.Filled" Color="BadgeColor.Informative">
-                        @Context?.State.Status
+                        @EffectiveContext?.State.Status
                     </CskBadge>
                 </div>
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(Context?.State.Description))
+            @if (!string.IsNullOrWhiteSpace(EffectiveContext?.State.Description))
             {
                 <div class="csk-review-desc">
-                    @Context?.State.Description
+                    @EffectiveContext?.State.Description
                 </div>
             }
 
@@ -38,62 +38,155 @@
                 <div>
                     <span class="csk-review-metric-title">Timeline Window</span>
                     <span class="csk-review-metric-val">
-                        @TimeZoneService.FormatDate(Context?.State.StartDate) ~ @TimeZoneService.FormatDate(Context?.State.EndDate)
+                        @TimeZoneService.FormatDate(EffectiveContext?.State.StartDate) ~ @TimeZoneService.FormatDate(EffectiveContext?.State.EndDate)
                     </span>
                 </div>
                 <div>
                     <span class="csk-review-metric-title">Program Administrators</span>
                     <span class="csk-review-metric-val">
-                        @(Context?.State.AdminUsers?.Count ?? 0) user(s) assigned
+                        @(EffectiveContext?.State.AdminUsers?.Count ?? 0) user(s) assigned
                     </span>
                 </div>
             </div>
 
-            <!-- Administrators List -->
-            @if (Context?.State.AdminUsers != null && Context.State.AdminUsers.Count > 0)
-            {
-                <div class="mt-2 mb-3">
-                    <span class="font-size-sm font-weight-600 mb-1 d-block">Designated Admins:</span>
-                    <div class="csk-admin-badge-list">
-                        @foreach (var admin in Context.State.AdminUsers)
+            <!-- Administrators List with Diff Badges -->
+            <div class="mt-4">
+                <span class="font-size-sm font-weight-600 mb-2 d-block">Designated Administrators (@(EffectiveContext?.State.AdminUsers?.Count ?? 0)):</span>
+                @if (EffectiveContext?.State.AdminUsers == null || EffectiveContext.State.AdminUsers.Count == 0)
+                {
+                    <span class="text-hint font-size-sm">No administrators assigned.</span>
+                }
+                else
+                {
+                    <div class="csk-badge-list">
+                        @foreach (var admin in EffectiveContext.State.AdminUsers)
                         {
-                            <span class="csk-admin-badge">
-                                @admin.DisplayName (@admin.Email)
+                            var isNewAdmin = _initialSnapshot != null && !(_initialSnapshot.AdminUsers?.Any(a => a.UserId == admin.UserId) ?? false);
+                            <span class="csk-badge-item">
+                                <span>@admin.DisplayName (@admin.Email)</span>
+                                @if (isNewAdmin)
+                                {
+                                    <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Success" Size="BadgeSize.Small">New</CskBadge>
+                                }
                             </span>
                         }
                     </div>
-                </div>
-            }
+                }
+            </div>
 
-            <!-- Milestones List -->
-            @if (Context?.State.Milestones != null && Context.State.Milestones.Count > 0)
-            {
-                <div class="mt-2">
-                    <span class="font-size-sm font-weight-600 mb-1 d-block">Planned Milestones (@Context.State.Milestones.Count):</span>
-                    <ul class="csk-milestones-list">
-                        @foreach (var m in Context.State.Milestones)
+            <!-- Timeline Stages & Nested Milestones with Diff Badges -->
+            <div class="mt-4">
+                <span class="font-size-sm font-weight-600 mb-2 d-block">Timeline Stages &amp; Milestones (@(EffectiveContext?.State.TimelineRows?.Count ?? 0) stages):</span>
+                @if (EffectiveContext?.State.TimelineRows == null || EffectiveContext.State.TimelineRows.Count == 0)
+                {
+                    <span class="text-hint font-size-sm">No timeline stages defined.</span>
+                }
+                else
+                {
+                    <div class="csk-timeline-stages-list">
+                        @foreach (var stage in EffectiveContext.State.TimelineRows)
                         {
-                            <li class="csk-milestone-item">
-                                <div>
-                                    <span class="csk-review-metric-val">@m.Name</span>
-                                    @if (!string.IsNullOrWhiteSpace(m.Description))
-                                    {
-                                        <div class="font-size-sm text-hint">@m.Description</div>
-                                    }
+                            var initialStage = _initialSnapshot?.TimelineRows?.FirstOrDefault(s => s.Id == stage.Id);
+                            var isNewStage = initialStage == null;
+                            var isModifiedStage = !isNewStage && (initialStage!.Title != stage.Title || initialStage.StartDate != stage.StartDate || initialStage.EndDate != stage.EndDate || initialStage.Status != stage.Status);
+
+                            <div class="csk-stage-card">
+                                <div class="csk-stage-header">
+                                    <div class="csk-stage-title-group">
+                                        <strong>@stage.Title</strong>
+                                        @if (isNewStage)
+                                        {
+                                            <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Success" Size="BadgeSize.Small">Added</CskBadge>
+                                        }
+                                        else if (isModifiedStage)
+                                        {
+                                            <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Warning" Size="BadgeSize.Small">Modified</CskBadge>
+                                        }
+                                    </div>
+                                    <div class="csk-stage-meta">
+                                        <span>@TimeZoneService.FormatDate(stage.StartDate) ~ @TimeZoneService.FormatDate(stage.EndDate)</span>
+                                        <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(stage.Status)">@stage.Status</CskBadge>
+                                    </div>
                                 </div>
-                                <span class="font-size-sm text-muted">@TimeZoneService.FormatDate(m.TargetDate)</span>
-                            </li>
+
+                                <!-- Nested Milestones -->
+                                @if (stage.Milestones != null && stage.Milestones.Count > 0)
+                                {
+                                    <div class="csk-stage-milestones-box">
+                                        <span class="csk-milestones-subheading">Milestones (@stage.Milestones.Count):</span>
+                                        <div class="csk-milestone-sublist">
+                                            @foreach (var m in stage.Milestones)
+                                            {
+                                                var initialM = initialStage?.Milestones?.FirstOrDefault(im => im.Id == m.Id);
+                                                var isNewM = initialM == null;
+                                                var isModifiedM = !isNewM && (initialM!.Title != m.Title || initialM.StartDate != m.StartDate || initialM.EndDate != m.EndDate || initialM.OwnerEmails != m.OwnerEmails || initialM.Status != m.Status);
+
+                                                <div class="csk-milestone-row">
+                                                    <div class="csk-milestone-left">
+                                                        <span>@m.Title</span>
+                                                        @if (isNewM)
+                                                        {
+                                                            <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Success" Size="BadgeSize.Small">New</CskBadge>
+                                                        }
+                                                        else if (isModifiedM)
+                                                        {
+                                                            <CskBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Warning" Size="BadgeSize.Small">Edited</CskBadge>
+                                                        }
+                                                        @if (!string.IsNullOrWhiteSpace(m.OwnerEmails))
+                                                        {
+                                                            <span class="csk-milestone-email">(@m.OwnerEmails)</span>
+                                                        }
+                                                    </div>
+                                                    <div class="csk-milestone-right">
+                                                        <span>@TimeZoneService.FormatDate(m.StartDate) ~ @TimeZoneService.FormatDate(m.EndDate)</span>
+                                                        <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(m.Status)">@m.Status</CskBadge>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="csk-empty-stages-text">
+                                        No milestones in this stage.
+                                    </div>
+                                }
+                            </div>
                         }
-                    </ul>
-                </div>
-            }
+                    </div>
+                }
+            </div>
         </CskCard>
     </CskStack>
 </div>
 
 @code {
+    [CascadingParameter]
+    public WizardContext<CreateProgramWizardState>? CascadedContext { get; set; }
+
     [Parameter]
     public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    private WizardContext<CreateProgramWizardState>? EffectiveContext => Context ?? CascadedContext;
+    private CreateProgramWizardState? _initialSnapshot;
+
+    protected override void OnParametersSet()
+    {
+        Context ??= CascadedContext;
+        if (EffectiveContext != null && _initialSnapshot == null)
+        {
+            _initialSnapshot = EffectiveContext.GetInitialStateSnapshot();
+        }
+    }
+
+    private static BadgeColor GetStatusBadgeColor(string? status) => status?.ToLowerInvariant() switch
+    {
+        "completed" => BadgeColor.Success,
+        "inprogress" or "active" => BadgeColor.Warning,
+        "new" => BadgeColor.Brand,
+        _ => BadgeColor.Neutral
+    };
 
     public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
     {

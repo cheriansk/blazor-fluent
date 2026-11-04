@@ -52,7 +52,15 @@
 </CskStack>
 
 @code {
+    protected override void OnParametersSet()
+    {
+        Context ??= CascadedContext;
+    }
+
     [CascadingParameter]
+    public WizardContext<CreateProjectWizardState>? CascadedContext { get; set; }
+
+    [Parameter]
     public WizardContext<CreateProjectWizardState>? Context { get; set; }
 
     public class WizardTemplateOption

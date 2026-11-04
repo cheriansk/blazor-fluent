@@ -4,65 +4,64 @@
    ============================================================================== */
 
 :root {
-  /* Typography - Material System Font Stack (Strict font-src 'self' compliant) */
-  --mat-font-family: Roboto, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --body-font: var(--mat-font-family);
+    /* Typography - Material System Font Stack (Strict font-src 'self' compliant) */
+    --mat-font-family: Roboto, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --body-font: var(--mat-font-family);
+    /* Primary Palette - Enterprise Deep Blue / Indigo */
+    --mat-primary: #1976D2;
+    --mat-primary-hover: #1565C0;
+    --mat-primary-active: #0D47A1;
+    --mat-primary-container: #E3F2FD;
+    --mat-on-primary: #FFFFFF;
+    --mat-on-primary-container: #0D47A1;
+    /* Secondary & Surface Colors */
+    --mat-secondary: #455A64;
+    --mat-secondary-container: #ECEFF1;
+    --mat-on-secondary-container: #263238;
+    --mat-surface: #FFFFFF;
+    --mat-surface-variant: #F4F6F9;
+    --mat-background: #F8FAFC;
+    --mat-outline: rgba(0, 0, 0, 0.12);
+    --mat-outline-variant: rgba(0, 0, 0, 0.06);
+    /* Semantic Status Colors */
+    --mat-success: #2E7D32;
+    --mat-success-container: #E8F5E9;
+    --mat-on-success-container: #1B5E20;
+    --mat-warning: #ED6C02;
+    --mat-warning-container: #FFF3E0;
+    --mat-on-warning-container: #E65100;
+    --mat-error: #D32F2F;
+    --mat-error-container: #FFEBEE;
+    --mat-on-error-container: #B71C1C;
+    --mat-info: #0288D1;
+    --mat-info-container: #E1F5FE;
+    --mat-on-info-container: #01579B;
+    /* Material Design 3 Elevation Shadows (dp1 - dp4) */
+    --mat-elevation-0: none;
+    --mat-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+    --mat-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+    --mat-elevation-3: 0px 4px 12px 3px rgba(0, 0, 0, 0.08), 0px 1px 3px 0px rgba(0, 0, 0, 0.06);
+    --mat-elevation-4: 0px 6px 16px 4px rgba(0, 0, 0, 0.10), 0px 2px 4px 0px rgba(0, 0, 0, 0.08);
+    /* Border Radii */
+    --mat-radius-xs: 4px;
+    --mat-radius-sm: 8px;
+    --mat-radius-md: 12px;
+    --mat-radius-card: 16px;
+    --mat-radius-pill: 9999px;
+    /* Shell Layout size*/
 
-  /* Primary Palette - Enterprise Deep Blue / Indigo */
-  --mat-primary: #1976D2;
-  --mat-primary-hover: #1565C0;
-  --mat-primary-active: #0D47A1;
-  --mat-primary-container: #E3F2FD;
-  --mat-on-primary: #FFFFFF;
-  --mat-on-primary-container: #0D47A1;
+    --layout-nav-width: clamp(14rem,18vw,16rem);
+    --layout-nav-rail-width: 4.5rem;
+    --layout-gutter: cmalp(0.75rem,2vw,1.5rem);
+    --layout-content-max:120rem;
 
-  /* Secondary & Surface Colors */
-  --mat-secondary: #455A64;
-  --mat-secondary-container: #ECEFF1;
-  --mat-on-secondary-container: #263238;
-  --mat-surface: #FFFFFF;
-  --mat-surface-variant: #F4F6F9;
-  --mat-background: #F8FAFC;
-  --mat-outline: rgba(0, 0, 0, 0.12);
-  --mat-outline-variant: rgba(0, 0, 0, 0.06);
 
-  /* Semantic Status Colors */
-  --mat-success: #2E7D32;
-  --mat-success-container: #E8F5E9;
-  --mat-on-success-container: #1B5E20;
-
-  --mat-warning: #ED6C02;
-  --mat-warning-container: #FFF3E0;
-  --mat-on-warning-container: #E65100;
-
-  --mat-error: #D32F2F;
-  --mat-error-container: #FFEBEE;
-  --mat-on-error-container: #B71C1C;
-
-  --mat-info: #0288D1;
-  --mat-info-container: #E1F5FE;
-  --mat-on-info-container: #01579B;
-
-  /* Material Design 3 Elevation Shadows (dp1 - dp4) */
-  --mat-elevation-0: none;
-  --mat-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-  --mat-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-  --mat-elevation-3: 0px 4px 12px 3px rgba(0, 0, 0, 0.08), 0px 1px 3px 0px rgba(0, 0, 0, 0.06);
-  --mat-elevation-4: 0px 6px 16px 4px rgba(0, 0, 0, 0.10), 0px 2px 4px 0px rgba(0, 0, 0, 0.08);
-
-  /* Border Radii */
-  --mat-radius-xs: 4px;
-  --mat-radius-sm: 8px;
-  --mat-radius-md: 12px;
-  --mat-radius-card: 16px;
-  --mat-radius-pill: 9999px;
-
-  /* Fluent UI v5 Design Token Bridges */
-  --accent-fill-rest: var(--mat-primary);
-  --accent-fill-hover: var(--mat-primary-hover);
-  --accent-fill-active: var(--mat-primary-active);
-  --layer-corner-radius: 16px;
-  --control-corner-radius: 8px;
+    /* Fluent UI v5 Design Token Bridges */
+    --accent-fill-rest: var(--mat-primary);
+    --accent-fill-hover: var(--mat-primary-hover);
+    --accent-fill-active: var(--mat-primary-active);
+    --layer-corner-radius: 16px;
+    --control-corner-radius: 8px;
 }
 
 /* Base Body Styles */

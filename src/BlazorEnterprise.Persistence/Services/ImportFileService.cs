@@ -324,7 +324,7 @@ public class ImportFileService : IImportFileService
     {
         var tenantId = _tenantContext.TenantId;
 
-        var file = await _context.ImportFiles.FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
+        var file = await _context.ImportFiles.AsTracking().FirstOrDefaultAsync(f => f.TenantId == tenantId && f.ProjectId == projectId && f.Id == importFileId, ct);
         if (file == null)
         {
             return Result<bool>.Failure("Import file record not found.");

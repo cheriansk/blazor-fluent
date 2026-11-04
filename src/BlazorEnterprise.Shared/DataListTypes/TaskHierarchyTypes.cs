@@ -289,47 +289,14 @@ public enum DependencyCriticalityEnum
 [ClassificationEnum]
 public enum CalendarEntryTypeEnum
 {
-    [Display(Name = "Planning Session", Description = "Sprint or roadmap planning")]
-    Planning = 1,
+    [Display(Name = "Timeline", Description = "High-level timeline phase or delivery track")]
+    Timeline = 1,
 
-    [Display(Name = "Milestone Review", Description = "Executive milestone check")]
+    [Display(Name = "Milestone", Description = "Strategic deliverable checkpoint or stage gate")]
     Milestone = 2,
 
-    [Display(Name = "Release", Description = "Target deployment or production release")]
-    Release = 3,
-
-    [Display(Name = "Steering Review", Description = "Governance or audit review")]
-    Review = 4,
-
-    [Display(Name = "Sprint Ceremony", Description = "Daily standup, demo, or retro")]
-    SprintEvent = 5,
-
-    [Display(Name = "Working Session", Description = "Team architecture or delivery workshop")]
-    WorkingSession = 6,
-
-    [Display(Name = "Time Off", Description = "Planned absence or non-working day")]
-    TimeOff = 7,
-
-    [Display(Name = "General", Description = "General scheduled event")]
-    General = 8,
-
-    [Display(Name = "Sprint", Description = "Sprint start and end date cadence")]
-    Sprint = 9,
-
-    [Display(Name = "Deadline", Description = "Target completion deadline or code freeze")]
-    Deadline = 10,
-
-    [Display(Name = "Vendor Delivery", Description = "Inbound or outbound vendor/partner delivery gate")]
-    VendorDelivery = 11,
-
-    [Display(Name = "SIT Window", Description = "System Integration Testing execution and sign-off")]
-    SitWindow = 12,
-
-    [Display(Name = "UAT Window", Description = "User Acceptance Testing execution and business sign-off")]
-    UatWindow = 13,
-
-    [Display(Name = "Go-Live Preparation", Description = "Cutover dry run, dress rehearsal, or go-live prep")]
-    GoLivePrep = 14
+    [Display(Name = "Personal", Description = "Personal user calendar appointment or reminder")]
+    Personal = 3
 }
 
 /// <summary>
@@ -338,13 +305,14 @@ public enum CalendarEntryTypeEnum
 [LifecycleEnum]
 public enum CalendarEntryStatusEnum
 {
-    Scheduled = 1,
-    Confirmed = 2,
-    InProgress = 3,
-    Completed = 4,
-    Cancelled = 5,
-    AtRisk = 6,
-    Delayed = 7
+    New = 1,
+    Scheduled = 2,
+    Confirmed = 3,
+    InProgress = 4,
+    Completed = 5,
+    Cancelled = 6,
+    AtRisk = 7,
+    Delayed = 8
 }
 
 public static class CalendarEntryStatusEnumDefinitions
@@ -352,13 +320,14 @@ public static class CalendarEntryStatusEnumDefinitions
     public static readonly IReadOnlyDictionary<CalendarEntryStatusEnum, IReadOnlySet<CalendarEntryStatusEnum>> AllowedTransitions =
         new Dictionary<CalendarEntryStatusEnum, IReadOnlySet<CalendarEntryStatusEnum>>
         {
+            [CalendarEntryStatusEnum.New] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Scheduled, CalendarEntryStatusEnum.Confirmed, CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Cancelled },
             [CalendarEntryStatusEnum.Scheduled] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Confirmed, CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Cancelled },
             [CalendarEntryStatusEnum.Confirmed] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.AtRisk, CalendarEntryStatusEnum.Cancelled },
             [CalendarEntryStatusEnum.InProgress] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Completed, CalendarEntryStatusEnum.AtRisk, CalendarEntryStatusEnum.Delayed, CalendarEntryStatusEnum.Cancelled },
             [CalendarEntryStatusEnum.AtRisk] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Delayed, CalendarEntryStatusEnum.Cancelled },
             [CalendarEntryStatusEnum.Delayed] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.InProgress, CalendarEntryStatusEnum.Completed, CalendarEntryStatusEnum.Cancelled },
             [CalendarEntryStatusEnum.Completed] = new HashSet<CalendarEntryStatusEnum>(),
-            [CalendarEntryStatusEnum.Cancelled] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.Scheduled }
+            [CalendarEntryStatusEnum.Cancelled] = new HashSet<CalendarEntryStatusEnum> { CalendarEntryStatusEnum.New, CalendarEntryStatusEnum.Scheduled }
         };
 }
 
@@ -393,6 +362,10 @@ public class CalendarItemDto
     public string PriorityOrCriticality { get; set; } = "Medium";
     public string Status { get; set; } = "Open";
     public string OwnerOrAssignee { get; set; } = string.Empty;
+    public string? OwnerEmails { get; set; }
+    public string? Comments { get; set; }
+    public Guid? ParentTimelineId { get; set; }
+    public DateTime? DueDate { get; set; }
     public string ColorHex { get; set; } = "#0078d4";
     public string BadgeIcon { get; set; } = "Calendar";
     public Guid? SourceTaskId { get; set; }

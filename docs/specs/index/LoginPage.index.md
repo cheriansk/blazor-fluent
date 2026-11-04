@@ -3,8 +3,8 @@
 target_spec: docs/specs/LoginPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor.cs
-generated_at_utc: 2026-11-02T02:06:44Z
-source_hash_sha256: c29cdc72d059428e
+generated_at_utc: 2026-11-03T02:50:48Z
+source_hash_sha256: a7499318fa2f1f0b
 ============================================================================ -->
 # AI Navigation Index: `LoginPage`
 

@@ -757,9 +757,9 @@ foreach ($targetEntry in $targetEntries) {
         if ($ArchiveCompleted) {
             # GUARD: Verify that the target source files have actual uncommitted or staged changes in git
             # This prevents premature archiving when files were accidentally reverted or forgotten.
-            $relSourcePath = $fullSourcePath.Replace((Get-Location).Path, "").TrimStart("\/")
-            $gitStatus = git status --porcelain $fullSourcePath 2>$null
-            $codeBehindPath = [System.IO.Path]::ChangeExtension($fullSourcePath, ".razor.cs")
+            $relSourcePath = $fullPath.Replace((Get-Location).Path, "").TrimStart("\/")
+            $gitStatus = git status --porcelain $fullPath 2>$null
+            $codeBehindPath = [System.IO.Path]::ChangeExtension($fullPath, ".razor.cs")
             if (Test-Path $codeBehindPath) {
                 $codeBehindGitStatus = git status --porcelain $codeBehindPath 2>$null
                 if (-not [string]::IsNullOrWhiteSpace($codeBehindGitStatus)) {
@@ -769,7 +769,7 @@ foreach ($targetEntry in $targetEntries) {
 
             if ([string]::IsNullOrWhiteSpace($gitStatus)) {
                 # Check if the file is tracked and has commits; if it is completely clean relative to HEAD, block archive
-                $hasWorkingDiff = git diff HEAD --name-only -- $fullSourcePath 2>$null
+                $hasWorkingDiff = git diff HEAD --name-only -- $fullPath 2>$null
                 if (-not $hasWorkingDiff -and (Test-Path $codeBehindPath)) {
                     $hasWorkingDiff = git diff HEAD --name-only -- $codeBehindPath 2>$null
                 }
@@ -1646,3 +1646,4 @@ if ($GenerateHtml) {
     Write-Host "  HTML Explorer : docs/specs/index.html" -ForegroundColor Gray
 }
 Write-Host "================================================================================" -ForegroundColor Cyan
+

@@ -1,256 +1,351 @@
-@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
-@using BlazorEnterprise.Shared.UI.Wizards
-@using BlazorEnterprise.Shared.UI.Components
-@using BlazorEnterprise.Core.Dtos
-@using BlazorEnterprise.Core.Contracts
-@implements IWizardStepComponent<CreateProgramWizardState>
-@inject IUserTimeZoneService TimeZoneService
-
-<div class="csk-wizard-step-container">
-    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
-        @if (!string.IsNullOrWhiteSpace(_validationError))
-        {
-            <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _validationError = null)">
-                @_validationError
-            </CskMessageBar>
-        }
-
-        <CskLabel Typo="Typography.Body" Class="text-hint">
-            Specify the overall delivery schedule and milestone phases for this enterprise program.
-        </CskLabel>
-
-        @if (!_isReadOnly)
-        {
-            <div class="csk-entry-form-card">
-                <CskLabel Typo="Typography.H6" Class="mb-3">
-                    @(_editingRowId.HasValue ? "Edit Timeline Row" : "Add Timeline Row")
-                </CskLabel>
-                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
-                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
-                        <CskTextInput Label="Timeline Title / Phase"
-                                      @bind-Value="_inputTitle"
-                                      Placeholder="e.g. Phase 1 - Architecture & Design"
-                                      Class="flex-2" />
-
-                        <CskDatePicker Label="Start Date"
-                                       @bind-Value="_inputStartDate"
-                                       Class="flex-1" />
-
-                        <CskDatePicker Label="End Date"
-                                       @bind-Value="_inputEndDate"
-                                       Class="flex-1" />
-
-                        <CskSelect TOption="string"
-                                   TValue="string"
-                                   Label="Status"
-                                   Items="@_statusOptions"
-                                   OptionText="@(s => s)"
-                                   OptionValue="@(s => s)"
-                                   @bind-Value="_inputStatus"
-                                   Class="flex-1" />
-                    </CskStack>
-
-                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
-                        <CskButton Variant="CskButtonVariant.Filled"
-                                   Size="CskButtonSize.Small"
-                                   IconStart="@(_editingRowId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
-                                   Disabled="@(string.IsNullOrWhiteSpace(_inputTitle))"
-                                   OnClick="@SaveTimelineRow">
-                            @(_editingRowId.HasValue ? "Update Row" : "Add Row")
-                        </CskButton>
-
-                        @if (_editingRowId.HasValue)
-                        {
-                            <CskButton Variant="CskButtonVariant.Text"
-                                       Size="CskButtonSize.Small"
-                                       OnClick="@CancelEdit">
-                                Cancel
-                            </CskButton>
-                        }
-                    </CskStack>
-                </CskStack>
-            </div>
-        }
-
-        @if (_timelineRows.Count == 0)
-        {
-            <div class="csk-empty-table-state">
-                No timeline rows defined yet. Add a timeline phase or schedule row above.
-            </div>
-        }
-        else
-        {
-            <table class="csk-datagrid-table csk-datagrid-dense csk-table-container">
-                <thead>
-                    <tr class="csk-datagrid-header-row">
-                        <th class="csk-datagrid-th">Title</th>
-                        <th class="csk-datagrid-th csk-col-date">Start Date</th>
-                        <th class="csk-datagrid-th csk-col-date">End Date</th>
-                        <th class="csk-datagrid-th csk-col-status">Status</th>
-                        <th class="csk-datagrid-th csk-col-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _timelineRows)
-                    {
-                        <tr class="csk-datagrid-row">
-                            <td class="csk-datagrid-td csk-font-medium">@row.Title</td>
-                            <td class="csk-datagrid-td font-size-sm">@TimeZoneService.FormatDate(row.StartDate)</td>
-                            <td class="csk-datagrid-td font-size-sm">@TimeZoneService.FormatDate(row.EndDate)</td>
-                            <td class="csk-datagrid-td">
-                                <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(row.Status)">
-                                    @row.Status
-                                </CskBadge>
-                            </td>
-                            <td class="csk-datagrid-td">
-                                @if (!_isReadOnly)
-                                {
-                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
-                                        <CskButton Variant="CskButtonVariant.Text"
-                                                   Size="CskButtonSize.Small"
-                                                   IconStart="@CskIcons.Edit"
-                                                   OnClick="@(() => StartEdit(row))">
-                                            Edit
-                                        </CskButton>
-                                        <CskButton Variant="CskButtonVariant.Text"
-                                                   Size="CskButtonSize.Small"
-                                                   IconStart="@CskIcons.Delete"
-                                                   OnClick="@(() => RemoveRow(row.Id))" />
-                                    </CskStack>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
-    </CskStack>
-</div>
-
-@code {
-    [Parameter]
-    public WizardContext<CreateProgramWizardState>? Context { get; set; }
-
-    private List<ProgramTimelineRowDto> _timelineRows = new();
-    private readonly List<string> _statusOptions = new() { "Planned", "Active", "On Hold", "Completed" };
-
-    private Guid? _editingRowId;
-    private string _inputTitle = string.Empty;
-    private DateTime? _inputStartDate = DateTime.UtcNow.Date;
-    private DateTime? _inputEndDate = DateTime.UtcNow.Date.AddMonths(3);
-    private string _inputStatus = "Planned";
-
-    private string? _validationError;
-    private bool _isReadOnly;
-
-    protected override void OnInitialized()
-    {
-        if (Context != null)
-        {
-            _timelineRows = Context.State.TimelineRows ?? new();
-            _isReadOnly = Context.IsReadOnly;
-
-            // Pre-seed an initial row if timeline was previously just StartDate/EndDate
-            if (_timelineRows.Count == 0 && Context.State.StartDate.HasValue)
-            {
-                _timelineRows.Add(new ProgramTimelineRowDto
-                {
-                    Title = "Primary Program Execution Window",
-                    StartDate = Context.State.StartDate,
-                    EndDate = Context.State.EndDate ?? Context.State.StartDate.Value.AddYears(1),
-                    Status = "Active"
-                });
-            }
-        }
-    }
-
-    private void StartEdit(ProgramTimelineRowDto row)
-    {
-        _editingRowId = row.Id;
-        _inputTitle = row.Title;
-        _inputStartDate = row.StartDate;
-        _inputEndDate = row.EndDate;
-        _inputStatus = row.Status;
-    }
-
-    private void CancelEdit()
-    {
-        _editingRowId = null;
-        _inputTitle = string.Empty;
-        _inputStartDate = DateTime.UtcNow.Date;
-        _inputEndDate = DateTime.UtcNow.Date.AddMonths(3);
-        _inputStatus = "Planned";
-    }
-
-    private void SaveTimelineRow()
-    {
-        if (string.IsNullOrWhiteSpace(_inputTitle)) return;
-
-        if (_inputStartDate.HasValue && _inputEndDate.HasValue && _inputEndDate.Value.Date < _inputStartDate.Value.Date)
-        {
-            _validationError = "End Date cannot precede Start Date.";
-            return;
-        }
-
-        _validationError = null;
-
-        if (_editingRowId.HasValue)
-        {
-            var existing = _timelineRows.FirstOrDefault(r => r.Id == _editingRowId.Value);
-            if (existing != null)
-            {
-                existing.Title = _inputTitle.Trim();
-                existing.StartDate = _inputStartDate;
-                existing.EndDate = _inputEndDate;
-                existing.Status = _inputStatus;
-            }
-        }
-        else
-        {
-            _timelineRows.Add(new ProgramTimelineRowDto
-            {
-                Id = Guid.NewGuid(),
-                Title = _inputTitle.Trim(),
-                StartDate = _inputStartDate,
-                EndDate = _inputEndDate,
-                Status = _inputStatus
-            });
-        }
-
-        CancelEdit();
-    }
-
-    private void RemoveRow(Guid id)
-    {
-        _timelineRows.RemoveAll(r => r.Id == id);
-        if (_editingRowId == id)
-        {
-            CancelEdit();
-        }
-    }
-
-    private BadgeColor GetStatusBadgeColor(string status) => status switch
-    {
-        "Active" => BadgeColor.Success,
-        "Planned" => BadgeColor.Informative,
-        "On Hold" => BadgeColor.Warning,
-        "Completed" => BadgeColor.Informative,
-        _ => BadgeColor.Informative
-    };
-
-    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
-    {
-        _validationError = null;
-        context.State.TimelineRows = _timelineRows;
-
-        if (_timelineRows.Any())
-        {
-            var minStart = _timelineRows.Where(r => r.StartDate.HasValue).Min(r => r.StartDate);
-            var maxEnd = _timelineRows.Where(r => r.EndDate.HasValue).Max(r => r.EndDate);
-            if (minStart.HasValue) context.State.StartDate = minStart;
-            if (maxEnd.HasValue) context.State.EndDate = maxEnd;
-        }
-
-        return Task.FromResult(true);
-    }
-}
+@namespace BlazorEnterprise.Web.Components.Pages.Settings.ProgramWizard.Steps
+@using BlazorEnterprise.Shared.UI.Wizards
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Core.Contracts
+@implements IWizardStepComponent<CreateProgramWizardState>
+@inject IUserTimeZoneService TimeZoneService
+
+<div class="csk-wizard-step-container">
+    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="16">
+        @if (!string.IsNullOrWhiteSpace(_validationError))
+        {
+            <CskMessageBar Intent="MessageBarIntent.Error" AllowDismiss="true" OnDismiss="@(() => _validationError = null)">
+                @_validationError
+            </CskMessageBar>
+        }
+
+        <CskLabel Typo="Typography.Body" Class="text-hint">
+            Specify the overall delivery schedule and timeline phases for this enterprise program. Milestones will be added in the next step under each timeline stage.
+        </CskLabel>
+
+        @if (!_isReadOnly)
+        {
+            <div class="csk-entry-form-card">
+                <CskLabel Typo="Typography.H6" Class="mb-3">
+                    @(_editingRowId.HasValue ? "Edit Timeline Row" : "Add Timeline Row")
+                </CskLabel>
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="full-width">
+                        <CskTextInput Label="Timeline Title / Phase *"
+                                      @bind-Value="_inputTitle"
+                                      Placeholder="e.g. Phase 1 - Architecture & Design"
+                                      Class="flex-2" />
+
+                        <CskDatePicker Label="Start Date *"
+                                       @bind-Value="_inputStartDate"
+                                       Class="flex-1" />
+
+                        <CskDatePicker Label="End Date *"
+                                       @bind-Value="_inputEndDate"
+                                       Class="flex-1" />
+
+                        <CskSelect TOption="string"
+                                   TValue="string"
+                                   Label="Status *"
+                                   Items="@_statusOptions"
+                                   OptionText="@(s => s)"
+                                   OptionValue="@(s => s)"
+                                   @bind-Value="_inputStatus"
+                                   Class="flex-1" />
+                    </CskStack>
+
+                    <CskTextArea Label="Comments"
+                                 @bind-Value="_inputComments"
+                                 Placeholder="Optional comments or scope description..."
+                                 Rows="2"
+                                 Class="full-width" />
+
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@(_editingRowId.HasValue ? CskIcons.Checkmark : CskIcons.Add)"
+                                   Disabled="@(string.IsNullOrWhiteSpace(_inputTitle))"
+                                   OnClick="@SaveTimelineRow">
+                            @(_editingRowId.HasValue ? "Update Row" : "Add Row")
+                        </CskButton>
+
+                        @if (_editingRowId.HasValue)
+                        {
+                            <CskButton Variant="CskButtonVariant.Text"
+                                       Size="CskButtonSize.Small"
+                                       OnClick="@CancelEdit">
+                                Cancel
+                            </CskButton>
+                        }
+                    </CskStack>
+                </CskStack>
+            </div>
+        }
+
+        @if (_timelineRows.Count == 0)
+        {
+            <div class="csk-empty-table-state">
+                <CskIcon Icon="@CskIcons.Clock" Class="csk-empty-icon" />
+                <p>No timeline rows defined yet. Add a timeline phase or schedule row above.</p>
+            </div>
+        }
+        else
+        {
+            <CskDataGrid TGridItem="ProgramTimelineRowDto" Items="@_timelineRows.AsQueryable()" Outlined="true" Dense="true" Hover="true">
+                <CskPropertyColumn Property="@(r => r.Title)" Title="Title" />
+                <CskTemplateColumn Title="Start Date">
+                    @TimeZoneService.FormatDate(context.StartDate)
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="End Date">
+                    @TimeZoneService.FormatDate(context.EndDate)
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Status">
+                    <CskBadge Appearance="BadgeAppearance.Filled" Color="@GetStatusBadgeColor(context.Status)">
+                        @context.Status
+                    </CskBadge>
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Comments">
+                    @(string.IsNullOrWhiteSpace(context.Comments) ? "—" : context.Comments)
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Actions">
+                    @if (!_isReadOnly)
+                    {
+                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
+                            <CskButton Variant="CskButtonVariant.Text"
+                                       Size="CskButtonSize.Small"
+                                       IconStart="@CskIcons.Edit"
+                                       OnClick="@(() => StartEdit(context))">
+                                Edit
+                            </CskButton>
+                            <CskButton Variant="CskButtonVariant.Text"
+                                       Size="CskButtonSize.Small"
+                                       IconStart="@CskIcons.Delete"
+                                       OnClick="@(() => RemoveRow(context.Id))" />
+                        </CskStack>
+                    }
+                </CskTemplateColumn>
+            </CskDataGrid>
+        }
+    </CskStack>
+</div>
+
+@code {
+    [CascadingParameter]
+    public WizardContext<CreateProgramWizardState>? CascadedContext { get; set; }
+
+    [Parameter]
+    public WizardContext<CreateProgramWizardState>? Context { get; set; }
+
+    private WizardContext<CreateProgramWizardState>? EffectiveContext => Context ?? CascadedContext;
+
+    private List<ProgramTimelineRowDto> _timelineRows = new();
+    private readonly List<string> _statusOptions = new() { "New", "Scheduled", "InProgress", "Completed" };
+
+    private Guid? _editingRowId;
+    private string _inputTitle = string.Empty;
+    private DateTime? _inputStartDate = DateTime.UtcNow.Date;
+    private DateTime? _inputEndDate = DateTime.UtcNow.Date.AddMonths(3);
+    private string _inputStatus = "New";
+    private string _inputComments = string.Empty;
+
+    private string? _validationError;
+    private bool _isReadOnly;
+
+    protected override void OnInitialized()
+    {
+        Context ??= CascadedContext;
+        LoadState();
+    }
+
+    protected override void OnParametersSet()
+    {
+        Context ??= CascadedContext;
+        LoadState();
+    }
+
+    private void LoadState()
+    {
+        var ctx = EffectiveContext;
+        if (ctx != null)
+        {
+            _isReadOnly = ctx.IsReadOnly;
+            if (ctx.State.TimelineRows != null && ctx.State.TimelineRows.Count > 0)
+            {
+                _timelineRows = ctx.State.TimelineRows;
+            }
+            else if (!ctx.State.CustomStepData.ContainsKey("TimelineInitialized") && _timelineRows.Count == 0 && ctx.State.StartDate.HasValue)
+            {
+                ctx.State.CustomStepData["TimelineInitialized"] = true;
+                _timelineRows.Add(new ProgramTimelineRowDto
+                {
+                    Title = "Primary Program Execution Window",
+                    StartDate = ctx.State.StartDate,
+                    EndDate = ctx.State.EndDate ?? ctx.State.StartDate.Value.AddYears(1),
+                    Status = "New"
+                });
+                SyncToContext();
+            }
+        }
+    }
+
+    private void StartEdit(ProgramTimelineRowDto row)
+    {
+        _editingRowId = row.Id;
+        _inputTitle = row.Title;
+        _inputStartDate = row.StartDate;
+        _inputEndDate = row.EndDate;
+        _inputStatus = row.Status;
+        _inputComments = row.Comments ?? string.Empty;
+        _validationError = null;
+    }
+
+    private void CancelEdit()
+    {
+        _editingRowId = null;
+        _inputTitle = string.Empty;
+        _inputStartDate = DateTime.UtcNow.Date;
+        _inputEndDate = DateTime.UtcNow.Date.AddMonths(3);
+        _inputStatus = "New";
+        _inputComments = string.Empty;
+        _validationError = null;
+    }
+
+    private void SaveTimelineRow()
+    {
+        if (string.IsNullOrWhiteSpace(_inputTitle))
+        {
+            _validationError = "Timeline Title is required.";
+            return;
+        }
+
+        if (!_inputStartDate.HasValue || !_inputEndDate.HasValue)
+        {
+            _validationError = "Start Date and End Date are required.";
+            return;
+        }
+
+        if (_inputEndDate < _inputStartDate)
+        {
+            _validationError = "End Date cannot be earlier than Start Date.";
+            return;
+        }
+
+        if (_editingRowId.HasValue)
+        {
+            var existing = _timelineRows.FirstOrDefault(r => r.Id == _editingRowId.Value);
+            if (existing != null)
+            {
+                existing.Title = _inputTitle.Trim();
+                existing.StartDate = _inputStartDate;
+                existing.EndDate = _inputEndDate;
+                existing.Status = _inputStatus;
+                existing.Comments = string.IsNullOrWhiteSpace(_inputComments) ? null : _inputComments.Trim();
+            }
+        }
+        else
+        {
+            _timelineRows.Add(new ProgramTimelineRowDto
+            {
+                Id = Guid.NewGuid(),
+                Title = _inputTitle.Trim(),
+                StartDate = _inputStartDate,
+                EndDate = _inputEndDate,
+                Status = _inputStatus,
+                Comments = string.IsNullOrWhiteSpace(_inputComments) ? null : _inputComments.Trim(),
+                Milestones = new List<ProgramMilestoneDto>()
+            });
+        }
+
+        if (EffectiveContext != null)
+        {
+            EffectiveContext.State.CustomStepData["TimelineInitialized"] = true;
+        }
+        CancelEdit();
+        SyncToContext();
+    }
+
+    private void RemoveRow(Guid id)
+    {
+        _timelineRows.RemoveAll(r => r.Id == id);
+        if (_editingRowId == id)
+        {
+            CancelEdit();
+        }
+        SyncToContext();
+    }
+
+    private void SyncToContext(WizardContext<CreateProgramWizardState>? targetContext = null)
+    {
+        var ctx = targetContext ?? EffectiveContext;
+        if (ctx != null)
+        {
+            ctx.State.TimelineRows = _timelineRows;
+            ctx.State.Milestones = _timelineRows.SelectMany(t => t.Milestones ?? new List<ProgramMilestoneDto>()).ToList();
+            ctx.MarkDirty();
+        }
+    }
+
+    private static BadgeColor GetStatusBadgeColor(string status) => status?.ToLowerInvariant() switch
+    {
+        "completed" => BadgeColor.Success,
+        "inprogress" or "active" => BadgeColor.Warning,
+        "new" => BadgeColor.Brand,
+        _ => BadgeColor.Neutral
+    };
+
+    public bool HasPendingChanges()
+    {
+        return !string.IsNullOrWhiteSpace(_inputTitle);
+    }
+
+    private bool TrySaveTimelineRow()
+    {
+        if (string.IsNullOrWhiteSpace(_inputTitle)) return true;
+
+        if (!_inputStartDate.HasValue || !_inputEndDate.HasValue)
+        {
+            _validationError = "Start Date and End Date are required for the timeline row in progress.";
+            return false;
+        }
+
+        if (_inputEndDate < _inputStartDate)
+        {
+            _validationError = "End Date cannot be earlier than Start Date for the timeline row in progress.";
+            return false;
+        }
+
+        SaveTimelineRow();
+        return true;
+    }
+
+    public Task<bool> ValidateStepAsync(WizardContext<CreateProgramWizardState> context)
+    {
+        _validationError = null;
+
+        // Auto-commit any row currently being typed or edited
+        if (!string.IsNullOrWhiteSpace(_inputTitle))
+        {
+            if (!TrySaveTimelineRow())
+            {
+                return Task.FromResult(false);
+            }
+        }
+
+        if (_timelineRows.Count == 0)
+        {
+            _validationError = "At least one timeline phase row is required.";
+            return Task.FromResult(false);
+        }
+
+        Context = context;
+        SyncToContext(context);
+
+        // Also sync program overall StartDate and EndDate from the earliest and latest timeline rows
+        if (_timelineRows.Any(r => r.StartDate.HasValue))
+        {
+            context.State.StartDate = _timelineRows.Where(r => r.StartDate.HasValue).Min(r => r.StartDate!.Value);
+        }
+        if (_timelineRows.Any(r => r.EndDate.HasValue))
+        {
+            context.State.EndDate = _timelineRows.Where(r => r.EndDate.HasValue).Max(r => r.EndDate!.Value);
+        }
+
+        return Task.FromResult(true);
+    }
+}

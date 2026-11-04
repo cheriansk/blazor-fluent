@@ -24,7 +24,7 @@ public static class InitialDatabaseSeeder
     public static async Task SeedAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         using var scope = serviceProvider.CreateScope();
-        var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
+        var rootAdminService = scope.ServiceProvider.GetRequiredService<IRootAdminService>();
         var systemIdentity = scope.ServiceProvider.GetRequiredService<ISystemIdentity>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var hostEnvironment = scope.ServiceProvider.GetService<IHostEnvironment>();

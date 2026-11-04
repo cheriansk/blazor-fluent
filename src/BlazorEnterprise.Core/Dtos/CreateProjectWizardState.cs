@@ -1,32 +1,47 @@
 namespace BlazorEnterprise.Core.Dtos;
 
-public class RfpTimelineRowDto
+public class ProjectMilestoneDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public string StepName { get; set; } = string.Empty;
+    public Guid? ParentTimelineId { get; set; }
+    public Guid? ParentPhaseId
+    {
+        get => ParentTimelineId;
+        set => ParentTimelineId = value;
+    }
+    public string Title { get; set; } = string.Empty;
     public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
-    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddDays(14);
-    public string Details { get; set; } = string.Empty;
-    public string Status { get; set; } = "Planned";
+    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
+    public DateTime? DueDate
+    {
+        get => EndDate;
+        set => EndDate = value;
+    }
+    public string OwnerEmails { get; set; } = string.Empty;
+    public string Deliverable { get; set; } = string.Empty;
+    public string Status { get; set; } = "New";
+    public string? Comments { get; set; }
 }
 
 public class ProjectPhaseDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public string PhaseName { get; set; } = string.Empty;
-    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
-    public DateTime? TargetDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
-    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
-    public string Status { get; set; } = "Planned";
-}
-
-public class ProjectMilestoneDto
-{
-    public Guid Id { get; set; } = Guid.NewGuid();
     public string Title { get; set; } = string.Empty;
-    public DateTime? DueDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
-    public string Deliverable { get; set; } = string.Empty;
-    public string Status { get; set; } = "Scheduled";
+    public string PhaseName
+    {
+        get => Title;
+        set => Title = value;
+    }
+    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
+    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(1);
+    public DateTime? TargetDate
+    {
+        get => EndDate;
+        set => EndDate = value;
+    }
+    public string Status { get; set; } = "New";
+    public string? Comments { get; set; }
+    public List<ProjectMilestoneDto> Milestones { get; set; } = new();
 }
 
 public class ProjectRosterMemberDto
@@ -49,18 +64,15 @@ public partial class CreateProjectWizardState
     public string ShortCode { get; set; } = string.Empty;
     public string ScopeSummary { get; set; } = string.Empty;
 
-    // Step 2: RFP Timeline
-    public List<RfpTimelineRowDto> RfpTimelineRows { get; set; } = [];
-
-    // Step 3: Project Timeline
+    // Step 2: Project Timeline
     public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
     public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(6);
     public List<ProjectPhaseDto> Phases { get; set; } = [];
 
-    // Step 4: Milestone Calendar
+    // Step 3: Milestone Calendar
     public List<ProjectMilestoneDto> Milestones { get; set; } = [];
 
-    // Step 5: Team Roster
+    // Step 4: Team Roster
     public List<ProjectRosterMemberDto> Roster { get; set; } = [];
 
     // Extensibility property bag for downstream custom steps

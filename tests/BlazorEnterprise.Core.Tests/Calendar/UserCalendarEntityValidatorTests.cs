@@ -20,8 +20,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.CreateVersion7(),
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow.AddHours(2),
             EndDate = DateTime.UtcNow.AddHours(2),
-            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            EntryType = CalendarEntryTypeEnum.Personal,
             Status = CalendarEntryStatusEnum.Confirmed
         };
 
@@ -41,8 +42,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.Empty, // Invalid
             Title = "Focus Work Session",
             StartDate = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow.AddHours(2),
             EndDate = DateTime.UtcNow.AddHours(2),
-            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            EntryType = CalendarEntryTypeEnum.Personal,
             Status = CalendarEntryStatusEnum.Scheduled
         };
 
@@ -62,8 +64,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.CreateVersion7(),
             Title = "", // Invalid
             StartDate = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow.AddHours(2),
             EndDate = DateTime.UtcNow.AddHours(2),
-            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            EntryType = CalendarEntryTypeEnum.Personal,
             Status = CalendarEntryStatusEnum.Scheduled
         };
 
@@ -83,8 +86,9 @@ public class UserCalendarEntityValidatorTests
             UserId = Guid.CreateVersion7(),
             Title = "Sprint Review",
             StartDate = DateTime.UtcNow.AddHours(2),
+            DueDate = DateTime.UtcNow.AddHours(2),
             EndDate = DateTime.UtcNow, // Invalid: earlier than StartDate
-            EntryType = CalendarEntryTypeEnum.WorkingSession,
+            EntryType = CalendarEntryTypeEnum.Personal,
             Status = CalendarEntryStatusEnum.Scheduled
         };
 
@@ -92,5 +96,26 @@ public class UserCalendarEntityValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(UserCalendarEntity.EndDate));
+    }
+
+    [Fact]
+    public void Validate_MissingDueDate_Fails()
+    {
+        var entry = new UserCalendarEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = Guid.NewGuid(),
+            UserId = Guid.CreateVersion7(),
+            Title = "Sprint Review",
+            StartDate = DateTime.UtcNow,
+            DueDate = default, // Invalid
+            EntryType = CalendarEntryTypeEnum.Personal,
+            Status = CalendarEntryStatusEnum.Scheduled
+        };
+
+        var result = _validator.Validate(entry);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(UserCalendarEntity.DueDate));
     }
 }

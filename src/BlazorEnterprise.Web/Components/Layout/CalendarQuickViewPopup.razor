@@ -1,0 +1,76 @@
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Layout
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+
+@if (!TenantContext.HasActiveTenant || TenantContext.TenantId == Guid.Empty || TenantContext.IsRootTenant)
+{
+    return;
+}
+
+<div class="calendar-quickview-root">
+    @* Calendar Trigger Button *@
+    <button type="button"
+            class="csk-icon-btn calendar-trigger-btn @(_isOpen ? "active" : "")"
+            @onclick="ToggleModal"
+            title="My Schedule & Calendar">
+        <CskIcon Icon="@CskIcons.Calendar" Class="calendar-header-icon" />
+    </button>
+
+    @* Calendar Quick View Modal *@
+    @if (_isOpen)
+    {
+        <div class="calendar-quickview-backdrop" @onclick="CloseModal">
+            <div class="calendar-quickview-card" @onclick:stopPropagation="true">
+                @* Modal Header *@
+                <div class="calendar-quickview-header">
+                    <div class="header-title-group">
+                        <CskIcon Icon="@CskIcons.Calendar" Class="csk-icon-primary" />
+                        <div>
+                            <h4 class="modal-title">My Schedule & Calendar</h4>
+                            <p class="modal-subtitle">Quick view of personal appointments and project commitments</p>
+                        </div>
+                    </div>
+                    <div class="header-actions-group">
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                   Size="CskButtonSize.Small"
+                                   IconEnd="@CskIcons.OpenInNew"
+                                   OnClick="OpenFullSchedule">
+                            Open in Settings
+                        </CskButton>
+                        <CskButton Variant="CskButtonVariant.Text"
+                                   Size="CskButtonSize.Small"
+                                   IconStart="@CskIcons.Dismiss"
+                                   OnClick="CloseModal"
+                                   Title="Close" />
+                    </div>
+                </div>
+
+                @* Modal Body *@
+                <div class="calendar-quickview-body">
+                    @if (_isLoading)
+                    {
+                        <div class="calendar-loading-state">
+                            <CskSpinner Size="CskSpinnerSize.Medium" />
+                            <span>Loading schedule...</span>
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <div class="calendar-error-banner">
+                            <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-error" />
+                            <span>@_errorMessage</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <FluentCalendarScheduleComp Items="@_calendarItems"
+                                                    @bind-SelectedDate="_selectedDate"
+                                                    ReadOnly="true" />
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

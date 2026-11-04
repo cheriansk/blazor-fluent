@@ -1,3 +1,4 @@
+using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -65,11 +66,15 @@ public class ProgramService : IProgramService
                         accessibleProgramIds.Contains(p.Id) &&
                         !p.IsDeleted)
             .Include(p => p.Projects.Where(pr => !pr.IsDeleted))
+                .ThenInclude(pr => pr.UserRoles.Where(ur => !ur.IsDeleted))
+                    .ThenInclude(ur => ur.User)
+            .Include(p => p.UserRoles.Where(r => !r.IsDeleted))
+                .ThenInclude(r => r.User)
             .OrderBy(p => p.Name)
             .ToListAsync(ct);
     }
 
-    public async Task<Result<ProgramEntity>> GetProgramByIdAsync(Guid programId, CancellationToken ct = default)
+    public async Task<Result<ProgramEntity>> GetProgramByIdAsync(Guid programId, bool forEdit = false, CancellationToken ct = default)
     {
         if (programId == Guid.Empty) return Result<ProgramEntity>.Failure("Invalid Program ID.");
 
@@ -81,8 +86,12 @@ public class ProgramService : IProgramService
         }
 
         var program = await _context.Programs
-            .AsNoTracking()
+            .WithTracking(forEdit)
             .Include(p => p.Projects.Where(pr => !pr.IsDeleted))
+                .ThenInclude(pr => pr.UserRoles.Where(ur => !ur.IsDeleted))
+                    .ThenInclude(ur => ur.User)
+            .Include(p => p.UserRoles.Where(r => !r.IsDeleted))
+                .ThenInclude(r => r.User)
             .FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
 
         if (program == null)
@@ -181,6 +190,7 @@ public class ProgramService : IProgramService
         }
 
         var program = await _context.Programs
+            .AsTracking()
             .FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
 
         if (program == null)
@@ -215,6 +225,70 @@ public class ProgramService : IProgramService
             ct);
 
         return Result<ProgramEntity>.Success(program);
+    }
+
+    public async Task<Result> SyncProgramAdminsAsync(Guid programId, IEnumerable<Guid> adminUserIds, CancellationToken ct = default)
+    {
+        if (programId == Guid.Empty) return Result.Failure("Invalid Program ID.");
+
+        var program = await _context.Programs.AsNoTracking().FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
+        if (program == null) return Result.Failure("Program not found.");
+
+        var targetAdminIds = (adminUserIds ?? Enumerable.Empty<Guid>())
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToHashSet();
+
+        var existingRoles = await _context.ProgramUserRoles
+            .AsTracking()
+            .Where(r => r.ProgramId == programId)
+            .ToListAsync(ct);
+
+        // Soft-delete removed admins
+        foreach (var role in existingRoles)
+        {
+            if (role.Role == ProgramRoleEnum.Admin)
+            {
+                if (!targetAdminIds.Contains(role.UserEntityId))
+                {
+                    if (!role.IsDeleted)
+                    {
+                        role.IsDeleted = true;
+                        role.DeletedAtUtc = DateTime.UtcNow;
+                        role.DeletedBy = _currentUser.UserId;
+                    }
+                }
+                else
+                {
+                    // Restore if previously deleted
+                    if (role.IsDeleted)
+                    {
+                        role.IsDeleted = false;
+                        role.DeletedAtUtc = null;
+                        role.DeletedBy = null;
+                    }
+                }
+            }
+        }
+
+        // Add new admins
+        var existingUserIds = existingRoles.Where(r => r.Role == ProgramRoleEnum.Admin).Select(r => r.UserEntityId).ToHashSet();
+        foreach (var adminId in targetAdminIds)
+        {
+            if (!existingUserIds.Contains(adminId))
+            {
+                _context.ProgramUserRoles.Add(new ProgramUserRoleEntity
+                {
+                    TenantId = program.TenantId,
+                    ProgramId = programId,
+                    UserEntityId = adminId,
+                    Role = ProgramRoleEnum.Admin
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync(ct);
+        return Result.Success();
     }
 
     public async Task<IReadOnlyList<ProjectEntity>> GetProgramProjectsAsync(Guid programId, CancellationToken ct = default)

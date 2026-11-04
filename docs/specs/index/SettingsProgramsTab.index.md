@@ -3,7 +3,7 @@
 target_spec: docs/specs/SettingsProgramsTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor.cs
-generated_at_utc: 2026-11-02T02:06:44Z
+generated_at_utc: 2026-11-03T02:50:47Z
 source_hash_sha256: d334b867fd1d9c07
 ============================================================================ -->
 # AI Navigation Index: `SettingsProgramsTab`

@@ -1,0 +1,67 @@
+@page "/programs/holistic"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Pages
+@using BlazorEnterprise.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Components.Pages.ProgramHolisticViewTabs
+@using BlazorEnterprise.Web.Components.Shared
+@inject IProjectContext ProjectContext
+@inject IProgramService ProgramService
+@inject ICalendarService CalendarService
+@inject ITenantContext TenantContext
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<PageTitle>Program Holistic View — BlazorEnterprise</PageTitle>
+
+<div class="holistic-page-container">
+    <CskSectionHeader Title="@(string.IsNullOrWhiteSpace(ProjectContext.ProgramName) ? "Program Holistic View" : $"{ProjectContext.ProgramName} — Holistic View")"
+                      Subtitle="Comprehensive multi-tab program management: executive summary, timeline schedule, milestone gates, and RAID log."
+                      Icon="@CskIcons.FolderDocument">
+        <Actions>
+            @if (ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty)
+            {
+                <CskButton Variant="CskButtonVariant.Outlined"
+                           IconStart="@CskIcons.ArrowSync"
+                           OnClick="@RefreshProgramDataAsync">
+                    Refresh
+                </CskButton>
+            }
+        </Actions>
+    </CskSectionHeader>
+
+    @if (!ProjectContext.ProgramId.HasValue || ProjectContext.ProgramId.Value == Guid.Empty)
+    {
+        <div class="holistic-no-program-card">
+            <div class="no-program-icon-box">
+                <CskIcon Icon="@CskIcons.FolderDocument" Class="no-program-icon" />
+            </div>
+            <div class="no-program-content">
+                <h3 class="no-program-title">No Active Program Selected</h3>
+                <p class="no-program-desc">
+                    To view the program's executive summary, timeline, milestone tracking, and RAID log, please select an active program from the workspace switcher in the top navigation bar.
+                </p>
+                <CskButton Variant="CskButtonVariant.Filled"
+                           IconStart="@CskIcons.Apps"
+                           OnClick="@(() => NavigationManager.NavigateTo("/"))">
+                    Return to Dashboard
+                </CskButton>
+            </div>
+        </div>
+    }
+    else if (_isLoading)
+    {
+        <div class="holistic-loading-state">
+            <CskSpinner Size="CskSpinnerSize.Large" />
+            <span class="loading-label">Loading program holistic data...</span>
+        </div>
+    }
+    else
+    {
+        <TabContainerComp Tabs="@_tabs" />
+    }
+</div>

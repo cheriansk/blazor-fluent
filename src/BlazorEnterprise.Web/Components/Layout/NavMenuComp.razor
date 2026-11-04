@@ -5,6 +5,7 @@
 @inject ITenantContext TenantContext
 @inject ICurrentUser CurrentUser
 @inject INavigationStateService NavState
+@inject IProjectContext ProjectContext
 @implements IDisposable
 
 <div class="navmenu-container @(NavState.IsCollapsed ? "nav-collapsed" : "nav-expanded")" aria-label="Main Navigation">
@@ -12,14 +13,7 @@
         @if (CurrentUser.IsAuthenticated && TenantContext.HasActiveTenant)
         {
             <div class="nav-section">
-                @if (!NavState.IsCollapsed)
-                {
-                    <span class="nav-section-title">Workspace</span>
-                }
-                else
-                {
-                    <div class="nav-rail-divider"></div>
-                }
+                <span class="nav-section-title" aria-hidden="@(NavState.IsCollapsed ? "true" : "false")">Workspace</span>
 
                 <NavLink class="csk-nav-item" href="" Match="NavLinkMatch.All" title="Home">
                     <span class="csk-nav-indicator">
@@ -28,6 +22,26 @@
                     @if (!NavState.IsCollapsed)
                     {
                         <span class="csk-nav-text">Home</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="programs/holistic" title="Program Holistic View">
+                    <span class="csk-nav-indicator">
+                        <CskIcon Icon="@CskIcons.FolderDocument" Class="csk-nav-icon" />
+                    </span>
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Program Holistic View</span>
+                    }
+                </NavLink>
+
+                <NavLink class="csk-nav-item" href="projects/holistic" title="Project Holistic View">
+                    <span class="csk-nav-indicator">
+                        <CskIcon Icon="@CskIcons.TaskListSquare" Class="csk-nav-icon" />
+                    </span>
+                    @if (!NavState.IsCollapsed)
+                    {
+                        <span class="csk-nav-text">Project Holistic View</span>
                     }
                 </NavLink>
 
@@ -78,14 +92,7 @@
             <div class="nav-section-spacer"></div>
 
             <div class="nav-section nav-section-bottom">
-                @if (!NavState.IsCollapsed)
-                {
-                    <span class="nav-section-title">Configuration</span>
-                }
-                else
-                {
-                    <div class="nav-rail-divider"></div>
-                }
+                <span class="nav-section-title" aria-hidden="@(NavState.IsCollapsed ? "true" : "false")">Configuration</span>
 
                 <NavLink class="csk-nav-item" href="settings" title="Settings">
                     <span class="csk-nav-indicator">
@@ -105,6 +112,7 @@
     protected override void OnInitialized()
     {
         NavState.OnChange += HandleStateChanged;
+        ProjectContext.OnChange += HandleStateChanged;
     }
 
     private void HandleStateChanged()
@@ -115,5 +123,6 @@
     public void Dispose()
     {
         NavState.OnChange -= HandleStateChanged;
+        ProjectContext.OnChange -= HandleStateChanged;
     }
 }

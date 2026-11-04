@@ -1,3 +1,4 @@
+using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Shared.Common;
 using System;
 using System.Collections.Generic;
@@ -230,6 +231,7 @@ public class WorkflowService : IWorkflowService
         var callerEmail = _currentUser.Email ?? string.Empty;
 
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId, ct)
@@ -381,6 +383,7 @@ public class WorkflowService : IWorkflowService
         var callerEmail = _currentUser.Email ?? string.Empty;
 
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId, ct)
@@ -452,6 +455,7 @@ public class WorkflowService : IWorkflowService
         var callerEmail = _currentUser.Email ?? string.Empty;
 
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId, ct)
@@ -518,6 +522,7 @@ public class WorkflowService : IWorkflowService
         var tenantId = _tenantContext.TenantId;
 
         var subTask = await _dbContext.SubTasks
+            .AsTracking()
             .FirstOrDefaultAsync(s => s.Id == request.SubTaskId && s.TenantId == tenantId, ct)
             ;
         if (subTask == null) return Result.Fail<SubTaskEntity>($"SubTask '{request.SubTaskId}' not found.");
@@ -579,11 +584,12 @@ public class WorkflowService : IWorkflowService
         return await GetWorkflowsAsync(new WorkflowFilterDto(Level: TaskLevelEnum.Project, ProjectId: projectId), ct);
     }
 
-    public async Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, CancellationToken ct = default)
+    public async Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, bool forEdit = false, CancellationToken ct = default)
     {
         var tenantId = _tenantContext.TenantId;
 
         return await _dbContext.Workflows
+            .WithTracking(forEdit)
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == workflowId && w.TenantId == tenantId && !w.IsDeleted, ct);
@@ -608,6 +614,7 @@ public class WorkflowService : IWorkflowService
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
@@ -644,6 +651,7 @@ public class WorkflowService : IWorkflowService
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
@@ -710,6 +718,7 @@ public class WorkflowService : IWorkflowService
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
@@ -767,6 +776,7 @@ public class WorkflowService : IWorkflowService
     {
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
+            .AsTracking()
             .Include(w => w.Steps)
                 .ThenInclude(s => s.SubTasks)
             .FirstOrDefaultAsync(w => w.Id == request.WorkflowId && w.TenantId == tenantId && !w.IsDeleted, ct)
@@ -798,6 +808,7 @@ public class WorkflowService : IWorkflowService
         if (request.ExistingTaskId.HasValue && request.ExistingTaskId.Value != Guid.Empty)
         {
             var existing = await _dbContext.Tasks
+                .AsTracking()
                 .Include(t => t.SubTasks)
                 .FirstOrDefaultAsync(t => t.Id == request.ExistingTaskId.Value && t.TenantId == tenantId, ct)
                 ;

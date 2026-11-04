@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Components.Pages;
 
-public partial class HomePage : ComponentBase
+public partial class HomePage : ComponentBase, IDisposable
 {
     [Inject] internal ITenantService TenantService { get; set; } = default!;
     [Inject] internal IUserTaskService TaskService { get; set; } = default!;
@@ -45,11 +45,32 @@ public partial class HomePage : ComponentBase
     internal IReadOnlyList<ProgramEntity> Programs => _programs;
     internal ProgramHealthSummaryDto? ProgramHealth => _programHealth;
     internal IReadOnlyList<ProjectCardItemDto> UserProjects => _userProjects;
+    internal IReadOnlyList<KanbanTaskItem> KanbanTasks => _kanbanTasks;
+    internal IReadOnlyList<AuditActivityItem> AuditActivities => _auditActivities;
     internal Task InitializeForTestAsync() => LoadDashboardDataAsync();
 
     protected override async Task OnInitializedAsync()
     {
+        ProjectContext.OnChange += HandleProjectContextChanged;
         await LoadDashboardDataAsync();
+    }
+
+    private void HandleProjectContextChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId != _selectedProgramId)
+            {
+                _selectedProgramId = ProjectContext.ProgramId.Value;
+                _programHealth = await ProgramService.GetProgramHealthAsync(_selectedProgramId.Value);
+                StateHasChanged();
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        ProjectContext.OnChange -= HandleProjectContextChanged;
     }
 
     private async Task RefreshDataAsync()
@@ -99,7 +120,11 @@ public partial class HomePage : ComponentBase
 
             if (_programs.Count > 0)
             {
-                if (!_selectedProgramId.HasValue || !_programs.Any(p => p.Id == _selectedProgramId.Value))
+                if (ProjectContext.ProgramId.HasValue && _programs.Any(p => p.Id == ProjectContext.ProgramId.Value))
+                {
+                    _selectedProgramId = ProjectContext.ProgramId.Value;
+                }
+                else if (!_selectedProgramId.HasValue || !_programs.Any(p => p.Id == _selectedProgramId.Value))
                 {
                     _selectedProgramId = _programs[0].Id;
                 }
@@ -181,30 +206,28 @@ public partial class HomePage : ComponentBase
             _auditActivities = auditTrail.Items.Select(a => new AuditActivityItem
             {
                 Title = a.EventType.ToString(),
-                Description = a.Description ?? $"{a.EntityName} updated",
-                User = a.UserEmail ?? "system",
-                TimeAgo = FormatTimeAgo(a.Created),
+                Description = a.Description ?? string.Empty,
+                User = !string.IsNullOrWhiteSpace(a.UserEmail) ? a.UserEmail : "System",
+                TimeAgo = GetTimeAgo(a.Created),
                 BadgeText = a.Severity.ToString(),
                 BadgeVariant = a.Severity switch
                 {
                     AuditSeverityEnum.Critical => CskStatusChip.ChipVariant.Error,
+                    AuditSeverityEnum.Error => CskStatusChip.ChipVariant.Error,
                     AuditSeverityEnum.Warning => CskStatusChip.ChipVariant.Warning,
                     _ => CskStatusChip.ChipVariant.Info
                 },
-                Icon = CskIcons.ShieldCheck
+                Icon = a.Severity switch
+                {
+                    AuditSeverityEnum.Critical or AuditSeverityEnum.Error => CskIcons.Error,
+                    AuditSeverityEnum.Warning => CskIcons.Warning,
+                    _ => CskIcons.CheckmarkCircle
+                }
             }).ToList();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load dashboard data for tenant '{TenantSlug}'", TenantContext.TenantSlug);
-            _userProjects.Clear();
-            _programs.Clear();
-            _kanbanTasks.Clear();
-            _auditActivities.Clear();
-            _projectCountText = "0";
-            _completionRateText = "0%";
-            _totalTasksCount = 0;
-            _completedTasksCount = 0;
         }
         finally
         {
@@ -212,82 +235,17 @@ public partial class HomePage : ComponentBase
         }
     }
 
-    private static string FormatTimeAgo(DateTime dt)
+    private void NavigateToTasks()
     {
-        var span = DateTime.UtcNow - dt;
+        NavigationManager.NavigateTo("/tasks");
+    }
+
+    private static string GetTimeAgo(DateTime timestamp)
+    {
+        var span = DateTime.UtcNow - timestamp;
+        if (span.TotalMinutes < 1) return "Just now";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
         return $"{(int)span.TotalDays}d ago";
-    }
-
-    private void NavigateToTasks()
-    {
-        if (ProjectContext.ProjectId.HasValue)
-        {
-            NavigationManager.NavigateTo($"/projects/{ProjectContext.ProjectId.Value}/tasks");
-        }
-        else if (_userProjects.Count > 0)
-        {
-            OpenProjectTasks(_userProjects[0].Id);
-        }
-        else
-        {
-            NavigationManager.NavigateTo("tasks");
-        }
-    }
-
-    private static CskStatusChip.ChipVariant GetProgramHealthVariant(ProgramHealthRatingEnum health) => health switch
-    {
-        ProgramHealthRatingEnum.OnTrack => CskStatusChip.ChipVariant.Success,
-        ProgramHealthRatingEnum.AtRisk => CskStatusChip.ChipVariant.Warning,
-        ProgramHealthRatingEnum.Critical => CskStatusChip.ChipVariant.Error,
-        _ => CskStatusChip.ChipVariant.Neutral
-    };
-
-    private static CskStatusChip.ChipVariant GetProjectHealthVariant(ProjectHealthRatingEnum health) => health switch
-    {
-        ProjectHealthRatingEnum.OnTrack => CskStatusChip.ChipVariant.Success,
-        ProjectHealthRatingEnum.AtRisk => CskStatusChip.ChipVariant.Warning,
-        ProjectHealthRatingEnum.Critical => CskStatusChip.ChipVariant.Error,
-        _ => CskStatusChip.ChipVariant.Neutral
-    };
-
-    private static CskStatusChip.ChipVariant GetProjectStatusVariant(ProjectStatusEnum status) => status switch
-    {
-        ProjectStatusEnum.Done => CskStatusChip.ChipVariant.Success,
-        ProjectStatusEnum.Active => CskStatusChip.ChipVariant.Primary,
-        ProjectStatusEnum.New => CskStatusChip.ChipVariant.Info,
-        ProjectStatusEnum.OnHold => CskStatusChip.ChipVariant.Warning,
-        _ => CskStatusChip.ChipVariant.Neutral
-    };
-
-    private static CskStatusChip.ChipVariant GetRoleVariant(ProjectRoleEnum? role) => role switch
-    {
-        ProjectRoleEnum.Admin => CskStatusChip.ChipVariant.Primary,
-        ProjectRoleEnum.ElevatedLead or ProjectRoleEnum.Lead => CskStatusChip.ChipVariant.Warning,
-        ProjectRoleEnum.Contribute => CskStatusChip.ChipVariant.Info,
-        ProjectRoleEnum.PMO => CskStatusChip.ChipVariant.Secondary,
-        _ => CskStatusChip.ChipVariant.Neutral
-    };
-
-    private sealed class KanbanTaskItem
-    {
-        public string Key { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string Column { get; set; } = "ToDo";
-        public string PriorityText { get; set; } = "Medium";
-        public CskStatusChip.ChipVariant PriorityVariant { get; set; } = CskStatusChip.ChipVariant.Neutral;
-        public string Assignee { get; set; } = string.Empty;
-    }
-
-    private sealed class AuditActivityItem
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string User { get; set; } = string.Empty;
-        public string TimeAgo { get; set; } = string.Empty;
-        public string BadgeText { get; set; } = "Info";
-        public CskStatusChip.ChipVariant BadgeVariant { get; set; } = CskStatusChip.ChipVariant.Info;
-        public string Icon { get; set; } = CskIcons.Info;
     }
 }

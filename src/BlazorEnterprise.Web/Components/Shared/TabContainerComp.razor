@@ -1,0 +1,38 @@
+@namespace BlazorEnterprise.Web.Components.Shared
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="csk-tab-container-root @Class">
+    <CskTabs @bind-ActiveTabId="ActiveTabId">
+        @foreach (var tab in Tabs)
+        {
+            <CskTab Id="@tab.Id" Label="@tab.Name">
+                <HeaderTemplate>
+                    <div class="csk-tab-header-item">
+                        @if (!string.IsNullOrWhiteSpace(tab.Icon))
+                        {
+                            <CskIcon Icon="@tab.Icon" Class="csk-tab-header-icon" />
+                        }
+                        <span class="csk-tab-header-text">@tab.Name</span>
+                        @if (tab.Badge != null)
+                        {
+                            <span class="csk-tab-badge @tab.BadgeClass">@tab.Badge</span>
+                        }
+                    </div>
+                </HeaderTemplate>
+                <Content>
+                    @if (IsTabLoaded(tab.Id))
+                    {
+                        @tab.Content
+                    }
+                    else
+                    {
+                        <div class="csk-tab-loading">
+                            <CskSpinner Size="CskSpinnerSize.Small" />
+                            <span class="csk-tab-loading-label">Loading tab content...</span>
+                        </div>
+                    }
+                </Content>
+            </CskTab>
+        }
+    </CskTabs>
+</div>
