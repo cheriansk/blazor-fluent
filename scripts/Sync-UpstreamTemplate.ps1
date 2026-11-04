@@ -213,7 +213,11 @@ if ($TemplateName -ne $DownstreamName) {
     }
 
     if (Test-Path $renameScript) {
-        & pwsh -File $renameScript -OldName $TemplateName -NewName $DownstreamName -Force | Out-Null
+        & pwsh -File $renameScript -TargetFolder $stagingDir -OldName $TemplateName -NewName $DownstreamName -Force
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  ERROR: Staged mirror rename failed with exit code $LASTEXITCODE." -ForegroundColor Red
+            exit $LASTEXITCODE
+        }
         Write-Host "  Staged mirror successfully rebranded to '$DownstreamName'!" -ForegroundColor Green
     } else {
         Write-Host "  WARNING: Rename-Project.ps1 not found in staging. Performing direct text substitution..." -ForegroundColor Yellow
@@ -392,6 +396,13 @@ switch ($Mode) {
             if (Test-Path $stagedAnalyzerDll) {
                 Copy-Item -Path $stagedAnalyzerDll -Destination $destAnalyzerDll -Force
                 Write-Host "  [GOVERNANCE] Updated tools/TemplateGuard/TemplateGuard.Analyzers.dll" -ForegroundColor Green
+            }
+
+            $stagedPackages = Get-ChildItem -Path (Join-Path $stagingDir "tools\TemplateGuard") -Filter "*.nupkg" -File -ErrorAction SilentlyContinue
+            foreach ($pkg in $stagedPackages) {
+                $destPkg = Join-Path $DownstreamFolder "tools\TemplateGuard\$($pkg.Name)"
+                Copy-Item -Path $pkg.FullName -Destination $destPkg -Force
+                Write-Host "  [GOVERNANCE] Updated tools/TemplateGuard/$($pkg.Name)" -ForegroundColor Green
             }
 
             Write-Host ""

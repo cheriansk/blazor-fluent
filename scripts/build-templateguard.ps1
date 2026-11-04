@@ -24,4 +24,7 @@ if ($LASTEXITCODE -ne 0) { throw "Manifest generation failed." }
 
 dotnet build $projectPath -c $Configuration -o $outputDir
 if ($LASTEXITCODE -ne 0) { throw "Analyzer build failed." }
+
+dotnet pack $projectPath -c $Configuration -o $outputDir --no-build
+if ($LASTEXITCODE -ne 0) { throw "Analyzer package creation failed." }
 Write-Host "==> TemplateGuard analyzer + manifest rebuilt. Commit tools/TemplateGuard/*." -ForegroundColor Green

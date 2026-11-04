@@ -72,7 +72,10 @@ param(
 
     [Parameter(Mandatory = $false, HelpMessage = "Distribution Mode: 'Full' (all projects + Aspire) or 'ClientDistribution' (strips proprietary RulesEngine and Api)")]
     [ValidateSet("Full", "ClientDistribution")]
-    [string]$Mode = "Full"
+    [string]$Mode = "Full",
+
+    [Parameter(Mandatory = $false, HelpMessage = "Explicit root folder of the project to rename")]
+    [string]$TargetFolder = ""
 )
 
 Set-StrictMode -Version Latest
@@ -93,7 +96,10 @@ if ($CurrentLocation) {
 }
 
 $RepoRoot = $null
-foreach ($cand in $CandidateRoots) {
+if ($TargetFolder -and (Test-Path $TargetFolder)) {
+    $RepoRoot = (Resolve-Path $TargetFolder).Path
+} else {
+    foreach ($cand in $CandidateRoots) {
     if (-not $cand) { continue }
     if ((Test-Path (Join-Path $cand "$OldName.slnx")) -or 
         (Test-Path (Join-Path $cand "src")) -or 
@@ -103,8 +109,9 @@ foreach ($cand in $CandidateRoots) {
     }
 }
 
-if (-not $RepoRoot) {
-    $RepoRoot = if ($PSScriptRoot) { (Resolve-Path (Split-Path -Parent $PSScriptRoot)).Path } else { $CurrentLocation }
+    if (-not $RepoRoot) {
+        $RepoRoot = if ($PSScriptRoot) { (Resolve-Path (Split-Path -Parent $PSScriptRoot)).Path } else { $CurrentLocation }
+    }
 }
 
 # --- Interactive Prompt for NewName if not provided --------------------------
@@ -424,6 +431,10 @@ if ((Test-Path $tgToolProj) -and (Test-Path $tgAnalyzerProj)) {
         Write-Host "  Rebuilding TemplateGuard analyzer (embeds the new manifest)..." -ForegroundColor Cyan
         dotnet build $tgAnalyzerProj -c Release -o $tgOutDir
         if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Analyzer rebuild failed." -ForegroundColor Red; exit 1 }
+
+        Write-Host "  Generating TemplateGuard NuGet package..." -ForegroundColor Cyan
+        dotnet pack $tgAnalyzerProj -c Release -o $tgOutDir --no-build
+        if ($LASTEXITCODE -ne 0) { Write-Host "  [ERROR] Analyzer package generation failed." -ForegroundColor Red; exit 1 }
     } else {
         Write-Host "  [DRY RUN] Would regenerate base manifest and rebuild TemplateGuard analyzer before purging tools/src." -ForegroundColor Magenta
     }
