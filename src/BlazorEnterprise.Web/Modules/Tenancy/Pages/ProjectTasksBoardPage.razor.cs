@@ -165,10 +165,6 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
         {
             _availableProjects = (await TenantService.GetTenantProjectsAsync(TenantContext.TenantSlug)).Where(p => p.IsActive && !p.IsDeleted).OrderBy(p => p.Name).ToList();
 
-
-
-
-
             if (_availableProjects.Count == 0)
             {
                 _currentProject = null;
@@ -244,9 +240,6 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
         if (_currentProject is null) return;
 
         var dependencies = (await TaskService.GetProjectWorkDependenciesAsync(_currentProject.Id)).Where(d => d.DependencyType == TaskDependencyTypeEnum.Blocks).ToList();
-
-
-
 
         var taskLookup = _tasks.ToDictionary(t => t.Id);
         _activeBlockedTaskIds = new HashSet<Guid>();

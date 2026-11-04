@@ -15,22 +15,23 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 public class ProjectHealthService : IProjectHealthService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
     private readonly IProjectAuthorizationService _projectAuth;
 
     public ProjectHealthService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
         IProjectAuthorizationService projectAuth)
     {
-        _context = context;
+        _dbFactory = dbFactory;
         _tenantContext = tenantContext;
         _projectAuth = projectAuth;
     }
 
     public async Task<ProjectHealthSummaryDto> GetProjectHealthAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectHealth", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -140,6 +141,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<MilestoneHealthSummaryDto> GetMilestoneHealthAsync(Guid milestoneId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var today = DateTime.UtcNow.Date;
 
@@ -294,6 +296,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<IReadOnlyList<MilestoneHealthSummaryDto>> GetProjectMilestonesHealthAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectMilestonesHealth", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -317,6 +320,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<IReadOnlyList<RiskEntity>> GetProjectRisksAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectRisks", ct: ct);
         var tenantId = _tenantContext.TenantId;
         return await _context.Risks
@@ -328,6 +332,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<IReadOnlyList<AssumptionEntity>> GetProjectAssumptionsAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectAssumptions", ct: ct);
         var tenantId = _tenantContext.TenantId;
         return await _context.Assumptions
@@ -339,6 +344,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<IReadOnlyList<IssueEntity>> GetProjectIssuesAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectIssues", ct: ct);
         var tenantId = _tenantContext.TenantId;
         return await _context.Issues
@@ -350,6 +356,7 @@ public class ProjectHealthService : IProjectHealthService
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetProjectBlockersAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectBlockers", ct: ct);
         var tenantId = _tenantContext.TenantId;
         return await _context.WorkDependencies

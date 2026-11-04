@@ -1301,6 +1301,45 @@
         "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "3b738923e913457991151657832f08904691efbab7d177c622526cbb17ae87e6"
       }
     },
+    "Core/Contracts/ICircuitActivityTracker.cs": {
+      "RelativePath": "Core/Contracts/ICircuitActivityTracker.cs",
+      "KnownMembers": [
+        "ActiveReadCount",
+        "ICircuitActivityTracker.ActiveReadCount",
+        "get_ActiveReadCount",
+        "ICircuitActivityTracker.ActiveReadCount.get",
+        "ActiveWriteCount",
+        "ICircuitActivityTracker.ActiveWriteCount",
+        "get_ActiveWriteCount",
+        "ICircuitActivityTracker.ActiveWriteCount.get",
+        "IsBusy",
+        "ICircuitActivityTracker.IsBusy",
+        "get_IsBusy",
+        "ICircuitActivityTracker.IsBusy.get",
+        "IsMutating",
+        "ICircuitActivityTracker.IsMutating",
+        "get_IsMutating",
+        "ICircuitActivityTracker.IsMutating.get",
+        "CurrentNavigationToken",
+        "ICircuitActivityTracker.CurrentNavigationToken",
+        "get_CurrentNavigationToken",
+        "ICircuitActivityTracker.CurrentNavigationToken.get",
+        "add_OnChange",
+        "ICircuitActivityTracker.OnChange.add",
+        "remove_OnChange",
+        "ICircuitActivityTracker.OnChange.remove",
+        "OnChange",
+        "ICircuitActivityTracker.OnChange",
+        "BeginOperation",
+        "ICircuitActivityTracker.BeginOperation(bool)",
+        "ResetNavigationToken",
+        "ICircuitActivityTracker.ResetNavigationToken()"
+      ],
+      "MemberSyntaxHashes": {
+        "ICircuitActivityTracker.BeginOperation(bool)": "fd4774172d4fc32aa26bd61f52689061e3587a04a7bd50d0790509a51c343f0e",
+        "ICircuitActivityTracker.ResetNavigationToken()": "822ad18c9abafa6166aacf99eb03a4ee8c5d4c7a59e99c2a3b58e56510905a89"
+      }
+    },
     "Core/Contracts/ICircuitSessionTracker.cs": {
       "RelativePath": "Core/Contracts/ICircuitSessionTracker.cs",
       "KnownMembers": [
@@ -9746,7 +9785,7 @@
         "SystemIdentityUtility.RequireAuthenticatedTenantUser(ICurrentUser, ITenantContext, string)": "7e2412e73e39e0f315e4390ba90c9e0423d664b6d6303b999ea68bb6f2382c87",
         "SystemIdentityUtility.RequireAuthenticatedContext(ICurrentUser, ITenantContext, string)": "0ab480f3ffc80a9d1d46fff9329380508fc334d3f3fa8d1552a511510e2b5eb9",
         "SystemIdentityUtility.ResolveAuditableUserId(ICurrentUser, string)": "1e233bcf64b7fdf39007399c01c54ad1663766cdb4f9ad120a5f57fa81bf2c68",
-        "SystemIdentityUtility.EstablishPreAuthContext(ICurrentUser, ITenantContext, ISystemIdentity, string, string)": "198aad00dc73b68601c897890626e40f45714ab426fbd39fad55c042770fc160",
+        "SystemIdentityUtility.EstablishPreAuthContext(ICurrentUser, ITenantContext, ISystemIdentity, string, string)": "5ad9602383b8f49074fccce41840743f0cb479cd9245b2b282fb4c8db4b08623",
         "SystemIdentityUtility.FormatInternalDaemonEmail(string)": "0bd7234f63fefe5d1616b82a39f0ea54c6c171c9adaa80e202dc27484132c922",
         "SystemIdentityUtility.IsSystemDaemon(string?)": "27dc2670d29f3875f491c606a28a0981f0a1a2286320143ff0f4e1ce0b13e81c"
       }
@@ -10022,8 +10061,10 @@
       "KnownMembers": [
         "_logger",
         "BlazorCircuitObservabilityHandler._logger",
+        "_correlationContext",
+        "BlazorCircuitObservabilityHandler._correlationContext",
         ".ctor",
-        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E)",
+        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E, ICorrelationContext)",
         "OnCircuitOpenedAsync",
         "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)",
         "OnCircuitClosedAsync",
@@ -10034,10 +10075,10 @@
         "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "f8936f23d35665c177cb6e0c5421fe33b8db96357a61d5fb5bc82a74323e51f2",
-        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "ed81a00f1804a10ff65ad52a485465516b63a6817f7099cdf2346c1e1447fd41",
-        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "43a0cf368190d4e3b8f11f5b85f99e63ec6914c275db3a002bc13a17953aa104",
-        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "6c5397442273dcf5a760e6863bc85bca160febf0eac16b4e3609b2a2ba3013f7"
+        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "4e2d0419f5fd1a29ab7f2876b3279a2b78ccd5b6abc9f76c1ceaea5231d21b75",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "b0ed2595adb2d1c97b8feab9e05ec8c45f52b6cd9f1f73483b1bc752b5447364",
+        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "72cee5400ac443ff218e5a0a0ba6f11c5e2782bc9592f68e481a8165d048c0ac",
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "b100404659ba5b04a0a89201e7c9a01ab2f8eccce29cffde753e40ecaffdc749"
       }
     },
     "Infrastructure/Security/CircuitSessionTracker.cs": {
@@ -10329,10 +10370,12 @@
         "UserSessionCircuitHandler._currentUser",
         "_sessionService",
         "UserSessionCircuitHandler._sessionService",
+        "_correlationContext",
+        "UserSessionCircuitHandler._correlationContext",
         "_logger",
         "UserSessionCircuitHandler._logger",
         ".ctor",
-        "UserSessionCircuitHandler.UserSessionCircuitHandler(ICircuitSessionTracker, ICurrentUser, IUserSessionService, ILogger\u003CUserSessionCircuitHandler\u003E)",
+        "UserSessionCircuitHandler.UserSessionCircuitHandler(ICircuitSessionTracker, ICurrentUser, IUserSessionService, ICorrelationContext, ILogger\u003CUserSessionCircuitHandler\u003E)",
         "OnConnectionUpAsync",
         "UserSessionCircuitHandler.OnConnectionUpAsync(Circuit, CancellationToken)",
         "OnCircuitClosedAsync",
@@ -10341,9 +10384,9 @@
         "UserSessionCircuitHandler.OnConnectionDownAsync(Circuit, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "UserSessionCircuitHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "de1063042e84eff73efa3d66a04a98a451cd343885d19c3d90189a1f42a77ee1",
-        "UserSessionCircuitHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "fd247c8498fd5650d0adaff0af663ec79602cf6450ecc4fce6d2d40d9c70d0e2",
-        "UserSessionCircuitHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "46f172948f46409886868f6f85316b8bcc14ed117fd0af4b0da0a696576026d9"
+        "UserSessionCircuitHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "159e6b57d0accf76dda023dd95b5051278b63e55454334680e8230c90b689179",
+        "UserSessionCircuitHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "5dafc6984b876a26baca76219f9d65d73893a51e54985b18c2dec0f0dc5ccfbe",
+        "UserSessionCircuitHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "3daa6fbbb364b6438f31c86b9cf8bcfe3585261d619d1773f6bbc66b99ac3c06"
       }
     },
     "Infrastructure/Storage/AzureAndLocalBlobStorageService.cs": {
@@ -12152,6 +12195,24 @@
         "AuditableEntityInterceptor.IsSensitiveProperty(string)": "c902f381281d345de7519f28c1eaa74c20dac26bdf141c947b46ec47223a9d08"
       }
     },
+    "Persistence/Interceptors/CircuitActivityDbInterceptor.cs": {
+      "RelativePath": "Persistence/Interceptors/CircuitActivityDbInterceptor.cs",
+      "KnownMembers": [
+        "ResolveTracker",
+        "CircuitActivityDbInterceptor.ResolveTracker(CommandEventData)",
+        "ReaderExecutingAsync",
+        "CircuitActivityDbInterceptor.ReaderExecutingAsync(DbCommand, CommandEventData, InterceptionResult\u003CDbDataReader\u003E, CancellationToken)",
+        "NonQueryExecutingAsync",
+        "CircuitActivityDbInterceptor.NonQueryExecutingAsync(DbCommand, CommandEventData, InterceptionResult\u003Cint\u003E, CancellationToken)",
+        ".ctor",
+        "CircuitActivityDbInterceptor.CircuitActivityDbInterceptor()"
+      ],
+      "MemberSyntaxHashes": {
+        "CircuitActivityDbInterceptor.ResolveTracker(CommandEventData)": "c0c7cb6c395c5b6635f015d9fb344feb393feae20b257028fa58764c621164ff",
+        "CircuitActivityDbInterceptor.ReaderExecutingAsync(DbCommand, CommandEventData, InterceptionResult\u003CDbDataReader\u003E, CancellationToken)": "cb7386246991a15de0d90cadbfb9cef61a28c2ea9071c45d80581153da6b0c87",
+        "CircuitActivityDbInterceptor.NonQueryExecutingAsync(DbCommand, CommandEventData, InterceptionResult\u003Cint\u003E, CancellationToken)": "a2e0cec0e8a19c6e64382e09b8d0416ab4112404e03f11ea65396284d315a754"
+      }
+    },
     "Persistence/Interceptors/DbCommandLoggingInterceptor.cs": {
       "RelativePath": "Persistence/Interceptors/DbCommandLoggingInterceptor.cs",
       "KnownMembers": [
@@ -12503,7 +12564,7 @@
         "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "0d2f7b81c0c7ff4af13d5919ae6a93d348e92f72e33e5e70109c3d78b33b60b9"
+        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "4c6a791a8c1177dbffb7545b1413d684a44b374dd7b5be989d3fd15609686102"
       }
     },
     "Persistence/Services/AuditService.cs": {
@@ -12593,6 +12654,71 @@
         "CalendarService.CreateProjectCalendarEntryAsync(ProjectCalendarEntity, CancellationToken)": "f48a9174ef96926e44233f038e398ddda65b6eb27df6d800ca785f08f046b955",
         "CalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "bcfe6a869998a07003a62709d6ec3134617d4e6e426e0947d6bd6853eadcd5f6",
         "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "9f1cf59febe775b6f0fabe80dffcb20fe2634942ecadc0ec49904f0e51949650"
+      }
+    },
+    "Persistence/Services/CircuitActivityTracker.cs": {
+      "RelativePath": "Persistence/Services/CircuitActivityTracker.cs",
+      "KnownMembers": [
+        "_activeReadCount",
+        "CircuitActivityTracker._activeReadCount",
+        "_activeWriteCount",
+        "CircuitActivityTracker._activeWriteCount",
+        "_cts",
+        "CircuitActivityTracker._cts",
+        "ActiveReadCount",
+        "CircuitActivityTracker.ActiveReadCount",
+        "get_ActiveReadCount",
+        "CircuitActivityTracker.ActiveReadCount.get",
+        "ActiveWriteCount",
+        "CircuitActivityTracker.ActiveWriteCount",
+        "get_ActiveWriteCount",
+        "CircuitActivityTracker.ActiveWriteCount.get",
+        "IsBusy",
+        "CircuitActivityTracker.IsBusy",
+        "get_IsBusy",
+        "CircuitActivityTracker.IsBusy.get",
+        "IsMutating",
+        "CircuitActivityTracker.IsMutating",
+        "get_IsMutating",
+        "CircuitActivityTracker.IsMutating.get",
+        "CurrentNavigationToken",
+        "CircuitActivityTracker.CurrentNavigationToken",
+        "get_CurrentNavigationToken",
+        "CircuitActivityTracker.CurrentNavigationToken.get",
+        "add_OnChange",
+        "CircuitActivityTracker.OnChange.add",
+        "remove_OnChange",
+        "CircuitActivityTracker.OnChange.remove",
+        "OnChange",
+        "CircuitActivityTracker.OnChange",
+        "BeginOperation",
+        "CircuitActivityTracker.BeginOperation(bool)",
+        "ResetNavigationToken",
+        "CircuitActivityTracker.ResetNavigationToken()",
+        "EndOperation",
+        "CircuitActivityTracker.EndOperation(bool)",
+        "NotifyStateChanged",
+        "CircuitActivityTracker.NotifyStateChanged()",
+        "Dispose",
+        "CircuitActivityTracker.Dispose()",
+        "ActivityScope",
+        "CircuitActivityTracker.ActivityScope",
+        ".ctor",
+        "CircuitActivityTracker.CircuitActivityTracker()",
+        "_tracker",
+        "CircuitActivityTracker.ActivityScope._tracker",
+        "_isWrite",
+        "CircuitActivityTracker.ActivityScope._isWrite",
+        "CircuitActivityTracker.ActivityScope.ActivityScope(CircuitActivityTracker, bool)",
+        "CircuitActivityTracker.ActivityScope.Dispose()"
+      ],
+      "MemberSyntaxHashes": {
+        "CircuitActivityTracker.BeginOperation(bool)": "df52ec59d0c33194367deecbe38896eced28bd03e8a313e517b1542a3084ed3a",
+        "CircuitActivityTracker.ResetNavigationToken()": "d10abe6aeac7f0b27d7ca77917ab4b7cdad1760e678077b9a9388f01a603f055",
+        "CircuitActivityTracker.EndOperation(bool)": "2ce143a0e020a0377226ea31e4e4b4bb599b456a0646e7760687eb50122d723f",
+        "CircuitActivityTracker.NotifyStateChanged()": "4ae09b4c8d8c16af74e5380fabac4b21176fdbb78cc18ba349949987dd6a666b",
+        "CircuitActivityTracker.Dispose()": "b2ac59e7b2628e856c6181a195a9e0b5e2f3bfef8710b168d6f55852625d0936",
+        "CircuitActivityTracker.ActivityScope.Dispose()": "a83bc7b12be4d4c5b07d6c6d2bbeec15528a6f9e64fad8a774dfcaad03ceda00"
       }
     },
     "Persistence/Services/EventTrackerService.cs": {
@@ -18939,15 +19065,43 @@
         "ICorrelationContext.CorrelationId.get",
         "set_CorrelationId",
         "ICorrelationContext.CorrelationId.set",
+        "CircuitId",
+        "ICorrelationContext.CircuitId",
+        "get_CircuitId",
+        "ICorrelationContext.CircuitId.get",
+        "set_CircuitId",
+        "ICorrelationContext.CircuitId.set",
+        "SessionId",
+        "ICorrelationContext.SessionId",
+        "get_SessionId",
+        "ICorrelationContext.SessionId.get",
+        "set_SessionId",
+        "ICorrelationContext.SessionId.set",
+        "Renew",
+        "ICorrelationContext.Renew()",
         "_correlationId",
         "CorrelationContext._correlationId",
         "CorrelationContext.CorrelationId",
         "CorrelationContext.CorrelationId.get",
         "CorrelationContext.CorrelationId.set",
+        "\u003CCircuitId\u003Ek__BackingField",
+        "CorrelationContext.CircuitId.field",
+        "CorrelationContext.CircuitId",
+        "CorrelationContext.CircuitId.get",
+        "CorrelationContext.CircuitId.set",
+        "\u003CSessionId\u003Ek__BackingField",
+        "CorrelationContext.SessionId.field",
+        "CorrelationContext.SessionId",
+        "CorrelationContext.SessionId.get",
+        "CorrelationContext.SessionId.set",
+        "CorrelationContext.Renew()",
         ".ctor",
         "CorrelationContext.CorrelationContext()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "ICorrelationContext.Renew()": "b34962bccfd01f7ebb40447045b408f239f8546988f60167a8444f9863fa2028",
+        "CorrelationContext.Renew()": "44dcbe39494c051678799fece7f0561f3f6f0a5fa02dbd8e755df8903c866234"
+      }
     },
     "Shared/Contracts/Engine/Client/IEngineClient.cs": {
       "RelativePath": "Shared/Contracts/Engine/Client/IEngineClient.cs",
@@ -21816,13 +21970,17 @@
       "KnownMembers": [
         "CorrelationIdPropertyName",
         "CorrelationIdEnricher.CorrelationIdPropertyName",
+        "CircuitIdPropertyName",
+        "CorrelationIdEnricher.CircuitIdPropertyName",
+        "SessionIdPropertyName",
+        "CorrelationIdEnricher.SessionIdPropertyName",
         "Enrich",
         "CorrelationIdEnricher.Enrich(LogEvent, ILogEventPropertyFactory)",
         ".ctor",
         "CorrelationIdEnricher.CorrelationIdEnricher()"
       ],
       "MemberSyntaxHashes": {
-        "CorrelationIdEnricher.Enrich(LogEvent, ILogEventPropertyFactory)": "6340a6bddb557ed8e1995e9712d3560d765308175a5ae8896c42af901069a61a"
+        "CorrelationIdEnricher.Enrich(LogEvent, ILogEventPropertyFactory)": "05798547f9d71569c5f4a418a61a485d886f03f9231ea57d99304fa7ebe9437a"
       }
     },
     "Shared/Logging/SharedLoggingExtensions.cs": {
@@ -21836,7 +21994,7 @@
         "SharedLoggingExtensions.StrictSeverity(LoggerSinkConfiguration, Action\u003CLoggerSinkConfiguration\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "SharedLoggingExtensions.UseSharedSerilog(IHostBuilder, string, Action\u003CLoggerSinkConfiguration, IConfiguration\u003E?)": "0d865d112621498bc16f6071694194baaeb58557ef6fce687bd1f4951654a7d3",
+        "SharedLoggingExtensions.UseSharedSerilog(IHostBuilder, string, Action\u003CLoggerSinkConfiguration, IConfiguration\u003E?)": "1a7599beafdb60102ae96cbd665458c9d9cee07667e22bca7c6619d2cb91d9d5",
         "SharedLoggingExtensions.ResolveRootLogsDirectory(string)": "4f0f1d3dccfc0ce000246358f2118c7fdd959e834fd95198be16bbbc875b116a",
         "SharedLoggingExtensions.StrictSeverity(LoggerSinkConfiguration, Action\u003CLoggerSinkConfiguration\u003E)": "855942feac0111ba408dab68946947363df995c9e34a4cd4122d3fdcb8e1fa22"
       }
@@ -23282,6 +23440,14 @@
         "MainLayout.TimeZoneService.get",
         "set_TimeZoneService",
         "MainLayout.TimeZoneService.set",
+        "\u003CCircuitActivity\u003Ek__BackingField",
+        "MainLayout.CircuitActivity.field",
+        "CircuitActivity",
+        "MainLayout.CircuitActivity",
+        "get_CircuitActivity",
+        "MainLayout.CircuitActivity.get",
+        "set_CircuitActivity",
+        "MainLayout.CircuitActivity.set",
         "HasActiveTenantSession",
         "MainLayout.HasActiveTenantSession",
         "get_HasActiveTenantSession",
@@ -23296,6 +23462,10 @@
         "MainLayout.HandleNavStateChanged()",
         "HandleTimeZoneChanged",
         "MainLayout.HandleTimeZoneChanged()",
+        "HandleCircuitActivityChanged",
+        "MainLayout.HandleCircuitActivityChanged()",
+        "HandleBeforeInternalNavigation",
+        "MainLayout.HandleBeforeInternalNavigation(AspNetCore.Components.Routing.LocationChangingContext)",
         "Dispose",
         "MainLayout.Dispose()",
         "OnAfterRenderAsync",
@@ -23306,10 +23476,12 @@
         "MainLayout.MainLayout()"
       ],
       "MemberSyntaxHashes": {
-        "MainLayout.OnInitialized()": "0f0d8af8f1b532fb4615aaeaac4b2957793e8504b98bd30f2c1ddea616e757d0",
+        "MainLayout.OnInitialized()": "476009775906aab2e8625696a38a32ff3036098a3f9326c45a2ac7ca12e252a9",
         "MainLayout.HandleNavStateChanged()": "420234fa7e46b1f1f7110415ddb79e7f70b78b5db47546bf43e8ff633fe788d9",
         "MainLayout.HandleTimeZoneChanged()": "a807801f7e2ef3f461a348209d068857455c4652fc0b84fe6e75d56c45fd2a5c",
-        "MainLayout.Dispose()": "1235b1f77acb6f7c79d7deb6f0ac816c89849baa3e7c65637c9f6369b09acac0",
+        "MainLayout.HandleCircuitActivityChanged()": "a9d0a33e506a30c0697de58efdabfcf6ddc609d0139da8c98c3cfc962389ec60",
+        "MainLayout.HandleBeforeInternalNavigation(AspNetCore.Components.Routing.LocationChangingContext)": "88fc169d5f0edf90ea693c0231adc130682623182a6b4b0a5464605a816d48a6",
+        "MainLayout.Dispose()": "2c5a7e16577cc2b4ecf975a16d80b34b76dabe3cf107f1f45505daf949aa6b02",
         "MainLayout.OnAfterRenderAsync(bool)": "c1966c6a0e97476d9c140d6fb76b91d22d64d4e883f30d57d313c36f759447ca",
         "MainLayout.SignOut()": "edee461f27a0d6d851de63d6fe52cbfb74c76e569e3bffc7fe97e0587b2ac651"
       }
@@ -24000,6 +24172,8 @@
       "KnownMembers": [
         "_isLoading",
         "ProgramHolisticView._isLoading",
+        "_loadCts",
+        "ProgramHolisticView._loadCts",
         "_healthSummary",
         "ProgramHolisticView._healthSummary",
         "_calendarEvents",
@@ -24035,9 +24209,9 @@
         "ProgramHolisticView.OnInitializedAsync()": "8589967c4abdde68e566d783a9bbfe7d46b24d6a36b8efea4a7016ce56231336",
         "ProgramHolisticView.HandleProjectContextChanged()": "9d83ac5fca8b5ba95fb0210c5f9f471f2547c201246bc34e5f9e7af3bf0791f3",
         "ProgramHolisticView.RefreshProgramDataAsync()": "0efd193b1bff345b196b560b851f7f729751aef0b83f0874e3838c941125106f",
-        "ProgramHolisticView.LoadDataAsync()": "84c7bb2669e8ef3ded09aa9fedd4a9f57a25af224a573148fe078c09c919db05",
+        "ProgramHolisticView.LoadDataAsync()": "1173e534971baf7ba6edb23f31be95c5e955c7672c8f7efaddaac1a9e53c53d9",
         "ProgramHolisticView.BuildTabs()": "a3535f19098bd0c58295ff437d1f7c7c8b6f8bcbe450c7fc53d451da509fa72d",
-        "ProgramHolisticView.Dispose()": "3d0bb32ce9635e2a337d3cbc304506c055a7172ae9eb32aa5667873eec66ceda"
+        "ProgramHolisticView.Dispose()": "c5abcf91e6648a1780143d0cf3bfe713b7093ddb35750cade8daeb2826bd394f"
       }
     },
     "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewHomeTab.razor.cs": {
@@ -24223,6 +24397,8 @@
       "KnownMembers": [
         "_isLoading",
         "ProjectHolisticView._isLoading",
+        "_loadCts",
+        "ProjectHolisticView._loadCts",
         "_healthSummary",
         "ProjectHolisticView._healthSummary",
         "_calendarEvents",
@@ -24260,9 +24436,9 @@
         "ProjectHolisticView.OnInitializedAsync()": "8589967c4abdde68e566d783a9bbfe7d46b24d6a36b8efea4a7016ce56231336",
         "ProjectHolisticView.HandleProjectContextChanged()": "9d83ac5fca8b5ba95fb0210c5f9f471f2547c201246bc34e5f9e7af3bf0791f3",
         "ProjectHolisticView.RefreshProjectDataAsync()": "61b3ee18f5eb3d5c5154208ac756657b18b285d4072ce45d6302b0d6122b9ff6",
-        "ProjectHolisticView.LoadDataAsync()": "f646c078c87c3693927dfa4cc7e0f236f6d2c47ca6ed8331c7d5cbc5650fa947",
+        "ProjectHolisticView.LoadDataAsync()": "1392dcae7d1d8bf804f55626a8dcc9c6cf9b87b2d20239288c707b83dcfaaf94",
         "ProjectHolisticView.BuildTabs()": "1ecdb2b94b92edfc05cce3f8a44904657a8112b7595e1d88a305df168f04ab75",
-        "ProjectHolisticView.Dispose()": "3d0bb32ce9635e2a337d3cbc304506c055a7172ae9eb32aa5667873eec66ceda"
+        "ProjectHolisticView.Dispose()": "c5abcf91e6648a1780143d0cf3bfe713b7093ddb35750cade8daeb2826bd394f"
       }
     },
     "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor.cs": {
@@ -25339,6 +25515,14 @@
         "SettingsProgramsTab.UnsavedChanges.get",
         "set_UnsavedChanges",
         "SettingsProgramsTab.UnsavedChanges.set",
+        "\u003CCorrelationContext\u003Ek__BackingField",
+        "SettingsProgramsTab.CorrelationContext.field",
+        "CorrelationContext",
+        "SettingsProgramsTab.CorrelationContext",
+        "get_CorrelationContext",
+        "SettingsProgramsTab.CorrelationContext.get",
+        "set_CorrelationContext",
+        "SettingsProgramsTab.CorrelationContext.set",
         "TenantFilterOption",
         "SettingsProgramsTab.TenantFilterOption",
         "_availableTenants",
@@ -25589,13 +25773,13 @@
         "SettingsProgramsTab.OpenCreateProgramWizard()": "efaa3fdd238cb35e331b67b8cf1fc06a6005ab84121e43a77425706bbb052a20",
         "SettingsProgramsTab.OpenViewProgramWizard(ProgramEntity)": "dd35c14a3686c011918c72ca6a53d33bc902686ca47d53c672f4b23e022af391",
         "SettingsProgramsTab.OpenEditProgramWizard(ProgramEntity)": "4718ab94e87ab763cf514067354220308c08c6f6c13b153e6f480d05fdf2ec3f",
-        "SettingsProgramsTab.OnProgramWizardSavedAsync(Core.Dtos.CreateProgramWizardState)": "13bd7c5a1405dadda0e2b023c1bb451ab745cb09ba15d1c9447f18b918c4fed2",
+        "SettingsProgramsTab.OnProgramWizardSavedAsync(Core.Dtos.CreateProgramWizardState)": "c3b0062bdf81e8cca42f0e38edc154e519788a237fd9db97dc8821c130536ba3",
         "SettingsProgramsTab.ToggleProgramExpanded(Guid)": "f5feda90d59dbb66b13aa0680012de0b4c656150f39d6c2c70859d554533c128",
         "SettingsProgramsTab.GetProjectStatusBadgeColor(ProjectStatusEnum)": "6eb3a0b6188ed18892515d761a1dba3d79fce1260a2f7b182e3f76714365cc32",
         "SettingsProgramsTab.OpenCreateProjectWizard(ProgramEntity)": "43836bc47bea0e048a05b199138282960fd202fc1a540962f7c3a1d9592d59a3",
         "SettingsProgramsTab.OpenViewProjectWizard(ProjectEntity)": "a3e98e93b3096b08c0cde2b277103c0b611ad288692d88d66b1cdd1523390c0c",
         "SettingsProgramsTab.OpenEditProjectWizard(ProjectEntity)": "4df53c4b38f3fce46b40e0475bc743bf6b70ef635a2cc46941e1e5b679a7596d",
-        "SettingsProgramsTab.OnProjectWizardSavedAsync(Core.Dtos.CreateProjectWizardState)": "1b4a80c025da7f44d132e0e5f7ebe2cf5975f69f5e86fb81dbde3e98c64c75c3",
+        "SettingsProgramsTab.OnProjectWizardSavedAsync(Core.Dtos.CreateProjectWizardState)": "e617c9fba957367c40e90da1dfd7beb9ce04ccc800468b66aea86cfd8e45d4de",
         "SettingsProgramsTab.Dispose()": "8cf226da2b5aeacc3edde4c43b22d06565ef72f10c3cdc79f7d706ce76495c74"
       }
     },
@@ -28350,7 +28534,7 @@
       "RelativePath": "Web/Components/Common/CreateWorkflowWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e87caf57067d14f192e33395d503f4f10905ee03d23ff0e23a246d1e97818826"
+        "$Markup": "8b38baaa581e835be050fb94f89e1207b8288c0b77ccef2dee7fd4707010ed53"
       }
     },
     "Web/Components/Common/DataListSelect.razor": {
@@ -28504,7 +28688,7 @@
       "RelativePath": "Web/Components/Layout/MainLayout.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "dc54461d724f11aabb54a058421058adaf07714fb71e9afec1a388c9a056b704"
+        "$Markup": "b0a439db427a2cad1ae3bdc125c9d826abcc238c461bb7bd9415ece0711b4027"
       }
     },
     "Web/Components/Layout/NavMenuComp.razor": {
@@ -28805,7 +28989,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsProgramsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "2594f8076fba8881f40a6989a45d5e49a28a51dedcacf9680736a3a350d353ec"
+        "$Markup": "0d431f723d92d1c7611d3e15d7e30279dbc33b8b692faeef7b26bc9640d2eae5"
       }
     },
     "Web/Components/Pages/Settings/SettingsSessionsTab.razor": {
@@ -28819,7 +29003,7 @@
       "RelativePath": "Web/Components/Pages/Settings/SettingsTenantsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "bdc9410dfbf45265989721f962c8b4849fa35430e27cbbb2850b98fde1e6f953"
+        "$Markup": "432daf3de1e311f239ae3bde06ce0338bb01556ea82f3c294fbd343e5e3486ad"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor": {
@@ -28840,7 +29024,7 @@
       "RelativePath": "Web/Components/Routes.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e554a6cd13a942e367b282581ae5cea751e5f9966e0c66c24ab2620ae4322732"
+        "$Markup": "173cd11e6e1712dd2e734c6f679783f4fb85ae99db22d4de5a4aee19c601bf63"
       }
     },
     "Shared/TabContainerComp.razor": {
@@ -28868,7 +29052,7 @@
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f6d1bab90df1911c3be7c039f89abeab5022653f07cf19abb7e1e5f7c913f915"
+        "$Markup": "ca5bfca3124423c2f0bb83f14fbf50a51b5c1f40a9e7d4dc68db8730a9b0dfb1"
       }
     },
     "Jobs/Pages/JobsDashboardPage.razor": {
@@ -28910,7 +29094,7 @@
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "708ff26fd58825380d4093fbadce36da2cb0939c5fc3e1ec25d0ff1d87106783"
+        "$Markup": "2fcc9d9a594cbeeaada2a7c369f7482ad199fa05c48282f5a4d13557cf2c3b8a"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectsDashboardPage.razor": {
@@ -29281,7 +29465,7 @@
       "RelativePath": "Web/Components/Layout/MainLayout.razor.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "e745f1ed6fe891706dd60dbff1d109257a87561b58471c189636a2692268d294"
+        "$Content": "6820551ea73cd66042d22dbaae058ad0784dcbe81a49a01e7c35d25d677002cb"
       }
     },
     "Web/Components/Layout/NavMenuComp.razor.css": {

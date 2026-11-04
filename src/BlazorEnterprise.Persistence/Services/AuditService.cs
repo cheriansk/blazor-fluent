@@ -20,33 +20,20 @@ using BlazorEnterprise.Core.Dtos.Response;
 
 using BlazorEnterprise.Persistence.Extensions;
 
-
-
 namespace BlazorEnterprise.Persistence.Services;
 
-
-
 internal class AuditService : IAuditService
-
 {
-
-    private readonly AppDbContext _dbContext;
-
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
-
     private readonly ITenantContext _tenantContext;
-
     private readonly IDateTimeProvider _dateTimeProvider;
-
     private readonly IServiceScopeFactory _scopeFactory;
-
     private readonly ILogger<AuditService> _logger;
-
-
 
     public AuditService(
 
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
 
         ICurrentUser currentUser,
 
@@ -57,24 +44,14 @@ internal class AuditService : IAuditService
         IServiceScopeFactory scopeFactory,
 
         ILogger<AuditService> logger)
-
     {
-
-        _dbContext = dbContext;
-
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
-
         _tenantContext = tenantContext;
-
         _dateTimeProvider = dateTimeProvider;
-
         _scopeFactory = scopeFactory;
-
         _logger = logger;
-
     }
-
-
 
     public async Task LogTenantSwitchAsync(
 
@@ -85,16 +62,12 @@ internal class AuditService : IAuditService
         string? reason = null,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, "LogTenantSwitch");
 
         var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "LogTenantSwitch");
-
         var now = _dateTimeProvider.Now;
-
-
 
         var targetTenantGuid = Guid.TryParse(toTenantId, out var parsedToGuid)
 
@@ -102,12 +75,8 @@ internal class AuditService : IAuditService
 
             : _tenantContext.TenantId;
 
-
-
         var record = new AuditRecordEntity
-
         {
-
             Id = Guid.CreateVersion7(),
 
             TenantId = targetTenantGuid, // Audit lives in target tenant's audit trail
@@ -131,24 +100,16 @@ internal class AuditService : IAuditService
             Updated = now,
 
             UpdatedBy = currentUserId
-
         };
 
-
-
         await SaveAuditRecordAsync(record, cancellationToken);
-
-
 
         _logger.LogInformation(
 
             "AUDIT [TenantSwitch]: User {UserId} switched tenant from {FromTenant} to {ToTenant}. Reason: {Reason}",
 
             currentUserId, fromTenantId, toTenantId, reason ?? "User interactive selection");
-
     }
-
-
 
     public async Task LogSecurityEventAsync(
 
@@ -159,23 +120,16 @@ internal class AuditService : IAuditService
         string? details = null,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, $"LogSecurityEvent:{action}");
 
         var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"LogSecurityEvent:{action}");
-
         var tenantId = _tenantContext.TenantId;
-
         var now = _dateTimeProvider.Now;
 
-
-
         var record = new AuditRecordEntity
-
         {
-
             Id = Guid.CreateVersion7(),
 
             TenantId = tenantId,
@@ -199,19 +153,12 @@ internal class AuditService : IAuditService
             Updated = now,
 
             UpdatedBy = currentUserId
-
         };
-
-
 
         await SaveAuditRecordAsync(record, cancellationToken);
 
-
-
         var logLevel = severity switch
-
         {
-
             AuditSeverityEnum.Information => LogLevel.Information,
 
             AuditSeverityEnum.Warning => LogLevel.Warning,
@@ -221,10 +168,7 @@ internal class AuditService : IAuditService
             AuditSeverityEnum.Critical => LogLevel.Critical,
 
             _ => LogLevel.Information
-
         };
-
-
 
         _logger.Log(
 
@@ -233,10 +177,7 @@ internal class AuditService : IAuditService
             "AUDIT [Security]: Action={Action}, Severity={Severity}, Tenant={TenantId}, User={UserId}, Details={Details}",
 
             action, severity, tenantId, currentUserId, details);
-
     }
-
-
 
     public async Task LogUserActivityAsync(
 
@@ -245,23 +186,16 @@ internal class AuditService : IAuditService
         string? details = null,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, $"LogUserActivity:{action}");
 
         var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"LogUserActivity:{action}");
-
         var tenantId = _tenantContext.TenantId;
-
         var now = _dateTimeProvider.Now;
 
-
-
         var record = new AuditRecordEntity
-
         {
-
             Id = Guid.CreateVersion7(),
 
             TenantId = tenantId,
@@ -285,33 +219,22 @@ internal class AuditService : IAuditService
             Updated = now,
 
             UpdatedBy = currentUserId
-
         };
 
-
-
         await SaveAuditRecordAsync(record, cancellationToken);
-
-
 
         _logger.LogInformation(
 
             "AUDIT [UserActivity]: Action={Action}, Tenant={TenantId}, User={UserId}, Details={Details}",
 
             action, tenantId, currentUserId, details);
-
     }
 
-
-
     private async Task SaveAuditRecordAsync(AuditRecordEntity record, CancellationToken cancellationToken)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         try
-
         {
-
             using var scope = _scopeFactory.CreateScope();
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
@@ -332,22 +255,15 @@ internal class AuditService : IAuditService
 
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-
-
             isolatedDbContext.AuditRecords.Add(record);
 
             await isolatedDbContext.SaveChangesAsync(cancellationToken);
-
         }
 
         catch (Exception ex)
-
         {
-
             _logger.LogError(ex, "Failed to persist audit record {RecordId} via isolated scope: {Description}", record.Id, record.Description);
-
         }
-
     }
 
     //REVIEWED-CSK
@@ -357,27 +273,20 @@ internal class AuditService : IAuditService
         AuditTrailFilterReqDto filter,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var targetTenantGuid = Guid.TryParse(filter.TenantId, out var parsedFilterGuid)
 
             ? parsedFilterGuid
 
             : _tenantContext.TenantId;
 
-
-
         var query = _dbContext.AuditRecords.Where(a => a.TenantId == targetTenantGuid)
 
             .AsNoTracking();
 
-
-
         if (filter.AllowedTenantIds != null && filter.AllowedTenantIds.Count > 0)
-
         {
-
             var allowedGuids = filter.AllowedTenantIds
 
                 .Select(id => Guid.TryParse(id, out var parsed) ? parsed : Guid.Empty)
@@ -387,55 +296,34 @@ internal class AuditService : IAuditService
                 .ToList();
 
             if (allowedGuids.Count > 0)
-
             {
-
                 query = query.Where(a => allowedGuids.Contains(a.TenantId));
-
             }
-
         }
-
-
 
         if (!string.IsNullOrWhiteSpace(filter.UserId))
-
         {
-
             query = query.Where(a => a.UserId == filter.UserId || a.UserEmail == filter.UserId);
-
         }
-
-
 
         if (filter.EventType.HasValue)
 
             query = query.Where(a => a.EventType == filter.EventType.Value);
 
-
-
         if (filter.Severity.HasValue)
 
             query = query.Where(a => a.Severity == filter.Severity.Value);
-
-
 
         if (filter.FromDate.HasValue)
 
             query = query.Where(a => a.Created >= filter.FromDate.Value);
 
-
-
         if (filter.ToDate.HasValue)
 
             query = query.Where(a => a.Created <= filter.ToDate.Value);
 
-
-
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-
         {
-
             var term = filter.SearchTerm.ToLower();
 
             query = query.Where(a =>
@@ -445,14 +333,9 @@ internal class AuditService : IAuditService
                 (a.UserId != null && a.UserId.ToLower().Contains(term)) ||
 
                 (a.EntityName != null && a.EntityName.ToLower().Contains(term)));
-
         }
 
-
-
         var totalCount = await query.CountWithAuditedBypassAsync(this, $"Audit trail search for Tenant '{filter.TenantId}'", cancellationToken);
-
-
 
         var items = await query
 
@@ -464,13 +347,8 @@ internal class AuditService : IAuditService
 
             .ToListWithAuditedBypassAsync(this, $"Audit trail paged view for Tenant '{filter.TenantId}'", cancellationToken);
 
-
-
         return PagedResultRespDto<AuditRecordEntity>.Create(items, totalCount, filter.PageNumber, filter.PageSize);
-
     }
-
-
 
     public async Task<string> LogExceptionAsync(
 
@@ -481,27 +359,20 @@ internal class AuditService : IAuditService
         AuditSeverityEnum severity = AuditSeverityEnum.Error,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var errorId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
-
         var now = _dateTimeProvider.Now;
 
         SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, "LogException");
 
         var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "LogException");
-
         var tenantId = _tenantContext.TenantId;
-
-
 
         // Structured JSON payload detailing the incident
 
         var exceptionPayload = new
-
         {
-
             IncidentReference = errorId,
 
             ExceptionType = exception.GetType().FullName,
@@ -513,30 +384,19 @@ internal class AuditService : IAuditService
             StackTrace = exception.StackTrace?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries),
 
             InnerException = exception.InnerException is not null ? new
-
             {
-
                 Type = exception.InnerException.GetType().FullName,
 
                 exception.InnerException.Message,
 
                 StackTrace = exception.InnerException.StackTrace?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-
             } : null
-
         };
 
-
-
         var changesJson = JsonSerializer.Serialize(exceptionPayload, new JsonSerializerOptions
-
         {
-
             WriteIndented = true
-
         });
-
-
 
         // 1. Always log structured incident to Serilog stream & rolling file sink
 
@@ -548,8 +408,6 @@ internal class AuditService : IAuditService
 
             errorId, contextDescription ?? "General", tenantId, currentUserId, exception.Message);
 
-
-
         // 2. Persist to audit.AuditRecords using an isolated scope
 
         // An isolated scope ensures that even if the caller's DbContext transaction is currently aborted/rolling back,
@@ -557,9 +415,7 @@ internal class AuditService : IAuditService
         // this exception record is guaranteed to be saved to PostgreSQL!
 
         try
-
         {
-
             using var scope = _scopeFactory.CreateScope();
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
@@ -586,12 +442,8 @@ internal class AuditService : IAuditService
 
             var isolatedDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-
-
             var record = new AuditRecordEntity
-
             {
-
                 Id = Guid.CreateVersion7(),
 
                 TenantId = tenantId,
@@ -623,32 +475,20 @@ internal class AuditService : IAuditService
                 Updated = now,
 
                 UpdatedBy = currentUserId
-
             };
-
-
 
             isolatedDbContext.AuditRecords.Add(record);
 
             await isolatedDbContext.SaveChangesAsync(cancellationToken);
-
         }
 
         catch (Exception persistEx)
-
         {
-
             _logger.LogCritical(persistEx, "Failed to persist exception audit record for Incident {ErrorId} to PostgreSQL!", errorId);
-
         }
 
-
-
         return errorId;
-
     }
-
-
 
     public async Task<List<EntityFieldHistoryRespDto>> GetEntityHistoryAsync(
 
@@ -659,23 +499,18 @@ internal class AuditService : IAuditService
         string? propertyName = null,
 
         CancellationToken cancellationToken = default)
-
     {
-
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var query = _dbContext.AuditRecords
 
             .AsNoTracking()
 
             .Where(a => a.EntityName == entityName && a.EntityId == entityId);
 
-
-
         // Zero Trust: Non-host users can only view audit trail for their own active tenant
 
         var activeTenant = _tenantContext.TenantId;
         query = query.Where(a => a.TenantId == activeTenant);
-
-
 
         var records = await query
 
@@ -683,32 +518,20 @@ internal class AuditService : IAuditService
 
             .ToListWithAuditedBypassAsync(this, $"Entity field history lookup for '{entityName}:{entityId}'", cancellationToken);
 
-
-
         var result = new List<EntityFieldHistoryRespDto>();
 
-
-
         foreach (var record in records)
-
         {
-
             var userEmail = !string.IsNullOrWhiteSpace(record.UserEmail)
 
                 ? record.UserEmail
 
                 : (!string.IsNullOrWhiteSpace(record.UserId) ? record.UserId : "System");
 
-
-
             if (string.IsNullOrWhiteSpace(record.ChangesJson))
-
             {
-
                 result.Add(new EntityFieldHistoryRespDto
-
                 {
-
                     AuditRecordId = record.Id.ToString(),
 
                     EntityName = record.EntityName ?? entityName,
@@ -732,101 +555,63 @@ internal class AuditService : IAuditService
                     Timestamp = record.Created,
 
                     Description = record.Description
-
                 });
 
                 continue;
-
             }
 
-
-
             try
-
             {
-
                 using var doc = JsonDocument.Parse(record.ChangesJson);
 
                 if (doc.RootElement.ValueKind != JsonValueKind.Object) continue;
 
-
-
                 foreach (var prop in doc.RootElement.EnumerateObject())
-
                 {
-
                     var propName = prop.Name;
-
-
 
                     if (!string.IsNullOrWhiteSpace(propertyName) &&
 
                         !string.Equals(propName, propertyName, StringComparison.OrdinalIgnoreCase))
-
                     {
-
                         continue;
-
                     }
-
-
 
                     string? oldVal = null;
 
                     string? newVal = null;
 
-
-
                     if (record.Operation == EntityOperationEnum.Update)
-
                     {
-
                         if (prop.Value.ValueKind == JsonValueKind.Object &&
 
                             (prop.Value.TryGetProperty("Old", out var oldElem) || prop.Value.TryGetProperty("old", out oldElem)) &&
 
                             (prop.Value.TryGetProperty("New", out var newElem) || prop.Value.TryGetProperty("new", out newElem)))
-
                         {
-
                             oldVal = oldElem.ValueKind == JsonValueKind.Null ? null : oldElem.ToString();
 
                             newVal = newElem.ValueKind == JsonValueKind.Null ? null : newElem.ToString();
-
                         }
 
                         else
-
                         {
-
                             newVal = prop.Value.ToString();
-
                         }
-
                     }
 
                     else if (record.Operation == EntityOperationEnum.Insert)
-
                     {
-
                         newVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
-
                     }
 
                     else if (record.Operation == EntityOperationEnum.Delete)
-
                     {
-
                         oldVal = prop.Value.ValueKind == JsonValueKind.Null ? null : prop.Value.ToString();
-
                     }
 
-
-
                     result.Add(new EntityFieldHistoryRespDto
-
                     {
-
                         AuditRecordId = record.Id.ToString(),
 
                         EntityName = record.EntityName ?? entityName,
@@ -850,31 +635,22 @@ internal class AuditService : IAuditService
                         Timestamp = record.Created,
 
                         Description = record.Description
-
                     });
-
                 }
-
             }
 
             catch (Exception ex)
-
             {
-
                 _logger.LogError(ex, "Failed to parse ChangesJson for audit record {AuditId}", record.Id);
-
             }
-
         }
 
-
-
         return result;
-
     }
 
     public async Task<int> PurgeAuditRecordsBeforeAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsRootAdmin)
         {
             throw new System.Security.SecurityException("Zero-Trust Security Violation: Purging audit records is strictly restricted to Root Super-Administrators.");
@@ -889,6 +665,4 @@ internal class AuditService : IAuditService
 
         return deletedCount;
     }
-
 }
-

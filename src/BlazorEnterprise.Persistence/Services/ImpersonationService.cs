@@ -10,20 +10,20 @@ namespace BlazorEnterprise.Persistence.Services;
 
 public class ImpersonationService : IImpersonationService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IAuditService _auditService;
     private readonly ILogger<ImpersonationService> _logger;
 
     public ImpersonationService(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IAuditService auditService,
         ILogger<ImpersonationService> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _auditService = auditService;
@@ -36,6 +36,7 @@ public class ImpersonationService : IImpersonationService
         int durationMinutes = 60,
         CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         // 1. Strict Host Admin Security Boundary
         if (!_currentUser.IsRootAdmin)
         {
@@ -107,6 +108,7 @@ public class ImpersonationService : IImpersonationService
 
     public async Task<Result> StopImpersonationAsync(CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var adminId = _currentUser.UserId;
         var activeGrants = await _dbContext.ImpersonationGrants
             .AsTracking()
@@ -133,6 +135,7 @@ public class ImpersonationService : IImpersonationService
 
     public async Task<ImpersonationGrantEntity?> GetActiveGrantAsync(CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var adminId = _currentUser.UserId;
         var now = DateTime.UtcNow;
 

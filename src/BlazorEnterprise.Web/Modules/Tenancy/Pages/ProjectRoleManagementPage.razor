@@ -17,25 +17,9 @@
 
 @using BlazorEnterprise.Infrastructure.Security
 
-
-
 @using Microsoft.AspNetCore.Authorization
 
-
-
-
-
-
-
-
-
-
-
-
-
 <PageTitle>Project Access Management</PageTitle>
-
-
 
 <CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
 
@@ -44,8 +28,6 @@
         <strong>Moved to Settings:</strong> Project Roles management has been consolidated into the <CskLink Href="/settings">Settings &gt; Projects</CskLink> tab.
 
     </CskMessageBar>
-
-
 
     <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="full-width">
 
@@ -69,8 +51,6 @@
 
     </CskStack>
 
-
-
     @if (!string.IsNullOrWhiteSpace(_statusMessage))
 
     {
@@ -82,8 +62,6 @@
         </CskMessageBar>
 
     }
-
-
 
     <!-- Project Selection Bar -->
 
@@ -109,8 +87,6 @@
 
                           Class="min-w-280" />
 
-
-
             @if (!string.IsNullOrWhiteSpace(_selectedProjectId))
 
             {
@@ -127,8 +103,6 @@
 
     </CskCard>
 
-
-
     <!-- Role Assignment Form (Collapsible Card) -->
 
     @if (_showAssignModal)
@@ -142,8 +116,6 @@
                 @(_isEditing ? "Update Project Role" : "Assign Tenant User to Project")
 
             </CskLabel>
-
-
 
             @if (!_isEditing && _tenantUsers.Count == 0)
 
@@ -193,8 +165,6 @@
 
                                       Class="full-width" />
 
-
-
                         @if (!string.IsNullOrWhiteSpace(_formEmail))
 
                         {
@@ -243,8 +213,6 @@
 
                     }
 
-
-
                     <div class="half-width">
 
                         <CskLabel Typo="Typography.Body" Class="mb-1">Project Role</CskLabel>
@@ -272,8 +240,6 @@
                         </CskSelect>
 
                     </div>
-
-
 
                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-3">
 
@@ -303,8 +269,6 @@
 
     }
 
-
-
     <!-- Impersonation Form (Collapsible Card) -->
 
     @if (_showImpersonateModal)
@@ -319,8 +283,6 @@
 
             </CskLabel>
 
-
-
             <CskLabel Typo="Typography.Body" Class="mb-3">
 
                 You are about to impersonate <strong>@_impersonateTargetName</strong> (<code>@_impersonateTargetEmail</code>) in tenant <strong>@TenantContext.TenantName</strong>.
@@ -328,8 +290,6 @@
                 This allows you to experience the application under this user's exact permissions.
 
             </CskLabel>
-
-
 
             <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
 
@@ -343,15 +303,11 @@
 
                                  Class="full-width" />
 
-
-
                 <div class="font-size-sm text-hint">
 
                     ⏳ Max Duration: 60 minutes. An exit button will be pinned to the top of all pages.
 
                 </div>
-
-
 
                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.Right" HorizontalGap="12">
 
@@ -381,8 +337,6 @@
 
     }
 
-
-
     <!-- Members Grid -->
 
     <CskCard>
@@ -402,8 +356,6 @@
             </CskButton>
 
         </CskStack>
-
-
 
         @if (_isLoading)
 
@@ -454,8 +406,6 @@
                 </span>
 
             </CskStack>
-
-
 
             <CskDataGrid Items="@FilteredMembers" ResizableColumns="true" GridTemplateColumns="1.5fr 1.5fr 120px 120px 180px">
 
@@ -584,8 +534,6 @@
         }
 
     </CskCard>
-
-
 
     <!-- Architecture Defense-in-Depth Info -->
 

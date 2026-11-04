@@ -189,3 +189,26 @@
         box-shadow: var(--mat-elevation-3);
     }
 }
+
+
+/* Indeterminate circuit activity bar */
+.circuit-activity-bar {
+    position: absolute;
+    top: 59px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--mat-primary, #6750A4) 0%, #a855f7 50%, var(--mat-primary, #6750A4) 100%);
+    background-size: 200% 100%;
+    animation: circuitPulse 1.2s infinite linear;
+    z-index: 101;
+}
+@keyframes circuitPulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.circuit-busy-guard {
+    pointer-events: none !important;
+    opacity: 0.72;
+    cursor: wait !important;
+}

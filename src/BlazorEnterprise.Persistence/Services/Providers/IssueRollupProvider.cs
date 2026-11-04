@@ -7,11 +7,11 @@ namespace BlazorEnterprise.Persistence.Services.Providers;
 
 public class IssueRollupProvider : IWorkItemRollupProvider
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public IssueRollupProvider(AppDbContext context)
+    public IssueRollupProvider(IDbContextFactory<AppDbContext> dbFactory)
     {
-        _context = context;
+        _dbFactory = dbFactory;
     }
 
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.Issue;
@@ -25,6 +25,7 @@ public class IssueRollupProvider : IWorkItemRollupProvider
         DateTime endUtc,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var query = _context.Issues
             .AsNoTracking()
             .Where(i => i.TenantId == tenantId && !i.IsDeleted && i.DueDate >= startUtc && i.DueDate <= endUtc);

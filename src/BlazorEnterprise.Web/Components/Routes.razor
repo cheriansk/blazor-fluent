@@ -11,6 +11,7 @@
 @inject ICurrentUser CurrentUser
 @inject ITenantContext TenantContext
 @inject ICorrelationContext CorrelationContext
+@inject ICircuitActivityTracker CircuitActivity
 @implements IDisposable
 
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFoundPage)">
@@ -60,6 +61,7 @@
 
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
+        CircuitActivity.ResetNavigationToken();
         // Cycle CorrId on every page navigation so logs for the new view/page have their own discrete correlation
         var corrId = CorrelationContext.Renew();
         using (LogContext.PushProperty("CorrelationId", corrId))

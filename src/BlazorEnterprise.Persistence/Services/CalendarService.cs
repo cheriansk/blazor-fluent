@@ -12,18 +12,18 @@ namespace BlazorEnterprise.Persistence.Services;
 
 public class CalendarService : ICalendarService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly IEnumerable<IWorkItemRollupProvider> _rollupProviders;
     private readonly ICurrentUser _currentUser;
     private readonly ILogger<CalendarService> _logger;
 
     public CalendarService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         IEnumerable<IWorkItemRollupProvider> rollupProviders,
         ICurrentUser currentUser,
         ILogger<CalendarService> logger)
     {
-        _context = context;
+        _dbFactory = dbFactory;
         _rollupProviders = rollupProviders;
         _currentUser = currentUser;
         _logger = logger;
@@ -35,7 +35,8 @@ public class CalendarService : ICalendarService
         DateTime startUtc,
         DateTime endUtc,
         CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         // 1. Direct program calendar entries
         var query = _context.ProgramCalendars
             .AsNoTracking()
@@ -92,7 +93,8 @@ public class CalendarService : ICalendarService
         DateTime startUtc,
         DateTime endUtc,
         CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         // 1. Direct project calendar entries
         var query = _context.ProjectCalendars
             .AsNoTracking()
@@ -149,7 +151,8 @@ public class CalendarService : ICalendarService
         DateTime startUtc,
         DateTime endUtc,
         CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         // 1. Direct user calendar entries
         Guid.TryParse(userId, out var userGuid);
         var directEntries = await _context.UserCalendars
@@ -200,7 +203,8 @@ public class CalendarService : ICalendarService
         Guid programId,
         bool forEdit = false,
         CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var query = _context.ProgramCalendars
             .WithTracking(forEdit)
             .Where(c => c.ProgramId == programId && !c.IsDeleted);
@@ -218,7 +222,8 @@ public class CalendarService : ICalendarService
         Guid projectId,
         bool forEdit = false,
         CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var query = _context.ProjectCalendars
             .WithTracking(forEdit)
             .Where(c => c.ProjectId == projectId && !c.IsDeleted);
@@ -232,7 +237,8 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<Result<ProgramCalendarEntity>> CreateProgramCalendarEntryAsync(ProgramCalendarEntity entry, CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var existing = await _context.ProgramCalendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entry.Id, ct);
@@ -268,7 +274,8 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<Result<ProjectCalendarEntity>> CreateProjectCalendarEntryAsync(ProjectCalendarEntity entry, CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var existing = await _context.ProjectCalendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entry.Id, ct);
@@ -306,7 +313,8 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<Result<UserCalendarEntity>> CreateUserCalendarEntryAsync(UserCalendarEntity entry, CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _context.UserCalendars.AddAsync(entry, ct);
@@ -321,7 +329,8 @@ public class CalendarService : ICalendarService
     }
 
     public async Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevelEnum level, CancellationToken ct = default)
-    {
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             if (level == TaskLevelEnum.Program)

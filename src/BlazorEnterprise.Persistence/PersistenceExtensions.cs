@@ -27,9 +27,11 @@ public static class PersistenceExtensions
         services.TryAddScoped<ITenantContext, TenantContext>();
         services.TryAddScoped<IProjectContext, ProjectContext>();
         services.TryAddScoped<IUnsavedChangesStateService, UnsavedChangesStateService>();
+        services.TryAddScoped<ICircuitActivityTracker, CircuitActivityTracker>();
 
         // 3. Register forensic audit service (scoped)
         services.TryAddScoped<IAuditService, AuditService>();
+        services.TryAddScoped<ISafeSaveService, SafeSaveService>();
 
         // 4. Register interceptors (Singletons — thread-safe, dynamically read context from AppDbContext)
         services.AddSingleton<ZeroTrustDbCommandInterceptor>();
@@ -55,6 +57,10 @@ public static class PersistenceExtensions
         }
 
         var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+        dataSourceBuilder.ConnectionStringBuilder.MaxPoolSize = Math.Max(dataSourceBuilder.ConnectionStringBuilder.MaxPoolSize, 200);
+        dataSourceBuilder.ConnectionStringBuilder.MinPoolSize = Math.Max(dataSourceBuilder.ConnectionStringBuilder.MinPoolSize, 10);
+        dataSourceBuilder.ConnectionStringBuilder.Timeout = Math.Max(dataSourceBuilder.ConnectionStringBuilder.Timeout, 15);
+        dataSourceBuilder.ConnectionStringBuilder.CommandTimeout = Math.Max(dataSourceBuilder.ConnectionStringBuilder.CommandTimeout, 30);
         var npgsqlDataSource = dataSourceBuilder.Build();
         services.AddSingleton(npgsqlDataSource);
 

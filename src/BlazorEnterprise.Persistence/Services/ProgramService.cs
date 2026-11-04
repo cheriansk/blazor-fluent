@@ -16,22 +16,25 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 public class ProgramService : IProgramService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUser _currentUser;
     private readonly IHierarchyAuthorizationService _hierarchyAuth;
     private readonly IAuditService _auditService;
+    private readonly ISafeSaveService _safeSaveService;
     private readonly ILogger<ProgramService> _logger;
 
     public ProgramService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
         ICurrentUser currentUser,
         IHierarchyAuthorizationService hierarchyAuth,
         IAuditService auditService,
+        ISafeSaveService safeSaveService,
         ILogger<ProgramService> logger)
     {
-        _context = context;
+        _dbFactory = dbFactory;
+        _safeSaveService = safeSaveService;
         _tenantContext = tenantContext;
         _currentUser = currentUser;
         _hierarchyAuth = hierarchyAuth;
@@ -41,6 +44,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<ProgramEntity>> GetProgramsAsync(string tenantSlug, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(tenantSlug)) return [];
 
         var normalizedSlug = tenantSlug.Trim().ToLowerInvariant();
@@ -76,6 +80,7 @@ public class ProgramService : IProgramService
 
     public async Task<Result<ProgramEntity>> GetProgramByIdAsync(Guid programId, bool forEdit = false, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty) return Result<ProgramEntity>.Failure("Invalid Program ID.");
 
         var userId = _currentUser.UserId;
@@ -110,6 +115,7 @@ public class ProgramService : IProgramService
         ProgramStatusEnum status = ProgramStatusEnum.Active,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (string.IsNullOrWhiteSpace(tenantSlug)) return Result<ProgramEntity>.Failure("Tenant slug is required.");
         if (string.IsNullOrWhiteSpace(name)) return Result<ProgramEntity>.Failure("Program name is required.");
         if (string.IsNullOrWhiteSpace(code)) return Result<ProgramEntity>.Failure("Program code is required.");
@@ -175,8 +181,10 @@ public class ProgramService : IProgramService
         DateTime? targetEndDateUtc,
         ProgramStatusEnum status,
         bool isActive,
+        uint version = 0,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty) return Result<ProgramEntity>.Failure("Invalid Program ID.");
         if (string.IsNullOrWhiteSpace(name)) return Result<ProgramEntity>.Failure("Program name is required.");
         if (string.IsNullOrWhiteSpace(code)) return Result<ProgramEntity>.Failure("Program code is required.");
@@ -217,7 +225,20 @@ public class ProgramService : IProgramService
         program.Status = status;
         program.IsActive = isActive;
 
-        await _context.SaveChangesAsync(ct);
+        if (version > 0)
+        {
+            _context.ApplyOriginalVersion(program, new VersionHolder(version));
+        }
+
+        var saveResult = await _safeSaveService.SaveAsync(_context, ct);
+        if (saveResult.Status == SaveStatus.Conflict)
+        {
+            return Result<ProgramEntity>.Failure("Concurrency Conflict: Another user updated this program while you were editing. To prevent data loss, no changes were saved. Please re-open the program to view the latest changes.");
+        }
+        if (saveResult.Status != SaveStatus.Ok)
+        {
+            return Result<ProgramEntity>.Failure(saveResult.Message ?? "Failed to update program due to database constraint violation.");
+        }
 
         await _auditService.LogUserActivityAsync(
             $"Updated program '{program.Name}' ({program.Code})",
@@ -229,6 +250,7 @@ public class ProgramService : IProgramService
 
     public async Task<Result> SyncProgramAdminsAsync(Guid programId, IEnumerable<Guid> adminUserIds, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty) return Result.Failure("Invalid Program ID.");
 
         var program = await _context.Programs.AsNoTracking().FirstOrDefaultAsync(p => p.Id == programId && !p.IsDeleted, ct);
@@ -293,6 +315,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<ProjectEntity>> GetProgramProjectsAsync(Guid programId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty) return [];
 
         var userId = _currentUser.UserId;
@@ -307,6 +330,7 @@ public class ProgramService : IProgramService
 
     public async Task<ProgramHealthSummaryDto> GetProgramHealthAsync(Guid programId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty) return new ProgramHealthSummaryDto();
 
         var program = await _context.Programs
@@ -424,6 +448,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<RiskEntity>> GetProgramRisksAsync(Guid programId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Risks
             .AsNoTracking()
             .Where(r => r.ProgramId == programId && !r.IsDeleted)
@@ -433,6 +458,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<AssumptionEntity>> GetProgramAssumptionsAsync(Guid programId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Assumptions
             .AsNoTracking()
             .Where(a => a.ProgramId == programId && !a.IsDeleted)
@@ -442,6 +468,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<IssueEntity>> GetProgramIssuesAsync(Guid programId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Issues
             .AsNoTracking()
             .Where(i => i.ProgramId == programId && !i.IsDeleted)
@@ -451,6 +478,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetProgramBlockersAsync(Guid programId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.WorkDependencies
             .AsNoTracking()
             .Where(b => b.ProgramId == programId && !b.IsDeleted)

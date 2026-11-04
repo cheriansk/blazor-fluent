@@ -43,7 +43,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 
 using Microsoft.AspNetCore.RateLimiting;
 
-
 using BlazorEnterprise.Shared.Logging;
 using BlazorEnterprise.Shared.UI.Extensions;
 
@@ -55,13 +54,9 @@ using Serilog.Events;
 
 using System.Threading.RateLimiting;
 
-
-
 // 0. Npgsql PostgreSQL Timestamp Compatibility (prevents DateTimeKind.Unspecified crashes)
 
 // AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
-
 
 // 1. Serilog Two-Stage Bootstrapping (captures early startup crashes)
 
@@ -71,42 +66,27 @@ Log.Logger = new LoggerConfiguration()
 
     .CreateBootstrapLogger();
 
-
-
 try
-
 {
-
     Log.Information("Starting BlazorEnterprise application host...");
 
-
-
     var builder = WebApplication.CreateBuilder(args);
-
-
 
     // Enforce DI scope validation & build validation across all environments to fail fast on captive dependencies
 
     builder.Host.UseDefaultServiceProvider((context, options) =>
-
     {
-
         options.ValidateScopes = true;
 
         options.ValidateOnBuild = true;
-
     });
-
-
 
     // Azure Key Vault configuration source for any environment when KeyVault:Uri is specified
 
     var keyVaultUri = builder.Configuration["KeyVault:Uri"];
 
     if (!string.IsNullOrWhiteSpace(keyVaultUri))
-
     {
-
         builder.Configuration.AddAzureKeyVault(
 
             new Uri(keyVaultUri),
@@ -114,70 +94,38 @@ try
             new DefaultAzureCredential());
 
         Log.Information("Azure Key Vault configuration source registered: {Uri}", keyVaultUri);
-
     }
 
     else if (builder.Environment.IsProduction())
-
     {
-
         Log.Warning("KeyVault:Uri not configured — checking environment and secret providers for production secrets.");
-
     }
 
-
-
     if (builder.Environment.IsProduction())
-
     {
-
-
-
         // Production Security Startup Gate: Fail-closed on missing or placeholder secrets
 
         var dbConn = builder.Configuration.GetConnectionString("DefaultConnection");
-
         var integritySecret = builder.Configuration["Security:IntegritySecret"];
-
         var masterKey = builder.Configuration["Security:MasterEncryptionKey"];
 
-
-
         if (string.IsNullOrWhiteSpace(dbConn) || dbConn.Contains("__SET_VIA_"))
-
         {
-
             throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'ConnectionStrings:DefaultConnection' is not configured or contains placeholder credentials.");
-
         }
-
-
 
         if (string.IsNullOrWhiteSpace(integritySecret) || integritySecret.Contains("__SET_VIA_") || integritySecret.Length < 32)
-
         {
-
             throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'Security:IntegritySecret' must be configured in Azure Key Vault or environment variables with at least 32 characters.");
-
         }
-
-
 
         if (string.IsNullOrWhiteSpace(masterKey) || masterKey.Contains("__SET_VIA_") || masterKey.Length < 32)
-
         {
-
             throw new InvalidOperationException("CRITICAL PRODUCTION SECURITY ERROR: 'Security:MasterEncryptionKey' must be configured in Azure Key Vault or environment variables with at least 32 characters.");
-
         }
 
-
-
         Log.Information("Production Security Startup Gate passed: All required secrets and connection strings validated.");
-
     }
-
-
 
     // 2. Configure Serilog using Shared Serilog with cross-file Correlation ID and configurable splitting
     builder.Host.UseSharedSerilog("BlazorEnterprise", configureExtraSinks: (wt, cfg) =>
@@ -185,16 +133,12 @@ try
         wt.TeamsAlert(cfg);
     });
 
-
-
     // 3. Add presentation and UI services (with enterprise SignalR & Circuit options)
 
     builder.Services.AddRazorComponents()
 
         .AddInteractiveServerComponents(options =>
-
         {
-
             options.DetailedErrors = builder.Environment.IsDevelopment();
 
             options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
@@ -202,33 +146,21 @@ try
             options.DisconnectedCircuitMaxRetained = 100;
 
             options.MaxBufferedUnacknowledgedRenderBatches = 10;
-
         });
 
-
-
     builder.Services.AddServerSideBlazor(options =>
-
     {
-
         options.DetailedErrors = builder.Environment.IsDevelopment();
 
         options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
 
         options.DisconnectedCircuitMaxRetained = 100;
-
     });
-
-
 
     builder.Services.AddScoped<CircuitHandler, BlazorEnterprise.Web.Infrastructure.Observability.BlazorCircuitObservabilityHandler>();
 
-
-
     builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
-
     {
-
         options.MaximumReceiveMessageSize = 128 * 1024; // 128 KB
 
         options.KeepAliveInterval = TimeSpan.FromSeconds(15);
@@ -238,7 +170,6 @@ try
         options.HandshakeTimeout = TimeSpan.FromSeconds(15);
 
         options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-
     });
 
     builder.Services.AddSharedUI();
@@ -251,30 +182,23 @@ try
 
     builder.Services.AddScoped<IUserTimeZoneService, UserTimeZoneService>();
 
-
-
     // 4. Authentication & Authorization State Provider with Dual Policy Wiring (FSH Standard)
 
     builder.Services.AddAuthentication();
 
     builder.Services.AddAuthorization(options =>
-
     {
-
         var defaultPolicy = new AuthorizationPolicyBuilder()
 
             .RequireAuthenticatedUser()
 
             .Build();
 
-
-
         options.DefaultPolicy = defaultPolicy;
 
         options.FallbackPolicy = defaultPolicy;
 
         options.AddPolicy(BlazorEnterprise.Core.Security.AuthorizationPolicies.HostAdminOnly, policy => policy.RequireRole("RootAdmin"));
-
     });
 
     builder.Services.AddCascadingAuthenticationState();
@@ -287,13 +211,9 @@ try
 
     builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CurrentUserAuthenticationStateProvider>());
 
-
-
     // 5. Validation Architecture: Register all Tier 1 (Page) and Tier 2 (Entity) validators from Core
 
     builder.Services.AddValidatorsFromAssemblyContaining<BaseEntity>();
-
-
 
     // 6. Modular Monolith Registrations (Persistence, Infrastructure, Jobs)
 
@@ -301,55 +221,64 @@ try
 
     builder.Services.AddInfrastructure(builder.Configuration);
 
-
-
     var enableHostedJobsListener = builder.Configuration.GetValue<bool>("Jobs:EnableHostedListener", true);
-
     var enableScheduler = builder.Configuration.GetValue<bool>("Jobs:EnableScheduler", true);
 
     builder.Services.AddBackgroundJobs(enableListener: enableHostedJobsListener, enableScheduler: enableScheduler);
 
-
-
     // 7. Security Hardening: Request Body Limits (Anti-Pattern 5), Rate Limiting (Anti-Pattern 7) & Secure Cookie Policy
 
     builder.WebHost.ConfigureKestrel(serverOptions =>
-
     {
-
         serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB limit
-
     });
-
-
 
     builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
-
     {
-
         options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB limit
-
     });
 
-
-
     builder.Services.AddRateLimiter(options =>
-
     {
-
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+        options.OnRejected = (ctx, ct) =>
+        {
+            var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var tenant = ctx.HttpContext.User.FindFirst("tenant_id")?.Value ?? "none";
+            var user = ctx.HttpContext.User.Identity?.Name ?? ctx.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+            var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            logger.LogWarning("HTTP Rate limit exceeded on {Path} for Tenant={TenantId}, User={User}, IP={ClientIp}",
+                ctx.HttpContext.Request.Path, tenant, user, ip);
+            return ValueTask.CompletedTask;
+        };
 
+        // Dedicated Named Policy: Razor Components Page Navigation & Full-Page Load Limiter
+        // Uses TokenBucket algorithm partitioned by tenant:user (or IP for anonymous users).
+        // Protects against rapid refresh spam and URL switching while exempting active SignalR circuit WebSocket traffic.
+        options.AddPolicy("page", httpContext =>
+        {
+            var tenant = httpContext.User.FindFirst("tenant_id")?.Value ?? "none";
+            var key = httpContext.User.Identity?.IsAuthenticated == true
+                ? $"{tenant}:{httpContext.User.Identity.Name ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "user"}"
+                : httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon";
+
+            return RateLimitPartition.GetTokenBucketLimiter(
+                key,
+                _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 60,
+                    TokensPerPeriod = 20,
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0
+                });
+        });
 
         // Global Rate Limiter: IP-partitioned sliding window (200 requests/minute), exempting static assets and health checks
 
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-
         {
-
             var path = httpContext.Request.Path.Value ?? string.Empty;
-
-
 
             // Exempt static assets, blazor framework bundles, and health check probes
 
@@ -372,14 +301,9 @@ try
                 path.EndsWith(".svg") ||
 
                 path.EndsWith(".woff2"))
-
             {
-
                 return RateLimitPartition.GetNoLimiter("StaticOrHealth");
-
             }
-
-
 
             var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
 
@@ -388,9 +312,7 @@ try
                 clientIp,
 
                 _ => new SlidingWindowRateLimiterOptions
-
                 {
-
                     PermitLimit = 200,
 
                     Window = TimeSpan.FromMinutes(1),
@@ -398,19 +320,13 @@ try
                     SegmentsPerWindow = 6,
 
                     QueueLimit = 0
-
                 });
-
         });
-
-
 
         // Dedicated Named Policy: Login Endpoint (10 requests/minute fixed window)
 
         options.AddFixedWindowLimiter("login", opt =>
-
         {
-
             opt.Window = TimeSpan.FromMinutes(1);
 
             opt.PermitLimit = 10;
@@ -418,17 +334,12 @@ try
             opt.QueueLimit = 0;
 
             opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-
         });
-
-
 
         // Dedicated Named Policy: API Endpoints (60 requests/minute sliding window)
 
         options.AddPolicy("api", httpContext =>
-
         {
-
             var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
 
             return RateLimitPartition.GetSlidingWindowLimiter(
@@ -436,9 +347,7 @@ try
                 clientIp,
 
                 _ => new SlidingWindowRateLimiterOptions
-
                 {
-
                     PermitLimit = 60,
 
                     Window = TimeSpan.FromMinutes(1),
@@ -446,19 +355,13 @@ try
                     SegmentsPerWindow = 6,
 
                     QueueLimit = 0
-
                 });
-
         });
-
-
 
         // Dedicated Named Policy: File Upload Pipeline (10 uploads/minute fixed window)
 
         options.AddPolicy("file-upload", httpContext =>
-
         {
-
             var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
 
             return RateLimitPartition.GetFixedWindowLimiter(
@@ -466,27 +369,19 @@ try
                 clientIp,
 
                 _ => new FixedWindowRateLimiterOptions
-
                 {
-
                     PermitLimit = 10,
 
                     Window = TimeSpan.FromMinutes(1),
 
                     QueueLimit = 0
-
                 });
-
         });
-
-
 
         // Dedicated Named Policy: Data Export Operations (5 exports/minute fixed window)
 
         options.AddPolicy("export", httpContext =>
-
         {
-
             var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
 
             return RateLimitPartition.GetFixedWindowLimiter(
@@ -494,36 +389,24 @@ try
                 clientIp,
 
                 _ => new FixedWindowRateLimiterOptions
-
                 {
-
                     PermitLimit = 5,
 
                     Window = TimeSpan.FromMinutes(1),
 
                     QueueLimit = 0
-
                 });
-
         });
-
     });
 
-
-
     builder.Services.AddCookiePolicy(options =>
-
     {
-
         options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
 
         options.Secure = CookieSecurePolicy.Always;
 
         options.MinimumSameSitePolicy = SameSiteMode.Strict;
-
     });
-
-
 
     // Strongly typed configuration options with zero-trust startup validation
 
@@ -537,8 +420,6 @@ try
 
         .ValidateOnStart();
 
-
-
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.SecurityOptions>()
 
         .BindConfiguration(BlazorEnterprise.Core.Configuration.SecurityOptions.SectionName)
@@ -549,23 +430,17 @@ try
 
         .ValidateOnStart();
 
-
-
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.CspOptions>()
 
         .BindConfiguration(BlazorEnterprise.Core.Configuration.CspOptions.SectionName)
 
         .ValidateOnStart();
 
-
-
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.CachingOptions>()
 
         .BindConfiguration(BlazorEnterprise.Core.Configuration.CachingOptions.SectionName)
 
         .ValidateOnStart();
-
-
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevLoginOptions>()
         .BindConfiguration(BlazorEnterprise.Core.Configuration.DevLoginOptions.SectionName)
@@ -577,8 +452,6 @@ try
     {
         Log.Fatal("FATAL SECURITY WARNING: Local passwordless email login ('Auth:DevLogin:Enabled') is ACTIVE in Development mode. This MUST be removed or disabled before production deployment!");
     }
-
-
 
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions>()
         .BindConfiguration(BlazorEnterprise.Core.Configuration.DevelopmentSeedOptions.SectionName)
@@ -625,8 +498,6 @@ try
     builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions>()
         .BindConfiguration(BlazorEnterprise.Core.Configuration.ProprietaryStorageOptions.SectionName);
 
-
-
     // 8. Health Checks: Liveness (/healthz) + Readiness (/health/ready)
 
     builder.Services.AddHealthChecks()
@@ -643,63 +514,42 @@ try
 
             tags: ["ready", "jobs"]);
 
-
-
     // 9. Observability: OpenTelemetry → Azure Monitor (Application Insights)
 
     var aiConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
 
     if (!string.IsNullOrWhiteSpace(aiConnectionString))
-
     {
-
         builder.Services.AddOpenTelemetry()
 
             .UseAzureMonitor(options =>
-
             {
-
                 options.ConnectionString = aiConnectionString;
-
             });
 
         Log.Information("OpenTelemetry → Azure Monitor configured.");
-
     }
 
     else
-
     {
-
         Log.Warning("ApplicationInsights:ConnectionString is not configured. OpenTelemetry tracing disabled.");
-
     }
-
-
 
     var app = builder.Build();
     BlazorEnterprise.Core.Utilities.SystemIdentityUtility.SetCurrent(app.Services.GetRequiredService<BlazorEnterprise.Core.Contracts.ISystemIdentity>());
 
-
-
     // 10. Database Migration and Root Seeding in Development (creates tables and seeds root anchor)
 
     if (app.Environment.IsDevelopment())
-
     {
-
         try
-
         {
-
             Log.Information("Applying EF Core database migrations in Development...");
 
             using var scope = app.Services.CreateScope();
 
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
-
             var rootAdminService = scope.ServiceProvider.GetRequiredService<BlazorEnterprise.Core.Contracts.IRootAdminService>();
-
             var tenantContext = scope.ServiceProvider.GetRequiredService<BlazorEnterprise.Core.Contracts.ITenantContext>();
 
             tenantContext.SetTenant(rootAdminService.RootTenantId, rootAdminService.RootTenantSlug, rootAdminService.RootTenantName);
@@ -707,99 +557,64 @@ try
             var bootstrapEmail = app.Configuration["Security:SystemBootstrapEmail"];
 
             if (string.IsNullOrWhiteSpace(bootstrapEmail))
-
             {
-
                 throw new InvalidOperationException("Zero-Trust Security Violation: 'Security:SystemBootstrapEmail' must be configured for startup migration and seeding.");
-
             }
 
             currentUser?.SetSystemDaemon("StartupMigration", bootstrapEmail);
 
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-
-
             // Inspect for pending entity changes not captured in a migration
 
             try
-
             {
-
                 if (db.Database.HasPendingModelChanges())
-
                 {
-
                     Log.Fatal("⚠️ [FATAL SCHEMA DRIFT DETECTED] The EF Core model for 'AppDbContext' has pending entity changes that have not been captured in a migration! Please run 'dotnet ef migrations add <Name>' to generate the missing migration.");
-
                 }
-
             }
 
             catch (Exception ex)
-
             {
-
                 Log.Warning(ex, "Could not evaluate pending model changes during startup check.");
-
             }
-
-
 
             db.Database.Migrate();
 
             Log.Information("Database migrations applied successfully.");
 
-
-
             Log.Information("Seeding default root tenant anchor and designated super-administrators...");
 
             await BlazorEnterprise.Persistence.Initialization.InitialDatabaseSeeder.SeedAsync(app.Services);
-
-
-
         }
 
         catch (Exception ex)
-
         {
-
             Log.Fatal(ex, "Failed to apply database migrations or seed initial data on startup. Please ensure PostgreSQL is running and connection string 'DefaultConnection' is valid.");
 
             throw;
-
         }
-
     }
-
-
 
     // Configure the HTTP request pipeline.
 
     if (!app.Environment.IsDevelopment())
-
     {
-
         app.UseExceptionHandler("/Error", createScopeForErrors: true);
 
         // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 
         app.UseHsts();
-
     }
 
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-
-
     // 6. Reverse Proxy & Forwarded Headers (preserves real client IP and HTTPS scheme behind Azure App Service / Cloudflare)
 
     var forwardedHeadersOptions = new ForwardedHeadersOptions
-
     {
-
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-
     };
 
     forwardedHeadersOptions.KnownNetworks.Clear();
@@ -808,15 +623,9 @@ try
 
     app.UseForwardedHeaders(forwardedHeadersOptions);
 
-
-
     app.UseCookiePolicy();
 
-
-
     app.UseHttpsRedirection();
-
-
 
     // 7. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
 
@@ -824,24 +633,16 @@ try
 
     app.UseMiddleware<BlazorEnterprise.Web.Infrastructure.Middleware.CorrelationIdMiddleware>();
 
-
-
     // 8. Serilog HTTP Request Logging with Diagnostic Context Enrichment & Noise Filtering
 
     app.UseSerilogRequestLogging(options =>
-
     {
-
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-
-
 
         // Silence noisy static web assets (_framework, _content, .css, .js, fonts, images)
 
         options.GetLevel = (httpContext, elapsed, ex) =>
-
         {
-
             if (ex != null || httpContext.Response.StatusCode >= 500)
 
                 return LogEventLevel.Error;
@@ -849,8 +650,6 @@ try
             if (httpContext.Response.StatusCode >= 400)
 
                 return LogEventLevel.Warning;
-
-
 
             var path = httpContext.Request.Path.Value;
 
@@ -871,68 +670,44 @@ try
                 path.EndsWith(".svg") ||
 
                 path.EndsWith(".woff2")))
-
             {
-
                 return LogEventLevel.Verbose;
-
             }
 
-
-
             return LogEventLevel.Information;
-
         };
-
-
 
         // Diagnostic context enrichment: TenantId, UserId, ClientIp
 
         options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-
         {
-
             diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
 
             diagnosticContext.Set("Host", httpContext.Request.Host.Value);
 
-
-
             var tenantContext = httpContext.RequestServices.GetService<ITenantContext>();
 
             if (tenantContext?.HasActiveTenant == true)
-
             {
-
                 diagnosticContext.Set("TenantId", tenantContext.TenantId);
-
             }
-
-
 
             var currentUser = httpContext.RequestServices.GetService<ICurrentUser>();
 
             if (currentUser?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(currentUser.UserId))
-
             {
-
                 diagnosticContext.Set("UserId", currentUser.UserId);
-
             }
-
         };
-
     });
-
-
 
     app.UseAntiforgery();
 
-    app.UseRateLimiter();
+    app.UseAuthentication();
 
     app.UseAuthorization();
 
-
+    app.UseRateLimiter();
 
     app.MapStaticAssets()
 
@@ -942,35 +717,25 @@ try
 
         .AddInteractiveServerRenderMode()
 
-        .RequireAuthorization();
+        .RequireAuthorization()
 
-
+        .RequireRateLimiting("page");
 
     // Health Check endpoints (unauthenticated probes)
 
     app.MapHealthChecks("/healthz", new HealthCheckOptions
-
     {
-
         Predicate = _ => false,
 
         AllowCachingResponses = false
-
     }).AllowAnonymous();
 
-
-
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
-
     {
-
         Predicate = check => check.Tags.Contains("ready"),
 
         AllowCachingResponses = false
-
     }).AllowAnonymous();
-
-
 
     // Content Security Policy (CSP) browser violation telemetry endpoint
     app.MapPost("/api/security/csp-violations", async (HttpContext context, ILoggerFactory loggerFactory) =>
@@ -987,32 +752,21 @@ try
     .DisableAntiforgery();
 
     app.Run();
-
 }
 
 catch (Exception ex)
-
 {
-
     Log.Fatal(ex, "BlazorEnterprise application host terminated unexpectedly.");
 
     throw;
-
 }
 
 finally
-
 {
-
     Log.Information("Shutting down BlazorEnterprise host and flushing logs...");
 
     Log.CloseAndFlush();
-
 }
-
-
-
-
 
 /**
 
@@ -1052,15 +806,7 @@ finally
 
 17. CurrentUserMiddleware          ← last, so authorization already done
 
-
-
-
-
-
-
 Three ordering rules are unusual and important:
-
-
 
  --> Tenant resolution before authentication. Finbuckle’s strategy chain sees an anonymous User, which is why claim-aware tenant logic lives in post-auth module middleware - see the multitenancy deep dive.
 
@@ -1070,11 +816,8 @@ Three ordering rules are unusual and important:
 
 --> CurrentUserMiddleware runs last: it populates ICurrentUser from claims for the endpoint to consume. Anything reading ICurrentUser earlier in the chain sees nothing - middleware that needs the user reads claims directly.
 
-
-
 Related
 
  * 
 
  */
-

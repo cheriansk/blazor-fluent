@@ -23,7 +23,7 @@ namespace BlazorEnterprise.Persistence.Services;
 /// </summary>
 public class WorkflowService : IWorkflowService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUser _currentUser;
     private readonly IHierarchyAuthorizationService _hierarchyAuth;
@@ -31,14 +31,14 @@ public class WorkflowService : IWorkflowService
     private readonly ILogger<WorkflowService> _logger;
 
     public WorkflowService(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
         ICurrentUser currentUser,
         IHierarchyAuthorizationService hierarchyAuth,
         INotifyService notifyService,
         ILogger<WorkflowService> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _tenantContext = tenantContext;
         _currentUser = currentUser;
         _hierarchyAuth = hierarchyAuth;
@@ -48,6 +48,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> CreateWorkflowAsync(CreateWorkflowReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         if (request.Steps == null || request.Steps.Count == 0)
         {
@@ -227,6 +228,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> CompleteStepAsync(CompleteWorkflowStepReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
 
@@ -379,6 +381,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> ReassignStepAsync(ReassignWorkflowStepReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
 
@@ -451,6 +454,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<SubTaskEntity>> AddSubTaskToStepAsync(AddSubTaskToStepReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var callerEmail = _currentUser.Email ?? string.Empty;
 
@@ -519,6 +523,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<SubTaskEntity>> ToggleSubTaskStatusAsync(ToggleSubTaskStatusReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         var subTask = await _dbContext.SubTasks
@@ -536,6 +541,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<IReadOnlyList<WorkflowEntity>> GetWorkflowsAsync(WorkflowFilterDto filter, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         var query = _dbContext.Workflows
@@ -581,11 +587,13 @@ public class WorkflowService : IWorkflowService
 
     public async Task<IReadOnlyList<WorkflowEntity>> GetProjectWorkflowsAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         return await GetWorkflowsAsync(new WorkflowFilterDto(Level: TaskLevelEnum.Project, ProjectId: projectId), ct);
     }
 
     public async Task<WorkflowEntity?> GetWorkflowByIdAsync(Guid workflowId, bool forEdit = false, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         return await _dbContext.Workflows
@@ -597,6 +605,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<bool> CanUserManageWorkflowAsync(TaskLevelEnum level, Guid? programId, Guid? projectId, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty) return false;
         var tenantId = _tenantContext.TenantId;
         var userId = _currentUser.UserId;
@@ -612,6 +621,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .AsTracking()
@@ -649,6 +659,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> CancelStepAsync(CancelWorkflowStepReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .AsTracking()
@@ -716,6 +727,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> ResumePausedWorkflowAsync(ResumePausedWorkflowReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .AsTracking()
@@ -774,6 +786,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<Result<WorkflowEntity>> AppendStepAsync(AppendStepToWorkflowReqDto request, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var workflow = await _dbContext.Workflows
             .AsTracking()
@@ -863,6 +876,7 @@ public class WorkflowService : IWorkflowService
 
     public async Task<IReadOnlyList<TaskEntity>> GetAvailableTasksForWorkflowAsync(TaskSearchFilterDto filter, CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
         var query = _dbContext.Tasks
             .AsNoTracking()
@@ -904,6 +918,7 @@ public class WorkflowService : IWorkflowService
         Guid? projectId,
         CancellationToken ct)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             if (string.IsNullOrWhiteSpace(recipientEmail)) return;

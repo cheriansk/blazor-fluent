@@ -55,7 +55,6 @@ public interface IProjectScopedEntity : ITenantEntity
     Guid ProjectId { get; set; }
 }
 
-
 /// <summary>
 /// Enables automatic soft deletion. When DbContext.Remove() is invoked on this entity,
 /// AuditableEntityInterceptor intercepts the operation, setting IsDeleted = true instead of issuing a SQL DELETE.
@@ -88,9 +87,6 @@ public interface IImmutableEntity : IMarkerEntity
 {
 }
 
-
-
-
 /// <summary>
 /// Enforces effective dating (temporal validity) on database records.
 /// Standardizes start and optional end date tracking across business entities (contracts, tenants, rate cards).
@@ -119,4 +115,3 @@ public interface IVersionedEntity : IMarkerEntity
     /// <param name="newVersion">The new version number (must be greater than current VerNum).</param>
     void SetVersionNumber(int newVersion);
 }
-

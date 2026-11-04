@@ -78,8 +78,6 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// </summary>
     public required CalendarEntryStatusEnum Status { get; set; }
 
-
-
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }

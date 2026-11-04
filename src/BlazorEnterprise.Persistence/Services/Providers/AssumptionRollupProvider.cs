@@ -7,11 +7,11 @@ namespace BlazorEnterprise.Persistence.Services.Providers;
 
 public class AssumptionRollupProvider : IWorkItemRollupProvider
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public AssumptionRollupProvider(AppDbContext context)
+    public AssumptionRollupProvider(IDbContextFactory<AppDbContext> dbFactory)
     {
-        _context = context;
+        _dbFactory = dbFactory;
     }
 
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.Assumption;
@@ -25,6 +25,7 @@ public class AssumptionRollupProvider : IWorkItemRollupProvider
         DateTime endUtc,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var query = _context.Assumptions
             .AsNoTracking()
             .Where(a => a.TenantId == tenantId && !a.IsDeleted && a.DueDate >= startUtc && a.DueDate <= endUtc);

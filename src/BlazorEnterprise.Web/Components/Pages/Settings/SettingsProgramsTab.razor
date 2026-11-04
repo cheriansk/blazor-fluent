@@ -12,17 +12,9 @@
 
 @using BlazorEnterprise.Core.Domain.Tenancy
 
-
-
-
-
 @using BlazorEnterprise.Shared.UI.Components
 
-
-
 @implements IDisposable
-
-
 
 <CskStack Orientation="CskOrientation.Vertical" VerticalGap="20">
 
@@ -54,8 +46,6 @@
 
     </CskStack>
 
-
-
     @if (!string.IsNullOrWhiteSpace(_statusMessage))
 
     {
@@ -67,12 +57,6 @@
         </CskMessageBar>
 
     }
-
-
-
-
-
-
 
     @* Programs DataGrid *@
 
@@ -109,8 +93,6 @@
             </CskTextInput>
 
         </CskStack>
-
-
 
         @if (_isLoading)
 
@@ -252,7 +234,6 @@
 
                         </CskButton>
 
-
                         <EntityHistoryButton EntityName="ProgramEntity" EntityId="@context.Id.ToString()" Tooltip="View program history" />
 
                     </CskStack>
@@ -272,8 +253,6 @@
                             <td colspan="7" class="csk-programs-detail-cell">
 
                                 <div class="csk-programs-detail-panel">
-
-
 
                                     @if (context.Projects.Count == 0)
 
@@ -363,7 +342,6 @@
 
                                                                 </CskButton>
 
-
                                                                 <CskLink Appearance="LinkAppearance.Subtle" Href="@($"/projects/{proj.Id}/tasks")" Class="font-size-sm">
 
                                                                     Tasks &rarr;
@@ -399,8 +377,6 @@
         }
 
     </CskCard>
-
-
 
     @* Selected Program Workspace Panel *@
 
@@ -439,8 +415,6 @@
                 </CskButton>
 
             </CskStack>
-
-
 
             <CskTabs @bind-ActiveTabId="_activeProgramTab">
 
@@ -512,8 +486,6 @@
 
                                     </CskCard>
 
-
-
                                     <CskCard Class="flex-1 min-w-140 p-3">
 
                                         <div class="font-size-sm text-hint">Member Projects</div>
@@ -526,8 +498,6 @@
 
                                     </CskCard>
 
-
-
                                     <CskCard Class="flex-1 min-w-140 p-3">
 
                                         <div class="font-size-sm text-hint">Overdue Tasks</div>
@@ -539,8 +509,6 @@
                                         </div>
 
                                     </CskCard>
-
-
 
                                     <CskCard Class="flex-1 min-w-180 p-3">
 
@@ -555,8 +523,6 @@
                                     </CskCard>
 
                                 </CskStack>
-
-
 
                                 <!-- Cross-Project Dependencies Breakdown -->
 
@@ -632,8 +598,6 @@
 
                 </CskTab>
 
-
-
                 <!-- Tab 2: Projects in this Program -->
 
                 <CskTab Id="tab-projects">
@@ -674,8 +638,6 @@
 
                         </CskStack>
 
-
-
                         @* Add Project Sub-Card *@
 
                         @if (_showAddProjectModal)
@@ -700,8 +662,6 @@
 
                                     </CskStack>
 
-
-
                                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16" Class="full-width">
 
                                         <CskTextInput Label="Location" @bind-Value="_projLocation" Class="flex-2" Placeholder="e.g. Headquarters / Remote" />
@@ -714,8 +674,6 @@
 
                                     </CskStack>
 
-
-
                                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="16">
 
                                         <CskDatePicker Label="Tentative Start Date" @bind-Value="_projStartDate" />
@@ -724,8 +682,6 @@
 
                                     </CskStack>
 
-
-
                                     <div>
 
                                         <CskLabel Typo="Typography.Body" Class="mb-1">Summary of Scope of Project</CskLabel>
@@ -733,8 +689,6 @@
                                         <CskTextArea @bind-Value="_projScopeSummary" Placeholder="Brief summary of project scope, deliverables, and goals..." Rows="3" Class="full-width" />
 
                                     </div>
-
-
 
                                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="12" Class="mt-2">
 
@@ -761,8 +715,6 @@
                             </CskCard>
 
                         }
-
-
 
                         @if (_isLoadingProjects)
 
@@ -864,8 +816,6 @@
 
                 </CskTab>
 
-
-
                 <!-- Tab 3: Program Calendar & Deadlines -->
 
                 <CskTab Id="tab-calendar">
@@ -910,8 +860,6 @@
 
                 </CskTab>
 
-
-
                 <!-- Tab 4: Program R.A.I.D. Log -->
 
                 <CskTab Id="tab-raid">
@@ -941,8 +889,6 @@
                                 <CskRadio Value="@("Blockers")">Blocker Dependencies (D: @_programBlockers.Count)</CskRadio>
 
                             </CskRadioGroup>
-
-
 
                             @if (_selectedRaidCategory == "Risks")
 
@@ -1157,8 +1103,6 @@
         </CskCard>
 
     }
-
-
 
     <!-- Create/View/Edit Program Wizard Modal -->
 

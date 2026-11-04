@@ -7,11 +7,11 @@ namespace BlazorEnterprise.Persistence.Services.Providers;
 
 public class RiskRollupProvider : IWorkItemRollupProvider
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public RiskRollupProvider(AppDbContext context)
+    public RiskRollupProvider(IDbContextFactory<AppDbContext> dbFactory)
     {
-        _context = context;
+        _dbFactory = dbFactory;
     }
 
     public TaskItemTypeEnum ItemType => TaskItemTypeEnum.Risk;
@@ -25,6 +25,7 @@ public class RiskRollupProvider : IWorkItemRollupProvider
         DateTime endUtc,
         CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var query = _context.Risks
             .AsNoTracking()
             .Where(r => r.TenantId == tenantId && !r.IsDeleted && r.DueDate >= startUtc && r.DueDate <= endUtc);

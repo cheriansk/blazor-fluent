@@ -6,7 +6,9 @@
 <SessionTimeoutModal />
 
 <div class="main-layout-container">
-    <header class="main-layout-header">
+    <NavigationLock ConfirmExternalNavigation="@CircuitActivity.IsMutating" OnBeforeInternalNavigation="HandleBeforeInternalNavigation" />
+
+<header class="main-layout-header">
         @if (HasActiveTenantSession)
         {
             <CskButton Variant="CskButtonVariant.Text"
@@ -49,9 +51,13 @@
                 Sign In
             </CskButton>
         }
-    </header>
+        @if (CircuitActivity.IsBusy)
+    {
+        <div class="circuit-activity-bar" role="progressbar" aria-busy="true" aria-label="Processing query..."></div>
+    }
+</header>
 
-    <div class="main-layout-body">
+    <div class="main-layout-body @(CircuitActivity.IsMutating ? "circuit-busy-guard" : "")">
         @if (HasActiveTenantSession)
         {
             <aside class="@(NavState.IsCollapsed ? "main-layout-nav-collapsed" : "main-layout-nav-expanded")">

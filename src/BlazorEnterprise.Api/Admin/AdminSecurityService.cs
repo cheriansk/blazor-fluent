@@ -19,8 +19,6 @@ public class AdminSecurityService : IAdminSecurityService
     private readonly IOptions<AdminOptions> _adminOptions;
     private readonly ILogger<AdminSecurityService> _logger;
 
-
-
     public AdminSecurityService(
         ILogger<AdminSecurityService> logger,
         IOptions<AdminOptions> adminOptions)

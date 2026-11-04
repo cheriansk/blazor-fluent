@@ -124,10 +124,10 @@ public static class SystemIdentityUtility
         ArgumentNullException.ThrowIfNull(tenantContext);
         ArgumentNullException.ThrowIfNull(systemIdentity);
 
-        var normalizedEmail = string.IsNullOrWhiteSpace(attemptedEmail) 
-            ? $"preauth+{operation.ToLowerInvariant()}@{systemIdentity.RootTenantSlug}.{systemIdentity.SystemDaemonEmailDomain}" 
-            : attemptedEmail.Trim();
-
+        var isExplicitEmail = !string.IsNullOrWhiteSpace(attemptedEmail) && attemptedEmail.Contains('@');
+        var normalizedEmail = isExplicitEmail
+            ? attemptedEmail.Trim()
+            : $"preauth+{operation.ToLowerInvariant()}@{systemIdentity.RootTenantSlug}.{systemIdentity.SystemDaemonEmailDomain}";
         currentUser.SetSystemDaemon($"PreAuth:{operation}", normalizedEmail);
         tenantContext.Initialize(
             systemIdentity.RootTenantId, 

@@ -19,20 +19,20 @@ public class ProjectMilestoneService : IProjectMilestoneService
         EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
             ctx.ProjectCalendars.AsNoTracking().FirstOrDefault(m => m.Id == id && !m.IsDeleted));
 
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
     private readonly IProjectAuthorizationService _projectAuth;
     private readonly IAuditService _auditService;
     private readonly ILogger<ProjectMilestoneService> _logger;
 
     public ProjectMilestoneService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
         IProjectAuthorizationService projectAuth,
         IAuditService auditService,
         ILogger<ProjectMilestoneService> logger)
     {
-        _context = context;
+        _dbFactory = dbFactory;
         _tenantContext = tenantContext;
         _projectAuth = projectAuth;
         _auditService = auditService;
@@ -41,6 +41,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetMilestonesByProject", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
@@ -54,6 +55,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<ProjectCalendarEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         var milestone = await _context.ProjectCalendars
@@ -70,6 +72,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<Result<ProjectCalendarEntity>> CreateMilestoneAsync(ProjectCalendarEntity milestone, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "CreateMilestone", ct: ct);
@@ -99,6 +102,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<Result<ProjectCalendarEntity>> UpdateMilestoneAsync(ProjectCalendarEntity updated, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -139,6 +143,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<Result<bool>> CompleteMilestoneAsync(Guid milestoneId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -169,6 +174,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<Result<bool>> DeleteMilestoneAsync(Guid milestoneId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
@@ -226,6 +232,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<IReadOnlyList<MilestoneDependencyItemDto>> GetMilestoneDependenciesAsync(Guid milestoneId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
         var milestone = await _context.ProjectCalendars
@@ -279,6 +286,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<Result<bool>> AddMilestoneDependencyAsync(Guid milestoneId, Guid dependsOnMilestoneId, string? notes = null, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             if (milestoneId == dependsOnMilestoneId)
@@ -362,6 +370,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
     public async Task<Result<bool>> RemoveMilestoneDependencyAsync(Guid dependencyId, CancellationToken ct = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;

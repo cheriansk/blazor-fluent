@@ -1,3 +1,4 @@
+using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Knowledge;
@@ -10,22 +11,25 @@ namespace BlazorEnterprise.Persistence.Services;
 
 public class KnowledgeBaseService : IKnowledgeBaseService
 {
-    private readonly AppDbContext _context;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
     private readonly IInputSanitizer _inputSanitizer;
+    private readonly ISafeSaveService _safeSaveService;
     private readonly ILogger<KnowledgeBaseService> _logger;
 
     public KnowledgeBaseService(
-        AppDbContext context,
+        IDbContextFactory<AppDbContext> dbFactory,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         INotifyService notificationService,
         IInputSanitizer inputSanitizer,
+        ISafeSaveService safeSaveService,
         ILogger<KnowledgeBaseService> logger)
     {
-        _context = context;
+        _dbFactory = dbFactory;
+        _safeSaveService = safeSaveService;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _notificationService = notificationService;
@@ -40,6 +44,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         bool? isGlobalOnly = null,
         CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             _logger.LogWarning("Unauthenticated user attempted to access knowledge base articles.");
@@ -107,13 +112,15 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                 a.ApprovedByUserName,
                 a.ApprovedAtUtc,
                 a.Reviewers.Count,
-                a.Reviewers.Count(r => r.HasApproved)
+                a.Reviewers.Count(r => r.HasApproved),
+                a.Version
             );
         }).ToList();
     }
 
     public async Task<KnowledgeArticleDetailDto?> GetArticleByIdAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             _logger.LogWarning("Unauthenticated user attempted to access knowledge base article '{ArticleId}'.", articleId);
@@ -159,12 +166,14 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             a.ApprovedByUserName,
             a.ApprovedByUserEmail,
             a.ApprovedAtUtc,
-            reviewers
+            reviewers,
+            a.Version
         );
     }
 
     public async Task<Guid> CreateArticleAsync(CreateArticleDto dto, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             throw new UnauthorizedAccessException("Only authenticated users can create knowledge articles.");
@@ -268,6 +277,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task UpdateArticleAsync(UpdateArticleDto dto, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             throw new UnauthorizedAccessException("Only authenticated users can update knowledge articles.");
@@ -314,11 +324,21 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _context.ApplyOriginalVersion(article, dto);
+        var saveResult = await _safeSaveService.SaveAsync(_context, cancellationToken);
+        if (saveResult.Status == SaveStatus.Conflict)
+        {
+            throw new ConcurrencyConflictException(saveResult.Message ?? "Optimistic concurrency conflict occurred.", saveResult.Diffs);
+        }
+        if (saveResult.Status != SaveStatus.Ok)
+        {
+            throw new InvalidOperationException(saveResult.Message ?? "Failed to update article due to database rule violation.");
+        }
     }
 
     public async Task<bool> ApproveArticleAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return false;
@@ -383,6 +403,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<bool> DeleteArticleAsync(Guid articleId, CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return false;
@@ -404,6 +425,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<List<UserDto>> GetAvailableReviewersAsync(CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return new List<UserDto>();
@@ -425,6 +447,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
     public async Task<List<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default)
     {
+        await using var _context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsAuthenticated)
         {
             return new List<string>();
