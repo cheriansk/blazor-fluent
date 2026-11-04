@@ -94,6 +94,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<int?>("UserType")
                         .HasColumnType("integer");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EventType")
@@ -189,6 +195,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<int>("VerNum")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -291,6 +303,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<int>("VerNum")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -395,6 +413,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<int>("VerNum")
                         .HasColumnType("integer");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId")
@@ -479,6 +503,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -582,6 +612,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CorrelationId")
@@ -684,6 +720,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresAtUtc")
@@ -773,6 +815,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<int>("UserType")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "PhysicalAddress", "BlazorEnterprise.Core.Domain.Identity.UserEntity.PhysicalAddress#Address", b1 =>
                         {
@@ -894,6 +942,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1035,6 +1089,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<string>("ValidationErrorsJson")
                         .HasColumnType("text");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId");
@@ -1134,6 +1194,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId");
@@ -1215,6 +1281,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1302,6 +1374,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedByUserEntityId");
@@ -1366,6 +1444,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<Guid>("UserEntityId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1471,6 +1555,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<string>("UserId")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1624,6 +1714,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<int>("ValidationStatus")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
@@ -1781,6 +1877,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<string>("UserId")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
@@ -1954,6 +2056,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(2000)
@@ -2107,6 +2215,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(2000)
@@ -2251,6 +2365,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(2000)
@@ -2354,6 +2474,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -2533,6 +2659,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(2000)
@@ -2690,6 +2822,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("text");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("WatcherEmails")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(2000)
@@ -2789,6 +2927,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Status");
@@ -2854,6 +2998,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<Guid>("UserEntityId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -2966,6 +3116,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProgramId")
@@ -3037,6 +3193,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<Guid>("UserEntityId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -3125,6 +3287,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
@@ -3183,6 +3351,12 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<Guid>("UserEntityId")
                         .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

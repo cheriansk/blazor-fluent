@@ -352,9 +352,37 @@ Value objects use EF Core 10 `[ComplexType]` and are declared as C# `record` typ
 
 **Reference example**: `Address` value object on `UserEntity.PhysicalAddress`, configured via `builder.ComplexProperty(u => u.PhysicalAddress)`.
 
-### 4.4 Transaction Management
+### 4.4 Blazor Server Data Access & Concurrency Architecture
 
-All multi-step write operations must use `IUnitOfWork.ExecuteAsync(...)` for atomic transactions with automatic rollback and `ChangeTracker.Clear()` on failure.
+#### 1. Zero Direct DbContext Injection Law
+- **Never inject AppDbContext** directly into Blazor components, pages, or domain services.
+- Always inject **IDbContextFactory<AppDbContext>** (_dbFactory).
+- Scoped AppDbContext spans the 30-minute SignalR circuit; sharing it across asynchronous components causes catastrophic InvalidOperationException: A second operation was started on this context instance before a previous operation completed.
+
+#### 2. Per-Operation Context Lifetime
+- Create a dedicated context per operation using await using var context = await _dbFactory.CreateDbContextAsync(ct);.
+- Dispose of the context immediately at the end of the method scope.
+- Streaming queries (IAsyncEnumerable) must initialize their context within the iterator method so its lifetime matches enumeration.
+
+#### 3. Sequential UI Query Execution & TG026 Enforcement
+- **Never use Task.WhenAll or Parallel.*** in Blazor components or persistence services.
+- Always await database queries sequentially in UI initialization (OnInitializedAsync, OnParametersSetAsync).
+- Analyzer rule **TG026** enforces this at compile-time as a build **Error**.
+
+#### 4. PostgreSQL xmin Optimistic Concurrency & SafeSaveService
+- Concurrency token: PostgreSQL system column xmin mapped via .Property(nameof(BaseEntity.Version)).IsRowVersion().
+- Audit timestamps: Updated is strictly an audit column and must never be configured as a concurrency token.
+- Edit flows: All edit DTOs implement IVersioned (uint Version). Edit pages pass the loaded Version into Update*Dto. Handlers apply the original version using context.ApplyOriginalVersion(entity, dto).
+- Central Save Wrapper: All updates and writes should execute through ISafeSaveService.SaveAsync(context, ct). This catches DbUpdateConcurrencyException, queries database values, and returns SaveStatus.Conflict, SaveStatus.Deleted, or friendly constraint messages.
+- Conflict Resolution UI: Edit screens display ConcurrencyConflictDialog allowing the user to either discard & reload the latest data or overwrite changes.
+
+#### 5. Component Load & Navigation Protection
+- Every data-loading component must maintain a CancellationTokenSource and cancel previous in-flight requests upon re-entry or disposal.
+- Component state updates must be guarded by an incrementing _loadId counter (if (currentLoadId != _loadId) return;) so that out-of-order responses from slow or cancelled queries cannot overwrite newer state.
+
+#### 6. Transaction Management & UnitOfWork Guidance
+- Single-method atomic writes execute within the factory-created context's transaction (await using var tx = await context.Database.BeginTransactionAsync(ct);).
+- Do not use UnitOfWork directly with factory-based services; transactional boundaries must pass an explicit context instance or execute atomically within one service method.
 
 ---
 

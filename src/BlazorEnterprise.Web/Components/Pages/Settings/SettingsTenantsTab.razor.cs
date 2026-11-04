@@ -402,7 +402,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
             return;
         }
 
-        var result = await TenantService.UpdateTenantDatesAsync(_selectedTenantModal.Id, _editStartDate.Value, _editEndDate.Value);
+        var result = await TenantService.UpdateTenantDatesAsync(_selectedTenantModal.Id, _editStartDate.Value, _editEndDate.Value, version: _selectedTenantModal.Version);
         if (result.Succeeded)
         {
             _selectedTenantModal.StartDate = _editStartDate.Value;

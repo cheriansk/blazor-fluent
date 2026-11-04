@@ -1,3 +1,4 @@
+using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Knowledge;
@@ -15,6 +16,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
     private readonly IInputSanitizer _inputSanitizer;
+    private readonly ISafeSaveService _safeSaveService;
     private readonly ILogger<KnowledgeBaseService> _logger;
 
     public KnowledgeBaseService(
@@ -23,9 +25,11 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         ITenantContext tenantContext,
         INotifyService notificationService,
         IInputSanitizer inputSanitizer,
+        ISafeSaveService safeSaveService,
         ILogger<KnowledgeBaseService> logger)
     {
         _dbFactory = dbFactory;
+        _safeSaveService = safeSaveService;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _notificationService = notificationService;
@@ -108,7 +112,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
                 a.ApprovedByUserName,
                 a.ApprovedAtUtc,
                 a.Reviewers.Count,
-                a.Reviewers.Count(r => r.HasApproved)
+                a.Reviewers.Count(r => r.HasApproved),
+                a.Version
             );
         }).ToList();
     }
@@ -161,7 +166,8 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             a.ApprovedByUserName,
             a.ApprovedByUserEmail,
             a.ApprovedAtUtc,
-            reviewers
+            reviewers,
+            a.Version
         );
     }
 
@@ -318,7 +324,16 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _context.ApplyOriginalVersion(article, dto);
+        var saveResult = await _safeSaveService.SaveAsync(_context, cancellationToken);
+        if (saveResult.Status == SaveStatus.Conflict)
+        {
+            throw new ConcurrencyConflictException(saveResult.Message ?? "Optimistic concurrency conflict occurred.", saveResult.Diffs);
+        }
+        if (saveResult.Status != SaveStatus.Ok)
+        {
+            throw new InvalidOperationException(saveResult.Message ?? "Failed to update article due to database rule violation.");
+        }
     }
 
     public async Task<bool> ApproveArticleAsync(Guid articleId, CancellationToken cancellationToken = default)

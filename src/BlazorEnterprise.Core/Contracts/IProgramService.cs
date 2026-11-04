@@ -34,6 +34,7 @@ public interface IProgramService
         DateTime? targetEndDateUtc,
         ProgramStatusEnum status,
         bool isActive,
+        uint version = 0,
         CancellationToken ct = default);
 
     Task<Result> SyncProgramAdminsAsync(Guid programId, IEnumerable<Guid> adminUserIds, CancellationToken ct = default);

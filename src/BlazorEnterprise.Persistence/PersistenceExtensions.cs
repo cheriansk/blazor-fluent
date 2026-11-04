@@ -31,6 +31,7 @@ public static class PersistenceExtensions
 
         // 3. Register forensic audit service (scoped)
         services.TryAddScoped<IAuditService, AuditService>();
+        services.TryAddScoped<ISafeSaveService, SafeSaveService>();
 
         // 4. Register interceptors (Singletons — thread-safe, dynamically read context from AppDbContext)
         services.AddSingleton<ZeroTrustDbCommandInterceptor>();

@@ -1,3 +1,4 @@
+using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Dtos;
@@ -16,8 +17,12 @@ public record KnowledgeArticleListDto(
     string? ApprovedByUserName,
     DateTime? ApprovedAtUtc,
     int ReviewerCount,
-    int ApprovedReviewerCount
-);
+    int ApprovedReviewerCount,
+    uint Version = 0
+) : IVersioned
+{
+    public uint Version { get; set; } = Version;
+}
 
 public record ArticleReviewerDto(
     string UserId,
@@ -45,8 +50,12 @@ public record KnowledgeArticleDetailDto(
     string? ApprovedByUserName,
     string? ApprovedByUserEmail,
     DateTime? ApprovedAtUtc,
-    List<ArticleReviewerDto> Reviewers
-);
+    List<ArticleReviewerDto> Reviewers,
+    uint Version = 0
+) : IVersioned
+{
+    public uint Version { get; set; } = Version;
+}
 
 public record CreateArticleDto
 {
@@ -58,7 +67,7 @@ public record CreateArticleDto
     public List<string> ReviewerUserIds { get; set; } = new();
 }
 
-public record UpdateArticleDto
+public record UpdateArticleDto : IVersioned
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -67,4 +76,5 @@ public record UpdateArticleDto
     public List<string> Labels { get; set; } = new();
     public Guid? ProjectId { get; set; }
     public List<string> ReviewerUserIds { get; set; } = new();
+    public uint Version { get; set; }
 }

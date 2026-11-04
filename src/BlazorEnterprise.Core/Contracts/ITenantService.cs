@@ -14,7 +14,7 @@ public interface ITenantService
     Task<Result<TenantEntity>> CreateTenantAsync(string slug, string displayName, string internalEmailDomain, string externalEmailDomain, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     Task<Result<TenantEntity>> CreateTenantWithAdminAsync(string slug, string displayName, IEnumerable<string> internalEmailDomains, IEnumerable<string> externalEmailDomains, DateTime startDate, DateTime endDate, string adminFullName, string adminEmail, CancellationToken cancellationToken = default);
     Task<Result> UpdateTenantStatusAsync(Guid tenantId, bool isActive, CancellationToken cancellationToken = default);
-    Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+    Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, uint version = 0, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<UserEntity>> GetTenantUsersAsync(string tenantSlug, CancellationToken cancellationToken = default);
     Task<Result<UserEntity>> AddTenantUserAsync(string tenantSlug, string fullName, string email, DateTime startDate, DateTime endDate, bool isActive, CancellationToken cancellationToken = default);
     Task<Result<UserEntity>> UpdateTenantUserAsync(string tenantSlug, Guid userId, string fullName, string email, DateTime startDate, DateTime endDate, bool isActive, CancellationToken cancellationToken = default);

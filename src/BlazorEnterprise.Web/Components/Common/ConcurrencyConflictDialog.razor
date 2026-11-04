@@ -1,0 +1,149 @@
+@* Reusable modal dialog for human-in-the-loop optimistic concurrency conflict resolution with visual side-by-side diff *@
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Persistence.Services
+@namespace BlazorEnterprise.Web.Components.Common
+@inject IJSRuntime JSRuntime
+
+<CskDialog @ref="_dialog" Modal="true" Class="dialog-concurrency-conflict">
+    <CskDialogBody>
+        <TitleTemplate>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                <CskIcon Icon="@CskIcons.Warning" Class="csk-icon-warning csk-icon-lg" />
+                <CskLabel Typo="Typography.H6">@Title</CskLabel>
+            </CskStack>
+        </TitleTemplate>
+        <ChildContent>
+            <div class="concurrency-banner">
+                <p class="concurrency-banner-text">@Message</p>
+                <span class="concurrency-badge-zero-trust">Zero-Trust: All-or-None Rollback Applied</span>
+            </div>
+
+            @if (IsDeleted)
+            {
+                <div class="csk-message-bar-error mb-3">
+                    This record was deleted by another user. Your changes cannot be saved because the record no longer exists.
+                </div>
+            }
+            else if (Diffs != null && Diffs.Count > 0)
+            {
+                <div class="diff-section-container">
+                    <div class="diff-header-bar">
+                        <span class="diff-header-title">Side-by-Side Field Changes:</span>
+                        @if (!string.IsNullOrWhiteSpace(_copyFeedback))
+                        {
+                            <span class="diff-copy-feedback">@_copyFeedback</span>
+                        }
+                    </div>
+
+                    <div class="diff-table-scroll">
+                        <table class="concurrency-diff-table">
+                            <thead>
+                                <tr>
+                                    <th class="diff-th-field">Field</th>
+                                    <th class="diff-th-yours">Your Unsaved Edits</th>
+                                    <th class="diff-th-db">Current Database (Saved by Other User)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var diff in Diffs)
+                                {
+                                    <tr class="@(diff.HasConflict ? "diff-row-conflict" : "diff-row-normal")">
+                                        <td class="diff-td-field">
+                                            <strong>@diff.PropertyName</strong>
+                                        </td>
+                                        <td class="diff-td-yours">
+                                            <div class="diff-value-wrapper">
+                                                <span class="diff-value-text">@(string.IsNullOrWhiteSpace(diff.YourValue) ? "(empty)" : diff.YourValue)</span>
+                                                @if (!string.IsNullOrWhiteSpace(diff.YourValue))
+                                                {
+                                                    <button type="button" class="diff-btn-copy" title="Copy to clipboard" @onclick="() => CopyToClipboardAsync(diff.PropertyName, diff.YourValue)">
+                                                        <CskIcon Icon="@CskIcons.Copy" Class="diff-icon-copy" />
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="diff-td-db">
+                                            <span class="diff-value-text">@(string.IsNullOrWhiteSpace(diff.DatabaseValue) ? "(empty)" : diff.DatabaseValue)</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="csk-message-bar-warning mb-3">
+                    Another user has modified and saved changes to this record. No partial changes were written.
+                </div>
+            }
+        </ChildContent>
+        <ActionTemplate>
+            <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" HorizontalAlignment="CskHorizontalAlignment.Right" Class="w-100">
+                <CskButton Variant="CskButtonVariant.Outlined" OnClick="@CancelAsync">
+                    Keep My Edits on Screen
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="@ReloadAsync">
+                    Discard & Reload Latest
+                </CskButton>
+            </CskStack>
+        </ActionTemplate>
+    </CskDialogBody>
+</CskDialog>
+
+@code {
+    private CskDialog? _dialog;
+    private string? _copyFeedback;
+
+    [Parameter] public string Title { get; set; } = "Concurrency Conflict Detected";
+    [Parameter] public string Message { get; set; } = "Another user saved changes to this record while you were editing. To prevent data loss or silent overwrites, none of your changes were saved.";
+    [Parameter] public bool IsDeleted { get; set; }
+    [Parameter] public IReadOnlyList<PropertyDiffItem>? Diffs { get; set; }
+    [Parameter] public EventCallback OnReload { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    public async Task ShowAsync(string? message = null, IReadOnlyList<PropertyDiffItem>? diffs = null, bool isDeleted = false)
+    {
+        if (!string.IsNullOrWhiteSpace(message)) Message = message;
+        Diffs = diffs;
+        IsDeleted = isDeleted;
+        _copyFeedback = null;
+        if (_dialog is not null)
+        {
+            await _dialog.ShowAsync();
+        }
+    }
+
+    private async Task CopyToClipboardAsync(string fieldName, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", value);
+            _copyFeedback = $"Copied {fieldName} to clipboard!";
+            StateHasChanged();
+            _ = Task.Delay(2500).ContinueWith(_ =>
+            {
+                _copyFeedback = null;
+                InvokeAsync(StateHasChanged);
+            });
+        }
+        catch
+        {
+            _copyFeedback = "Select text to copy manually.";
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_dialog is not null) await _dialog.HideAsync();
+        await OnReload.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_dialog is not null) await _dialog.HideAsync();
+        await OnCancel.InvokeAsync();
+    }
+}

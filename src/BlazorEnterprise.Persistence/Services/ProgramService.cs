@@ -21,6 +21,7 @@ public class ProgramService : IProgramService
     private readonly ICurrentUser _currentUser;
     private readonly IHierarchyAuthorizationService _hierarchyAuth;
     private readonly IAuditService _auditService;
+    private readonly ISafeSaveService _safeSaveService;
     private readonly ILogger<ProgramService> _logger;
 
     public ProgramService(
@@ -29,9 +30,11 @@ public class ProgramService : IProgramService
         ICurrentUser currentUser,
         IHierarchyAuthorizationService hierarchyAuth,
         IAuditService auditService,
+        ISafeSaveService safeSaveService,
         ILogger<ProgramService> logger)
     {
         _dbFactory = dbFactory;
+        _safeSaveService = safeSaveService;
         _tenantContext = tenantContext;
         _currentUser = currentUser;
         _hierarchyAuth = hierarchyAuth;
@@ -178,6 +181,7 @@ public class ProgramService : IProgramService
         DateTime? targetEndDateUtc,
         ProgramStatusEnum status,
         bool isActive,
+        uint version = 0,
         CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
@@ -221,7 +225,20 @@ public class ProgramService : IProgramService
         program.Status = status;
         program.IsActive = isActive;
 
-        await _context.SaveChangesAsync(ct);
+        if (version > 0)
+        {
+            _context.ApplyOriginalVersion(program, new VersionHolder(version));
+        }
+
+        var saveResult = await _safeSaveService.SaveAsync(_context, ct);
+        if (saveResult.Status == SaveStatus.Conflict)
+        {
+            return Result<ProgramEntity>.Failure("Concurrency Conflict: Another user updated this program while you were editing. To prevent data loss, no changes were saved. Please re-open the program to view the latest changes.");
+        }
+        if (saveResult.Status != SaveStatus.Ok)
+        {
+            return Result<ProgramEntity>.Failure(saveResult.Message ?? "Failed to update program due to database constraint violation.");
+        }
 
         await _auditService.LogUserActivityAsync(
             $"Updated program '{program.Name}' ({program.Code})",

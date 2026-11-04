@@ -1,3 +1,6 @@
+using BlazorEnterprise.Persistence.Services;
+using BlazorEnterprise.Web.Components.Common;
+using Microsoft.EntityFrameworkCore;
 using BlazorEnterprise.Shared.UI.Components;
 ﻿using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
@@ -31,6 +34,8 @@ public partial class KnowledgeArticleEditPage : ComponentBase
     private bool _labelsError = false;
     private bool _reviewersError = false;
     private bool _contentError = false;
+    private uint _rowVersion = 0;
+    private ConcurrencyConflictDialog? _conflictDialog;
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,6 +48,7 @@ public partial class KnowledgeArticleEditPage : ComponentBase
                 var existing = await KnowledgeService.GetArticleByIdAsync(Id!.Value);
                 if (existing != null)
                 {
+                    _rowVersion = existing.Version;
                     _model = new CreateArticleDto
                     {
                         Title = existing.Title,
@@ -120,7 +126,8 @@ public partial class KnowledgeArticleEditPage : ComponentBase
                     Scope = _model.Scope,
                     Labels = _model.Labels,
                     ProjectId = _model.ProjectId,
-                    ReviewerUserIds = _model.ReviewerUserIds
+                    ReviewerUserIds = _model.ReviewerUserIds,
+                    Version = _rowVersion
                 });
 
                 NavigationManager.NavigateTo($"/knowledge/{Id.Value}");
@@ -129,6 +136,30 @@ public partial class KnowledgeArticleEditPage : ComponentBase
             {
                 var newId = await KnowledgeService.CreateArticleAsync(_model);
                 NavigationManager.NavigateTo($"/knowledge/{newId}");
+            }
+        }
+        catch (ConcurrencyConflictException ex)
+        {
+            if (_conflictDialog is not null)
+            {
+                await _conflictDialog.ShowAsync(ex.Message, ex.Diffs);
+            }
+            else
+            {
+                _statusMessage = "A concurrency conflict occurred. Another user updated this article. No changes were saved.";
+                _isStatusError = true;
+            }
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            if (_conflictDialog is not null)
+            {
+                await _conflictDialog.ShowAsync(ex.Message);
+            }
+            else
+            {
+                _statusMessage = "A concurrency conflict occurred. The article was modified by another user.";
+                _isStatusError = true;
             }
         }
         catch (Exception ex)
@@ -141,4 +172,29 @@ public partial class KnowledgeArticleEditPage : ComponentBase
             _isSubmitting = false;
         }
     }
+
+    private async Task HandleConflictReloadAsync()
+    {
+        if (!IsEditMode || !Id.HasValue) return;
+
+        var existing = await KnowledgeService.GetArticleByIdAsync(Id.Value);
+        if (existing is null)
+        {
+            NavigationManager.NavigateTo("/knowledge");
+            return;
+        }
+
+        _rowVersion = existing.Version;
+        _model.Title = existing.Title;
+        _model.Content = existing.Content;
+        _model.Scope = existing.IsGlobal ? KnowledgeArticleScopeEnum.Global : KnowledgeArticleScopeEnum.TenantOnly;
+        _model.Labels = existing.Labels.ToList();
+        _model.ProjectId = existing.ProjectId;
+        _model.ReviewerUserIds = existing.Reviewers.Select(r => r.UserId).ToList();
+        _statusMessage = "Latest article content reloaded.";
+        _isStatusError = false;
+        StateHasChanged();
+    }
+
+
 }

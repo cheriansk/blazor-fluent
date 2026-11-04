@@ -84,6 +84,7 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
     private List<WorkDependencyEntity> _programBlockers = [];
     private bool _showProgramModal = false;
     private Guid? _editingProgramId = null;
+    private uint _editingProgramVersion = 0;
     private string _programFormCode = string.Empty;
     private string _programFormName = string.Empty;
     private string _programFormDescription = string.Empty;
@@ -417,6 +418,7 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
         _programFormStartDate = program.StartDate;
         _programFormTargetEndDate = program.EndDate ?? program.DueDate;
         _programFormStatus = program.Status;
+        _editingProgramVersion = program.Version;
         _showProgramModal = true;
 
         UnsavedChanges.RegisterChange("Settings > Programs", $"Editing program '{program.Name}'");
@@ -451,7 +453,9 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
                 _programFormStatus,
 
-                isActive: true);
+                isActive: true,
+
+                version: _editingProgramVersion);
 
             if (updateResult.Succeeded && updateResult.Data is not null)
             {

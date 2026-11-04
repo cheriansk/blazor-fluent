@@ -11,6 +11,7 @@ namespace BlazorEnterprise.Web.Components.Pages;
 public partial class ProjectHolisticView : ComponentBase, IDisposable
 {
     private bool _isLoading = true;
+    private int _loadId;
     private CancellationTokenSource? _loadCts;
     private ProjectHealthSummaryDto? _healthSummary;
     private IReadOnlyList<CalendarItemDto> _calendarEvents = Array.Empty<CalendarItemDto>();
@@ -59,6 +60,7 @@ public partial class ProjectHolisticView : ComponentBase, IDisposable
         catch (ObjectDisposedException) { }
         _loadCts = new CancellationTokenSource();
         var ct = _loadCts.Token;
+        var currentLoadId = ++_loadId;
 
         _isLoading = true;
         StateHasChanged();
@@ -68,25 +70,33 @@ public partial class ProjectHolisticView : ComponentBase, IDisposable
             var projectId = ProjectContext.ProjectId.Value;
             var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId : Guid.Empty;
 
-            _healthSummary = await ProjectHealthService.GetProjectHealthAsync(projectId, ct);
+            var healthSummary = await ProjectHealthService.GetProjectHealthAsync(projectId, ct);
             ct.ThrowIfCancellationRequested();
-            _risks = await ProjectHealthService.GetProjectRisksAsync(projectId, ct);
+            var risks = await ProjectHealthService.GetProjectRisksAsync(projectId, ct);
             ct.ThrowIfCancellationRequested();
-            _assumptions = await ProjectHealthService.GetProjectAssumptionsAsync(projectId, ct);
+            var assumptions = await ProjectHealthService.GetProjectAssumptionsAsync(projectId, ct);
             ct.ThrowIfCancellationRequested();
-            _issues = await ProjectHealthService.GetProjectIssuesAsync(projectId, ct);
+            var issues = await ProjectHealthService.GetProjectIssuesAsync(projectId, ct);
             ct.ThrowIfCancellationRequested();
-            _blockers = await ProjectHealthService.GetProjectBlockersAsync(projectId, ct);
+            var blockers = await ProjectHealthService.GetProjectBlockersAsync(projectId, ct);
             ct.ThrowIfCancellationRequested();
 
             var now = DateTime.UtcNow;
-            _calendarEvents = await CalendarService.GetProjectCalendarAsync(
+            var calendarEvents = await CalendarService.GetProjectCalendarAsync(
                 tenantId,
                 projectId,
                 now.AddYears(-1),
                 now.AddYears(2),
                 ct);
 
+            if (currentLoadId != _loadId) return;
+
+            _healthSummary = healthSummary;
+            _risks = risks;
+            _assumptions = assumptions;
+            _issues = issues;
+            _blockers = blockers;
+            _calendarEvents = calendarEvents;
             _milestones = _calendarEvents
                 .Where(e => string.Equals(e.ItemCategory, "Milestone", StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -117,12 +127,19 @@ public partial class ProjectHolisticView : ComponentBase, IDisposable
         }
         catch (Exception)
         {
-            // Gracefully present tab shell
-            BuildTabs();
+            if (currentLoadId == _loadId)
+            {
+                // Gracefully present tab shell
+                BuildTabs();
+            }
         }
         finally
         {
-            _isLoading = false;
+            if (currentLoadId == _loadId)
+            {
+                _isLoading = false;
+                StateHasChanged();
+            }
         }
     }
 

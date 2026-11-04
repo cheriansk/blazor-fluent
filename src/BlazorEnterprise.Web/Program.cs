@@ -242,6 +242,38 @@ try
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+        options.OnRejected = (ctx, ct) =>
+        {
+            var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var tenant = ctx.HttpContext.User.FindFirst("tenant_id")?.Value ?? "none";
+            var user = ctx.HttpContext.User.Identity?.Name ?? ctx.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+            var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            logger.LogWarning("HTTP Rate limit exceeded on {Path} for Tenant={TenantId}, User={User}, IP={ClientIp}",
+                ctx.HttpContext.Request.Path, tenant, user, ip);
+            return ValueTask.CompletedTask;
+        };
+
+        // Dedicated Named Policy: Razor Components Page Navigation & Full-Page Load Limiter
+        // Uses TokenBucket algorithm partitioned by tenant:user (or IP for anonymous users).
+        // Protects against rapid refresh spam and URL switching while exempting active SignalR circuit WebSocket traffic.
+        options.AddPolicy("page", httpContext =>
+        {
+            var tenant = httpContext.User.FindFirst("tenant_id")?.Value ?? "none";
+            var key = httpContext.User.Identity?.IsAuthenticated == true
+                ? $"{tenant}:{httpContext.User.Identity.Name ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "user"}"
+                : httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon";
+
+            return RateLimitPartition.GetTokenBucketLimiter(
+                key,
+                _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 60,
+                    TokensPerPeriod = 20,
+                    ReplenishmentPeriod = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0
+                });
+        });
+
         // Global Rate Limiter: IP-partitioned sliding window (200 requests/minute), exempting static assets and health checks
 
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
@@ -671,9 +703,11 @@ try
 
     app.UseAntiforgery();
 
-    app.UseRateLimiter();
+    app.UseAuthentication();
 
     app.UseAuthorization();
+
+    app.UseRateLimiter();
 
     app.MapStaticAssets()
 
@@ -683,7 +717,9 @@ try
 
         .AddInteractiveServerRenderMode()
 
-        .RequireAuthorization();
+        .RequireAuthorization()
+
+        .RequireRateLimiting("page");
 
     // Health Check endpoints (unauthenticated probes)
 

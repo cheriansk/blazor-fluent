@@ -1,14 +1,23 @@
+using BlazorEnterprise.Core.Contracts;
+
 namespace BlazorEnterprise.Core.Domain.Base;
 
 /// <summary>
-/// ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK ROOT ENTITY
+/// ARCHITECTURAL WARNING: CRITICAL FRAMEWORK ROOT ENTITY
 /// DO NOT MODIFY without architectural review.
 /// Declares the sequential UUIDv7 primary key (Guid.CreateVersion7()) for all database entities.
 /// Sequential UUIDv7 ensures optimal B-Tree index clustering and high insert throughput in PostgreSQL.
+/// Implements IVersioned for PostgreSQL xmin system-column optimistic concurrency.
 /// </summary>
-public abstract class BaseEntity : IAuditableEntity
+public abstract class BaseEntity : IAuditableEntity, IVersioned
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
+
+    /// <summary>
+    /// PostgreSQL xmin system column mapped as a row-version concurrency token.
+    /// Updated automatically by PostgreSQL on every physical row modification.
+    /// </summary>
+    public uint Version { get; set; }
 
     /// <summary>
     /// Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.

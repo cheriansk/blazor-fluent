@@ -48,6 +48,7 @@ public class TenantService : ITenantService
     private readonly IRootAdminService _rootAdminService;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
+    private readonly ISafeSaveService _safeSaveService;
     private readonly ILogger<TenantService> _logger;
 
     /// <summary>
@@ -1018,7 +1019,7 @@ public class TenantService : ITenantService
         return Result.Success();
     }
 
-    public async Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+    public async Task<Result> UpdateTenantDatesAsync(Guid tenantId, DateTime startDate, DateTime endDate, uint version = 0, CancellationToken cancellationToken = default)
     {
         await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (!_currentUser.IsRootAdmin)
@@ -1045,7 +1046,20 @@ public class TenantService : ITenantService
 
         tenant.EndDate = endDate;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (version > 0)
+        {
+            _dbContext.ApplyOriginalVersion(tenant, new VersionHolder(version));
+        }
+
+        var saveResult = await _safeSaveService.SaveAsync(_dbContext, cancellationToken);
+        if (saveResult.Status == SaveStatus.Conflict)
+        {
+            return Result.Failure("Concurrency Conflict: Another user modified this tenant's contract dates while you were editing. To prevent data loss, no changes were saved. Please re-open to load the latest dates.");
+        }
+        if (saveResult.Status != SaveStatus.Ok)
+        {
+            return Result.Failure(saveResult.Message ?? "Failed to update tenant dates due to database constraint violation.");
+        }
 
         // Evict global tenant directory cache across all auto-scaled instances
 
