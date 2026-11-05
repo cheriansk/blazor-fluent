@@ -37,8 +37,12 @@
   -->
   <Target Name="TemplateGuardIntegrityCheck" BeforeTargets="CoreCompile"
           Condition="'$(MSBuildProjectName)' != 'TemplateGuard.Analyzers' And '$(MSBuildProjectName)' != 'TemplateGuard.Tool' And '$(IsTestProject)' != 'true'">
+    <ItemGroup>
+      <_TgNupkgFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\*.TemplateGuard.*.nupkg" />
+      <_TgNupkgFiles Include="$(MSBuildThisFileDirectory)tools\TemplateGuard\*TemplateGuard*.nupkg" />
+    </ItemGroup>
     <PropertyGroup>
-      <_TgNupkgExists Condition="Exists('$(MSBuildThisFileDirectory)tools\TemplateGuard\BlazorEnterprise.TemplateGuard.1.0.0.nupkg')">true</_TgNupkgExists>
+      <_TgNupkgExists Condition="@(_TgNupkgFiles->Count()) &gt; 0">true</_TgNupkgExists>
       <_TgModeValid Condition="'$(TemplateGuardMode)' == 'TemplateAuthoring' Or '$(TemplateGuardMode)' == 'DownstreamEnforce'">true</_TgModeValid>
     </PropertyGroup>
 
@@ -46,7 +50,7 @@
            Code="TG020" Text="TemplateGuardMode '$(TemplateGuardMode)' is invalid. Use 'TemplateAuthoring' or 'DownstreamEnforce'." />
 
     <Error Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce' And '$(TemplateGuardAllowMissing)' != 'true' And '$(_TgNupkgExists)' != 'true'"
-           Code="TG020" Text="TemplateGuard package (tools\TemplateGuard\BlazorEnterprise.TemplateGuard.*.nupkg) is missing. Governance is not enforced. Restore tools/TemplateGuard. Local last resort: -p:TemplateGuardAllowMissing=true." />
+           Code="TG020" Text="TemplateGuard package (tools\TemplateGuard\*TemplateGuard*.nupkg) is missing. Governance is not enforced. Restore tools/TemplateGuard. Local last resort: -p:TemplateGuardAllowMissing=true." />
 
     <Warning Condition="'$(TemplateGuardMode)' == 'DownstreamEnforce' And '$(TemplateGuardAllowMissing)' == 'true' And '$(_TgNupkgExists)' != 'true'"
              Code="TG020" Text="TemplateGuard package missing but TemplateGuardAllowMissing=true - base-file governance is DISABLED for this build." />

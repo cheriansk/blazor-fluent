@@ -28598,7 +28598,7 @@
       "RelativePath": "Shared.UI/Components/Dialog/CskDialog.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4692f7bebff56158e0d2cc7a4c6c2b6d5c3b62512527aae9cf827275bc7c570b"
+        "$Markup": "1019b459637c2b1d1389b69354d168ddc42afde4961b0c4272832866543268a9"
       }
     },
     "Shared.UI/Components/Dialog/CskDialogBody.razor": {
@@ -29473,7 +29473,14 @@
       "RelativePath": "Shared.UI/Components/Dialog/CskDialog.razor.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "333b630f9c2deed09ac4bacb020a4797dc812f576fd7783ae5e23623aa3c030e"
+        "$Content": "fb0a2d6ca9607d2adde5ab28cc6c21da5857eece3790ae4a3535e4260e7da11a"
+      }
+    },
+    "Shared.UI/Components/Dialog/CskDialogBody.razor.css": {
+      "RelativePath": "Shared.UI/Components/Dialog/CskDialogBody.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "41626328c30ef6ece3ea561d8f8dfa3ed8b62f4a7477fd189d9f3ed343a55adc"
       }
     },
     "Shared.UI/Components/Divider/CskDivider.razor.css": {
@@ -29648,7 +29655,7 @@
       "RelativePath": "Shared.UI/wwwroot/css/material-theme.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "0af5f686a39a2b5d99bed8655f3041c156d6e6921452a011ba6c003ac3d92aa9"
+        "$Content": "aa116c3218b1d51550bcfd9c8c3f416c9b39aef1aa43ac647cc201b8dbc2439a"
       }
     },
     "Web/Components/Common/AppErrorBoundaryComp.razor.css": {

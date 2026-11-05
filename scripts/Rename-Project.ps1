@@ -221,7 +221,7 @@ if (-not $Force -and -not $DryRun) {
 # =============================================================================
 Write-Host "=== Phase 1: Replacing file contents ===" -ForegroundColor Cyan
 
-$extensions = @("*.cs", "*.csproj", "*.slnx", "*.razor", "*.json", "*.props",
+$extensions = @("*.cs", "*.csproj", "*.slnx", "*.razor", "*.json", "*.props", "*.targets",
                 "*.yml", "*.yaml", "*.md", "*.js", "*.css", "*.html",
                 "*.user", "*.ps1", "*.sql", "Dockerfile*")
 
