@@ -398,6 +398,11 @@ switch ($Mode) {
                 Write-Host "  [GOVERNANCE] Updated tools/TemplateGuard/TemplateGuard.Analyzers.dll" -ForegroundColor Green
             }
 
+            # Purge any stale or misnamed downstream nupkg packages before copying clean upstream packages
+            Get-ChildItem -Path (Join-Path $DownstreamFolder "tools\TemplateGuard") -Filter "*.nupkg" -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -ne "BlazorEnterprise.TemplateGuard.1.0.0.nupkg" } |
+                Remove-Item -Force -ErrorAction SilentlyContinue
+
             $stagedPackages = Get-ChildItem -Path (Join-Path $stagingDir "tools\TemplateGuard") -Filter "*.nupkg" -File -ErrorAction SilentlyContinue
             foreach ($pkg in $stagedPackages) {
                 $destPkg = Join-Path $DownstreamFolder "tools\TemplateGuard\$($pkg.Name)"

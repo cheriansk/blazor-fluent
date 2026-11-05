@@ -302,7 +302,7 @@ Write-Host "=== Phase 2: Renaming files ===" -ForegroundColor Cyan
 $filesToRename = Get-ChildItem -Path $RepoRoot -Recurse -File |
     Where-Object {
         $rel = $_.FullName.Substring($RepoRoot.Length)
-        ($_.Name -like "*$OldName*") -and (-not (Should-Exclude $rel)) -and ($_.Name -ne $currentScriptName)
+        ($_.Name -like "*$OldName*") -and (-not (Should-Exclude $rel)) -and ($_.Name -ne $currentScriptName) -and ($_.Extension -ne ".nupkg")
     } |
     Sort-Object { $_.FullName.Length } -Descending  # Deepest first
 
