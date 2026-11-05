@@ -252,6 +252,9 @@ foreach ($file in $targetFiles) {
 
     # Pass 2: lowercase replacement (e.g. blazorfluent -> newname)
     $content = $content -creplace [regex]::Escape($OldNameLower), $NewNameLower
+    # Preserve governance analyzer package reference (BlazorEnterprise.TemplateGuard)
+    $content = $content -creplace [regex]::Escape("$NewName.TemplateGuard"), "$OldName.TemplateGuard"
+    $content = $content -creplace [regex]::Escape("$NewNameLower.templateguard"), "$OldNameLower.templateguard"
 
     if ($content -ne $original) {
         $filesModified++
