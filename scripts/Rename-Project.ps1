@@ -311,7 +311,7 @@ foreach ($file in $filesToRename) {
         if ($DryRun) {
             Write-Host "  [DRY RUN] Would rename: $rel -> $newFileName" -ForegroundColor Magenta
         } else {
-            Rename-Item -Path $file.FullName -NewName $newFileName
+            $targetPath = Join-Path (Split-Path $file.FullName -Parent) $newFileName; if (Test-Path $targetPath) { Remove-Item -Path $targetPath -Force -ErrorAction SilentlyContinue }; Rename-Item -Path $file.FullName -NewName $newFileName -Force
             Write-Host "  Renamed: $rel -> $newFileName" -ForegroundColor DarkGreen
         }
     }
@@ -340,7 +340,7 @@ foreach ($dir in $dirsToRename) {
         if ($DryRun) {
             Write-Host "  [DRY RUN] Would rename dir: $rel -> $newDirName" -ForegroundColor Magenta
         } else {
-            Rename-Item -Path $dir.FullName -NewName $newDirName
+            $targetDirPath = Join-Path (Split-Path $dir.FullName -Parent) $newDirName; if (Test-Path $targetDirPath) { Remove-Item -Path $targetDirPath -Recurse -Force -ErrorAction SilentlyContinue }; Rename-Item -Path $dir.FullName -NewName $newDirName -Force
             Write-Host "  Renamed dir: $rel -> $newDirName" -ForegroundColor DarkGreen
         }
     }
