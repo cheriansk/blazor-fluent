@@ -4,6 +4,10 @@
 @using BlazorEnterprise.Core.Domain.Calendar
 
 <div class="holistic-timeline-root">
+    <BlazorEnterprise.Web.Components.Common.RevisionToolbarComp 
+        ScopeLevel="TaskLevelEnum.Program" 
+        FeatureType="VersionedFeatureTypeEnum.ProgramCalendar" 
+        ProgramId="@ProgramId" />
     <div class="timeline-toolbar">
         <div class="toolbar-stats">
             <span class="stat-item"><strong>@TimelineRows.Count</strong> Timeline Stages</span>

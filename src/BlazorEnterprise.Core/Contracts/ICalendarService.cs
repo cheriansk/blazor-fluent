@@ -38,12 +38,14 @@ public interface ICalendarService
         Guid tenantId,
         Guid programId,
         bool forEdit = false,
+        Guid? revisionHeaderId = null,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<ProjectCalendarEntity>> GetProjectCalendarEntitiesAsync(
         Guid tenantId,
         Guid projectId,
         bool forEdit = false,
+        Guid? revisionHeaderId = null,
         CancellationToken ct = default);
 
     // --- Direct Calendar Operations ---

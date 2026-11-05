@@ -1,3 +1,4 @@
+using BlazorEnterprise.Core.Domain.Base;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Domain.Tasks;
@@ -7,7 +8,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Invariant: Maximum hierarchy depth is 1 (a subtask cannot have a subtask).
 /// Invariant: Intra-task blockers can only reference sibling subtasks under the same ParentTaskId.
 /// </summary>
-public class SubTaskEntity : BaseTaskEntity
+public class SubTaskEntity : BaseTaskEntity, IUnversionedEntity
 {
     /// <summary>
     /// Foreign key to the governing parent <see cref="TaskEntity"/>.

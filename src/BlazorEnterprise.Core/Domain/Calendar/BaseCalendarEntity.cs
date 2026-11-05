@@ -9,9 +9,8 @@ namespace BlazorEnterprise.Core.Domain.Calendar;
 /// Models milestone target dates, sprint cadences, release schedules, phase gates, and delivery deadlines.
 /// Tied to tenant via sequential UUIDv7 <see cref="TenantAuditableEntity.TenantId"/>.
 /// Implements <see cref="IEffectiveDatedEntity"/> (StartDate and EndDate) and <see cref="ISoftDeletableEntity"/>.
-/// Implements <see cref="IVersionedEntity"/> to maintain immutable baseline revision slippage history.
 /// </summary>
-public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDatedEntity, IVersionedEntity, ISoftDeletableEntity
+public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// Title for the Event
@@ -39,6 +38,7 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
 
     /// <summary>
     /// Optional foreign key pointing to the parent timeline row (when EntryType is Milestone).
+    /// Stores the RelId of the parent timeline to ensure lineage continuity across revisions.
     /// </summary>
     public Guid? ParentTimelineId { get; set; }
 
@@ -51,27 +51,12 @@ public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDate
     /// Effective end date in UTC (Date-level precision).
     /// Required for all entries. For single-day milestones, EndDate equals StartDate.
     /// </summary>
-    public DateTime? EndDate { get; set; } 
-
-    /// <summary>
-    /// Formal schedule baseline revision version number (1, 2, 3...).
-    /// Initialized to 1 upon creation; incremented on schedule re-baselining to preserve slippage audit trails.
-    /// </summary>
-    public int VerNum { get; set; } = 1;
-
-    public void SetVersionNumber(int newVersion)
-    {
-        if (newVersion <= VerNum)
-        {
-            throw new InvalidOperationException($"New calendar version ({newVersion}) must be greater than current version ({VerNum}).");
-        }
-        VerNum = newVersion;
-    }
+    public DateTime? EndDate { get; set; }
 
     /// <summary>
     /// Classification category of this calendar entry (Milestone, Sprint, Release, Deadline, etc.).
     /// </summary>
-    public required CalendarEntryTypeEnum EntryType { get; set; } 
+    public required CalendarEntryTypeEnum EntryType { get; set; }
 
     /// <summary>
     /// Current scheduling status (Scheduled, Confirmed, InProgress, Completed, Cancelled).

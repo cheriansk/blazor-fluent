@@ -6,14 +6,12 @@ namespace BlazorEnterprise.Core.Domain.Events;
 /// <summary>
 /// Persistent ledger record capturing an event publication:
 /// who emitted it (source class and method), acting user, payload JSON, and aggregate status.
-/// Implements <see cref="ITenantEntity"/> for tenancy scoping,
-/// <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
+/// Inherits <see cref="TenantAuditableEntity"/> for tenancy scoping,
+/// implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
+/// and <see cref="IImmutableEntity"/> to enforce ledger integrity.
 /// </summary>
-public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
+public class EventPublishTrackerEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
-    /// <summary>Tenant scope for row-level isolation. Multi-tenant queries filter by this value.</summary>
-    public required Guid TenantId { get; set; }
-
     /// <summary>Unique identifier of the published event (UUIDv7).</summary>
     public Guid EventId { get; set; } = Guid.CreateVersion7();
 
@@ -59,11 +57,6 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
     /// <summary>Consumer executions recorded for this event.</summary>
     public ICollection<EventConsumptionTrackerEntity> Consumptions { get; set; } = new List<EventConsumptionTrackerEntity>();
 
-    /// <summary>
-    /// Computes who or what sent the event:
-    /// - If sent by user interaction: strictly points to that user (Email or UserId).
-    /// - If sent by batch or background daemon: uses the daemon user running the batch.
-    /// </summary>
     public string GetEffectiveSender()
     {
         if (!string.IsNullOrWhiteSpace(UserEmail) &&
@@ -87,12 +80,6 @@ public class EventPublishTrackerEntity : AuditableEntity, ITenantEntity, IAuditE
         return $"SystemDaemon ({batchName})";
     }
 
-    /// <summary>
-    /// Computes the sender origin:
-    /// - If batch: the batch name (e.g. TaskCadenceAlertJob)
-    /// - If button on razor page: the button name (e.g. Button:RunTaskCadenceAlertJob)
-    /// - If class function: the functionName (e.g. ImportFileService.UploadBatchAsync)
-    /// </summary>
     public string GetEffectiveSenderOrigin()
     {
         if (!string.IsNullOrWhiteSpace(TriggerSource) &&

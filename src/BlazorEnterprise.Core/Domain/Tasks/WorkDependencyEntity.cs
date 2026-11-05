@@ -12,7 +12,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Side B (Dependent item waiting) depends on Side A (Prerequisite item blocking).
 /// Subtype of <see cref="BaseTaskEntity"/> mapped to table 'tasks.work_dependencies'.
 /// </summary>
-public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity
+public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
 {
     // =========================================================================
     // Side B: Dependent / Successor Item (Waiting on Prerequisite A)

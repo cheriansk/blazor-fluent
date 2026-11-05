@@ -14,7 +14,7 @@ namespace BlazorEnterprise.Core.Domain.Identity;
 /// allowing company users to participate in multiple tenants and projects.
 /// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
-public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IHmacSignableEntity
+public class UserEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
 {
     public required string Email { get; set; }
 

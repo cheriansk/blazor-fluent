@@ -13,7 +13,7 @@ namespace BlazorEnterprise.Core.Domain.Knowledge;
 /// Enforces 3NF relational normalization by persisting only <see cref="AuthorUserEntityId"/> and <see cref="ApprovedByUserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="AuthorUser"/> and <see cref="ApprovedByUser"/>.
 /// </summary>
-public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity
+public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
 {
     /// <summary>
     /// Concise headline title of the article. Required. Max 100 characters.

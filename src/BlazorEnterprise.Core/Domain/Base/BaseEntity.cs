@@ -7,9 +7,9 @@ namespace BlazorEnterprise.Core.Domain.Base;
 /// DO NOT MODIFY without architectural review.
 /// Declares the sequential UUIDv7 primary key (Guid.CreateVersion7()) for all database entities.
 /// Sequential UUIDv7 ensures optimal B-Tree index clustering and high insert throughput in PostgreSQL.
-/// Implements IVersioned for PostgreSQL xmin system-column optimistic concurrency.
+/// Implements IConcurrency for PostgreSQL xmin system-column optimistic concurrency.
 /// </summary>
-public abstract class BaseEntity : IAuditableEntity, IVersioned
+public abstract class BaseEntity : IAuditableEntity, IConcurrency
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 

@@ -164,10 +164,21 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<Guid>("ParentRowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValue(new Guid("00000000-0000-0000-0000-000000000000"));
+
                     b.Property<Guid?>("ParentTimelineId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RevisionHeaderId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("StartDate")
@@ -207,8 +218,18 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasIndex("ParentTimelineId")
                         .HasDatabaseName("IX_ProgramCalendars_ParentTimelineId");
 
+                    b.HasIndex("RelId")
+                        .HasDatabaseName("IX_ProgramCalendars_RelId");
+
+                    b.HasIndex("RevisionHeaderId")
+                        .HasDatabaseName("IX_ProgramCalendars_RevisionHeaderId");
+
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_ProgramCalendars_TenantId");
+
+                    b.HasIndex("RevisionHeaderId", "RelId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProgramCalendars_Revision_RelId");
 
                     b.HasIndex("TenantId", "ProgramId")
                         .HasDatabaseName("IX_ProgramCalendars_Tenant_Program");
@@ -269,6 +290,11 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<Guid?>("ParentProgramCalendarId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("ParentRowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValue(new Guid("00000000-0000-0000-0000-000000000000"));
+
                     b.Property<Guid?>("ParentTimelineId")
                         .HasColumnType("uuid");
 
@@ -276,6 +302,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RevisionHeaderId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("StartDate")
@@ -319,8 +351,18 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasIndex("ProgramId");
 
+                    b.HasIndex("RelId")
+                        .HasDatabaseName("IX_ProjectCalendars_RelId");
+
+                    b.HasIndex("RevisionHeaderId")
+                        .HasDatabaseName("IX_ProjectCalendars_RevisionHeaderId");
+
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_ProjectCalendars_TenantId");
+
+                    b.HasIndex("RevisionHeaderId", "RelId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProjectCalendars_Revision_RelId");
 
                     b.HasIndex("TenantId", "ProjectId")
                         .HasDatabaseName("IX_ProjectCalendars_Tenant_Project");
@@ -409,9 +451,6 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
-
-                    b.Property<int>("VerNum")
-                        .HasColumnType("integer");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -3373,6 +3412,160 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.ToTable("tenant_users", "tenancy");
                 });
 
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ActivatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ActivatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("AssignedToEmails")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<string>("CreatorEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("FeatureType")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("ParentRevisionHeaderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValue(new Guid("00000000-0000-0000-0000-000000000000"));
+
+                    b.Property<int>("ParentVerNum")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(-1);
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReviewComments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("ReviewerEmails")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RevisionName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("ScopeLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("SubmittedForReviewAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SupersededAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<int>("VerNum")
+                        .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentRevisionHeaderId")
+                        .HasDatabaseName("IX_RevisionHeaders_ParentRevisionHeaderId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("IX_RevisionHeaders_Tenant_Status");
+
+                    b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RevisionHeaders_Scenario_SingleActive")
+                        .HasFilter("\"Status\" = 4 AND \"IsDeleted\" = false");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType"), false);
+
+                    b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType", "VerNum")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RevisionHeaders_Scenario_VerNum_Unique");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType", "VerNum"), false);
+
+                    b.ToTable("RevisionHeaders", "versioning", t =>
+                        {
+                            t.HasCheckConstraint("CK_RevisionHeaders_Lineage_Integrity", "\"VerNum\" >= 1 AND (\"ParentVerNum\" = -1 OR (\"ParentVerNum\" >= 1 AND \"ParentVerNum\" < \"VerNum\"))");
+
+                            t.HasCheckConstraint("CK_RevisionHeaders_Scope_Hierarchy", "(\"ScopeLevel\" = 1 AND \"ProgramId\" IS NULL AND \"ProjectId\" IS NULL) OR (\"ScopeLevel\" = 2 AND \"ProgramId\" IS NOT NULL AND \"ProjectId\" IS NULL) OR (\"ScopeLevel\" = 3 AND \"ProgramId\" IS NOT NULL AND \"ProjectId\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
                 {
                     b.Property<int>("Id")
@@ -3405,9 +3598,17 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
+                        .WithMany()
+                        .HasForeignKey("RevisionHeaderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("ParentTimeline");
 
                     b.Navigation("Program");
+
+                    b.Navigation("RevisionHeader");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProjectCalendarEntity", b =>
@@ -3433,6 +3634,12 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
+                        .WithMany()
+                        .HasForeignKey("RevisionHeaderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("ParentProgramCalendar");
 
                     b.Navigation("ParentTimeline");
@@ -3440,6 +3647,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Navigation("Program");
 
                     b.Navigation("Project");
+
+                    b.Navigation("RevisionHeader");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.UserCalendarEntity", b =>

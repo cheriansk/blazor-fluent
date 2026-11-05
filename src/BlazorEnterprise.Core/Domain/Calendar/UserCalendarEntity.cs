@@ -1,3 +1,4 @@
+using BlazorEnterprise.Core.Domain.Base;
 using BlazorEnterprise.Core.Domain.Identity;
 
 namespace BlazorEnterprise.Core.Domain.Calendar;
@@ -6,8 +7,9 @@ namespace BlazorEnterprise.Core.Domain.Calendar;
 /// Dedicated user-level personal calendar entry.
 /// Mapped to physical table 'user_calendars'.
 /// Tracks personal appointments, working focus sessions, and planned time off.
+/// Implements IUnversionedEntity since user schedules and time off do not require multi-draft approval workflows.
 /// </summary>
-public class UserCalendarEntity : BaseCalendarEntity
+public class UserCalendarEntity : BaseCalendarEntity, IUnversionedEntity
 {
     /// <summary>
     /// Foreign key identifier of the UserEntity owning this personal calendar entry.

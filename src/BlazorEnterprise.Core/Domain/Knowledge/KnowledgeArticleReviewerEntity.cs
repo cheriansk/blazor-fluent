@@ -6,12 +6,12 @@ namespace BlazorEnterprise.Core.Domain.Knowledge;
 
 /// <summary>
 /// Represents an assigned reviewer for a knowledge article.
-/// Extends <see cref="BaseEntity"/>, implements <see cref="IGlobalEntity"/> as a dependent child record governed
+/// Extends <see cref="AuditableEntity"/>, implements <see cref="IGlobalEntity"/> as a dependent child record governed
 /// by the parent article's query filter.
 /// Enforces 3NF relational normalization by persisting only <see cref="ArticleId"/> and <see cref="UserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
 /// </summary>
-public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity, IHardDeletableEntity
+public class KnowledgeArticleReviewerEntity : AuditableEntity, IGlobalEntity, IHardDeletableEntity, IUnversionedEntity
 {
     public required Guid ArticleId { get; set; }
 

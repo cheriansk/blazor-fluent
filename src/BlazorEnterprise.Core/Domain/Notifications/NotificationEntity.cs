@@ -9,7 +9,7 @@ namespace BlazorEnterprise.Core.Domain.Notifications;
 /// - Project isolation (IProjectScopedEntity)
 /// - Personal recipient isolation (UserId)
 /// </summary>
-public class NotificationEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity
+public class NotificationEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
 {
     /// <summary>
     /// Associated project ID, or Guid.Empty for system/tenant-wide generic notifications.

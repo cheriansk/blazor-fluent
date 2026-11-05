@@ -1078,18 +1078,12 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
         catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException ex)
         {
             var err = "Concurrency Conflict: This program was modified by another user while your edit was in progress. Your changes were not applied to avoid overwriting newer data. Please refresh and review.";
-            _statusMessage = err;
-            _isError = true;
-
             return err;
         }
 
         catch (Exception ex)
         {
             var err = $"An error occurred while saving the program: {ex.Message}";
-            _statusMessage = err;
-            _isError = true;
-
             return err;
         }
 
@@ -1619,18 +1613,12 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
         catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException ex)
         {
             var err = "Concurrency Conflict: This project was modified by another user while your edit was in progress. Your changes were not applied to avoid overwriting newer data. Please refresh and review.";
-            _statusMessage = err;
-            _isError = true;
-
             return err;
         }
 
         catch (Exception ex)
         {
             var err = $"An error occurred while saving the project: {ex.Message}";
-            _statusMessage = err;
-            _isError = true;
-
             return err;
         }
 

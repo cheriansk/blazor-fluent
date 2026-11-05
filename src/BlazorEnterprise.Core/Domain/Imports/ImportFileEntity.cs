@@ -7,7 +7,7 @@ namespace BlazorEnterprise.Core.Domain.Imports;
 /// Represents a raw uploaded file metadata record, strictly isolated per-tenant and per-project.
 /// Tracks the encrypted blob reference in Azure Blob Storage, processing lifecycle, row metrics, and forensic hash.
 /// </summary>
-public class ImportFileEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class ImportFileEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     /// <summary>
     /// ID of the project workspace to which this file import belongs.

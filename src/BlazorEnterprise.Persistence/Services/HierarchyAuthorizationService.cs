@@ -608,6 +608,8 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .AsNoTracking()
 
+            .IgnoreQueryFilters()
+
             .Where(p => p.Id == projectId && !p.IsDeleted)
 
             .Select(p => new { p.TenantId, p.ProgramId })

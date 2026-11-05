@@ -6,14 +6,12 @@ namespace BlazorEnterprise.Core.Domain.Events;
 /// <summary>
 /// Persistent ledger record capturing an individual consumer execution receipt:
 /// which handler class and method consumed it, when it ran, duration in ms, and diagnostics.
-/// Implements <see cref="ITenantEntity"/> for tenancy scoping,
-/// <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
+/// Inherits <see cref="TenantAuditableEntity"/> for tenancy scoping,
+/// implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
+/// and <see cref="IImmutableEntity"/> to enforce ledger integrity.
 /// </summary>
-public class EventConsumptionTrackerEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
+public class EventConsumptionTrackerEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
-    /// <summary>Tenant scope for row-level isolation.</summary>
-    public required Guid TenantId { get; set; }
-
     /// <summary>Foreign key linking to the parent publication record.</summary>
     public required Guid EventPublishTrackerId { get; set; }
 

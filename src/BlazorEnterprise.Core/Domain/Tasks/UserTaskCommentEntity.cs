@@ -11,7 +11,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Enforces 3NF relational normalization by persisting only <see cref="AuthorUserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="AuthorUser"/>.
 /// </summary>
-public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class UserTaskCommentEntity : TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     /// <summary>
     /// Foreign key to the parent <see cref="TaskEntity"/>.

@@ -28,10 +28,6 @@ public interface IAuditExemptEntity : IMarkerEntity { }
 /// <summary>
 /// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
 /// AppDbContext enforces at startup that every entity implements either ITenantEntity or IGlobalEntity (fail-closed guard).
-/// <para>
-/// <b>Note:</b> Entities like <c>JobExecutionEntity</c> retain a <c>TenantId</c> column for auditability and service-layer filtering,
-/// while implementing <see cref="IGlobalEntity"/> to allow system-wide daemon execution and centralized platform observability.
-/// </para>
 /// </summary>
 public interface IGlobalEntity : IMarkerEntity { }
 
@@ -101,17 +97,30 @@ public interface IEffectiveDatedEntity : IMarkerEntity
 
 /// <summary>
 /// Enforces revision and version tracking on database records.
-/// Version numbers are NOT blindly auto-incremented on every update; instead, the entity encapsulates
-/// its own SetVersionNumber(newVersion) method to enforce table-specific validation rules.
-/// AuditableEntityInterceptor validates that VerNum is initialized >= 1 upon insert.
+/// Version numbers are managed via RevisionHeaderEntity.
+/// RelId identifies the logical business entity across versions/drafts.
+/// ParentRowId provides soft lineage back to the source version row (Guid.Empty for root/new records).
+/// AuditableEntityInterceptor validates that RelId and VerNum are strictly immutable after creation.
 /// </summary>
 public interface IVersionedEntity : IMarkerEntity
 {
+    Guid RevisionHeaderId { get; set; }
+    Guid RelId { get; set; }
     int VerNum { get; set; }
+    Guid ParentRowId { get; set; }
 
     /// <summary>
     /// Explicitly updates the version number while enforcing table-specific validation rules.
     /// </summary>
     /// <param name="newVersion">The new version number (must be greater than current VerNum).</param>
     void SetVersionNumber(int newVersion);
+}
+
+/// <summary>
+/// Explicitly marks an entity as not subject to multi-draft scenario versioning.
+/// Mutually exclusive with <see cref="IVersionedEntity"/>.
+/// Every concrete entity in the system must implement either IVersionedEntity OR IUnversionedEntity.
+/// </summary>
+public interface IUnversionedEntity : IMarkerEntity
+{
 }
