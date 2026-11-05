@@ -9,7 +9,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Can act as a standalone task or as a sequential step in a <see cref="WorkflowEntity"/>.
 /// Can have one or more <see cref="SubTaskEntity"/> children delegated to team members.
 /// </summary>
-public partial class TaskEntity : BaseTaskEntity, IProjectScopedEntity, IMilestoneLinkedEntity
+public partial class TaskEntity : BaseTaskEntity, IProjectScopedEntity, IMilestoneLinkedEntity, IUnversionedEntity
 {
     /// <summary>
     /// ID of the project to which this task belongs (when Level is Project).

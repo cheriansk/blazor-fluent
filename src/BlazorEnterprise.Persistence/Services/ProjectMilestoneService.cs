@@ -39,18 +39,27 @@ public class ProjectMilestoneService : IProjectMilestoneService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, Guid? revisionHeaderId = null, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetMilestonesByProject", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
 
-        return await _context.ProjectCalendars
+        var query = _context.ProjectCalendars
             .AsNoTracking()
-            .Where(m => m.TenantId == tenantId && m.ProjectId == projectId && !m.IsDeleted)
-            .OrderBy(m => m.StartDate)
-            .ToListAsync(ct);
+            .Where(m => m.TenantId == tenantId && m.ProjectId == projectId && !m.IsDeleted);
+
+        if (revisionHeaderId.HasValue && revisionHeaderId.Value != Guid.Empty)
+        {
+            query = query.Where(m => m.RevisionHeaderId == revisionHeaderId.Value);
+        }
+        else
+        {
+            query = query.Where(m => m.RevisionHeader!.Status == RevisionStatusEnum.Active);
+        }
+
+        return await query.OrderBy(m => m.StartDate).ToListAsync(ct);
     }
 
     public async Task<ProjectCalendarEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default)

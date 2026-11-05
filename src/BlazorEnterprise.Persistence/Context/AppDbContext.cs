@@ -1,3 +1,4 @@
+using BlazorEnterprise.Core.Domain.Versioning;
 using System.Reflection;
 
 using BlazorEnterprise.Core.Contracts;
@@ -54,20 +55,12 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
     /// </summary>
 
-    private static readonly HashSet<Type> WhitelistedGlobalEntities = new()
-
+        public static readonly IReadOnlySet<Type> WhitelistedGlobalEntities = new HashSet<Type>
     {
-
         typeof(TenantEntity),
-
         typeof(UserEntity),
-
         typeof(KnowledgeArticleReviewerEntity),
-
-        typeof(ImpersonationGrantEntity),
-
-        typeof(JobExecutionEntity)
-
+        typeof(ImpersonationGrantEntity)
     };
 
 
@@ -175,6 +168,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<EventConsumptionTrackerEntity> EventConsumptionTrackers => Set<EventConsumptionTrackerEntity>();
 
     public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
+    public DbSet<RevisionHeaderEntity> RevisionHeaders => Set<RevisionHeaderEntity>();
 
 
 
@@ -246,6 +240,22 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
             if (clrType == typeof(DataProtectionKey)) continue;
 
+            // Fail-closed BaseEntity Rule: Every entity MUST inherit BaseEntity to be mapped/persisted
+            if (!typeof(BaseEntity).IsAssignableFrom(clrType))
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates core domain architecture! " +
+                    $"Every entity must inherit from '{nameof(BaseEntity)}'.");
+            }
+
+            // Fail-closed TenantAuditableEntity Rule: Every entity MUST inherit TenantAuditableEntity unless in the 4-entity global whitelist
+            if (!typeof(TenantAuditableEntity).IsAssignableFrom(clrType) && !WhitelistedGlobalEntities.Contains(clrType))
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates multi-tenant security architecture! " +
+                    $"Every entity must extend '{nameof(TenantAuditableEntity)}' unless explicitly whitelisted in '{nameof(WhitelistedGlobalEntities)}'.");
+            }
+
 
 
             var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
@@ -259,6 +269,22 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
             var isImmutable = typeof(IImmutableEntity).IsAssignableFrom(clrType);
 
             var isProjectScoped = typeof(IProjectScopedEntity).IsAssignableFrom(clrType);
+            var isVersioned = typeof(IVersionedEntity).IsAssignableFrom(clrType);
+            var isUnversioned = typeof(IUnversionedEntity).IsAssignableFrom(clrType);
+
+            // Fail-closed Versioning Architecture Rule: every entity must implement either IVersionedEntity OR IUnversionedEntity
+            if (!isVersioned && !isUnversioned)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates versioning governance architecture! " +
+                    $"It must implement either '{nameof(IVersionedEntity)}' or '{nameof(IUnversionedEntity)}'.");
+            }
+            if (isVersioned && isUnversioned)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates versioning governance architecture! " +
+                    $"It cannot implement both '{nameof(IVersionedEntity)}' and '{nameof(IUnversionedEntity)}'.");
+            }
 
 
 
@@ -537,6 +563,37 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
                     .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
 
+            }
+            if (isVersioned)
+            {
+                entityType.FindProperty(nameof(IVersionedEntity.RevisionHeaderId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(IVersionedEntity.RelId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(IVersionedEntity.VerNum))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                                entityType.FindProperty(nameof(IVersionedEntity.ParentRowId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+            }
+
+            if (clrType == typeof(RevisionHeaderEntity))
+            {
+                entityType.FindProperty(nameof(RevisionHeaderEntity.VerNum))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.ScopeLevel))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.FeatureType))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.ProgramId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.ProjectId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.ParentVerNum))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.ParentRevisionHeaderId))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+                entityType.FindProperty(nameof(RevisionHeaderEntity.CreatorEmail))?
+                    .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
             }
 
         }

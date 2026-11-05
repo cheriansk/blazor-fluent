@@ -1,3 +1,4 @@
+using BlazorEnterprise.Core.Domain.Versioning;
 using System.Security;
 using System.Text.Json;
 using BlazorEnterprise.Core.Contracts;
@@ -99,7 +100,31 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
     {
         foreach (var entry in context.ChangeTracker.Entries())
         {
-            // ─── 0. IMMUTABLE RECORD SECURITY GUARD ─────────────────────────────────
+            if (entry.Entity is DataProtectionKey) continue;
+
+            // Zero-Trust Rule 1: Every persisted entity MUST inherit BaseEntity
+            if (entry.Entity is not BaseEntity)
+            {
+                throw new System.Security.SecurityException(
+                    $"Zero-Trust Security Violation: Entity '{entry.Entity.GetType().Name}' does not inherit from '{nameof(BaseEntity)}'.");
+            }
+
+            // Zero-Trust Rule 2: Every entity MUST implement IVersionedEntity XOR IUnversionedEntity
+            var isVer = entry.Entity is IVersionedEntity;
+            var isUnver = entry.Entity is IUnversionedEntity;
+            if ((!isVer && !isUnver) || (isVer && isUnver))
+            {
+                throw new System.Security.SecurityException(
+                    $"Zero-Trust Security Violation: Entity '{entry.Entity.GetType().Name}' must implement either IVersionedEntity OR IUnversionedEntity (mutually exclusive).");
+            }
+
+            // Zero-Trust Rule 3: Every entity MUST inherit TenantAuditableEntity unless in AppDbContext.WhitelistedGlobalEntities
+            if (entry.Entity is not TenantAuditableEntity && !AppDbContext.WhitelistedGlobalEntities.Contains(entry.Entity.GetType()))
+            {
+                throw new System.Security.SecurityException(
+                    $"Zero-Trust Security Violation: Entity '{entry.Entity.GetType().Name}' must inherit from TenantAuditableEntity or be in the approved global whitelist.");
+            }
+            // 0. IMMUTABLE RECORD SECURITY GUARD
             // Guard immutable records (AuditRecordEntity, EventTrackers, JobExecutions) from deletion and mutation
             if (entry.Entity is IImmutableEntity)
             {
@@ -121,7 +146,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 continue;
             }
 
-            // ─── 0a. SYSTEM DAEMON RESTRICTION GUARD ────────────────────────────────
+            // 0a. SYSTEM DAEMON RESTRICTION GUARD
             // SystemDaemon can NEVER perform administrative operations: creating/modifying/deleting
             // Tenants, Users, or Role assignments (TenantUser, ProgramUserRole, ProjectUserRole).
             // Daemons are restricted to pure data processing only.
@@ -361,17 +386,98 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             }
             // ─────────────────────────────────────────────────────────────────────────
 
-            // ─── VERSIONING ───────────────────────────────────────────────────────────
+            // ZERO-TRUST SCENARIO VERSIONING & RELID INTEGRITY GUARD
             if (entry.Entity is IVersionedEntity versionedEntity)
             {
-                if (entry.State == EntityState.Added && versionedEntity.VerNum <= 0)
+                if (entry.State == EntityState.Added)
                 {
-                    versionedEntity.VerNum = 1;
+                    // Brand-new records receive RelId = Id if not set
+                    if (versionedEntity.RelId == Guid.Empty)
+                    {
+                        var idProp = entry.Property("Id");
+                        if (idProp?.CurrentValue is Guid entityId && entityId != Guid.Empty)
+                        {
+                            versionedEntity.RelId = entityId;
+                        }
+                        else
+                        {
+                            versionedEntity.RelId = Guid.CreateVersion7();
+                            if (idProp is not null)
+                            {
+                                idProp.CurrentValue = versionedEntity.RelId;
+                            }
+                        }
+                    }
+
+                    if (versionedEntity.VerNum <= 0)
+                    {
+                        versionedEntity.VerNum = 1;
+                    }
                 }
-                // On Modified, version updates are explicitly governed by entity.SetVersionNumber(newVersion)
+                else if (entry.State == EntityState.Modified)
+                {
+                    var relIdProp = entry.Property(nameof(IVersionedEntity.RelId));
+                    if (relIdProp.IsModified && !Equals(relIdProp.OriginalValue, relIdProp.CurrentValue))
+                    {
+                        throw new System.Security.SecurityException(
+                            $"CRITICAL SECURITY ALERT: RelId on entity '{entry.Entity.GetType().Name}' is permanently immutable and cannot be altered!");
+                    }
+
+                    var verNumProp = entry.Property(nameof(IVersionedEntity.VerNum));
+                    if (verNumProp.IsModified && !Equals(verNumProp.OriginalValue, verNumProp.CurrentValue))
+                    {
+                        throw new System.Security.SecurityException(
+                            $"CRITICAL SECURITY ALERT: VerNum on entity '{entry.Entity.GetType().Name}' is permanently immutable after creation!");
+                    }
+
+                    var parentRowIdProp = entry.Property(nameof(IVersionedEntity.ParentRowId));
+                    if (parentRowIdProp.IsModified && !Equals(parentRowIdProp.OriginalValue, parentRowIdProp.CurrentValue))
+                    {
+                        throw new System.Security.SecurityException(
+                            $"CRITICAL SECURITY ALERT: ParentRowId on entity '{entry.Entity.GetType().Name}' is permanently immutable after creation!");
+                    }
+
+                    var revHeaderIdProp = entry.Property(nameof(IVersionedEntity.RevisionHeaderId));
+                    if (revHeaderIdProp.IsModified && !Equals(revHeaderIdProp.OriginalValue, revHeaderIdProp.CurrentValue))
+                    {
+                        throw new System.Security.SecurityException(
+                            $"CRITICAL SECURITY ALERT: RevisionHeaderId on entity '{entry.Entity.GetType().Name}' is permanently immutable after creation!");
+                    }
+                }
             }
 
-            // ─── EFFECTIVE DATING VALIDATION ──────────────────────────────────────────
+            if (entry.Entity is RevisionHeaderEntity revHeader && entry.State == EntityState.Modified)
+            {
+                var verNumProp = entry.Property(nameof(RevisionHeaderEntity.VerNum));
+                if (verNumProp.IsModified && !Equals(verNumProp.OriginalValue, verNumProp.CurrentValue))
+                {
+                    throw new System.Security.SecurityException(
+                        $"CRITICAL SECURITY ALERT: VerNum on RevisionHeaderEntity is permanently immutable!");
+                }
+
+                var parentVerNumProp = entry.Property(nameof(RevisionHeaderEntity.ParentVerNum));
+                if (parentVerNumProp.IsModified && !Equals(parentVerNumProp.OriginalValue, parentVerNumProp.CurrentValue))
+                {
+                    throw new System.Security.SecurityException(
+                        $"CRITICAL SECURITY ALERT: ParentVerNum on RevisionHeaderEntity is permanently immutable!");
+                }
+
+                var parentHeaderIdProp = entry.Property(nameof(RevisionHeaderEntity.ParentRevisionHeaderId));
+                if (parentHeaderIdProp.IsModified && !Equals(parentHeaderIdProp.OriginalValue, parentHeaderIdProp.CurrentValue))
+                {
+                    throw new System.Security.SecurityException(
+                        $"CRITICAL SECURITY ALERT: ParentRevisionHeaderId on RevisionHeaderEntity is permanently immutable!");
+                }
+
+                var creatorEmailProp = entry.Property(nameof(RevisionHeaderEntity.CreatorEmail));
+                if (creatorEmailProp.IsModified && !Equals(creatorEmailProp.OriginalValue, creatorEmailProp.CurrentValue))
+                {
+                    throw new System.Security.SecurityException(
+                        $"CRITICAL SECURITY ALERT: CreatorEmail on RevisionHeaderEntity is permanently immutable!");
+                }
+            }
+
+                        // EFFECTIVE DATING VALIDATION
             if (entry.Entity is IEffectiveDatedEntity effectiveDated)
             {
                 if (effectiveDated.EndDate.HasValue && effectiveDated.EndDate.Value.Date < effectiveDated.StartDate.Date)
@@ -382,7 +488,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
 
-            // ─── SCHEDULED WORK AUTOMATION & GOVERNANCE ────────────────────────
+            // SCHEDULED WORK AUTOMATION & GOVERNANCE
             if (entry.Entity is IScheduledWorkEntity scheduledWork)
             {
                 if (entry.Entity is BaseTaskEntity baseTask)

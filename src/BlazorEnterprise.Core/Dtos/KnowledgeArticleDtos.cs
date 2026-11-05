@@ -19,7 +19,7 @@ public record KnowledgeArticleListDto(
     int ReviewerCount,
     int ApprovedReviewerCount,
     uint Version = 0
-) : IVersioned
+) : IConcurrency
 {
     public uint Version { get; set; } = Version;
 }
@@ -52,7 +52,7 @@ public record KnowledgeArticleDetailDto(
     DateTime? ApprovedAtUtc,
     List<ArticleReviewerDto> Reviewers,
     uint Version = 0
-) : IVersioned
+) : IConcurrency
 {
     public uint Version { get; set; } = Version;
 }
@@ -67,7 +67,7 @@ public record CreateArticleDto
     public List<string> ReviewerUserIds { get; set; } = new();
 }
 
-public record UpdateArticleDto : IVersioned
+public record UpdateArticleDto : IConcurrency
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;

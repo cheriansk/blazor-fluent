@@ -19,6 +19,20 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
         builder.Property(c => c.ProgramId)
             .IsRequired();
 
+        // IVersionedEntity Properties
+        builder.Property(c => c.RevisionHeaderId)
+            .IsRequired();
+
+        builder.Property(c => c.RelId)
+            .IsRequired();
+
+        builder.Property(c => c.VerNum)
+            .IsRequired();
+
+        builder.Property(c => c.ParentRowId)
+            .IsRequired()
+            .HasDefaultValue(Guid.Empty);
+
         builder.Property(c => c.Title)
             .HasMaxLength(200)
             .IsRequired();
@@ -61,6 +75,12 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
             .HasMaxLength(256)
             .IsRequired(false);
 
+        // Relationship to RevisionHeader (Restrict delete to prevent accidental cascading baseline loss)
+        builder.HasOne(c => c.RevisionHeader)
+            .WithMany()
+            .HasForeignKey(c => c.RevisionHeaderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Relationship to Program
         builder.HasOne(c => c.Program)
             .WithMany()
@@ -79,6 +99,16 @@ public class ProgramCalendarEntityConfiguration : IEntityTypeConfiguration<Progr
 
         builder.HasIndex(c => new { c.TenantId, c.ProgramId })
             .HasDatabaseName("IX_ProgramCalendars_Tenant_Program");
+
+        builder.HasIndex(c => c.RevisionHeaderId)
+            .HasDatabaseName("IX_ProgramCalendars_RevisionHeaderId");
+
+        builder.HasIndex(c => c.RelId)
+            .HasDatabaseName("IX_ProgramCalendars_RelId");
+
+        builder.HasIndex(c => new { c.RevisionHeaderId, c.RelId })
+            .IsUnique()
+            .HasDatabaseName("IX_ProgramCalendars_Revision_RelId");
 
         builder.HasIndex(c => new { c.ProgramId, c.StartDate, c.EndDate })
             .HasDatabaseName("IX_ProgramCalendars_Program_Start_End");

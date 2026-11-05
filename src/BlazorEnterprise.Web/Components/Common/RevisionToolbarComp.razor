@@ -1,0 +1,204 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Versioning
+@using BlazorEnterprise.Core.Models
+@inject IRevisionService RevisionService
+
+<div class="revision-toolbar-container">
+    <div class="revision-selector-group">
+        <label class="revision-label">Scenario Revision:</label>
+        <select class="revision-select" value="@SelectedRevisionId" @onchange="OnRevisionChangedAsync" disabled="@IsLoading">
+            @foreach (var r in Revisions)
+            {
+                <option value="@r.Id">
+                    v@r.VerNum - @r.RevisionName [@r.Status] @(r.ParentVerNum != -1 ? $"(from v{r.ParentVerNum})" : "")
+                </option>
+            }
+        </select>
+        @if (CurrentRevision != null)
+        {
+            <span class="revision-status-badge badge-@CurrentRevision.Status.ToString().ToLowerInvariant()">
+                @CurrentRevision.Status
+            </span>
+            @if (CurrentRevision.ParentVerNum != -1)
+            {
+                <span class="revision-lineage-badge" title="Cloned from Revision v@CurrentRevision.ParentVerNum">
+                    from v@CurrentRevision.ParentVerNum
+                </span>
+            }
+        }
+    </div>
+
+    <div class="revision-actions-group">
+        <button class="btn btn-secondary btn-sm" @onclick="OpenNewDraftModal" disabled="@IsLoading">
+            <CskIcon Icon="@CskIcons.Add" Class="csk-icon-sm" /> New Draft
+        </button>
+
+        @if (CurrentRevision != null)
+        {
+            @if (CurrentRevision.Status == RevisionStatusEnum.Draft)
+            {
+                <button class="btn btn-primary btn-sm" @onclick="OpenSubmitModal" disabled="@IsLoading">
+                    <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" /> Submit for Review
+                </button>
+                <button class="btn btn-danger btn-sm" @onclick="DiscardDraftAsync" disabled="@IsLoading">
+                    <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-sm" /> Discard Draft
+                </button>
+            }
+            else if (CurrentRevision.Status == RevisionStatusEnum.ReadyForReview)
+            {
+                <button class="btn btn-success btn-sm" @onclick="ApproveRevisionAsync" disabled="@IsLoading">
+                    <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" /> Approve
+                </button>
+                <button class="btn btn-danger btn-sm" @onclick="OpenRejectModal" disabled="@IsLoading">
+                    <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-sm" /> Reject
+                </button>
+            }
+            else if (CurrentRevision.Status == RevisionStatusEnum.Approved)
+            {
+                <button class="btn btn-success btn-sm" @onclick="ActivateRevisionAsync" disabled="@IsLoading">
+                    <CskIcon Icon="@CskIcons.Checkmark" Class="csk-icon-sm" /> Activate Version
+                </button>
+            }
+
+            <button class="btn btn-outline-secondary btn-sm" @onclick="OpenCompareModalAsync" disabled="@IsLoading">
+                <CskIcon Icon="@CskIcons.Clock" Class="csk-icon-sm" /> Compare
+            </button>
+        }
+    </div>
+</div>
+
+@* Modal: New Draft *@
+@if (ShowNewDraftModal)
+{
+    <div class="csk-modal-backdrop">
+        <div class="csk-modal">
+            <div class="csk-modal-header">
+                <h5>Create New Draft Revision</h5>
+                <button type="button" class="close" @onclick="() => ShowNewDraftModal = false">&times;</button>
+            </div>
+            <div class="csk-modal-body">
+                <div class="form-group">
+                    <label>Draft Revision Name</label>
+                    <input type="text" class="form-control" @bind="NewDraftName" placeholder="e.g. Q3 Re-baseline - Alice" />
+                </div>
+                <div class="form-group">
+                    <label>Copy records from</label>
+                    <select class="form-control" @bind="SourceRevisionIdForClone">
+                        <option value="">-- Active Baseline --</option>
+                        @foreach (var r in Revisions)
+                        {
+                            <option value="@r.Id">v@r.VerNum - @r.RevisionName [@r.Status]</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="csk-modal-footer">
+                <button class="btn btn-secondary" @onclick="() => ShowNewDraftModal = false">Cancel</button>
+                <button class="btn btn-primary" @onclick="CreateDraftAsync" disabled="@string.IsNullOrWhiteSpace(NewDraftName)">Create Draft</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal: Submit for Review *@
+@if (ShowSubmitModal)
+{
+    <div class="csk-modal-backdrop">
+        <div class="csk-modal">
+            <div class="csk-modal-header">
+                <h5>Submit Revision for Review</h5>
+                <button type="button" class="close" @onclick="() => ShowSubmitModal = false">&times;</button>
+            </div>
+            <div class="csk-modal-body">
+                <div class="form-group">
+                    <label>Reviewer Emails (semicolon separated)</label>
+                    <input type="text" class="form-control" @bind="ReviewerEmails" placeholder="e.g. lead@enterprise.com; manager@enterprise.com" />
+                </div>
+                <div class="form-group">
+                    <label>Review Notes (optional)</label>
+                    <textarea class="form-control" @bind="ReviewNotes" rows="3" placeholder="Summary of changes..."></textarea>
+                </div>
+            </div>
+            <div class="csk-modal-footer">
+                <button class="btn btn-secondary" @onclick="() => ShowSubmitModal = false">Cancel</button>
+                <button class="btn btn-primary" @onclick="SubmitForReviewAsync" disabled="@string.IsNullOrWhiteSpace(ReviewerEmails)">Submit</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal: Reject Review *@
+@if (ShowRejectModal)
+{
+    <div class="csk-modal-backdrop">
+        <div class="csk-modal">
+            <div class="csk-modal-header">
+                <h5>Reject Revision</h5>
+                <button type="button" class="close" @onclick="() => ShowRejectModal = false">&times;</button>
+            </div>
+            <div class="csk-modal-body">
+                <div class="form-group">
+                    <label>Rejection Reason</label>
+                    <textarea class="form-control" @bind="RejectReason" rows="3" placeholder="Provide feedback to draft creator..."></textarea>
+                </div>
+            </div>
+            <div class="csk-modal-footer">
+                <button class="btn btn-secondary" @onclick="() => ShowRejectModal = false">Cancel</button>
+                <button class="btn btn-danger" @onclick="RejectRevisionAsync" disabled="@string.IsNullOrWhiteSpace(RejectReason)">Reject & Revert to Draft</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Modal: Compare Revisions *@
+@if (ShowCompareModal && ComparisonResult != null)
+{
+    <div class="csk-modal-backdrop">
+        <div class="csk-modal csk-modal-lg">
+            <div class="csk-modal-header">
+                <h5>Revision Comparison (v@ComparisonResult.LeftVerNum vs v@ComparisonResult.RightVerNum)</h5>
+                <button type="button" class="close" @onclick="() => ShowCompareModal = false">&times;</button>
+            </div>
+            <div class="csk-modal-body">
+                <div class="comparison-summary">
+                    <span class="badge-success">@ComparisonResult.AddedRows.Count Added</span>
+                    <span class="badge-warning">@ComparisonResult.ModifiedRows.Count Modified</span>
+                    <span class="badge-danger">@ComparisonResult.RemovedRows.Count Removed</span>
+                    <span class="badge-secondary">@ComparisonResult.UnchangedRows.Count Unchanged</span>
+                </div>
+                <div class="diff-list mt-3">
+                    @foreach (var mod in ComparisonResult.ModifiedRows)
+                    {
+                        <div class="diff-item diff-modified">
+                            <strong>@mod.Title:</strong>
+                            <ul>
+                                @foreach (var c in mod.Changes)
+                                {
+                                    <li>@c</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    @foreach (var add in ComparisonResult.AddedRows)
+                    {
+                        <div class="diff-item diff-added">
+                            <strong>[+ Added] @add.Title</strong> (Target: @add.RightEndDate?.ToString("yyyy-MM-dd"))
+                        </div>
+                    }
+                    @foreach (var rem in ComparisonResult.RemovedRows)
+                    {
+                        <div class="diff-item diff-removed">
+                            <strong>[- Removed] @rem.Title</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="csk-modal-footer">
+                <button class="btn btn-secondary" @onclick="() => ShowCompareModal = false">Close</button>
+            </div>
+        </div>
+    </div>
+}

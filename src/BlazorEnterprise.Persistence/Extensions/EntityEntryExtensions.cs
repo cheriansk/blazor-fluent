@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace BlazorEnterprise.Persistence.Extensions;
 
 /// <summary>
-/// Helper record to wrap a raw uint version token into IVersioned.
+/// Helper record to wrap a raw uint version token into IConcurrency.
 /// </summary>
-public sealed record VersionHolder(uint Version) : IVersioned
+public sealed record VersionHolder(uint Version) : IConcurrency
 {
     public uint Version { get; set; } = Version;
 }
@@ -22,7 +22,7 @@ public static class EntityEntryExtensions
     /// Guarantees that EF Core includes 'WHERE xmin = @originalVersion' in the UPDATE statement,
     /// detecting mid-edit modifications made by concurrent users or processes.
     /// </summary>
-    public static void ApplyOriginalVersion<T>(this DbContext db, T entity, IVersioned model)
+    public static void ApplyOriginalVersion<T>(this DbContext db, T entity, IConcurrency model)
         where T : BaseEntity
     {
         ArgumentNullException.ThrowIfNull(db);

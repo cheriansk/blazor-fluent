@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using BlazorEnterprise.Core.Configuration;
@@ -12,23 +13,82 @@ namespace BlazorEnterprise.Persistence.Interceptors;
 /// <summary>
 /// EF Core <see cref="DbCommandInterceptor"/> that logs executed SQL queries, bound parameters,
 /// execution duration, and any SQL exceptions to the dedicated DB operations log sink.
-/// Correlated via Serilog's CorrelationIdEnricher ([CorrId:...]).
+/// Correlated via Serilog's CorrelationIdEnricher ([CorrId:...]) and optional SQL comment tagging (/* CorrId:... */).
+/// Dynamic runtime updates supported via <see cref="IOptionsMonitor{DatabaseLoggingOptions}"/>.
 /// </summary>
 public sealed class DbCommandLoggingInterceptor : DbCommandInterceptor
 {
     private readonly ILogger<DbCommandLoggingInterceptor> _logger;
-    private readonly bool _enableDbLogging;
-    private readonly bool _logDbParameters;
+    private readonly IOptionsMonitor<DatabaseLoggingOptions> _optionsMonitor;
 
     public DbCommandLoggingInterceptor(
         ILogger<DbCommandLoggingInterceptor> logger,
-        IOptions<DatabaseLoggingOptions>? options = null)
+        IOptionsMonitor<DatabaseLoggingOptions> optionsMonitor)
     {
         _logger = logger;
-        var opts = options?.Value ?? new DatabaseLoggingOptions();
-        _enableDbLogging = opts.EnableDbLogging;
-        _logDbParameters = opts.LogDbParameters;
+        _optionsMonitor = optionsMonitor;
     }
+
+    // --- Command Executing (SQL Comment Tagging) ---
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        TagCommandText(command);
+        return base.ReaderExecuting(command, eventData, result);
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        TagCommandText(command);
+        return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override InterceptionResult<int> NonQueryExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result)
+    {
+        TagCommandText(command);
+        return base.NonQueryExecuting(command, eventData, result);
+    }
+
+    public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        TagCommandText(command);
+        return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override InterceptionResult<object> ScalarExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<object> result)
+    {
+        TagCommandText(command);
+        return base.ScalarExecuting(command, eventData, result);
+    }
+
+    public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<object> result,
+        CancellationToken cancellationToken = default)
+    {
+        TagCommandText(command);
+        return base.ScalarExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    // --- Command Executed Logging ---
 
     public override DbDataReader ReaderExecuted(
         DbCommand command,
@@ -87,6 +147,8 @@ public sealed class DbCommandLoggingInterceptor : DbCommandInterceptor
         return base.ScalarExecutedAsync(command, eventData, result, cancellationToken);
     }
 
+    // --- Command Failed Logging ---
+
     public override void CommandFailed(
         DbCommand command,
         CommandErrorEventData eventData)
@@ -104,15 +166,36 @@ public sealed class DbCommandLoggingInterceptor : DbCommandInterceptor
         return base.CommandFailedAsync(command, eventData, cancellationToken);
     }
 
+    private void TagCommandText(DbCommand command)
+    {
+        var opts = _optionsMonitor.CurrentValue;
+        if (!opts.TagSqlWithCorrelationId || string.IsNullOrWhiteSpace(command.CommandText))
+        {
+            return;
+        }
+
+        if (command.CommandText.StartsWith("/* CorrId:", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var correlationId = ResolveCurrentCorrelationId();
+        if (!string.IsNullOrWhiteSpace(correlationId))
+        {
+            command.CommandText = $"/* CorrId: {correlationId} */{Environment.NewLine}{command.CommandText}";
+        }
+    }
+
     private void LogCommandExecuted(DbCommand command, CommandExecutedEventData eventData)
     {
-        if (!_enableDbLogging)
+        var opts = _optionsMonitor.CurrentValue;
+        if (opts.Mode != DatabaseLoggingMode.All)
         {
             return;
         }
 
         var durationMs = eventData.Duration.TotalMilliseconds;
-        var parameters = _logDbParameters ? FormatParameters(command.Parameters) : "[Redacted by Configuration]";
+        var parameters = opts.LogDbParameters ? FormatParameters(command.Parameters) : "[Redacted by Configuration]";
         var sql = command.CommandText?.Trim() ?? string.Empty;
 
         _logger.LogInformation(
@@ -125,8 +208,14 @@ public sealed class DbCommandLoggingInterceptor : DbCommandInterceptor
 
     private void LogCommandFailed(DbCommand command, CommandErrorEventData eventData)
     {
+        var opts = _optionsMonitor.CurrentValue;
+        if (opts.Mode == DatabaseLoggingMode.None)
+        {
+            return;
+        }
+
         var durationMs = eventData.Duration.TotalMilliseconds;
-        var parameters = _logDbParameters ? FormatParameters(command.Parameters) : "[Redacted by Configuration]";
+        var parameters = opts.LogDbParameters ? FormatParameters(command.Parameters) : "[Redacted by Configuration]";
         var sql = command.CommandText?.Trim() ?? string.Empty;
 
         _logger.LogError(
@@ -136,6 +225,19 @@ public sealed class DbCommandLoggingInterceptor : DbCommandInterceptor
             parameters,
             Environment.NewLine,
             sql);
+    }
+
+    private static string? ResolveCurrentCorrelationId()
+    {
+        var activity = Activity.Current;
+        if (activity != null)
+        {
+            var tagVal = activity.GetTagItem("blazorenterprise.correlation_id") as string;
+            if (!string.IsNullOrWhiteSpace(tagVal)) return tagVal;
+            if (activity.TraceId != default) return activity.TraceId.ToString();
+            if (!string.IsNullOrWhiteSpace(activity.Id)) return activity.Id;
+        }
+        return null;
     }
 
     private static string FormatParameters(DbParameterCollection? parameters)
@@ -201,41 +303,36 @@ public sealed class DbCommandLoggingInterceptor : DbCommandInterceptor
 
         if (value is DateTime dt)
         {
-            return $"'{dt.ToString("O", CultureInfo.InvariantCulture)}'";
+            return $"'{dt:yyyy-MM-dd HH:mm:ss.fff}'";
         }
 
         if (value is DateTimeOffset dto)
         {
-            return $"'{dto.ToString("O", CultureInfo.InvariantCulture)}'";
+            return $"'{dto:yyyy-MM-dd HH:mm:ss.fff zzz}'";
         }
 
         if (value is bool b)
         {
-            return b ? "true" : "false";
+            return b ? "TRUE" : "FALSE";
         }
 
         if (value is byte[] bytes)
         {
-            return $"<byte[{bytes.Length}]>";
+            return $"byte[{bytes.Length}]";
         }
 
         if (value is IEnumerable enumerable and not string)
         {
-            var items = new List<string>();
             var count = 0;
-            foreach (var item in enumerable)
-            {
-                if (count >= 25)
-                {
-                    items.Add("...");
-                    break;
-                }
-                items.Add(FormatParameterValue(item));
-                count++;
-            }
-            return "[" + string.Join(", ", items) + "]";
+            foreach (var _ in enumerable) count++;
+            return $"IEnumerable[{count}]";
         }
 
-        return Convert.ToString(value, CultureInfo.InvariantCulture) ?? "NULL";
+        if (value is IFormattable formattable)
+        {
+            return formattable.ToString(null, CultureInfo.InvariantCulture);
+        }
+
+        return value.ToString() ?? "NULL";
     }
 }

@@ -18,10 +18,6 @@ public static class MigrationBuilderRlsExtensions
         string tenantColumn = "TenantId",
         bool allowGlobal = false)
     {
-        // Dynamically appends an 'OR "IsGlobal" = true' clause to the PostgreSQL RLS policy for hybrid-global entities 
-        // (such as KnowledgeArticleEntity), ensuring full parity with EF Core's application-level query filter so globally 
-        // published records are readable by all tenants; defaults to an empty string for standard tenant-only tables 
-        // to prevent PostgreSQL syntax errors on schemas that do not possess an "IsGlobal" column.
         var globalPredicate = allowGlobal ? @" OR ""IsGlobal"" = true" : string.Empty;
 
         migrationBuilder.Sql($@"
@@ -79,9 +75,18 @@ END $$;");
     {
         migrationBuilder.EnableTenantRowLevelSecurity("tenancy", "Projects");
         migrationBuilder.EnableTenantRowLevelSecurity("tenancy", "ProjectUserRoles");
+        migrationBuilder.EnableTenantRowLevelSecurity("tenancy", "TenantUsers");
+        migrationBuilder.EnableTenantRowLevelSecurity("tenancy", "ProgramUserRoles");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "AuditRecords");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "Notifications");
-        migrationBuilder.EnableTenantRowLevelSecurity("app", "Tasks");
+        migrationBuilder.EnableTenantRowLevelSecurity("app", "JobExecutions");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "Tasks");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "SubTasks");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "Risks");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "Assumptions");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "Issues");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "WorkDependencies");
+        migrationBuilder.EnableTenantRowLevelSecurity("tasks", "Workflows");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "TaskComments");
         migrationBuilder.EnableTenantRowLevelSecurity("app", "KnowledgeArticles", allowGlobal: true);
         migrationBuilder.EnableTenantRowLevelSecurity("app", "EventPublishTrackers");
@@ -89,6 +94,10 @@ END $$;");
         migrationBuilder.EnableTenantRowLevelSecurity("identity", "UserSessions");
         migrationBuilder.EnableTenantRowLevelSecurity("imports", "ImportFiles");
         migrationBuilder.EnableTenantRowLevelSecurity("staging", "StagedImports");
+        migrationBuilder.EnableTenantRowLevelSecurity("calendar", "ProgramCalendars");
+        migrationBuilder.EnableTenantRowLevelSecurity("calendar", "ProjectCalendars");
+        migrationBuilder.EnableTenantRowLevelSecurity("calendar", "UserCalendars");
+        migrationBuilder.EnableTenantRowLevelSecurity("versioning", "RevisionHeaders");
 
         return migrationBuilder;
     }
@@ -100,9 +109,18 @@ END $$;");
     {
         migrationBuilder.DisableTenantRowLevelSecurity("tenancy", "Projects");
         migrationBuilder.DisableTenantRowLevelSecurity("tenancy", "ProjectUserRoles");
+        migrationBuilder.DisableTenantRowLevelSecurity("tenancy", "TenantUsers");
+        migrationBuilder.DisableTenantRowLevelSecurity("tenancy", "ProgramUserRoles");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "AuditRecords");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "Notifications");
-        migrationBuilder.DisableTenantRowLevelSecurity("app", "Tasks");
+        migrationBuilder.DisableTenantRowLevelSecurity("app", "JobExecutions");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "Tasks");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "SubTasks");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "Risks");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "Assumptions");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "Issues");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "WorkDependencies");
+        migrationBuilder.DisableTenantRowLevelSecurity("tasks", "Workflows");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "TaskComments");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "KnowledgeArticles");
         migrationBuilder.DisableTenantRowLevelSecurity("app", "EventPublishTrackers");
@@ -110,6 +128,10 @@ END $$;");
         migrationBuilder.DisableTenantRowLevelSecurity("identity", "UserSessions");
         migrationBuilder.DisableTenantRowLevelSecurity("imports", "ImportFiles");
         migrationBuilder.DisableTenantRowLevelSecurity("staging", "StagedImports");
+        migrationBuilder.DisableTenantRowLevelSecurity("calendar", "ProgramCalendars");
+        migrationBuilder.DisableTenantRowLevelSecurity("calendar", "ProjectCalendars");
+        migrationBuilder.DisableTenantRowLevelSecurity("calendar", "UserCalendars");
+        migrationBuilder.DisableTenantRowLevelSecurity("versioning", "RevisionHeaders");
 
         return migrationBuilder;
     }
@@ -135,17 +157,17 @@ BEGIN
     END IF;
 
     -- Grant schema usage
-    GRANT USAGE ON SCHEMA public, app, tenancy, identity, imports, staging TO {appRole};
+    GRANT USAGE ON SCHEMA public, app, tenancy, identity, imports, staging, tasks, calendar, versioning TO {appRole};
 
     -- Grant CRUD on existing tables
-    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, app, tenancy, identity, imports, staging TO {appRole};
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, app, tenancy, identity, imports, staging, tasks, calendar, versioning TO {appRole};
 
     -- Grant sequence usage
-    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, app, tenancy, identity, imports, staging TO {appRole};
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, app, tenancy, identity, imports, staging, tasks, calendar, versioning TO {appRole};
 
     -- Ensure future tables and sequences inherit permissions
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, identity, imports, staging GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {appRole};
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, identity, imports, staging GRANT USAGE, SELECT ON SEQUENCES TO {appRole};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, identity, imports, staging, tasks, calendar, versioning GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {appRole};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public, app, tenancy, identity, imports, staging, tasks, calendar, versioning GRANT USAGE, SELECT ON SEQUENCES TO {appRole};
 END $$;");
 
         return migrationBuilder;

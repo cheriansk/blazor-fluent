@@ -89,7 +89,7 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
 
         foreach (var projectId in distinctProjectIds)
         {
-            var role = ResolveRoleForProject(userId, projectId);
+            var role = ResolveRoleForProject(context, userId, projectId);
             if (role is null || !role.Value.CanWrite())
             {
                 _logger.LogCritical(
@@ -139,7 +139,7 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
 
         foreach (var projectId in distinctProjectIds)
         {
-            var role = await ResolveRoleForProjectAsync(userId, projectId, ct);
+            var role = await ResolveRoleForProjectAsync(context, userId, projectId, ct);
             if (role is null || !role.Value.CanWrite())
             {
                 _logger.LogCritical(
@@ -163,11 +163,40 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
     /// Asynchronous callers invoke <see cref="ResolveRoleForProjectAsync"/> which is 100% non-blocking.
     /// </para>
     /// </summary>
-    private ProjectRoleEnum? ResolveRoleForProject(string userId, Guid projectId)
+    private void InitializeTransientScope(IServiceScope scope, DbContext context)
+    {
+        if (context is AppDbContext appDb)
+        {
+            var scopedTenant = scope.ServiceProvider.GetService<ITenantContext>();
+            if (scopedTenant != null && appDb.TenantContext.HasActiveTenant)
+            {
+                scopedTenant.Initialize(
+                    appDb.TenantContext.TenantId,
+                    appDb.TenantContext.TenantName,
+                    appDb.TenantContext.UserType,
+                    appDb.TenantContext.AllowedTenants,
+                    appDb.TenantContext.TenantSlug,
+                    appDb.TenantContext.IsRootTenant);
+            }
+
+            var scopedUser = scope.ServiceProvider.GetService<ICurrentUser>();
+            if (scopedUser != null && appDb.CurrentUser.IsAuthenticated)
+            {
+                scopedUser.RestoreUserContext(
+                    appDb.CurrentUser.UserId,
+                    appDb.CurrentUser.Email,
+                    appDb.CurrentUser.UserName,
+                    appDb.CurrentUser.IsRootAdmin);
+            }
+        }
+    }
+
+    private ProjectRoleEnum? ResolveRoleForProject(DbContext context, string userId, Guid projectId)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
+            InitializeTransientScope(scope, context);
             var hierarchyAuth = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
             if (hierarchyAuth is null) return null;
 
@@ -180,11 +209,12 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         }
     }
 
-    private async Task<ProjectRoleEnum?> ResolveRoleForProjectAsync(string userId, Guid projectId, CancellationToken ct)
+    private async Task<ProjectRoleEnum?> ResolveRoleForProjectAsync(DbContext context, string userId, Guid projectId, CancellationToken ct)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
+            InitializeTransientScope(scope, context);
             var hierarchyAuth = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
             if (hierarchyAuth is null) return null;
 

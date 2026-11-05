@@ -5,7 +5,7 @@ namespace BlazorEnterprise.Core.Domain.Identity;
 /// <summary>
 /// Tracks active user circuits and browser sessions for visibility and remote revocation.
 /// </summary>
-public class UserSessionEntity : TenantAuditableEntity, ISoftDeletableEntity
+public class UserSessionEntity : TenantAuditableEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     public required string UserId { get; set; }
     public required string UserEmail { get; set; }

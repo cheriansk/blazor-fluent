@@ -13,8 +13,9 @@ public interface IProjectMilestoneService
 {
     /// <summary>
     /// Retrieves all milestones configured for a project, ordered by start date.
+    /// By default, queries active baseline revision rows unless a specific revisionHeaderId is provided.
     /// </summary>
-    Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, Guid? revisionHeaderId = null, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a single milestone by ID.

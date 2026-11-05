@@ -14,7 +14,7 @@ namespace BlazorEnterprise.Core.Domain.Tenancy;
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
 /// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
-public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity
+public class TenantUserEntity : TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
 {
     public required Guid UserEntityId { get; set; }
 

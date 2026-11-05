@@ -13,6 +13,7 @@ namespace BlazorEnterprise.Persistence.Configurations
         tenancy, //Tenanacy level tables only
         app,//App level tables
         tasks, //Work item and task hierarchy tables
-        calendar //Calendar entries and scheduling tables
+        calendar, //Calendar entries and scheduling tables
+        versioning //Scenario revision headers and baseline lifecycle tables
     }
 }

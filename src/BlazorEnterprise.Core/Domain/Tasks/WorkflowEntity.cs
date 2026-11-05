@@ -11,7 +11,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Governs an ordered collection of sequential steps (<see cref="TaskEntity"/>).
 /// Inherits from <see cref="BaseTaskEntity"/>.
 /// </summary>
-public class WorkflowEntity : BaseTaskEntity
+public class WorkflowEntity : BaseTaskEntity, IUnversionedEntity
 {
     /// <summary>
     /// Email of the single, constant workflow owner who retains operational accountability

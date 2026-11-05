@@ -11,7 +11,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Implements <see cref="IScheduledWorkEntity"/> for baseline vs. actual schedule tracking.
 /// Implements <see cref="ISoftDeletableEntity"/> for forensic auditability.
 /// </summary>
-public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, ISourceTrackedEntity, IEncryptedPayloadEntity
+public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, ISourceTrackedEntity, IEncryptedPayloadEntity, IUnversionedEntity
 {
     /// <summary>
     /// Organizational level at which this work item exists (Tenant, Program, Project, User).

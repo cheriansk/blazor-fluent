@@ -8,13 +8,8 @@ namespace BlazorEnterprise.Core.Domain.Auditing;
 /// Captures property-level entity diffs, tenant-switching events, security milestones, and user activities.
 /// Implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing of audit log entries.
 /// </summary>
-public class AuditRecordEntity : AuditableEntity, ITenantEntity, IAuditExemptEntity, IImmutableEntity
+public class AuditRecordEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
-    /// <summary>
-    /// The tenant scope for this audit record. Multi-tenant queries automatically row-filter by this value.
-    /// </summary>
-    public required Guid TenantId { get; set; }
-
     /// <summary>ID of the user who performed the operation, or 'system' for background workers.</summary>
     public string? UserId { get; set; }
 

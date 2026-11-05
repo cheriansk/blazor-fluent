@@ -9,7 +9,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Can be scoped to Program or Project levels.
 /// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class AssumptionEntity : BaseTaskEntity, IMilestoneLinkedEntity
+public class AssumptionEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
 {
     /// <summary>
     /// Optional foreign key to a project or program milestone.
