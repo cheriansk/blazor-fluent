@@ -50,3 +50,72 @@
     width: 1rem;
     height: 1rem;
 }
+
+.import-section-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Template info card styling */
+.template-info-box {
+    background: var(--mat-surface-container-low, #f8f9fa);
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    border-left: 4px solid var(--mat-primary, #1976d2);
+    border-radius: 6px;
+    padding: 12px 16px;
+}
+
+.template-title {
+    font-size: 0.9375rem;
+    color: var(--mat-on-surface, #212121);
+}
+
+.template-desc {
+    font-size: 0.8125rem;
+    color: var(--mat-on-surface-variant, #616161);
+    margin-bottom: 0;
+}
+
+/* File selection dropzone */
+.file-drop-zone {
+    border: 2px dashed var(--mat-outline-variant, #c4c7c5);
+    border-radius: 8px;
+    padding: 20px;
+    background: var(--mat-surface-container-lowest, #ffffff);
+    text-align: center;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.file-drop-zone:hover {
+    border-color: var(--mat-primary, #1976d2);
+}
+
+.disabled-zone {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.selected-file-card {
+    background: var(--mat-surface-container, #f5f5f5);
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+
+/* Progress & Staging lock */
+.staging-progress-container {
+    background: var(--mat-surface-container-low, #f8f9fa);
+    border: 1px solid var(--mat-outline-variant, #e0e0e0);
+    border-radius: 6px;
+    padding: 14px 16px;
+}
+
+.font-size-xs {
+    font-size: 0.75rem;
+}
+
+.mono-code {
+    font-family: monospace;
+    font-size: 0.8125rem;
+}

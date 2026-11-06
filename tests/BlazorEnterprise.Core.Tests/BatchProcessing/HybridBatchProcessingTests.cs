@@ -61,7 +61,9 @@ public class HybridBatchProcessingTests : IClassFixture<ApiTestWebApplicationFac
             })
         };
 
+        var tenantId = Guid.Parse(ApiTestWebApplicationFactory.ValidTenantId);
         var payload = new CanonicalStagedChunkPayload(
+            TenantId: tenantId,
             ImportId: importId,
             ImportFileId: importFileId,
             FileType: "TaskCsv",
@@ -123,7 +125,9 @@ public class HybridBatchProcessingTests : IClassFixture<ApiTestWebApplicationFac
             })
         };
 
+        var tenantId = Guid.Parse(ApiTestWebApplicationFactory.ValidTenantId);
         var payload = new CanonicalStagedChunkPayload(
+            TenantId: tenantId,
             ImportId: importId,
             ImportFileId: importFileId,
             FileType: "TaskExcel",
@@ -214,7 +218,9 @@ public class HybridBatchProcessingTests : IClassFixture<ApiTestWebApplicationFac
             })
         };
 
+        var tenantId = Guid.Parse(ApiTestWebApplicationFactory.ValidTenantId);
         var stagedPayload = new CanonicalStagedChunkPayload(
+            TenantId: tenantId,
             ImportId: importId,
             ImportFileId: importFileId,
             FileType: "TaskCsv",
@@ -228,6 +234,7 @@ public class HybridBatchProcessingTests : IClassFixture<ApiTestWebApplicationFac
 
         var compressedBytes = PayloadEncryptionUtility.CompressGzip(JsonDefaults.ToJson(stagedPayload));
         var processReq = new ProcessBatchReqDto(
+            TenantId: tenantId,
             ImportId: importId,
             ImportFileId: importFileId,
             FileType: "TaskCsv",
@@ -282,5 +289,144 @@ public class HybridBatchProcessingTests : IClassFixture<ApiTestWebApplicationFac
         decryptResp.Items[0].RecordId.Should().Be(recordId);
         decryptResp.Items[0].Properties["Title"].Should().Be("Top Secret Merger Task");
         decryptResp.Items[0].Properties["Description"].Should().Be("Confidential M&A due diligence");
+    }
+
+    [Fact]
+    public void CalendarCloudProcessor_ValidTimelineAndMilestone_TransformsAndLinksParentTimeline()
+    {
+        var processor = new CalendarCloudProcessor();
+        var importId = Guid.CreateVersion7();
+        var importFileId = Guid.CreateVersion7();
+        var tenantId = Guid.Parse(ApiTestWebApplicationFactory.ValidTenantId);
+
+        var timelineRowId = Guid.CreateVersion7();
+        var milestoneRowId = Guid.CreateVersion7();
+
+        var headerMap = new Dictionary<string, string>
+        {
+            ["c1"] = "EntryType",
+            ["c2"] = "Title",
+            ["c3"] = "StartDate",
+            ["c4"] = "EndDate",
+            ["c5"] = "Status",
+            ["c6"] = "OwnerEmails",
+            ["c7"] = "Comments"
+        };
+
+        var rows = new List<StagedRowDto>
+        {
+            new(timelineRowId, 1, new Dictionary<string, string?>
+            {
+                ["c1"] = "Timeline",
+                ["c2"] = "Phase 1: Architecture Inception",
+                ["c3"] = "2026-11-01",
+                ["c4"] = "2026-12-01",
+                ["c5"] = "InProgress",
+                ["c7"] = "Core system stage"
+            }),
+            new(milestoneRowId, 2, new Dictionary<string, string?>
+            {
+                ["c1"] = "Milestone",
+                ["c2"] = "Gate 1 Review",
+                ["c3"] = "2026-11-15",
+                ["c4"] = "2026-11-15",
+                ["c5"] = "Scheduled",
+                ["c6"] = "lead@enterprise.com; reviewer@enterprise.com",
+                ["c7"] = "Sign-off"
+            })
+        };
+
+        var payload = new CanonicalStagedChunkPayload(
+            TenantId: tenantId,
+            ImportId: importId,
+            ImportFileId: importFileId,
+            FileType: "ProjectCalendarExcel",
+            SheetName: "Calendar",
+            ChunkIndex: 0,
+            TotalChunks: 1,
+            RowCount: 2,
+            IsLastChunk: true,
+            HeaderMap: headerMap,
+            Rows: rows);
+
+        var resp = processor.ProcessChunk(
+            importId,
+            importFileId,
+            0,
+            "ProjectCalendarExcel",
+            payload,
+            null);
+
+        resp.IsSuccess.Should().BeTrue();
+        resp.Errors.Should().BeEmpty();
+        resp.ProcessedRows.Should().HaveCount(2);
+
+        var timelineRow = resp.ProcessedRows[0];
+        timelineRow.DomainProperties["EntryType"].Should().Be("Timeline");
+        timelineRow.DomainProperties["Title"].Should().Be("Phase 1: Architecture Inception");
+        timelineRow.DomainProperties["ParentTimelineSourceRowId"].Should().BeNull();
+
+        var milestoneRow = resp.ProcessedRows[1];
+        milestoneRow.DomainProperties["EntryType"].Should().Be("Milestone");
+        milestoneRow.DomainProperties["Title"].Should().Be("Gate 1 Review");
+        milestoneRow.DomainProperties["ParentTimelineSourceRowId"].Should().Be(timelineRowId.ToString());
+        milestoneRow.DomainProperties["ParentTimelineTitle"].Should().Be("Phase 1: Architecture Inception");
+    }
+
+    [Fact]
+    public void CalendarCloudProcessor_AllOrNothing_RejectsWhenMilestonePrecedesTimelineOrHasBadEmail()
+    {
+        var processor = new CalendarCloudProcessor();
+        var importId = Guid.CreateVersion7();
+        var importFileId = Guid.CreateVersion7();
+        var tenantId = Guid.Parse(ApiTestWebApplicationFactory.ValidTenantId);
+
+        var headerMap = new Dictionary<string, string>
+        {
+            ["c1"] = "EntryType",
+            ["c2"] = "Title",
+            ["c3"] = "StartDate",
+            ["c4"] = "EndDate",
+            ["c5"] = "OwnerEmails"
+        };
+
+        var rows = new List<StagedRowDto>
+        {
+            new(Guid.CreateVersion7(), 1, new Dictionary<string, string?>
+            {
+                ["c1"] = "Milestone",
+                ["c2"] = "Orphan Milestone Without Timeline",
+                ["c3"] = "2026-11-15",
+                ["c4"] = "2026-11-15",
+                ["c5"] = "not-an-email"
+            })
+        };
+
+        var payload = new CanonicalStagedChunkPayload(
+            TenantId: tenantId,
+            ImportId: importId,
+            ImportFileId: importFileId,
+            FileType: "ProgramCalendarExcel",
+            SheetName: "Calendar",
+            ChunkIndex: 0,
+            TotalChunks: 1,
+            RowCount: 1,
+            IsLastChunk: true,
+            HeaderMap: headerMap,
+            Rows: rows);
+
+        var resp = processor.ProcessChunk(
+            importId,
+            importFileId,
+            0,
+            "ProgramCalendarExcel",
+            payload,
+            null);
+
+        resp.IsSuccess.Should().BeFalse();
+        resp.ProcessedRows.Should().BeEmpty();
+        resp.Errors.Should().HaveCountGreaterThanOrEqualTo(2);
+        resp.Errors.Should().Contain(e => e.ColumnName == "EntryType" && e.ErrorMessage.Contains("preceded by a parent Timeline"));
+        resp.Errors.Should().Contain(e => e.ColumnName == "OwnerEmails" && e.ErrorMessage.Contains("not a valid email address"));
     }
 }

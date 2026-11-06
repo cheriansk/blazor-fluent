@@ -39,6 +39,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
     private readonly IFileTemplateConfigRepository? _templateRepository;
     private readonly ILocalBatchStagerResolver? _batchStagerResolver;
     private readonly IEngineClient? _engineClient;
+    private readonly IEnumerable<BlazorEnterprise.Jobs.FileImports.Committers.IBatchDomainCommitter> _domainCommitters;
     private readonly ILogger<GenericFileImportBatchJobHandler> _logger;
 
     public GenericFileImportBatchJobHandler(
@@ -50,7 +51,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         ILogger<GenericFileImportBatchJobHandler> logger,
         IFileTemplateConfigRepository? templateRepository = null,
         ILocalBatchStagerResolver? batchStagerResolver = null,
-        IEngineClient? engineClient = null)
+        IEngineClient? engineClient = null,
+        IEnumerable<BlazorEnterprise.Jobs.FileImports.Committers.IBatchDomainCommitter>? domainCommitters = null)
     {
         _dbContext = dbContext;
         _encryptionService = encryptionService;
@@ -61,6 +63,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         _templateRepository = templateRepository;
         _batchStagerResolver = batchStagerResolver;
         _engineClient = engineClient;
+        _domainCommitters = domainCommitters ?? [];
     }
 
     public async Task HandleAsync(FileImportBatchJobEvent jobEvent, CancellationToken cancellationToken)
@@ -288,12 +291,15 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         var allProcessedRows = new List<ProcessedDomainRowDto>();
 
+        var allCloudErrors = new List<FileValidationError>();
+
         foreach (var chunk in orderedChunks)
         {
             chunk.Status = "Processing";
             var compressedBytes = PayloadEncryptionUtility.CompressGzip(chunk.PayloadJson);
 
             var batchReq = new ProcessBatchReqDto(
+                TenantId: file.TenantId,
                 ImportId: file.ImportId,
                 ImportFileId: file.Id,
                 FileType: chunk.FileType,
@@ -306,30 +312,124 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
             var engineResult = await _engineClient!.ProcessStagedBatchAsync(batchReq, ct);
 
+            // Zero-Trust Response Verification
+            if (engineResult.IsSuccess && engineResult.Data != null && engineResult.Data.TenantId != file.TenantId)
+            {
+                _logger.LogCritical("Zero-Trust Security Violation: Cloud API response TenantId '{RespTenant}' does not match File TenantId '{FileTenant}'. Halting immediately.",
+                    engineResult.Data.TenantId, file.TenantId);
+                allCloudErrors.Add(new FileValidationError("Security", 0, "TenantId", "Zero-Trust Security Violation: Response tenant identity mismatch."));
+                break;
+            }
+
             if (!engineResult.IsSuccess || engineResult.Data == null || !engineResult.Data.IsSuccess)
             {
-                var cloudErrors = engineResult.Data?.Errors ?? [];
-                var firstError = cloudErrors.FirstOrDefault()?.ErrorMessage
+                var chunkErrors = engineResult.Data?.Errors ?? [];
+                allCloudErrors.AddRange(chunkErrors);
+
+                var firstError = chunkErrors.FirstOrDefault()?.ErrorMessage
                     ?? engineResult.Error
                     ?? engineResult.Data?.ErrorMessage
-                    ?? "Cloud batch processing rejected the staged chunk.";
+                    ?? $"Cloud batch processing rejected chunk {chunk.ChunkIndex}/{chunk.TotalChunks}.";
 
-                // All-or-nothing rollback: mark all chunks for this file as Failed and commit 0 domain rows
+                _logger.LogWarning("Cloud processing rejected chunk {ChunkIndex}/{TotalChunks} for file '{FileName}': {Error}",
+                    chunk.ChunkIndex, chunk.TotalChunks, file.OriginalFileName, firstError);
+                break;
+            }
+
+            allProcessedRows.AddRange(engineResult.Data.ProcessedRows);
+        }
+
+        // Strict All-or-Nothing Atomicity Across All Chunks: If any error occurred, abort and commit 0 rows
+        if (allCloudErrors.Count > 0)
+        {
+            var firstError = allCloudErrors.FirstOrDefault()?.ErrorMessage ?? "Cloud batch processing rejected the file.";
+            _logger.LogError("Batch processing failed with {ErrorCount} total error(s) for file '{FileName}' (FileId={FileId}). Enforcing All-or-Nothing rollback.",
+                allCloudErrors.Count, file.OriginalFileName, file.Id);
+
+            foreach (var c in orderedChunks)
+            {
+                c.IsProcessed = false;
+                c.Status = "Failed";
+                c.ErrorMessage = firstError;
+            }
+
+            file.Status = ImportStatusEnum.ProcessingFailed;
+            file.StepStage = "ProcessingFailed";
+            file.ErrorMessage = $"Batch processing rejected with {allCloudErrors.Count} error(s): {firstError}";
+            file.ErrorRowsCount = allCloudErrors.Count;
+            file.ValidationErrorsJson = JsonDefaults.ToJson(allCloudErrors);
+            file.ProcessedAtUtc = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync(ct);
+
+            await _eventPublisher.PublishAsync(new FileProcessingCompletedJobEvent(
+                file.Id,
+                IsSuccess: false,
+                ProcessedCount: 0,
+                ErrorMessage: file.ErrorMessage,
+                TenantId: file.TenantId,
+                CorrelationId: jobEvent.CorrelationId,
+                SenderOrigin: jobEvent.SenderOrigin,
+                SenderUserId: jobEvent.SenderUserId,
+                SenderUserEmail: jobEvent.SenderUserEmail,
+                ParentExecutionId: jobEvent.EventId), ct);
+
+            await SendNotificationAsync(
+                file,
+                title: "Domain Processing Failed",
+                message: $"File '{file.OriginalFileName}' failed during cloud batch processing: {firstError}",
+                severity: NotificationSeverityEnum.Error,
+                ct);
+
+            return;
+        }
+
+        // 4. Atomic Commit of All Processed Domain Rows via Pluggable IBatchDomainCommitter
+        var entityGroups = allProcessedRows
+            .GroupBy(r => r.TargetEntityName, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in entityGroups)
+        {
+            var targetEntity = group.Key;
+            var committer = _domainCommitters.FirstOrDefault(c => c.CanCommit(targetEntity));
+
+            if (committer == null)
+            {
+                var missingCommitterMsg = $"No registered IBatchDomainCommitter found for TargetEntity '{targetEntity}'.";
+                _logger.LogError(missingCommitterMsg);
+
                 foreach (var c in orderedChunks)
                 {
                     c.IsProcessed = false;
                     c.Status = "Failed";
-                    c.ErrorMessage = firstError;
+                    c.ErrorMessage = missingCommitterMsg;
                 }
 
                 file.Status = ImportStatusEnum.ProcessingFailed;
                 file.StepStage = "ProcessingFailed";
-                file.ErrorMessage = firstError;
-                file.ErrorRowsCount = cloudErrors.Count;
-                if (cloudErrors.Count > 0)
+                file.ErrorMessage = missingCommitterMsg;
+                file.ProcessedAtUtc = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync(ct);
+
+                await SendNotificationAsync(file, "Commit Failed", missingCommitterMsg, NotificationSeverityEnum.Error, ct);
+                return;
+            }
+
+            var commitResult = await committer.CommitProcessedRowsAsync(file, group.ToList(), jobEvent, ct);
+            if (!commitResult.IsSuccess)
+            {
+                var commitErrMsg = commitResult.Error ?? $"Failed to commit records for entity '{targetEntity}'.";
+                _logger.LogError("IBatchDomainCommitter failed for '{TargetEntity}': {Error}", targetEntity, commitErrMsg);
+
+                foreach (var c in orderedChunks)
                 {
-                    file.ValidationErrorsJson = JsonDefaults.ToJson(cloudErrors);
+                    c.IsProcessed = false;
+                    c.Status = "Failed";
+                    c.ErrorMessage = commitErrMsg;
                 }
+
+                file.Status = ImportStatusEnum.ProcessingFailed;
+                file.StepStage = "ProcessingFailed";
+                file.ErrorMessage = commitErrMsg;
                 file.ProcessedAtUtc = DateTime.UtcNow;
                 await _dbContext.SaveChangesAsync(ct);
 
@@ -337,7 +437,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     file.Id,
                     IsSuccess: false,
                     ProcessedCount: 0,
-                    ErrorMessage: firstError,
+                    ErrorMessage: commitErrMsg,
                     TenantId: file.TenantId,
                     CorrelationId: jobEvent.CorrelationId,
                     SenderOrigin: jobEvent.SenderOrigin,
@@ -345,61 +445,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     SenderUserEmail: jobEvent.SenderUserEmail,
                     ParentExecutionId: jobEvent.EventId), ct);
 
-                await SendNotificationAsync(
-                    file,
-                    title: "Domain Processing Failed",
-                    message: $"File '{file.OriginalFileName}' failed during cloud batch processing: {firstError}",
-                    severity: NotificationSeverityEnum.Error,
-                    ct);
-
+                await SendNotificationAsync(file, "Commit Failed", commitErrMsg, NotificationSeverityEnum.Error, ct);
                 return;
-            }
-
-            allProcessedRows.AddRange(engineResult.Data.ProcessedRows);
-        }
-
-        // 4. Atomic Commit of All Processed Domain Rows & StagedImport Flags
-        var uploaderEmail = string.IsNullOrWhiteSpace(file.CreatedBy) ? "system@local" : file.CreatedBy;
-
-        foreach (var row in allProcessedRows)
-        {
-            if (string.Equals(row.TargetEntityName, "TaskEntity", StringComparison.OrdinalIgnoreCase))
-            {
-                row.DomainProperties.TryGetValue("Title", out var title);
-                row.DomainProperties.TryGetValue("Description", out var description);
-                row.DomainProperties.TryGetValue("Status", out var statusStr);
-                row.DomainProperties.TryGetValue("Priority", out var priorityStr);
-                row.DomainProperties.TryGetValue("DueDateUtc", out var dueDateStr);
-
-                var status = statusStr.ToEnum(BlazorEnterprise.Shared.DataListTypes.TaskStatusEnum.Open);
-                var priority = priorityStr.ToEnum(TaskPriorityEnum.Medium);
-
-                DateTime dueDateUtc = DateTime.UtcNow.AddDays(7);
-                if (!string.IsNullOrWhiteSpace(dueDateStr) &&
-                    DateTime.TryParse(dueDateStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedDue))
-                {
-                    dueDateUtc = parsedDue;
-                }
-
-                var taskEntity = new TaskEntity
-                {
-                    Id = Guid.CreateVersion7(),
-                    TenantId = file.TenantId,
-                    ProjectId = file.ProjectId,
-                    Level = TaskLevelEnum.Project,
-                    Title = string.IsNullOrWhiteSpace(title) ? "[ENCRYPTED]" : title,
-                    Description = description,
-                    Status = status,
-                    Priority = priority,
-                    StartDate = DateTime.UtcNow,
-                    DueDate = dueDateUtc,
-                    ReporterEmail = uploaderEmail,
-                    SourceRowId = row.SourceRowId,
-                    IsEncryptedAtRest = row.IsEncryptedAtRest,
-                    EncryptedPayloadBytes = row.EncryptedPayloadBytes
-                };
-
-                _dbContext.Tasks.Add(taskEntity);
             }
         }
 

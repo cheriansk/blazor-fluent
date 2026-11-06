@@ -17,6 +17,7 @@ public sealed record StagedRowDto(
 /// Self-describing via HeaderMap (e.g., "c1" -> "Title").
 /// </summary>
 public sealed record CanonicalStagedChunkPayload(
+    [property: JsonPropertyName("tenantId")] Guid TenantId,
     [property: JsonPropertyName("importId")] Guid ImportId,
     [property: JsonPropertyName("importFileId")] Guid ImportFileId,
     [property: JsonPropertyName("fileType")] string FileType,
@@ -33,6 +34,7 @@ public sealed record CanonicalStagedChunkPayload(
 /// Supports either inline rows or a Gzip-compressed CanonicalStagedChunkPayload byte array.
 /// </summary>
 public sealed record ProcessBatchReqDto(
+    [property: JsonPropertyName("tenantId")] Guid TenantId,
     Guid ImportId,
     Guid ImportFileId,
     string FileType,
@@ -63,6 +65,7 @@ public sealed record ProcessedDomainRowDto(
 /// Enforces All-or-Nothing atomicity: if IsSuccess is false, ProcessedRows is empty.
 /// </summary>
 public sealed record ProcessBatchRespDto(
+    [property: JsonPropertyName("tenantId")] Guid TenantId,
     Guid ImportFileId,
     int ChunkIndex,
     bool IsSuccess,

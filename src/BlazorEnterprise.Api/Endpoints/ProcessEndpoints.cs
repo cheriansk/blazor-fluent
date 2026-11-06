@@ -368,6 +368,7 @@ public static class ProcessEndpoints
                 else if (req.Rows != null && req.HeaderMap != null)
                 {
                     chunkPayload = new CanonicalStagedChunkPayload(
+                        TenantId: req.TenantId,
                         ImportId: req.ImportId,
                         ImportFileId: req.ImportFileId,
                         FileType: req.FileType,
@@ -387,11 +388,26 @@ public static class ProcessEndpoints
                     "Processing staged batch chunk {ChunkIndex}/{TotalChunks} for ImportFile {ImportFileId} ({FileType}, {RowCount} rows)",
                     req.ChunkIndex, req.TotalChunks, req.ImportFileId, req.FileType, chunkPayload.Rows.Count);
 
-                // Cache transient session metadata in HybridCache (L1 RAM + optional L2 Redis) with tenant namespace
+                // Zero-Trust Tenant Verification: Check JWT claims vs Request vs Staged Chunk Payload
                 var activeTenant = user.Claims.FirstOrDefault(c => c.Type == "tenant_id" || c.Type == "tid")?.Value;
-                if (string.IsNullOrWhiteSpace(activeTenant))
+                if (string.IsNullOrWhiteSpace(activeTenant) || !Guid.TryParse(activeTenant, out var jwtTenantGuid))
                 {
+                    logger.LogCritical("Zero-Trust Security Violation: Missing or invalid tenant claim in JWT.");
                     return Results.Forbid();
+                }
+
+                if (req.TenantId == Guid.Empty || req.TenantId != jwtTenantGuid)
+                {
+                    logger.LogCritical("Zero-Trust Security Violation: Request TenantId '{ReqTenant}' does not match JWT tenant claim '{JwtTenant}' for user '{User}'.",
+                        req.TenantId, jwtTenantGuid, user.Identity?.Name);
+                    return Results.Json(new { error = "TenantMismatchViolation", message = "Zero-Trust Security Violation: Payload TenantId does not match authenticated JWT tenant claim." }, statusCode: StatusCodes.Status403Forbidden);
+                }
+
+                if (chunkPayload.TenantId != Guid.Empty && chunkPayload.TenantId != jwtTenantGuid)
+                {
+                    logger.LogCritical("Zero-Trust Security Violation: Staged Chunk TenantId '{ChunkTenant}' does not match JWT tenant claim '{JwtTenant}'.",
+                        chunkPayload.TenantId, jwtTenantGuid);
+                    return Results.Json(new { error = "TenantMismatchViolation", message = "Zero-Trust Security Violation: Staged Chunk TenantId does not match authenticated JWT tenant claim." }, statusCode: StatusCodes.Status403Forbidden);
                 }
                 var cacheKey = $"t:{activeTenant.ToLowerInvariant()}:batch:import:{req.ImportFileId}:chunk:{req.ChunkIndex}";
                 await hybridCache.SetAsync(

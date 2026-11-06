@@ -1,0 +1,28 @@
+{
+  "fileType": "ProjectCalendarExcel",
+  "stagingBatchStrategy": "generic-json",
+  "targetEntity": "ProjectCalendarEntity",
+  "chunkSize": 1000,
+  "maxErrorThreshold": 500,
+  "omitNullValues": true,
+  "dependsOn": [ "ProgramCalendarExcel" ],
+  "format": {
+    "type": "excel",
+    "hasHeader": true
+  },
+  "sheets": [
+    {
+      "name": "Calendar",
+      "required": true
+    }
+  ],
+  "columns": [
+    { "name": "EntryType", "alias": "c1", "dataType": "string", "required": true, "allowedValues": ["Timeline", "Milestone"] },
+    { "name": "Title", "alias": "c2", "dataType": "string", "required": true, "maxLength": 200 },
+    { "name": "StartDate", "alias": "c3", "dataType": "date", "required": true },
+    { "name": "EndDate", "alias": "c4", "dataType": "date", "required": true },
+    { "name": "Status", "alias": "c5", "dataType": "string", "required": false, "allowedValues": ["New", "Scheduled", "Confirmed", "InProgress", "Completed", "Delayed", "Cancelled"] },
+    { "name": "OwnerEmails", "alias": "c6", "dataType": "string", "required": false, "maxLength": 2000 },
+    { "name": "Comments", "alias": "c7", "dataType": "string", "required": false, "maxLength": 4000 }
+  ]
+}

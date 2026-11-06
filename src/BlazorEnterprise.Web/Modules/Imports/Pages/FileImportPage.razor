@@ -12,33 +12,34 @@
 @using BlazorEnterprise.Core.Extensions
 @using BlazorEnterprise.Modules.Imports.Components
 @using BlazorEnterprise.Persistence.Context
+@using BlazorEnterprise.Web.Modules.Imports.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
 
 <PageTitle>File Import & Processing — BlazorEnterprise</PageTitle>
 
+<!-- Active Navigation Lock while validation/staging is executing -->
+<NavigationLock ConfirmExternalNavigation="@_isStagingInProgress"
+                OnBeforeInternalNavigation="@HandleBeforeInternalNavigation" />
+
 <PageHeaderComp Title="File Import & Batch Processing Pipeline"
-                Subtitle="Upload single or bulk multi-format payloads, client-side encrypted per-tenant, and processed asynchronously.">
+                Subtitle="Select file format, download configured templates, validate and stage payloads, and monitor batch execution.">
     <Actions>
         <CskButton Variant="CskButtonVariant.Outlined"
-                      IconStart="@CskIcons.ArrowClockwise"
-                      OnClick="@RefreshHistoryAsync">
+                   IconStart="@CskIcons.ArrowClockwise"
+                   OnClick="@RefreshHistoryAsync">
             Refresh Status
         </CskButton>
     </Actions>
 </PageHeaderComp>
 
-<CskGrid Spacing="3" AdaptiveRendering="true">
-    <!-- Left Column: Upload Form Card -->
-    <CskGridItem xs="12" lg="5">
-        <CskCard Class="p-card full-height">
-            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="15">
-                <CskLabel Typo="Typography.H6">Upload Batch Payloads</CskLabel>
-                <CskLabel Typo="Typography.Body" Class="text-hint">
-                    Select single or multiple files. All files in a batch share a unified Batch ID and are client-side encrypted with AES-256-GCM.
-                </CskLabel>
-
-                <!-- Target Project (Bound Strictly to Active Workspace) -->
+<CskTabs @bind-ActiveTabId="_activeTabId" Class="mt-3">
+    <!-- TAB 1: IMPORT FILE -->
+    <CskTab Id="tab-import" Label="Import File">
+        <CskCard Class="p-card mt-3">
+            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="18">
+                <!-- Target Project (Bound to Active Workspace) -->
                 @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty && _currentProject != null)
                 {
                     <div class="workspace-target-display">
@@ -60,93 +61,133 @@
                 else
                 {
                     <CskMessageBar Intent="MessageBarIntent.Warning">
-                        No active project selected in workspace. Please select a project from the top navigation switcher to enable batch uploads.
+                        No active project selected in workspace. Please select a project from the top navigation switcher to enable file imports.
                     </CskMessageBar>
                 }
 
                 @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty && _currentProject != null)
                 {
-                    <!-- Multi-File Picker Dropzone -->
-                    <div class="file-drop-zone">
-                        <CskLabel Typo="Typography.Body" Class="mb-2 d-block">
-                            Choose one or more task files (.csv, .txt, .tsv)
-                        </CskLabel>
-                        <InputFile OnChange="@HandleFilesSelected" multiple accept=".csv,.txt,.tsv" class="full-width" />
+                    <!-- STEP 1: Select File Type -->
+                    <div class="import-section-group">
+                        <CskLabel Typo="Typography.Subtitle" Class="mb-1 font-weight-600">1. Select Payload Specification</CskLabel>
+                        <CskSelect TOption="ImportFileTypeMetadata" TValue="string"
+                                   Items="@_availableTypes"
+                                   OptionText="@(i => i.DisplayName)"
+                                   OptionValue="@(i => i.FileType.ToString())"
+                                   Value="@_selectedFileType.ToString()"
+                                   ValueChanged="@OnFileTypeChanged"
+                                   Disabled="@_isStagingInProgress"
+                                   Label="File Type"
+                                   Class="full-width" />
                     </div>
-                }
 
-                <!-- Pending Files Table -->
-                @if (_pendingFiles.Count > 0)
-                {
-                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
-                        <CskLabel Typo="Typography.Subtitle">Queued Files (@_pendingFiles.Count)</CskLabel>
-                        <CskButton Variant="CskButtonVariant.Text"
-                                      IconStart="@CskIcons.Dismiss"
-                                      OnClick="@ClearPendingFiles">
-                            Clear All
+                    <!-- STEP 2: Template Information & Download Link -->
+                    @if (_selectedMetadata != null)
+                    {
+                        <div class="template-info-box">
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="4">
+                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8" VerticalAlignment="CskVerticalAlignment.Center">
+                                        <CskIcon Icon="@CskIcons.Document" Class="csk-icon-primary" />
+                                        <span class="template-title font-weight-600">Starter Template Available</span>
+                                        <CskBadge Variant="@BadgeAppearance.Outline">@_selectedMetadata.Extension</CskBadge>
+                                    </CskStack>
+                                    <p class="template-desc">@_selectedMetadata.Description</p>
+                                </CskStack>
+                                <CskButton Variant="CskButtonVariant.Outlined"
+                                           IconStart="@CskIcons.ArrowDown"
+                                           Loading="@_isDownloadingTemplate"
+                                           Disabled="@(_isStagingInProgress || _isDownloadingTemplate)"
+                                           OnClick="@DownloadTemplateAsync">
+                                    Download Blank Template
+                                </CskButton>
+                            </CskStack>
+                        </div>
+                    }
+
+                    <!-- STEP 3: File Picker -->
+                    <div class="import-section-group">
+                        <CskLabel Typo="Typography.Subtitle" Class="mb-1 font-weight-600">2. Select File to Import</CskLabel>
+                        <div class="file-drop-zone @(_isStagingInProgress ? "disabled-zone" : "")">
+                            <CskLabel Typo="Typography.Body" Class="mb-2 d-block">
+                                Choose a file matching the selected format (@(_selectedMetadata?.Extension ?? ".xlsx, .csv"))
+                            </CskLabel>
+                            <InputFile OnChange="@HandleFileSelected"
+                                       accept="@(_selectedMetadata?.AcceptAttribute ?? ".xlsx,.csv")"
+                                       disabled="@_isStagingInProgress"
+                                       class="full-width" />
+                        </div>
+                    </div>
+
+                    <!-- Selected File Preview -->
+                    @if (_selectedFile != null)
+                    {
+                        <div class="selected-file-card">
+                            <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                                    <CskIcon Icon="@CskIcons.Document" />
+                                    <div>
+                                        <div class="font-weight-600">@_selectedFileName</div>
+                                        <div class="text-hint font-size-xs">@FormatBytes(_selectedFileSize) • Ready for staging</div>
+                                    </div>
+                                </CskStack>
+                                @if (!_isStagingInProgress)
+                                {
+                                    <CskButton Variant="CskButtonVariant.Text"
+                                               IconStart="@CskIcons.Dismiss"
+                                               OnClick="@ClearSelectedFile"
+                                               Title="Remove file" />
+                                }
+                            </CskStack>
+                        </div>
+                    }
+
+                    <!-- Progress Bar while Staging -->
+                    @if (_isStagingInProgress)
+                    {
+                        <div class="staging-progress-container mt-2">
+                            <CskStack Orientation="CskOrientation.Vertical" VerticalGap="8">
+                                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8" VerticalAlignment="CskVerticalAlignment.Center">
+                                    <CskSpinner Class="csk-icon-sm" />
+                                    <span class="font-weight-600">Validating schema & staging payload...</span>
+                                </CskStack>
+                                <CskProgressBar />
+                                <span class="text-hint font-size-xs">
+                                    Please do not navigate away or close the browser window. Client-side encryption and database staging are in flight.
+                                </span>
+                            </CskStack>
+                        </div>
+                    }
+
+                    <!-- Status Notification Banner -->
+                    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+                    {
+                        <CskMessageBar Intent="@_messageIntent">
+                            @_statusMessage
+                        </CskMessageBar>
+                    }
+
+                    <!-- STEP 4: Action Button -->
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.End" Class="mt-2">
+                        <CskButton Variant="CskButtonVariant.Filled"
+                                   IconStart="@CskIcons.ArrowSync"
+                                   Disabled="@(_isStagingInProgress || _selectedFile == null || _currentProject == null)"
+                                   Loading="@_isStagingInProgress"
+                                   OnClick="@ImportAndStageFileAsync">
+                            @(_isStagingInProgress ? "Validating & Staging..." : "Import & Stage Payload")
                         </CskButton>
                     </CskStack>
-
-                    <div class="import-files-list">
-                        <CskStack Orientation="CskOrientation.Vertical" VerticalGap="10">
-                            @foreach (var item in _pendingFiles)
-                            {
-                                <div class="import-file-item" @key="item.Id">
-                                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mb-2">
-                                        <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6" VerticalAlignment="CskVerticalAlignment.Center">
-                                            <CskIcon Icon="@CskIcons.Document" />
-                                            <div>
-                                                <CskLabel Typo="Typography.Body" Class="font-weight-600">@item.FileName</CskLabel>
-                                                <CskLabel Typo="Typography.Caption" Class="text-hint">@FormatBytes(item.Size)</CskLabel>
-                                            </div>
-                                        </CskStack>
-                                        <CskButton Variant="CskButtonVariant.Text"
-                                                      IconStart="@CskIcons.Delete"
-                                                      OnClick="@(() => RemovePendingFile(item.Id))"
-                                                      Title="Remove from batch" />
-                                    </CskStack>
-
-                                    <!-- Per-file Combined Format & Target Type Selector -->
-                                    <CskSelect TOption="DataListItem<ImportFileTypeEnum>" TValue="string"
-                                                  Items="@_fileTypeOptions"
-                                                  OptionText="@(i => i.DisplayName)"
-                                                  OptionValue="@(i => i.Code)"
-                                                  Value="@item.SelectedFileType.ToString()"
-                                                  ValueChanged="@((string? v) => OnItemFileTypeChanged(item, v))"
-                                                  Label="Payload Specification"
-                                                  Class="full-width" />
-                                </div>
-                            }
-                        </CskStack>
-                    </div>
                 }
-
-                @if (!string.IsNullOrWhiteSpace(_statusMessage))
-                {
-                    <CskMessageBar Intent="@_messageIntent">
-                        @_statusMessage
-                    </CskMessageBar>
-                }
-
-                <!-- Submit Button -->
-                <CskButton Variant="CskButtonVariant.Filled"
-                              IconStart="@CskIcons.ArrowSync"
-                              Disabled="@(_isUploading || _pendingFiles.Count == 0 || _currentProject == null)"
-                              Loading="@_isUploading"
-                              Class="full-width mt-2"
-                              OnClick="@UploadBatchAsync">
-                    @(_isUploading ? "Encrypting & Storing Batch..." : $"Upload & Ingest Batch ({_pendingFiles.Count} files)")
-                </CskButton>
             </CskStack>
         </CskCard>
-    </CskGridItem>
+    </CskTab>
 
-    <!-- Right Column: Staging History Grid -->
-    <CskGridItem xs="12" lg="7">
-        <CskCard Class="p-card full-height">
+    <!-- TAB 2: IMPORT STATUS & HISTORY -->
+    <CskTab Id="tab-status" Label="Import Status">
+        <CskCard Class="p-card mt-3">
             <CskStack Orientation="CskOrientation.Vertical" VerticalGap="15">
-                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween">
-                    <CskLabel Typo="Typography.H6">Payload Staging History</CskLabel>
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskLabel Typo="Typography.H6">Payload Staging & Batch Execution History</CskLabel>
                     <CskBadge Variant="@BadgeAppearance.Filled">@_history.Count file(s)</CskBadge>
                 </CskStack>
 
@@ -164,9 +205,9 @@
                 {
                     <div class="overflow-x-auto">
                         <CskDataGrid Items="@_history.AsQueryable()"
-                                        ResizableColumns="true"
-                                        TGridItem="ImportFileSummaryDto"
-                                        Class="full-width">
+                                     ResizableColumns="true"
+                                     TGridItem="ImportFileSummaryDto"
+                                     Class="full-width">
                             <CskTemplateColumn Title="Batch ID" Width="100px">
                                 <span title="@context.ImportId.ToString()" class="mono-code">
                                     @context.ImportId.ToString()[..8]...
@@ -230,15 +271,15 @@
                                     @if (context.Status is ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed or ImportStatusEnum.ProcessingFailed)
                                     {
                                         <CskButton Variant="CskButtonVariant.Text"
-                                                      IconStart="@CskIcons.ErrorCircle"
-                                                      Class="text-danger"
-                                                      OnClick="@(() => ViewDiagnosticsAsync(context.Id))">
+                                                   IconStart="@CskIcons.ErrorCircle"
+                                                   Class="text-danger"
+                                                   OnClick="@(() => ViewDiagnosticsAsync(context.Id))">
                                             Errors
                                         </CskButton>
                                     }
                                     <CskButton Variant="CskButtonVariant.Text"
-                                                  IconStart="@CskIcons.Delete"
-                                                  OnClick="@(() => PromptDelete(context.Id))" />
+                                               IconStart="@CskIcons.Delete"
+                                               OnClick="@(() => PromptDelete(context.Id))" />
                                 </CskStack>
                             </CskTemplateColumn>
                         </CskDataGrid>
@@ -246,8 +287,8 @@
                 }
             </CskStack>
         </CskCard>
-    </CskGridItem>
-</CskGrid>
+    </CskTab>
+</CskTabs>
 
 <!-- Diagnostics Modal -->
 <ImportErrorsModal @ref="_errorsModal" />

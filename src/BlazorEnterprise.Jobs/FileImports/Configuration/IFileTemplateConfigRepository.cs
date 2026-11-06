@@ -126,6 +126,81 @@ public sealed class JsonFileTemplateConfigRepository : IFileTemplateConfigReposi
             };
         }
 
+        if (string.Equals(fileType, "ProgramCalendarExcel", StringComparison.OrdinalIgnoreCase))
+        {
+            return new FileTemplateConfig
+            {
+                FileType = "ProgramCalendarExcel",
+                StagingBatchStrategy = "generic-json",
+                TargetEntity = "ProgramCalendarEntity",
+                ChunkSize = 1000,
+                MaxErrorThreshold = 500,
+                OmitNullValues = true,
+                DependsOn = [],
+                Format = new FileFormatConfig
+                {
+                    Type = "excel",
+                    HasHeader = true
+                },
+                Sheets =
+                [
+                    new SheetTemplateConfig
+                    {
+                        Name = "Calendar",
+                        Required = true
+                    }
+                ],
+                Columns =
+                [
+                    new ColumnTemplateConfig { Name = "EntryType", Alias = "c1", DataType = "string", Required = true, AllowedValues = ["Timeline", "Milestone"] },
+                    new ColumnTemplateConfig { Name = "Title", Alias = "c2", DataType = "string", Required = true, MaxLength = 200 },
+                    new ColumnTemplateConfig { Name = "StartDate", Alias = "c3", DataType = "date", Required = true },
+                    new ColumnTemplateConfig { Name = "EndDate", Alias = "c4", DataType = "date", Required = true },
+                    new ColumnTemplateConfig { Name = "Status", Alias = "c5", DataType = "string", Required = false, AllowedValues = ["New", "Scheduled", "Confirmed", "InProgress", "Completed", "Delayed", "Cancelled"] },
+                    new ColumnTemplateConfig { Name = "OwnerEmails", Alias = "c6", DataType = "string", Required = false, MaxLength = 2000 },
+                    new ColumnTemplateConfig { Name = "Comments", Alias = "c7", DataType = "string", Required = false, MaxLength = 4000 },
+                    new ColumnTemplateConfig { Name = "ProgramCode", Alias = "c8", DataType = "string", Required = false, MaxLength = 50 }
+                ]
+            };
+        }
+
+        if (string.Equals(fileType, "ProjectCalendarExcel", StringComparison.OrdinalIgnoreCase))
+        {
+            return new FileTemplateConfig
+            {
+                FileType = "ProjectCalendarExcel",
+                StagingBatchStrategy = "generic-json",
+                TargetEntity = "ProjectCalendarEntity",
+                ChunkSize = 1000,
+                MaxErrorThreshold = 500,
+                OmitNullValues = true,
+                DependsOn = ["ProgramCalendarExcel"],
+                Format = new FileFormatConfig
+                {
+                    Type = "excel",
+                    HasHeader = true
+                },
+                Sheets =
+                [
+                    new SheetTemplateConfig
+                    {
+                        Name = "Calendar",
+                        Required = true
+                    }
+                ],
+                Columns =
+                [
+                    new ColumnTemplateConfig { Name = "EntryType", Alias = "c1", DataType = "string", Required = true, AllowedValues = ["Timeline", "Milestone"] },
+                    new ColumnTemplateConfig { Name = "Title", Alias = "c2", DataType = "string", Required = true, MaxLength = 200 },
+                    new ColumnTemplateConfig { Name = "StartDate", Alias = "c3", DataType = "date", Required = true },
+                    new ColumnTemplateConfig { Name = "EndDate", Alias = "c4", DataType = "date", Required = true },
+                    new ColumnTemplateConfig { Name = "Status", Alias = "c5", DataType = "string", Required = false, AllowedValues = ["New", "Scheduled", "Confirmed", "InProgress", "Completed", "Delayed", "Cancelled"] },
+                    new ColumnTemplateConfig { Name = "OwnerEmails", Alias = "c6", DataType = "string", Required = false, MaxLength = 2000 },
+                    new ColumnTemplateConfig { Name = "Comments", Alias = "c7", DataType = "string", Required = false, MaxLength = 4000 }
+                ]
+            };
+        }
+
         return null;
     }
 }

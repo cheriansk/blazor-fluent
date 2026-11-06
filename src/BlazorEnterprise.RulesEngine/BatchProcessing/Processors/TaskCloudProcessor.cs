@@ -126,6 +126,7 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
         if (errors.Count > 0)
         {
             return new ProcessBatchRespDto(
+                TenantId: payload.TenantId,
                 ImportFileId: importFileId,
                 ChunkIndex: chunkIndex,
                 IsSuccess: false,
@@ -136,7 +137,8 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
         }
 
         return new ProcessBatchRespDto(
-            ImportFileId: importFileId,
+            TenantId: payload.TenantId,
+                ImportFileId: importFileId,
             ChunkIndex: chunkIndex,
             IsSuccess: true,
             IsEncryptedAtRest: false,

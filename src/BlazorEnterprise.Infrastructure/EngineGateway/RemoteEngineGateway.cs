@@ -100,8 +100,31 @@ public class RemoteEngineGateway : IRemoteEngineGateway, IEngineClient
     public Task<Result<FileConvertRespDto>> ConvertFileAsync(FileConvertReqDto request, CancellationToken ct = default) =>
         CallApiAsync<FileConvertReqDto, FileConvertRespDto>(EngineRoutes.TransformsConvert, request, ct);
 
-    public Task<Result<ProcessBatchRespDto>> ProcessStagedBatchAsync(ProcessBatchReqDto request, CancellationToken ct = default) =>
-        CallApiAsync<ProcessBatchReqDto, ProcessBatchRespDto>(EngineRoutes.TransformsProcessBatch, request, ct);
+    public async Task<Result<ProcessBatchRespDto>> ProcessStagedBatchAsync(ProcessBatchReqDto request, CancellationToken ct = default)
+    {
+        var tenantId = _tenantContext.TenantId;
+        if (request.TenantId != Guid.Empty && request.TenantId != tenantId)
+        {
+            _logger.LogCritical("Zero-Trust Security Violation: Outbound batch request TenantId '{ReqTenant}' does not match active TenantContext '{TenantId}'. Aborting.",
+                request.TenantId, tenantId);
+            return Result<ProcessBatchRespDto>.Fail("Zero-Trust Security Violation: Request TenantId does not match active tenant context.");
+        }
+
+        var result = await CallApiAsync<ProcessBatchReqDto, ProcessBatchRespDto>(EngineRoutes.TransformsProcessBatch, request, ct);
+        if (!result.IsSuccess || result.Data == null)
+        {
+            return result;
+        }
+
+        if (result.Data.TenantId != Guid.Empty && result.Data.TenantId != tenantId)
+        {
+            _logger.LogCritical("Zero-Trust Security Violation: Cloud API response TenantId '{RespTenant}' does not match active TenantContext '{TenantId}'. Payload rejected.",
+                result.Data.TenantId, tenantId);
+            return Result<ProcessBatchRespDto>.Fail("Zero-Trust Security Violation: Response TenantId does not match active tenant context.");
+        }
+
+        return result;
+    }
 
     public Task<Result<DecryptProprietaryRespDto>> DecryptProprietaryBatchAsync(DecryptProprietaryReqDto request, CancellationToken ct = default) =>
         CallApiAsync<DecryptProprietaryReqDto, DecryptProprietaryRespDto>(EngineRoutes.TransformsDecryptProprietary, request, ct);

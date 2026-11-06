@@ -292,9 +292,9 @@ public class RevisionService : IRevisionService
 
         context.RevisionHeaders.Add(draftHeader);
 
-        // 3. Clone rows if source revision exists
+        // 3. Clone rows if source revision exists (UI mode only; batch mode populates from staged rows)
         int clonedCount = 0;
-        if (sourceRevision is not null)
+        if (sourceRevision is not null && !isBatch)
         {
             if (featureType == VersionedFeatureTypeEnum.ProgramCalendar && programId.HasValue)
             {

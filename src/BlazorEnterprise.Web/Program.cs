@@ -225,6 +225,7 @@ try
     var enableScheduler = builder.Configuration.GetValue<bool>("Jobs:EnableScheduler", true);
 
     builder.Services.AddBackgroundJobs(enableListener: enableHostedJobsListener, enableScheduler: enableScheduler);
+    builder.Services.AddScoped<BlazorEnterprise.Web.Modules.Imports.Services.IFileTemplateDownloadService, BlazorEnterprise.Web.Modules.Imports.Services.FileTemplateDownloadService>();
 
     // 7. Security Hardening: Request Body Limits (Anti-Pattern 5), Rate Limiting (Anti-Pattern 7) & Secure Cookie Policy
 

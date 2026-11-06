@@ -54,4 +54,24 @@ public interface ICalendarService
     Task<Result<UserCalendarEntity>> CreateUserCalendarEntryAsync(UserCalendarEntity entry, CancellationToken ct = default);
 
     Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevelEnum level, CancellationToken ct = default);
+
+    // --- Enterprise Scenario Revision & Schedule Persistence (Shared between UI & Batch) ---
+    Task<Result<int>> SaveProgramCalendarScheduleAsync(
+        Guid tenantId,
+        Guid programId,
+        IReadOnlyList<BlazorEnterprise.Core.Dtos.ProgramTimelineRowDto> timelineRows,
+        Guid? revisionHeaderId = null,
+        bool isBatchDraft = false,
+        string? batchRevisionName = null,
+        CancellationToken ct = default);
+
+    Task<Result<int>> SaveProjectCalendarScheduleAsync(
+        Guid tenantId,
+        Guid projectId,
+        Guid? programId,
+        IReadOnlyList<BlazorEnterprise.Core.Dtos.ProjectPhaseDto> phases,
+        Guid? revisionHeaderId = null,
+        bool isBatchDraft = false,
+        string? batchRevisionName = null,
+        CancellationToken ct = default);
 }

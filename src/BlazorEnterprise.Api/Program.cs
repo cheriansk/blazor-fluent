@@ -52,6 +52,7 @@ builder.Services.AddHybridCache(options =>
 });
 
 builder.Services.AddSingleton<BaseCloudProcessor, TaskCloudProcessor>();
+builder.Services.AddSingleton<BaseCloudProcessor, CalendarCloudProcessor>();
 builder.Services.AddSingleton<CloudProcessorDispatcher>();
 
 // Strongly-typed options registration
