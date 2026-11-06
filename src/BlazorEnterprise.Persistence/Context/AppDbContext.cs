@@ -442,16 +442,23 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
 
 
-                        // Configure PostgreSQL xmin optimistic concurrency token for all BaseEntity models
+            // Configure PostgreSQL xmin optimistic concurrency token for all BaseEntity models
             if (typeof(BaseEntity).IsAssignableFrom(clrType))
             {
                 modelBuilder.Entity(clrType, builder =>
                 {
-                    builder.Property(nameof(BaseEntity.Version))
-                        .IsRowVersion();
+                    var prop = builder.Property(nameof(BaseEntity.Version));
+                    if (Database.IsNpgsql())
+                    {
+                        prop.IsRowVersion();
+                    }
+                    else
+                    {
+                        prop.HasDefaultValue(0u);
+                    }
                 });
-            }
 
+            }
             // Enforce audit columns (Updated is audit-only, not a concurrency token)
             if (typeof(IAuditableEntity).IsAssignableFrom(clrType))
             {

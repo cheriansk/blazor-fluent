@@ -117,6 +117,15 @@ public interface IVersionedEntity : IMarkerEntity
 }
 
 /// <summary>
+/// Versioned entity whose revisions follow Sprint Planning Lock-and-Auto-Draft lifecycle (Baseline vs Actual).
+/// Finalizing (locking) a baseline revision immediately spawns exactly one working draft.
+/// Explicit manual creation of arbitrary drafts is disallowed to preserve strict 2-stage/linear lifecycle.
+/// </summary>
+public interface ISprintVersionEntity : IVersionedEntity
+{
+}
+
+/// <summary>
 /// Explicitly marks an entity as not subject to multi-draft scenario versioning.
 /// Mutually exclusive with <see cref="IVersionedEntity"/>.
 /// Every concrete entity in the system must implement either IVersionedEntity OR IUnversionedEntity.

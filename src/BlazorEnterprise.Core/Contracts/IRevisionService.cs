@@ -89,6 +89,25 @@ public interface IRevisionService
     /// <summary>
     /// Compares two revisions row-by-row matching on RelId.
     /// </summary>
+    /// <summary>
+    /// Finalizes a draft for an ISprintVersionEntity feature (Lock-and-Auto-Draft mode).
+    /// Locks the draft as an Active baseline and immediately spawns a working draft (vN+1)
+    /// cloning records with lineage.
+    /// </summary>
+    Task<FinalizeRevisionResult> FinalizeAsync(
+        Guid draftRevisionHeaderId,
+        string? notes = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Closes the cycle at the end of a sprint/phase for an ISprintVersionEntity feature.
+    /// Marks the working draft as the final completed revision.
+    /// </summary>
+    Task<RevisionHeaderEntity> CloseCycleAsync(
+        Guid workingDraftRevisionHeaderId,
+        string? notes = null,
+        CancellationToken cancellationToken = default);
+
     Task<RevisionComparisonDto> CompareRevisionsAsync(
         Guid leftRevisionHeaderId,
         Guid rightRevisionHeaderId,

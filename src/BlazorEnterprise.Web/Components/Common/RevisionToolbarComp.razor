@@ -97,7 +97,7 @@
             </div>
             <div class="csk-modal-footer">
                 <button class="btn btn-secondary" @onclick="() => ShowNewDraftModal = false">Cancel</button>
-                <button class="btn btn-primary" @onclick="CreateDraftAsync" disabled="@string.IsNullOrWhiteSpace(NewDraftName)">Create Draft</button>
+                <button class="btn btn-primary" @onclick="CreateDraftAsync" disabled="@string.IsNullOrWhiteSpace(NewDraftName)">@(IsMultiDraftMode ? "Create Draft" : "Create Plan")</button>
             </div>
         </div>
     </div>

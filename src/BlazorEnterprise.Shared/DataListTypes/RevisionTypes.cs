@@ -26,7 +26,13 @@ public enum RevisionStatusEnum
     Superseded = 5,
 
     [Display(Name = "Cancelled", Description = "Abandoned or automatically cancelled when another version was activated")]
-    Cancelled = 6
+    Cancelled = 6,
+
+    [Display(Name = "Complete", Description = "Universal terminal state when an active revision scenario or cycle is finalized and closed.")]
+    Complete = 7,
+
+    [Display(Name = "Draft Complete", Description = "Sprint-exclusive terminal state capturing the final live working draft upon sprint completion.")]
+    DraftComplete = 8
 }
 
 public static class RevisionStatusEnumDefinitions
@@ -54,10 +60,13 @@ public static class RevisionStatusEnumDefinitions
             },
             [RevisionStatusEnum.Active] = new HashSet<RevisionStatusEnum>
             {
-                RevisionStatusEnum.Superseded
+                RevisionStatusEnum.Superseded,
+                RevisionStatusEnum.Complete
             },
             [RevisionStatusEnum.Superseded] = new HashSet<RevisionStatusEnum>(),
-            [RevisionStatusEnum.Cancelled] = new HashSet<RevisionStatusEnum>()
+            [RevisionStatusEnum.Cancelled] = new HashSet<RevisionStatusEnum>(),
+            [RevisionStatusEnum.Complete] = new HashSet<RevisionStatusEnum>(),
+            [RevisionStatusEnum.DraftComplete] = new HashSet<RevisionStatusEnum>()
         };
 }
 
@@ -72,4 +81,35 @@ public enum VersionedFeatureTypeEnum
     SprintPlan = 3,
     Estimation = 4,
     Pricing = 5
+}
+
+/// <summary>
+/// Operational versioning policy governing how revisions and drafts behave for a feature area.
+/// </summary>
+[ClassificationEnum]
+public enum VersioningModeEnum
+{
+    /// <summary>
+    /// Multi-draft scenario modeling: users can explicitly create multiple concurrent drafts and review cycles.
+    /// </summary>
+    MultiDraft = 1,
+
+    /// <summary>
+    /// Single-version Lock-and-Auto-Draft (e.g., Sprint Planning, Baseline vs Live Working Copy).
+    /// Finalizing a baseline revision locks it and immediately auto-spawns a single working draft.
+    /// Explicit creation of arbitrary drafts is blocked.
+    /// </summary>
+    LockAndAutoDraft = 2
+}
+
+public static class VersionedFeatureTypeEnumDefinitions
+{
+    public static bool IsSprintExclusiveStatus(RevisionStatusEnum status) =>
+        status == RevisionStatusEnum.DraftComplete;
+
+    public static VersioningModeEnum GetVersioningMode(VersionedFeatureTypeEnum featureType) => featureType switch
+    {
+        VersionedFeatureTypeEnum.SprintPlan => VersioningModeEnum.LockAndAutoDraft,
+        _ => VersioningModeEnum.MultiDraft
+    };
 }

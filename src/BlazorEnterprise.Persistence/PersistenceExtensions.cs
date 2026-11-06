@@ -182,6 +182,8 @@ public static class PersistenceExtensions
 
         // 24. Unified Enterprise Calendar Service
         services.TryAddScoped<ICalendarService, CalendarService>();
+        services.AddScoped<BlazorEnterprise.Core.Models.IRevisionRowProvider, BlazorEnterprise.Persistence.Services.RevisionProviders.ProgramCalendarRevisionRowProvider>();
+        services.AddScoped<BlazorEnterprise.Core.Models.IRevisionRowProvider, BlazorEnterprise.Persistence.Services.RevisionProviders.ProjectCalendarRevisionRowProvider>();
         services.TryAddScoped<IRevisionService, RevisionService>();
 
         // 25. ServiceNow-Style Sequential Workflow Engine
