@@ -940,118 +940,22 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
                 }
             }
 
-            // Persist Timeline rows and Milestones & Soft-Delete Removed
-
+            // Persist Timeline rows and Milestones via shared ICalendarService
             var tenantGuid = ResolveSelectedTenantGuid();
-
-            if (tenantGuid != Guid.Empty)
+            if (tenantGuid != Guid.Empty && state.TimelineRows != null)
             {
-                var existingEntries = await CalendarService.GetProgramCalendarEntitiesAsync(tenantGuid, targetProgramId, forEdit: true);
-                var activeTimelineIds = new HashSet<Guid>();
-                var activeMilestoneIds = new HashSet<Guid>();
+                var saveScheduleResult = await CalendarService.SaveProgramCalendarScheduleAsync(
+                    tenantId: tenantGuid,
+                    programId: targetProgramId,
+                    timelineRows: state.TimelineRows,
+                    isBatchDraft: false);
 
-                if (state.TimelineRows != null)
+                if (!saveScheduleResult.Succeeded)
                 {
-                    foreach (var row in state.TimelineRows)
-                    {
-                        var rowId = row.Id == Guid.Empty ? Guid.NewGuid() : row.Id;
-
-                        activeTimelineIds.Add(rowId);
-
-                        var rowStatus = row.Status.ToEnum(CalendarEntryStatusEnum.New);
-
-                        var timelineEntity = new ProgramCalendarEntity
-                        {
-                            Id = rowId,
-
-                            TenantId = tenantGuid,
-
-                            ProgramId = targetProgramId,
-
-                            Title = row.Title,
-
-                            StartDate = row.StartDate ?? DateTime.UtcNow.Date,
-
-                            EndDate = row.EndDate,
-
-                            Status = rowStatus,
-
-                            Comments = row.Comments,
-
-                            EntryType = CalendarEntryTypeEnum.Timeline
-                        };
-
-                        var calResult = await CalendarService.CreateProgramCalendarEntryAsync(timelineEntity);
-
-                        if (!calResult.Succeeded)
-                        {
-                            var err = $"Failed to save timeline row '{timelineEntity.Title}': {string.Join("; ", calResult.Errors)}";
-                            _statusMessage = err;
-                            _isError = true;
-
-                            return err;
-                        }
-
-                        foreach (var m in row.Milestones ?? new List<BlazorEnterprise.Core.Dtos.ProgramMilestoneDto>())
-                        {
-                            var milestoneId = m.Id == Guid.Empty ? Guid.NewGuid() : m.Id;
-
-                            activeMilestoneIds.Add(milestoneId);
-
-                            var mStatus = m.Status.ToEnum(CalendarEntryStatusEnum.New);
-
-                            var milestoneEntity = new ProgramCalendarEntity
-                            {
-                                Id = milestoneId,
-
-                                TenantId = tenantGuid,
-
-                                ProgramId = targetProgramId,
-
-                                ParentTimelineId = timelineEntity.Id,
-
-                                Title = m.Title,
-
-                                StartDate = m.StartDate ?? timelineEntity.StartDate,
-
-                                EndDate = m.EndDate ?? timelineEntity.EndDate,
-
-                                OwnerEmails = m.OwnerEmails,
-
-                                Status = mStatus,
-
-                                Comments = m.Comments,
-
-                                EntryType = CalendarEntryTypeEnum.Milestone
-                            };
-
-                            var mResult = await CalendarService.CreateProgramCalendarEntryAsync(milestoneEntity);
-
-                            if (!mResult.Succeeded)
-                            {
-                                var err = $"Failed to save milestone '{milestoneEntity.Title}': {string.Join("; ", mResult.Errors)}";
-                                _statusMessage = err;
-                                _isError = true;
-
-                                return err;
-                            }
-                        }
-                    }
-                }
-
-                // Soft-delete removed timeline rows & milestones
-
-                foreach (var entry in existingEntries)
-                {
-                    if (entry.EntryType == CalendarEntryTypeEnum.Timeline && !activeTimelineIds.Contains(entry.Id))
-                    {
-                        await CalendarService.DeleteCalendarEntryAsync(entry.Id, TaskLevelEnum.Program);
-                    }
-
-                    else if (entry.EntryType == CalendarEntryTypeEnum.Milestone && !activeMilestoneIds.Contains(entry.Id))
-                    {
-                        await CalendarService.DeleteCalendarEntryAsync(entry.Id, TaskLevelEnum.Program);
-                    }
+                    var err = saveScheduleResult.Errors.FirstOrDefault() ?? "Failed to save program schedule.";
+                    _statusMessage = err;
+                    _isError = true;
+                    return err;
                 }
             }
 
@@ -1473,122 +1377,23 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
                 }
             }
 
-            // Synchronously persist Project timeline phases and milestones & Soft-Delete Removed
-
+            // Persist Project timeline phases and milestones via shared ICalendarService
             var tenantGuid = ResolveSelectedTenantGuid();
-
-            if (tenantGuid != Guid.Empty)
+            if (tenantGuid != Guid.Empty && state.Phases != null)
             {
-                var existingEntries = await CalendarService.GetProjectCalendarEntitiesAsync(tenantGuid, targetProjectId, forEdit: true);
-                var activePhaseIds = new HashSet<Guid>();
-                var activeMilestoneIds = new HashSet<Guid>();
+                var saveScheduleResult = await CalendarService.SaveProjectCalendarScheduleAsync(
+                    tenantId: tenantGuid,
+                    projectId: targetProjectId,
+                    programId: state.ProgramId,
+                    phases: state.Phases,
+                    isBatchDraft: false);
 
-                if (state.Phases != null)
+                if (!saveScheduleResult.Succeeded)
                 {
-                    foreach (var phase in state.Phases)
-                    {
-                        var phaseId = phase.Id == Guid.Empty ? Guid.NewGuid() : phase.Id;
-
-                        activePhaseIds.Add(phaseId);
-
-                        var phaseStatus = phase.Status.ToEnum(CalendarEntryStatusEnum.New);
-
-                        var timelineEntity = new ProjectCalendarEntity
-                        {
-                            Id = phaseId,
-
-                            TenantId = tenantGuid,
-
-                            ProjectId = targetProjectId,
-
-                            ProgramId = state.ProgramId,
-
-                            Title = phase.Title,
-
-                            StartDate = phase.StartDate ?? DateTime.UtcNow.Date,
-
-                            EndDate = phase.EndDate,
-
-                            Status = phaseStatus,
-
-                            Comments = phase.Comments,
-
-                            EntryType = CalendarEntryTypeEnum.Timeline
-                        };
-
-                        var calResult = await CalendarService.CreateProjectCalendarEntryAsync(timelineEntity);
-
-                        if (!calResult.Succeeded)
-                        {
-                            var err = $"Failed to save project phase '{timelineEntity.Title}': {string.Join("; ", calResult.Errors)}";
-                            _statusMessage = err;
-                            _isError = true;
-
-                            return err;
-                        }
-
-                        foreach (var m in phase.Milestones ?? new List<BlazorEnterprise.Core.Dtos.ProjectMilestoneDto>())
-                        {
-                            var milestoneId = m.Id == Guid.Empty ? Guid.NewGuid() : m.Id;
-
-                            activeMilestoneIds.Add(milestoneId);
-
-                            var mStatus = m.Status.ToEnum(CalendarEntryStatusEnum.New);
-
-                            var milestoneEntity = new ProjectCalendarEntity
-                            {
-                                Id = milestoneId,
-
-                                TenantId = tenantGuid,
-
-                                ProjectId = targetProjectId,
-
-                                ProgramId = state.ProgramId,
-
-                                ParentTimelineId = timelineEntity.Id,
-
-                                Title = m.Title,
-
-                                StartDate = m.StartDate ?? timelineEntity.StartDate,
-
-                                EndDate = m.EndDate ?? timelineEntity.EndDate,
-
-                                OwnerEmails = m.OwnerEmails,
-
-                                Status = mStatus,
-
-                                Comments = m.Comments,
-
-                                EntryType = CalendarEntryTypeEnum.Milestone
-                            };
-
-                            var mResult = await CalendarService.CreateProjectCalendarEntryAsync(milestoneEntity);
-
-                            if (!mResult.Succeeded)
-                            {
-                                var err = $"Failed to save project milestone '{milestoneEntity.Title}': {string.Join("; ", mResult.Errors)}";
-                                _statusMessage = err;
-                                _isError = true;
-
-                                return err;
-                            }
-                        }
-                    }
-                }
-
-                // Soft-delete removed phases and milestones
-
-                foreach (var entry in existingEntries)
-                {
-                    if (entry.EntryType == CalendarEntryTypeEnum.Timeline && !activePhaseIds.Contains(entry.Id))
-                    {
-                        await CalendarService.DeleteCalendarEntryAsync(entry.Id, TaskLevelEnum.Project);
-                    }
-
-                    else if (entry.EntryType == CalendarEntryTypeEnum.Milestone && !activeMilestoneIds.Contains(entry.Id))
-                    {
-                        await CalendarService.DeleteCalendarEntryAsync(entry.Id, TaskLevelEnum.Project);
-                    }
+                    var err = saveScheduleResult.Errors.FirstOrDefault() ?? "Failed to save project schedule.";
+                    _statusMessage = err;
+                    _isError = true;
+                    return err;
                 }
             }
 

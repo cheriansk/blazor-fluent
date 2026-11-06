@@ -34,6 +34,7 @@ public sealed class CloudProcessorDispatcher
             !_processorsByFileType.TryGetValue(fileType, out var strategy))
         {
             return new ProcessBatchRespDto(
+                TenantId: payload.TenantId,
                 ImportFileId: importFileId,
                 ChunkIndex: chunkIndex,
                 IsSuccess: false,

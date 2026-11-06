@@ -60,7 +60,17 @@ public enum ImportFileTypeEnum
     [Display(Name = "Project Tasks (CSV .csv)", Description = "Project tasks comma-delimited plain text file.")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Text)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
-    TaskCsv = 4
+    TaskCsv = 4,
+
+    [Display(Name = "Program Calendar & Milestones (Excel .xlsx)", Description = "Single-sheet program timeline stages and milestones workbook.")]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
+    ProgramCalendarExcel = 5,
+
+    [Display(Name = "Project Calendar & Milestones (Excel .xlsx)", Description = "Single-sheet project timeline phases and milestones workbook.")]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
+    ProjectCalendarExcel = 6
 }
 
 #endregion

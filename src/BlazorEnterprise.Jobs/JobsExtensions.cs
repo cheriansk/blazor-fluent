@@ -42,6 +42,9 @@ public static class JobsExtensions
         // 6. Auto-discover and register all ICanonicalBatchStager implementations
         RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(ICanonicalBatchStager));
 
+        // 6b. Auto-discover and register all IBatchDomainCommitter implementations
+        RegisterImplementationsOf(services, typeof(JobsExtensions).Assembly, typeof(BlazorEnterprise.Jobs.FileImports.Committers.IBatchDomainCommitter));
+
         // 7. Register Hybrid Batch Template Configuration Repository & Pre-Ingestion Strategy Resolver
         services.TryAddSingleton<IFileTemplateConfigRepository, JsonFileTemplateConfigRepository>();
         services.TryAddScoped<ILocalBatchStagerResolver, LocalBatchStagerResolver>();

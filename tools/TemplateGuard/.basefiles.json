@@ -406,7 +406,7 @@
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "aa9f090f03392ae01a5a03ef38202f2632fd80a55f1bf4e5ef8b37e2bf2a7721",
+        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "9aefad8aa0c9f0fd468eb7c73abba0245c5a6a7f50d74d124fb7a201044cad73",
         "ProcessEndpoints.ValidateEnvelope(EncryptedEnvelopeDto?)": "221b3c8805f29db28e4968ec063b19b7682d2847843cbc174889bac9e31ea58e",
         "ProcessEndpoints.ResolveEncryptionKey(ClaimsPrincipal, IConfiguration, ILogger)": "0b059e6881573514a81efb11cd000565e24fbd986b4151b254eaa28090abc193",
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)": "a9b51ed79515f7fa746e94e77a95661829dd21600480cc9ff13812d0d140bcc1"
@@ -1294,7 +1294,11 @@
         "CreateUserCalendarEntryAsync",
         "ICalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)",
         "DeleteCalendarEntryAsync",
-        "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)"
+        "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)",
+        "SaveProgramCalendarScheduleAsync",
+        "ICalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CDtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)",
+        "SaveProjectCalendarScheduleAsync",
+        "ICalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CDtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "ICalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)": "0e29cfad38afd928f175f3f0f7d604bba9573074406b18789123b4f773519078",
@@ -1305,7 +1309,9 @@
         "ICalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)": "9ae01a6bf92f41ea3a85065ed2bd4465506478f756a6c50960752ae65961645c",
         "ICalendarService.CreateProjectCalendarEntryAsync(ProjectCalendarEntity, CancellationToken)": "87c212c3b3b33ea7461d5c04ec1b623996fc7463f26bad2f5ad9e7f2b2ac0ec4",
         "ICalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "e5d4d47efba23ca14c7a1dd41e9b29cd21ca3239a9a483bd335a33cf4f2fbd4c",
-        "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "3b738923e913457991151657832f08904691efbab7d177c622526cbb17ae87e6"
+        "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "3b738923e913457991151657832f08904691efbab7d177c622526cbb17ae87e6",
+        "ICalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CDtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "f0fb8ec2f15fdf443d660312bd861de2eb27cb980e432357ba1c3ec56b42c4d9",
+        "ICalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CDtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "1cb6c39802cc78121344125c069420710ef1bce98c3a38d32ef5bf95dd41a9b6"
       }
     },
     "Core/Contracts/ICircuitActivityTracker.cs": {
@@ -10665,7 +10671,7 @@
       "MemberSyntaxHashes": {
         "RemoteEngineGateway.CallApiAsync\u003CTReq, TResp\u003E(string, TReq, CancellationToken)": "43ad07fb50225b25bf7e63b0a645dec8cedca722efcf45a9fe1e5d6a6b16c8d5",
         "RemoteEngineGateway.ConvertFileAsync(FileConvertReqDto, CancellationToken)": "cea96d8ed31effe7eee0abada3475368303208e64ccaac08b490f6337f35b18b",
-        "RemoteEngineGateway.ProcessStagedBatchAsync(ProcessBatchReqDto, CancellationToken)": "f8a2128a6a9f6e7594f7769581a7daf6ed47770dc51873a32dbeaed312b29a56",
+        "RemoteEngineGateway.ProcessStagedBatchAsync(ProcessBatchReqDto, CancellationToken)": "2f562875b09a739160fc81636f4d7686173ab3d4d7e5c7f38bc4a84c918e6074",
         "RemoteEngineGateway.DecryptProprietaryBatchAsync(DecryptProprietaryReqDto, CancellationToken)": "16170fb6206c020e0593d9a88a37d4e68ddf493245237e273c6055f6b7d64bd1",
         "RemoteEngineGateway.RollupProgramAsync(ProgramRollupReqDto, CancellationToken)": "50da9a9e469b90f0558f8cd742e6e135affd925907044d20ebb3427105aaca77",
         "RemoteEngineGateway.AnalyzeDagAsync(DependencyDagReqDto, CancellationToken)": "86b35234052623f7457b5058e2f4d688c4f3469e677211296dadf2f194b2137c",
@@ -11363,6 +11369,65 @@
         "TabularFileStager\u003CTEntity, TModel\u003E.PersistBatchAsync(IReadOnlyList\u003CTEntity\u003E, CancellationToken)": "9859c3fe5f73bd44f2c25ec7af487653b77d0b078c9f4342f6cd3066cd4d3c79"
       }
     },
+    "Jobs/FileImports/Committers/CalendarBatchDomainCommitter.cs": {
+      "RelativePath": "Jobs/FileImports/Committers/CalendarBatchDomainCommitter.cs",
+      "KnownMembers": [
+        "_calendarService",
+        "CalendarBatchDomainCommitter._calendarService",
+        "_dbContext",
+        "CalendarBatchDomainCommitter._dbContext",
+        "_logger",
+        "CalendarBatchDomainCommitter._logger",
+        ".ctor",
+        "CalendarBatchDomainCommitter.CalendarBatchDomainCommitter(ICalendarService, AppDbContext, ILogger\u003CCalendarBatchDomainCommitter\u003E)",
+        "CanCommit",
+        "CalendarBatchDomainCommitter.CanCommit(string)",
+        "CommitProcessedRowsAsync",
+        "CalendarBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)",
+        "BuildProgramTimelineRows",
+        "CalendarBatchDomainCommitter.BuildProgramTimelineRows(IReadOnlyList\u003CProcessedDomainRowDto\u003E)",
+        "BuildProjectPhases",
+        "CalendarBatchDomainCommitter.BuildProjectPhases(IReadOnlyList\u003CProcessedDomainRowDto\u003E)"
+      ],
+      "MemberSyntaxHashes": {
+        "CalendarBatchDomainCommitter.CanCommit(string)": "7792bb7091fa277b22153c1b430445c687e2ec8425706fae2f337412c1881500",
+        "CalendarBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "dae593eeab851f6ad78c735b349fc29db9860a31348533f48654ead1038b78de",
+        "CalendarBatchDomainCommitter.BuildProgramTimelineRows(IReadOnlyList\u003CProcessedDomainRowDto\u003E)": "8f2f32bc8dfd051238a7313cd3225fb3ce3797c2902adf464c8fae42bb32fbc6",
+        "CalendarBatchDomainCommitter.BuildProjectPhases(IReadOnlyList\u003CProcessedDomainRowDto\u003E)": "1d91c81591d4364c7548ff2e2ad67b0429ee35a9d577d280df7b4ce84e2d6ba9"
+      }
+    },
+    "Jobs/FileImports/Committers/IBatchDomainCommitter.cs": {
+      "RelativePath": "Jobs/FileImports/Committers/IBatchDomainCommitter.cs",
+      "KnownMembers": [
+        "CanCommit",
+        "IBatchDomainCommitter.CanCommit(string)",
+        "CommitProcessedRowsAsync",
+        "IBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "IBatchDomainCommitter.CanCommit(string)": "93ceb8e2ee392f817367186590ffc9898e530e3ba1edbf948826e1738598ce0e",
+        "IBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "40c464e24ac180159e7de256cc1fea346f5c31c0e0b88c67027f5ff5ef5d4a33"
+      }
+    },
+    "Jobs/FileImports/Committers/TaskBatchDomainCommitter.cs": {
+      "RelativePath": "Jobs/FileImports/Committers/TaskBatchDomainCommitter.cs",
+      "KnownMembers": [
+        "_dbContext",
+        "TaskBatchDomainCommitter._dbContext",
+        "_logger",
+        "TaskBatchDomainCommitter._logger",
+        ".ctor",
+        "TaskBatchDomainCommitter.TaskBatchDomainCommitter(AppDbContext, ILogger\u003CTaskBatchDomainCommitter\u003E)",
+        "CanCommit",
+        "TaskBatchDomainCommitter.CanCommit(string)",
+        "CommitProcessedRowsAsync",
+        "TaskBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "TaskBatchDomainCommitter.CanCommit(string)": "7165768daad1a7d85fba2dc855ab75bc7bfc7be61128dfb6a46373b2a5b351bd",
+        "TaskBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "ded7a917c2371da73523993c4171e843f81a0c4b7471ec518136db0709a78729"
+      }
+    },
     "Jobs/FileImports/Configuration/IFileTemplateConfigRepository.cs": {
       "RelativePath": "Jobs/FileImports/Configuration/IFileTemplateConfigRepository.cs",
       "KnownMembers": [
@@ -11387,7 +11452,7 @@
       "MemberSyntaxHashes": {
         "IFileTemplateConfigRepository.GetConfigAsync(string, CancellationToken)": "69841493dfaab747ec9bf653eff430155be7c8a3e44714de7fe322d10ec517f2",
         "JsonFileTemplateConfigRepository.GetConfigAsync(string, CancellationToken)": "9ddd8f580ec0e1c9fc4f75a3ba012eddaf9de2b7f710a292c49f6401f5cfa736",
-        "JsonFileTemplateConfigRepository.CreateBuiltInTemplate(string)": "9b1631f228d703acda2f6aaea78e39b3890a6ab436e053d1b0068144240588b4"
+        "JsonFileTemplateConfigRepository.CreateBuiltInTemplate(string)": "85171b60450985db533403d6d668833e1548ee9af13c11d8ff04bd1ee273d67c"
       }
     },
     "Jobs/FileImports/GenericFileImportBatchJobHandler.cs": {
@@ -11409,10 +11474,12 @@
         "GenericFileImportBatchJobHandler._batchStagerResolver",
         "_engineClient",
         "GenericFileImportBatchJobHandler._engineClient",
+        "_domainCommitters",
+        "GenericFileImportBatchJobHandler._domainCommitters",
         "_logger",
         "GenericFileImportBatchJobHandler._logger",
         ".ctor",
-        "GenericFileImportBatchJobHandler.GenericFileImportBatchJobHandler(AppDbContext, ITenantEncryptionService, ITenantBlobStorageService, INotifyService, IJobEventPublisher, ILogger\u003CGenericFileImportBatchJobHandler\u003E, IFileTemplateConfigRepository?, ILocalBatchStagerResolver?, IEngineClient?)",
+        "GenericFileImportBatchJobHandler.GenericFileImportBatchJobHandler(AppDbContext, ITenantEncryptionService, ITenantBlobStorageService, INotifyService, IJobEventPublisher, ILogger\u003CGenericFileImportBatchJobHandler\u003E, IFileTemplateConfigRepository?, ILocalBatchStagerResolver?, IEngineClient?, IEnumerable\u003CCommitters.IBatchDomainCommitter\u003E?)",
         "HandleAsync",
         "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)",
         "OrderFilesByDependenciesAsync",
@@ -11428,7 +11495,7 @@
         "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "6c714e10e18c093fb28b513210c5f828fdd0c3ca5561ee938b8d3cce883d1d36",
         "GenericFileImportBatchJobHandler.OrderFilesByDependenciesAsync(List\u003CImportFileEntity\u003E, CancellationToken)": "ed056bc0d6ecc5decfc91818cdd792ba613e012d2c2beae493ab9b8fe58391a1",
         "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "26c02aab8f142b613a67523212beddda52359372b09224c119ae0f1a7d9a4add",
-        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "c3cd48e80dbf1dd1a011b489433288586d082de53ca1de5116194476ff1e7656",
+        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "77a9cb033723bec90566f471959f7c68d52c8bbeebdb8b7358715635cda3a13c",
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)": "357a57db49576d30a386a8833d98acf7d6602b6a600c608f842a611c11d758da"
       }
     },
@@ -11553,7 +11620,7 @@
         "GenericTabularJsonBatchStager.ExcelSheetMetadata.Deconstruct(out string, out string)"
       ],
       "MemberSyntaxHashes": {
-        "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)": "68b7d77b95e7f03147d743340a16929c221ff03a87b607cb2888f6a2c3ccd90f",
+        "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)": "f4f438798c0198b9ced2c4208da7dd5f46523c19bcd145e474255394b79427d4",
         "GenericTabularJsonBatchStager.IsExcelFormat(ImportFileEntity, FileTemplateConfig)": "3c07144754abd0b5085fbbdbe2038776e9bcf8cb9f591e9578ba749e6e51fc10",
         "GenericTabularJsonBatchStager.ValidateRow(int, string, IReadOnlyDictionary\u003Cstring, string?\u003E, IReadOnlyDictionary\u003Cstring, ColumnTemplateConfig\u003E, IReadOnlyList\u003Cstring\u003E, HashSet\u003Cstring\u003E, List\u003CFileValidationError\u003E)": "590e20ce18588c8108cc556cecbaa3944a57d20862ce225abf5898a3b8a6cd71",
         "GenericTabularJsonBatchStager.TryParseExcelOrIsoDate(string, out DateTime)": "2165277a9d55a889be6185a74dd09a1ca5ee258af1f4edbb1504ef793b915391",
@@ -12019,7 +12086,7 @@
         "JobsExtensions.RegisterImplementationsOf(IServiceCollection, Assembly, Type)"
       ],
       "MemberSyntaxHashes": {
-        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool, bool)": "e89fe30cda500bf2fed6afa4b1dc49d6f5cd88b164e0ddf64e1103fb248d7bb5",
+        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool, bool)": "d0becac6a40f996693f0555956af2ba08d2e16a7c6e6593e3cc304f1a9e9e478",
         "JobsExtensions.RegisterBatchJobHandlers(IServiceCollection, Assembly)": "98a3cd912b137751957d5a5b828e51fe4257f98805c7fe459a2efba4bdc18694",
         "JobsExtensions.RegisterImplementationsOf(IServiceCollection, Assembly, Type)": "5ed1cc104291512deba0890ece276c02b130b318644706b1e6fd35ae981bd19a"
       }
@@ -12866,11 +12933,11 @@
         "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)"
       ],
       "MemberSyntaxHashes": {
-        "MigrationBuilderRlsExtensions.EnableTenantRowLevelSecurity(MigrationBuilder, string, string, string, bool)": "8a984cd4ca4f0e0d6d8a74d6b89a13caf193910209a4ac421b36c4fb333fc639",
-        "MigrationBuilderRlsExtensions.DisableTenantRowLevelSecurity(MigrationBuilder, string, string)": "0b06b0dab9004366e2eb35e8f501b803304a7acec914f41bcc33894e506ba997",
+        "MigrationBuilderRlsExtensions.EnableTenantRowLevelSecurity(MigrationBuilder, string, string, string, bool)": "1b74705d9139201fd50ec7da92dfbb1aca2df1339cc219ee818ba5f0abcbddb6",
+        "MigrationBuilderRlsExtensions.DisableTenantRowLevelSecurity(MigrationBuilder, string, string)": "d83c53912db15de923380e6de250007b48e6ca05770cc8e30038ff8ca4b2954e",
         "MigrationBuilderRlsExtensions.ApplyAllTenantRowLevelSecurity(MigrationBuilder)": "3be278d2466b6100a4807e91ac211c32ae45419a18c2bd3a627f25eb862d3a72",
         "MigrationBuilderRlsExtensions.RevertAllTenantRowLevelSecurity(MigrationBuilder)": "f84dee6982e0cf35850eb6e793f47ebd0e4cfabf41f214c3abdea53a43dd2e07",
-        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)": "282bd9ccd7edb93afc4cf303c22a53101fd0d5b2d41b2524fc4d8fe22cf2ca4f"
+        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)": "36f20defa9ae4f0f132dbe01ce66ddc7e95933aca397e389637feb72937d9856"
       }
     },
     "Persistence/Extensions/QueryableExtensions.cs": {
@@ -13479,8 +13546,10 @@
         "CalendarService._currentUser",
         "_logger",
         "CalendarService._logger",
+        "_revisionService",
+        "CalendarService._revisionService",
         ".ctor",
-        "CalendarService.CalendarService(IDbContextFactory\u003CAppDbContext\u003E, IEnumerable\u003CIWorkItemRollupProvider\u003E, ICurrentUser, ILogger\u003CCalendarService\u003E)",
+        "CalendarService.CalendarService(IDbContextFactory\u003CAppDbContext\u003E, IEnumerable\u003CIWorkItemRollupProvider\u003E, ICurrentUser, IRevisionService, ILogger\u003CCalendarService\u003E)",
         "GetProgramCalendarAsync",
         "CalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)",
         "GetProjectCalendarAsync",
@@ -13498,7 +13567,11 @@
         "CreateUserCalendarEntryAsync",
         "CalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)",
         "DeleteCalendarEntryAsync",
-        "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)"
+        "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)",
+        "SaveProgramCalendarScheduleAsync",
+        "CalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CCore.Dtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)",
+        "SaveProjectCalendarScheduleAsync",
+        "CalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CCore.Dtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "CalendarService.GetProgramCalendarAsync(Guid, Guid, DateTime, DateTime, CancellationToken)": "0c98a9c22390fe8ba0d598e814677caa9a7cec2019162e257a5c10f3998c1ea6",
@@ -13509,7 +13582,9 @@
         "CalendarService.CreateProgramCalendarEntryAsync(ProgramCalendarEntity, CancellationToken)": "192a036d9ed7387f5472e20bcfb7947572e3be55eee6ae17b27d4a18f26ebad7",
         "CalendarService.CreateProjectCalendarEntryAsync(ProjectCalendarEntity, CancellationToken)": "5457d01e2b2fc4190bd7438162cea248b8d031d8b398a98704fb623c75857cb9",
         "CalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "061a9e99137b26f4a048cdaf456e1406f08100aa4feeae9768eb203459177639",
-        "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "17e1100a99e1de4a00544cc5fecb399bd4554c0694503d7de7bd7f399a442ef9"
+        "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "17e1100a99e1de4a00544cc5fecb399bd4554c0694503d7de7bd7f399a442ef9",
+        "CalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CCore.Dtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "f78a7d6c0371910b816cb15a8c385b9d2d8b78aa21721b9a730f9516f7d513c6",
+        "CalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CCore.Dtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "a206eb831309fe56bfc1178283eecf7881da8531e145e69d5fc72160d1e68bda"
       }
     },
     "Persistence/Services/CircuitActivityTracker.cs": {
@@ -14463,7 +14538,7 @@
       "MemberSyntaxHashes": {
         "RevisionService.GetRevisionsAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "0df8e38b399ddb5c8633528c01e481cbd4a2be4d75122e0b56f303d07176cf21",
         "RevisionService.GetActiveRevisionAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "3c4bd858e3ad4c33c3abbe81b2c201f22131c47e74cb122ce4e6456634e3ff62",
-        "RevisionService.CreateDraftAsync(TaskLevelEnum, VersionedFeatureTypeEnum, string, Guid?, Guid?, Guid?, bool, CancellationToken)": "93cd51efea0f8516f5f0ba3db514b717a6e82d0e1174fe2193f7f9970e1328dd",
+        "RevisionService.CreateDraftAsync(TaskLevelEnum, VersionedFeatureTypeEnum, string, Guid?, Guid?, Guid?, bool, CancellationToken)": "0112e7a1c38289e1de6acd7be32ac3538206d3f434593ca66f6b6a254b2582b4",
         "RevisionService.SubmitForReviewAsync(Guid, string, string?, CancellationToken)": "df87381dfdc4f2e1bd585d9e56bd5ffcc7ff62699d693a9494d9a7c5db09a3de",
         "RevisionService.ApproveRevisionAsync(Guid, string?, CancellationToken)": "bd6949714c0156ae9644349659ee549bd6d91345b1f5a75dcfcf80d0d057d136",
         "RevisionService.RejectRevisionAsync(Guid, string, CancellationToken)": "cf63d50b37f9503702182bae6421cf504890818c3b9b9f3be79b53afdbaf3bff",
@@ -15015,7 +15090,7 @@
         "CloudProcessorDispatcher.Dispatch(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)"
       ],
       "MemberSyntaxHashes": {
-        "CloudProcessorDispatcher.Dispatch(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "41df20fed31659d02455373e01eab8c00388a495764212ed462fec79865faf35"
+        "CloudProcessorDispatcher.Dispatch(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "3bf2609b5e699699498c4754ec44f61466d229d729bd916b56c42f218ba7ab93"
       }
     },
     "RulesEngine/BatchProcessing/ICloudProcessingStrategy.cs": {
@@ -15042,6 +15117,33 @@
         "BaseCloudProcessor.GetCellValue(StagedRowDto, IReadOnlyDictionary\u003Cstring, string\u003E, string)": "7e6b2976862f39245ba3a9d229d28b91fb5db69cebafe2f1d40cdfc99229be89"
       }
     },
+    "RulesEngine/BatchProcessing/Processors/CalendarCloudProcessor.cs": {
+      "RelativePath": "RulesEngine/BatchProcessing/Processors/CalendarCloudProcessor.cs",
+      "KnownMembers": [
+        "SupportedTypes",
+        "CalendarCloudProcessor.SupportedTypes",
+        "EmailRegex",
+        "CalendarCloudProcessor.EmailRegex",
+        "SupportedFileTypes",
+        "CalendarCloudProcessor.SupportedFileTypes",
+        "get_SupportedFileTypes",
+        "CalendarCloudProcessor.SupportedFileTypes.get",
+        "ProcessChunk",
+        "CalendarCloudProcessor.ProcessChunk(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)",
+        "TryParseIsoOrExcelDate",
+        "CalendarCloudProcessor.TryParseIsoOrExcelDate(string, out DateTime)",
+        "NormalizeStatus",
+        "CalendarCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)",
+        ".ctor",
+        "CalendarCloudProcessor.CalendarCloudProcessor()",
+        ".cctor"
+      ],
+      "MemberSyntaxHashes": {
+        "CalendarCloudProcessor.ProcessChunk(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "df5398c11ae1f1ee611e5ef941185fa49e6444aa16eb634c9c59ae4a4497c564",
+        "CalendarCloudProcessor.TryParseIsoOrExcelDate(string, out DateTime)": "50524a4d5caaac67e222f7b86f3f0ef128e55d94492daef651597bce6846df4f",
+        "CalendarCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)": "39a1a30f9773eb384d2cb041dd336231307a2f7fef8d3e30752e3d431a7e35f5"
+      }
+    },
     "RulesEngine/BatchProcessing/Processors/TaskCloudProcessor.cs": {
       "RelativePath": "RulesEngine/BatchProcessing/Processors/TaskCloudProcessor.cs",
       "KnownMembers": [
@@ -15062,7 +15164,7 @@
         ".cctor"
       ],
       "MemberSyntaxHashes": {
-        "TaskCloudProcessor.ProcessChunk(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "891e150214f30f6373d7c03668659d037654877ae255b7fb577bd632b71b5cfe",
+        "TaskCloudProcessor.ProcessChunk(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "80ac445ace4becd7e7feeceadbc4377816fb7dab5380c00ffed6746289e9e70f",
         "TaskCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)": "df9205d874ddc05a75e1cf11e2cab74863c7a95fb57a3d8f41354862fc9f9744",
         "TaskCloudProcessor.NormalizePriority(string?, int, string, List\u003CFileValidationError\u003E)": "ee8236824967fcb79839a87dfb9dbd890b11954890408a9e5f9ee22695776975"
       }
@@ -20260,9 +20362,17 @@
         "StagedRowDto.StagedRowDto(StagedRowDto)",
         "Deconstruct",
         "StagedRowDto.Deconstruct(out Guid, out int, out IReadOnlyDictionary\u003Cstring, string?\u003E)",
-        "CanonicalStagedChunkPayload.CanonicalStagedChunkPayload(Guid, Guid, string, string, int, int, int, bool, IReadOnlyDictionary\u003Cstring, string\u003E, IReadOnlyList\u003CStagedRowDto\u003E)",
+        "CanonicalStagedChunkPayload.CanonicalStagedChunkPayload(Guid, Guid, Guid, string, string, int, int, int, bool, IReadOnlyDictionary\u003Cstring, string\u003E, IReadOnlyList\u003CStagedRowDto\u003E)",
         "CanonicalStagedChunkPayload.EqualityContract.get",
         "CanonicalStagedChunkPayload.EqualityContract",
+        "\u003CTenantId\u003Ek__BackingField",
+        "CanonicalStagedChunkPayload.TenantId.field",
+        "get_TenantId",
+        "CanonicalStagedChunkPayload.TenantId.get",
+        "set_TenantId",
+        "CanonicalStagedChunkPayload.TenantId.init",
+        "TenantId",
+        "CanonicalStagedChunkPayload.TenantId",
         "\u003CImportId\u003Ek__BackingField",
         "CanonicalStagedChunkPayload.ImportId.field",
         "get_ImportId",
@@ -20352,10 +20462,14 @@
         "CanonicalStagedChunkPayload.Equals(CanonicalStagedChunkPayload?)",
         "CanonicalStagedChunkPayload.\u003CClone\u003E$()",
         "CanonicalStagedChunkPayload.CanonicalStagedChunkPayload(CanonicalStagedChunkPayload)",
-        "CanonicalStagedChunkPayload.Deconstruct(out Guid, out Guid, out string, out string, out int, out int, out int, out bool, out IReadOnlyDictionary\u003Cstring, string\u003E, out IReadOnlyList\u003CStagedRowDto\u003E)",
-        "ProcessBatchReqDto.ProcessBatchReqDto(Guid, Guid, string, int, int, bool, IReadOnlyDictionary\u003Cstring, string\u003E, IReadOnlyList\u003CStagedRowDto\u003E, byte[]?, bool?)",
+        "CanonicalStagedChunkPayload.Deconstruct(out Guid, out Guid, out Guid, out string, out string, out int, out int, out int, out bool, out IReadOnlyDictionary\u003Cstring, string\u003E, out IReadOnlyList\u003CStagedRowDto\u003E)",
+        "ProcessBatchReqDto.ProcessBatchReqDto(Guid, Guid, Guid, string, int, int, bool, IReadOnlyDictionary\u003Cstring, string\u003E, IReadOnlyList\u003CStagedRowDto\u003E, byte[]?, bool?)",
         "ProcessBatchReqDto.EqualityContract.get",
         "ProcessBatchReqDto.EqualityContract",
+        "ProcessBatchReqDto.TenantId.field",
+        "ProcessBatchReqDto.TenantId.get",
+        "ProcessBatchReqDto.TenantId.init",
+        "ProcessBatchReqDto.TenantId",
         "ProcessBatchReqDto.ImportId.field",
         "ProcessBatchReqDto.ImportId.get",
         "ProcessBatchReqDto.ImportId.init",
@@ -20413,7 +20527,7 @@
         "ProcessBatchReqDto.Equals(ProcessBatchReqDto?)",
         "ProcessBatchReqDto.\u003CClone\u003E$()",
         "ProcessBatchReqDto.ProcessBatchReqDto(ProcessBatchReqDto)",
-        "ProcessBatchReqDto.Deconstruct(out Guid, out Guid, out string, out int, out int, out bool, out IReadOnlyDictionary\u003Cstring, string\u003E, out IReadOnlyList\u003CStagedRowDto\u003E, out byte[]?, out bool?)",
+        "ProcessBatchReqDto.Deconstruct(out Guid, out Guid, out Guid, out string, out int, out int, out bool, out IReadOnlyDictionary\u003Cstring, string\u003E, out IReadOnlyList\u003CStagedRowDto\u003E, out byte[]?, out bool?)",
         "ProcessedDomainRowDto.ProcessedDomainRowDto(Guid, int, string, string?, bool, byte[]?, IReadOnlyDictionary\u003Cstring, string?\u003E)",
         "ProcessedDomainRowDto.EqualityContract.get",
         "ProcessedDomainRowDto.EqualityContract",
@@ -20483,9 +20597,13 @@
         "ProcessedDomainRowDto.\u003CClone\u003E$()",
         "ProcessedDomainRowDto.ProcessedDomainRowDto(ProcessedDomainRowDto)",
         "ProcessedDomainRowDto.Deconstruct(out Guid, out int, out string, out string?, out bool, out byte[]?, out IReadOnlyDictionary\u003Cstring, string?\u003E)",
-        "ProcessBatchRespDto.ProcessBatchRespDto(Guid, int, bool, bool, IReadOnlyList\u003CProcessedDomainRowDto\u003E, IReadOnlyList\u003CFileValidationError\u003E, string?)",
+        "ProcessBatchRespDto.ProcessBatchRespDto(Guid, Guid, int, bool, bool, IReadOnlyList\u003CProcessedDomainRowDto\u003E, IReadOnlyList\u003CFileValidationError\u003E, string?)",
         "ProcessBatchRespDto.EqualityContract.get",
         "ProcessBatchRespDto.EqualityContract",
+        "ProcessBatchRespDto.TenantId.field",
+        "ProcessBatchRespDto.TenantId.get",
+        "ProcessBatchRespDto.TenantId.init",
+        "ProcessBatchRespDto.TenantId",
         "ProcessBatchRespDto.ImportFileId.field",
         "ProcessBatchRespDto.ImportFileId.get",
         "ProcessBatchRespDto.ImportFileId.init",
@@ -20539,7 +20657,7 @@
         "ProcessBatchRespDto.Equals(ProcessBatchRespDto?)",
         "ProcessBatchRespDto.\u003CClone\u003E$()",
         "ProcessBatchRespDto.ProcessBatchRespDto(ProcessBatchRespDto)",
-        "ProcessBatchRespDto.Deconstruct(out Guid, out int, out bool, out bool, out IReadOnlyList\u003CProcessedDomainRowDto\u003E, out IReadOnlyList\u003CFileValidationError\u003E, out string?)",
+        "ProcessBatchRespDto.Deconstruct(out Guid, out Guid, out int, out bool, out bool, out IReadOnlyList\u003CProcessedDomainRowDto\u003E, out IReadOnlyList\u003CFileValidationError\u003E, out string?)",
         "DecryptProprietaryItemDto.DecryptProprietaryItemDto(Guid, byte[])",
         "DecryptProprietaryItemDto.EqualityContract.get",
         "DecryptProprietaryItemDto.EqualityContract",
@@ -21365,6 +21483,10 @@
         "ImportFileTypeEnum.TaskXml",
         "TaskCsv",
         "ImportFileTypeEnum.TaskCsv",
+        "ProgramCalendarExcel",
+        "ImportFileTypeEnum.ProgramCalendarExcel",
+        "ProjectCalendarExcel",
+        "ImportFileTypeEnum.ProjectCalendarExcel",
         ".ctor",
         "ImportFileTypeEnum.ImportFileTypeEnum()",
         "Uploaded",
@@ -27088,13 +27210,13 @@
         "SettingsProgramsTab.OpenCreateProgramWizard()": "efaa3fdd238cb35e331b67b8cf1fc06a6005ab84121e43a77425706bbb052a20",
         "SettingsProgramsTab.OpenViewProgramWizard(ProgramEntity)": "dd35c14a3686c011918c72ca6a53d33bc902686ca47d53c672f4b23e022af391",
         "SettingsProgramsTab.OpenEditProgramWizard(ProgramEntity)": "4718ab94e87ab763cf514067354220308c08c6f6c13b153e6f480d05fdf2ec3f",
-        "SettingsProgramsTab.OnProgramWizardSavedAsync(Core.Dtos.CreateProgramWizardState)": "4d71caf17af02b07f7af49b966cacb1992abb6f127bad2cce28df32cd4a3d330",
+        "SettingsProgramsTab.OnProgramWizardSavedAsync(Core.Dtos.CreateProgramWizardState)": "0961b8e0ce8bd2a0f2b85e0146ffd1a3b7d508133e3a16a757fe4e861942c248",
         "SettingsProgramsTab.ToggleProgramExpanded(Guid)": "f5feda90d59dbb66b13aa0680012de0b4c656150f39d6c2c70859d554533c128",
         "SettingsProgramsTab.GetProjectStatusBadgeColor(ProjectStatusEnum)": "6eb3a0b6188ed18892515d761a1dba3d79fce1260a2f7b182e3f76714365cc32",
         "SettingsProgramsTab.OpenCreateProjectWizard(ProgramEntity)": "43836bc47bea0e048a05b199138282960fd202fc1a540962f7c3a1d9592d59a3",
         "SettingsProgramsTab.OpenViewProjectWizard(ProjectEntity)": "a3e98e93b3096b08c0cde2b277103c0b611ad288692d88d66b1cdd1523390c0c",
         "SettingsProgramsTab.OpenEditProjectWizard(ProjectEntity)": "4df53c4b38f3fce46b40e0475bc743bf6b70ef635a2cc46941e1e5b679a7596d",
-        "SettingsProgramsTab.OnProjectWizardSavedAsync(Core.Dtos.CreateProjectWizardState)": "8221767369828b6b970228afb43a0d80b10da29041023aa951b9346a35b18191",
+        "SettingsProgramsTab.OnProjectWizardSavedAsync(Core.Dtos.CreateProjectWizardState)": "0d9f05d76364515bc1f9fc389dfc8529a1f01e5bfafcca20a6a28a932806732c",
         "SettingsProgramsTab.Dispose()": "8cf226da2b5aeacc3edde4c43b22d06565ef72f10c3cdc79f7d706ce76495c74"
       }
     },
@@ -28445,6 +28567,22 @@
         "FileImportPage.ImportService.get",
         "set_ImportService",
         "FileImportPage.ImportService.set",
+        "\u003CTemplateDownloadService\u003Ek__BackingField",
+        "FileImportPage.TemplateDownloadService.field",
+        "TemplateDownloadService",
+        "FileImportPage.TemplateDownloadService",
+        "get_TemplateDownloadService",
+        "FileImportPage.TemplateDownloadService.get",
+        "set_TemplateDownloadService",
+        "FileImportPage.TemplateDownloadService.set",
+        "\u003CCircuitActivity\u003Ek__BackingField",
+        "FileImportPage.CircuitActivity.field",
+        "CircuitActivity",
+        "FileImportPage.CircuitActivity",
+        "get_CircuitActivity",
+        "FileImportPage.CircuitActivity.get",
+        "set_CircuitActivity",
+        "FileImportPage.CircuitActivity.set",
         "\u003CTenantService\u003Ek__BackingField",
         "FileImportPage.TenantService.field",
         "TenantService",
@@ -28485,20 +28623,42 @@
         "FileImportPage.Navigation.get",
         "set_Navigation",
         "FileImportPage.Navigation.set",
+        "\u003CJSRuntime\u003Ek__BackingField",
+        "FileImportPage.JSRuntime.field",
+        "JSRuntime",
+        "FileImportPage.JSRuntime",
+        "get_JSRuntime",
+        "FileImportPage.JSRuntime.get",
+        "set_JSRuntime",
+        "FileImportPage.JSRuntime.set",
         "_errorsModal",
         "FileImportPage._errorsModal",
         "_confirmDialog",
         "FileImportPage._confirmDialog",
         "_currentProject",
         "FileImportPage._currentProject",
-        "_fileTypeOptions",
-        "FileImportPage._fileTypeOptions",
-        "_pendingFiles",
-        "FileImportPage._pendingFiles",
-        "_isUploading",
-        "FileImportPage._isUploading",
+        "_activeTabId",
+        "FileImportPage._activeTabId",
+        "_availableTypes",
+        "FileImportPage._availableTypes",
+        "_selectedFileType",
+        "FileImportPage._selectedFileType",
+        "_selectedMetadata",
+        "FileImportPage._selectedMetadata",
+        "_selectedFile",
+        "FileImportPage._selectedFile",
+        "_selectedFileName",
+        "FileImportPage._selectedFileName",
+        "_selectedFileSize",
+        "FileImportPage._selectedFileSize",
+        "_isStagingInProgress",
+        "FileImportPage._isStagingInProgress",
+        "_activeMutationScope",
+        "FileImportPage._activeMutationScope",
         "_isLoadingHistory",
         "FileImportPage._isLoadingHistory",
+        "_isDownloadingTemplate",
+        "FileImportPage._isDownloadingTemplate",
         "_statusMessage",
         "FileImportPage._statusMessage",
         "_messageIntent",
@@ -28507,26 +28667,28 @@
         "FileImportPage._history",
         "_pendingDeleteId",
         "FileImportPage._pendingDeleteId",
-        "PendingUploadItem",
-        "FileImportPage.PendingUploadItem",
         "OnInitializedAsync",
         "FileImportPage.OnInitializedAsync()",
+        "UpdateSelectedMetadata",
+        "FileImportPage.UpdateSelectedMetadata()",
         "HandleProjectContextChanged",
         "FileImportPage.HandleProjectContextChanged()",
         "Dispose",
         "FileImportPage.Dispose()",
         "SyncActiveProjectAsync",
         "FileImportPage.SyncActiveProjectAsync()",
-        "HandleFilesSelected",
-        "FileImportPage.HandleFilesSelected(InputFileChangeEventArgs)",
-        "OnItemFileTypeChanged",
-        "FileImportPage.OnItemFileTypeChanged(FileImportPage.PendingUploadItem, string?)",
-        "RemovePendingFile",
-        "FileImportPage.RemovePendingFile(Guid)",
-        "ClearPendingFiles",
-        "FileImportPage.ClearPendingFiles()",
-        "UploadBatchAsync",
-        "FileImportPage.UploadBatchAsync()",
+        "OnFileTypeChanged",
+        "FileImportPage.OnFileTypeChanged(string?)",
+        "HandleFileSelected",
+        "FileImportPage.HandleFileSelected(InputFileChangeEventArgs)",
+        "ClearSelectedFile",
+        "FileImportPage.ClearSelectedFile()",
+        "DownloadTemplateAsync",
+        "FileImportPage.DownloadTemplateAsync()",
+        "HandleBeforeInternalNavigation",
+        "FileImportPage.HandleBeforeInternalNavigation(LocationChangingContext)",
+        "ImportAndStageFileAsync",
+        "FileImportPage.ImportAndStageFileAsync()",
         "RefreshHistoryAsync",
         "FileImportPage.RefreshHistoryAsync()",
         "ViewDiagnosticsAsync",
@@ -28538,54 +28700,164 @@
         "FormatBytes",
         "FileImportPage.FormatBytes(long)",
         ".ctor",
-        "FileImportPage.FileImportPage()",
-        "\u003CId\u003Ek__BackingField",
-        "FileImportPage.PendingUploadItem.Id.field",
-        "Id",
-        "FileImportPage.PendingUploadItem.Id",
-        "get_Id",
-        "FileImportPage.PendingUploadItem.Id.get",
-        "\u003CFile\u003Ek__BackingField",
-        "FileImportPage.PendingUploadItem.File.field",
-        "File",
-        "FileImportPage.PendingUploadItem.File",
-        "get_File",
-        "FileImportPage.PendingUploadItem.File.get",
-        "set_File",
-        "FileImportPage.PendingUploadItem.File.set",
-        "FileName",
-        "FileImportPage.PendingUploadItem.FileName",
-        "get_FileName",
-        "FileImportPage.PendingUploadItem.FileName.get",
-        "Size",
-        "FileImportPage.PendingUploadItem.Size",
-        "get_Size",
-        "FileImportPage.PendingUploadItem.Size.get",
-        "\u003CSelectedFileType\u003Ek__BackingField",
-        "FileImportPage.PendingUploadItem.SelectedFileType.field",
-        "SelectedFileType",
-        "FileImportPage.PendingUploadItem.SelectedFileType",
-        "get_SelectedFileType",
-        "FileImportPage.PendingUploadItem.SelectedFileType.get",
-        "set_SelectedFileType",
-        "FileImportPage.PendingUploadItem.SelectedFileType.set",
-        "FileImportPage.PendingUploadItem.PendingUploadItem()"
+        "FileImportPage.FileImportPage()"
       ],
       "MemberSyntaxHashes": {
-        "FileImportPage.OnInitializedAsync()": "38f9c5554989f39772662b0d6057977f3d146447b55486437a1692215325f4bc",
+        "FileImportPage.OnInitializedAsync()": "843ca5b831b7c1e3f2c893e80377c2ef7a186baf1ff25d91cb2bcf489771b41a",
+        "FileImportPage.UpdateSelectedMetadata()": "5de0657066fab71347d5ba1cdec19a1c1223abd683980c35caaad53d61d44b0f",
         "FileImportPage.HandleProjectContextChanged()": "911c06a82991075a70ca96e57e32292eab34d9398c0e9e62cf18e868bcd83b20",
-        "FileImportPage.Dispose()": "3d0bb32ce9635e2a337d3cbc304506c055a7172ae9eb32aa5667873eec66ceda",
+        "FileImportPage.Dispose()": "042c9794fb505ceb5d9a7e20d2e6fba09760b78dc5ad867ff8b5b2150f41c665",
         "FileImportPage.SyncActiveProjectAsync()": "a25d805eba2a59bda0b2696d97439e59b314f2ee95466552359f72ba5aa1a9e1",
-        "FileImportPage.HandleFilesSelected(InputFileChangeEventArgs)": "47a746eeb09ba8458c953850d07a0160da46d913719a8e9fe8b1cbd46426545d",
-        "FileImportPage.OnItemFileTypeChanged(FileImportPage.PendingUploadItem, string?)": "2b227e348ee6a4804603d21f21fcaae3592e8d1706f4af45d78c2916f5fb4186",
-        "FileImportPage.RemovePendingFile(Guid)": "26d081b47aec803910b7aa85755cf93e57b94ab48b25ac8771faa1eeb04c1410",
-        "FileImportPage.ClearPendingFiles()": "a930030b3cc78f170fa8be2894bd418439f0762d96ea9e22f170bd27f3360787",
-        "FileImportPage.UploadBatchAsync()": "08a2aa6969ffb8bc5fa8ef6d9b1c946764e7b52d64f84cb34cafe7d89675efb7",
-        "FileImportPage.RefreshHistoryAsync()": "d2a40db1fb17051368f5bc669421f05a923f63e278a5aecd85975f6fd84387db",
-        "FileImportPage.ViewDiagnosticsAsync(Guid)": "7b436fd116b9905bb5f1681c8e80c033b2f8c8fbeb02e0a71509a62dae85ec39",
+        "FileImportPage.OnFileTypeChanged(string?)": "e5a8dba965132edfa3b9bde369e2bb82adf22a66ce3e651bd1b00b3d2f5d2887",
+        "FileImportPage.HandleFileSelected(InputFileChangeEventArgs)": "55ca8ca1be29ee04fdf25fadf11dc39387237cb8761c827bf492edae9be94b2e",
+        "FileImportPage.ClearSelectedFile()": "a75f51e4f3168b580e74c206006c00c692801ae6c07a7b737cbeadc016a3692d",
+        "FileImportPage.DownloadTemplateAsync()": "a975328efd17d94a061411cb6fb96a49128bc2164f38cafc3f59f8113388bdff",
+        "FileImportPage.HandleBeforeInternalNavigation(LocationChangingContext)": "9bcff257af590b2a7965409e95c715e140adbe2228d1a9b239a95039e57c4ac3",
+        "FileImportPage.ImportAndStageFileAsync()": "9e08970c0b6097dec3cbfcc3533de1860bdfa1889af04d2638cddd430b9a0102",
+        "FileImportPage.RefreshHistoryAsync()": "972d93cf281e4cc17672334edd0826fcaac371cd9e058f895f7092c324ed8b96",
+        "FileImportPage.ViewDiagnosticsAsync(Guid)": "754ec5d0cb1634421110dcd1557ccdf50855a463cef041250240899d5d698e01",
         "FileImportPage.PromptDelete(Guid)": "711f9d4e11e464ba902c810e77852864649af3e7a64fe2d0f7ff4ccf5617bcce",
-        "FileImportPage.DeleteConfirmedAsync()": "07ad35cca084eca09d59ee43c7619c4d5fdf60579a11f18630b985b85c8b6c17",
-        "FileImportPage.FormatBytes(long)": "341c272a73eb8815eefe32f6010b9f831be21e43bf180d1c950a47a299aacd5a"
+        "FileImportPage.DeleteConfirmedAsync()": "b61bead965d65875473cc5e72371db870734742b343174dfcf26de2440709c89",
+        "FileImportPage.FormatBytes(long)": "51ac77aefe8adc0ca238aefb7d553c65f997ca2fb3369d2182e058444b4f6cf6"
+      }
+    },
+    "Web/Modules/Imports/Services/FileTemplateDownloadService.cs": {
+      "RelativePath": "Web/Modules/Imports/Services/FileTemplateDownloadService.cs",
+      "KnownMembers": [
+        "_configRepository",
+        "FileTemplateDownloadService._configRepository",
+        "_logger",
+        "FileTemplateDownloadService._logger",
+        "AvailableTypes",
+        "FileTemplateDownloadService.AvailableTypes",
+        ".ctor",
+        "FileTemplateDownloadService.FileTemplateDownloadService(IFileTemplateConfigRepository, ILogger\u003CFileTemplateDownloadService\u003E)",
+        "GetAvailableFileTypes",
+        "FileTemplateDownloadService.GetAvailableFileTypes()",
+        "GetMetadata",
+        "FileTemplateDownloadService.GetMetadata(ImportFileTypeEnum)",
+        "GenerateTemplateAsync",
+        "FileTemplateDownloadService.GenerateTemplateAsync(ImportFileTypeEnum, CancellationToken)",
+        "GetDefaultColumns",
+        "FileTemplateDownloadService.GetDefaultColumns(ImportFileTypeEnum)",
+        "GenerateCsvTemplate",
+        "FileTemplateDownloadService.GenerateCsvTemplate(List\u003Cstring\u003E)",
+        "GenerateJsonTemplate",
+        "FileTemplateDownloadService.GenerateJsonTemplate(List\u003Cstring\u003E)",
+        "GenerateXmlTemplate",
+        "FileTemplateDownloadService.GenerateXmlTemplate(List\u003Cstring\u003E)",
+        "GenerateOpenXmlWorkbook",
+        "FileTemplateDownloadService.GenerateOpenXmlWorkbook(string, List\u003Cstring\u003E)",
+        "GetColumnLetter",
+        "FileTemplateDownloadService.GetColumnLetter(int)",
+        ".cctor",
+        "FileTemplateDownloadService.FileTemplateDownloadService()"
+      ],
+      "MemberSyntaxHashes": {
+        "FileTemplateDownloadService.GetAvailableFileTypes()": "cf626597e1c51eba2d6f9e7aca9fab0b0e85f5fef23c5c7474f907c476914d5a",
+        "FileTemplateDownloadService.GetMetadata(ImportFileTypeEnum)": "b570df5924edf0c70c55e93773d61c0d85a1e40f0bdf1468bd33f70c02169cea",
+        "FileTemplateDownloadService.GenerateTemplateAsync(ImportFileTypeEnum, CancellationToken)": "7f98074c44135e19639bf93a5e17a52eb3dad233b184ba851ab95ec8c519b6dd",
+        "FileTemplateDownloadService.GetDefaultColumns(ImportFileTypeEnum)": "9e22150a4bc452b7228f1ef113c4f9e85d0a25620f59cc99cfc6830198cb4188",
+        "FileTemplateDownloadService.GenerateCsvTemplate(List\u003Cstring\u003E)": "3715f4f17421045e044364687c7796c395652b20669b34d98f39487ce62b88b5",
+        "FileTemplateDownloadService.GenerateJsonTemplate(List\u003Cstring\u003E)": "8ca879a17d013ab9433e1b82b3ee82e5fcc6f4203591317070626fabded464dc",
+        "FileTemplateDownloadService.GenerateXmlTemplate(List\u003Cstring\u003E)": "314105e80574d5119d58c55f225f01a59a6fda9457c863f2e78be49519506d12",
+        "FileTemplateDownloadService.GenerateOpenXmlWorkbook(string, List\u003Cstring\u003E)": "8d9b224297d8f272ac63656736ea0c82c16d2e6ead595b8fdc6a8514732860b8",
+        "FileTemplateDownloadService.GetColumnLetter(int)": "1626a12f481712fc660152cd9e1274a8341f8640678edfe4525793db634c12e3"
+      }
+    },
+    "Web/Modules/Imports/Services/IFileTemplateDownloadService.cs": {
+      "RelativePath": "Web/Modules/Imports/Services/IFileTemplateDownloadService.cs",
+      "KnownMembers": [
+        "\u003CFileType\u003Ek__BackingField",
+        "ImportFileTypeMetadata.FileType.field",
+        "FileType",
+        "ImportFileTypeMetadata.FileType",
+        "get_FileType",
+        "ImportFileTypeMetadata.FileType.get",
+        "set_FileType",
+        "ImportFileTypeMetadata.FileType.set",
+        "\u003CDisplayName\u003Ek__BackingField",
+        "ImportFileTypeMetadata.DisplayName.field",
+        "DisplayName",
+        "ImportFileTypeMetadata.DisplayName",
+        "get_DisplayName",
+        "ImportFileTypeMetadata.DisplayName.get",
+        "set_DisplayName",
+        "ImportFileTypeMetadata.DisplayName.set",
+        "\u003CExtension\u003Ek__BackingField",
+        "ImportFileTypeMetadata.Extension.field",
+        "Extension",
+        "ImportFileTypeMetadata.Extension",
+        "get_Extension",
+        "ImportFileTypeMetadata.Extension.get",
+        "set_Extension",
+        "ImportFileTypeMetadata.Extension.set",
+        "\u003CContentType\u003Ek__BackingField",
+        "ImportFileTypeMetadata.ContentType.field",
+        "ContentType",
+        "ImportFileTypeMetadata.ContentType",
+        "get_ContentType",
+        "ImportFileTypeMetadata.ContentType.get",
+        "set_ContentType",
+        "ImportFileTypeMetadata.ContentType.set",
+        "\u003CAcceptAttribute\u003Ek__BackingField",
+        "ImportFileTypeMetadata.AcceptAttribute.field",
+        "AcceptAttribute",
+        "ImportFileTypeMetadata.AcceptAttribute",
+        "get_AcceptAttribute",
+        "ImportFileTypeMetadata.AcceptAttribute.get",
+        "set_AcceptAttribute",
+        "ImportFileTypeMetadata.AcceptAttribute.set",
+        "\u003CDescription\u003Ek__BackingField",
+        "ImportFileTypeMetadata.Description.field",
+        "Description",
+        "ImportFileTypeMetadata.Description",
+        "get_Description",
+        "ImportFileTypeMetadata.Description.get",
+        "set_Description",
+        "ImportFileTypeMetadata.Description.set",
+        "\u003CSampleFileName\u003Ek__BackingField",
+        "ImportFileTypeMetadata.SampleFileName.field",
+        "SampleFileName",
+        "ImportFileTypeMetadata.SampleFileName",
+        "get_SampleFileName",
+        "ImportFileTypeMetadata.SampleFileName.get",
+        "set_SampleFileName",
+        "ImportFileTypeMetadata.SampleFileName.set",
+        ".ctor",
+        "ImportFileTypeMetadata.ImportFileTypeMetadata()",
+        "\u003CFileName\u003Ek__BackingField",
+        "FileTemplateDownloadResult.FileName.field",
+        "FileName",
+        "FileTemplateDownloadResult.FileName",
+        "get_FileName",
+        "FileTemplateDownloadResult.FileName.get",
+        "set_FileName",
+        "FileTemplateDownloadResult.FileName.set",
+        "FileTemplateDownloadResult.ContentType.field",
+        "FileTemplateDownloadResult.ContentType",
+        "FileTemplateDownloadResult.ContentType.get",
+        "FileTemplateDownloadResult.ContentType.set",
+        "\u003CContentBytes\u003Ek__BackingField",
+        "FileTemplateDownloadResult.ContentBytes.field",
+        "ContentBytes",
+        "FileTemplateDownloadResult.ContentBytes",
+        "get_ContentBytes",
+        "FileTemplateDownloadResult.ContentBytes.get",
+        "set_ContentBytes",
+        "FileTemplateDownloadResult.ContentBytes.set",
+        "FileTemplateDownloadResult.FileTemplateDownloadResult()",
+        "GetAvailableFileTypes",
+        "IFileTemplateDownloadService.GetAvailableFileTypes()",
+        "GetMetadata",
+        "IFileTemplateDownloadService.GetMetadata(ImportFileTypeEnum)",
+        "GenerateTemplateAsync",
+        "IFileTemplateDownloadService.GenerateTemplateAsync(ImportFileTypeEnum, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "IFileTemplateDownloadService.GetAvailableFileTypes()": "c409b40da91de59d438fc08484efffb80797dc761aa618eac803f63c57080dfd",
+        "IFileTemplateDownloadService.GetMetadata(ImportFileTypeEnum)": "1a8ec07dcd1b40f0ea1d9326e2bf0cdce8a2cfd5c1e6b57305047f51c15df1d1",
+        "IFileTemplateDownloadService.GenerateTemplateAsync(ImportFileTypeEnum, CancellationToken)": "974fc12aca4f8fc362f0bc269e77f74949df482efd9ddef3fe3008b6427cde2c"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor.cs": {
@@ -29828,7 +30100,7 @@
       "RelativePath": "Web/Components/App.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "2f9bfc5e5410edb9b33c3125be4cecff6429cf6eaceb9b95f03b557b391bee52"
+        "$Markup": "ebefd100be87fd698ae5ce32b048627eed0994753fb98ef658999607d9dea0b5"
       }
     },
     "Web/Components/Common/AppErrorBoundaryComp.razor": {
@@ -30388,7 +30660,7 @@
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ca5bfca3124423c2f0bb83f14fbf50a51b5c1f40a9e7d4dc68db8730a9b0dfb1"
+        "$Markup": "ef98577b2010ad483d945b078a0ca6a422db49fd146a2e6ab20bf55380b91023"
       }
     },
     "Jobs/Pages/JobsDashboardPage.razor": {
@@ -31109,7 +31381,7 @@
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "091533463cc9d4757b5e18f88bb2e9c8cadb9507f607d8666ed6dfe21d3c574a"
+        "$Content": "07e71681fc6280ed910c9946c4f5e23ae67d10b9368aa8dbe7d99135dc3feca6"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor.css": {
@@ -31152,6 +31424,13 @@
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Content": "bb747758f3a128408d2f91c5462392ca249669e932129dd5043681552f3394fd"
+      }
+    },
+    "Web/wwwroot/js/file-download-interop.js": {
+      "RelativePath": "Web/wwwroot/js/file-download-interop.js",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "0bda2769e1cdc9a5e1ce1b838a923f5b77291e8ae8aefd0fed6730f254979ad9"
       }
     },
     "Web/wwwroot/js/quill-interop.js": {

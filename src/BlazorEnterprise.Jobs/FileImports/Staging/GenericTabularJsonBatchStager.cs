@@ -302,6 +302,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             foreach (var chunk in stagedChunksToPersist)
             {
                 var payload = new CanonicalStagedChunkPayload(
+                    TenantId: file.TenantId,
                     ImportId: file.ImportId,
                     ImportFileId: file.Id,
                     FileType: config.FileType,
