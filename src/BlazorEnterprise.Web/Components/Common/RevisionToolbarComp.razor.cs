@@ -17,6 +17,7 @@ public partial class RevisionToolbarComp : ComponentBase
     protected Guid? SelectedRevisionId { get; set; }
     protected RevisionSummaryDto? CurrentRevision => Revisions.FirstOrDefault(r => r.Id == SelectedRevisionId);
     protected bool IsLoading { get; set; }
+    protected bool IsMultiDraftMode => VersionedFeatureTypeEnumDefinitions.GetVersioningMode(FeatureType) == VersioningModeEnum.MultiDraft;
 
     // Modals
     protected bool ShowNewDraftModal { get; set; }
@@ -217,6 +218,46 @@ public partial class RevisionToolbarComp : ComponentBase
         {
             ComparisonResult = await RevisionService.CompareRevisionsAsync(targetId.Value, SelectedRevisionId.Value);
             ShowCompareModal = true;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    protected async Task FinalizeBaselineAsync()
+    {
+        if (SelectedRevisionId == null) return;
+        IsLoading = true;
+        try
+        {
+            var result = await RevisionService.FinalizeAsync(SelectedRevisionId.Value);
+            await LoadRevisionsAsync();
+            SelectedRevisionId = result.WorkingDraft.Id;
+            if (OnRevisionSelected.HasDelegate)
+            {
+                await OnRevisionSelected.InvokeAsync(result.WorkingDraft.Id);
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    protected async Task CloseCycleAsync()
+    {
+        if (SelectedRevisionId == null) return;
+        IsLoading = true;
+        try
+        {
+            var closed = await RevisionService.CloseCycleAsync(SelectedRevisionId.Value);
+            await LoadRevisionsAsync();
+            SelectedRevisionId = closed.Id;
+            if (OnRevisionSelected.HasDelegate)
+            {
+                await OnRevisionSelected.InvokeAsync(closed.Id);
+            }
         }
         finally
         {

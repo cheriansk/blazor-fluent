@@ -2259,6 +2259,10 @@
         "IRevisionService.ActivateRevisionAsync(Guid, string?, CancellationToken)",
         "DiscardDraftAsync",
         "IRevisionService.DiscardDraftAsync(Guid, string?, CancellationToken)",
+        "FinalizeAsync",
+        "IRevisionService.FinalizeAsync(Guid, string?, CancellationToken)",
+        "CloseCycleAsync",
+        "IRevisionService.CloseCycleAsync(Guid, string?, CancellationToken)",
         "CompareRevisionsAsync",
         "IRevisionService.CompareRevisionsAsync(Guid, Guid, CancellationToken)"
       ],
@@ -2271,6 +2275,8 @@
         "IRevisionService.RejectRevisionAsync(Guid, string, CancellationToken)": "1cb3c1229637925fb56aef851121add8a16121a215f916f66cbbba55853a780c",
         "IRevisionService.ActivateRevisionAsync(Guid, string?, CancellationToken)": "9d061de257eefe3d6aecd28fc219d12add610da7a1ee1af3ca220d4a73730f67",
         "IRevisionService.DiscardDraftAsync(Guid, string?, CancellationToken)": "f1901d8aafe45082ea890efc511a3fd6435cce63e799f2ee0d935cd8d5dbc59c",
+        "IRevisionService.FinalizeAsync(Guid, string?, CancellationToken)": "19a511c68c185d06623ffa466e872876c3a9c9dba911bd781da3a0efde38cb3e",
+        "IRevisionService.CloseCycleAsync(Guid, string?, CancellationToken)": "01947b772703043dbfe0d667d262d958503f0904fd959427abe992f39e9dbf70",
         "IRevisionService.CompareRevisionsAsync(Guid, Guid, CancellationToken)": "e7f8f074f0194381aede0132073f4e9d5c78edc2919343325abb90467c51f847"
       }
     },
@@ -10044,6 +10050,116 @@
       ],
       "MemberSyntaxHashes": {}
     },
+    "Core/Models/IRevisionRowProvider.cs": {
+      "RelativePath": "Core/Models/IRevisionRowProvider.cs",
+      "KnownMembers": [
+        ".ctor",
+        "FinalizeRevisionResult.FinalizeRevisionResult(RevisionHeaderEntity, RevisionHeaderEntity)",
+        "get_EqualityContract",
+        "FinalizeRevisionResult.EqualityContract.get",
+        "EqualityContract",
+        "FinalizeRevisionResult.EqualityContract",
+        "\u003CFinalizedBaseline\u003Ek__BackingField",
+        "FinalizeRevisionResult.FinalizedBaseline.field",
+        "get_FinalizedBaseline",
+        "FinalizeRevisionResult.FinalizedBaseline.get",
+        "set_FinalizedBaseline",
+        "FinalizeRevisionResult.FinalizedBaseline.init",
+        "FinalizedBaseline",
+        "FinalizeRevisionResult.FinalizedBaseline",
+        "\u003CWorkingDraft\u003Ek__BackingField",
+        "FinalizeRevisionResult.WorkingDraft.field",
+        "get_WorkingDraft",
+        "FinalizeRevisionResult.WorkingDraft.get",
+        "set_WorkingDraft",
+        "FinalizeRevisionResult.WorkingDraft.init",
+        "WorkingDraft",
+        "FinalizeRevisionResult.WorkingDraft",
+        "ToString",
+        "FinalizeRevisionResult.ToString()",
+        "PrintMembers",
+        "FinalizeRevisionResult.PrintMembers(StringBuilder)",
+        "op_Inequality",
+        "FinalizeRevisionResult.operator !=(FinalizeRevisionResult?, FinalizeRevisionResult?)",
+        "op_Equality",
+        "FinalizeRevisionResult.operator ==(FinalizeRevisionResult?, FinalizeRevisionResult?)",
+        "GetHashCode",
+        "FinalizeRevisionResult.GetHashCode()",
+        "Equals",
+        "FinalizeRevisionResult.Equals(object?)",
+        "FinalizeRevisionResult.Equals(FinalizeRevisionResult?)",
+        "\u003CClone\u003E$",
+        "FinalizeRevisionResult.\u003CClone\u003E$()",
+        "FinalizeRevisionResult.FinalizeRevisionResult(FinalizeRevisionResult)",
+        "Deconstruct",
+        "FinalizeRevisionResult.Deconstruct(out RevisionHeaderEntity, out RevisionHeaderEntity)",
+        "\u003CRelId\u003Ek__BackingField",
+        "RevisionRowComparableItem.RelId.field",
+        "RelId",
+        "RevisionRowComparableItem.RelId",
+        "get_RelId",
+        "RevisionRowComparableItem.RelId.get",
+        "set_RelId",
+        "RevisionRowComparableItem.RelId.set",
+        "\u003CTitle\u003Ek__BackingField",
+        "RevisionRowComparableItem.Title.field",
+        "Title",
+        "RevisionRowComparableItem.Title",
+        "get_Title",
+        "RevisionRowComparableItem.Title.get",
+        "set_Title",
+        "RevisionRowComparableItem.Title.set",
+        "\u003CEntryType\u003Ek__BackingField",
+        "RevisionRowComparableItem.EntryType.field",
+        "EntryType",
+        "RevisionRowComparableItem.EntryType",
+        "get_EntryType",
+        "RevisionRowComparableItem.EntryType.get",
+        "set_EntryType",
+        "RevisionRowComparableItem.EntryType.set",
+        "\u003CStatus\u003Ek__BackingField",
+        "RevisionRowComparableItem.Status.field",
+        "Status",
+        "RevisionRowComparableItem.Status",
+        "get_Status",
+        "RevisionRowComparableItem.Status.get",
+        "set_Status",
+        "RevisionRowComparableItem.Status.set",
+        "\u003CStartDate\u003Ek__BackingField",
+        "RevisionRowComparableItem.StartDate.field",
+        "StartDate",
+        "RevisionRowComparableItem.StartDate",
+        "get_StartDate",
+        "RevisionRowComparableItem.StartDate.get",
+        "set_StartDate",
+        "RevisionRowComparableItem.StartDate.set",
+        "\u003CEndDate\u003Ek__BackingField",
+        "RevisionRowComparableItem.EndDate.field",
+        "EndDate",
+        "RevisionRowComparableItem.EndDate",
+        "get_EndDate",
+        "RevisionRowComparableItem.EndDate.get",
+        "set_EndDate",
+        "RevisionRowComparableItem.EndDate.set",
+        "\u003CCustomProperties\u003Ek__BackingField",
+        "RevisionRowComparableItem.CustomProperties.field",
+        "CustomProperties",
+        "RevisionRowComparableItem.CustomProperties",
+        "get_CustomProperties",
+        "RevisionRowComparableItem.CustomProperties.get",
+        "set_CustomProperties",
+        "RevisionRowComparableItem.CustomProperties.set",
+        "RevisionRowComparableItem.RevisionRowComparableItem()",
+        "CanHandle",
+        "IRevisionRowProvider.CanHandle(VersionedFeatureTypeEnum)",
+        "GetRowsAsync",
+        "IRevisionRowProvider.GetRowsAsync(Guid, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "IRevisionRowProvider.CanHandle(VersionedFeatureTypeEnum)": "9be3cb56f78dc21f8982eafbbb27db940a8bb947dcf3b10e10fe9cc73e51a078",
+        "IRevisionRowProvider.GetRowsAsync(Guid, CancellationToken)": "d2139d791cf33019cecfa4839735eb4cfc35724bab4523409840ac0d143ca584"
+      }
+    },
     "Core/Models/RevisionDtos.cs": {
       "RelativePath": "Core/Models/RevisionDtos.cs",
       "KnownMembers": [
@@ -12820,7 +12936,7 @@
       ],
       "MemberSyntaxHashes": {
         "AppDbContext.ConfigureConventions(ModelConfigurationBuilder)": "9078f6d7e3dd65e270ce749efccf3180bef45bf3b0912f478c9073a5f76e04fc",
-        "AppDbContext.OnModelCreating(ModelBuilder)": "99e4b83b884d63092782b38792555c9250aa6fe519f0070523e7d0e6b05a3c69",
+        "AppDbContext.OnModelCreating(ModelBuilder)": "6fd185c69d1b9281f33e907c91622c0e8c7ae8444fb3178681c87680cbcdac53",
         "AppDbContext.ConfigureNamedTenantFilter\u003CTEntity\u003E(ModelBuilder)": "6c608b73ba7a2245d7a2a6301bb94877e9996a0b9c37682d884a5f0636a24481",
         "AppDbContext.ConfigureNamedSoftDeleteFilter\u003CTEntity\u003E(ModelBuilder)": "efef6259e83850f776fd1d7069f48697407f75b2b2b417d447f9aedced4d8183"
       }
@@ -13487,7 +13603,7 @@
         "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "d61332b0568e5f31acc4b50eaaf0eb563494c750fbb23292f3d53a71871491e9"
+        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "e8625d17f8f2d8a66875bf54a6c619dd8d8fb55e2008be0e869746af2bf72c16"
       }
     },
     "Persistence/Services/AuditService.cs": {
@@ -14501,6 +14617,29 @@
         "TaskRollupProvider.GetCalendarRollupItemsAsync(Guid, TaskLevelEnum, Guid?, string?, DateTime, DateTime, CancellationToken)": "7c77bed04d5d1de755359d7d5fea2f717929710e2ac301043da577af19bf8a28"
       }
     },
+    "Persistence/Services/RevisionProviders/CalendarRevisionRowProviders.cs": {
+      "RelativePath": "Persistence/Services/RevisionProviders/CalendarRevisionRowProviders.cs",
+      "KnownMembers": [
+        "_dbFactory",
+        "ProgramCalendarRevisionRowProvider._dbFactory",
+        ".ctor",
+        "ProgramCalendarRevisionRowProvider.ProgramCalendarRevisionRowProvider(IDbContextFactory\u003CAppDbContext\u003E)",
+        "CanHandle",
+        "ProgramCalendarRevisionRowProvider.CanHandle(VersionedFeatureTypeEnum)",
+        "GetRowsAsync",
+        "ProgramCalendarRevisionRowProvider.GetRowsAsync(Guid, CancellationToken)",
+        "ProjectCalendarRevisionRowProvider._dbFactory",
+        "ProjectCalendarRevisionRowProvider.ProjectCalendarRevisionRowProvider(IDbContextFactory\u003CAppDbContext\u003E)",
+        "ProjectCalendarRevisionRowProvider.CanHandle(VersionedFeatureTypeEnum)",
+        "ProjectCalendarRevisionRowProvider.GetRowsAsync(Guid, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "ProgramCalendarRevisionRowProvider.CanHandle(VersionedFeatureTypeEnum)": "3e9632ca62dc8651a927ee0b19f03f009e3a7a892b1d350bf6fedbc89783fa6b",
+        "ProgramCalendarRevisionRowProvider.GetRowsAsync(Guid, CancellationToken)": "a7b0b04ee61760aa1eb776919fc6268b641d1169fb8aa4bf23900775d0355c28",
+        "ProjectCalendarRevisionRowProvider.CanHandle(VersionedFeatureTypeEnum)": "965dbbbff33f6bed0ef3082be76a182e32e03f4b8b55ed042d8a830a975e3283",
+        "ProjectCalendarRevisionRowProvider.GetRowsAsync(Guid, CancellationToken)": "ab6af6eb097727e38675c367f2d889c497a3ff7fcecdfb8f42c29aa5df9864da"
+      }
+    },
     "Persistence/Services/RevisionService.cs": {
       "RelativePath": "Persistence/Services/RevisionService.cs",
       "KnownMembers": [
@@ -14514,8 +14653,10 @@
         "RevisionService._dateTimeProvider",
         "_logger",
         "RevisionService._logger",
+        "_rowProviders",
+        "RevisionService._rowProviders",
         ".ctor",
-        "RevisionService.RevisionService(IDbContextFactory\u003CAppDbContext\u003E, ITenantContext, ICurrentUser, IDateTimeProvider, ILogger\u003CRevisionService\u003E)",
+        "RevisionService.RevisionService(IDbContextFactory\u003CAppDbContext\u003E, ITenantContext, ICurrentUser, IDateTimeProvider, ILogger\u003CRevisionService\u003E, IEnumerable\u003CIRevisionRowProvider\u003E?)",
         "GetRevisionsAsync",
         "RevisionService.GetRevisionsAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)",
         "GetActiveRevisionAsync",
@@ -14533,18 +14674,24 @@
         "DiscardDraftAsync",
         "RevisionService.DiscardDraftAsync(Guid, string?, CancellationToken)",
         "CompareRevisionsAsync",
-        "RevisionService.CompareRevisionsAsync(Guid, Guid, CancellationToken)"
+        "RevisionService.CompareRevisionsAsync(Guid, Guid, CancellationToken)",
+        "FinalizeAsync",
+        "RevisionService.FinalizeAsync(Guid, string?, CancellationToken)",
+        "CloseCycleAsync",
+        "RevisionService.CloseCycleAsync(Guid, string?, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
         "RevisionService.GetRevisionsAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "0df8e38b399ddb5c8633528c01e481cbd4a2be4d75122e0b56f303d07176cf21",
         "RevisionService.GetActiveRevisionAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "3c4bd858e3ad4c33c3abbe81b2c201f22131c47e74cb122ce4e6456634e3ff62",
-        "RevisionService.CreateDraftAsync(TaskLevelEnum, VersionedFeatureTypeEnum, string, Guid?, Guid?, Guid?, bool, CancellationToken)": "0112e7a1c38289e1de6acd7be32ac3538206d3f434593ca66f6b6a254b2582b4",
+        "RevisionService.CreateDraftAsync(TaskLevelEnum, VersionedFeatureTypeEnum, string, Guid?, Guid?, Guid?, bool, CancellationToken)": "1cf74c5c5bb4d5d2aa62e73e1a0660b356cc58eb064001f9c645808df5881258",
         "RevisionService.SubmitForReviewAsync(Guid, string, string?, CancellationToken)": "df87381dfdc4f2e1bd585d9e56bd5ffcc7ff62699d693a9494d9a7c5db09a3de",
         "RevisionService.ApproveRevisionAsync(Guid, string?, CancellationToken)": "bd6949714c0156ae9644349659ee549bd6d91345b1f5a75dcfcf80d0d057d136",
         "RevisionService.RejectRevisionAsync(Guid, string, CancellationToken)": "cf63d50b37f9503702182bae6421cf504890818c3b9b9f3be79b53afdbaf3bff",
         "RevisionService.ActivateRevisionAsync(Guid, string?, CancellationToken)": "7f601edc9881259a0054c85e284d7e86414edd96c9d4d1d47df21bae38278fb3",
         "RevisionService.DiscardDraftAsync(Guid, string?, CancellationToken)": "3da633e3a321e94c6cf83380a79c635f6f93027dcc8a7742e5dac3145be04d0e",
-        "RevisionService.CompareRevisionsAsync(Guid, Guid, CancellationToken)": "4a094c4d00c1960a92f4a286cada7c261ffc49e2805c1b17b9e5c503d10b0b8e"
+        "RevisionService.CompareRevisionsAsync(Guid, Guid, CancellationToken)": "4a094c4d00c1960a92f4a286cada7c261ffc49e2805c1b17b9e5c503d10b0b8e",
+        "RevisionService.FinalizeAsync(Guid, string?, CancellationToken)": "42c631c17b8d40c3164efb9fa3903c8812577a11ccdaa999b580dbe1a0fd1249",
+        "RevisionService.CloseCycleAsync(Guid, string?, CancellationToken)": "89c68591c0320780faacb83d193bdcb047b8f3f57b338f14cfe0e9af1be3c7f4"
       }
     },
     "Persistence/Services/SafeSaveService.cs": {
@@ -22486,6 +22633,10 @@
         "RevisionStatusEnum.Superseded",
         "Cancelled",
         "RevisionStatusEnum.Cancelled",
+        "Complete",
+        "RevisionStatusEnum.Complete",
+        "DraftComplete",
+        "RevisionStatusEnum.DraftComplete",
         ".ctor",
         "RevisionStatusEnum.RevisionStatusEnum()",
         "AllowedTransitions",
@@ -22502,9 +22653,21 @@
         "VersionedFeatureTypeEnum.Estimation",
         "Pricing",
         "VersionedFeatureTypeEnum.Pricing",
-        "VersionedFeatureTypeEnum.VersionedFeatureTypeEnum()"
+        "VersionedFeatureTypeEnum.VersionedFeatureTypeEnum()",
+        "MultiDraft",
+        "VersioningModeEnum.MultiDraft",
+        "LockAndAutoDraft",
+        "VersioningModeEnum.LockAndAutoDraft",
+        "VersioningModeEnum.VersioningModeEnum()",
+        "IsSprintExclusiveStatus",
+        "VersionedFeatureTypeEnumDefinitions.IsSprintExclusiveStatus(RevisionStatusEnum)",
+        "GetVersioningMode",
+        "VersionedFeatureTypeEnumDefinitions.GetVersioningMode(VersionedFeatureTypeEnum)"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "VersionedFeatureTypeEnumDefinitions.IsSprintExclusiveStatus(RevisionStatusEnum)": "ce34752f055e8f01673e8bea65427126ffae0b1db7fcf89deaf9ac8516224b13",
+        "VersionedFeatureTypeEnumDefinitions.GetVersioningMode(VersionedFeatureTypeEnum)": "faa920c15873400825f2088a6d7f8e0c4e213172d2f34a40c6ff8d62a01cbfbe"
+      }
     },
     "Shared/DataListTypes/TaskHierarchyTypes.cs": {
       "RelativePath": "Shared/DataListTypes/TaskHierarchyTypes.cs",
@@ -24132,6 +24295,10 @@
         "RevisionToolbarComp.IsLoading.get",
         "set_IsLoading",
         "RevisionToolbarComp.IsLoading.set",
+        "IsMultiDraftMode",
+        "RevisionToolbarComp.IsMultiDraftMode",
+        "get_IsMultiDraftMode",
+        "RevisionToolbarComp.IsMultiDraftMode.get",
         "\u003CShowNewDraftModal\u003Ek__BackingField",
         "RevisionToolbarComp.ShowNewDraftModal.field",
         "ShowNewDraftModal",
@@ -24240,6 +24407,10 @@
         "RevisionToolbarComp.DiscardDraftAsync()",
         "OpenCompareModalAsync",
         "RevisionToolbarComp.OpenCompareModalAsync()",
+        "FinalizeBaselineAsync",
+        "RevisionToolbarComp.FinalizeBaselineAsync()",
+        "CloseCycleAsync",
+        "RevisionToolbarComp.CloseCycleAsync()",
         ".ctor",
         "RevisionToolbarComp.RevisionToolbarComp()"
       ],
@@ -24257,7 +24428,9 @@
         "RevisionToolbarComp.RejectRevisionAsync()": "1286337eeb4ae64c7e5b4eeb664ad48f44444830e331a0a10dc67c3a153b5100",
         "RevisionToolbarComp.ActivateRevisionAsync()": "2bb925198a214e1fe9c9421d06d5ffa62433079f5c2b2c4d0439572b343ddf4f",
         "RevisionToolbarComp.DiscardDraftAsync()": "d4ab86710f07e74ac0560979577bc4b1b789ab9a10341964f2b934e7c7a2e8d3",
-        "RevisionToolbarComp.OpenCompareModalAsync()": "0ee1de9de9b7c09ebc74c3e9ee7c845e8418e90b3b2244ef7c871502fc19b908"
+        "RevisionToolbarComp.OpenCompareModalAsync()": "0ee1de9de9b7c09ebc74c3e9ee7c845e8418e90b3b2244ef7c871502fc19b908",
+        "RevisionToolbarComp.FinalizeBaselineAsync()": "9b55192d3b0504ebfafb9ed55cb85400c2667ae34eaf962c64151e82bb409547",
+        "RevisionToolbarComp.CloseCycleAsync()": "d7ed13372e6b70c41da26ea8e1f2c04ddc37ad6d2f4019883894f0efee040c55"
       }
     },
     "Web/Components/Common/SessionRevokedModal.razor.cs": {
@@ -28761,7 +28934,7 @@
         "FileTemplateDownloadService.GenerateCsvTemplate(List\u003Cstring\u003E)": "3715f4f17421045e044364687c7796c395652b20669b34d98f39487ce62b88b5",
         "FileTemplateDownloadService.GenerateJsonTemplate(List\u003Cstring\u003E)": "8ca879a17d013ab9433e1b82b3ee82e5fcc6f4203591317070626fabded464dc",
         "FileTemplateDownloadService.GenerateXmlTemplate(List\u003Cstring\u003E)": "314105e80574d5119d58c55f225f01a59a6fda9457c863f2e78be49519506d12",
-        "FileTemplateDownloadService.GenerateOpenXmlWorkbook(string, List\u003Cstring\u003E)": "8d9b224297d8f272ac63656736ea0c82c16d2e6ead595b8fdc6a8514732860b8",
+        "FileTemplateDownloadService.GenerateOpenXmlWorkbook(string, List\u003Cstring\u003E)": "ea0c54f7a707033b6cf49587719db83f7e9f479e41438527aeae6da8ddd78869",
         "FileTemplateDownloadService.GetColumnLetter(int)": "1626a12f481712fc660152cd9e1274a8341f8640678edfe4525793db634c12e3"
       }
     },
@@ -30247,7 +30420,7 @@
       "RelativePath": "Web/Components/Common/RevisionToolbarComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "57b5441aae8c1ffa2c9c4052c60a6502737505f76399f4147f5d13b425dc85e5"
+        "$Markup": "1c1a4cfaf7b58f3415b27c92f68ab36f79f4fa7b1e205250e9cc507a5f8dae06"
       }
     },
     "Web/Components/Common/SessionRevokedModal.razor": {

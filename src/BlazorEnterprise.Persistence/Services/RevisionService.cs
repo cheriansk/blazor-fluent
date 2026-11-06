@@ -1,3 +1,4 @@
+using BlazorEnterprise.Persistence.Services.RevisionProviders;
 using System.Security.Claims;
 using System.Text.Json;
 using BlazorEnterprise.Core.Contracts;
@@ -24,21 +25,23 @@ public class RevisionService : IRevisionService
     private readonly ICurrentUser _currentUser;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<RevisionService> _logger;
+    private readonly IEnumerable<IRevisionRowProvider> _rowProviders;
 
     public RevisionService(
         IDbContextFactory<AppDbContext> dbFactory,
         ITenantContext tenantContext,
         ICurrentUser currentUser,
         IDateTimeProvider dateTimeProvider,
-        ILogger<RevisionService> logger)
+        ILogger<RevisionService> logger,
+        IEnumerable<IRevisionRowProvider>? rowProviders = null)
     {
         _dbFactory = dbFactory;
         _tenantContext = tenantContext;
         _currentUser = currentUser;
         _dateTimeProvider = dateTimeProvider;
         _logger = logger;
+        _rowProviders = rowProviders ?? Enumerable.Empty<IRevisionRowProvider>();
     }
-
     public async Task<List<RevisionSummaryDto>> GetRevisionsAsync(
         TaskLevelEnum scopeLevel,
         VersionedFeatureTypeEnum featureType,
@@ -202,6 +205,25 @@ public class RevisionService : IRevisionService
         {
             programId = null;
             projectId = null;
+        }
+
+        // Operational Guard: LockAndAutoDraft mode forbids explicit manual creation of arbitrary drafts
+        var versioningMode = VersionedFeatureTypeEnumDefinitions.GetVersioningMode(featureType);
+        if (versioningMode == VersioningModeEnum.LockAndAutoDraft && !isBatch)
+        {
+            var existingCount = await context.RevisionHeaders
+                .IgnoreQueryFilters()
+                .CountAsync(r => r.TenantId == tenantId &&
+                                 r.ScopeLevel == scopeLevel &&
+                                 r.FeatureType == featureType &&
+                                 (scopeLevel != TaskLevelEnum.Program && scopeLevel != TaskLevelEnum.Project || r.ProgramId == programId) &&
+                                 (scopeLevel != TaskLevelEnum.Project || r.ProjectId == projectId), cancellationToken);
+
+            // Allow initial creation (v1), but disallow subsequent explicit user-triggered drafts
+            if (existingCount > 0 && sourceRevisionHeaderId == null && !revisionName.StartsWith("[AUTO-SPAWN]"))
+            {
+                throw new InvalidOperationException($"Explicit draft creation is not permitted for '{featureType}' (Lock-and-Auto-Draft mode). Drafts are automatically spawned upon finalizing the active baseline.");
+            }
         }
 
         // 1. Strictly monotonic VerNum allocation across ALL statuses and soft-deleted rows using IgnoreQueryFilters()
@@ -955,5 +977,200 @@ public class RevisionService : IRevisionService
         }
 
         return result;
+    }
+
+    public async Task<FinalizeRevisionResult> FinalizeAsync(
+        Guid draftRevisionHeaderId,
+        string? notes = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var draft = await context.RevisionHeaders.FindAsync(new object[] { draftRevisionHeaderId }, cancellationToken);
+        if (draft is null)
+        {
+            throw new KeyNotFoundException($"RevisionHeader '{draftRevisionHeaderId}' was not found.");
+        }
+
+        if (draft.Status != RevisionStatusEnum.Approved)
+        {
+            throw new InvalidOperationException($"A sprint plan draft cannot be finalized until it has progressed through the formal review and approval process (Draft -> ReadyForReview -> Approved -> Finalize). Current status is '{draft.Status}'.");
+        }
+
+        var mode = VersionedFeatureTypeEnumDefinitions.GetVersioningMode(draft.FeatureType);
+        if (mode != VersioningModeEnum.LockAndAutoDraft)
+        {
+            throw new InvalidOperationException($"FinalizeAsync is only supported for features in Lock-and-Auto-Draft mode. '{draft.FeatureType}' operates in '{mode}' mode.");
+        }
+
+        var now = _dateTimeProvider.Now.ToUniversalTime();
+        var actingUser = !string.IsNullOrWhiteSpace(_currentUser.Email) ? _currentUser.Email : _currentUser.UserId;
+
+        // 1. Mark current draft as Active baseline
+        draft.Status = RevisionStatusEnum.Active;
+        draft.ActivatedAtUtc = now;
+        draft.ActivatedBy = actingUser;
+        draft.Updated = now;
+        draft.UpdatedBy = actingUser;
+
+        var baselineAudit = new AuditRecordEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = draft.TenantId,
+            UserId = _currentUser.UserId,
+            UserEmail = actingUser,
+            UserType = _tenantContext.UserType,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
+            EntityName = nameof(RevisionHeaderEntity),
+            EntityId = draft.Id.ToString(),
+            Operation = EntityOperationEnum.Update,
+            ChangesJson = JsonSerializer.Serialize(new
+            {
+                Action = "BaselineFinalized",
+                VerNum = draft.VerNum,
+                Notes = notes
+            }),
+            Created = now,
+            CreatedBy = actingUser,
+            Updated = now,
+            UpdatedBy = actingUser
+        };
+        context.AuditRecords.Add(baselineAudit);
+
+        // 2. Immediately auto-spawn working draft (vN+1) linked to this baseline
+        var nextVerNum = draft.VerNum + 1;
+        var workingDraft = new RevisionHeaderEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = draft.TenantId,
+            ScopeLevel = draft.ScopeLevel,
+            ProgramId = draft.ProgramId,
+            ProjectId = draft.ProjectId,
+            FeatureType = draft.FeatureType,
+            VerNum = nextVerNum,
+            ParentVerNum = draft.VerNum,
+            ParentRevisionHeaderId = draft.Id,
+            RevisionName = $"[AUTO-SPAWN] Working Copy (v{nextVerNum})",
+            Status = RevisionStatusEnum.Draft,
+            CreatorEmail = actingUser,
+            AssignedToEmails = actingUser,
+            Created = now,
+            CreatedBy = actingUser,
+            Updated = now,
+            UpdatedBy = actingUser
+        };
+        context.RevisionHeaders.Add(workingDraft);
+
+        var spawnAudit = new AuditRecordEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = draft.TenantId,
+            UserId = _currentUser.UserId,
+            UserEmail = actingUser,
+            UserType = _tenantContext.UserType,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
+            EntityName = nameof(RevisionHeaderEntity),
+            EntityId = workingDraft.Id.ToString(),
+            Operation = EntityOperationEnum.Insert,
+            ChangesJson = JsonSerializer.Serialize(new
+            {
+                Action = "WorkingDraftAutoSpawned",
+                VerNum = nextVerNum,
+                ParentVerNum = draft.VerNum,
+                ParentRevisionHeaderId = draft.Id
+            }),
+            Created = now,
+            CreatedBy = actingUser,
+            Updated = now,
+            UpdatedBy = actingUser
+        };
+        context.AuditRecords.Add(spawnAudit);
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Finalized Baseline Revision v{VerNum} (HeaderId: {HeaderId}) and auto-spawned Working Draft v{NextVer} (HeaderId: {WorkingDraftId}).",
+            draft.VerNum, draft.Id, nextVerNum, workingDraft.Id);
+
+        return new FinalizeRevisionResult(draft, workingDraft);
+    }
+
+    public async Task<RevisionHeaderEntity> CloseCycleAsync(
+        Guid workingDraftRevisionHeaderId,
+        string? notes = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var workingDraft = await context.RevisionHeaders.FindAsync(new object[] { workingDraftRevisionHeaderId }, cancellationToken);
+        if (workingDraft is null)
+        {
+            throw new KeyNotFoundException($"RevisionHeader '{workingDraftRevisionHeaderId}' was not found.");
+        }
+
+        if (workingDraft.Status != RevisionStatusEnum.Draft)
+        {
+            throw new InvalidOperationException($"Only an open working draft can be closed at the end of a cycle. Current status is '{workingDraft.Status}'.");
+        }
+
+        var now = _dateTimeProvider.Now.ToUniversalTime();
+        var actingUser = !string.IsNullOrWhiteSpace(_currentUser.Email) ? _currentUser.Email : _currentUser.UserId;
+
+        // For sprint plan: transition active baseline to Complete and working draft to DraftComplete
+        var activeBaseline = await context.RevisionHeaders
+            .Where(r => r.TenantId == workingDraft.TenantId &&
+                        r.ScopeLevel == workingDraft.ScopeLevel &&
+                        r.FeatureType == workingDraft.FeatureType &&
+                        r.ProgramId == workingDraft.ProgramId &&
+                        r.ProjectId == workingDraft.ProjectId &&
+                        r.Status == RevisionStatusEnum.Active &&
+                        r.Id != workingDraft.Id &&
+                        !r.IsDeleted)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (activeBaseline != null)
+        {
+            activeBaseline.Status = RevisionStatusEnum.Complete;
+            activeBaseline.Updated = now;
+            activeBaseline.UpdatedBy = actingUser;
+        }
+
+        workingDraft.Status = RevisionStatusEnum.DraftComplete;
+        workingDraft.Updated = now;
+        workingDraft.UpdatedBy = actingUser;
+
+        var audit = new AuditRecordEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = workingDraft.TenantId,
+            UserId = _currentUser.UserId,
+            UserEmail = actingUser,
+            UserType = _tenantContext.UserType,
+            EventType = AuditEventTypeEnum.EntityChange,
+            Severity = AuditSeverityEnum.Information,
+            EntityName = nameof(RevisionHeaderEntity),
+            EntityId = workingDraft.Id.ToString(),
+            Operation = EntityOperationEnum.Update,
+            ChangesJson = JsonSerializer.Serialize(new
+            {
+                Action = "CycleClosed",
+                VerNum = workingDraft.VerNum,
+                PreviousBaselineVerNum = activeBaseline?.VerNum,
+                Notes = notes
+            }),
+            Created = now,
+            CreatedBy = actingUser,
+            Updated = now,
+            UpdatedBy = actingUser
+        };
+        context.AuditRecords.Add(audit);
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Cycle closed for v{VerNum} (HeaderId: {HeaderId}). Superseded previous baseline v{PrevVer}.",
+            workingDraft.VerNum, workingDraft.Id, activeBaseline?.VerNum);
+
+        return workingDraft;
     }
 }
