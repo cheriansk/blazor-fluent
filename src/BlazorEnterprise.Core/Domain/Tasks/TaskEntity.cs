@@ -1,5 +1,6 @@
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Base;
+using BlazorEnterprise.Core.Domain.Sprints;
 
 namespace BlazorEnterprise.Core.Domain.Tasks;
 
@@ -21,9 +22,26 @@ public partial class TaskEntity : BaseTaskEntity, IProjectScopedEntity, IMilesto
     }
 
     /// <summary>
+    /// Planned / estimated effort hours for the task.
+    /// Not present or available on SubTaskEntity.
+    /// </summary>
+    public decimal? EstimatedHours { get; set; }
+
+    /// <summary>
     /// Optional foreign key to a project milestone. Null indicates an ad-hoc task.
     /// </summary>
     public Guid? MilestoneId { get; set; }
+
+    /// <summary>
+    /// Optional foreign key to the assigned sprint iteration. Null indicates backlog / unassigned.
+    /// A task can be assigned to at most 1 sprint at a time.
+    /// </summary>
+    public Guid? SprintId { get; set; }
+
+    /// <summary>
+    /// Assigned sprint iteration.
+    /// </summary>
+    public SprintEntity? Sprint { get; set; }
 
     /// <summary>
     /// Optional foreign key referencing the governing workflow pipeline (null for standalone tasks).

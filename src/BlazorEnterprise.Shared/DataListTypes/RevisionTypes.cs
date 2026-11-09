@@ -80,7 +80,8 @@ public enum VersionedFeatureTypeEnum
     ProjectCalendar = 2,
     SprintPlan = 3,
     Estimation = 4,
-    Pricing = 5
+    Pricing = 5,
+    ResourceAllocationPlan = 6
 }
 
 /// <summary>

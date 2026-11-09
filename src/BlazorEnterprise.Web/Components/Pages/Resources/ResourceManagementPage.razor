@@ -1,0 +1,206 @@
+@page "/resources"
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Pages.Resources
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Resources
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Components.Common
+
+<PageTitle>Resource Management - BlazorEnterprise</PageTitle>
+
+<div class="resource-management-page">
+    @if (!ProjectContext.HasProject)
+    {
+        <div class="no-project-selected">
+            <CskIcon Icon="@CskIcons.Info" Class="info-icon" />
+            <div>
+                <h3>No Project Selected</h3>
+                <p>Please select an active project to view and manage team resource allocations.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Header & Revision Versioning Toolbar -->
+        <div class="page-header-row">
+            <div>
+                <h2 class="page-title">Resource Management</h2>
+                <span class="page-subtitle">Capacity planning & allocation calendar for <strong>@ProjectContext.ProjectName</strong></span>
+            </div>
+
+            <div class="header-actions">
+                <button type="button" class="csk-btn csk-btn-secondary" @onclick="OpenAddResourceModal" disabled="@_isReadOnly">
+                    <CskIcon Icon="@CskIcons.PersonAdd" />
+                    <span>Add Resource</span>
+                </button>
+            </div>
+        </div>
+
+        @if (_planSummary != null)
+        {
+            <div class="toolbar-wrapper">
+                <RevisionToolbarComp Revisions="_revisions"
+                                     SelectedRevisionId="_selectedRevisionId"
+                                     ScopeLevel="TaskLevelEnum.Project"
+                                     FeatureType="VersionedFeatureTypeEnum.ResourceAllocationPlan"
+                                     ProjectId="ProjectContext.ProjectId"
+                                     OnRevisionChanged="HandleRevisionChanged"
+                                     OnDataMutated="HandleDataMutated" />
+            </div>
+
+            @if (_planSummary.IsLocked)
+            {
+                <div class="locked-banner">
+                    <CskIcon Icon="@CskIcons.LockClosed" Class="banner-icon" />
+                    <span>This allocation plan is <strong>@_planSummary.Status</strong> (read-only). To modify team allocations, submit a new draft or select an active working draft.</span>
+                </div>
+            }
+
+            <!-- Summary Utilization Cards -->
+            <div class="utilization-cards-row">
+                <div class="stat-card">
+                    <span class="stat-label">Total Resources</span>
+                    <span class="stat-val">@_planSummary.Resources.Count</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total Allocated Hours</span>
+                    <span class="stat-val">@_planSummary.Resources.Sum(r => r.TotalAllocatedHours).ToString("N1") hrs</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Estimated Plan Cost</span>
+                    <span class="stat-val">@_planSummary.TotalPlanCost.ToString("C0")</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Planning Timeline</span>
+                    <span class="stat-val">@_planSummary.StartDate.ToString("MMM dd") - @_planSummary.EndDate.ToString("MMM dd, yyyy")</span>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="filters-row">
+                <div class="filter-item">
+                    <input type="text" class="csk-input" placeholder="Filter by resource..." @bind="_filterName" @bind:event="oninput" />
+                </div>
+                <div class="filter-item">
+                    <select class="csk-select" @bind="_filterRole">
+                        <option value="">All Roles</option>
+                        @foreach (var role in Enum.GetValues<ProjectResourceRoleEnum>())
+                        {
+                            <option value="@role">@role</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-spacer"></div>
+                <div class="legend-items">
+                    <span class="legend-badge badge-0">0%</span>
+                    <span class="legend-badge badge-partial">1-50%</span>
+                    <span class="legend-badge badge-high">51-99%</span>
+                    <span class="legend-badge badge-full">100%</span>
+                </div>
+            </div>
+
+            <!-- Allocation Grid -->
+            <div class="allocation-grid-container">
+                <table class="allocation-table">
+                    <thead>
+                        <tr>
+                            <th class="col-fixed col-name">Resource</th>
+                            <th class="col-fixed col-role">Project Role</th>
+                            <th class="col-fixed col-rate">Hourly Rate</th>
+                            @foreach (var date in _planSummary.Dates)
+                            {
+                                <th class="col-date @(date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday ? "weekend" : "")">
+                                    <div class="date-header-day">@date.ToString("ddd")</div>
+                                    <div class="date-header-num">@date.ToString("MM/dd")</div>
+                                </th>
+                            }
+                            <th class="col-fixed col-total">Hours</th>
+                            <th class="col-fixed col-cost">Cost</th>
+                            <th class="col-fixed col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var res in FilteredResources)
+                        {
+                            <tr>
+                                <td class="col-fixed col-name">
+                                    <div class="resource-cell">
+                                        <div class="avatar-circle">@res.ResourceName[..1].ToUpper()</div>
+                                        <span>@res.ResourceName</span>
+                                    </div>
+                                </td>
+                                <td class="col-fixed col-role">
+                                    @if (_isReadOnly)
+                                    {
+                                        <span class="role-badge">@res.Role</span>
+                                    }
+                                    else
+                                    {
+                                        <select class="csk-select-sm" value="@res.Role" @onchange="(e) => UpdateResourceRole(res.ProjectResourceId, e.Value?.ToString())">
+                                            @foreach (var role in Enum.GetValues<ProjectResourceRoleEnum>())
+                                            {
+                                                <option value="@role">@role</option>
+                                            }
+                                        </select>
+                                    }
+                                </td>
+                                <td class="col-fixed col-rate">
+                                    @res.HourlyRate.ToString("C0")/hr
+                                </td>
+                                @foreach (var date in _planSummary.Dates)
+                                {
+                                    var pct = res.Allocations.TryGetValue(date, out var val) ? val : 0;
+                                    var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                                    <td class="col-cell @GetCellCssClass(pct) @(isWeekend ? "cell-weekend" : "")">
+                                        @if (_isReadOnly)
+                                        {
+                                            <span>@pct%</span>
+                                        }
+                                        else
+                                        {
+                                            <input type="number" min="0" max="100" class="pct-input"
+                                                   value="@pct"
+                                                   @onchange="(e) => SetCellAllocation(res.ProjectResourceId, date, e.Value?.ToString())" />
+                                        }
+                                    </td>
+                                }
+                                <td class="col-fixed col-total">
+                                    <strong>@res.TotalAllocatedHours.ToString("N1") hrs</strong>
+                                </td>
+                                <td class="col-fixed col-cost">
+                                    @res.TotalCost.ToString("C0")
+                                </td>
+                                <td class="col-fixed col-actions">
+                                    <button type="button" class="btn-icon-danger" title="Remove Resource" disabled="@_isReadOnly"
+                                            @onclick="() => RemoveResource(res.ProjectResourceId)">
+                                        <CskIcon Icon="@CskIcons.Delete" />
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="totals-row">
+                            <td colspan="3" class="totals-label">Total Daily Allocation %</td>
+                            @foreach (var date in _planSummary.Dates)
+                            {
+                                var dayTot = _planSummary.DailyTotals.TryGetValue(date, out var t) ? t : 0;
+                                <td class="totals-cell">@dayTot%</td>
+                            }
+                            <td><strong>@_planSummary.Resources.Sum(r => r.TotalAllocatedHours).ToString("N1")</strong></td>
+                            <td><strong>@_planSummary.TotalPlanCost.ToString("C0")</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+<ResourceSelectionModal IsOpen="_showAddResourceModal"
+                        AvailableUsers="_availableUsers"
+                        OnConfirm="HandleUsersSelected"
+                        OnCancel="() => _showAddResourceModal = false" />

@@ -91,6 +91,8 @@ internal class AuditService : IAuditService
 
             Severity = AuditSeverityEnum.Information,
 
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
+
             Description = $"User switched active tenant from '{fromTenantId}' to '{toTenantId}'. Reason: {reason ?? "User interactive selection"}",
 
             Created = now,
@@ -143,6 +145,8 @@ internal class AuditService : IAuditService
             EventType = AuditEventTypeEnum.Security,
 
             Severity = severity,
+
+            RetentionDays = AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays,
 
             Description = $"{action}. Details: {details}",
 
@@ -209,6 +213,8 @@ internal class AuditService : IAuditService
             EventType = AuditEventTypeEnum.UserActivity,
 
             Severity = AuditSeverityEnum.Information,
+
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
 
             Description = $"{action}. Details: {details}",
 
@@ -458,6 +464,8 @@ internal class AuditService : IAuditService
 
                 Severity = severity,
 
+                RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
+
                 Description = string.IsNullOrWhiteSpace(contextDescription)
 
                     ? $"Exception: {exception.Message}"
@@ -664,5 +672,42 @@ internal class AuditService : IAuditService
             deletedCount, cutoffUtc, _currentUser.Email);
 
         return deletedCount;
+    }
+
+    public async Task UpdateAuditRecordRetentionAsync(
+        Guid auditRecordId,
+        AuditRetentionPeriodEnum retention,
+        string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        SystemIdentityUtility.RequireAuthenticatedContext(_currentUser, _tenantContext, "UpdateAuditRecordRetention");
+
+        if (!_currentUser.IsRootAdmin && !_currentUser.IsInRole("Admin") && !_currentUser.IsInRole("TenantAdmin"))
+        {
+            throw new System.Security.SecurityException("Zero-Trust Security Violation: Updating audit record retention is restricted to Administrators.");
+        }
+
+        var record = await _dbContext.AuditRecords
+            .FirstOrDefaultAsync(r => r.Id == auditRecordId, cancellationToken);
+
+        if (record == null)
+        {
+            throw new InvalidOperationException($"Audit record with ID '{auditRecordId}' was not found.");
+        }
+
+        var oldRetention = record.RetentionDays;
+        var now = _dateTimeProvider.Now;
+        var currentUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "UpdateAuditRecordRetention");
+
+        record.RetentionDays = retention;
+        record.Updated = now;
+        record.UpdatedBy = currentUserId;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Audit record '{Id}' retention updated from {OldRetention} to {NewRetention} by user '{User}'. Reason: {Reason}",
+            auditRecordId, oldRetention, retention, _currentUser.Email ?? currentUserId, reason ?? "Administrative adjustment");
     }
 }

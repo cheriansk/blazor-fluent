@@ -22,6 +22,7 @@ public partial class TabContainerComp : ComponentBase
     private string? _activeTabId;
     private readonly HashSet<string> _loadedTabIds = new(StringComparer.OrdinalIgnoreCase);
 
+    [Parameter]
     public string? ActiveTabId
     {
         get => _activeTabId;

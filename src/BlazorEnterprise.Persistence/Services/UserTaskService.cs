@@ -232,6 +232,7 @@ public partial class UserTaskService : IUserTaskService
             task.Priority = updated.Priority;
             task.Status = updated.Status;
             task.DueDate = updated.DueDate;
+            task.EstimatedHours = updated.EstimatedHours;
             task.AssigneeEmails = updated.AssigneeEmails;
             task.Labels = updated.Labels;
             task.MilestoneId = updated.MilestoneId;

@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Auditing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -48,6 +49,11 @@ public class AuditRecordEntityConfiguration : IEntityTypeConfiguration<AuditReco
             .HasColumnType("jsonb")
             .IsRequired(false);
 
+        builder.Property(a => a.RetentionDays)
+            .HasConversion<int>()
+            .HasDefaultValue(AuditRetentionPeriodEnum.NinetyDays)
+            .IsRequired();
+
         // Indexes for high performance querying
         builder.HasIndex(a => a.TenantId)
             .HasDatabaseName("IX_AuditRecords_TenantId");
@@ -60,5 +66,8 @@ public class AuditRecordEntityConfiguration : IEntityTypeConfiguration<AuditReco
 
         builder.HasIndex(a => a.EventType)
             .HasDatabaseName("IX_AuditRecords_EventType");
+
+        builder.HasIndex(a => new { a.RetentionDays, a.Created })
+            .HasDatabaseName("IX_AuditRecords_RetentionDays_Created");
     }
 }

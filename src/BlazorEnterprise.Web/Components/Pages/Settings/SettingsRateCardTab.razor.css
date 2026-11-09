@@ -1,0 +1,119 @@
+.settings-rate-card-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tab-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--csk-color-text-secondary, #6b7280);
+}
+
+.plan-selector-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.csk-alert-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #1e40af;
+}
+
+.bulk-rate-card {
+    background: var(--csk-color-subtle-hover, #f9fafb);
+    border: 1px solid var(--csk-color-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bulk-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.bulk-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.rate-card-table-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.search-bar {
+    max-width: 300px;
+}
+
+.rate-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.csk-input-sm {
+    width: 80px;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--csk-color-border, #d1d5db);
+    border-radius: 4px;
+}
+
+.empty-cell {
+    text-align: center;
+    padding: 2rem !important;
+    color: var(--csk-color-text-secondary, #6b7280);
+}
+.csk-select {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--csk-color-border, #d1d5db);
+    border-radius: 4px;
+    background: #fff;
+    font-size: 0.85rem;
+}
+
+.csk-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.csk-table th,
+.csk-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--csk-color-border, #e5e7eb);
+    text-align: left;
+}
+
+.role-badge {
+    background: #f3f4f6;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}

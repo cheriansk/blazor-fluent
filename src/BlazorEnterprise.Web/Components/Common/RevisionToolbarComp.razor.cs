@@ -12,10 +12,15 @@ public partial class RevisionToolbarComp : ComponentBase
     [Parameter] public Guid? ProgramId { get; set; }
     [Parameter] public Guid? ProjectId { get; set; }
     [Parameter] public EventCallback<Guid> OnRevisionSelected { get; set; }
+    [Parameter] public EventCallback<Guid> OnRevisionChanged { get; set; }
+    [Parameter] public EventCallback OnDataMutated { get; set; }
 
-    protected List<RevisionSummaryDto> Revisions { get; set; } = new();
-    protected Guid? SelectedRevisionId { get; set; }
-    protected RevisionSummaryDto? CurrentRevision => Revisions.FirstOrDefault(r => r.Id == SelectedRevisionId);
+    [Parameter] public List<RevisionSummaryDto>? Revisions { get; set; }
+    [Parameter] public Guid? SelectedRevisionId { get; set; }
+
+    protected List<RevisionSummaryDto> EffectiveRevisions => Revisions ?? _internalRevisions;
+    private List<RevisionSummaryDto> _internalRevisions = new();
+    protected RevisionSummaryDto? CurrentRevision => EffectiveRevisions.FirstOrDefault(r => r.Id == SelectedRevisionId);
     protected bool IsLoading { get; set; }
     protected bool IsMultiDraftMode => VersionedFeatureTypeEnumDefinitions.GetVersioningMode(FeatureType) == VersioningModeEnum.MultiDraft;
 
@@ -49,11 +54,14 @@ public partial class RevisionToolbarComp : ComponentBase
         IsLoading = true;
         try
         {
-            Revisions = await RevisionService.GetRevisionsAsync(ScopeLevel, FeatureType, ProgramId, ProjectId);
-            if (SelectedRevisionId == null || !Revisions.Any(r => r.Id == SelectedRevisionId))
+            if (Revisions == null)
             {
-                var active = Revisions.FirstOrDefault(r => r.Status == RevisionStatusEnum.Active);
-                SelectedRevisionId = active?.Id ?? Revisions.FirstOrDefault()?.Id;
+                _internalRevisions = await RevisionService.GetRevisionsAsync(ScopeLevel, FeatureType, ProgramId, ProjectId);
+            }
+            if (SelectedRevisionId == null || !EffectiveRevisions.Any(r => r.Id == SelectedRevisionId))
+            {
+                var active = EffectiveRevisions.FirstOrDefault(r => r.Status == RevisionStatusEnum.Active);
+                SelectedRevisionId = active?.Id ?? EffectiveRevisions.FirstOrDefault()?.Id;
             }
         }
         finally
@@ -62,15 +70,32 @@ public partial class RevisionToolbarComp : ComponentBase
         }
     }
 
+    private async Task NotifyRevisionChangedAsync(Guid id)
+    {
+        SelectedRevisionId = id;
+        if (OnRevisionSelected.HasDelegate)
+        {
+            await OnRevisionSelected.InvokeAsync(id);
+        }
+        if (OnRevisionChanged.HasDelegate)
+        {
+            await OnRevisionChanged.InvokeAsync(id);
+        }
+    }
+
+    private async Task NotifyDataMutatedAsync()
+    {
+        if (OnDataMutated.HasDelegate)
+        {
+            await OnDataMutated.InvokeAsync();
+        }
+    }
+
     protected async Task OnRevisionChangedAsync(ChangeEventArgs e)
     {
         if (Guid.TryParse(e.Value?.ToString(), out var id))
         {
-            SelectedRevisionId = id;
-            if (OnRevisionSelected.HasDelegate)
-            {
-                await OnRevisionSelected.InvokeAsync(id);
-            }
+            await NotifyRevisionChangedAsync(id);
         }
     }
 
@@ -94,11 +119,8 @@ public partial class RevisionToolbarComp : ComponentBase
 
             ShowNewDraftModal = false;
             await LoadRevisionsAsync();
-            SelectedRevisionId = draft.Id;
-            if (OnRevisionSelected.HasDelegate)
-            {
-                await OnRevisionSelected.InvokeAsync(draft.Id);
-            }
+            await NotifyRevisionChangedAsync(draft.Id);
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -123,6 +145,7 @@ public partial class RevisionToolbarComp : ComponentBase
             await RevisionService.SubmitForReviewAsync(SelectedRevisionId.Value, ReviewerEmails, ReviewNotes);
             ShowSubmitModal = false;
             await LoadRevisionsAsync();
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -139,6 +162,7 @@ public partial class RevisionToolbarComp : ComponentBase
         {
             await RevisionService.ApproveRevisionAsync(SelectedRevisionId.Value);
             await LoadRevisionsAsync();
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -162,6 +186,7 @@ public partial class RevisionToolbarComp : ComponentBase
             await RevisionService.RejectRevisionAsync(SelectedRevisionId.Value, RejectReason);
             ShowRejectModal = false;
             await LoadRevisionsAsync();
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -178,10 +203,8 @@ public partial class RevisionToolbarComp : ComponentBase
         {
             await RevisionService.ActivateRevisionAsync(SelectedRevisionId.Value);
             await LoadRevisionsAsync();
-            if (OnRevisionSelected.HasDelegate)
-            {
-                await OnRevisionSelected.InvokeAsync(SelectedRevisionId.Value);
-            }
+            await NotifyRevisionChangedAsync(SelectedRevisionId.Value);
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -198,6 +221,7 @@ public partial class RevisionToolbarComp : ComponentBase
         {
             await RevisionService.DiscardDraftAsync(SelectedRevisionId.Value);
             await LoadRevisionsAsync();
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -209,8 +233,8 @@ public partial class RevisionToolbarComp : ComponentBase
     {
         if (SelectedRevisionId == null) return;
 
-        var active = Revisions.FirstOrDefault(r => r.Status == RevisionStatusEnum.Active);
-        var targetId = active?.Id ?? Revisions.FirstOrDefault(r => r.Id != SelectedRevisionId)?.Id;
+        var active = EffectiveRevisions.FirstOrDefault(r => r.Status == RevisionStatusEnum.Active);
+        var targetId = active?.Id ?? EffectiveRevisions.FirstOrDefault(r => r.Id != SelectedRevisionId)?.Id;
         if (targetId == null || targetId == SelectedRevisionId) return;
 
         IsLoading = true;
@@ -233,11 +257,8 @@ public partial class RevisionToolbarComp : ComponentBase
         {
             var result = await RevisionService.FinalizeAsync(SelectedRevisionId.Value);
             await LoadRevisionsAsync();
-            SelectedRevisionId = result.WorkingDraft.Id;
-            if (OnRevisionSelected.HasDelegate)
-            {
-                await OnRevisionSelected.InvokeAsync(result.WorkingDraft.Id);
-            }
+            await NotifyRevisionChangedAsync(result.WorkingDraft.Id);
+            await NotifyDataMutatedAsync();
         }
         finally
         {
@@ -253,11 +274,8 @@ public partial class RevisionToolbarComp : ComponentBase
         {
             var closed = await RevisionService.CloseCycleAsync(SelectedRevisionId.Value);
             await LoadRevisionsAsync();
-            SelectedRevisionId = closed.Id;
-            if (OnRevisionSelected.HasDelegate)
-            {
-                await OnRevisionSelected.InvokeAsync(closed.Id);
-            }
+            await NotifyRevisionChangedAsync(closed.Id);
+            await NotifyDataMutatedAsync();
         }
         finally
         {

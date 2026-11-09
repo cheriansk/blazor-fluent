@@ -10,7 +10,7 @@
     <div class="revision-selector-group">
         <label class="revision-label">Scenario Revision:</label>
         <select class="revision-select" value="@SelectedRevisionId" @onchange="OnRevisionChangedAsync" disabled="@IsLoading">
-            @foreach (var r in Revisions)
+            @foreach (var r in EffectiveRevisions)
             {
                 <option value="@r.Id">
                     v@r.VerNum - @r.RevisionName [@r.Status] @(r.ParentVerNum != -1 ? $"(from v{r.ParentVerNum})" : "")
@@ -114,8 +114,10 @@
             </div>
             <div class="csk-modal-body">
                 <div class="form-group">
-                    <label>Reviewer Emails (semicolon separated)</label>
-                    <input type="text" class="form-control" @bind="ReviewerEmails" placeholder="e.g. lead@enterprise.com; manager@enterprise.com" />
+                    <CskTenantUserPicker Label="Reviewer Emails (semicolon separated)"
+                                         @bind-Value="ReviewerEmails"
+                                         MultiSelect="true"
+                                         Placeholder="Select or search registered tenant reviewers..." />
                 </div>
                 <div class="form-group">
                     <label>Review Notes (optional)</label>

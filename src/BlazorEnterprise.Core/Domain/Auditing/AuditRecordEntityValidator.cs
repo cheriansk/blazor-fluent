@@ -29,6 +29,10 @@ public class AuditRecordEntityValidator : AbstractValidator<AuditRecordEntity>
             .IsInEnum()
             .WithMessage("A valid AuditSeverity is required.");
 
+        RuleFor(x => x.RetentionDays)
+            .IsInEnum()
+            .WithMessage("A valid AuditRetentionPeriodEnum (90 to 730 days) is required.");
+
         // 2. Conditional Invariants: EntityChange Events
         When(x => x.EventType == AuditEventTypeEnum.EntityChange, () =>
         {

@@ -86,6 +86,29 @@
                             <span class="csk-nav-text">File Imports</span>
                         }
                     </NavLink>
+
+                    @if (ProjectContext.HasProject)
+                    {
+                        <NavLink class="csk-nav-item" href="resources" title="Resource Management">
+                            <span class="csk-nav-indicator">
+                                <CskIcon Icon="@CskIcons.People" Class="csk-nav-icon" />
+                            </span>
+                            @if (!NavState.IsCollapsed)
+                            {
+                                <span class="csk-nav-text">Resource Management</span>
+                            }
+                        </NavLink>
+
+                        <NavLink class="csk-nav-item" href="sprints" title="Sprint Planning">
+                            <span class="csk-nav-indicator">
+                                <CskIcon Icon="@CskIcons.Calendar" Class="csk-nav-icon" />
+                            </span>
+                            @if (!NavState.IsCollapsed)
+                            {
+                                <span class="csk-nav-text">Sprint Planning</span>
+                            }
+                        </NavLink>
+                    }
                 }
             </div>
 

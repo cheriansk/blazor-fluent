@@ -226,6 +226,22 @@
           "enabled": true
         }
       ]
+    },
+    "src/BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor",
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor",
+      "category": "Pages",
+      "thinking_level": "low",
+      "description": "Sprint planning and iteration capacity management workspace",
+      "enabled": true,
+      "children": [
+        {
+          "path": "BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor",
+          "category": "Shared",
+          "thinking_level": "low",
+          "enabled": true
+        }
+      ]
     }
   ]
 }

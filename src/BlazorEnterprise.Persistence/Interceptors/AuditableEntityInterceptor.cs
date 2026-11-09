@@ -134,10 +134,27 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                         $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}) and can NEVER be deleted.");
                 }
 
-                if (entry.State == EntityState.Modified && entry.Entity is AuditRecordEntity or EventPublishTrackerEntity or EventConsumptionTrackerEntity)
+                if (entry.State == EntityState.Modified)
                 {
-                    throw new InvalidOperationException(
-                        $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}) and can NEVER be modified after creation.");
+                    if (entry.Entity is AuditRecordEntity)
+                    {
+                        // AuditRecordEntity is immutable except for RetentionDays adjustments by authorized admins
+                        var modifiedProps = entry.Properties
+                            .Where(p => p.IsModified)
+                            .Select(p => p.Metadata.Name)
+                            .ToHashSet();
+                        var allowedProps = new HashSet<string> { nameof(AuditRecordEntity.RetentionDays), "Updated", "UpdatedBy" };
+                        if (!modifiedProps.IsSubsetOf(allowedProps))
+                        {
+                            throw new InvalidOperationException(
+                                $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}). Only 'RetentionDays' may be adjusted.");
+                        }
+                    }
+                    else if (entry.Entity is EventPublishTrackerEntity or EventConsumptionTrackerEntity)
+                    {
+                        throw new InvalidOperationException(
+                            $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}) and can NEVER be modified after creation.");
+                    }
                 }
             }
 
@@ -653,6 +670,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 EntityId = entityId,
                 Operation = operation,
                 ChangesJson = changes.Count > 0 ? JsonSerializer.Serialize(changes) : null,
+                RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
                 Created = now,
                 CreatedBy = currentUserId,
                 Updated = now,

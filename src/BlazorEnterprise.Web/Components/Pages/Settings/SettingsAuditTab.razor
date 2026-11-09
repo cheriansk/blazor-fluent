@@ -135,7 +135,7 @@
             </span>
         </CskStack>
 
-        <CskDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 180px 120px 110px 1fr 100px">
+        <CskDataGrid Items="@FilteredAuditItems" ResizableColumns="true" GridTemplateColumns="160px 120px 180px 120px 110px 110px 1fr 110px">
             <CskTemplateColumn Title="Timestamp" SortBy="@(GridSort<AuditRecordEntity>.ByDescending(a => a.Created))">
                 @TimeZoneService.FormatDateTime(context.Created)
             </CskTemplateColumn>
@@ -162,14 +162,24 @@
                     <CskBadge Color="BadgeColor.Informative">@context.Severity</CskBadge>
                 }
             </CskTemplateColumn>
+            <CskTemplateColumn Title="Retention" SortBy="@(GridSort<AuditRecordEntity>.ByAscending(a => (int)a.RetentionDays))">
+                <CskBadge Color="BadgeColor.Subtle">@(((int)context.RetentionDays).ToString())d</CskBadge>
+            </CskTemplateColumn>
             <CskPropertyColumn Property="@(a => a.Description)" Title="Description" Sortable="true" />
-            <CskTemplateColumn Title="Diff">
-                @if (!string.IsNullOrWhiteSpace(context.ChangesJson))
-                {
-                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _selectedAuditRecord = context)">
-                        View Diff
-                    </CskButton>
-                }
+            <CskTemplateColumn Title="Actions">
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="4">
+                    @if (!string.IsNullOrWhiteSpace(context.ChangesJson))
+                    {
+                        <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _selectedAuditRecord = context)">
+                            Diff
+                        </CskButton>
+                    }
+                    @if (CanEditRetention)
+                    {
+                        <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Edit" OnClick="@(() => OpenRetentionEditModal(context))" title="Edit retention period">
+                        </CskButton>
+                    }
+                </CskStack>
             </CskTemplateColumn>
         </CskDataGrid>
 
@@ -184,4 +194,56 @@
             </CskStack>
         </CskStack>
     }
+
+    <!-- Edit Retention Period Dialog -->
+    <CskDialog @ref="_retentionDialog" Modal="true" Class="dialog-confirm-width">
+        <CskDialogBody>
+            <TitleTemplate>
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" VerticalAlignment="CskVerticalAlignment.Center">
+                    <CskIcon Icon="@CskIcons.Clock" Class="csk-icon-primary csk-icon-lg" />
+                    <div>
+                        <CskLabel Typo="Typography.H6">Edit Audit Record Retention</CskLabel>
+                        <span class="text-hint font-size-sm">Record ID: @_retentionTargetRecord?.Id</span>
+                    </div>
+                </CskStack>
+            </TitleTemplate>
+            <ChildContent>
+                @if (_retentionTargetRecord is not null)
+                {
+                    <CskStack Orientation="CskOrientation.Vertical" VerticalGap="14" Class="pt-2 pb-2">
+                        @if (!string.IsNullOrEmpty(_retentionErrorMessage))
+                        {
+                            <CskMessageBar Intent="MessageBarIntent.Error">
+                                @_retentionErrorMessage
+                            </CskMessageBar>
+                        }
+                        <div>
+                            <CskLabel Typo="Typography.Body"><strong>Event Type:</strong> @_retentionTargetRecord.EventType</CskLabel><br />
+                            <CskLabel Typo="Typography.Body"><strong>Created:</strong> @TimeZoneService.FormatDateTime(_retentionTargetRecord.Created)</CskLabel><br />
+                            <CskLabel Typo="Typography.Body"><strong>Current Retention:</strong> @((int)_retentionTargetRecord.RetentionDays) Days</CskLabel>
+                        </div>
+                        <div>
+                            <CskLabel Typo="Typography.Body" Class="mb-1">New Retention Period (90 - 730 Days)</CskLabel>
+                            <CskSelect TOption="RetentionOption"
+                                       TValue="AuditRetentionPeriodEnum"
+                                       Items="@_retentionOptions"
+                                       OptionText="@(o => o.DisplayName)"
+                                       OptionValue="@(o => o.Value)"
+                                       @bind-Value="_selectedRetentionOption"
+                                       Class="w-full" />
+                        </div>
+                        <CskTextInput Label="Reason for modification (Audited)" @bind-Value="_retentionReason" Placeholder="e.g. Legal hold, Extended compliance requirement" Class="w-full" />
+                    </CskStack>
+                }
+            </ChildContent>
+            <ActionTemplate>
+                <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8" HorizontalAlignment="CskHorizontalAlignment.End">
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseRetentionEditModalAsync" Disabled="@_isSavingRetention">Cancel</CskButton>
+                    <CskButton Variant="CskButtonVariant.Filled" OnClick="@SaveRetentionAsync" Disabled="@_isSavingRetention">
+                        @(_isSavingRetention ? "Saving..." : "Save Retention")
+                    </CskButton>
+                </CskStack>
+            </ActionTemplate>
+        </CskDialogBody>
+    </CskDialog>
 </CskStack>

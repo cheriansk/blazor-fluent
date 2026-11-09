@@ -1,0 +1,649 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Visual ER Diagram</title><link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+.diag-container { max-width: 100%; padding: 16px 24px; box-sizing: border-box; }
+.diag-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #fff; padding: 10px 18px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-wrap: wrap; }
+.hint-box { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.hint-badge { background: #e1dfdd; color: var(--text-primary); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.toolbar-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.zoom-indicator { font-family: Consolas, monospace; font-size: 12px; font-weight: 700; color: var(--primary); min-width: 48px; text-align: center; }
+
+/* Viewport with Drag-to-Pan and Smooth Zoom */
+.diag-viewport {
+    position: relative;
+    width: 100%;
+    height: 78vh;
+    min-height: 650px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    box-sizing: border-box;
+}
+.diag-viewport:active {
+    cursor: grabbing;
+}
+.diag-viewport:fullscreen {
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    padding: 20px;
+    background: #ffffff;
+}
+
+/* Transform Canvas */
+.diag-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    transition: transform 0.05s ease-out;
+    display: inline-block;
+    padding: 40px;
+}
+.diag-canvas pre.mermaid {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+.diag-canvas svg {
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+g.entityBox, g[id*="entity-"], .er.entityBox { cursor: pointer; transition: all 0.2s; }
+g.entityBox:hover, g[id*="entity-"]:hover { filter: drop-shadow(0 0 6px var(--primary)); opacity: 0.95; }
+
+/* Interactive Hover Highlighting Classes */
+.er-dimmed {
+    opacity: 0.15 !important;
+    transition: opacity 0.2s ease-in-out;
+}
+.er-highlighted-box {
+    filter: drop-shadow(0 0 10px rgba(0, 120, 212, 0.95)) !important;
+    opacity: 1 !important;
+}
+.er-connected-box {
+    filter: drop-shadow(0 0 8px rgba(16, 124, 16, 0.9)) !important;
+    opacity: 1 !important;
+}
+.er-highlighted-line {
+    stroke: #0078d4 !important;
+    stroke-width: 3.5px !important;
+    stroke-opacity: 1 !important;
+    filter: drop-shadow(0 0 5px rgba(0, 120, 212, 0.8)) !important;
+    opacity: 1 !important;
+}
+.er-highlighted-label {
+    fill: #004578 !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    opacity: 1 !important;
+}
+</style>
+</head><body>
+<div class="diag-container">
+    <div class="page-header" style="margin-bottom: 12px;">
+        <div>
+            <h1 class="entity-title" style="font-size:22px;">🗺️ Visual Entity-Relationship Diagram</h1>
+            <div class="breadcrumb">Comprehensive Database Relational Architecture &bull; Click any entity box to view its full specification</div>
+        </div>
+    </div>
+    
+    <div class="diag-toolbar">
+        <div class="hint-box">
+            <span class="hint-badge">💡 Controls</span>
+            <span>Drag canvas to pan &bull; Mouse wheel to zoom &bull; Click entity box to inspect</span>
+        </div>
+        <div class="toolbar-controls">
+            <span class="zoom-indicator" id="zoomLevel">100%</span>
+            <button class="btn-action" onclick="zoomIn()" title="Zoom In (Ctrl + Scroll Up)">➕ Zoom In</button>
+            <button class="btn-action" onclick="zoomOut()" title="Zoom Out (Ctrl + Scroll Down)">➖ Zoom Out</button>
+            <button class="btn-action" onclick="fitView()" title="Fit Diagram to Viewport">📐 Fit View</button>
+            <button class="btn-action" onclick="resetZoom()" title="Reset to 100%">🔄 100%</button>
+            <button class="btn-action primary" onclick="toggleFullscreen()" title="Toggle Fullscreen Canvas">⛶ Fullscreen</button>
+        </div>
+    </div>
+
+    <div class="diag-viewport" id="viewport">
+        <div class="diag-canvas" id="canvas">
+            <pre class="mermaid" id="erDiagramPre">
+erDiagram
+    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    AuditRecordEntity {
+    }
+    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    EventConsumptionTrackerEntity {
+    }
+    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    EventPublishTrackerEntity {
+    }
+    %% Extends: AuditableEntity, IGlobalEntity, IHardDeletableEntity, IUnversionedEntity
+    KnowledgeArticleReviewerEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    KnowledgeArticleEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    NotificationEntity {
+    }
+    %% Extends: TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
+    UserTaskCommentEntity {
+    }
+    %% Extends: BaseCalendarEntity, IVersionedEntity
+    ProgramCalendarEntity {
+    }
+    %% Extends: BaseCalendarEntity, IVersionedEntity, IProjectScopedEntity
+    ProjectCalendarEntity {
+    }
+    %% Extends: BaseCalendarEntity, IUnversionedEntity
+    UserCalendarEntity {
+    }
+    DataProtectionKey {
+    }
+    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    JobExecutionEntity {
+    }
+    %% Extends: AuditableEntity, IGlobalEntity, ISoftDeletableEntity, IUnversionedEntity
+    ImpersonationGrantEntity {
+    }
+    %% Extends: AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+    UserEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IUnversionedEntity
+    UserSessionEntity {
+    }
+    %% Extends: TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
+    ImportFileEntity {
+    }
+    %% Extends: TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity, IUnversionedEntity
+    StagedImportEntity {
+    }
+    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    AssumptionEntity {
+    }
+    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    IssueEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    ProjectResourceEntity {
+    }
+    %% Extends: TenantAuditableEntity, IVersionedEntity, IProjectScopedEntity, ISoftDeletableEntity
+    ResourceAllocationEntity {
+    }
+    %% Extends: TenantAuditableEntity, IVersionedEntity, IProjectScopedEntity, ISoftDeletableEntity
+    ResourceRateEntity {
+    }
+    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    RiskEntity {
+    }
+    %% Extends: TenantAuditableEntity, IImmutableEntity, IAuditExemptEntity, IUnversionedEntity
+    SprintAuditLogEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISprintVersionEntity, IProjectScopedEntity, ISoftDeletableEntity
+    SprintItemVersionEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    SprintEntity {
+    }
+    %% Extends: BaseTaskEntity, IUnversionedEntity
+    SubTaskEntity {
+    }
+    %% Extends: BaseTaskEntity, IProjectScopedEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    TaskEntity {
+    }
+    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    WorkDependencyEntity {
+    }
+    %% Extends: BaseTaskEntity, IUnversionedEntity
+    WorkflowEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+    ProgramUserRoleEntity {
+    }
+    %% Extends: TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
+    ProgramEntity {
+    }
+    %% Extends: TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
+    ProjectEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IHmacSignableEntity, IUnversionedEntity
+    ProjectUserRoleEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+    TenantUserEntity {
+    }
+    %% Extends: AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IUnversionedEntity
+    TenantEntity {
+    }
+    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IUnversionedEntity
+    RevisionHeaderEntity {
+    }
+    EventPublishTrackerEntity ||--o{ EventConsumptionTrackerEntity : "Consumptions"
+    KnowledgeArticleEntity ||--o{ KnowledgeArticleReviewerEntity : "Reviewers"
+    ProgramCalendarEntity ||--o{ ProgramCalendarEntity : "Milestones"
+    ProgramCalendarEntity ||--o{ ProjectCalendarEntity : "ParentProgramCalendar"
+    ProgramEntity ||--o{ ProgramCalendarEntity : "Program"
+    ProgramEntity ||--o{ ProgramUserRoleEntity : "UserRoles"
+    ProgramEntity ||--o{ ProjectCalendarEntity : "Program"
+    ProgramEntity ||--o{ ProjectEntity : "Projects"
+    ProgramEntity ||--o{ TaskEntity : "references"
+    ProjectCalendarEntity ||--o{ ProjectCalendarEntity : "Milestones"
+    ProjectEntity ||--o{ KnowledgeArticleEntity : "Project"
+    ProjectEntity ||--o{ ProjectCalendarEntity : "Project"
+    ProjectEntity ||--o{ ProjectResourceEntity : "Project"
+    ProjectEntity ||--o{ ProjectUserRoleEntity : "UserRoles"
+    ProjectEntity ||--o{ SprintEntity : "Project"
+    ProjectEntity ||--o{ TaskEntity : "references"
+    ProjectResourceEntity ||--o{ ResourceAllocationEntity : "ProjectResource"
+    ProjectResourceEntity ||--o{ ResourceRateEntity : "ProjectResource"
+    RevisionHeaderEntity ||--o{ ProgramCalendarEntity : "RevisionHeader"
+    RevisionHeaderEntity ||--o{ ProjectCalendarEntity : "RevisionHeader"
+    RevisionHeaderEntity ||--o{ ResourceAllocationEntity : "RevisionHeader"
+    RevisionHeaderEntity ||--o{ ResourceRateEntity : "RevisionHeader"
+    RevisionHeaderEntity ||--o{ SprintItemVersionEntity : "RevisionHeader"
+    SprintEntity ||--o{ SprintAuditLogEntity : "AuditLogs"
+    SprintEntity ||--o{ SprintItemVersionEntity : "Items"
+    SubTaskEntity ||--o{ SubTaskEntity : "BlockedBySubTask"
+    TaskEntity ||--o{ SprintItemVersionEntity : "Item"
+    TaskEntity ||--o{ SubTaskEntity : "SubTasks"
+    TaskEntity ||--o{ UserTaskCommentEntity : "Comments"
+    TenantEntity ||--o{ ProgramEntity : "Programs"
+    TenantEntity ||--o{ ProjectEntity : "Projects"
+    TenantEntity ||--o{ TenantUserEntity : "TenantUsers"
+    UserEntity ||--o{ KnowledgeArticleEntity : "ApprovedByUser"
+    UserEntity ||--o{ KnowledgeArticleEntity : "AuthorUser"
+    UserEntity ||--o{ KnowledgeArticleReviewerEntity : "User"
+    UserEntity ||--o{ ProgramUserRoleEntity : "ProgramRoles"
+    UserEntity ||--o{ ProjectResourceEntity : "User"
+    UserEntity ||--o{ ProjectUserRoleEntity : "ProjectRoles"
+    UserEntity ||--o{ TenantUserEntity : "TenantMemberships"
+    UserEntity ||--o{ UserCalendarEntity : "User"
+    UserEntity ||--o{ UserTaskCommentEntity : "AuthorUser"
+    WorkflowEntity ||--o{ TaskEntity : "Steps"
+            </pre>
+        </div>
+    </div>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        securityLevel: 'loose',
+        er: { useMaxWidth: false }
+    });
+
+    const activeRelationships = [
+        { parent: 'EventPublishTrackerEntity', child: 'EventConsumptionTrackerEntity', label: 'Consumptions' },
+        { parent: 'KnowledgeArticleEntity', child: 'KnowledgeArticleReviewerEntity', label: 'Reviewers' },
+        { parent: 'ProgramCalendarEntity', child: 'ProgramCalendarEntity', label: 'Milestones' },
+        { parent: 'ProgramCalendarEntity', child: 'ProjectCalendarEntity', label: 'ParentProgramCalendar' },
+        { parent: 'ProgramEntity', child: 'ProgramCalendarEntity', label: 'Program' },
+        { parent: 'ProgramEntity', child: 'ProgramUserRoleEntity', label: 'UserRoles' },
+        { parent: 'ProgramEntity', child: 'ProjectCalendarEntity', label: 'Program' },
+        { parent: 'ProgramEntity', child: 'ProjectEntity', label: 'Projects' },
+        { parent: 'ProgramEntity', child: 'TaskEntity', label: 'references' },
+        { parent: 'ProjectCalendarEntity', child: 'ProjectCalendarEntity', label: 'Milestones' },
+        { parent: 'ProjectEntity', child: 'KnowledgeArticleEntity', label: 'Project' },
+        { parent: 'ProjectEntity', child: 'ProjectCalendarEntity', label: 'Project' },
+        { parent: 'ProjectEntity', child: 'ProjectResourceEntity', label: 'Project' },
+        { parent: 'ProjectEntity', child: 'ProjectUserRoleEntity', label: 'UserRoles' },
+        { parent: 'ProjectEntity', child: 'SprintEntity', label: 'Project' },
+        { parent: 'ProjectEntity', child: 'TaskEntity', label: 'references' },
+        { parent: 'ProjectResourceEntity', child: 'ResourceAllocationEntity', label: 'ProjectResource' },
+        { parent: 'ProjectResourceEntity', child: 'ResourceRateEntity', label: 'ProjectResource' },
+        { parent: 'RevisionHeaderEntity', child: 'ProgramCalendarEntity', label: 'RevisionHeader' },
+        { parent: 'RevisionHeaderEntity', child: 'ProjectCalendarEntity', label: 'RevisionHeader' },
+        { parent: 'RevisionHeaderEntity', child: 'ResourceAllocationEntity', label: 'RevisionHeader' },
+        { parent: 'RevisionHeaderEntity', child: 'ResourceRateEntity', label: 'RevisionHeader' },
+        { parent: 'RevisionHeaderEntity', child: 'SprintItemVersionEntity', label: 'RevisionHeader' },
+        { parent: 'SprintEntity', child: 'SprintAuditLogEntity', label: 'AuditLogs' },
+        { parent: 'SprintEntity', child: 'SprintItemVersionEntity', label: 'Items' },
+        { parent: 'SubTaskEntity', child: 'SubTaskEntity', label: 'BlockedBySubTask' },
+        { parent: 'TaskEntity', child: 'SprintItemVersionEntity', label: 'Item' },
+        { parent: 'TaskEntity', child: 'SubTaskEntity', label: 'SubTasks' },
+        { parent: 'TaskEntity', child: 'UserTaskCommentEntity', label: 'Comments' },
+        { parent: 'TenantEntity', child: 'ProgramEntity', label: 'Programs' },
+        { parent: 'TenantEntity', child: 'ProjectEntity', label: 'Projects' },
+        { parent: 'TenantEntity', child: 'TenantUserEntity', label: 'TenantUsers' },
+        { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'ApprovedByUser' },
+        { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'AuthorUser' },
+        { parent: 'UserEntity', child: 'KnowledgeArticleReviewerEntity', label: 'User' },
+        { parent: 'UserEntity', child: 'ProgramUserRoleEntity', label: 'ProgramRoles' },
+        { parent: 'UserEntity', child: 'ProjectResourceEntity', label: 'User' },
+        { parent: 'UserEntity', child: 'ProjectUserRoleEntity', label: 'ProjectRoles' },
+        { parent: 'UserEntity', child: 'TenantUserEntity', label: 'TenantMemberships' },
+        { parent: 'UserEntity', child: 'UserCalendarEntity', label: 'User' },
+        { parent: 'UserEntity', child: 'UserTaskCommentEntity', label: 'AuthorUser' },
+        { parent: 'WorkflowEntity', child: 'TaskEntity', label: 'Steps' },
+    ];
+
+    const tableToEntityMap = {
+        'AuditRecords': 'AuditRecordEntity.html',
+        'AuditRecordEntity': 'AuditRecordEntity.html',
+        'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
+        'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
+        'EventPublishTrackers': 'EventPublishTrackerEntity.html',
+        'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
+        'KnowledgeArticleReviewers': 'KnowledgeArticleReviewerEntity.html',
+        'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
+        'KnowledgeArticles': 'KnowledgeArticleEntity.html',
+        'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
+        'Notifications': 'NotificationEntity.html',
+        'NotificationEntity': 'NotificationEntity.html',
+        'TaskComments': 'UserTaskCommentEntity.html',
+        'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
+        'ProgramCalendars': 'ProgramCalendarEntity.html',
+        'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
+        'ProjectCalendars': 'ProjectCalendarEntity.html',
+        'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+        'UserCalendars': 'UserCalendarEntity.html',
+        'UserCalendarEntity': 'UserCalendarEntity.html',
+        'DataProtectionKeys': 'DataProtectionKey.html',
+        'DataProtectionKey': 'DataProtectionKey.html',
+        'JobExecutions': 'JobExecutionEntity.html',
+        'JobExecutionEntity': 'JobExecutionEntity.html',
+        'ImpersonationGrants': 'ImpersonationGrantEntity.html',
+        'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
+        'Users': 'UserEntity.html',
+        'UserEntity': 'UserEntity.html',
+        'UserSessions': 'UserSessionEntity.html',
+        'UserSessionEntity': 'UserSessionEntity.html',
+        'ImportFiles': 'ImportFileEntity.html',
+        'ImportFileEntity': 'ImportFileEntity.html',
+        'StagedImports': 'StagedImportEntity.html',
+        'StagedImportEntity': 'StagedImportEntity.html',
+        'Assumptions': 'AssumptionEntity.html',
+        'AssumptionEntity': 'AssumptionEntity.html',
+        'Issues': 'IssueEntity.html',
+        'IssueEntity': 'IssueEntity.html',
+        'ProjectResources': 'ProjectResourceEntity.html',
+        'ProjectResourceEntity': 'ProjectResourceEntity.html',
+        'ResourceAllocations': 'ResourceAllocationEntity.html',
+        'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
+        'ResourceRates': 'ResourceRateEntity.html',
+        'ResourceRateEntity': 'ResourceRateEntity.html',
+        'Risks': 'RiskEntity.html',
+        'RiskEntity': 'RiskEntity.html',
+        'SprintAuditLogs': 'SprintAuditLogEntity.html',
+        'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
+        'SprintItemVersions': 'SprintItemVersionEntity.html',
+        'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+        'Sprints': 'SprintEntity.html',
+        'SprintEntity': 'SprintEntity.html',
+        'SubTasks': 'SubTaskEntity.html',
+        'SubTaskEntity': 'SubTaskEntity.html',
+        'Tasks': 'TaskEntity.html',
+        'TaskEntity': 'TaskEntity.html',
+        'WorkDependencies': 'WorkDependencyEntity.html',
+        'WorkDependencyEntity': 'WorkDependencyEntity.html',
+        'Workflows': 'WorkflowEntity.html',
+        'WorkflowEntity': 'WorkflowEntity.html',
+        'program_user_roles': 'ProgramUserRoleEntity.html',
+        'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
+        'programs': 'ProgramEntity.html',
+        'ProgramEntity': 'ProgramEntity.html',
+        'Projects': 'ProjectEntity.html',
+        'ProjectEntity': 'ProjectEntity.html',
+        'ProjectUserRoles': 'ProjectUserRoleEntity.html',
+        'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
+        'tenant_users': 'TenantUserEntity.html',
+        'TenantUserEntity': 'TenantUserEntity.html',
+        'Tenants': 'TenantEntity.html',
+        'TenantEntity': 'TenantEntity.html',
+        'RevisionHeaders': 'RevisionHeaderEntity.html',
+        'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
+    };
+
+    // Pan & Zoom Engine State
+    let scale = 1.0;
+    let pointX = 0;
+    let pointY = 0;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+    let hasMoved = false;
+
+    const viewport = document.getElementById('viewport');
+    const canvas = document.getElementById('canvas');
+    const zoomLevelEl = document.getElementById('zoomLevel');
+
+    function updateTransform() {
+        canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+        zoomLevelEl.textContent = Math.round(scale * 100) + '%';
+    }
+
+    function zoomIn() {
+        scale = Math.min(scale * 1.25, 4.0);
+        updateTransform();
+    }
+
+    function zoomOut() {
+        scale = Math.max(scale / 1.25, 0.15);
+        updateTransform();
+    }
+
+    function resetZoom() {
+        scale = 1.0;
+        pointX = 40;
+        pointY = 40;
+        updateTransform();
+    }
+
+    function fitView() {
+        const svg = canvas.querySelector('svg');
+        if (!svg) return;
+        const vRect = viewport.getBoundingClientRect();
+        const sRect = svg.getBoundingClientRect();
+        const rawW = svg.viewBox ? svg.viewBox.baseVal.width : (svg.clientWidth || sRect.width / scale);
+        const rawH = svg.viewBox ? svg.viewBox.baseVal.height : (svg.clientHeight || sRect.height / scale);
+
+        if (rawW > 0 && rawH > 0) {
+            const scaleX = (vRect.width - 60) / rawW;
+            const scaleY = (vRect.height - 60) / rawH;
+            scale = Math.min(scaleX, scaleY, 1.2);
+            pointX = Math.max((vRect.width - rawW * scale) / 2, 20);
+            pointY = Math.max((vRect.height - rawH * scale) / 2, 20);
+            updateTransform();
+        }
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            viewport.requestFullscreen().catch(err => alert(err.message));
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // Mouse Pan & Drag
+    viewport.addEventListener('mousedown', (e) => {
+        // Only primary mouse button
+        if (e.button !== 0) return;
+        isPanning = true;
+        startX = e.clientX - pointX;
+        startY = e.clientY - pointY;
+        hasMoved = false;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        const dx = Math.abs(e.clientX - (startX + pointX));
+        const dy = Math.abs(e.clientY - (startY + pointY));
+        if (dx > 4 || dy > 4) hasMoved = true;
+        pointX = e.clientX - startX;
+        pointY = e.clientY - startY;
+        updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+        isPanning = false;
+    });
+
+    // Mouse Wheel Zoom centered at cursor
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = viewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY < 0 ? 1.15 : (1 / 1.15);
+        const newScale = Math.min(Math.max(scale * zoomFactor, 0.15), 4.0);
+
+        // Zoom toward cursor location
+        pointX = mouseX - (mouseX - pointX) * (newScale / scale);
+        pointY = mouseY - (mouseY - pointY) * (newScale / scale);
+        scale = newScale;
+        updateTransform();
+    }, { passive: false });
+
+    // Interactive Entity Click Handler, Hover Highlighting & Pan-Suppression
+    function attachClickHandlers() {
+        const svg = canvas.querySelector('svg');
+        if (!svg) {
+            setTimeout(attachClickHandlers, 300);
+            return;
+        }
+
+        // Map entity names to SVG groups
+        const entityGroups = {};
+        const allEntityGs = [];
+        svg.querySelectorAll('g').forEach(g => {
+            const textEl = g.querySelector('text');
+            if (textEl) {
+                const raw = textEl.textContent.trim();
+                if (tableToEntityMap[raw] && !entityGroups[raw]) {
+                    entityGroups[raw] = g;
+                    allEntityGs.push(g);
+                }
+            }
+        });
+
+        // Collect all relationship paths and labels
+        const allPaths = Array.from(svg.querySelectorAll('path')).filter(p => {
+            const cls = (p.getAttribute('class') || '') + ' ' + (p.getAttribute('id') || '');
+            return cls.includes('relationship') || p.getAttribute('marker-start') || p.getAttribute('marker-end') || p.getAttribute('d');
+        });
+        const allLabels = Array.from(svg.querySelectorAll('text')).filter(t => {
+            const cls = t.getAttribute('class') || '';
+            return cls.includes('relationship') || cls.includes('label');
+        });
+
+        // Map relationships in order to SVG paths
+        // In Mermaid ER diagrams, relationship paths are rendered sequentially matching the input statements
+        const relPathMap = [];
+        for (let i = 0; i < activeRelationships.length; i++) {
+            const rel = activeRelationships[i];
+            const p = allPaths[i] || null;
+            const l = allLabels[i] || null;
+            relPathMap.push({
+                parent: rel.parent,
+                child: rel.child,
+                label: rel.label,
+                pathEl: p,
+                labelEl: l
+            });
+        }
+
+        // Hover Highlighting Logic
+        function highlightEntityRelations(entityName) {
+            // Collect connected lines, labels, and partners
+            const connectedPaths = [];
+            const connectedLabels = [];
+            const connectedPartners = new Set();
+
+            relPathMap.forEach(item => {
+                if (item.parent === entityName || item.child === entityName) {
+                    if (item.pathEl) connectedPaths.push(item.pathEl);
+                    if (item.labelEl) connectedLabels.push(item.labelEl);
+                    if (item.parent === entityName) connectedPartners.add(item.child);
+                    if (item.child === entityName) connectedPartners.add(item.parent);
+                }
+            });
+
+            // Dim everything
+            allEntityGs.forEach(g => g.classList.add('er-dimmed'));
+            allPaths.forEach(p => p.classList.add('er-dimmed'));
+            allLabels.forEach(l => l.classList.add('er-dimmed'));
+
+            // Highlight hovered entity
+            if (entityGroups[entityName]) {
+                entityGroups[entityName].classList.remove('er-dimmed');
+                entityGroups[entityName].classList.add('er-highlighted-box');
+            }
+
+            // Highlight connected partner entities
+            connectedPartners.forEach(partnerName => {
+                if (entityGroups[partnerName]) {
+                    entityGroups[partnerName].classList.remove('er-dimmed');
+                    entityGroups[partnerName].classList.add('er-connected-box');
+                }
+            });
+
+            // Highlight connected lines & labels
+            connectedPaths.forEach(p => {
+                p.classList.remove('er-dimmed');
+                p.classList.add('er-highlighted-line');
+                // Move path to top of SVG render stack so it sits above dimmed lines
+                p.parentNode.appendChild(p);
+            });
+            connectedLabels.forEach(l => {
+                l.classList.remove('er-dimmed');
+                l.classList.add('er-highlighted-label');
+                l.parentNode.appendChild(l);
+            });
+        }
+
+        function clearHighlights() {
+            allEntityGs.forEach(g => {
+                g.classList.remove('er-dimmed', 'er-highlighted-box', 'er-connected-box');
+            });
+            allPaths.forEach(p => {
+                p.classList.remove('er-dimmed', 'er-highlighted-line');
+            });
+            allLabels.forEach(l => {
+                l.classList.remove('er-dimmed', 'er-highlighted-label');
+            });
+        }
+
+        // Attach clicks and hover events to text labels and rect containers
+        svg.querySelectorAll('text, rect').forEach(el => {
+            const parentG = el.closest('g');
+            if (parentG) {
+                const textEl = parentG.querySelector('text');
+                if (textEl) {
+                    const raw = textEl.textContent.trim();
+                    if (tableToEntityMap[raw]) {
+                        parentG.style.cursor = 'pointer';
+                        parentG.setAttribute('title', 'Click to inspect ' + raw);
+
+                        parentG.addEventListener('mouseenter', () => {
+                            highlightEntityRelations(raw);
+                        });
+                        parentG.addEventListener('mouseleave', () => {
+                            clearHighlights();
+                        });
+
+                        parentG.addEventListener('click', (e) => {
+                            if (hasMoved) return; // Prevent navigation when user was dragging/panning
+                            e.stopPropagation();
+                            window.location.href = 'entities/' + tableToEntityMap[raw];
+                        });
+                    }
+                }
+            }
+        });
+
+        // Auto-fit on initial load after SVG renders
+        setTimeout(fitView, 350);
+    }
+
+    window.addEventListener('load', () => {
+        setTimeout(attachClickHandlers, 500);
+    });
+</script>
+</div></body></html>
+

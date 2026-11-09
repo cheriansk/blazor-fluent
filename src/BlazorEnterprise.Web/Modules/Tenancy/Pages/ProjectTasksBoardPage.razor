@@ -345,10 +345,20 @@ else
                                   @bind-Value="_newTaskMilestoneIdString"
                                   Label="Milestone Association (Optional)" Class="full-width" />
 
-                    <CskTextInput @bind-Value="_newTask.AssigneeEmails"
-                                     Label="Assignee Email(s)"
-                                     Placeholder="alice@company.com; bob@company.com"
-                                     Class="full-width" />
+                    <CskTenantUserPicker Label="Assignee Email(s)"
+                                         @bind-Value="_newTask.AssigneeEmails"
+                                         MultiSelect="true"
+                                         Placeholder="Select or type tenant assignees..."
+                                         Class="full-width" />
+                </div>
+
+                <div class="modal-grid-row mt-3">
+                    <CskTextInput Value="@_newTaskEstimatedHoursString"
+                                  ValueChanged="@((string? val) => _newTaskEstimatedHoursString = val)"
+                                  Type="number"
+                                  Label="Estimated Hours (Planned)"
+                                  Placeholder="e.g. 8.0"
+                                  Class="full-width" />
                 </div>
 
                 <CskTextInput @bind-Value="_newTask.Labels"
@@ -444,15 +454,25 @@ else
                         </div>
 
                         <div class="modal-grid-row mt-3">
-                            <CskTextInput @bind-Value="_selectedTask.AssigneeEmails"
-                                             Label="Assignees (Semicolon-Separated)"
-                                             Placeholder="email1@co.com; email2@co.com"
-                                             Class="full-width" />
+                            <CskTenantUserPicker Label="Assignees (Semicolon-Separated)"
+                                                 @bind-Value="_selectedTask.AssigneeEmails"
+                                                 MultiSelect="true"
+                                                 Placeholder="Select or type tenant assignees..."
+                                                 Class="full-width" />
 
                             <CskTextInput Value="@_selectedTask.ReporterEmail"
                                              Label="Reporter"
                                              ReadOnly="true"
                                              Class="full-width" />
+                        </div>
+
+                        <div class="modal-grid-row mt-3">
+                            <CskTextInput Value="@_selectedTaskEstimatedHoursString"
+                                          ValueChanged="@((string? val) => _selectedTaskEstimatedHoursString = val)"
+                                          Type="number"
+                                          Label="Estimated Hours (Planned)"
+                                          Placeholder="e.g. 16.0"
+                                          Class="full-width" />
                         </div>
 
                         <CskTextInput @bind-Value="_selectedTask.Labels"

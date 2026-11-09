@@ -5,6 +5,7 @@
 @using BlazorEnterprise.Components.Common
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.UI.Components
+@inject IProjectContext ProjectContext
 @using Microsoft.AspNetCore.Authorization
 
 <PageTitle>Settings — BlazorEnterprise</PageTitle>
@@ -75,6 +76,21 @@
             My Calendar
         </CskButton>
 
+        @if (ProjectContext.HasProject)
+        {
+            <CskButton Variant="@(_activeTabId == "ratecard" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.DocumentBulletList"
+                       OnClick="@(() => SelectTab("ratecard"))">
+                Rate Card
+            </CskButton>
+
+            <CskButton Variant="@(_activeTabId == "sprinttimeline" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
+                       IconStart="@CskIcons.Clock"
+                       OnClick="@(() => SelectTab("sprinttimeline"))">
+                Sprint Timeline
+            </CskButton>
+        }
+
         <CskButton Variant="@(_activeTabId == "notifications" ? CskButtonVariant.Filled : CskButtonVariant.Text)"
                    IconStart="@CskIcons.Alert"
                    OnClick="@(() => SelectTab("notifications"))">
@@ -115,6 +131,14 @@
         else if (_activeTabId == "calendar" && _visitedTabs.Contains("calendar"))
         {
             <SettingsUserCalendarTab />
+        }
+        else if (_activeTabId == "ratecard" && _visitedTabs.Contains("ratecard"))
+        {
+            <SettingsRateCardTab />
+        }
+        else if (_activeTabId == "sprinttimeline" && _visitedTabs.Contains("sprinttimeline"))
+        {
+            <SettingsSprintTimelineTab />
         }
         else if (_activeTabId == "notifications" && _visitedTabs.Contains("notifications"))
         {
