@@ -1,0 +1,465 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"></head><body>
+<div class="page-container">
+<div class="breadcrumb"><a href="../overview.html">Data Model</a> &bull; <span>Sprints</span> &bull; <b>SprintItemVersionEntity</b></div>
+<div class="page-header">
+<div><h1 class="entity-title">SprintItemVersionEntity</h1>
+<div class="entity-meta">
+<span class="badge badge-subsystem">Subsystem: Sprints</span>
+<span class="badge badge-tenant">DbSet: SprintItemVersions</span>
+<span class="badge badge-tenant" title="Database Table Name">Table: SprintItemVersions</span>
+<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+<a class="badge badge-base" style="background:#004b50;" href="ISprintVersionEntity.html">Implements: ISprintVersionEntity</a>
+<a class="badge badge-base" style="background:#004b50;" href="IProjectScopedEntity.html">Implements: IProjectScopedEntity</a>
+<a class="badge badge-base" style="background:#004b50;" href="ISoftDeletableEntity.html">Implements: ISoftDeletableEntity</a>
+</div></div>
+<div style="display:flex; gap:8px;">
+<a href="../diagram.html" class="nav-tab active" style="display:inline-block; background:var(--primary); color:#fff; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;">🗺️ Full ER Diagram &rarr;</a>
+</div></div>
+<div class="card" style="padding: 20px 24px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+<div><div class="card-title" style="margin-bottom: 2px;">🗺️ Connected Database Relationships</div><div style="font-size: 12px; color: var(--text-secondary);">Direct relational model, extends & implements, and foreign keys &bull; Click any entity node to inspect its specification</div></div>
+<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+<button class="btn-action" onclick="zoomEntityIn()" title="Zoom In">➕</button>
+<button class="btn-action" onclick="zoomEntityOut()" title="Zoom Out">➖</button>
+<button class="btn-action" onclick="resetEntityZoom()" title="Reset Zoom">🔄</button>
+<a href="#sectionClassHierarchy" class="nav-tab active" style="display:inline-block; background:#edebe9; color:var(--text-primary); padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;">⬇️ View Class Hierarchy Below</a>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+.diag-fullview { position: relative; width: 100%; background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 24px 20px 48px 20px; box-sizing: border-box; overflow: auto; min-height: 520px; display: flex; justify-content: center; align-items: flex-start; }
+.diag-fullview pre.mermaid { width: 100%; text-align: center; }
+.diag-fullview svg { max-width: none !important; height: auto !important; min-width: 400px; overflow: visible; display: inline-block; transform-origin: top center; transition: transform 0.15s ease-out; }
+g.entityBox, g[id*="entity-"], .er.entityBox, g.classGroup { cursor: pointer !important; transition: all 0.2s; }
+g.entityBox:hover, g[id*="entity-"]:hover, g.classGroup:hover { filter: drop-shadow(0 0 6px var(--primary)); opacity: 0.95; }
+.er-dimmed { opacity: 0.15 !important; transition: opacity 0.2s ease-in-out; }
+.er-highlighted-box { filter: drop-shadow(0 0 10px rgba(0, 120, 212, 0.95)) !important; opacity: 1 !important; }
+.er-connected-box { filter: drop-shadow(0 0 8px rgba(16, 124, 16, 0.9)) !important; opacity: 1 !important; }
+.er-highlighted-line { stroke: #0078d4 !important; stroke-width: 3.5px !important; stroke-opacity: 1 !important; filter: drop-shadow(0 0 5px rgba(0, 120, 212, 0.8)) !important; opacity: 1 !important; }
+.er-highlighted-label { fill: #004578 !important; font-weight: 700 !important; font-size: 13px !important; opacity: 1 !important; }
+</style>
+<div class="diag-fullview" id="entityDiagViewport">
+<pre class="mermaid" id="erDiagramPre">
+erDiagram
+    IProjectScopedEntity {
+    }
+    ISoftDeletableEntity {
+    }
+    ISprintVersionEntity {
+    }
+    RevisionHeaderEntity {
+    }
+    SprintEntity {
+    }
+    SprintItemVersionEntity {
+    }
+    TaskEntity {
+    }
+    TenantAuditableEntity {
+    }
+    TenantAuditableEntity ||--|| SprintItemVersionEntity : "extends"
+    ISprintVersionEntity ||--o{ SprintItemVersionEntity : "implements"
+    IProjectScopedEntity ||--o{ SprintItemVersionEntity : "implements"
+    ISoftDeletableEntity ||--o{ SprintItemVersionEntity : "implements"
+    RevisionHeaderEntity ||--o{ SprintItemVersionEntity : "RevisionHeader"
+    SprintEntity ||--o{ SprintItemVersionEntity : "Items"
+    TaskEntity ||--o{ SprintItemVersionEntity : "Item"
+</pre></div>
+</div>
+<div class="card">
+<div class="card-title">Architectural Markers & Security Gates</div>
+<div class="entity-meta">
+<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
+<span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
+<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
+<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
+</div>
+<div class="desc-box" style="margin-top: 14px;">Versioned assignment of a task item to a sprint iteration, tracking movement and effort across sprint versions. Implements ISprintVersionEntity.</div>
+</div>
+<div class="card">
+<div class="card-title">Properties & Fields (26)</div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
+<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">ItemId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">SprintId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">EstimatedHours </td><td><span class="code-type">double</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">ActualHours </td><td><span class="code-type">double</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">Status </td><td><span class="code-type">TaskStatusEnum</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">EffectiveFromDate </td><td><span class="code-type">DateTime</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">EffectiveToDate </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">RevisionHeaderId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">RelId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">VerNum </td><td><span class="code-type">int</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">ParentRowId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">IsDeleted </td><td><span class="code-type">bool</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">DeletedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">DeletedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">Sprint <span class="fk-pill">NAV</span></td><td><a href="SprintEntity.html" class="code-type">SprintEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">Item <span class="fk-pill">NAV</span></td><td><a href="TaskEntity.html" class="code-type">TaskEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">RevisionHeader <span class="fk-pill">NAV</span></td><td><a href="RevisionHeaderEntity.html" class="code-type">RevisionHeaderEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
+<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantAuditableEntity.html" class="badge badge-base" style="font-size:10px;">from TenantAuditableEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">Version </td><td><span class="code-type">uint</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>PostgreSQL xmin system column mapped as a row-version concurrency token. Updated automatically by PostgreSQL on every physical row modification.</td></tr>
+<tr><td class="prop-name">Created </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.</td></tr>
+<tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who created the record.</td></tr>
+<tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
+<tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">Inbound References (Where this entity is referenced) (1)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="SprintEntity.html"><b>SprintEntity</b></a></td><td>Sprints</td><td><code>Items</code></td><td>Collection (1:N)</td></tr>
+</tbody></table>
+</div>
+<div class="card">
+<div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">No direct Razor component references detected. (Backend domain entity, background batch worker, or intermediate staging ledger).</div>
+</div>
+<div class="card" id="sectionClassHierarchy" style="padding: 20px 24px;">
+<div class="card-title">📐 Class &amp; Interface Hierarchy (Object-Oriented Architecture)</div>
+<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Inheritance tree, abstract base classes, and implemented interface contracts &bull; Click any node to inspect its specification</div>
+<div class="diag-fullview">
+<pre class="mermaid" id="classDiagramPre">
+classDiagram
+    class AuditableEntity {
+        <<abstract>>
+    }
+    class BaseEntity {
+        <<abstract>>
+    }
+    class IAuditableEntity {
+        <<interface>>
+    }
+    class IConcurrency {
+        <<interface>>
+    }
+    class IMarkerEntity {
+        <<interface>>
+    }
+    class IProjectScopedEntity {
+        <<interface>>
+    }
+    class ISoftDeletableEntity {
+        <<interface>>
+    }
+    class ISprintVersionEntity {
+        <<interface>>
+    }
+    class ITenantEntity {
+        <<interface>>
+    }
+    class IVersionedEntity {
+        <<interface>>
+    }
+    class SprintItemVersionEntity {
+    }
+    class TenantAuditableEntity {
+        <<abstract>>
+    }
+    AuditableEntity <|-- TenantAuditableEntity : extends
+    BaseEntity <|-- AuditableEntity : extends
+    IAuditableEntity <|.. BaseEntity : implements
+    IConcurrency <|.. BaseEntity : implements
+    IMarkerEntity <|-- IAuditableEntity : extends
+    IMarkerEntity <|-- ISoftDeletableEntity : extends
+    IMarkerEntity <|-- ITenantEntity : extends
+    IMarkerEntity <|-- IVersionedEntity : extends
+    IProjectScopedEntity <|.. SprintItemVersionEntity : implements
+    ISoftDeletableEntity <|.. SprintItemVersionEntity : implements
+    ISprintVersionEntity <|.. SprintItemVersionEntity : implements
+    ITenantEntity <|-- IProjectScopedEntity : extends
+    ITenantEntity <|.. TenantAuditableEntity : implements
+    IVersionedEntity <|-- ISprintVersionEntity : extends
+    TenantAuditableEntity <|-- SprintItemVersionEntity : extends
+</pre></div>
+<script>
+mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
+const activeEntityRels = [
+    { parent: 'TenantAuditableEntity', child: 'SprintItemVersionEntity', label: 'extends' },
+    { parent: 'ISprintVersionEntity', child: 'SprintItemVersionEntity', label: 'implements' },
+    { parent: 'IProjectScopedEntity', child: 'SprintItemVersionEntity', label: 'implements' },
+    { parent: 'ISoftDeletableEntity', child: 'SprintItemVersionEntity', label: 'implements' },
+    { parent: 'RevisionHeaderEntity', child: 'SprintItemVersionEntity', label: 'RevisionHeader' },
+    { parent: 'SprintEntity', child: 'SprintItemVersionEntity', label: 'Items' },
+    { parent: 'TaskEntity', child: 'SprintItemVersionEntity', label: 'Item' },
+];
+const entityLookup = {
+    'AuditRecords': 'AuditRecordEntity.html',
+    'AuditRecordEntity': 'AuditRecordEntity.html',
+    'ProgramCalendars': 'ProgramCalendarEntity.html',
+    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
+    'ProjectCalendars': 'ProjectCalendarEntity.html',
+    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'UserCalendars': 'UserCalendarEntity.html',
+    'UserCalendarEntity': 'UserCalendarEntity.html',
+    'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
+    'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
+    'EventPublishTrackers': 'EventPublishTrackerEntity.html',
+    'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
+    'ImpersonationGrants': 'ImpersonationGrantEntity.html',
+    'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
+    'Users': 'UserEntity.html',
+    'UserEntity': 'UserEntity.html',
+    'UserSessions': 'UserSessionEntity.html',
+    'UserSessionEntity': 'UserSessionEntity.html',
+    'ImportFiles': 'ImportFileEntity.html',
+    'ImportFileEntity': 'ImportFileEntity.html',
+    'StagedImports': 'StagedImportEntity.html',
+    'StagedImportEntity': 'StagedImportEntity.html',
+    'JobExecutions': 'JobExecutionEntity.html',
+    'JobExecutionEntity': 'JobExecutionEntity.html',
+    'KnowledgeArticles': 'KnowledgeArticleEntity.html',
+    'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
+    'KnowledgeArticleReviewers': 'KnowledgeArticleReviewerEntity.html',
+    'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
+    'Notifications': 'NotificationEntity.html',
+    'NotificationEntity': 'NotificationEntity.html',
+    'ProjectResources': 'ProjectResourceEntity.html',
+    'ProjectResourceEntity': 'ProjectResourceEntity.html',
+    'ResourceAllocations': 'ResourceAllocationEntity.html',
+    'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
+    'ResourceRates': 'ResourceRateEntity.html',
+    'ResourceRateEntity': 'ResourceRateEntity.html',
+    'SprintAuditLogs': 'SprintAuditLogEntity.html',
+    'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
+    'Sprints': 'SprintEntity.html',
+    'SprintEntity': 'SprintEntity.html',
+    'SprintItemVersions': 'SprintItemVersionEntity.html',
+    'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+    'Assumptions': 'AssumptionEntity.html',
+    'AssumptionEntity': 'AssumptionEntity.html',
+    'Issues': 'IssueEntity.html',
+    'IssueEntity': 'IssueEntity.html',
+    'Risks': 'RiskEntity.html',
+    'RiskEntity': 'RiskEntity.html',
+    'SubTasks': 'SubTaskEntity.html',
+    'SubTaskEntity': 'SubTaskEntity.html',
+    'Tasks': 'TaskEntity.html',
+    'TaskEntity': 'TaskEntity.html',
+    'TaskComments': 'UserTaskCommentEntity.html',
+    'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
+    'WorkDependencies': 'WorkDependencyEntity.html',
+    'WorkDependencyEntity': 'WorkDependencyEntity.html',
+    'Workflows': 'WorkflowEntity.html',
+    'WorkflowEntity': 'WorkflowEntity.html',
+    'programs': 'ProgramEntity.html',
+    'ProgramEntity': 'ProgramEntity.html',
+    'program_user_roles': 'ProgramUserRoleEntity.html',
+    'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
+    'Projects': 'ProjectEntity.html',
+    'ProjectEntity': 'ProjectEntity.html',
+    'ProjectUserRoles': 'ProjectUserRoleEntity.html',
+    'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
+    'Tenants': 'TenantEntity.html',
+    'TenantEntity': 'TenantEntity.html',
+    'tenant_users': 'TenantUserEntity.html',
+    'TenantUserEntity': 'TenantUserEntity.html',
+    'RevisionHeaders': 'RevisionHeaderEntity.html',
+    'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
+    'DataProtectionKeys': 'DataProtectionKey.html',
+    'DataProtectionKey': 'DataProtectionKey.html',
+    'AuditRecordEntity': 'AuditRecordEntity.html',
+    'AuditableEntity': 'AuditableEntity.html',
+    'BaseEntity': 'BaseEntity.html',
+    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
+    'IHmacSignableEntity': 'IHmacSignableEntity.html',
+    'IMarkerEntity': 'IMarkerEntity.html',
+    'IAuditableEntity': 'IAuditableEntity.html',
+    'IAuditExemptEntity': 'IAuditExemptEntity.html',
+    'IGlobalEntity': 'IGlobalEntity.html',
+    'ITenantEntity': 'ITenantEntity.html',
+    'IProjectScopedEntity': 'IProjectScopedEntity.html',
+    'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
+    'IHardDeletableEntity': 'IHardDeletableEntity.html',
+    'IImmutableEntity': 'IImmutableEntity.html',
+    'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
+    'IVersionedEntity': 'IVersionedEntity.html',
+    'ISprintVersionEntity': 'ISprintVersionEntity.html',
+    'IUnversionedEntity': 'IUnversionedEntity.html',
+    'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
+    'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
+    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
+    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'BaseCalendarEntity': 'BaseCalendarEntity.html',
+    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
+    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'UserCalendarEntity': 'UserCalendarEntity.html',
+    'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
+    'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
+    'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
+    'UserEntity': 'UserEntity.html',
+    'UserSessionEntity': 'UserSessionEntity.html',
+    'ImportFileEntity': 'ImportFileEntity.html',
+    'StagedImportEntity': 'StagedImportEntity.html',
+    'JobExecutionEntity': 'JobExecutionEntity.html',
+    'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
+    'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
+    'NotificationEntity': 'NotificationEntity.html',
+    'ProjectResourceEntity': 'ProjectResourceEntity.html',
+    'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
+    'ResourceRateEntity': 'ResourceRateEntity.html',
+    'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
+    'SprintEntity': 'SprintEntity.html',
+    'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+    'AssumptionEntity': 'AssumptionEntity.html',
+    'BaseTaskEntity': 'BaseTaskEntity.html',
+    'IssueEntity': 'IssueEntity.html',
+    'RiskEntity': 'RiskEntity.html',
+    'SubTaskEntity': 'SubTaskEntity.html',
+    'TaskEntity': 'TaskEntity.html',
+    'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
+    'WorkDependencyEntity': 'WorkDependencyEntity.html',
+    'WorkflowEntity': 'WorkflowEntity.html',
+    'ProgramEntity': 'ProgramEntity.html',
+    'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
+    'ProjectEntity': 'ProjectEntity.html',
+    'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
+    'TenantEntity': 'TenantEntity.html',
+    'TenantUserEntity': 'TenantUserEntity.html',
+    'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
+};
+
+let entityDiagScale = 1.0;
+function zoomEntityIn() {
+    const svg = document.querySelector('#erDiagramPre svg');
+    if (svg) {
+        entityDiagScale = Math.min(entityDiagScale * 1.2, 3.0);
+        svg.style.transform = `scale(${entityDiagScale})`;
+    }
+}
+function zoomEntityOut() {
+    const svg = document.querySelector('#erDiagramPre svg');
+    if (svg) {
+        entityDiagScale = Math.max(entityDiagScale / 1.2, 0.3);
+        svg.style.transform = `scale(${entityDiagScale})`;
+    }
+}
+function resetEntityZoom() {
+    const svg = document.querySelector('#erDiagramPre svg');
+    if (svg) {
+        entityDiagScale = 1.0;
+        svg.style.transform = 'none';
+    }
+}
+
+function bindDetailClicks() {
+    const svg = document.querySelector('#erDiagramPre svg');
+    if (!svg) {
+        setTimeout(bindDetailClicks, 300);
+        return;
+    }
+
+    const entityGs = {};
+    const allGs = [];
+    svg.querySelectorAll('g').forEach(g => {
+        const t = g.querySelector('text');
+        if (t) {
+            const raw = t.textContent.trim();
+            if (entityLookup[raw] && !entityGs[raw]) {
+                entityGs[raw] = g;
+                allGs.push(g);
+            }
+        }
+    });
+
+    const allPaths = Array.from(svg.querySelectorAll('path')).filter(p => {
+        const cls = (p.getAttribute('class') || '') + ' ' + (p.getAttribute('id') || '');
+        return cls.includes('relationship') || p.getAttribute('marker-start') || p.getAttribute('marker-end') || p.getAttribute('d');
+    });
+    const allLabels = Array.from(svg.querySelectorAll('text')).filter(t => {
+        const cls = t.getAttribute('class') || '';
+        return cls.includes('relationship') || cls.includes('label');
+    });
+
+    const entityRels = (typeof activeEntityRels !== 'undefined') ? activeEntityRels : [];
+    const relMap = [];
+    for (let i = 0; i < entityRels.length; i++) {
+        relMap.push({
+            parent: entityRels[i].parent,
+            child: entityRels[i].child,
+            pathEl: allPaths[i] || null,
+            labelEl: allLabels[i] || null
+        });
+    }
+
+    function highlightRelations(entName) {
+        const connPaths = [];
+        const connLabels = [];
+        const connPartners = new Set();
+
+        relMap.forEach(r => {
+            if (r.parent === entName || r.child === entName) {
+                if (r.pathEl) connPaths.push(r.pathEl);
+                if (r.labelEl) connLabels.push(r.labelEl);
+                if (r.parent === entName) connPartners.add(r.child);
+                if (r.child === entName) connPartners.add(r.parent);
+            }
+        });
+
+        allGs.forEach(g => g.classList.add('er-dimmed'));
+        allPaths.forEach(p => p.classList.add('er-dimmed'));
+        allLabels.forEach(l => l.classList.add('er-dimmed'));
+
+        if (entityGs[entName]) {
+            entityGs[entName].classList.remove('er-dimmed');
+            entityGs[entName].classList.add('er-highlighted-box');
+        }
+        connPartners.forEach(pName => {
+            if (entityGs[pName]) {
+                entityGs[pName].classList.remove('er-dimmed');
+                entityGs[pName].classList.add('er-connected-box');
+            }
+        });
+        connPaths.forEach(p => {
+            p.classList.remove('er-dimmed');
+            p.classList.add('er-highlighted-line');
+            p.parentNode.appendChild(p);
+        });
+        connLabels.forEach(l => {
+            l.classList.remove('er-dimmed');
+            l.classList.add('er-highlighted-label');
+            l.parentNode.appendChild(l);
+        });
+    }
+
+    function clearRelHighlights() {
+        allGs.forEach(g => g.classList.remove('er-dimmed', 'er-highlighted-box', 'er-connected-box'));
+        allPaths.forEach(p => p.classList.remove('er-dimmed', 'er-highlighted-line'));
+        allLabels.forEach(l => l.classList.remove('er-dimmed', 'er-highlighted-label'));
+    }
+
+    document.querySelectorAll('.mermaid svg text, .mermaid svg rect').forEach(el => {
+        let parentG = el.closest('g');
+        if (parentG) {
+            let text = parentG.querySelector('text');
+            if (text) {
+                const raw = text.textContent.trim();
+                if (entityLookup[raw]) {
+                    parentG.style.cursor = 'pointer';
+                    parentG.setAttribute('title', 'Click to inspect ' + raw);
+
+                    parentG.onmouseenter = () => highlightRelations(raw);
+                    parentG.onmouseleave = () => clearRelHighlights();
+
+                    parentG.onclick = (e) => {
+                        e.stopPropagation();
+                        window.location.href = entityLookup[raw];
+                    };
+                }
+            }
+        }
+    });
+}
+
+window.addEventListener('load', () => {
+    setTimeout(bindDetailClicks, 600);
+});
+</script>
+</div>
+<div class="card">
+<div class="card-title">⚙️ Service Dependencies (Phase 3)</div>
+<div class="desc-box" style="color: #605e5c; font-style: italic;">Domain services, repositories, and scheduled jobs referencing this entity will be automatically indexed here in Phase 3.</div>
+</div>
+</div></body></html>
+

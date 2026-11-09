@@ -1,3 +1,4 @@
+@using BlazorEnterprise.Web.Components.Common
 @namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
 @using BlazorEnterprise.Shared.UI.Wizards
 @using BlazorEnterprise.Core.Dtos
@@ -18,7 +19,7 @@
                         <CskTextInput Label="Member Name" @bind-Value="_newMemberName" Placeholder="e.g. Jane Doe" Class="full-width" />
                     </div>
                     <div class="flex-2 min-w-160">
-                        <CskTextInput Label="Email Address" @bind-Value="_newMemberEmail" Placeholder="jane.doe@company.local" Class="full-width" />
+                        <CskTenantUserPicker Label="Email Address" @bind-Value="_newMemberEmail" Placeholder="Select or type tenant user email..." Class="full-width" />
                     </div>
                     <div class="flex-1 min-w-140">
                         <CskDatePicker Label="Start Date" @bind-Value="_newMemberStartDate" Class="full-width" />

@@ -1,6 +1,7 @@
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Domain.Tenancy;
+using BlazorEnterprise.Core.Domain.Sprints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -78,20 +79,22 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 
         builder.Property(t => t.Labels)
             .HasMaxLength(500)
-            .IsRequired(false)
-            .HasDefaultValue(string.Empty);
+            .IsRequired(false);
+
+        builder.Property(t => t.EstimatedHours)
+            .HasPrecision(18, 2)
+            .IsRequired(false);
 
         builder.Property(t => t.ProgramId)
             .IsRequired(false);
 
         builder.Property(t => t.ProjectId)
-            .IsRequired();
-
-        builder.Property(t => t.UserId)
-            .HasMaxLength(256)
             .IsRequired(false);
 
         builder.Property(t => t.MilestoneId)
+            .IsRequired(false);
+
+        builder.Property(t => t.SprintId)
             .IsRequired(false);
 
         builder.Property(t => t.WorkflowId)
@@ -123,6 +126,11 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasForeignKey(t => t.ProgramId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(t => t.Sprint)
+            .WithMany()
+            .HasForeignKey(t => t.SprintId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasOne(t => t.Workflow)
             .WithMany(w => w.Steps)
             .HasForeignKey(t => t.WorkflowId)
@@ -145,6 +153,9 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 
         builder.HasIndex(t => new { t.TenantId, t.ProgramId })
             .HasDatabaseName("IX_Tasks_TenantId_ProgramId");
+
+        builder.HasIndex(t => new { t.TenantId, t.SprintId })
+            .HasDatabaseName("IX_Tasks_TenantId_SprintId");
 
         builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
             .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");

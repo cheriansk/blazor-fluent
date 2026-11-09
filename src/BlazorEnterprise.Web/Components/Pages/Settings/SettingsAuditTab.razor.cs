@@ -19,6 +19,7 @@ public partial class SettingsAuditTab : ComponentBase, IDisposable
 
     public record TenantFilterOption(string Id, string Name);
     public record UserFilterOption(string Id, string DisplayName);
+    public record RetentionOption(AuditRetentionPeriodEnum Value, string DisplayName);
 
     private List<TenantFilterOption> _availableTenants = new();
     private string? _selectedTenantId;
@@ -31,6 +32,24 @@ public partial class SettingsAuditTab : ComponentBase, IDisposable
     private bool _isLoading = true;
     private AuditRecordEntity? _selectedAuditRecord;
     private string _inGridSearchText = string.Empty;
+
+    private CskDialog? _retentionDialog;
+    private AuditRecordEntity? _retentionTargetRecord;
+    private AuditRetentionPeriodEnum _selectedRetentionOption = AuditRetentionPeriodEnum.NinetyDays;
+    private string? _retentionReason;
+    private string? _retentionErrorMessage;
+    private bool _isSavingRetention;
+
+    private readonly List<RetentionOption> _retentionOptions =
+    [
+        new(AuditRetentionPeriodEnum.NinetyDays, "90 Days (3 Months)"),
+        new(AuditRetentionPeriodEnum.OneHundredEightyDays, "180 Days (6 Months)"),
+        new(AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays, "365 Days (1 Year)"),
+        new(AuditRetentionPeriodEnum.FiveHundredFortyDays, "540 Days (18 Months)"),
+        new(AuditRetentionPeriodEnum.SevenHundredThirtyDays, "730 Days (2 Years)")
+    ];
+
+    private bool CanEditRetention => CurrentUser.IsRootAdmin || CurrentUser.IsInRole("Admin") || CurrentUser.IsInRole("TenantAdmin");
 
     private readonly List<string> _eventTypes = ["All", "EntityChange", "Security", "TenantSwitch", "UserActivity"];
     private string _selectedEventType = "All";
@@ -245,6 +264,59 @@ public partial class SettingsAuditTab : ComponentBase, IDisposable
     private void HandleTimeZoneChanged()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenRetentionEditModal(AuditRecordEntity record)
+    {
+        _retentionTargetRecord = record;
+        _selectedRetentionOption = record.RetentionDays;
+        _retentionReason = null;
+        _retentionErrorMessage = null;
+        _isSavingRetention = false;
+
+        if (_retentionDialog is not null)
+        {
+            await _retentionDialog.ShowAsync();
+        }
+    }
+
+    private async Task CloseRetentionEditModalAsync()
+    {
+        if (_retentionDialog is not null)
+        {
+            await _retentionDialog.HideAsync();
+        }
+        _retentionTargetRecord = null;
+        _retentionErrorMessage = null;
+    }
+
+    private async Task SaveRetentionAsync()
+    {
+        if (_retentionTargetRecord is null) return;
+
+        try
+        {
+            _isSavingRetention = true;
+            _retentionErrorMessage = null;
+
+            await AuditService.UpdateAuditRecordRetentionAsync(
+                _retentionTargetRecord.Id,
+                _selectedRetentionOption,
+                _retentionReason);
+
+            // Update in-memory record so UI reflects immediately
+            _retentionTargetRecord.RetentionDays = _selectedRetentionOption;
+
+            await CloseRetentionEditModalAsync();
+        }
+        catch (Exception ex)
+        {
+            _retentionErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSavingRetention = false;
+        }
     }
 
     public void Dispose()

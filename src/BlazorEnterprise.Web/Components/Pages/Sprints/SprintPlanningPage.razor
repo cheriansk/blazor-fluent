@@ -1,0 +1,89 @@
+@page "/sprints"
+@rendermode InteractiveServer
+@namespace BlazorEnterprise.Web.Components.Pages.Sprints
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Dtos
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Web.Components.Shared
+@inject ISprintPlanningService SprintPlanningService
+@inject IProjectContext ProjectContext
+
+
+<PageTitle>Sprint Planning - BlazorEnterprise</PageTitle>
+
+<div class="sprint-planning-page">
+    @if (!ProjectContext.HasProject)
+    {
+        <div class="no-project-selected">
+            <CskIcon Icon="@CskIcons.Info" Class="info-icon" />
+            <div>
+                <h3>No Project Selected</h3>
+                <p>Please select an active project to view and plan sprints.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="page-header-row">
+            <div>
+                <h2 class="page-title">Sprint Planning</h2>
+                <span class="page-subtitle">Manage sprint iterations, metrics, and capacity for <strong>@ProjectContext.ProjectName</strong></span>
+            </div>
+            <div class="header-actions">
+                <CskButton Variant="CskButtonVariant.Outlined"
+                           IconStart="@CskIcons.ArrowSync"
+                           OnClick="LoadDataAsync">
+                    Refresh
+                </CskButton>
+            </div>
+        </div>
+
+        @if (_isLoading)
+        {
+            <div class="loading-state">
+                <CskSpinner Size="CskSpinnerSize.Medium" />
+                <span>Loading sprint data...</span>
+            </div>
+        }
+        else
+        {
+            <TabContainerComp Tabs="_tabs" @bind-ActiveTabId="_activeTabId" />
+        }
+    }
+</div>
+
+@* Move to Sprint Modal *@
+@if (_showMoveModal)
+{
+    <div class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Move Work Items to Sprint</h3>
+                <button type="button" class="btn-close" @onclick="CloseMoveModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Reassign <strong>@_selectedItemIds.Count</strong> selected item(s) to a target sprint or backlog:</p>
+                <div class="form-group">
+                    <label>Target Sprint / Destination</label>
+                    <select class="csk-select" @bind="_targetMoveSprintId">
+                        <option value="">Backlog (No Sprint)</option>
+                        @foreach (var sprint in _sprints.Where(s => s.Status != SprintStatusEnum.Completed))
+                        {
+                            <option value="@sprint.Id">Sprint @sprint.SprintNumber: @sprint.SprintName (@sprint.Status)</option>
+                        }
+                    </select>
+                </div>
+                @if (!string.IsNullOrEmpty(_moveError))
+                {
+                    <div class="form-error">@_moveError</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <CskButton Variant="CskButtonVariant.Text" OnClick="CloseMoveModal">Cancel</CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" OnClick="ExecuteMoveAsync">Move Items</CskButton>
+            </div>
+        </div>
+    </div>
+}

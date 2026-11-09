@@ -1,3 +1,4 @@
+@using BlazorEnterprise.Web.Components.Common
 @using System.Text.RegularExpressions
 @namespace BlazorEnterprise.Web.Components.Pages.Settings.ProjectWizard.Steps
 @using BlazorEnterprise.Shared.UI.Wizards
@@ -73,7 +74,7 @@
                                     <CskSelect TOption="string" TValue="string" Label="Status *" Items="@_statusOptions" OptionText="@(s => s)" OptionValue="@(s => s)" @bind-Value="_newStatus" Class="flex-1" />
                                 </CskStack>
                                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="10" Class="full-width">
-                                    <CskTextInput Label="Owner(s) Emails * (semicolon-separated)" @bind-Value="_newOwnerEmails" Placeholder="e.g. lead@org.com; dev@org.com" Class="flex-2" />
+                                    <CskTenantUserPicker Label="Owner(s) Emails * (semicolon-separated)" @bind-Value="_newOwnerEmails" MultiSelect="true" Placeholder="e.g. lead@org.com; dev@org.com" Class="flex-2" />
                                     <CskTextInput Label="Comments / Scope" @bind-Value="_newComments" Placeholder="Optional criteria..." Class="flex-2" />
                                 </CskStack>
                                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
@@ -134,7 +135,7 @@
                             <CskTemplateColumn Title="Owner(s) Emails">
                                 @if (_editingMilestoneId == context.Id)
                                 {
-                                    <CskTextInput @bind-Value="_editOwnerEmails" Class="w-full" />
+                                    <CskTenantUserPicker @bind-Value="_editOwnerEmails" MultiSelect="true" Class="w-full" />
                                 }
                                 else
                                 {

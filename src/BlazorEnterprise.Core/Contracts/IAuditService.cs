@@ -55,5 +55,15 @@ public interface IAuditService
     /// Restricted strictly to Root Super-Administrators.
     /// </summary>
     Task<int> PurgeAuditRecordsBeforeAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the retention period for a specific audit record.
+    /// Restricted to Root Super-Administrators or Tenant Administrators.
+    /// </summary>
+    Task UpdateAuditRecordRetentionAsync(
+        Guid auditRecordId,
+        AuditRetentionPeriodEnum retention,
+        string? reason = null,
+        CancellationToken cancellationToken = default);
 }
 

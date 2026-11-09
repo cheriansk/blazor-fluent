@@ -1,0 +1,170 @@
+.csk-tenant-user-picker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.csk-tenant-user-picker .csk-field-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--neutral-foreground-1, #323130);
+}
+
+.csk-tenant-user-picker .csk-field-required {
+    color: #a80000;
+    margin-left: 2px;
+}
+
+.csk-tenant-user-picker .user-picker-container {
+    position: relative;
+    width: 100%;
+}
+
+.csk-tenant-user-picker .input-and-trigger {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--neutral-stroke-1, #8a8886);
+    border-radius: 4px;
+    background-color: var(--neutral-background-1, #ffffff);
+    transition: border-color 0.15s ease-in-out;
+}
+
+.csk-tenant-user-picker .input-and-trigger:focus-within {
+    border-color: var(--accent-fill-rest, #0078d4);
+    box-shadow: 0 0 0 1px var(--accent-fill-rest, #0078d4);
+}
+
+.csk-tenant-user-picker .user-picker-container.picker-error .input-and-trigger {
+    border-color: #a80000;
+}
+
+.csk-tenant-user-picker .user-picker-container.picker-disabled .input-and-trigger {
+    background-color: var(--neutral-background-disabled, #f3f2f1);
+    border-color: var(--neutral-stroke-disabled, #c8c6c4);
+    opacity: 0.7;
+}
+
+.csk-tenant-user-picker .csk-picker-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    color: inherit;
+    width: 100%;
+}
+
+.csk-tenant-user-picker .csk-picker-input.input-readonly {
+    background-color: var(--neutral-background-3, #f3f2f1);
+}
+
+.csk-tenant-user-picker .btn-picker-toggle {
+    background: none;
+    border: none;
+    padding: 6px 8px;
+    cursor: pointer;
+    color: var(--neutral-foreground-3, #605e5c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.csk-tenant-user-picker .btn-picker-toggle:hover {
+    color: var(--neutral-foreground-1, #323130);
+}
+
+.csk-tenant-user-picker .user-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    background-color: var(--neutral-background-1, #ffffff);
+    border: 1px solid var(--neutral-stroke-1, #8a8886);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+}
+
+.csk-tenant-user-picker .picker-item-loading,
+.csk-tenant-user-picker .picker-item-empty {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    color: var(--neutral-foreground-3, #605e5c);
+    text-align: center;
+}
+
+.csk-tenant-user-picker .picker-user-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.csk-tenant-user-picker .picker-user-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.csk-tenant-user-picker .picker-user-row:hover {
+    background-color: var(--neutral-background-hover, #edebe9);
+}
+
+.csk-tenant-user-picker .picker-user-row.selected {
+    background-color: var(--accent-subtle, #deecf9);
+}
+
+.csk-tenant-user-picker .user-row-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: var(--accent-fill-rest, #0078d4);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.csk-tenant-user-picker .user-row-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.csk-tenant-user-picker .user-row-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--neutral-foreground-1, #323130);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.csk-tenant-user-picker .user-row-email {
+    font-size: 0.75rem;
+    color: var(--neutral-foreground-3, #605e5c);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.csk-tenant-user-picker .csk-field-error-text {
+    font-size: 0.75rem;
+    color: #a80000;
+    margin-top: 4px;
+}
+
+.csk-tenant-user-picker .csk-field-helper-text {
+    font-size: 0.75rem;
+    color: var(--neutral-foreground-3, #605e5c);
+    margin-top: 4px;
+}

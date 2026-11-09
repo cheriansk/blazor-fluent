@@ -1,0 +1,132 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Settings
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="settings-sprint-timeline-tab">
+    <div class="tab-header">
+        <div>
+            <h3>Project Sprint Timeline</h3>
+            <p class="tab-desc">Configure project iteration cadences, sprint dates, and milestone planning boundaries.</p>
+        </div>
+
+        <button type="button" class="csk-btn csk-btn-primary" @onclick="OpenCreateModal">
+            <CskIcon Icon="@CskIcons.Add" />
+            <span>Create Sprint</span>
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="csk-alert-error">
+            <CskIcon Icon="@CskIcons.Warning" />
+            <span>@_errorMessage</span>
+        </div>
+    }
+
+    <!-- Sprints Table -->
+    <div class="timeline-table-wrapper">
+        <div class="filter-bar">
+            <select class="csk-select" @bind="_filterStatus">
+                <option value="">All Statuses</option>
+                @foreach (var st in Enum.GetValues<SprintStatusEnum>())
+                {
+                    <option value="@st">@st</option>
+                }
+            </select>
+            <span class="total-badge">Total Sprints: @_sprints.Count</span>
+        </div>
+
+        <table class="csk-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Sprint Name</th>
+                    <th>Timeline</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Planned Hours</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!FilteredSprints.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="empty-cell">No sprints found for this project. Click "Create Sprint" to begin iteration planning.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var s in FilteredSprints)
+                    {
+                        var isCompleted = s.Status == SprintStatusEnum.Completed;
+                        <tr>
+                            <td><strong>@s.SprintNumber</strong></td>
+                            <td>@s.SprintName</td>
+                            <td>@s.StartDate.ToString("MMM dd, yyyy") - @s.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <span class="status-badge status-@s.Status.ToString().ToLower()">@s.Status</span>
+                            </td>
+                            <td>@s.ItemCount items</td>
+                            <td>@s.TotalPlannedHours.ToString("N1") hrs</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-icon" title="Edit Sprint" disabled="@isCompleted" @onclick="() => OpenEditModal(s)">
+                                        <CskIcon Icon="@CskIcons.Edit" />
+                                    </button>
+                                    <button type="button" class="btn-icon-danger" title="Delete Sprint" disabled="@(s.ItemCount > 0)" @onclick="() => DeleteSprint(s.Id)">
+                                        <CskIcon Icon="@CskIcons.Delete" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (_showModal)
+{
+    <div class="csk-modal-backdrop" @onclick="() => _showModal = false">
+        <div class="csk-modal-card" @onclick:stopPropagation="true">
+            <div class="csk-modal-header">
+                <h4>@(_isEditing ? "Edit Sprint" : "Create New Sprint")</h4>
+                <button type="button" class="btn-close" @onclick="() => _showModal = false">✕</button>
+            </div>
+            <div class="csk-modal-body">
+                <div class="form-group">
+                    <label>Sprint Number:</label>
+                    <input type="number" min="1" class="csk-input" @bind="_modalSprintNumber" disabled="@_isEditing" />
+                </div>
+                <div class="form-group">
+                    <label>Sprint Name:</label>
+                    <input type="text" class="csk-input" @bind="_modalSprintName" placeholder="e.g. Sprint 1 - Foundation" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date:</label>
+                        <input type="date" class="csk-input" value="@_modalStartDate.ToString("yyyy-MM-dd")"
+                               @onchange="HandleStartDateChanged" />
+                    </div>
+                    <div class="form-group">
+                        <label>End Date:</label>
+                        <input type="date" class="csk-input" value="@_modalEndDate.ToString("yyyy-MM-dd")"
+                               @onchange="HandleEndDateChanged" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comments / Goals:</label>
+                    <textarea class="csk-textarea" rows="3" @bind="_modalComments" placeholder="Sprint scope and deliverables summary..."></textarea>
+                </div>
+            </div>
+            <div class="csk-modal-footer">
+                <button type="button" class="csk-btn csk-btn-secondary" @onclick="() => _showModal = false">Cancel</button>
+                <button type="button" class="csk-btn csk-btn-primary" @onclick="SaveSprint">
+                    @(_isEditing ? "Save Changes" : "Create Sprint")
+                </button>
+            </div>
+        </div>
+    </div>
+}

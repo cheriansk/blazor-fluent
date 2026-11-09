@@ -184,6 +184,10 @@ public static class PersistenceExtensions
         services.TryAddScoped<ICalendarService, CalendarService>();
         services.AddScoped<BlazorEnterprise.Core.Models.IRevisionRowProvider, BlazorEnterprise.Persistence.Services.RevisionProviders.ProgramCalendarRevisionRowProvider>();
         services.AddScoped<BlazorEnterprise.Core.Models.IRevisionRowProvider, BlazorEnterprise.Persistence.Services.RevisionProviders.ProjectCalendarRevisionRowProvider>();
+        services.AddScoped<BlazorEnterprise.Core.Models.IRevisionRowProvider, BlazorEnterprise.Persistence.Services.RevisionProviders.ResourceAllocationRevisionRowProvider>();
+        services.AddScoped<BlazorEnterprise.Core.Contracts.IResourceManagementService, BlazorEnterprise.Persistence.Services.ResourceManagementService>();
+        services.AddScoped<BlazorEnterprise.Core.Models.IRevisionRowProvider, BlazorEnterprise.Persistence.Services.RevisionProviders.SprintItemRevisionRowProvider>();
+        services.AddScoped<BlazorEnterprise.Core.Contracts.ISprintPlanningService, BlazorEnterprise.Persistence.Services.SprintPlanningService>();
         services.TryAddScoped<IRevisionService, RevisionService>();
 
         // 25. ServiceNow-Style Sequential Workflow Engine

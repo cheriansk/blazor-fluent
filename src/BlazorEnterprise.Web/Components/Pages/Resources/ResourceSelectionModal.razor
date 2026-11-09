@@ -1,0 +1,64 @@
+@namespace BlazorEnterprise.Web.Components.Pages.Resources
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+
+@if (IsOpen)
+{
+    <div class="csk-modal-backdrop" @onclick="Cancel">
+        <div class="csk-modal-card" @onclick:stopPropagation="true">
+            <div class="csk-modal-header">
+                <div class="csk-modal-title">
+                    <CskIcon Icon="@CskIcons.PersonAdd" Class="title-icon" />
+                    <span>Add Resources to Project</span>
+                </div>
+                <button type="button" class="btn-close" @onclick="Cancel">✕</button>
+            </div>
+
+            <div class="csk-modal-body">
+                <div class="filter-bar">
+                    <input type="text" class="csk-input" placeholder="Search by name or email..." @bind="_searchTerm" @bind:event="oninput" />
+                    <div class="role-selector">
+                        <label>Initial Role:</label>
+                        <select class="csk-select" @bind="_defaultRole">
+                            @foreach (var role in Enum.GetValues<ProjectResourceRoleEnum>())
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="user-list">
+                    @if (!FilteredUsers.Any())
+                    {
+                        <div class="empty-state">No matching users available to add.</div>
+                    }
+                    else
+                    {
+                        @foreach (var user in FilteredUsers)
+                        {
+                            var isSelected = _selectedUserIds.Contains(user.Id);
+                            <div class="user-row @(isSelected ? "selected" : "")" @onclick="() => ToggleUserSelection(user.Id)">
+                                <input type="checkbox" checked="@isSelected" @onclick:stopPropagation="true" @onchange="() => ToggleUserSelection(user.Id)" />
+                                <div class="user-avatar">
+                                    @(user.FullName?.Length > 0 ? user.FullName[..1].ToUpper() : "U")
+                                </div>
+                                <div class="user-details">
+                                    <span class="user-name">@user.FullName</span>
+                                    <span class="user-email">@user.Email</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="csk-modal-footer">
+                <button type="button" class="csk-btn csk-btn-secondary" @onclick="Cancel">Cancel</button>
+                <button type="button" class="csk-btn csk-btn-primary" disabled="@(!_selectedUserIds.Any())" @onclick="ConfirmSelection">
+                    Add Selected (@_selectedUserIds.Count)
+                </button>
+            </div>
+        </div>
+    </div>
+}

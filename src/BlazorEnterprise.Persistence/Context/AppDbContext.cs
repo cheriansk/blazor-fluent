@@ -1,4 +1,6 @@
 using BlazorEnterprise.Core.Domain.Versioning;
+using BlazorEnterprise.Core.Domain.Resources;
+using BlazorEnterprise.Core.Domain.Sprints;
 using System.Reflection;
 
 using BlazorEnterprise.Core.Contracts;
@@ -122,7 +124,13 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ProjectEntity> Projects => Set<ProjectEntity>();
 
     public DbSet<ProjectUserRoleEntity> ProjectUserRoles => Set<ProjectUserRoleEntity>();
+    public DbSet<ProjectResourceEntity> ProjectResources => Set<ProjectResourceEntity>();
+    public DbSet<ResourceAllocationEntity> ResourceAllocations => Set<ResourceAllocationEntity>();
+    public DbSet<ResourceRateEntity> ResourceRates => Set<ResourceRateEntity>();
 
+    public DbSet<SprintEntity> Sprints => Set<SprintEntity>();
+    public DbSet<SprintAuditLogEntity> SprintAuditLogs => Set<SprintAuditLogEntity>();
+    public DbSet<SprintItemVersionEntity> SprintItemVersions => Set<SprintItemVersionEntity>();
     public DbSet<UserEntity> Users => Set<UserEntity>();
 
     public DbSet<AuditRecordEntity> AuditRecords => Set<AuditRecordEntity>();

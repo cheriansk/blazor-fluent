@@ -1,0 +1,93 @@
+@namespace BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Domain.Identity
+@using BlazorEnterprise.Shared.UI.Components
+@inject ITenantService TenantService
+@inject ITenantContext TenantContext
+
+<div class="csk-tenant-user-picker @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label for="@_inputId" class="csk-field-label">
+            @Label
+            @if (Required)
+            {
+                <span class="csk-field-required">*</span>
+            }
+        </label>
+    }
+
+    <div class="user-picker-container @(HasError ? "picker-error" : "") @(Disabled ? "picker-disabled" : "")">
+        <div class="input-and-trigger">
+            <input id="@_inputId"
+                   type="text"
+                   class="csk-picker-input @(ReadOnly ? "input-readonly" : "")"
+                   value="@DisplayValue"
+                   placeholder="@Placeholder"
+                   disabled="@Disabled"
+                   readonly="@ReadOnly"
+                   @oninput="OnInputChanged"
+                   @onfocus="OnInputFocused"
+                   @onblur="OnInputBlur" />
+
+            @if (!Disabled && !ReadOnly && _isOpen)
+            {
+                <button type="button" class="btn-picker-toggle" @onclick="ToggleDropdown" tabindex="-1">
+                    <CskIcon Icon="@CskIcons.ChevronUp" />
+                </button>
+            }
+            else if (!Disabled && !ReadOnly)
+            {
+                <button type="button" class="btn-picker-toggle" @onclick="ToggleDropdown" tabindex="-1">
+                    <CskIcon Icon="@CskIcons.ChevronDown" />
+                </button>
+            }
+        </div>
+
+        @if (_isOpen && !Disabled && !ReadOnly)
+        {
+            <div class="user-picker-dropdown" @onmousedown:preventDefault="true">
+                @if (_isLoading)
+                {
+                    <div class="picker-item-loading">Loading tenant users...</div>
+                }
+                else if (!FilteredUsers.Any())
+                {
+                    <div class="picker-item-empty">No active tenant users match "@_searchTerm"</div>
+                }
+                else
+                {
+                    <div class="picker-user-list">
+                        @foreach (var user in FilteredUsers)
+                        {
+                            var isSelected = IsUserSelected(user.Email);
+                            <div class="picker-user-row @(isSelected ? "selected" : "")"
+                                 @onclick="() => SelectUser(user)">
+                                @if (MultiSelect)
+                                {
+                                    <input type="checkbox" checked="@isSelected" @onclick:stopPropagation="true" @onchange="() => SelectUser(user)" />
+                                }
+                                <div class="user-row-avatar">
+                                    @(user.FullName?.Length > 0 ? user.FullName[..1].ToUpper() : "U")
+                                </div>
+                                <div class="user-row-info">
+                                    <span class="user-row-name">@user.FullName</span>
+                                    <span class="user-row-email">@user.Email</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (HasError)
+    {
+        <div class="csk-field-error-text">@EffectiveErrorText</div>
+    }
+    else if (!string.IsNullOrEmpty(HelperText))
+    {
+        <div class="csk-field-helper-text">@HelperText</div>
+    }
+</div>

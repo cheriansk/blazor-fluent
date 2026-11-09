@@ -64,6 +64,11 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<int?>("Operation")
                         .HasColumnType("integer");
 
+                    b.Property<int>("RetentionDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(90);
+
                     b.Property<int>("Severity")
                         .HasColumnType("integer");
 
@@ -110,6 +115,9 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_AuditRecords_UserId");
+
+                    b.HasIndex("RetentionDays", "Created")
+                        .HasDatabaseName("IX_AuditRecords_RetentionDays_Created");
 
                     b.HasIndex("TenantId", "Created")
                         .HasDatabaseName("IX_AuditRecords_TenantId_Created");
@@ -1620,6 +1628,485 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.ToTable("Notifications", "app");
                 });
 
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Resources.ProjectResourceEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<Guid>("UserEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserEntityId");
+
+                    b.HasIndex("ProjectId", "UserEntityId")
+                        .HasDatabaseName("IX_ProjectResources_Project_User");
+
+                    b.ToTable("ProjectResources", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Resources.ResourceAllocationEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AllocationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("AllocationPercentage")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ParentRowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RevisionHeaderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<int>("VerNum")
+                        .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("ProjectResourceId", "RevisionHeaderId")
+                        .HasDatabaseName("IX_ResourceAllocations_Resource_Plan");
+
+                    b.HasIndex("RevisionHeaderId", "AllocationDate")
+                        .HasDatabaseName("IX_ResourceAllocations_Plan_Date");
+
+                    b.ToTable("ResourceAllocations", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Resources.ResourceRateEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EffectiveFromDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveToDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ParentRowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RevisionHeaderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<int>("VerNum")
+                        .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectResourceId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("RevisionHeaderId", "ProjectResourceId")
+                        .HasDatabaseName("IX_ResourceRates_Plan_Resource");
+
+                    b.ToTable("ResourceRates", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintAuditLogEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangeType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ChangedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("ChangedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("NewValue")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OldValue")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("SprintId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SprintId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("SprintAuditLogs", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SprintName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("SprintNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("ProjectId", "SprintNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Sprints_Project_Number");
+
+                    b.HasIndex("ProjectId", "Status")
+                        .HasDatabaseName("IX_Sprints_Project_Status");
+
+                    b.ToTable("Sprints", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintItemVersionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("ActualHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EffectiveFromDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveToDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("EstimatedHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ParentRowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RevisionHeaderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SprintId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<int>("VerNum")
+                        .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RevisionHeaderId");
+
+                    b.HasIndex("SprintId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("ItemId", "SprintId")
+                        .HasDatabaseName("IX_SprintItemVersions_Item_Sprint");
+
+                    b.HasIndex("ProjectId", "SprintId")
+                        .HasDatabaseName("IX_SprintItemVersions_Project_Sprint");
+
+                    b.ToTable("SprintItemVersions", "tasks");
+                });
+
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.AssumptionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2326,6 +2813,10 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("EstimatedHours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<byte[]>("EncryptedPayloadBytes")
                         .HasColumnType("bytea");
@@ -3718,6 +4209,111 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Resources.ProjectResourceEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BlazorEnterprise.Core.Domain.Identity.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserEntityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Resources.ResourceAllocationEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Resources.ProjectResourceEntity", "ProjectResource")
+                        .WithMany()
+                        .HasForeignKey("ProjectResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
+                        .WithMany()
+                        .HasForeignKey("RevisionHeaderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProjectResource");
+
+                    b.Navigation("RevisionHeader");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Resources.ResourceRateEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Resources.ProjectResourceEntity", "ProjectResource")
+                        .WithMany()
+                        .HasForeignKey("ProjectResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
+                        .WithMany()
+                        .HasForeignKey("RevisionHeaderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProjectResource");
+
+                    b.Navigation("RevisionHeader");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintAuditLogEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Sprints.SprintEntity", "Sprint")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sprint");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintItemVersionEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Tasks.TaskEntity", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
+                        .WithMany()
+                        .HasForeignKey("RevisionHeaderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BlazorEnterprise.Core.Domain.Sprints.SprintEntity", "Sprint")
+                        .WithMany("Items")
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Item");
+
+                    b.Navigation("RevisionHeader");
+
+                    b.Navigation("Sprint");
+                });
+
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.SubTaskEntity", b =>
                 {
                     b.HasOne("BlazorEnterprise.Core.Domain.Tasks.SubTaskEntity", "BlockedBySubTask")
@@ -3889,6 +4485,13 @@ namespace BlazorEnterprise.Persistence.Migrations
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Knowledge.KnowledgeArticleEntity", b =>
                 {
                     b.Navigation("Reviewers");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Sprints.SprintEntity", b =>
+                {
+                    b.Navigation("AuditLogs");
+
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.TaskEntity", b =>

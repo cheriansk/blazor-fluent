@@ -78,10 +78,12 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     };
     private DateTime? _newTaskDueDate;
     private string _newTaskMilestoneIdString = string.Empty;
+    private string? _newTaskEstimatedHoursString;
 
     private TaskEntity? _selectedTask;
     private DateTime? _selectedTaskDueDate;
     private string _selectedTaskMilestoneIdString = string.Empty;
+    private string? _selectedTaskEstimatedHoursString;
     private string _selectedModalTab = "details";
     private List<UserTaskCommentEntity> _selectedTaskComments = [];
     private List<TaskDependencyItemDto> _selectedTaskDependencies = [];
@@ -310,6 +312,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
         _newTaskMilestoneIdString = _selectedMilestoneFilter != "all" && _selectedMilestoneFilter != "adhoc"
             ? _selectedMilestoneFilter
             : string.Empty;
+        _newTaskEstimatedHoursString = null;
 
         _showCreateModal = true;
     }
@@ -365,6 +368,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
             _newTask.ProjectId = _currentProject!.Id;
             _newTask.DueDate = _newTaskDueDate.Value;
             _newTask.MilestoneId = Guid.TryParse(_newTaskMilestoneIdString, out var mid) ? mid : null;
+            _newTask.EstimatedHours = decimal.TryParse(_newTaskEstimatedHoursString, out var eh) ? eh : null;
 
             var result = await TaskService.CreateTaskAsync(_newTask);
             if (result.IsSuccess)
@@ -391,6 +395,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
         {
             _selectedTaskDueDate = _selectedTask.DueDate;
             _selectedTaskMilestoneIdString = _selectedTask.MilestoneId?.ToString() ?? string.Empty;
+            _selectedTaskEstimatedHoursString = _selectedTask.EstimatedHours?.ToString();
             _selectedTaskComments = (await TaskService.GetCommentsAsync(_currentProject.Id, _selectedTask.Id)).ToList();
             _selectedTaskDependencies = (await TaskService.GetTaskDependenciesAsync(_currentProject.Id, _selectedTask.Id)).ToList();
             _selectedTaskSubTasks = (await TaskService.GetSubTasksByTaskIdAsync(_selectedTask.Id)).ToList();
@@ -473,6 +478,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
         {
             _selectedTask.DueDate = _selectedTaskDueDate.Value;
             _selectedTask.MilestoneId = Guid.TryParse(_selectedTaskMilestoneIdString, out var mid) ? mid : null;
+            _selectedTask.EstimatedHours = decimal.TryParse(_selectedTaskEstimatedHoursString, out var seh) ? seh : null;
 
             var result = await TaskService.UpdateTaskAsync(_selectedTask);
             if (result.IsSuccess)

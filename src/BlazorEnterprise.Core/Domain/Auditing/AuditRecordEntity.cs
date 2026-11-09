@@ -49,4 +49,11 @@ public class AuditRecordEntity : TenantAuditableEntity, IAuditExemptEntity, IImm
 
     /// <summary>Correlation or distributed trace ID.</summary>
     public string? TraceId { get; set; }
+
+    /// <summary>
+    /// Configured retention window for this specific audit record.
+    /// Defaults to 365 days for Security events, and 90 days for all others.
+    /// Can be adjusted by authorized administrators between 90 and 730 days.
+    /// </summary>
+    public AuditRetentionPeriodEnum RetentionDays { get; set; } = AuditRetentionPeriodEnum.NinetyDays;
 }
