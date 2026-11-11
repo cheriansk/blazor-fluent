@@ -879,7 +879,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         if (string.IsNullOrWhiteSpace(_newTenantTaskTitle) || _managingTasksTenant == null) return;
         try
         {
-            var task = new TaskEntity
+            var task = new MiscTaskEntity
             {
                 TenantId = _managingTasksTenant.Id,
                 Level = TaskLevelEnum.Tenant,

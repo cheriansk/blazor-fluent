@@ -15,8 +15,7 @@ public class StagedImportEntityConfiguration : IEntityTypeConfiguration<StagedIm
         builder.Property(e => e.TenantId)
             .IsRequired();
 
-        builder.Property(e => e.ProjectId)
-            .IsRequired();
+        // ProjectId is nullable on ProjectScopedEntity; validated by Level
 
         builder.Property(e => e.ImportFileId)
             .IsRequired();

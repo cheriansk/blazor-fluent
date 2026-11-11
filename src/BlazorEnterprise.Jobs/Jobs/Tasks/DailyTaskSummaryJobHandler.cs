@@ -52,16 +52,17 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 
         var dispatchedCount = 0;
 
-        // Batch retrieve all actionable tasks across target projects in a single query
+        // Batch retrieve all actionable tasks across target projects directly in a single indexed query
         var projectIds = projects.Select(p => p.Id).ToList();
         var allTasks = await _dbContext.Tasks
-            .Where(t => projectIds.Contains(t.ProjectId) &&
+            .Where(t => t.ProjectId.HasValue &&
+                        projectIds.Contains(t.ProjectId.Value) &&
                         t.Status != TaskStatusEnum.Closed &&
                         t.Status != TaskStatusEnum.Cancelled)
             .OrderBy(t => t.DueDate)
             .ToListAsync(cancellationToken);
 
-        var tasksByProject = allTasks.ToLookup(t => t.ProjectId);
+        var tasksByProject = allTasks.ToLookup(t => t.ProjectId ?? Guid.Empty);
 
         foreach (var project in projects)
         {

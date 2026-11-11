@@ -15,8 +15,7 @@ public class ImportFileEntityConfiguration : IEntityTypeConfiguration<ImportFile
         builder.Property(e => e.TenantId)
             .IsRequired();
 
-        builder.Property(e => e.ProjectId)
-            .IsRequired();
+        // ProjectId is nullable on ProjectScopedEntity; validated by Level
 
         builder.Property(e => e.ImportId)
             .IsRequired();

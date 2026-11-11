@@ -7,9 +7,8 @@
 <span class="badge badge-subsystem">Subsystem: Knowledge</span>
 <span class="badge badge-tenant">DbSet: KnowledgeArticles</span>
 <span class="badge badge-tenant" title="Database Table Name">Table: KnowledgeArticles</span>
-<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+<a class="badge badge-base" href="ProjectScopedEntity.html">Base: ProjectScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="ISoftDeletableEntity.html">Implements: ISoftDeletableEntity</a>
-<a class="badge badge-base" style="background:#004b50;" href="IProjectScopedEntity.html">Implements: IProjectScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IUnversionedEntity.html">Implements: IUnversionedEntity</a>
 </div></div>
 <div style="display:flex; gap:8px;">
@@ -40,8 +39,6 @@ g.entityBox:hover, g[id*="entity-"]:hover, g.classGroup:hover { filter: drop-sha
 <div class="diag-fullview" id="entityDiagViewport">
 <pre class="mermaid" id="erDiagramPre">
 erDiagram
-    IProjectScopedEntity {
-    }
     ISoftDeletableEntity {
     }
     IUnversionedEntity {
@@ -50,18 +47,14 @@ erDiagram
     }
     KnowledgeArticleReviewerEntity {
     }
-    ProjectEntity {
-    }
-    TenantAuditableEntity {
+    ProjectScopedEntity {
     }
     UserEntity {
     }
-    TenantAuditableEntity ||--|| KnowledgeArticleEntity : "extends"
+    ProjectScopedEntity ||--|| KnowledgeArticleEntity : "extends"
     ISoftDeletableEntity ||--o{ KnowledgeArticleEntity : "implements"
-    IProjectScopedEntity ||--o{ KnowledgeArticleEntity : "implements"
     IUnversionedEntity ||--o{ KnowledgeArticleEntity : "implements"
     KnowledgeArticleEntity ||--o{ KnowledgeArticleReviewerEntity : "Reviewers"
-    ProjectEntity ||--o{ KnowledgeArticleEntity : "Project"
     UserEntity ||--o{ KnowledgeArticleEntity : "ApprovedByUser"
     UserEntity ||--o{ KnowledgeArticleEntity : "AuthorUser"
 </pre></div>
@@ -69,15 +62,12 @@ erDiagram
 <div class="card">
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
-<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
 <span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
-<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
-<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
 </div>
-<div class="desc-box" style="margin-top: 14px;">Represents a knowledge base article. Extends and . Can be scoped to a project via or be cross-project/tenant/global. Enforces 3NF relational normalization by persisting only and while exposing convenience properties from and .</div>
+<div class="desc-box" style="margin-top: 14px;">Represents a knowledge base article. Extends and . Can be scoped to a project via Target-Centric Edge Relations (ProjectRelationEntity) or be cross-project/tenant/global. Enforces 3NF relational normalization by persisting only and while exposing convenience properties from and .</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (31)</div>
+<div class="card-title">Properties & Fields (34)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">Title </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Concise headline title of the article. Required. Max 100 characters.</td></tr>
 <tr><td class="prop-name">Content </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Rich text HTML content and embedded base64/URL images. Required. Max 20,000 characters.</td></tr>
@@ -85,8 +75,7 @@ erDiagram
 <tr><td class="prop-name">LabelList <span class="fk-pill">1:N</span></td><td><span class="code-type">List<string></span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Helper to access parsed labels.</td></tr>
 <tr><td class="prop-name">IsGlobal </td><td><span class="code-type">bool</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Indicates whether the article is visible globally across all tenants. If false, visible only within the author's tenant.</td></tr>
 <tr><td class="prop-name">Status </td><td><span class="code-type">KnowledgeArticleStatusEnum</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Current approval lifecycle status.</td></tr>
-<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional project to which the article belongs.</td></tr>
-<tr><td class="prop-name">Project <span class="fk-pill">NAV</span></td><td><a href="ProjectEntity.html" class="code-type">ProjectEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional project navigation.</td></tr>
+<tr><td class="prop-name">Project <span class="fk-pill">NAV</span></td><td><a href="ProjectEntity.html" class="code-type">ProjectEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional project navigation forwarder.</td></tr>
 <tr><td class="prop-name">AuthorUserEntityId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">AuthorUser <span class="fk-pill">NAV</span></td><td><a href="UserEntity.html" class="code-type">UserEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">ApprovedByUserEntityId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
@@ -102,14 +91,18 @@ erDiagram
 <tr><td class="prop-name">ApprovedByUserId <span class="fk-pill">FK</span></td><td><span class="code-type">string?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">ApprovedByUserEmail </td><td><span class="code-type">string?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">ApprovedByUserName </td><td><span class="code-type">string?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
-<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantAuditableEntity.html" class="badge badge-base" style="font-size:10px;">from TenantAuditableEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProjectScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProjectScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">Level </td><td><span class="code-type">TaskLevelEnum</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Version </td><td><span class="code-type">uint</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>PostgreSQL xmin system column mapped as a row-version concurrency token. Updated automatically by PostgreSQL on every physical row modification.</td></tr>
 <tr><td class="prop-name">Created </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.</td></tr>
 <tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who created the record.</td></tr>
 <tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
 <tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
-<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation.</td></tr>
+<tr><td class="prop-name">DomainEvents </td><td><span class="code-type">IReadOnlyCollection<IDomainEvent></span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Collection of domain events raised by this entity during business operations. Harvested and dispatched automatically by UnitOfWork on commit.</td></tr>
 </tbody></table>
 </div>
 <div class="card">
@@ -121,7 +114,7 @@ erDiagram
 <div class="card">
 <div class="card-title">🖥️ Screen / Razor Page Usages (3)</div>
 <table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
-<tr><td><a href="../razor-pages.html#screen-KnowledgeArticleEditPage.razor"><b>KnowledgeArticleEditPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>KnowledgeBase</td><td><code>/knowledge/new</code></td><td><span class="badge-field">Title</span> <span class="badge-field">Content</span> <span class="badge-field">Labels</span> <span class="badge-field">IsGlobal</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Reviewers</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-KnowledgeArticleEditPage.razor"><b>KnowledgeArticleEditPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>KnowledgeBase</td><td><code>/knowledge/new</code></td><td><span class="badge-field">Title</span> <span class="badge-field">Content</span> <span class="badge-field">Labels</span> <span class="badge-field">IsGlobal</span> <span class="badge-field">Reviewers</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-KnowledgeArticlesListPage.razor"><b>KnowledgeArticlesListPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>KnowledgeBase</td><td><code>/knowledge</code></td><td><span class="badge-field">Title</span> <span class="badge-field">Labels</span> <span class="badge-field">IsGlobal</span> <span class="badge-field">Status</span> <span class="badge-field">AuthorUserName</span> <span class="badge-field">ApprovedByUserName</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-KnowledgeArticleViewPage.razor"><b>KnowledgeArticleViewPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>KnowledgeBase</td><td><code>/knowledge/{Id:guid}</code></td><td><span class="badge-field">Title</span> <span class="badge-field">Content</span> <span class="badge-field">Labels</span> <span class="badge-field">IsGlobal</span> <span class="badge-field">Status</span> <span class="badge-field">ApprovedAtUtc</span> <span class="badge-field">Reviewers</span> <span class="badge-field">AuthorUserName</span> <span class="badge-field">ApprovedByUserName</span></td></tr>
 </tbody></table>
@@ -132,28 +125,13 @@ erDiagram
 <div class="diag-fullview">
 <pre class="mermaid" id="classDiagramPre">
 classDiagram
-    class AuditableEntity {
-        <<abstract>>
-    }
     class BaseEntity {
         <<abstract>>
-    }
-    class IAuditableEntity {
-        <<interface>>
     }
     class IConcurrency {
         <<interface>>
     }
-    class IMarkerEntity {
-        <<interface>>
-    }
-    class IProjectScopedEntity {
-        <<interface>>
-    }
     class ISoftDeletableEntity {
-        <<interface>>
-    }
-    class ITenantEntity {
         <<interface>>
     }
     class IUnversionedEntity {
@@ -161,43 +139,38 @@ classDiagram
     }
     class KnowledgeArticleEntity {
     }
-    class TenantAuditableEntity {
+    class ProgramScopedEntity {
         <<abstract>>
     }
-    AuditableEntity <|-- TenantAuditableEntity : extends
-    BaseEntity <|-- AuditableEntity : extends
-    IAuditableEntity <|.. BaseEntity : implements
+    class ProjectScopedEntity {
+        <<abstract>>
+    }
+    class TenantScopedEntity {
+        <<abstract>>
+    }
+    BaseEntity <|-- TenantScopedEntity : extends
     IConcurrency <|.. BaseEntity : implements
-    IMarkerEntity <|-- IAuditableEntity : extends
-    IMarkerEntity <|-- ISoftDeletableEntity : extends
-    IMarkerEntity <|-- ITenantEntity : extends
-    IMarkerEntity <|-- IUnversionedEntity : extends
-    IProjectScopedEntity <|.. KnowledgeArticleEntity : implements
     ISoftDeletableEntity <|.. KnowledgeArticleEntity : implements
-    ITenantEntity <|-- IProjectScopedEntity : extends
-    ITenantEntity <|.. TenantAuditableEntity : implements
     IUnversionedEntity <|.. KnowledgeArticleEntity : implements
-    TenantAuditableEntity <|-- KnowledgeArticleEntity : extends
+    ProgramScopedEntity <|-- ProjectScopedEntity : extends
+    ProjectScopedEntity <|-- KnowledgeArticleEntity : extends
+    TenantScopedEntity <|-- ProgramScopedEntity : extends
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
-    { parent: 'TenantAuditableEntity', child: 'KnowledgeArticleEntity', label: 'extends' },
+    { parent: 'ProjectScopedEntity', child: 'KnowledgeArticleEntity', label: 'extends' },
     { parent: 'ISoftDeletableEntity', child: 'KnowledgeArticleEntity', label: 'implements' },
-    { parent: 'IProjectScopedEntity', child: 'KnowledgeArticleEntity', label: 'implements' },
     { parent: 'IUnversionedEntity', child: 'KnowledgeArticleEntity', label: 'implements' },
     { parent: 'KnowledgeArticleEntity', child: 'KnowledgeArticleReviewerEntity', label: 'Reviewers' },
-    { parent: 'ProjectEntity', child: 'KnowledgeArticleEntity', label: 'Project' },
     { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'ApprovedByUser' },
     { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'AuthorUser' },
 ];
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -236,14 +209,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -266,31 +239,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -311,13 +283,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

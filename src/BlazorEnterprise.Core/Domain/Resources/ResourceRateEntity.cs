@@ -6,15 +6,15 @@ namespace BlazorEnterprise.Core.Domain.Resources;
 /// <summary>
 /// Hourly billing/cost rate assigned to a project resource within a versioned plan.
 /// </summary>
-public class ResourceRateEntity : TenantAuditableEntity, IVersionedEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class ResourceRateEntity : ProjectScopedEntity, IVersionedEntity, ISoftDeletableEntity
 {
-    public required Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     public required Guid ProjectResourceId { get; set; }
 
     public decimal HourlyRate { get; set; }
 
-    public string CurrencyCode { get; set; } = "USD";
+    public string CurrencyCode { get; set; } = string.Empty;
 
     public DateTime? EffectiveFromDate { get; set; }
 
@@ -23,8 +23,8 @@ public class ResourceRateEntity : TenantAuditableEntity, IVersionedEntity, IProj
     // --- IVersionedEntity ---
     public Guid RevisionHeaderId { get; set; }
     public Guid RelId { get; set; }
-    public int VerNum { get; set; } = 1;
-    public Guid ParentRowId { get; set; } = Guid.Empty;
+    public int VerNum { get; set; }
+    public Guid ParentRowId { get; set; }
 
     public void SetVersionNumber(int newVersion)
     {

@@ -13,9 +13,7 @@ public class NotificationEntityConfiguration : IEntityTypeConfiguration<Notifica
         builder.HasKey(n => n.Id);
 
         builder.Property(n => n.TenantId)
-            .IsRequired();
-
-        builder.Property(n => n.ProjectId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(n => n.UserId)
@@ -77,6 +75,10 @@ public class NotificationEntityConfiguration : IEntityTypeConfiguration<Notifica
         builder.Property(n => n.DeletedAtUtc)
             .IsRequired(false);
 
+        // Ignore [NotMapped] edge relations
+        builder.Property(n => n.ProgramId).IsRequired(false);
+        builder.Property(n => n.ProjectId).IsRequired(false);
+
         // Indexes for fast, isolated queries
         builder.HasIndex(n => n.TenantId)
             .HasDatabaseName("IX_Notifications_TenantId");
@@ -85,6 +87,9 @@ public class NotificationEntityConfiguration : IEntityTypeConfiguration<Notifica
             .HasDatabaseName("IX_Notifications_Tenant_User_IsRead")
             .HasFilter("\"IsDeleted\" = false");
 
+        builder.HasIndex(n => new { n.TenantId, n.Category })
+            .HasDatabaseName("IX_Notifications_Tenant_Category")
+            .HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(n => new { n.TenantId, n.ProjectId, n.Category })
             .HasDatabaseName("IX_Notifications_Tenant_Project_Category")
             .HasFilter("\"IsDeleted\" = false");

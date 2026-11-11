@@ -1,4 +1,4 @@
-using BlazorEnterprise.Persistence.Extensions;
+﻿using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Knowledge;
@@ -243,7 +243,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         }
 
         _context.KnowledgeArticles.Add(article);
-        await _context.SaveChangesAsync(cancellationToken);
+        _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(cancellationToken); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
         var authorDisplayName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Unknown");
 
@@ -257,7 +257,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
             {
                 await _notificationService.SendAsync(new SendNotificationReqDto
                 {
-                    ProjectId = article.ProjectId,
+                    ProjectId = article.ProjectId ?? Guid.Empty,
                     UserId = reviewerUser.Id.ToString(),
                     Category = NotificationCategoryEnum.Personal,
                     Severity = NotificationSeverityEnum.Info,
@@ -375,7 +375,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         article.ApprovedByUserEntityId = currentUserGuid != Guid.Empty ? currentUserGuid : null;
         article.ApprovedAtUtc = now;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(cancellationToken); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
         var approverDisplayName = !string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName : (_currentUser.Email ?? "Approver");
         _logger.LogInformation("Knowledge article '{ArticleId}' approved by '{Approver}'", articleId, _currentUser.Email);
 
@@ -384,7 +384,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         {
             await _notificationService.SendAsync(new SendNotificationReqDto
             {
-                ProjectId = article.ProjectId,
+                ProjectId = article.ProjectId ?? Guid.Empty,
                 UserId = article.AuthorUserId,
                 Category = NotificationCategoryEnum.Personal,
                 Severity = NotificationSeverityEnum.Info,
@@ -419,7 +419,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         article.DeletedAtUtc = DateTime.UtcNow;
         article.DeletedBy = _currentUser.Email;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(cancellationToken); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
         return true;
     }
 

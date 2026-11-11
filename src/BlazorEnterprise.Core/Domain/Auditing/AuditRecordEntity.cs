@@ -8,7 +8,7 @@ namespace BlazorEnterprise.Core.Domain.Auditing;
 /// Captures property-level entity diffs, tenant-switching events, security milestones, and user activities.
 /// Implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing of audit log entries.
 /// </summary>
-public class AuditRecordEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+public class AuditRecordEntity : TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
     /// <summary>ID of the user who performed the operation, or 'system' for background workers.</summary>
     public string? UserId { get; set; }
@@ -55,5 +55,7 @@ public class AuditRecordEntity : TenantAuditableEntity, IAuditExemptEntity, IImm
     /// Defaults to 365 days for Security events, and 90 days for all others.
     /// Can be adjusted by authorized administrators between 90 and 730 days.
     /// </summary>
+    #pragma warning disable TG027 // Approved: Default retention is 90 days for operational events and 365 days for security events
     public AuditRetentionPeriodEnum RetentionDays { get; set; } = AuditRetentionPeriodEnum.NinetyDays;
+#pragma warning restore TG027
 }

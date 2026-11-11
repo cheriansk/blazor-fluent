@@ -7,9 +7,8 @@
 <span class="badge badge-subsystem">Subsystem: Sprints</span>
 <span class="badge badge-tenant">DbSet: Sprints</span>
 <span class="badge badge-tenant" title="Database Table Name">Table: Sprints</span>
-<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+<a class="badge badge-base" href="ProjectScopedEntity.html">Base: ProjectScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="ISoftDeletableEntity.html">Implements: ISoftDeletableEntity</a>
-<a class="badge badge-base" style="background:#004b50;" href="IProjectScopedEntity.html">Implements: IProjectScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IUnversionedEntity.html">Implements: IUnversionedEntity</a>
 </div></div>
 <div style="display:flex; gap:8px;">
@@ -40,13 +39,13 @@ g.entityBox:hover, g[id*="entity-"]:hover, g.classGroup:hover { filter: drop-sha
 <div class="diag-fullview" id="entityDiagViewport">
 <pre class="mermaid" id="erDiagramPre">
 erDiagram
-    IProjectScopedEntity {
-    }
     ISoftDeletableEntity {
     }
     IUnversionedEntity {
     }
     ProjectEntity {
+    }
+    ProjectScopedEntity {
     }
     SprintAuditLogEntity {
     }
@@ -54,31 +53,27 @@ erDiagram
     }
     SprintItemVersionEntity {
     }
-    TenantAuditableEntity {
+    SprintTaskEntity {
     }
-    TenantAuditableEntity ||--|| SprintEntity : "extends"
+    ProjectScopedEntity ||--|| SprintEntity : "extends"
     ISoftDeletableEntity ||--o{ SprintEntity : "implements"
-    IProjectScopedEntity ||--o{ SprintEntity : "implements"
     IUnversionedEntity ||--o{ SprintEntity : "implements"
     ProjectEntity ||--o{ SprintEntity : "Project"
     SprintEntity ||--o{ SprintAuditLogEntity : "AuditLogs"
     SprintEntity ||--o{ SprintItemVersionEntity : "Items"
+    SprintEntity ||--o{ SprintTaskEntity : "Sprint"
 </pre></div>
 </div>
 <div class="card">
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
-<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
 <span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
-<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
-<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
 </div>
 <div class="desc-box" style="margin-top: 14px;">Project-scoped sprint iteration. Sprints maintain an audit trail but are container records (not versioned).</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (21)</div>
+<div class="card-title">Properties & Fields (24)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
-<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">SprintNumber </td><td><span class="code-type">int</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">SprintName </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">StartDate </td><td><span class="code-type">DateTime</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
@@ -91,14 +86,18 @@ erDiagram
 <tr><td class="prop-name">Project <span class="fk-pill">NAV</span></td><td><a href="ProjectEntity.html" class="code-type">ProjectEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">Items <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<SprintItemVersionEntity></span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">AuditLogs <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<SprintAuditLogEntity></span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
-<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantAuditableEntity.html" class="badge badge-base" style="font-size:10px;">from TenantAuditableEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProjectScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProjectScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">Level </td><td><span class="code-type">TaskLevelEnum</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Version </td><td><span class="code-type">uint</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>PostgreSQL xmin system column mapped as a row-version concurrency token. Updated automatically by PostgreSQL on every physical row modification.</td></tr>
 <tr><td class="prop-name">Created </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.</td></tr>
 <tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who created the record.</td></tr>
 <tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
 <tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
-<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation.</td></tr>
+<tr><td class="prop-name">DomainEvents </td><td><span class="code-type">IReadOnlyCollection<IDomainEvent></span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Collection of domain events raised by this entity during business operations. Harvested and dispatched automatically by UnitOfWork on commit.</td></tr>
 </tbody></table>
 </div>
 <div class="card">
@@ -108,16 +107,16 @@ erDiagram
 <tr><td><a href="SprintAuditLogEntity.html"><b>SprintAuditLogEntity</b></a></td><td>Sprints</td><td><code>SprintId</code></td><td>Foreign Key FK</td></tr>
 <tr><td><a href="SprintItemVersionEntity.html"><b>SprintItemVersionEntity</b></a></td><td>Sprints</td><td><code>Sprint</code></td><td>Navigation (1:1)</td></tr>
 <tr><td><a href="SprintItemVersionEntity.html"><b>SprintItemVersionEntity</b></a></td><td>Sprints</td><td><code>SprintId</code></td><td>Foreign Key FK</td></tr>
-<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>Sprint</code></td><td>Navigation (1:1)</td></tr>
-<tr><td><a href="TaskEntity.html"><b>TaskEntity</b></a></td><td>Tasks</td><td><code>SprintId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="SprintTaskEntity.html"><b>SprintTaskEntity</b></a></td><td>Tasks</td><td><code>Sprint</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="SprintTaskEntity.html"><b>SprintTaskEntity</b></a></td><td>Tasks</td><td><code>SprintId</code></td><td>Foreign Key FK</td></tr>
 </tbody></table>
 </div>
 <div class="card">
 <div class="card-title">🖥️ Screen / Razor Page Usages (3)</div>
 <table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
 <tr><td><a href="../razor-pages.html#screen-NavMenuComp.razor"><b>NavMenuComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SprintPlanningPage.razor"><b>SprintPlanningPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/sprints</code></td><td><span class="badge-field">ProjectId</span> <span class="badge-field">SprintNumber</span> <span class="badge-field">SprintName</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SettingsSprintTimelineTab.razor"><b>SettingsSprintTimelineTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">ProjectId</span> <span class="badge-field">SprintNumber</span> <span class="badge-field">SprintName</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">Comments</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SprintPlanningPage.razor"><b>SprintPlanningPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/sprints</code></td><td><span class="badge-field">SprintNumber</span> <span class="badge-field">SprintName</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">Status</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsSprintTimelineTab.razor"><b>SettingsSprintTimelineTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">SprintNumber</span> <span class="badge-field">SprintName</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">Comments</span> <span class="badge-field">Status</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
 </tbody></table>
 </div>
 <div class="card" id="sectionClassHierarchy" style="padding: 20px 24px;">
@@ -126,71 +125,53 @@ erDiagram
 <div class="diag-fullview">
 <pre class="mermaid" id="classDiagramPre">
 classDiagram
-    class AuditableEntity {
-        <<abstract>>
-    }
     class BaseEntity {
         <<abstract>>
     }
-    class IAuditableEntity {
-        <<interface>>
-    }
     class IConcurrency {
-        <<interface>>
-    }
-    class IMarkerEntity {
-        <<interface>>
-    }
-    class IProjectScopedEntity {
         <<interface>>
     }
     class ISoftDeletableEntity {
         <<interface>>
     }
-    class ITenantEntity {
-        <<interface>>
-    }
     class IUnversionedEntity {
         <<interface>>
     }
-    class SprintEntity {
-    }
-    class TenantAuditableEntity {
+    class ProgramScopedEntity {
         <<abstract>>
     }
-    AuditableEntity <|-- TenantAuditableEntity : extends
-    BaseEntity <|-- AuditableEntity : extends
-    IAuditableEntity <|.. BaseEntity : implements
+    class ProjectScopedEntity {
+        <<abstract>>
+    }
+    class SprintEntity {
+    }
+    class TenantScopedEntity {
+        <<abstract>>
+    }
+    BaseEntity <|-- TenantScopedEntity : extends
     IConcurrency <|.. BaseEntity : implements
-    IMarkerEntity <|-- IAuditableEntity : extends
-    IMarkerEntity <|-- ISoftDeletableEntity : extends
-    IMarkerEntity <|-- ITenantEntity : extends
-    IMarkerEntity <|-- IUnversionedEntity : extends
-    IProjectScopedEntity <|.. SprintEntity : implements
     ISoftDeletableEntity <|.. SprintEntity : implements
-    ITenantEntity <|-- IProjectScopedEntity : extends
-    ITenantEntity <|.. TenantAuditableEntity : implements
     IUnversionedEntity <|.. SprintEntity : implements
-    TenantAuditableEntity <|-- SprintEntity : extends
+    ProgramScopedEntity <|-- ProjectScopedEntity : extends
+    ProjectScopedEntity <|-- SprintEntity : extends
+    TenantScopedEntity <|-- ProgramScopedEntity : extends
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
-    { parent: 'TenantAuditableEntity', child: 'SprintEntity', label: 'extends' },
+    { parent: 'ProjectScopedEntity', child: 'SprintEntity', label: 'extends' },
     { parent: 'ISoftDeletableEntity', child: 'SprintEntity', label: 'implements' },
-    { parent: 'IProjectScopedEntity', child: 'SprintEntity', label: 'implements' },
     { parent: 'IUnversionedEntity', child: 'SprintEntity', label: 'implements' },
     { parent: 'ProjectEntity', child: 'SprintEntity', label: 'Project' },
     { parent: 'SprintEntity', child: 'SprintAuditLogEntity', label: 'AuditLogs' },
     { parent: 'SprintEntity', child: 'SprintItemVersionEntity', label: 'Items' },
+    { parent: 'SprintEntity', child: 'SprintTaskEntity', label: 'Sprint' },
 ];
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -229,14 +210,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -259,31 +240,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -304,13 +284,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

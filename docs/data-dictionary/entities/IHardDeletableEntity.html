@@ -6,7 +6,6 @@
 <div class="entity-meta">
 <span class="badge badge-subsystem">Subsystem: Base</span>
 <span class="badge badge-tenant" title="Database Table Name">Table: IHardDeletableEntity</span>
-<a class="badge badge-base" style="background:#004b50;" href="IMarkerEntity.html">Implements: IMarkerEntity</a>
 </div></div>
 <div style="display:flex; gap:8px;">
 <a href="../diagram.html" class="nav-tab active" style="display:inline-block; background:var(--primary); color:#fff; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;">🗺️ Full ER Diagram &rarr;</a>
@@ -38,16 +37,14 @@ g.entityBox:hover, g[id*="entity-"]:hover, g.classGroup:hover { filter: drop-sha
 erDiagram
     IHardDeletableEntity {
     }
-    IMarkerEntity {
-    }
-    IMarkerEntity ||--o{ IHardDeletableEntity : "implements"
+    %% Standalone table or indirect relationships
 </pre></div>
 </div>
 <div class="card">
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
 </div>
-<div class="desc-box" style="margin-top: 14px;">Marks an entity as hard-deletable. When DbContext.Remove() is invoked, a physical SQL DELETE is generated and executed in the database. Used for ephemeral staging tables and graph link/edge records. Mutually exclusive with and .</div>
+<div class="desc-box" style="margin-top: 14px;">Marks an entity as hard-deletable. When DbContext.Remove() is invoked, a physical SQL DELETE is generated and executed in the database. Mutually exclusive with and .</div>
 </div>
 <div class="card">
 <div class="card-title">Properties & Fields (0)</div>
@@ -70,23 +67,16 @@ classDiagram
     class IHardDeletableEntity {
         <<interface>>
     }
-    class IMarkerEntity {
-        <<interface>>
-    }
-    IMarkerEntity <|-- IHardDeletableEntity : extends
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
-    { parent: 'IMarkerEntity', child: 'IHardDeletableEntity', label: 'implements' },
 ];
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -125,14 +115,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -155,31 +145,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -200,13 +189,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

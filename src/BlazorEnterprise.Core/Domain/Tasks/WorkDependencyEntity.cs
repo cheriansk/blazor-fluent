@@ -12,7 +12,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Side B (Dependent item waiting) depends on Side A (Prerequisite item blocking).
 /// Subtype of <see cref="BaseTaskEntity"/> mapped to table 'tasks.work_dependencies'.
 /// </summary>
-public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+public class WorkDependencyEntity : RAIDTaskEntity
 {
     // =========================================================================
     // Side B: Dependent / Successor Item (Waiting on Prerequisite A)
@@ -22,7 +22,7 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnv
     /// <summary>
     /// Endpoint classification for Side B (CalendarGate, TaskItem, ManualDependency).
     /// </summary>
-    public DependencyNodeTypeEnum DependentType { get; set; } = DependencyNodeTypeEnum.TaskItem;
+    public DependencyNodeTypeEnum DependentType { get; set; }
 
     /// <summary>
     /// ID of the dependent entity (Task ID if TaskItem, Calendar ID if CalendarGate, null if general RAID ManualDependency).
@@ -46,7 +46,7 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnv
     /// <summary>
     /// Endpoint classification for Side A (CalendarGate, TaskItem, ManualDependency).
     /// </summary>
-    public DependencyNodeTypeEnum DependsOnType { get; set; } = DependencyNodeTypeEnum.TaskItem;
+    public DependencyNodeTypeEnum DependsOnType { get; set; }
 
     /// <summary>
     /// ID of the prerequisite entity (Task ID if TaskItem, Calendar ID if CalendarGate, null if ManualDependency).
@@ -56,16 +56,19 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnv
     /// <summary>
     /// Hierarchy scoping level of Side A (Program or Project).
     /// </summary>
-    public TaskLevelEnum DependsOnLevel { get; set; } = TaskLevelEnum.Project;
+    [NotMapped]
+    public TaskLevelEnum DependsOnLevel { get; set; }
 
     /// <summary>
     /// Target project ID of Side A (supports intra-project or cross-project within/across programs).
     /// </summary>
+    [NotMapped]
     public Guid? DependsOnProjectId { get; set; }
 
     /// <summary>
     /// Target program ID of Side A (supports cross-program or program-level dependencies).
     /// </summary>
+    [NotMapped]
     public Guid? DependsOnProgramId { get; set; }
 
     /// <summary>
@@ -86,16 +89,19 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnv
     /// <summary>
     /// Cached headline title of Side A, enabling Side B viewers to inspect the dependency without violating Side A's project RBAC.
     /// </summary>
+    [NotMapped]
     public string? DependsOnSnapshotTitle { get; set; }
 
     /// <summary>
     /// Cached status label of Side A (e.g. Open, Delayed, AtRisk, Completed, Closed).
     /// </summary>
+    [NotMapped]
     public string? DependsOnSnapshotStatus { get; set; }
 
     /// <summary>
     /// Cached target resolution/completion deadline of Side A.
     /// </summary>
+    [NotMapped]
     public DateTime? DependsOnSnapshotDueDate { get; set; }
 
     /// <summary>
@@ -110,12 +116,9 @@ public class WorkDependencyEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnv
     /// <summary>
     /// Semantic nature of the relationship (Blocks, BlockedBy, RelatesTo).
     /// </summary>
-    public TaskDependencyTypeEnum DependencyType { get; set; } = TaskDependencyTypeEnum.Blocks;
+    public TaskDependencyTypeEnum DependencyType { get; set; }
 
-    /// <summary>
-    /// Optional foreign key to a project or program milestone.
-    /// </summary>
-    public Guid? MilestoneId { get; set; }
+
 
     /// <summary>
     /// Unmapped convenience alias forwarding to <see cref="BaseTaskEntity.Description"/> to avoid duplicate storage.

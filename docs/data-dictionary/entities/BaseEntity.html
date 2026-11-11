@@ -6,7 +6,6 @@
 <div class="entity-meta">
 <span class="badge badge-subsystem">Subsystem: Base</span>
 <span class="badge badge-tenant" title="Database Table Name">Table: BaseEntity</span>
-<a class="badge badge-base" style="background:#004b50;" href="IAuditableEntity.html">Implements: IAuditableEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IConcurrency.html">Implements: IConcurrency</a>
 </div></div>
 <div style="display:flex; gap:8px;">
@@ -39,23 +38,19 @@ g.entityBox:hover, g[id*="entity-"]:hover, g.classGroup:hover { filter: drop-sha
 erDiagram
     BaseEntity {
     }
-    IAuditableEntity {
-    }
     IConcurrency {
     }
-    IAuditableEntity ||--o{ BaseEntity : "implements"
     IConcurrency ||--o{ BaseEntity : "implements"
 </pre></div>
 </div>
 <div class="card">
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
-<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
 </div>
-<div class="desc-box" style="margin-top: 14px;">ARCHITECTURAL WARNING: CRITICAL FRAMEWORK ROOT ENTITY DO NOT MODIFY without architectural review. Declares the sequential UUIDv7 primary key (Guid.CreateVersion7()) for all database entities. Sequential UUIDv7 ensures optimal B-Tree index clustering and high insert throughput in PostgreSQL. Implements IConcurrency for PostgreSQL xmin system-column optimistic concurrency.</div>
+<div class="desc-box" style="margin-top: 14px;">Root abstract base entity for all persistent domain entities. Declares the sequential UUIDv7 primary key, concurrency token, Level 1 audit properties, and Milan Jovanović's Domain Events collection.</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (7)</div>
+<div class="card-title">Properties & Fields (8)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">Version </td><td><span class="code-type">uint</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>PostgreSQL xmin system column mapped as a row-version concurrency token. Updated automatically by PostgreSQL on every physical row modification.</td></tr>
@@ -63,7 +58,8 @@ erDiagram
 <tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>User identifier or system actor who created the record.</td></tr>
 <tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
 <tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
-<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Indicates whether the entity has been modified since its initial creation.</td></tr>
+<tr><td class="prop-name">DomainEvents </td><td><span class="code-type">IReadOnlyCollection<IDomainEvent></span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Collection of domain events raised by this entity during business operations. Harvested and dispatched automatically by UnitOfWork on commit.</td></tr>
 </tbody></table>
 </div>
 <div class="card">
@@ -83,32 +79,21 @@ classDiagram
     class BaseEntity {
         <<abstract>>
     }
-    class IAuditableEntity {
-        <<interface>>
-    }
     class IConcurrency {
         <<interface>>
     }
-    class IMarkerEntity {
-        <<interface>>
-    }
-    IAuditableEntity <|.. BaseEntity : implements
     IConcurrency <|.. BaseEntity : implements
-    IMarkerEntity <|-- IAuditableEntity : extends
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
-    { parent: 'IAuditableEntity', child: 'BaseEntity', label: 'implements' },
     { parent: 'IConcurrency', child: 'BaseEntity', label: 'implements' },
 ];
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -147,14 +132,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -177,31 +162,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -222,13 +206,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

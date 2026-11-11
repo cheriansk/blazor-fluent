@@ -35,9 +35,9 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
     }
 
     [Fact]
-    public void ProjectCalendarEntity_Implements_IEffectiveDatedEntity()
+    public void CalendarEntity_Implements_IEffectiveDatedEntity()
     {
-        var milestone = new ProjectCalendarEntity
+        var milestone = new CalendarEntity
         {
             ProjectId = Guid.NewGuid(),
             Title = "Sprint 1", EntryType = CalendarEntryTypeEnum.Milestone,
@@ -56,7 +56,7 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
     public void IsActiveAt_ComparesByDate_RemainsActiveThroughoutEntireDayOfEndDate()
     {
         // Arrange: EndDate is Oct 19 at 00:00:00 UTC (start of day)
-        var milestone = new ProjectCalendarEntity
+        var milestone = new CalendarEntity
         {
             ProjectId = Guid.NewGuid(),
             Title = "Milestone Alpha", EntryType = CalendarEntryTypeEnum.Milestone,
@@ -126,8 +126,8 @@ public class EffectiveDatedEntityDateOnlyComparisonTests
         var userResult = userValidator.Validate(sameDayUser);
         userResult.IsValid.Should().BeTrue();
 
-        var milestoneValidator = new ProjectCalendarEntityValidator();
-        var sameDayMilestone = new ProjectCalendarEntity
+        var milestoneValidator = new CalendarEntityValidator();
+        var sameDayMilestone = new CalendarEntity
         {
             ProjectId = Guid.NewGuid(),
             Title = "Single-Day Milestone", EntryType = CalendarEntryTypeEnum.Milestone,

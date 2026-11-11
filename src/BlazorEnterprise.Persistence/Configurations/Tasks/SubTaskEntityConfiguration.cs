@@ -14,6 +14,7 @@ public class SubTaskEntityConfiguration : IEntityTypeConfiguration<SubTaskEntity
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(s => s.Level)
@@ -85,15 +86,9 @@ public class SubTaskEntityConfiguration : IEntityTypeConfiguration<SubTaskEntity
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(s => s.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(s => s.ProjectId)
-            .IsRequired(false);
-
-        builder.Property(s => s.UserId)
-            .HasMaxLength(256)
-            .IsRequired(false);
+        // Ignore [NotMapped] edge relations
+        builder.Property(s => s.ProgramId).IsRequired(false);
+        builder.Property(s => s.ProjectId).IsRequired(false);
 
         // Soft delete properties
         builder.Property(s => s.IsDeleted)

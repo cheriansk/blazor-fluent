@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.Contracts.Engine.Client;
 using BlazorEnterprise.Shared.Contracts.Engine.Transforms;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -21,6 +21,7 @@ public partial class UserTaskService : IUserTaskService
     private readonly ITenantContext _tenantContext;
     private readonly INotifyService _notificationService;
     private readonly IProjectAuthorizationService _projectAuth;
+    private readonly IHierarchyAuthorizationService _hierarchyAuth;
     private readonly IAuditService _auditService;
     private readonly ILogger<UserTaskService> _logger;
     private readonly IEngineClient? _engineClient;
@@ -31,6 +32,7 @@ public partial class UserTaskService : IUserTaskService
         ITenantContext tenantContext,
         INotifyService notificationService,
         IProjectAuthorizationService projectAuth,
+        IHierarchyAuthorizationService hierarchyAuth,
         IAuditService auditService,
         ILogger<UserTaskService> logger,
         IEngineClient? engineClient = null)
@@ -40,6 +42,7 @@ public partial class UserTaskService : IUserTaskService
         _tenantContext = tenantContext;
         _notificationService = notificationService;
         _projectAuth = projectAuth;
+        _hierarchyAuth = hierarchyAuth;
         _auditService = auditService;
         _logger = logger;
         _engineClient = engineClient;
@@ -165,13 +168,21 @@ public partial class UserTaskService : IUserTaskService
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
-            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "CreateTask", ct: ct);
+            if (task.ProjectId.HasValue && task.ProjectId.Value != Guid.Empty)
+            {
+                await _projectAuth.EnsureCanEditAsync(task.ProjectId.Value, operation: "CreateTask", ct: ct);
+            }
 
             if (task.TenantId == Guid.Empty)
             {
                 task.TenantId = _tenantContext.TenantId;
             }
 
+            if (task.ProjectId.HasValue && task.ProjectId.Value != Guid.Empty)
+            {
+                task.Level = TaskLevelEnum.Project;
+                task.ProgramId = null;
+            }
             // Automatically stamp creator as reporter
             if (string.IsNullOrWhiteSpace(task.ReporterEmail))
             {
@@ -183,7 +194,7 @@ public partial class UserTaskService : IUserTaskService
             }
 
             _context.Tasks.Add(task);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Task '{Title}' ({Id}) created in project {ProjectId}", task.Title, task.Id, task.ProjectId);
 
@@ -225,7 +236,10 @@ public partial class UserTaskService : IUserTaskService
             }
 
             // 3. Authorize caller against verified database project
-            await _projectAuth.EnsureCanEditAsync(task.ProjectId, operation: "UpdateTask", ct: ct);
+            if (task.ProjectId.HasValue && task.ProjectId.Value != Guid.Empty)
+            {
+                await _projectAuth.EnsureCanEditAsync(task.ProjectId.Value, operation: "UpdateTask", ct: ct);
+            }
 
             task.Title = updated.Title;
             task.Description = updated.Description;
@@ -237,7 +251,7 @@ public partial class UserTaskService : IUserTaskService
             task.Labels = updated.Labels;
             task.MilestoneId = updated.MilestoneId;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<TaskEntity>.Success(task);
         }
         catch (Exception ex)
@@ -286,13 +300,13 @@ public partial class UserTaskService : IUserTaskService
                         {
                             await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
                                 $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
-                                NotificationSeverityEnum.Info, sourceTask.ProjectId, ct);
+                                NotificationSeverityEnum.Info, sourceTask.ProjectId ?? Guid.Empty, ct);
                         }
                     }
                 }
             }
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -341,13 +355,13 @@ public partial class UserTaskService : IUserTaskService
                         {
                             await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
                                 $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
-                                NotificationSeverityEnum.Warning, sourceTask.ProjectId, ct);
+                                NotificationSeverityEnum.Warning, sourceTask.ProjectId ?? Guid.Empty, ct);
                         }
                     }
                 }
             }
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -374,7 +388,7 @@ public partial class UserTaskService : IUserTaskService
 
             task.Status = TaskStatusEnum.Cancelled;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             _logger.LogInformation("Task '{Title}' ({Id}) marked Cancelled in project {ProjectId}", task.Title, task.Id, projectId);
             return Result<bool>.Success(true);
         }
@@ -423,7 +437,7 @@ public partial class UserTaskService : IUserTaskService
             };
 
             _context.TaskComments.Add(comment);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Added comment to task {TaskId} by {Author}", taskId, comment.AuthorName);
             return Result<UserTaskCommentEntity>.Success(comment);
@@ -467,31 +481,76 @@ public partial class UserTaskService : IUserTaskService
 
         if (dependencies.Count == 0) return Array.Empty<TaskDependencyItemDto>();
 
-        return dependencies.Select(dep => new TaskDependencyItemDto
+        var results = new List<TaskDependencyItemDto>();
+        foreach (var dep in dependencies)
         {
-            DependencyId = dep.Id,
-            DependentType = dep.DependentType,
-            DependentItemId = dep.DependentItemId,
-            DependentLevel = dep.Level,
-            ProjectId = dep.ProjectId,
-            ProgramId = dep.ProgramId,
-            DependsOnType = dep.DependsOnType,
-            DependsOnItemId = dep.DependsOnItemId,
-            DependsOnLevel = dep.DependsOnLevel,
-            DependsOnProjectId = dep.DependsOnProjectId,
-            DependsOnProgramId = dep.DependsOnProgramId,
-            DependsOnTitle = dep.DependsOnSnapshotTitle ?? "Prerequisite Item",
-            DependsOnStatus = dep.DependsOnSnapshotStatus ?? "Open",
-            DependsOnDueDate = dep.DependsOnSnapshotDueDate ?? dep.DueDate,
-            DependsOnAssigneeEmails = dep.AssigneeEmails ?? string.Empty,
-            Title = dep.Title,
-            ImpactDetails = dep.Description ?? string.Empty,
-            DependencyType = dep.DependencyType,
-            Criticality = dep.Priority,
-            Status = dep.Status,
-            ResolveByUtc = dep.DueDate,
-            IsScheduleConflict = dep.IsScheduleConflict
-        }).ToList();
+            string liveTitle = dep.DependsOnSnapshotTitle ?? "Prerequisite Item";
+            string liveStatus = dep.DependsOnSnapshotStatus ?? "Open";
+            DateTime? liveDueDate = dep.DependsOnSnapshotDueDate ?? dep.DueDate;
+            string liveAssignees = dep.AssigneeEmails ?? string.Empty;
+            Guid? targetProjectId = dep.DependsOnProjectId;
+            Guid? targetProgramId = dep.DependsOnProgramId;
+            TaskLevelEnum targetLevel = dep.DependsOnLevel;
+
+            if (dep.DependsOnItemId.HasValue)
+            {
+                var targetTask = await _context.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == dep.DependsOnItemId.Value, ct);
+                if (targetTask != null)
+                {
+                    liveTitle = targetTask.Title;
+                    liveStatus = targetTask.Status.ToString();
+                    liveDueDate = targetTask.DueDate;
+                    liveAssignees = targetTask.AssigneeEmails ?? string.Empty;
+                    targetLevel = targetTask.Level;
+                    targetProjectId = targetTask.ProjectId;
+                    targetProgramId = targetTask.ProgramId;
+                }
+                else
+                {
+                    var targetRisk = await _context.Risks.AsNoTracking().FirstOrDefaultAsync(r => r.Id == dep.DependsOnItemId.Value, ct);
+                    if (targetRisk != null)
+                    {
+                        liveTitle = targetRisk.Title;
+                        liveStatus = targetRisk.Status.ToString();
+                        liveDueDate = targetRisk.DueDate;
+                        liveAssignees = targetRisk.AssigneeEmails ?? string.Empty;
+                        targetLevel = targetRisk.Level;
+                        targetProjectId = targetRisk.ProjectId;
+                        targetProgramId = targetRisk.ProgramId;
+                    }
+                }
+            }
+
+            var canAccess = await _hierarchyAuth.CanViewScopedItemAsync(targetLevel, tenantId, targetProgramId, targetProjectId, ct: ct);
+
+            results.Add(new TaskDependencyItemDto
+            {
+                DependencyId = dep.Id,
+                DependentType = dep.DependentType,
+                DependentItemId = dep.DependentItemId,
+                DependentLevel = dep.Level,
+                ProjectId = dep.ProjectId,
+                ProgramId = dep.ProgramId,
+                DependsOnType = dep.DependsOnType,
+                DependsOnItemId = dep.DependsOnItemId,
+                DependsOnLevel = targetLevel,
+                DependsOnProjectId = targetProjectId,
+                DependsOnProgramId = targetProgramId,
+                DependsOnTitle = liveTitle,
+                DependsOnStatus = liveStatus,
+                DependsOnDueDate = liveDueDate,
+                DependsOnAssigneeEmails = liveAssignees,
+                Title = dep.Title,
+                ImpactDetails = dep.Description ?? string.Empty,
+                DependencyType = dep.DependencyType,
+                Criticality = dep.Priority,
+                Status = dep.Status,
+                ResolveByUtc = dep.DueDate,
+                IsScheduleConflict = dep.IsScheduleConflict,
+                CanAccessTargetItem = canAccess
+            });
+        }
+        return results;
     }
 
     public async Task<Result<bool>> AddTaskDependencyAsync(
@@ -529,7 +588,10 @@ public partial class UserTaskService : IUserTaskService
 
             if (dependsOnTask.ProjectId != projectId)
             {
-                await _projectAuth.EnsureCanVisitAsync(dependsOnTask.ProjectId, operation: "LinkCrossProjectDependency", ct: ct);
+                if (dependsOnTask.ProjectId.HasValue && dependsOnTask.ProjectId.Value != Guid.Empty)
+                {
+                    await _projectAuth.EnsureCanVisitAsync(dependsOnTask.ProjectId.Value, operation: "LinkCrossProjectDependency", ct: ct);
+                }
             }
 
             var exists = await _context.WorkDependencies
@@ -575,7 +637,7 @@ public partial class UserTaskService : IUserTaskService
             };
 
             _context.WorkDependencies.Add(link);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Task dependency created: Task {TaskId} -> {DependsOnId} ({Type})", taskId, dependsOnTaskId, dependencyType);
 
@@ -612,7 +674,7 @@ public partial class UserTaskService : IUserTaskService
             link.DeletedAtUtc = DateTime.UtcNow;
             link.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Task dependency {DependencyId} removed in project {ProjectId}", dependencyId, projectId);
 
@@ -661,7 +723,7 @@ public partial class UserTaskService : IUserTaskService
                     Severity = task.Priority == TaskPriorityEnum.Urgent ? NotificationSeverityEnum.Warning : NotificationSeverityEnum.Info,
                     Title = title,
                     Message = message,
-                    ProjectId = task.ProjectId,
+                    ProjectId = task.ProjectId ?? Guid.Empty,
                     UserId = targetUserId,
                     LinkUrl = linkUrl,
                     Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
@@ -701,7 +763,10 @@ public partial class UserTaskService : IUserTaskService
 
             if (parentTask.ProjectId != Guid.Empty)
             {
-                await _projectAuth.EnsureCanEditAsync(parentTask.ProjectId, operation: "CreateSubTask", ct: ct);
+                if (parentTask.ProjectId.HasValue && parentTask.ProjectId.Value != Guid.Empty)
+                {
+                    await _projectAuth.EnsureCanEditAsync(parentTask.ProjectId.Value, operation: "CreateSubTask", ct: ct);
+                }
             }
 
             subTask.TenantId = tenantId;
@@ -714,7 +779,7 @@ public partial class UserTaskService : IUserTaskService
             }
 
             await _context.SubTasks.AddAsync(subTask, ct);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<SubTaskEntity>.Success(subTask);
         }
         catch (Exception ex)
@@ -748,7 +813,7 @@ public partial class UserTaskService : IUserTaskService
             subTask.OrderIndex = updated.OrderIndex;
             subTask.BlockedBySubTaskId = updated.BlockedBySubTaskId;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<SubTaskEntity>.Success(subTask);
         }
         catch (Exception ex)
@@ -777,7 +842,7 @@ public partial class UserTaskService : IUserTaskService
             subTask.DeletedAtUtc = DateTime.UtcNow;
             subTask.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -829,7 +894,10 @@ public partial class UserTaskService : IUserTaskService
 
             if (sourceTask.ProjectId != targetTask.ProjectId)
             {
-                await _projectAuth.EnsureCanVisitAsync(targetTask.ProjectId, operation: "LinkCrossProjectBlocker", ct: ct);
+                if (targetTask.ProjectId.HasValue && targetTask.ProjectId.Value != Guid.Empty)
+                {
+                    await _projectAuth.EnsureCanVisitAsync(targetTask.ProjectId.Value, operation: "LinkCrossProjectBlocker", ct: ct);
+                }
             }
 
             var existingLink = await _context.WorkDependencies.FirstOrDefaultAsync(l =>
@@ -888,7 +956,7 @@ public partial class UserTaskService : IUserTaskService
             };
 
             await _context.WorkDependencies.AddAsync(blocker, ct);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             // Notify prerequisite assignee about the new blocker SLA
             var notifyEmails = blocker.GetParsedAssigneeEmails();
@@ -896,7 +964,7 @@ public partial class UserTaskService : IUserTaskService
             {
                 await SendBlockerAlertAsync(email, $"New Blocker Dependency Assigned: '{targetTask.Title}'",
                     $"Your task '{targetTask.Title}' is blocking '{sourceTask.Title}'. Resolve SLA: {resolveDueDate:yyyy-MM-dd}. Criticality: {criticality}.",
-                    NotificationSeverityEnum.Warning, targetTask.ProjectId, ct);
+                    NotificationSeverityEnum.Warning, targetTask.ProjectId ?? Guid.Empty, ct);
             }
 
             return Result<WorkDependencyEntity>.Success(blocker);
@@ -923,7 +991,7 @@ public partial class UserTaskService : IUserTaskService
             link.DeletedAtUtc = DateTime.UtcNow;
             link.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -968,7 +1036,7 @@ public partial class UserTaskService : IUserTaskService
             }
             else if (targetType == DependencyNodeTypeEnum.CalendarGate)
             {
-                var cal = await _context.ProjectCalendars.AsNoTracking().FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Id == targetItemId, ct);
+                var cal = await _context.Calendars.AsNoTracking().FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Id == targetItemId, ct);
                 if (cal != null)
                 {
                     dep.DependsOnSnapshotTitle = cal.Title;
@@ -978,7 +1046,7 @@ public partial class UserTaskService : IUserTaskService
                 }
             }
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<WorkDependencyEntity>.Success(dep);
         }
         catch (Exception ex)
@@ -1018,6 +1086,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<TaskEntity>> GetTenantTasksAsync(Guid tenantId, CancellationToken ct = default)
     {
+        await _hierarchyAuth.EnsureIsTenantAdminAsync(tenantId, ct: ct);
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Tasks
             .AsNoTracking()
@@ -1028,6 +1097,7 @@ public partial class UserTaskService : IUserTaskService
 
     public async Task<IReadOnlyList<RiskEntity>> GetTenantRisksAsync(Guid tenantId, CancellationToken ct = default)
     {
+        await _hierarchyAuth.EnsureIsTenantAdminAsync(tenantId, ct: ct);
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Risks
             .AsNoTracking()
@@ -1042,7 +1112,7 @@ public partial class UserTaskService : IUserTaskService
         try
         {
             _context.Risks.Add(risk);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<RiskEntity>.Success(risk);
         }
         catch (Exception ex)
@@ -1055,12 +1125,24 @@ public partial class UserTaskService : IUserTaskService
     public async Task<IReadOnlyList<TaskEntity>> GetRecentTasksAsync(int limit = 30, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
-        return await _context.Tasks
+        var tenantId = _tenantContext.TenantId;
+        var candidates = await _context.Tasks
             .AsNoTracking()
-            .Where(t => !t.IsDeleted)
+            .Where(t => t.TenantId == tenantId && !t.IsDeleted)
             .OrderByDescending(t => t.Created)
-            .Take(limit)
+            .Take(limit * 2)
             .ToListAsync(ct);
+
+        var authorized = new List<TaskEntity>();
+        foreach (var task in candidates)
+        {
+            if (await _hierarchyAuth.CanViewScopedItemAsync(task.Level, task.TenantId, task.ProgramId, task.ProjectId, ct: ct))
+            {
+                authorized.Add(task);
+                if (authorized.Count >= limit) break;
+            }
+        }
+        return authorized;
     }
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetProjectWorkDependenciesAsync(Guid projectId, CancellationToken ct = default)

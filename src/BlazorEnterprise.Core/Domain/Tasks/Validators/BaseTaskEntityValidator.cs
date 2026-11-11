@@ -62,9 +62,6 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
 
             RuleFor(x => x.ProjectId)
                 .Null().WithMessage("Tenant-level items cannot belong to a specific Project.");
-
-            RuleFor(x => x.UserId)
-                .Null().WithMessage("Tenant-level items cannot be personal user items.");
         });
 
         // 2. Program Level: multi-project strategic initiative; ProgramId mandatory, ProjectId strictly null
@@ -76,9 +73,6 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
 
             RuleFor(x => x.ProjectId)
                 .Null().WithMessage("Program-level items cannot belong to a specific Project.");
-
-            RuleFor(x => x.UserId)
-                .Null().WithMessage("Program-level items cannot be personal user items.");
         });
 
         // 3. Project Level: team delivery item; ProjectId mandatory, ProgramId strictly null (traversed via Project.ProgramId)
@@ -90,22 +84,6 @@ public abstract class BaseTaskEntityValidator<T> : AbstractValidator<T> where T 
 
             RuleFor(x => x.ProgramId)
                 .Null().WithMessage("Project-level items cannot specify a direct ProgramId (inherited via Project).");
-
-            RuleFor(x => x.UserId)
-                .Null().WithMessage("Project-level items cannot be personal user items.");
-        });
-
-        // 4. User Level: personal workload item; UserId mandatory, ProgramId & ProjectId strictly null
-        When(x => x.Level == TaskLevelEnum.User, () =>
-        {
-            RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage("UserId is mandatory for personal User-level items.");
-
-            RuleFor(x => x.ProgramId)
-                .Null().WithMessage("User-level items cannot belong to a Program.");
-
-            RuleFor(x => x.ProjectId)
-                .Null().WithMessage("User-level items cannot belong to a Project.");
         });
     }
 }

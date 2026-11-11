@@ -113,141 +113,139 @@ g.entityBox:hover, g[id*="entity-"]:hover { filter: drop-shadow(0 0 6px var(--pr
         <div class="diag-canvas" id="canvas">
             <pre class="mermaid" id="erDiagramPre">
 erDiagram
-    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
     AuditRecordEntity {
     }
-    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
     EventConsumptionTrackerEntity {
     }
-    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
     EventPublishTrackerEntity {
     }
-    %% Extends: AuditableEntity, IGlobalEntity, IHardDeletableEntity, IUnversionedEntity
+    %% Extends: BaseEntity, IGlobalEntity, IHardDeletableEntity, IUnversionedEntity
     KnowledgeArticleReviewerEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     KnowledgeArticleEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     NotificationEntity {
     }
-    %% Extends: TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     UserTaskCommentEntity {
     }
     %% Extends: BaseCalendarEntity, IVersionedEntity
-    ProgramCalendarEntity {
-    }
-    %% Extends: BaseCalendarEntity, IVersionedEntity, IProjectScopedEntity
-    ProjectCalendarEntity {
+    CalendarEntity {
     }
     %% Extends: BaseCalendarEntity, IUnversionedEntity
     UserCalendarEntity {
     }
     DataProtectionKey {
     }
-    %% Extends: TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
     JobExecutionEntity {
     }
-    %% Extends: AuditableEntity, IGlobalEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: BaseEntity, IGlobalEntity, ISoftDeletableEntity, IUnversionedEntity
     ImpersonationGrantEntity {
     }
-    %% Extends: AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+    %% Extends: BaseEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
     UserEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     UserSessionEntity {
     }
-    %% Extends: TenantAuditableEntity, IProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     ImportFileEntity {
     }
-    %% Extends: TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, IHardDeletableEntity, IUnversionedEntity
     StagedImportEntity {
     }
-    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    %% Extends: RAIDTaskEntity
     AssumptionEntity {
     }
-    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity
+    DeliverableEntity {
+    }
+    %% Extends: RAIDTaskEntity
     IssueEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    %% Extends: TaskEntity
+    MiscTaskEntity {
+    }
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     ProjectResourceEntity {
     }
-    %% Extends: TenantAuditableEntity, IVersionedEntity, IProjectScopedEntity, ISoftDeletableEntity
+    %% Extends: ProjectScopedEntity, IVersionedEntity, ISoftDeletableEntity
     ResourceAllocationEntity {
     }
-    %% Extends: TenantAuditableEntity, IVersionedEntity, IProjectScopedEntity, ISoftDeletableEntity
+    %% Extends: ProjectScopedEntity, IVersionedEntity, ISoftDeletableEntity
     ResourceRateEntity {
     }
-    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    %% Extends: RAIDTaskEntity
     RiskEntity {
     }
-    %% Extends: TenantAuditableEntity, IImmutableEntity, IAuditExemptEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, IImmutableEntity, IAuditExemptEntity, IUnversionedEntity
     SprintAuditLogEntity {
     }
-    %% Extends: TenantAuditableEntity, ISprintVersionEntity, IProjectScopedEntity, ISoftDeletableEntity
+    %% Extends: ProjectScopedEntity, IVersionedEntity, ISoftDeletableEntity
     SprintItemVersionEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     SprintEntity {
     }
-    %% Extends: BaseTaskEntity, IUnversionedEntity
+    %% Extends: TaskEntity
+    SprintTaskEntity {
+    }
+    %% Extends: BaseTaskEntity
     SubTaskEntity {
     }
-    %% Extends: BaseTaskEntity, IProjectScopedEntity, IMilestoneLinkedEntity, IUnversionedEntity
-    TaskEntity {
-    }
-    %% Extends: BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+    %% Extends: RAIDTaskEntity
     WorkDependencyEntity {
     }
-    %% Extends: BaseTaskEntity, IUnversionedEntity
+    %% Extends: BaseTaskEntity
     WorkflowEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+    %% Extends: TaskEntity
+    WorkflowTaskEntity {
+    }
+    %% Extends: ProgramScopedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
     ProgramUserRoleEntity {
     }
-    %% Extends: TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: ProgramScopedEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
     ProgramEntity {
     }
-    %% Extends: TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: ProgramScopedEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
     ProjectEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IHmacSignableEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
     ProjectUserRoleEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+    %% Extends: TenantScopedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
     TenantUserEntity {
     }
-    %% Extends: AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: BaseEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IUnversionedEntity
     TenantEntity {
     }
-    %% Extends: TenantAuditableEntity, ISoftDeletableEntity, IUnversionedEntity
+    %% Extends: ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
     RevisionHeaderEntity {
     }
+    CalendarEntity ||--o{ CalendarEntity : "Milestones"
     EventPublishTrackerEntity ||--o{ EventConsumptionTrackerEntity : "Consumptions"
     KnowledgeArticleEntity ||--o{ KnowledgeArticleReviewerEntity : "Reviewers"
-    ProgramCalendarEntity ||--o{ ProgramCalendarEntity : "Milestones"
-    ProgramCalendarEntity ||--o{ ProjectCalendarEntity : "ParentProgramCalendar"
-    ProgramEntity ||--o{ ProgramCalendarEntity : "Program"
     ProgramEntity ||--o{ ProgramUserRoleEntity : "UserRoles"
-    ProgramEntity ||--o{ ProjectCalendarEntity : "Program"
     ProgramEntity ||--o{ ProjectEntity : "Projects"
-    ProgramEntity ||--o{ TaskEntity : "references"
-    ProjectCalendarEntity ||--o{ ProjectCalendarEntity : "Milestones"
-    ProjectEntity ||--o{ KnowledgeArticleEntity : "Project"
-    ProjectEntity ||--o{ ProjectCalendarEntity : "Project"
     ProjectEntity ||--o{ ProjectResourceEntity : "Project"
     ProjectEntity ||--o{ ProjectUserRoleEntity : "UserRoles"
     ProjectEntity ||--o{ SprintEntity : "Project"
-    ProjectEntity ||--o{ TaskEntity : "references"
     ProjectResourceEntity ||--o{ ResourceAllocationEntity : "ProjectResource"
     ProjectResourceEntity ||--o{ ResourceRateEntity : "ProjectResource"
-    RevisionHeaderEntity ||--o{ ProgramCalendarEntity : "RevisionHeader"
-    RevisionHeaderEntity ||--o{ ProjectCalendarEntity : "RevisionHeader"
+    RevisionHeaderEntity ||--o{ CalendarEntity : "RevisionHeader"
     RevisionHeaderEntity ||--o{ ResourceAllocationEntity : "RevisionHeader"
     RevisionHeaderEntity ||--o{ ResourceRateEntity : "RevisionHeader"
     RevisionHeaderEntity ||--o{ SprintItemVersionEntity : "RevisionHeader"
     SprintEntity ||--o{ SprintAuditLogEntity : "AuditLogs"
     SprintEntity ||--o{ SprintItemVersionEntity : "Items"
+    SprintEntity ||--o{ SprintTaskEntity : "Sprint"
     SubTaskEntity ||--o{ SubTaskEntity : "BlockedBySubTask"
     TaskEntity ||--o{ SprintItemVersionEntity : "Item"
     TaskEntity ||--o{ SubTaskEntity : "SubTasks"
@@ -255,8 +253,8 @@ erDiagram
     TenantEntity ||--o{ ProgramEntity : "Programs"
     TenantEntity ||--o{ ProjectEntity : "Projects"
     TenantEntity ||--o{ TenantUserEntity : "TenantUsers"
-    UserEntity ||--o{ KnowledgeArticleEntity : "ApprovedByUser"
     UserEntity ||--o{ KnowledgeArticleEntity : "AuthorUser"
+    UserEntity ||--o{ KnowledgeArticleEntity : "ApprovedByUser"
     UserEntity ||--o{ KnowledgeArticleReviewerEntity : "User"
     UserEntity ||--o{ ProgramUserRoleEntity : "ProgramRoles"
     UserEntity ||--o{ ProjectResourceEntity : "User"
@@ -264,7 +262,7 @@ erDiagram
     UserEntity ||--o{ TenantUserEntity : "TenantMemberships"
     UserEntity ||--o{ UserCalendarEntity : "User"
     UserEntity ||--o{ UserTaskCommentEntity : "AuthorUser"
-    WorkflowEntity ||--o{ TaskEntity : "Steps"
+    WorkflowEntity ||--o{ WorkflowTaskEntity : "Steps"
             </pre>
         </div>
     </div>
@@ -277,31 +275,23 @@ erDiagram
     });
 
     const activeRelationships = [
+        { parent: 'CalendarEntity', child: 'CalendarEntity', label: 'Milestones' },
         { parent: 'EventPublishTrackerEntity', child: 'EventConsumptionTrackerEntity', label: 'Consumptions' },
         { parent: 'KnowledgeArticleEntity', child: 'KnowledgeArticleReviewerEntity', label: 'Reviewers' },
-        { parent: 'ProgramCalendarEntity', child: 'ProgramCalendarEntity', label: 'Milestones' },
-        { parent: 'ProgramCalendarEntity', child: 'ProjectCalendarEntity', label: 'ParentProgramCalendar' },
-        { parent: 'ProgramEntity', child: 'ProgramCalendarEntity', label: 'Program' },
         { parent: 'ProgramEntity', child: 'ProgramUserRoleEntity', label: 'UserRoles' },
-        { parent: 'ProgramEntity', child: 'ProjectCalendarEntity', label: 'Program' },
         { parent: 'ProgramEntity', child: 'ProjectEntity', label: 'Projects' },
-        { parent: 'ProgramEntity', child: 'TaskEntity', label: 'references' },
-        { parent: 'ProjectCalendarEntity', child: 'ProjectCalendarEntity', label: 'Milestones' },
-        { parent: 'ProjectEntity', child: 'KnowledgeArticleEntity', label: 'Project' },
-        { parent: 'ProjectEntity', child: 'ProjectCalendarEntity', label: 'Project' },
         { parent: 'ProjectEntity', child: 'ProjectResourceEntity', label: 'Project' },
         { parent: 'ProjectEntity', child: 'ProjectUserRoleEntity', label: 'UserRoles' },
         { parent: 'ProjectEntity', child: 'SprintEntity', label: 'Project' },
-        { parent: 'ProjectEntity', child: 'TaskEntity', label: 'references' },
         { parent: 'ProjectResourceEntity', child: 'ResourceAllocationEntity', label: 'ProjectResource' },
         { parent: 'ProjectResourceEntity', child: 'ResourceRateEntity', label: 'ProjectResource' },
-        { parent: 'RevisionHeaderEntity', child: 'ProgramCalendarEntity', label: 'RevisionHeader' },
-        { parent: 'RevisionHeaderEntity', child: 'ProjectCalendarEntity', label: 'RevisionHeader' },
+        { parent: 'RevisionHeaderEntity', child: 'CalendarEntity', label: 'RevisionHeader' },
         { parent: 'RevisionHeaderEntity', child: 'ResourceAllocationEntity', label: 'RevisionHeader' },
         { parent: 'RevisionHeaderEntity', child: 'ResourceRateEntity', label: 'RevisionHeader' },
         { parent: 'RevisionHeaderEntity', child: 'SprintItemVersionEntity', label: 'RevisionHeader' },
         { parent: 'SprintEntity', child: 'SprintAuditLogEntity', label: 'AuditLogs' },
         { parent: 'SprintEntity', child: 'SprintItemVersionEntity', label: 'Items' },
+        { parent: 'SprintEntity', child: 'SprintTaskEntity', label: 'Sprint' },
         { parent: 'SubTaskEntity', child: 'SubTaskEntity', label: 'BlockedBySubTask' },
         { parent: 'TaskEntity', child: 'SprintItemVersionEntity', label: 'Item' },
         { parent: 'TaskEntity', child: 'SubTaskEntity', label: 'SubTasks' },
@@ -309,8 +299,8 @@ erDiagram
         { parent: 'TenantEntity', child: 'ProgramEntity', label: 'Programs' },
         { parent: 'TenantEntity', child: 'ProjectEntity', label: 'Projects' },
         { parent: 'TenantEntity', child: 'TenantUserEntity', label: 'TenantUsers' },
-        { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'ApprovedByUser' },
         { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'AuthorUser' },
+        { parent: 'UserEntity', child: 'KnowledgeArticleEntity', label: 'ApprovedByUser' },
         { parent: 'UserEntity', child: 'KnowledgeArticleReviewerEntity', label: 'User' },
         { parent: 'UserEntity', child: 'ProgramUserRoleEntity', label: 'ProgramRoles' },
         { parent: 'UserEntity', child: 'ProjectResourceEntity', label: 'User' },
@@ -318,7 +308,7 @@ erDiagram
         { parent: 'UserEntity', child: 'TenantUserEntity', label: 'TenantMemberships' },
         { parent: 'UserEntity', child: 'UserCalendarEntity', label: 'User' },
         { parent: 'UserEntity', child: 'UserTaskCommentEntity', label: 'AuthorUser' },
-        { parent: 'WorkflowEntity', child: 'TaskEntity', label: 'Steps' },
+        { parent: 'WorkflowEntity', child: 'WorkflowTaskEntity', label: 'Steps' },
     ];
 
     const tableToEntityMap = {
@@ -336,10 +326,8 @@ erDiagram
         'NotificationEntity': 'NotificationEntity.html',
         'TaskComments': 'UserTaskCommentEntity.html',
         'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
-        'ProgramCalendars': 'ProgramCalendarEntity.html',
-        'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-        'ProjectCalendars': 'ProjectCalendarEntity.html',
-        'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+        'calendars': 'CalendarEntity.html',
+        'CalendarEntity': 'CalendarEntity.html',
         'UserCalendars': 'UserCalendarEntity.html',
         'UserCalendarEntity': 'UserCalendarEntity.html',
         'DataProtectionKeys': 'DataProtectionKey.html',
@@ -358,8 +346,12 @@ erDiagram
         'StagedImportEntity': 'StagedImportEntity.html',
         'Assumptions': 'AssumptionEntity.html',
         'AssumptionEntity': 'AssumptionEntity.html',
+        'Deliverables': 'DeliverableEntity.html',
+        'DeliverableEntity': 'DeliverableEntity.html',
         'Issues': 'IssueEntity.html',
         'IssueEntity': 'IssueEntity.html',
+        'MiscTasks': 'MiscTaskEntity.html',
+        'MiscTaskEntity': 'MiscTaskEntity.html',
         'ProjectResources': 'ProjectResourceEntity.html',
         'ProjectResourceEntity': 'ProjectResourceEntity.html',
         'ResourceAllocations': 'ResourceAllocationEntity.html',
@@ -374,14 +366,16 @@ erDiagram
         'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
         'Sprints': 'SprintEntity.html',
         'SprintEntity': 'SprintEntity.html',
+        'SprintTasks': 'SprintTaskEntity.html',
+        'SprintTaskEntity': 'SprintTaskEntity.html',
         'SubTasks': 'SubTaskEntity.html',
         'SubTaskEntity': 'SubTaskEntity.html',
-        'Tasks': 'TaskEntity.html',
-        'TaskEntity': 'TaskEntity.html',
         'WorkDependencies': 'WorkDependencyEntity.html',
         'WorkDependencyEntity': 'WorkDependencyEntity.html',
         'Workflows': 'WorkflowEntity.html',
         'WorkflowEntity': 'WorkflowEntity.html',
+        'WorkflowTasks': 'WorkflowTaskEntity.html',
+        'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
         'program_user_roles': 'ProgramUserRoleEntity.html',
         'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
         'programs': 'ProgramEntity.html',

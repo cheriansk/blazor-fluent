@@ -2,22 +2,44 @@ using FluentValidation;
 
 namespace BlazorEnterprise.Core.Domain.Tasks.Validators;
 
-public class TaskEntityValidator : BaseTaskEntityValidator<TaskEntity>
+public abstract class TaskEntityValidator<T> : BaseTaskEntityValidator<T> where T : TaskEntity
+{
+    protected TaskEntityValidator()
+    {
+    }
+}
+
+public class TaskEntityValidator : TaskEntityValidator<TaskEntity>
 {
     public TaskEntityValidator()
     {
-        // Workflow sequencing invariants
-        When(x => x.WorkflowId.HasValue && x.WorkflowId.Value != Guid.Empty, () =>
-        {
-            RuleFor(x => x.WorkflowStepOrder)
-                .NotNull().WithMessage("WorkflowStepOrder is mandatory when the task belongs to a workflow.")
-                .GreaterThan(0).WithMessage("WorkflowStepOrder must be a positive integer greater than zero.");
-        });
+    }
+}
 
-        When(x => !x.WorkflowId.HasValue || x.WorkflowId.Value == Guid.Empty, () =>
-        {
-            RuleFor(x => x.WorkflowStepOrder)
-                .Null().WithMessage("WorkflowStepOrder must be null when the task does not belong to a workflow.");
-        });
+public class SprintTaskEntityValidator : TaskEntityValidator<SprintTaskEntity>
+{
+    public SprintTaskEntityValidator()
+    {
+        RuleFor(x => x.SprintId)
+            .NotEmpty().WithMessage("SprintId is mandatory for sprint tasks.");
+    }
+}
+
+public class WorkflowTaskEntityValidator : TaskEntityValidator<WorkflowTaskEntity>
+{
+    public WorkflowTaskEntityValidator()
+    {
+        RuleFor(x => x.WorkflowId)
+            .NotEmpty().WithMessage("WorkflowId is mandatory for workflow tasks.");
+
+        RuleFor(x => x.WorkflowStepOrder)
+            .GreaterThan(0).WithMessage("WorkflowStepOrder must be a positive integer greater than zero.");
+    }
+}
+
+public class MiscTaskEntityValidator : TaskEntityValidator<MiscTaskEntity>
+{
+    public MiscTaskEntityValidator()
+    {
     }
 }

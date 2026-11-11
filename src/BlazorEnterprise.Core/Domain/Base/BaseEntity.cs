@@ -1,16 +1,19 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Events;
 
 namespace BlazorEnterprise.Core.Domain.Base;
 
 /// <summary>
-/// ARCHITECTURAL WARNING: CRITICAL FRAMEWORK ROOT ENTITY
-/// DO NOT MODIFY without architectural review.
-/// Declares the sequential UUIDv7 primary key (Guid.CreateVersion7()) for all database entities.
-/// Sequential UUIDv7 ensures optimal B-Tree index clustering and high insert throughput in PostgreSQL.
-/// Implements IConcurrency for PostgreSQL xmin system-column optimistic concurrency.
+/// Root abstract base entity for all persistent domain entities.
+/// Declares the sequential UUIDv7 primary key, concurrency token, Level 1 audit properties,
+/// and Milan Jovanović's Domain Events collection.
 /// </summary>
-public abstract class BaseEntity : IAuditableEntity, IConcurrency
+public abstract class BaseEntity : IConcurrency
 {
+    private readonly List<IDomainEvent> _domainEvents = [];
+
     public Guid Id { get; set; } = Guid.CreateVersion7();
 
     /// <summary>
@@ -43,7 +46,22 @@ public abstract class BaseEntity : IAuditableEntity, IConcurrency
 
     /// <summary>
     /// Indicates whether the entity has been modified since its initial creation.
-    /// Evaluates to true if Updated timestamp is strictly greater than Created timestamp.
     /// </summary>
     public bool IsModifiedSinceCreation => Updated > Created;
+
+    /// <summary>
+    /// Collection of domain events raised by this entity during business operations.
+    /// Harvested and dispatched automatically by UnitOfWork on commit.
+    /// </summary>
+    [NotMapped]
+    [JsonIgnore]
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+    public void RaiseDomainEvent(IDomainEvent domainEvent)
+    {
+        ArgumentNullException.ThrowIfNull(domainEvent);
+        _domainEvents.Add(domainEvent);
+    }
+
+    public void ClearDomainEvents() => _domainEvents.Clear();
 }

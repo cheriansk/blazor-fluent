@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Core.Domain.Base;
 using BlazorEnterprise.Shared.DataListTypes;
 
@@ -9,12 +10,8 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Can be scoped to Program or Project levels.
 /// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class AssumptionEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+public class AssumptionEntity : RAIDTaskEntity
 {
-    /// <summary>
-    /// Optional foreign key to a project or program milestone.
-    /// </summary>
-    public Guid? MilestoneId { get; set; }
 
     /// <summary>
     /// Explicit criteria or tests required to validate this assumption.

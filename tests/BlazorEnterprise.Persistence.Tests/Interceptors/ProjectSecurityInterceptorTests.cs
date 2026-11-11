@@ -32,7 +32,7 @@ public class ProjectSecurityInterceptorTests : IDisposable
         _connection.Dispose();
     }
 
-    private TaskEntity CreateTestTask(string title) => new()
+    private MiscTaskEntity CreateTestTask(string title) => new()
     {
         Id = Guid.NewGuid(),
         TenantId = _tenantId,

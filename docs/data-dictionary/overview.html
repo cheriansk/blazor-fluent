@@ -2,12 +2,12 @@
 <div class="page-container">
 <div class="page-header"><div><h1 class="entity-title">Data Model Architecture Overview</h1><div class="breadcrumb">Enterprise Data Dictionary &bull; BlazorEnterprise Monolith</div></div></div>
 <div class="stat-grid">
-<div class="stat-card"><div class="stat-val">41</div><div class="stat-lbl">Domain Entities</div></div>
+<div class="stat-card"><div class="stat-val">46</div><div class="stat-lbl">Domain Entities</div></div>
 <div class="stat-card"><div class="stat-val">14</div><div class="stat-lbl">Subsystems</div></div>
-<div class="stat-card"><div class="stat-val">37</div><div class="stat-lbl">AppDbContext DbSets</div></div>
+<div class="stat-card"><div class="stat-val">40</div><div class="stat-lbl">AppDbContext DbSets</div></div>
 <div class="stat-card"><div class="stat-val">129</div><div class="stat-lbl">Razor Screens</div></div>
-<div class="stat-card"><div class="stat-val">24</div><div class="stat-lbl">Entities in UI</div></div>
-<div class="stat-card"><div class="stat-val">759</div><div class="stat-lbl">Field Bindings</div></div>
+<div class="stat-card"><div class="stat-val">27</div><div class="stat-lbl">Entities in UI</div></div>
+<div class="stat-card"><div class="stat-val">867</div><div class="stat-lbl">Field Bindings</div></div>
 </div>
 <div class="card">
 <div class="card-title">The 3-Tier Enterprise Entity Framework</div>
@@ -25,8 +25,8 @@
 <p>BlazorEnterprise indexes all Razor pages, settings tabs, modals, and components (<code>*.razor</code>) to track UI field bindings across domain entities:</p>
 <ul style="margin: 8px 0 12px 20px;">
 <li><b>129 Screens Cataloged</b>: Across routed pages, modal dialogs, drawers, and multi-tenant settings tabs.</li>
-<li><b>24 Entities Active in UI</b>: Every entity page documents its screens and exact property bindings (forms, data grids, and audit buttons).</li>
-<li><b>759 Property Usages Tracked</b>: Full traceability between schema properties and presentation components.</li>
+<li><b>27 Entities Active in UI</b>: Every entity page documents its screens and exact property bindings (forms, data grids, and audit buttons).</li>
+<li><b>867 Property Usages Tracked</b>: Full traceability between schema properties and presentation components.</li>
 </ul>
 <a href="razor-pages.html" class="nav-tab active" style="display: inline-block; background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: 600;">Browse All Razor Screens &rarr;</a>
 </div></div>
@@ -35,8 +35,8 @@
 <div class="desc-box">
 <p>Explore the full platform database architecture visually with real-time relational foreign key navigations and interactive clickable entity nodes:</p>
 <ul style="margin: 8px 0 12px 20px;">
-<li><b>37 Database Tables Mapped</b>: Complete schema coverage across all tenancy, identity, tasks, and audit bounded contexts.</li>
-<li><b>42 Relational Connections</b>: Visual cardinalities (1:N, 1:1) and navigation property labels.</li>
+<li><b>39 Database Tables Mapped</b>: Complete schema coverage across all tenancy, identity, tasks, and audit bounded contexts.</li>
+<li><b>34 Relational Connections</b>: Visual cardinalities (1:N, 1:1) and navigation property labels.</li>
 <li><b>Interactive Click-Through</b>: Click any entity box in the diagram to inspect its properties, marker gates, and presentation usages.</li>
 </ul>
 <a href="diagram.html" class="nav-tab active" style="display: inline-block; background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: 600;">Open Interactive Visual ER Diagram &rarr;</a>
@@ -49,18 +49,18 @@
 <a class="entity-tag" href="entities/AuditRecordEntity.html">AuditRecordEntity</a>
 </div></div>
 <div class="subsystem-card">
-<h3><span>Base</span><span class="badge-count">3</span></h3>
+<h3><span>Base</span><span class="badge-count">4</span></h3>
 <div class="entity-tag-list">
-<a class="entity-tag" href="entities/AuditableEntity.html">AuditableEntity</a>
 <a class="entity-tag" href="entities/BaseEntity.html">BaseEntity</a>
-<a class="entity-tag" href="entities/TenantAuditableEntity.html">TenantAuditableEntity</a>
+<a class="entity-tag" href="entities/ProgramScopedEntity.html">ProgramScopedEntity</a>
+<a class="entity-tag" href="entities/ProjectScopedEntity.html">ProjectScopedEntity</a>
+<a class="entity-tag" href="entities/TenantScopedEntity.html">TenantScopedEntity</a>
 </div></div>
 <div class="subsystem-card">
-<h3><span>Calendar</span><span class="badge-count">4</span></h3>
+<h3><span>Calendar</span><span class="badge-count">3</span></h3>
 <div class="entity-tag-list">
 <a class="entity-tag" href="entities/BaseCalendarEntity.html">BaseCalendarEntity</a>
-<a class="entity-tag" href="entities/ProgramCalendarEntity.html">ProgramCalendarEntity</a>
-<a class="entity-tag" href="entities/ProjectCalendarEntity.html">ProjectCalendarEntity</a>
+<a class="entity-tag" href="entities/CalendarEntity.html">CalendarEntity</a>
 <a class="entity-tag" href="entities/UserCalendarEntity.html">UserCalendarEntity</a>
 </div></div>
 <div class="subsystem-card">
@@ -113,17 +113,22 @@
 <a class="entity-tag" href="entities/SprintItemVersionEntity.html">SprintItemVersionEntity</a>
 </div></div>
 <div class="subsystem-card">
-<h3><span>Tasks</span><span class="badge-count">9</span></h3>
+<h3><span>Tasks</span><span class="badge-count">14</span></h3>
 <div class="entity-tag-list">
 <a class="entity-tag" href="entities/AssumptionEntity.html">AssumptionEntity</a>
 <a class="entity-tag" href="entities/BaseTaskEntity.html">BaseTaskEntity</a>
+<a class="entity-tag" href="entities/DeliverableEntity.html">DeliverableEntity</a>
 <a class="entity-tag" href="entities/IssueEntity.html">IssueEntity</a>
+<a class="entity-tag" href="entities/MiscTaskEntity.html">MiscTaskEntity</a>
+<a class="entity-tag" href="entities/RAIDTaskEntity.html">RAIDTaskEntity</a>
 <a class="entity-tag" href="entities/RiskEntity.html">RiskEntity</a>
+<a class="entity-tag" href="entities/SprintTaskEntity.html">SprintTaskEntity</a>
 <a class="entity-tag" href="entities/SubTaskEntity.html">SubTaskEntity</a>
 <a class="entity-tag" href="entities/TaskEntity.html">TaskEntity</a>
 <a class="entity-tag" href="entities/UserTaskCommentEntity.html">UserTaskCommentEntity</a>
 <a class="entity-tag" href="entities/WorkDependencyEntity.html">WorkDependencyEntity</a>
 <a class="entity-tag" href="entities/WorkflowEntity.html">WorkflowEntity</a>
+<a class="entity-tag" href="entities/WorkflowTaskEntity.html">WorkflowTaskEntity</a>
 </div></div>
 <div class="subsystem-card">
 <h3><span>Tenancy</span><span class="badge-count">6</span></h3>

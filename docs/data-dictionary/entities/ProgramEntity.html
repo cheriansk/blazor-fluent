@@ -7,7 +7,7 @@
 <span class="badge badge-subsystem">Subsystem: Tenancy</span>
 <span class="badge badge-tenant">DbSet: Programs</span>
 <span class="badge badge-tenant" title="Database Table Name">Table: programs</span>
-<a class="badge badge-base" href="TenantAuditableEntity.html">Base: TenantAuditableEntity</a>
+<a class="badge badge-base" href="ProgramScopedEntity.html">Base: ProgramScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IScheduledWorkEntity.html">Implements: IScheduledWorkEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="ISoftDeletableEntity.html">Implements: ISoftDeletableEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IUnversionedEntity.html">Implements: IUnversionedEntity</a>
@@ -46,59 +46,51 @@ erDiagram
     }
     IUnversionedEntity {
     }
-    ProgramCalendarEntity {
-    }
     ProgramEntity {
+    }
+    ProgramScopedEntity {
     }
     ProgramUserRoleEntity {
     }
-    ProjectCalendarEntity {
-    }
     ProjectEntity {
-    }
-    TaskEntity {
-    }
-    TenantAuditableEntity {
     }
     TenantEntity {
     }
-    TenantAuditableEntity ||--|| ProgramEntity : "extends"
+    ProgramScopedEntity ||--|| ProgramEntity : "extends"
     IScheduledWorkEntity ||--o{ ProgramEntity : "implements"
     ISoftDeletableEntity ||--o{ ProgramEntity : "implements"
     IUnversionedEntity ||--o{ ProgramEntity : "implements"
-    ProgramEntity ||--o{ ProgramCalendarEntity : "Program"
     ProgramEntity ||--o{ ProgramUserRoleEntity : "UserRoles"
-    ProgramEntity ||--o{ ProjectCalendarEntity : "Program"
     ProgramEntity ||--o{ ProjectEntity : "Projects"
-    ProgramEntity ||--o{ TaskEntity : "references"
     TenantEntity ||--o{ ProgramEntity : "Programs"
 </pre></div>
 </div>
 <div class="card">
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
-<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
 <span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
-<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
 </div>
 <div class="desc-box" style="margin-top: 14px;">Represents an enterprise multi-year program containing one or more projects. Scoped to a tenant via sequential UUIDv7 . Implements for baseline vs. actual schedule tracking. Implements — programs are soft-deleted to maintain audit trails.</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (21)</div>
+<div class="card-title">Properties & Fields (24)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">Name </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">Code </td><td><span class="code-type">string</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">Description </td><td><span class="code-type">string?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">Status </td><td><span class="code-type">ProgramStatusEnum</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">IsActive </td><td><span class="code-type">bool</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
-<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantAuditableEntity.html" class="badge badge-base" style="font-size:10px;">from TenantAuditableEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">Level </td><td><span class="code-type">TaskLevelEnum</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Version </td><td><span class="code-type">uint</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>PostgreSQL xmin system column mapped as a row-version concurrency token. Updated automatically by PostgreSQL on every physical row modification.</td></tr>
 <tr><td class="prop-name">Created </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.</td></tr>
 <tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who created the record.</td></tr>
 <tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
 <tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
-<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation.</td></tr>
+<tr><td class="prop-name">DomainEvents </td><td><span class="code-type">IReadOnlyCollection<IDomainEvent></span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Collection of domain events raised by this entity during business operations. Harvested and dispatched automatically by UnitOfWork on commit.</td></tr>
 <tr><td class="prop-name">DueDate </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="IScheduledWorkEntity.html" class="badge badge-base" style="font-size:10px;">from IScheduledWorkEntity</a></td><td>Baseline delivery target deadline (UTC). Initial commitment established at creation; drives cadence notifications and variance tracking.</td></tr>
 <tr><td class="prop-name">RevisedDueDate </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><a href="IScheduledWorkEntity.html" class="badge badge-base" style="font-size:10px;">from IScheduledWorkEntity</a></td><td>Formally approved target deadline extension (UTC). Set when a Lead or Administrator approves a revised schedule without erasing the original baseline .</td></tr>
 <tr><td class="prop-name">ActualStartDate </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><a href="IScheduledWorkEntity.html" class="badge badge-base" style="font-size:10px;">from IScheduledWorkEntity</a></td><td>Actual timestamp (UTC) when work execution commenced. Automatically captured upon transitioning to InProgress, or manually updated with work logs.</td></tr>
@@ -110,40 +102,34 @@ erDiagram
 </tbody></table>
 </div>
 <div class="card">
-<div class="card-title">Inbound References (Where this entity is referenced) (8)</div>
+<div class="card-title">Inbound References (Where this entity is referenced) (2)</div>
 <table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
-<tr><td><a href="ProgramCalendarEntity.html"><b>ProgramCalendarEntity</b></a></td><td>Calendar</td><td><code>Program</code></td><td>Navigation (1:1)</td></tr>
-<tr><td><a href="ProgramCalendarEntity.html"><b>ProgramCalendarEntity</b></a></td><td>Calendar</td><td><code>ProgramId</code></td><td>Foreign Key FK</td></tr>
-<tr><td><a href="ProjectCalendarEntity.html"><b>ProjectCalendarEntity</b></a></td><td>Calendar</td><td><code>Program</code></td><td>Navigation (1:1)</td></tr>
-<tr><td><a href="ProjectCalendarEntity.html"><b>ProjectCalendarEntity</b></a></td><td>Calendar</td><td><code>ProgramId</code></td><td>Foreign Key FK</td></tr>
-<tr><td><a href="BaseTaskEntity.html"><b>BaseTaskEntity</b></a></td><td>Tasks</td><td><code>ProgramId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="ProgramScopedEntity.html"><b>ProgramScopedEntity</b></a></td><td>Base</td><td><code>ProgramId</code></td><td>Foreign Key FK</td></tr>
 <tr><td><a href="ProgramUserRoleEntity.html"><b>ProgramUserRoleEntity</b></a></td><td>Tenancy</td><td><code>Program</code></td><td>Navigation (1:1)</td></tr>
-<tr><td><a href="ProgramUserRoleEntity.html"><b>ProgramUserRoleEntity</b></a></td><td>Tenancy</td><td><code>ProgramId</code></td><td>Foreign Key FK</td></tr>
-<tr><td><a href="RevisionHeaderEntity.html"><b>RevisionHeaderEntity</b></a></td><td>Versioning</td><td><code>ProgramId</code></td><td>Foreign Key FK</td></tr>
 </tbody></table>
 </div>
 <div class="card">
 <div class="card-title">🖥️ Screen / Razor Page Usages (19)</div>
 <table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
-<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-NavMenuComp.razor"><b>NavMenuComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProgramAndProjectSwitcherComp.razor"><b>ProgramAndProjectSwitcherComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-HomePage.razor"><b>HomePage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/</code></td><td><span class="badge-field">Name</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProgramHolisticView.razor"><b>ProgramHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/programs/holistic</code></td><td><span class="badge-field">TenantId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProgramAndProjectSwitcherComp.razor"><b>ProgramAndProjectSwitcherComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-HomePage.razor"><b>HomePage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/</code></td><td><span class="badge-field">Name</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">ProgramId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProgramHolisticView.razor"><b>ProgramHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/programs/holistic</code></td><td><span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewHomeTab.razor"><b>ProgramHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewMilestoneTab.razor"><b>ProgramHolisticViewMilestoneTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewTimelineTab.razor"><b>ProgramHolisticViewTimelineTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramSummaryCard.razor"><b>ProgramSummaryCard.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProgramDetailsStep.razor"><b>ProgramDetailsStep.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProgramDetailsStep.razor"><b>ProgramDetailsStep.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramMilestonesStep.razor"><b>ProgramMilestonesStep.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramReviewStep.razor"><b>ProgramReviewStep.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramTimelineStep.razor"><b>ProgramTimelineStep.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsPage.razor"><b>SettingsPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Settings</td><td><code>/settings</code></td><td><span class="badge-field">TenantId</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsTenantsTab.razor"><b>SettingsTenantsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span> <span class="badge-field">CreatedBy</span> <span class="badge-field">Updated</span> <span class="badge-field">UpdatedBy</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProjectsDashboardPage.razor"><b>ProjectsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/tenancy/projects</code></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">Name</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">Name</span> <span class="badge-field">Status</span> <span class="badge-field">IsActive</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
 </tbody></table>
 </div>
 <div class="card" id="sectionClassHierarchy" style="padding: 20px 24px;">
@@ -152,22 +138,13 @@ erDiagram
 <div class="diag-fullview">
 <pre class="mermaid" id="classDiagramPre">
 classDiagram
-    class AuditableEntity {
-        <<abstract>>
-    }
     class BaseEntity {
         <<abstract>>
-    }
-    class IAuditableEntity {
-        <<interface>>
     }
     class IConcurrency {
         <<interface>>
     }
     class IEffectiveDatedEntity {
-        <<interface>>
-    }
-    class IMarkerEntity {
         <<interface>>
     }
     class IScheduledWorkEntity {
@@ -176,54 +153,42 @@ classDiagram
     class ISoftDeletableEntity {
         <<interface>>
     }
-    class ITenantEntity {
-        <<interface>>
-    }
     class IUnversionedEntity {
         <<interface>>
     }
     class ProgramEntity {
     }
-    class TenantAuditableEntity {
+    class ProgramScopedEntity {
         <<abstract>>
     }
-    AuditableEntity <|-- TenantAuditableEntity : extends
-    BaseEntity <|-- AuditableEntity : extends
-    IAuditableEntity <|.. BaseEntity : implements
+    class TenantScopedEntity {
+        <<abstract>>
+    }
+    BaseEntity <|-- TenantScopedEntity : extends
     IConcurrency <|.. BaseEntity : implements
     IEffectiveDatedEntity <|-- IScheduledWorkEntity : extends
-    IMarkerEntity <|-- IAuditableEntity : extends
-    IMarkerEntity <|-- IEffectiveDatedEntity : extends
-    IMarkerEntity <|-- ISoftDeletableEntity : extends
-    IMarkerEntity <|-- ITenantEntity : extends
-    IMarkerEntity <|-- IUnversionedEntity : extends
     IScheduledWorkEntity <|.. ProgramEntity : implements
     ISoftDeletableEntity <|.. ProgramEntity : implements
-    ITenantEntity <|.. TenantAuditableEntity : implements
     IUnversionedEntity <|.. ProgramEntity : implements
-    TenantAuditableEntity <|-- ProgramEntity : extends
+    ProgramScopedEntity <|-- ProgramEntity : extends
+    TenantScopedEntity <|-- ProgramScopedEntity : extends
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
-    { parent: 'TenantAuditableEntity', child: 'ProgramEntity', label: 'extends' },
+    { parent: 'ProgramScopedEntity', child: 'ProgramEntity', label: 'extends' },
     { parent: 'IScheduledWorkEntity', child: 'ProgramEntity', label: 'implements' },
     { parent: 'ISoftDeletableEntity', child: 'ProgramEntity', label: 'implements' },
     { parent: 'IUnversionedEntity', child: 'ProgramEntity', label: 'implements' },
-    { parent: 'ProgramEntity', child: 'ProgramCalendarEntity', label: 'Program' },
     { parent: 'ProgramEntity', child: 'ProgramUserRoleEntity', label: 'UserRoles' },
-    { parent: 'ProgramEntity', child: 'ProjectCalendarEntity', label: 'Program' },
     { parent: 'ProgramEntity', child: 'ProjectEntity', label: 'Projects' },
-    { parent: 'ProgramEntity', child: 'TaskEntity', label: 'references' },
     { parent: 'TenantEntity', child: 'ProgramEntity', label: 'Programs' },
 ];
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -262,14 +227,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -292,31 +257,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -337,13 +301,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

@@ -33,16 +33,17 @@ public class BlockerRollupProvider : IWorkItemRollupProvider
         if (level == TaskLevelEnum.Program && scopeId.HasValue)
         {
             query = query.Where(b => b.ProgramId == scopeId.Value ||
-                b.DependsOnProgramId == scopeId.Value ||
+                (b.DependsOnItemId.HasValue && _context.Tasks.Any(t => t.Id == b.DependsOnItemId.Value && t.ProgramId == scopeId.Value)) ||
                 (b.ProjectId.HasValue && _context.Projects.Any(p => p.Id == b.ProjectId.Value && p.ProgramId == scopeId.Value)));
         }
         else if (level == TaskLevelEnum.Project && scopeId.HasValue)
         {
-            query = query.Where(b => b.ProjectId == scopeId.Value || b.DependsOnProjectId == scopeId.Value);
+            query = query.Where(b => b.ProjectId == scopeId.Value ||
+                (b.DependsOnItemId.HasValue && _context.Tasks.Any(t => t.Id == b.DependsOnItemId.Value && t.ProjectId == scopeId.Value)));
         }
         else if (level == TaskLevelEnum.User && !string.IsNullOrWhiteSpace(userId))
         {
-            query = query.Where(b => b.UserId == userId || (b.AssigneeEmails != null && b.AssigneeEmails.Contains(userId)) || (b.WatcherEmails != null && b.WatcherEmails.Contains(userId)));
+            query = query.Where(b => (b.AssigneeEmails != null && b.AssigneeEmails.Contains(userId)) || (b.WatcherEmails != null && b.WatcherEmails.Contains(userId)));
         }
 
         var items = await query.ToListAsync(ct);

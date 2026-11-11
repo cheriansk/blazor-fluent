@@ -63,6 +63,12 @@ public static class ProjectRoleEnumDefinitions
 public static class ProjectRoleExtensions
 {
     /// <summary>
+    /// Returns true if the role has permission to view project data (ReadOnly and above).
+    /// </summary>
+    public static bool CanRead(this ProjectRoleEnum role) =>
+        (int)role >= (int)ProjectRoleEnum.ReadOnly;
+
+    /// <summary>
     /// Returns true if the role has permission to write/mutate project data (Contribute and above).
     /// </summary>
     public static bool CanWrite(this ProjectRoleEnum role) =>

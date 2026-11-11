@@ -1,4 +1,4 @@
-using BlazorEnterprise.Persistence.Extensions;
+﻿using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -162,7 +162,7 @@ public class ProgramService : IProgramService
         };
 
         _context.Programs.Add(program);
-        await _context.SaveChangesAsync(ct);
+        _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
         await _auditService.LogUserActivityAsync(
             $"Created program '{program.Name}' ({program.Code}) in tenant '{normalizedSlug}'",
@@ -309,7 +309,7 @@ public class ProgramService : IProgramService
             }
         }
 
-        await _context.SaveChangesAsync(ct);
+        _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
         return Result.Success();
     }
 
@@ -330,8 +330,9 @@ public class ProgramService : IProgramService
 
     public async Task<ProgramHealthSummaryDto> GetProgramHealthAsync(Guid programId, CancellationToken ct = default)
     {
-        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         if (programId == Guid.Empty) return new ProgramHealthSummaryDto();
+        await _hierarchyAuth.EnsureHasProgramClearanceAsync(programId, ProgramRoleEnum.ReadOnly, ct: ct);
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
 
         var program = await _context.Programs
             .AsNoTracking()
@@ -344,13 +345,27 @@ public class ProgramService : IProgramService
 
         var tasks = await _context.Tasks
             .AsNoTracking()
-            .Where(t => projectIds.Contains(t.ProjectId))
+            .Where(t => t.ProjectId.HasValue && projectIds.Contains(t.ProjectId.Value))
             .ToListAsync(ct);
+
+        var taskIds = tasks.Select(t => t.Id).ToList();
+        var taskProjectMap = tasks.Where(t => t.ProjectId.HasValue).ToDictionary(t => t.Id, t => t.ProjectId!.Value);
 
         var dependencies = await _context.WorkDependencies
             .AsNoTracking()
-            .Where(d => ((d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)) || (d.DependsOnProjectId.HasValue && projectIds.Contains(d.DependsOnProjectId.Value))) && !d.IsDeleted)
+            .Where(d => !d.IsDeleted &&
+                        ((d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)) ||
+                         (d.DependsOnItemId.HasValue && taskIds.Contains(d.DependsOnItemId.Value))))
             .ToListAsync(ct);
+
+        // Resolve unmapped DependsOnProjectId in memory from known tasks
+        foreach (var dep in dependencies)
+        {
+            if (dep.DependsOnItemId.HasValue && taskProjectMap.TryGetValue(dep.DependsOnItemId.Value, out var dependsOnPid))
+            {
+                dep.DependsOnProjectId = dependsOnPid;
+            }
+        }
 
         var projectLookup = program.Projects.ToDictionary(pr => pr.Id, pr => pr.Name);
 
@@ -371,7 +386,7 @@ public class ProgramService : IProgramService
             var targetTask = tasks.FirstOrDefault(t => t.Id == dep.DependsOnItemId);
 
             string sourceProjectName = "External Project";
-            if (sourceTask != null && projectLookup.TryGetValue(sourceTask.ProjectId, out var sName))
+            if (sourceTask?.ProjectId != null && projectLookup.TryGetValue(sourceTask.ProjectId.Value, out var sName))
             {
                 sourceProjectName = sName;
             }
@@ -389,6 +404,9 @@ public class ProgramService : IProgramService
             var isResolved = dep.IsResolved || (targetTask?.Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled);
             var isOverdue = !isResolved && dep.DueDate.Date < DateTime.UtcNow.Date;
 
+            var targetProjectId = dep.DependsOnProjectId ?? Guid.Empty;
+            var canAccessTarget = targetProjectId != Guid.Empty && await _hierarchyAuth.CanViewScopedItemAsync(TaskLevelEnum.Project, program.TenantId, program.Id, targetProjectId, ct: ct);
+
             crossProjectDeps.Add(new CrossProjectDependencyDto
             {
                 DependencyId = dep.Id,
@@ -396,14 +414,15 @@ public class ProgramService : IProgramService
                 SourceProjectName = sourceProjectName,
                 SourceTaskId = dep.DependentItemId ?? Guid.Empty,
                 SourceTaskTitle = sourceTask?.Title ?? dep.Title,
-                TargetProjectId = dep.DependsOnProjectId ?? Guid.Empty,
+                TargetProjectId = targetProjectId,
                 TargetProjectName = targetProjectName,
                 TargetTaskId = dep.DependsOnItemId ?? Guid.Empty,
                 TargetTaskTitle = targetTask?.Title ?? dep.DependsOnSnapshotTitle ?? "Prerequisite Item",
                 TargetAssigneeEmails = targetTask?.AssigneeEmails ?? string.Empty,
                 DependencyType = dep.DependencyType,
                 ResolveByUtc = dep.DueDate,
-                IsResolved = isResolved
+                IsResolved = isResolved,
+                CanAccessTargetItem = canAccessTarget
             });
 
             if (isOverdue && dep.DependencyType == TaskDependencyTypeEnum.Blocks)
@@ -448,6 +467,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<RiskEntity>> GetProgramRisksAsync(Guid programId, CancellationToken ct = default)
     {
+        await _hierarchyAuth.EnsureHasProgramClearanceAsync(programId, ProgramRoleEnum.ReadOnly, ct: ct);
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Risks
             .AsNoTracking()
@@ -458,6 +478,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<AssumptionEntity>> GetProgramAssumptionsAsync(Guid programId, CancellationToken ct = default)
     {
+        await _hierarchyAuth.EnsureHasProgramClearanceAsync(programId, ProgramRoleEnum.ReadOnly, ct: ct);
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Assumptions
             .AsNoTracking()
@@ -468,6 +489,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<IssueEntity>> GetProgramIssuesAsync(Guid programId, CancellationToken ct = default)
     {
+        await _hierarchyAuth.EnsureHasProgramClearanceAsync(programId, ProgramRoleEnum.ReadOnly, ct: ct);
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.Issues
             .AsNoTracking()
@@ -478,6 +500,7 @@ public class ProgramService : IProgramService
 
     public async Task<IReadOnlyList<WorkDependencyEntity>> GetProgramBlockersAsync(Guid programId, CancellationToken ct = default)
     {
+        await _hierarchyAuth.EnsureHasProgramClearanceAsync(programId, ProgramRoleEnum.ReadOnly, ct: ct);
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         return await _context.WorkDependencies
             .AsNoTracking()

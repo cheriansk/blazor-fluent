@@ -7,7 +7,7 @@
 <span class="badge badge-subsystem">Subsystem: Knowledge</span>
 <span class="badge badge-tenant">DbSet: ArticleReviewers</span>
 <span class="badge badge-tenant" title="Database Table Name">Table: KnowledgeArticleReviewers</span>
-<a class="badge badge-base" href="AuditableEntity.html">Base: AuditableEntity</a>
+<a class="badge badge-base" href="BaseEntity.html">Base: BaseEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IGlobalEntity.html">Implements: IGlobalEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IHardDeletableEntity.html">Implements: IHardDeletableEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IUnversionedEntity.html">Implements: IUnversionedEntity</a>
@@ -40,7 +40,7 @@ g.entityBox:hover, g[id*="entity-"]:hover, g.classGroup:hover { filter: drop-sha
 <div class="diag-fullview" id="entityDiagViewport">
 <pre class="mermaid" id="erDiagramPre">
 erDiagram
-    AuditableEntity {
+    BaseEntity {
     }
     IGlobalEntity {
     }
@@ -54,7 +54,7 @@ erDiagram
     }
     UserEntity {
     }
-    AuditableEntity ||--|| KnowledgeArticleReviewerEntity : "extends"
+    BaseEntity ||--|| KnowledgeArticleReviewerEntity : "extends"
     IGlobalEntity ||--o{ KnowledgeArticleReviewerEntity : "implements"
     IHardDeletableEntity ||--o{ KnowledgeArticleReviewerEntity : "implements"
     IUnversionedEntity ||--o{ KnowledgeArticleReviewerEntity : "implements"
@@ -66,12 +66,11 @@ erDiagram
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
 <span class="badge badge-global" title="Host-wide entity; bypasses tenant query filter">[Global Scope]</span>
-<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
 </div>
 <div class="desc-box" style="margin-top: 14px;">Represents an assigned reviewer for a knowledge article. Extends , implements as a dependent child record governed by the parent article's query filter. Enforces 3NF relational normalization by persisting only and while exposing convenience properties from .</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (16)</div>
+<div class="card-title">Properties & Fields (17)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">ArticleId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
 <tr><td class="prop-name">Article <span class="fk-pill">NAV</span></td><td><a href="KnowledgeArticleEntity.html" class="code-type">KnowledgeArticleEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>-</td></tr>
@@ -88,7 +87,8 @@ erDiagram
 <tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who created the record.</td></tr>
 <tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
 <tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
-<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation.</td></tr>
+<tr><td class="prop-name">DomainEvents </td><td><span class="code-type">IReadOnlyCollection<IDomainEvent></span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Collection of domain events raised by this entity during business operations. Harvested and dispatched automatically by UnitOfWork on commit.</td></tr>
 </tbody></table>
 </div>
 <div class="card">
@@ -107,14 +107,8 @@ erDiagram
 <div class="diag-fullview">
 <pre class="mermaid" id="classDiagramPre">
 classDiagram
-    class AuditableEntity {
-        <<abstract>>
-    }
     class BaseEntity {
         <<abstract>>
-    }
-    class IAuditableEntity {
-        <<interface>>
     }
     class IConcurrency {
         <<interface>>
@@ -125,30 +119,21 @@ classDiagram
     class IHardDeletableEntity {
         <<interface>>
     }
-    class IMarkerEntity {
-        <<interface>>
-    }
     class IUnversionedEntity {
         <<interface>>
     }
     class KnowledgeArticleReviewerEntity {
     }
-    AuditableEntity <|-- KnowledgeArticleReviewerEntity : extends
-    BaseEntity <|-- AuditableEntity : extends
-    IAuditableEntity <|.. BaseEntity : implements
+    BaseEntity <|-- KnowledgeArticleReviewerEntity : extends
     IConcurrency <|.. BaseEntity : implements
     IGlobalEntity <|.. KnowledgeArticleReviewerEntity : implements
     IHardDeletableEntity <|.. KnowledgeArticleReviewerEntity : implements
-    IMarkerEntity <|-- IAuditableEntity : extends
-    IMarkerEntity <|-- IGlobalEntity : extends
-    IMarkerEntity <|-- IHardDeletableEntity : extends
-    IMarkerEntity <|-- IUnversionedEntity : extends
     IUnversionedEntity <|.. KnowledgeArticleReviewerEntity : implements
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
-    { parent: 'AuditableEntity', child: 'KnowledgeArticleReviewerEntity', label: 'extends' },
+    { parent: 'BaseEntity', child: 'KnowledgeArticleReviewerEntity', label: 'extends' },
     { parent: 'IGlobalEntity', child: 'KnowledgeArticleReviewerEntity', label: 'implements' },
     { parent: 'IHardDeletableEntity', child: 'KnowledgeArticleReviewerEntity', label: 'implements' },
     { parent: 'IUnversionedEntity', child: 'KnowledgeArticleReviewerEntity', label: 'implements' },
@@ -158,10 +143,8 @@ const activeEntityRels = [
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -200,14 +183,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -230,31 +213,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -275,13 +257,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

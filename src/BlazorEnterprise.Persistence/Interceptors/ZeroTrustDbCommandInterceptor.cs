@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Persistence.Context;
@@ -87,18 +88,35 @@ public class ZeroTrustDbCommandInterceptor : DbCommandInterceptor
             return;
         }
 
-        // 2. Allow internal framework queries strictly needed during startup, key management, forensic audit recording, and active session tracking
+        // 2. Allow internal framework queries strictly needed during startup, key management, forensic audit recording, active session tracking, and event tracking ledgers
         var cmdText = command.CommandText ?? string.Empty;
         if (cmdText.Contains("DataProtectionKeys", StringComparison.OrdinalIgnoreCase) ||
             cmdText.Contains("__EFMigrationsHistory", StringComparison.OrdinalIgnoreCase) ||
             cmdText.Contains("AuditRecords", StringComparison.OrdinalIgnoreCase) ||
-            cmdText.Contains("UserSessions", StringComparison.OrdinalIgnoreCase))
+            cmdText.Contains("UserSessions", StringComparison.OrdinalIgnoreCase) ||
+            cmdText.Contains("EventPublishTrackers", StringComparison.OrdinalIgnoreCase) ||
+            cmdText.Contains("EventConsumptionTrackers", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         var appDbContext = eventData.Context as AppDbContext;
         var currentUser = appDbContext?.CurrentUser;
+
+        // 2b. Gate 4: Mutation commands (INSERT, UPDATE, DELETE) must execute inside an active database transaction
+        var trimmedCmd = cmdText.TrimStart();
+        bool isMutation = trimmedCmd.StartsWith("INSERT ", StringComparison.OrdinalIgnoreCase) ||
+                          trimmedCmd.StartsWith("UPDATE ", StringComparison.OrdinalIgnoreCase) ||
+                          trimmedCmd.StartsWith("DELETE ", StringComparison.OrdinalIgnoreCase);
+
+        if (isMutation)
+        {
+            if (command.Transaction == null && appDbContext?.Database.CurrentTransaction == null)
+            {
+                _logger.LogCritical("TRANSACTION SECURITY VIOLATION: Denied database mutation command execution outside a transaction. Command: {CommandText}", cmdText);
+                throw new InvalidOperationException("Transaction Security Violation: Database mutation commands (INSERT, UPDATE, DELETE) cannot be executed outside an active transaction scope.");
+            }
+        }
 
         // 3. Authenticated user or background system daemon allowed IF tenant context is valid
         if (currentUser != null && (currentUser.IsAuthenticated || currentUser.IsSystemDaemon))

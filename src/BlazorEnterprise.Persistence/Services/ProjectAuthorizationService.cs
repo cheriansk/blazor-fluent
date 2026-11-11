@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Utilities;
+﻿using BlazorEnterprise.Core.Utilities;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Auditing;
@@ -129,7 +129,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
 
         return userRoles
             .Where(r => r.Role.Satisfies(minRole))
-            .Select(r => r.ProjectId)
+            .Where(r => r.ProjectId.HasValue).Select(r => r.ProjectId!.Value)
             .Distinct()
             .ToList();
     }
@@ -224,7 +224,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
             _dbContext.ProjectUserRoles.Add(assignment);
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         await _auditService.LogUserActivityAsync(
             "AssignProjectRole",
@@ -264,7 +264,7 @@ public class ProjectAuthorizationService : IProjectAuthorizationService
         existing.DeletedAtUtc = DateTime.UtcNow;
         existing.DeletedBy = _currentUser.UserId;
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         await _auditService.LogUserActivityAsync(
             "RevokeProjectRole",

@@ -11,7 +11,7 @@ namespace BlazorEnterprise.Core.Domain.Knowledge;
 /// Enforces 3NF relational normalization by persisting only <see cref="ArticleId"/> and <see cref="UserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
 /// </summary>
-public class KnowledgeArticleReviewerEntity : AuditableEntity, IGlobalEntity, IHardDeletableEntity, IUnversionedEntity
+public class KnowledgeArticleReviewerEntity : BaseEntity, IGlobalEntity, IHardDeletableEntity, IUnversionedEntity
 {
     public required Guid ArticleId { get; set; }
 

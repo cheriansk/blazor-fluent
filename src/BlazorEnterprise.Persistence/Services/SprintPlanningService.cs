@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Sprints;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Domain.Versioning;
@@ -62,7 +62,7 @@ public class SprintPlanningService : ISprintPlanningService
             result.Add(new SprintDto
             {
                 Id = s.Id,
-                ProjectId = s.ProjectId,
+                ProjectId = s.ProjectId ?? Guid.Empty,
                 SprintNumber = s.SprintNumber,
                 SprintName = s.SprintName,
                 StartDate = s.StartDate,
@@ -100,7 +100,7 @@ public class SprintPlanningService : ISprintPlanningService
         return new SprintDto
         {
             Id = s.Id,
-            ProjectId = s.ProjectId,
+            ProjectId = s.ProjectId ?? Guid.Empty,
             SprintNumber = s.SprintNumber,
             SprintName = s.SprintName,
             StartDate = s.StartDate,
@@ -182,7 +182,7 @@ public class SprintPlanningService : ISprintPlanningService
         };
         context.SprintAuditLogs.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
         return sprint;
     }
 
@@ -244,7 +244,7 @@ public class SprintPlanningService : ISprintPlanningService
         };
         context.SprintAuditLogs.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task DeleteSprintAsync(Guid sprintId, CancellationToken cancellationToken = default)
@@ -277,7 +277,7 @@ public class SprintPlanningService : ISprintPlanningService
         };
         context.SprintAuditLogs.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task<SprintStatusEnum> GetSprintStatusAsync(Guid sprintId, CancellationToken cancellationToken = default)
@@ -535,7 +535,63 @@ public class SprintPlanningService : ISprintPlanningService
             var task = await context.Tasks.FindAsync([itemId], cancellationToken);
             if (task != null)
             {
-                task.SprintId = targetSprintId;
+                if (targetSprintId.HasValue)
+                {
+                    if (task is SprintTaskEntity st)
+                    {
+                        st.SprintId = targetSprintId.Value;
+                    }
+                    else
+                    {
+                        // Promote MiscTaskEntity to SprintTaskEntity
+                        var sprintTask = new SprintTaskEntity
+                        {
+                            Id = task.Id,
+                            TenantId = task.TenantId,
+                            Level = task.Level,
+                            Title = task.Title,
+                            Description = task.Description,
+                            Priority = task.Priority,
+                            Status = task.Status,
+                            StartDate = task.StartDate,
+                            DueDate = task.DueDate,
+                            ReporterEmail = task.ReporterEmail,
+                            AssigneeEmails = task.AssigneeEmails,
+                            WatcherEmails = task.WatcherEmails,
+                            Labels = task.Labels,
+                            EstimatedHours = task.EstimatedHours,
+                            SprintId = targetSprintId.Value
+                        };
+                        context.Tasks.Remove(task);
+                        context.SprintTasks.Add(sprintTask);
+                    }
+                }
+                else
+                {
+                    // Moving to backlog (null sprint) -> ensure it is a MiscTaskEntity
+                    if (task is SprintTaskEntity st)
+                    {
+                        var miscTask = new MiscTaskEntity
+                        {
+                            Id = task.Id,
+                            TenantId = task.TenantId,
+                            Level = task.Level,
+                            Title = task.Title,
+                            Description = task.Description,
+                            Priority = task.Priority,
+                            Status = task.Status,
+                            StartDate = task.StartDate,
+                            DueDate = task.DueDate,
+                            ReporterEmail = task.ReporterEmail,
+                            AssigneeEmails = task.AssigneeEmails,
+                            WatcherEmails = task.WatcherEmails,
+                            Labels = task.Labels,
+                            EstimatedHours = task.EstimatedHours
+                        };
+                        context.Tasks.Remove(task);
+                        context.MiscTasks.Add(miscTask);
+                    }
+                }
             }
 
             var estimatedHours = currentVersion?.EstimatedHours ?? 0;
@@ -567,7 +623,7 @@ public class SprintPlanningService : ISprintPlanningService
             context.SprintItemVersions.Add(newVersion);
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task<List<ResourceCapacityDto>> CalculateResourceCapacityAsync(

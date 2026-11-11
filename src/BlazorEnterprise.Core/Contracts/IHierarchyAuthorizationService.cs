@@ -102,4 +102,45 @@ public interface IHierarchyAuthorizationService
     /// Permitted to Tenant Admins of the owning tenant, Program Admins of the parent program, or existing Project Admins of that project.
     /// </summary>
     Task<bool> CanManageProjectAdminsAsync(Guid projectId, string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Computes the effective program role for a user on a given program.
+    /// Resolves explicit ProgramUserRole first or returns Admin if Tenant/Root Admin.
+    /// </summary>
+    Task<BlazorEnterprise.Shared.DataListTypes.ProgramRoleEnum?> GetEffectiveProgramRoleAsync(Guid programId, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Evaluates if the user satisfies the required program clearance tier (numeric hierarchy check).
+    /// </summary>
+    Task<bool> HasProgramClearanceAsync(Guid programId, BlazorEnterprise.Shared.DataListTypes.ProgramRoleEnum minimumTier, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enforces the required program clearance tier. Throws SecurityException if user lacks clearance.
+    /// </summary>
+    Task EnsureHasProgramClearanceAsync(Guid programId, BlazorEnterprise.Shared.DataListTypes.ProgramRoleEnum minimumTier, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enforces that the user is a Tenant Admin or Root Admin for the tenant. Throws SecurityException if not.
+    /// </summary>
+    Task EnsureIsTenantAdminAsync(Guid tenantId, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Evaluates if the user has permission to view an item scoped to Tenant, Program, or Project level.
+    /// </summary>
+    Task<bool> CanViewScopedItemAsync(BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Evaluates if the user has permission to create, edit, or delete an item scoped to Tenant, Program, or Project level.
+    /// </summary>
+    Task<bool> CanEditScopedItemAsync(BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enforces view permission on a scoped item. Throws SecurityException or UnauthorizedAccessException if not permitted.
+    /// </summary>
+    Task EnsureCanViewScopedItemAsync(BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enforces edit permission on a scoped item. Throws SecurityException or UnauthorizedAccessException if not permitted.
+    /// </summary>
+    Task EnsureCanEditScopedItemAsync(BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default);
 }

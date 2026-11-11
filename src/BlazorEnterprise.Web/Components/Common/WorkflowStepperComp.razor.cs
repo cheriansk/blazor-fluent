@@ -28,7 +28,7 @@ public partial class WorkflowStepperComp : ComponentBase
     private bool _isAddSubtaskModalOpen;
     private bool _isCancelModalOpen;
 
-    private TaskEntity? _targetStep;
+    private WorkflowTaskEntity? _targetStep;
     private string _completionNotes = string.Empty;
     private string _reassignEmail = string.Empty;
     private string _reassignReason = string.Empty;
@@ -65,7 +65,7 @@ public partial class WorkflowStepperComp : ComponentBase
         _ => "var(--neutral-stroke-subtle, #8a8886)"
     };
 
-    private bool CanToggleSubtask(TaskEntity step, SubTaskEntity sub)
+    private bool CanToggleSubtask(WorkflowTaskEntity step, SubTaskEntity sub)
     {
         if (_isTenantAdmin || CurrentUser.IsRootAdmin) return true;
         if (string.Equals(CurrentUser.Email, Workflow.WorkflowOwnerEmail, StringComparison.OrdinalIgnoreCase)) return true;
@@ -91,7 +91,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
     }
 
-    private void PromptAddSubtask(TaskEntity step)
+    private void PromptAddSubtask(WorkflowTaskEntity step)
     {
         _targetStep = step;
         _newSubtaskTitle = string.Empty;
@@ -149,7 +149,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
     }
 
-    private void PromptCompleteStep(TaskEntity step)
+    private void PromptCompleteStep(WorkflowTaskEntity step)
     {
         _targetStep = step;
         _completionNotes = string.Empty;
@@ -196,7 +196,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
     }
 
-    private void PromptReassignStep(TaskEntity step)
+    private void PromptReassignStep(WorkflowTaskEntity step)
     {
         _targetStep = step;
         _reassignEmail = string.Empty;
@@ -251,7 +251,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
     }
 
-    private void PromptCancelStep(TaskEntity step)
+    private void PromptCancelStep(WorkflowTaskEntity step)
     {
         _targetStep = step;
         _cancelReason = string.Empty;

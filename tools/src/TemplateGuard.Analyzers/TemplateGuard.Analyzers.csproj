@@ -11,7 +11,7 @@
 
     <!-- NuGet Analyzer Package Configuration -->
     <PackageId>BlazorEnterprise.TemplateGuard</PackageId>
-    <Version>1.0.11</Version>
+    <Version>1.0.12</Version>
     <Authors>BlazorEnterprise Team</Authors>
     <Description>Roslyn code analyzers and architectural governance guards enforcing base file integrity and Clean Architecture conventions.</Description>
     <DevelopmentDependency>true</DevelopmentDependency>

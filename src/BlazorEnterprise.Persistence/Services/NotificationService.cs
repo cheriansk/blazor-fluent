@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -135,7 +135,7 @@ public class NotificationService : INotifyService
         };
 
         db.Notifications.Add(notification);
-        await db.SaveChangesAsync(ct);
+        db.IsTransactionScopeCommitAuthorized = true; try { await db.SaveChangesAsync(ct); } finally { db.IsTransactionScopeCommitAuthorized = false; }
 
         // 1. Teams Dispatch (if requested and configured)
         if ((request.Channels & NotificationChannelsEnum.Teams) != 0)
@@ -169,7 +169,7 @@ public class NotificationService : INotifyService
 
         if (notification.SentToTeams || notification.SentToMailbox)
         {
-            await db.SaveChangesAsync(ct);
+            db.IsTransactionScopeCommitAuthorized = true; try { await db.SaveChangesAsync(ct); } finally { db.IsTransactionScopeCommitAuthorized = false; }
         }
 
         return notification;
@@ -225,13 +225,13 @@ public class NotificationService : INotifyService
         else if (filter.Category == NotificationCategoryEnum.Generic)
         {
             query = query.Where(n => n.Category == NotificationCategoryEnum.Generic && n.UserId == null
-                && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
+                && (n.ProjectId == null || n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId.Value)));
         }
         else
         {
             query = query.Where(n =>
                 (n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId) ||
-                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == null || n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId.Value)))
             );
         }
 
@@ -307,7 +307,7 @@ public class NotificationService : INotifyService
         var genericCount = await baseQuery
             .Where(n => n.Category == NotificationCategoryEnum.Generic
                 && n.UserId == null
-                && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                && (n.ProjectId == null || n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId.Value)))
             .CountWithAuditedBypassAsync(auditService, "Counting unread generic notifications across authorized tenants.", ct);
 
         var personalCount = 0;
@@ -316,7 +316,7 @@ public class NotificationService : INotifyService
             personalCount = await baseQuery
                 .Where(n => n.Category == NotificationCategoryEnum.Personal
                     && n.UserId == currentUserId
-                    && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                    && (n.ProjectId == null || n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId.Value)))
                 .CountWithAuditedBypassAsync(auditService, "Counting unread personal notifications across authorized tenants.", ct);
         }
 
@@ -364,10 +364,10 @@ public class NotificationService : INotifyService
         }
 
         // Project check: Generic notification on a project requires read access
-        if (notification.ProjectId != Guid.Empty)
+        if (notification.ProjectId.HasValue && notification.ProjectId != Guid.Empty)
         {
             var authorizedProjectIds = await GetAuthorizedProjectIdsAcrossTenantsAsync(db, auditService, isHost, currentUserId, allowedTenants, ct);
-            if (!authorizedProjectIds.Contains(notification.ProjectId))
+            if (notification.ProjectId.HasValue && !authorizedProjectIds.Contains(notification.ProjectId.Value))
             {
                 return false;
             }
@@ -375,7 +375,7 @@ public class NotificationService : INotifyService
 
         notification.IsRead = true;
         notification.ReadAtUtc = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
+        db.IsTransactionScopeCommitAuthorized = true; try { await db.SaveChangesAsync(ct); } finally { db.IsTransactionScopeCommitAuthorized = false; }
         return true;
     }
 
@@ -417,13 +417,13 @@ public class NotificationService : INotifyService
         else if (category == NotificationCategoryEnum.Generic)
         {
             query = query.Where(n => n.Category == NotificationCategoryEnum.Generic && n.UserId == null
-                && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)));
+                && (n.ProjectId == null || n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId.Value)));
         }
         else
         {
             query = query.Where(n =>
                 (n.Category == NotificationCategoryEnum.Personal && n.UserId == currentUserId) ||
-                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId)))
+                (n.Category == NotificationCategoryEnum.Generic && n.UserId == null && (n.ProjectId == null || n.ProjectId == Guid.Empty || authorizedProjectIds.Contains(n.ProjectId.Value)))
             );
         }
 
@@ -437,7 +437,7 @@ public class NotificationService : INotifyService
             item.ReadAtUtc = now;
         }
 
-        await db.SaveChangesAsync(ct);
+        db.IsTransactionScopeCommitAuthorized = true; try { await db.SaveChangesAsync(ct); } finally { db.IsTransactionScopeCommitAuthorized = false; }
         return unreadNotifications.Count;
     }
 
@@ -473,7 +473,7 @@ public class NotificationService : INotifyService
 
         return userRoles
             .Where(r => r.Role.Satisfies(ProjectRoleEnum.ReadOnly))
-            .Select(r => r.ProjectId)
+            .Where(r => r.ProjectId.HasValue).Select(r => r.ProjectId!.Value)
             .Distinct()
             .ToList();
     }

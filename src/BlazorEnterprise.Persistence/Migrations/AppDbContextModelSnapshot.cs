@@ -61,6 +61,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("Operation")
                         .HasColumnType("integer");
 
@@ -73,7 +76,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("TraceId")
                         .HasMaxLength(128)
@@ -125,7 +129,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.ToTable("AuditRecords", "app");
                 });
 
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProgramCalendarEntity", b =>
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.CalendarEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -152,10 +156,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<string>("Description")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(5000)
-                        .HasColumnType("character varying(5000)")
-                        .HasDefaultValue("");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone");
@@ -168,132 +170,16 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("Level")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
                     b.Property<string>("OwnerEmails")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<Guid>("ParentRowId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValue(new Guid("00000000-0000-0000-0000-000000000000"));
-
-                    b.Property<Guid?>("ParentTimelineId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProgramId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RevisionHeaderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("Updated")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Updated");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("UpdatedBy");
-
-                    b.Property<int>("VerNum")
-                        .HasColumnType("integer");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentTimelineId")
-                        .HasDatabaseName("IX_ProgramCalendars_ParentTimelineId");
-
-                    b.HasIndex("RelId")
-                        .HasDatabaseName("IX_ProgramCalendars_RelId");
-
-                    b.HasIndex("RevisionHeaderId")
-                        .HasDatabaseName("IX_ProgramCalendars_RevisionHeaderId");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_ProgramCalendars_TenantId");
-
-                    b.HasIndex("RevisionHeaderId", "RelId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ProgramCalendars_Revision_RelId");
-
-                    b.HasIndex("TenantId", "ProgramId")
-                        .HasDatabaseName("IX_ProgramCalendars_Tenant_Program");
-
-                    b.HasIndex("ProgramId", "StartDate", "EndDate")
-                        .HasDatabaseName("IX_ProgramCalendars_Program_Start_End");
-
-                    b.ToTable("ProgramCalendars", "calendar");
-                });
-
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProjectCalendarEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Comments")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Created");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("CreatedBy");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Description")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(5000)
-                        .HasColumnType("character varying(5000)")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasDefaultValue("");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("EntryType")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("OwnerEmails")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid?>("ParentProgramCalendarId")
                         .HasColumnType("uuid");
@@ -309,7 +195,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<Guid?>("ProgramId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("RelId")
@@ -325,7 +211,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -352,33 +239,28 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentProgramCalendarId");
-
-                    b.HasIndex("ParentTimelineId")
-                        .HasDatabaseName("IX_ProjectCalendars_ParentTimelineId");
-
-                    b.HasIndex("ProgramId");
+                    b.HasIndex("ParentTimelineId");
 
                     b.HasIndex("RelId")
-                        .HasDatabaseName("IX_ProjectCalendars_RelId");
+                        .HasDatabaseName("IX_Calendars_RelId");
 
                     b.HasIndex("RevisionHeaderId")
-                        .HasDatabaseName("IX_ProjectCalendars_RevisionHeaderId");
+                        .HasDatabaseName("IX_Calendars_RevisionHeaderId");
 
                     b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_ProjectCalendars_TenantId");
+                        .HasDatabaseName("IX_Calendars_TenantId");
 
                     b.HasIndex("RevisionHeaderId", "RelId")
                         .IsUnique()
-                        .HasDatabaseName("IX_ProjectCalendars_Revision_RelId");
+                        .HasDatabaseName("IX_Calendars_Revision_RelId");
+
+                    b.HasIndex("TenantId", "ProgramId")
+                        .HasDatabaseName("IX_Calendars_Tenant_Program");
 
                     b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_ProjectCalendars_Tenant_Project");
+                        .HasDatabaseName("IX_Calendars_Tenant_Project");
 
-                    b.HasIndex("ProjectId", "StartDate", "EndDate")
-                        .HasDatabaseName("IX_ProjectCalendars_Project_Start_End");
-
-                    b.ToTable("ProjectCalendars", "calendar");
+                    b.ToTable("calendars", "calendar");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.UserCalendarEntity", b =>
@@ -427,11 +309,23 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("OwnerEmails")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
                     b.Property<Guid?>("ParentTimelineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("StartDate")
@@ -441,7 +335,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -533,6 +428,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<string>("ExceptionDetails")
                         .HasColumnType("text");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("StartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -540,7 +438,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -610,6 +509,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("PayloadJson")
                         .IsRequired()
                         .HasColumnType("jsonb");
@@ -635,7 +537,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("TriggerSource")
                         .IsRequired()
@@ -953,6 +856,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<DateTime>("LastActivityAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("RevokedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -964,7 +870,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -1078,6 +985,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("OriginalFileName")
                         .IsRequired()
                         .HasMaxLength(260)
@@ -1086,7 +996,10 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<DateTime?>("ProcessedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Sha256Checksum")
@@ -1112,7 +1025,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasDefaultValue("");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<int>("TotalRowsCount")
                         .ValueGeneratedOnAdd()
@@ -1194,6 +1108,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("OriginalFileName")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1206,7 +1123,10 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<DateTime?>("ProcessedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("RowCount")
@@ -1227,7 +1147,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasDefaultValue("Staged");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<int>("TotalChunks")
                         .HasColumnType("integer");
@@ -1298,6 +1219,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<int>("MaxRetries")
                         .HasColumnType("integer");
 
@@ -1314,7 +1238,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("TriggerSource")
                         .IsRequired()
@@ -1398,14 +1323,21 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1439,16 +1371,11 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasIndex("IsGlobal")
                         .HasDatabaseName("IX_KnowledgeArticles_IsGlobal");
 
-                    b.HasIndex("ProjectId");
-
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_KnowledgeArticles_Status");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_KnowledgeArticles_TenantId");
-
-                    b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_KnowledgeArticles_TenantId_ProjectId");
 
                     b.ToTable("KnowledgeArticles", "app");
                 });
@@ -1500,11 +1427,11 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ArticleId")
-                        .HasDatabaseName("IX_KnowledgeArticleReviewers_ArticleId");
+                    b.HasIndex("UserEntityId");
 
-                    b.HasIndex("UserEntityId")
-                        .HasDatabaseName("IX_KnowledgeArticleReviewers_UserEntityId");
+                    b.HasIndex("ArticleId", "UserEntityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_KnowledgeArticleReviewers_Article_User");
 
                     b.ToTable("KnowledgeArticleReviewers", "app");
                 });
@@ -1545,6 +1472,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("LinkUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -1560,7 +1490,10 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<string>("MetadataJson")
                         .HasColumnType("jsonb");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ReadAtUtc")
@@ -1583,7 +1516,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1616,6 +1550,10 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Notifications_TenantId");
+
+                    b.HasIndex("TenantId", "Category")
+                        .HasDatabaseName("IX_Notifications_Tenant_Category")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("TenantId", "ProjectId", "Category")
                         .HasDatabaseName("IX_Notifications_Tenant_Project_Category")
@@ -1653,14 +1591,21 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -1723,10 +1668,16 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ParentRowId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ProjectResourceId")
@@ -1739,7 +1690,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -1812,10 +1764,16 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ParentRowId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ProjectResourceId")
@@ -1828,7 +1786,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -1892,6 +1851,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("NewValue")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -1904,7 +1866,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -1962,7 +1925,13 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("SprintName")
@@ -1980,7 +1949,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -2051,10 +2021,16 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ParentRowId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("RelId")
@@ -2070,7 +2046,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -2180,9 +2157,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(3);
 
-                    b.Property<Guid?>("MilestoneId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
@@ -2212,7 +2186,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -2227,10 +2202,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
-
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("ValidationCriteria")
                         .ValueGeneratedOnAdd()
@@ -2261,16 +2232,181 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasIndex("TenantId", "Level")
                         .HasDatabaseName("IX_Assumptions_TenantId_Level");
 
-                    b.HasIndex("TenantId", "ProgramId")
-                        .HasDatabaseName("IX_Assumptions_TenantId_ProgramId");
-
-                    b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_Assumptions_TenantId_ProjectId");
-
                     b.HasIndex("TenantId", "Level", "ValidationStatus")
                         .HasDatabaseName("IX_Assumptions_Tenant_Level_ValidationStatus");
 
                     b.ToTable("Assumptions", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.DeliverableEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ActualEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ArtifactUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("AssigneeEmails")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasDefaultValue("");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("EncryptedPayloadBytes")
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEncryptedAtRest")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Labels")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("");
+
+                    b.Property<int>("Level")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
+                    b.Property<Guid>("ParentItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ParentType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReporterEmail")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasDefaultValue("");
+
+                    b.Property<DateTime?>("RevisedDueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SignOffNotes")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<int>("SignOffStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<Guid?>("SourceRowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("WatcherEmails")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasDefaultValue("");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Deliverables_TenantId");
+
+                    b.HasIndex("TenantId", "Level")
+                        .HasDatabaseName("IX_Deliverables_TenantId_Level");
+
+                    b.HasIndex("TenantId", "SignOffStatus")
+                        .HasDatabaseName("IX_Deliverables_Tenant_SignOffStatus");
+
+                    b.HasIndex("TenantId", "ParentType", "ParentItemId")
+                        .HasDatabaseName("IX_Deliverables_Tenant_ParentType_ParentItemId");
+
+                    b.HasIndex("TenantId", "Level", "Status", "DueDate")
+                        .HasDatabaseName("IX_Deliverables_Tenant_Level_Status_DueDate");
+
+                    b.ToTable("Deliverables", "tasks");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.IssueEntity", b =>
@@ -2340,9 +2476,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(3);
 
-                    b.Property<Guid?>("MilestoneId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
@@ -2384,7 +2517,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -2399,10 +2533,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
-
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -2429,12 +2559,6 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasIndex("TenantId", "Level")
                         .HasDatabaseName("IX_Issues_TenantId_Level");
-
-                    b.HasIndex("TenantId", "ProgramId")
-                        .HasDatabaseName("IX_Issues_TenantId_ProgramId");
-
-                    b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_Issues_TenantId_ProjectId");
 
                     b.HasIndex("TenantId", "Level", "Priority", "Status")
                         .HasDatabaseName("IX_Issues_Tenant_Level_Priority_Status");
@@ -2518,9 +2642,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(3);
 
-                    b.Property<Guid?>("MilestoneId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("MitigationStrategy")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(5000)
@@ -2562,7 +2683,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -2577,10 +2699,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
-
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -2601,15 +2719,6 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.HasIndex("TenantId", "Level")
                         .HasDatabaseName("IX_Risks_TenantId_Level");
-
-                    b.HasIndex("TenantId", "ProgramId")
-                        .HasDatabaseName("IX_Risks_TenantId_ProgramId");
-
-                    b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_Risks_TenantId_ProjectId");
-
-                    b.HasIndex("TenantId", "Level", "RiskStatus", "DueDate")
-                        .HasDatabaseName("IX_Risks_Tenant_Level_RiskStatus_DueDate");
 
                     b.ToTable("Risks", "tasks");
                 });
@@ -2721,7 +2830,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -2736,10 +2846,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
-
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -2814,15 +2920,15 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("EstimatedHours")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<byte[]>("EncryptedPayloadBytes")
                         .HasColumnType("bytea");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("EstimatedHours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -2833,10 +2939,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Labels")
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasDefaultValue("");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int>("Level")
                         .ValueGeneratedOnAdd()
@@ -2852,7 +2956,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<Guid?>("ProgramId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ReporterEmail")
@@ -2875,7 +2979,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -2891,10 +2996,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
 
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -2907,45 +3008,13 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasDefaultValue("");
 
-                    b.Property<Guid?>("WorkflowId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("WorkflowStepOrder")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("MilestoneId")
-                        .HasDatabaseName("IX_Tasks_MilestoneId");
+                    b.HasIndex("TenantId");
 
-                    b.HasIndex("ProgramId");
+                    b.ToTable((string)null);
 
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_Tasks_TenantId");
-
-                    b.HasIndex("WorkflowId");
-
-                    b.HasIndex("TenantId", "Level")
-                        .HasDatabaseName("IX_Tasks_TenantId_Level");
-
-                    b.HasIndex("TenantId", "ProgramId")
-                        .HasDatabaseName("IX_Tasks_TenantId_ProgramId");
-
-                    b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_Tasks_TenantId_ProjectId");
-
-                    b.HasIndex("TenantId", "WorkflowId", "WorkflowStepOrder")
-                        .HasDatabaseName("IX_Tasks_TenantId_WorkflowId_StepOrder");
-
-                    b.HasIndex("TenantId", "ProjectId", "Status", "DueDate")
-                        .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
-
-                    b.ToTable("Tasks", "tasks", t =>
-                        {
-                            t.HasCheckConstraint("CK_Tasks_WorkflowId_WorkflowStepOrder", "(\"WorkflowId\" IS NULL AND \"WorkflowStepOrder\" IS NULL) OR (\"WorkflowId\" IS NOT NULL AND \"WorkflowStepOrder\" IS NOT NULL AND \"WorkflowStepOrder\" > 0)");
-                        });
+                    b.UseTpcMappingStrategy();
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.UserTaskCommentEntity", b =>
@@ -2987,14 +3056,21 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -3074,28 +3150,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<Guid?>("DependsOnItemId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("DependsOnLevel")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(3);
-
-                    b.Property<Guid?>("DependsOnProgramId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("DependsOnProjectId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DependsOnSnapshotDueDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DependsOnSnapshotStatus")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("DependsOnSnapshotTitle")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<int>("DependsOnType")
                         .HasColumnType("integer");
 
@@ -3118,9 +3172,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<bool>("IsEncryptedAtRest")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsScheduleConflict")
                         .ValueGeneratedOnAdd()
@@ -3138,9 +3190,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(3);
 
-                    b.Property<Guid?>("MilestoneId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
@@ -3151,6 +3200,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("ReporterEmail")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -3169,7 +3219,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -3184,10 +3235,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
-
-                    b.Property<string>("UserId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -3206,29 +3253,11 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_WorkDependencies_TenantId");
 
-                    b.HasIndex("TenantId", "DependsOnProgramId")
-                        .HasDatabaseName("IX_WorkDependencies_Tenant_DependsOnProgramId");
-
-                    b.HasIndex("TenantId", "DependsOnProjectId")
-                        .HasDatabaseName("IX_WorkDependencies_Tenant_DependsOnProjectId");
-
-                    b.HasIndex("TenantId", "IsScheduleConflict")
-                        .HasDatabaseName("IX_WorkDependencies_Tenant_ScheduleConflict");
-
-                    b.HasIndex("TenantId", "ProgramId")
-                        .HasDatabaseName("IX_WorkDependencies_Tenant_ProgramId");
-
-                    b.HasIndex("TenantId", "ProjectId")
-                        .HasDatabaseName("IX_WorkDependencies_Tenant_ProjectId");
-
                     b.HasIndex("TenantId", "DependentType", "DependentItemId")
                         .HasDatabaseName("IX_WorkDependencies_Tenant_DependentItem");
 
                     b.HasIndex("TenantId", "DependsOnType", "DependsOnItemId")
                         .HasDatabaseName("IX_WorkDependencies_Tenant_DependsOnItem");
-
-                    b.HasIndex("TenantId", "Status", "DueDate")
-                        .HasDatabaseName("IX_WorkDependencies_Tenant_Status_DueDate");
 
                     b.ToTable("WorkDependencies", "tasks");
                 });
@@ -3333,7 +3362,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -3348,9 +3378,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("UpdatedBy");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -3371,10 +3398,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasIndex("TenantId", "AssigneeEmails");
 
                     b.HasIndex("TenantId", "Level");
-
-                    b.HasIndex("TenantId", "ProgramId");
-
-                    b.HasIndex("TenantId", "ProjectId", "Status");
 
                     b.ToTable("Workflows", "tasks");
                 });
@@ -3431,10 +3454,16 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("RevisedDueDate")
                         .HasColumnType("timestamp with time zone");
@@ -3446,7 +3475,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -3503,6 +3533,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ProgramId")
                         .HasColumnType("uuid");
 
@@ -3515,7 +3548,8 @@ namespace BlazorEnterprise.Persistence.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -3599,6 +3633,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Location")
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
@@ -3635,7 +3672,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(2000)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -3699,7 +3737,13 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("ProjectId")
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Role")
@@ -3710,7 +3754,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -3860,6 +3905,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
@@ -3868,7 +3916,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -3964,6 +4013,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ParentRevisionHeaderId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
@@ -4006,7 +4058,8 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("timestamp with time zone")
@@ -4036,24 +4089,18 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasIndex("TenantId", "Status")
                         .HasDatabaseName("IX_RevisionHeaders_Tenant_Status");
 
-                    b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType")
+                    b.HasIndex("TenantId", "ScopeLevel", "FeatureType", "ProgramId", "ProjectId")
                         .IsUnique()
                         .HasDatabaseName("IX_RevisionHeaders_Scenario_SingleActive")
                         .HasFilter("\"Status\" = 4 AND \"IsDeleted\" = false");
 
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType"), false);
-
-                    b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType", "VerNum")
+                    b.HasIndex("TenantId", "ScopeLevel", "FeatureType", "ProgramId", "ProjectId", "VerNum")
                         .IsUnique()
                         .HasDatabaseName("IX_RevisionHeaders_Scenario_VerNum_Unique");
-
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "ProgramId", "ProjectId", "FeatureType", "VerNum"), false);
 
                     b.ToTable("RevisionHeaders", "versioning", t =>
                         {
                             t.HasCheckConstraint("CK_RevisionHeaders_Lineage_Integrity", "\"VerNum\" >= 1 AND (\"ParentVerNum\" = -1 OR (\"ParentVerNum\" >= 1 AND \"ParentVerNum\" < \"VerNum\"))");
-
-                            t.HasCheckConstraint("CK_RevisionHeaders_Scope_Hierarchy", "(\"ScopeLevel\" = 1 AND \"ProgramId\" IS NULL AND \"ProjectId\" IS NULL) OR (\"ScopeLevel\" = 2 AND \"ProgramId\" IS NOT NULL AND \"ProjectId\" IS NULL) OR (\"ScopeLevel\" = 3 AND \"ProgramId\" IS NOT NULL AND \"ProjectId\" IS NOT NULL)");
                         });
                 });
 
@@ -4076,54 +4123,73 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProgramCalendarEntity", b =>
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.MiscTaskEntity", b =>
                 {
-                    b.HasOne("BlazorEnterprise.Core.Domain.Calendar.ProgramCalendarEntity", "ParentTimeline")
-                        .WithMany("Milestones")
-                        .HasForeignKey("ParentTimelineId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.HasBaseType("BlazorEnterprise.Core.Domain.Tasks.TaskEntity");
 
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProgramEntity", "Program")
-                        .WithMany()
-                        .HasForeignKey("ProgramId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasIndex("TenantId", "Level")
+                        .HasDatabaseName("IX_MiscTasks_TenantId_Level");
 
-                    b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
-                        .WithMany()
-                        .HasForeignKey("RevisionHeaderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasIndex("TenantId", "Level", "Status", "DueDate")
+                        .HasDatabaseName("IX_MiscTasks_Tenant_Level_Status_DueDate");
 
-                    b.Navigation("ParentTimeline");
-
-                    b.Navigation("Program");
-
-                    b.Navigation("RevisionHeader");
+                    b.ToTable("MiscTasks", "tasks");
                 });
 
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProjectCalendarEntity", b =>
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.SprintTaskEntity", b =>
                 {
-                    b.HasOne("BlazorEnterprise.Core.Domain.Calendar.ProgramCalendarEntity", "ParentProgramCalendar")
-                        .WithMany()
-                        .HasForeignKey("ParentProgramCalendarId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasBaseType("BlazorEnterprise.Core.Domain.Tasks.TaskEntity");
 
-                    b.HasOne("BlazorEnterprise.Core.Domain.Calendar.ProjectCalendarEntity", "ParentTimeline")
+                    b.Property<Guid>("SprintId")
+                        .HasColumnType("uuid");
+
+                    b.HasIndex("SprintId");
+
+                    b.HasIndex("TenantId", "Level")
+                        .HasDatabaseName("IX_SprintTasks_TenantId_Level");
+
+                    b.HasIndex("TenantId", "SprintId")
+                        .HasDatabaseName("IX_SprintTasks_TenantId_SprintId");
+
+                    b.HasIndex("TenantId", "Level", "Status", "DueDate")
+                        .HasDatabaseName("IX_SprintTasks_Tenant_Level_Status_DueDate");
+
+                    b.ToTable("SprintTasks", "tasks");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.WorkflowTaskEntity", b =>
+                {
+                    b.HasBaseType("BlazorEnterprise.Core.Domain.Tasks.TaskEntity");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("WorkflowStepOrder")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.HasIndex("TenantId", "Level")
+                        .HasDatabaseName("IX_WorkflowTasks_TenantId_Level");
+
+                    b.HasIndex("TenantId", "WorkflowId", "WorkflowStepOrder")
+                        .HasDatabaseName("IX_WorkflowTasks_TenantId_WorkflowId_StepOrder");
+
+                    b.HasIndex("TenantId", "Level", "Status", "DueDate")
+                        .HasDatabaseName("IX_WorkflowTasks_Tenant_Level_Status_DueDate");
+
+                    b.ToTable("WorkflowTasks", "tasks", t =>
+                        {
+                            t.HasCheckConstraint("CK_WorkflowTasks_WorkflowStepOrder_Positive", "\"WorkflowStepOrder\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.CalendarEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Calendar.CalendarEntity", "ParentTimeline")
                         .WithMany("Milestones")
                         .HasForeignKey("ParentTimelineId")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProgramEntity", "Program")
-                        .WithMany()
-                        .HasForeignKey("ProgramId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.HasOne("BlazorEnterprise.Core.Domain.Versioning.RevisionHeaderEntity", "RevisionHeader")
                         .WithMany()
@@ -4131,13 +4197,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("ParentProgramCalendar");
-
                     b.Navigation("ParentTimeline");
-
-                    b.Navigation("Program");
-
-                    b.Navigation("Project");
 
                     b.Navigation("RevisionHeader");
                 });
@@ -4177,17 +4237,9 @@ namespace BlazorEnterprise.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
-
                     b.Navigation("ApprovedByUser");
 
                     b.Navigation("AuthorUser");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Knowledge.KnowledgeArticleReviewerEntity", b =>
@@ -4214,8 +4266,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BlazorEnterprise.Core.Domain.Identity.UserEntity", "User")
                         .WithMany()
@@ -4282,8 +4333,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Project");
                 });
@@ -4330,27 +4380,6 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Navigation("BlockedBySubTask");
 
                     b.Navigation("ParentTask");
-                });
-
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.TaskEntity", b =>
-                {
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProgramEntity", null)
-                        .WithMany()
-                        .HasForeignKey("ProgramId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BlazorEnterprise.Core.Domain.Tasks.WorkflowEntity", "Workflow")
-                        .WithMany("Steps")
-                        .HasForeignKey("WorkflowId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("Workflow");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.UserTaskCommentEntity", b =>
@@ -4425,8 +4454,7 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.HasOne("BlazorEnterprise.Core.Domain.Tenancy.ProjectEntity", "Project")
                         .WithMany("UserRoles")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("BlazorEnterprise.Core.Domain.Identity.UserEntity", "User")
                         .WithMany("ProjectRoles")
@@ -4458,12 +4486,29 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProgramCalendarEntity", b =>
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.SprintTaskEntity", b =>
                 {
-                    b.Navigation("Milestones");
+                    b.HasOne("BlazorEnterprise.Core.Domain.Sprints.SprintEntity", "Sprint")
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Sprint");
                 });
 
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.ProjectCalendarEntity", b =>
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.WorkflowTaskEntity", b =>
+                {
+                    b.HasOne("BlazorEnterprise.Core.Domain.Tasks.WorkflowEntity", "Workflow")
+                        .WithMany("Steps")
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workflow");
+                });
+
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Calendar.CalendarEntity", b =>
                 {
                     b.Navigation("Milestones");
                 });

@@ -40,6 +40,7 @@ public static class PersistenceExtensions
         services.AddSingleton<AuditableEntityInterceptor>();
         services.AddSingleton<ProjectSecurityInterceptor>();
         services.AddSingleton<NoTrackingMutationGuardInterceptor>();
+        services.AddSingleton<TransactionScopeGuardInterceptor>();
         services.AddOptions<BlazorEnterprise.Core.Configuration.DatabaseLoggingOptions>()
             .BindConfiguration(BlazorEnterprise.Core.Configuration.DatabaseLoggingOptions.SectionName);
         services.AddSingleton<DbCommandLoggingInterceptor>();
@@ -77,6 +78,7 @@ public static class PersistenceExtensions
             var interceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
             var securityInterceptor = sp.GetRequiredService<ProjectSecurityInterceptor>();
             var noTrackingGuard = sp.GetRequiredService<NoTrackingMutationGuardInterceptor>();
+            var txScopeGuard = sp.GetRequiredService<TransactionScopeGuardInterceptor>();
             var dbCommandLoggingInterceptor = sp.GetRequiredService<DbCommandLoggingInterceptor>();
             var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
 
@@ -89,11 +91,26 @@ public static class PersistenceExtensions
                     maxRetryDelay: TimeSpan.FromSeconds(5),
                     errorCodesToAdd: null);
             })
-            .AddInterceptors(zeroTrustInterceptor, connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard, dbCommandLoggingInterceptor);
+            .AddInterceptors(zeroTrustInterceptor, connectionInterceptor, validationInterceptor, interceptor, securityInterceptor, noTrackingGuard, txScopeGuard, dbCommandLoggingInterceptor);
         };
 
         services.AddDbContext<AppDbContext>(configureDbContext);
         services.AddDbContextFactory<AppDbContext>(configureDbContext, ServiceLifetime.Scoped);
+        var dbContextFactoryDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IDbContextFactory<AppDbContext>));
+        if (dbContextFactoryDescriptor != null)
+        {
+            services.Remove(dbContextFactoryDescriptor);
+            services.Add(new ServiceDescriptor(
+                typeof(IDbContextFactory<AppDbContext>),
+                sp =>
+                {
+                    var inner = (IDbContextFactory<AppDbContext>)(dbContextFactoryDescriptor.ImplementationFactory != null
+                        ? dbContextFactoryDescriptor.ImplementationFactory(sp)
+                        : ActivatorUtilities.GetServiceOrCreateInstance(sp, dbContextFactoryDescriptor.ImplementationType!));
+                    return new AmbientAwareDbContextFactory(inner);
+                },
+                ServiceLifetime.Scoped));
+        }
 
         // 7. Auto-scaling Azure Web Apps: Shared Data Protection Key Ring in PostgreSQL
         services.AddDataProtection()
@@ -135,6 +152,14 @@ public static class PersistenceExtensions
         services.TryAddScoped<ITenantService, TenantService>();
 
         // 11. Register Unit of Work for atomic transactions and rollbacks
+        // 11. Register Unit of Work & Domain Event Dispatcher (Milan Jovanovic pattern)
+        services.TryAddScoped<BlazorEnterprise.Core.Events.IDomainEventDispatcher, DomainEventDispatcher>();
+        services.AddScoped<BlazorEnterprise.Core.Events.IDomainEventHandler<BlazorEnterprise.Core.Events.UnitOfWorkSucceededDomainEvent>, UnitOfWorkLifecycleEventHandlers>();
+        services.AddScoped<BlazorEnterprise.Core.Events.IDomainEventHandler<BlazorEnterprise.Core.Events.UnitOfWorkFailedDomainEvent>, UnitOfWorkLifecycleEventHandlers>();
+        services.AddScoped<BlazorEnterprise.Core.Events.IDomainEventHandler<BlazorEnterprise.Core.Events.ProgramCreatedDomainEvent>, UnitOfWorkLifecycleEventHandlers>();
+        services.AddScoped<BlazorEnterprise.Core.Events.IDomainEventHandler<BlazorEnterprise.Core.Events.ProgramUpdatedDomainEvent>, UnitOfWorkLifecycleEventHandlers>();
+        services.AddScoped<BlazorEnterprise.Core.Events.IDomainEventHandler<BlazorEnterprise.Core.Events.ProjectCreatedDomainEvent>, UnitOfWorkLifecycleEventHandlers>();
+        services.AddScoped<BlazorEnterprise.Core.Events.IDomainEventHandler<BlazorEnterprise.Core.Events.ProjectUpdatedDomainEvent>, UnitOfWorkLifecycleEventHandlers>();
         services.TryAddScoped<IUnitOfWork, UnitOfWork>();
 
         // 12. Register Project Authorization Service with direct live real-time queries

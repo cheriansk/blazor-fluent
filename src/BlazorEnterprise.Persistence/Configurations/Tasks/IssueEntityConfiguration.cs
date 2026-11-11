@@ -14,6 +14,7 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(i => i.Level)
@@ -30,9 +31,6 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
             .IsRequired(false);
 
         builder.Ignore(i => i.Severity);
-
-        builder.Property(i => i.MilestoneId)
-            .IsRequired(false);
 
         builder.Property(i => i.RootCause)
             .HasMaxLength(5000)
@@ -95,15 +93,10 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(i => i.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(i => i.ProjectId)
-            .IsRequired(false);
-
-        builder.Property(i => i.UserId)
-            .HasMaxLength(256)
-            .IsRequired(false);
+        // Ignore [NotMapped] edge relations
+        builder.Property(i => i.ProgramId).IsRequired(false);
+        builder.Property(i => i.ProjectId).IsRequired(false);
+        builder.Ignore(i => i.MilestoneId);
 
         // Soft delete properties
         builder.Property(i => i.IsDeleted)
@@ -123,12 +116,6 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
 
         builder.HasIndex(i => new { i.TenantId, i.Level })
             .HasDatabaseName("IX_Issues_TenantId_Level");
-
-        builder.HasIndex(i => new { i.TenantId, i.ProgramId })
-            .HasDatabaseName("IX_Issues_TenantId_ProgramId");
-
-        builder.HasIndex(i => new { i.TenantId, i.ProjectId })
-            .HasDatabaseName("IX_Issues_TenantId_ProjectId");
 
         builder.HasIndex(i => new { i.TenantId, i.Level, i.Priority, i.Status })
             .HasDatabaseName("IX_Issues_Tenant_Level_Priority_Status");

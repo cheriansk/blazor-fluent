@@ -1,7 +1,5 @@
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Tasks;
-using BlazorEnterprise.Core.Domain.Tenancy;
-using BlazorEnterprise.Core.Domain.Sprints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,16 +9,13 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 {
     public void Configure(EntityTypeBuilder<TaskEntity> builder)
     {
-        builder.ToTable("Tasks", EntitySchemas.tasks.ToString(), t =>
-        {
-            t.HasCheckConstraint(
-                "CK_Tasks_WorkflowId_WorkflowStepOrder",
-                "(\"WorkflowId\" IS NULL AND \"WorkflowStepOrder\" IS NULL) OR (\"WorkflowId\" IS NOT NULL AND \"WorkflowStepOrder\" IS NOT NULL AND \"WorkflowStepOrder\" > 0)");
-        });
+        // EF Core Table-per-Concrete-Type (TPC) inheritance mapping
+        builder.UseTpcMappingStrategy();
 
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(t => t.Level)
@@ -85,24 +80,6 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasPrecision(18, 2)
             .IsRequired(false);
 
-        builder.Property(t => t.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(t => t.ProjectId)
-            .IsRequired(false);
-
-        builder.Property(t => t.MilestoneId)
-            .IsRequired(false);
-
-        builder.Property(t => t.SprintId)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowId)
-            .IsRequired(false);
-
-        builder.Property(t => t.WorkflowStepOrder)
-            .IsRequired(false);
-
         // Soft delete properties
         builder.Property(t => t.IsDeleted)
             .IsRequired()
@@ -115,56 +92,16 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
             .HasMaxLength(256)
             .IsRequired(false);
 
+        // Ignore [NotMapped] edge relations
+        builder.Property(t => t.ProgramId).IsRequired(false);
+        builder.Property(t => t.ProjectId).IsRequired(false);
+        builder.Property(t => t.MilestoneId).IsRequired(false);
+
         // Relationships
-        builder.HasOne<ProjectEntity>()
-            .WithMany()
-            .HasForeignKey(t => t.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<ProgramEntity>()
-            .WithMany()
-            .HasForeignKey(t => t.ProgramId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(t => t.Sprint)
-            .WithMany()
-            .HasForeignKey(t => t.SprintId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(t => t.Workflow)
-            .WithMany(w => w.Steps)
-            .HasForeignKey(t => t.WorkflowId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasMany(t => t.SubTasks)
             .WithOne(s => s.ParentTask)
             .HasForeignKey(s => s.ParentTaskId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // Targeted High-Performance Compound Indexes
-        builder.HasIndex(t => t.TenantId)
-            .HasDatabaseName("IX_Tasks_TenantId");
-
-        builder.HasIndex(t => new { t.TenantId, t.Level })
-            .HasDatabaseName("IX_Tasks_TenantId_Level");
-
-        builder.HasIndex(t => new { t.TenantId, t.ProjectId })
-            .HasDatabaseName("IX_Tasks_TenantId_ProjectId");
-
-        builder.HasIndex(t => new { t.TenantId, t.ProgramId })
-            .HasDatabaseName("IX_Tasks_TenantId_ProgramId");
-
-        builder.HasIndex(t => new { t.TenantId, t.SprintId })
-            .HasDatabaseName("IX_Tasks_TenantId_SprintId");
-
-        builder.HasIndex(t => new { t.TenantId, t.ProjectId, t.Status, t.DueDate })
-            .HasDatabaseName("IX_Tasks_Tenant_Project_Status_DueDate");
-
-        builder.HasIndex(t => t.MilestoneId)
-            .HasDatabaseName("IX_Tasks_MilestoneId");
-
-        builder.HasIndex(t => new { t.TenantId, t.WorkflowId, t.WorkflowStepOrder })
-            .HasDatabaseName("IX_Tasks_TenantId_WorkflowId_StepOrder");
 
         // Hook for downstream entity mapping customizations
         OnConfigureCustom(builder);

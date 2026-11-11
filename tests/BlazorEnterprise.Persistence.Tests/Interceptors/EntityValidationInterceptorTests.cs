@@ -30,7 +30,7 @@ public class EntityValidationInterceptorTests : IDisposable
         _connection.Dispose();
     }
 
-    private static TaskEntity CreateTestTask(string title) => new()
+    private static MiscTaskEntity CreateTestTask(string title) => new()
     {
         Id = Guid.NewGuid(),
         TenantId = Guid.NewGuid(),

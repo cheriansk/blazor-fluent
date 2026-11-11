@@ -12,6 +12,7 @@ public record ProgramAdminUserDto
 public class ProgramMilestoneDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public uint Version { get; set; }
     public Guid? ParentTimelineId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Name
@@ -39,6 +40,7 @@ public class ProgramMilestoneDto
 public class ProgramTimelineRowDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public uint Version { get; set; }
     public string Title { get; set; } = string.Empty;
     public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
     public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(3);
@@ -50,6 +52,7 @@ public class ProgramTimelineRowDto
 public partial class CreateProgramWizardState
 {
     public Guid? ProgramId { get; set; }
+    public uint Version { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

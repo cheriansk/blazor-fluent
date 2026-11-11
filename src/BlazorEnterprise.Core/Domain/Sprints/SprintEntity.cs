@@ -7,9 +7,9 @@ namespace BlazorEnterprise.Core.Domain.Sprints;
 /// <summary>
 /// Project-scoped sprint iteration. Sprints maintain an audit trail but are container records (not versioned).
 /// </summary>
-public class SprintEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+public class SprintEntity : ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
-    public required Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     public int SprintNumber { get; set; }
 
@@ -21,14 +21,14 @@ public class SprintEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjec
 
     public string? Comments { get; set; }
 
-    public SprintStatusEnum Status { get; set; } = SprintStatusEnum.Planned;
+    public SprintStatusEnum Status { get; set; }
 
     // --- ISoftDeletableEntity ---
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
     public string? DeletedBy { get; set; }
 
-    // --- Navigation Properties ---
+    // --- Navigation Prouerties ---
     public ProjectEntity? Project { get; set; }
     public ICollection<SprintItemVersionEntity> Items { get; set; } = new List<SprintItemVersionEntity>();
     public ICollection<SprintAuditLogEntity> AuditLogs { get; set; } = new List<SprintAuditLogEntity>();

@@ -11,13 +11,9 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Implements <see cref="IScheduledWorkEntity"/> for baseline vs. actual schedule tracking.
 /// Implements <see cref="ISoftDeletableEntity"/> for forensic auditability.
 /// </summary>
-public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, ISourceTrackedEntity, IEncryptedPayloadEntity, IUnversionedEntity
+public abstract class BaseTaskEntity : ProjectScopedEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
 {
-    /// <summary>
-    /// Organizational level at which this work item exists (Tenant, Program, Project, User).
-    /// </summary>
-    public required TaskLevelEnum Level { get; set; }
-
+    
     /// <summary>
     /// Concise headline title of the work item. Required.
     /// </summary>
@@ -103,10 +99,10 @@ public abstract class BaseTaskEntity : TenantAuditableEntity, IScheduledWorkEnti
     /// </summary>
     public string? Labels { get; set; }
 
-    // --- Hierarchy Scoping ---
-    public Guid? ProgramId { get; set; }
-    public Guid? ProjectId { get; set; }
-    public string? UserId { get; set; }
+    // --- Hierarchy Scoping (Hydrated via Hierarchy Scoping: ProgramId / ProjectId) ---
+    // Inherits ProgramId from ProjectScopedEntity
+
+    // Inherits ProjectId from ProjectScopedEntity
 
     // --- ISourceTrackedEntity ---
     public Guid? SourceRowId { get; set; }

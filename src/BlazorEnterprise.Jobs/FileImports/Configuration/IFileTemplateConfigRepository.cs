@@ -132,7 +132,7 @@ public sealed class JsonFileTemplateConfigRepository : IFileTemplateConfigReposi
             {
                 FileType = "ProgramCalendarExcel",
                 StagingBatchStrategy = "generic-json",
-                TargetEntity = "ProgramCalendarEntity",
+                TargetEntity = "CalendarEntity",
                 ChunkSize = 1000,
                 MaxErrorThreshold = 500,
                 OmitNullValues = true,
@@ -170,7 +170,7 @@ public sealed class JsonFileTemplateConfigRepository : IFileTemplateConfigReposi
             {
                 FileType = "ProjectCalendarExcel",
                 StagingBatchStrategy = "generic-json",
-                TargetEntity = "ProjectCalendarEntity",
+                TargetEntity = "CalendarEntity",
                 ChunkSize = 1000,
                 MaxErrorThreshold = 500,
                 OmitNullValues = true,

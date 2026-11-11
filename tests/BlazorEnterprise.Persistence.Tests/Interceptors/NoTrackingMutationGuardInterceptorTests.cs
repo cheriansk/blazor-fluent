@@ -55,7 +55,7 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
         using (var setup = new AppDbContext(options, mockTime.Object, mockTenant.Object, mockUser.Object))
         {
             setup.Database.EnsureCreated();
-            setup.Tasks.Add(new TaskEntity
+            setup.Tasks.Add(new MiscTaskEntity
             {
                 Id = taskId,
                 TenantId = tenantId,

@@ -156,7 +156,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 Severity = NotificationSeverityEnum.Error,
                 Title = $"🚨 Overdue Task Alert ({tasks.Count} item{(tasks.Count > 1 ? "s" : "")})",
                 Message = message,
-                ProjectId = firstProject,
+                ProjectId = firstProject ?? Guid.Empty,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
                 Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
@@ -181,7 +181,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 Severity = NotificationSeverityEnum.Warning,
                 Title = $"⏰ Tasks Due Today ({tasks.Count})",
                 Message = message,
-                ProjectId = firstProject,
+                ProjectId = firstProject ?? Guid.Empty,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
                 Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
@@ -210,7 +210,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 Severity = NotificationSeverityEnum.Info,
                 Title = $"📅 Upcoming Deadlines ({items.Count} items)",
                 Message = sb.ToString(),
-                ProjectId = firstProject,
+                ProjectId = firstProject ?? Guid.Empty,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
                 Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email
@@ -239,7 +239,7 @@ public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEv
                 Severity = NotificationSeverityEnum.Warning,
                 Title = $"⛔ Blocker Resolution Alert ({items.Count} blocking item{(items.Count > 1 ? "s" : "")})",
                 Message = sb.ToString(),
-                ProjectId = firstProject,
+                ProjectId = firstProject ?? Guid.Empty,
                 UserId = userId,
                 LinkUrl = $"/projects/{firstProject}/tasks",
                 Channels = NotificationChannelsEnum.InApp | NotificationChannelsEnum.Email

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using BlazorEnterprise.Core.Domain.Imports;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Events.Imports;
@@ -63,7 +63,7 @@ public sealed class TaskBatchDomainCommitter : IBatchDomainCommitter
                 dueDateUtc = parsedDue;
             }
 
-            var taskEntity = new TaskEntity
+            var taskEntity = new MiscTaskEntity
             {
                 Id = Guid.CreateVersion7(),
                 TenantId = file.TenantId,
@@ -85,7 +85,7 @@ public sealed class TaskBatchDomainCommitter : IBatchDomainCommitter
             committedCount++;
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         _logger.LogInformation("Committed {Count} TaskEntity records for File {FileId}.", committedCount, file.Id);
         return Result<int>.Success(committedCount);
     }

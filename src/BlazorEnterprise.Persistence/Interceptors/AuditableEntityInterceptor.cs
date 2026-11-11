@@ -118,11 +118,11 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     $"Zero-Trust Security Violation: Entity '{entry.Entity.GetType().Name}' must implement either IVersionedEntity OR IUnversionedEntity (mutually exclusive).");
             }
 
-            // Zero-Trust Rule 3: Every entity MUST inherit TenantAuditableEntity unless in AppDbContext.WhitelistedGlobalEntities
-            if (entry.Entity is not TenantAuditableEntity && !AppDbContext.WhitelistedGlobalEntities.Contains(entry.Entity.GetType()))
+            // Zero-Trust Rule 3: Every entity MUST inherit TenantScopedEntity unless in AppDbContext.WhitelistedGlobalEntities
+            if (entry.Entity is not TenantScopedEntity && !AppDbContext.WhitelistedGlobalEntities.Contains(entry.Entity.GetType()))
             {
                 throw new System.Security.SecurityException(
-                    $"Zero-Trust Security Violation: Entity '{entry.Entity.GetType().Name}' must inherit from TenantAuditableEntity or be in the approved global whitelist.");
+                    $"Zero-Trust Security Violation: Entity '{entry.Entity.GetType().Name}' must inherit from TenantScopedEntity or be in the approved global whitelist.");
             }
             // 0. IMMUTABLE RECORD SECURITY GUARD
             // Guard immutable records (AuditRecordEntity, EventTrackers, JobExecutions) from deletion and mutation
@@ -150,10 +150,42 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                                 $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}). Only 'RetentionDays' may be adjusted.");
                         }
                     }
-                    else if (entry.Entity is EventPublishTrackerEntity or EventConsumptionTrackerEntity)
+                    else if (entry.Entity is EventPublishTrackerEntity)
                     {
-                        throw new InvalidOperationException(
-                            $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}) and can NEVER be modified after creation.");
+                        // EventPublishTrackerEntity is an immutable ledger record except for lifecycle status tracking
+                        var modifiedProps = entry.Properties
+                            .Where(p => p.IsModified)
+                            .Select(p => p.Metadata.Name)
+                            .ToHashSet();
+                        var allowedProps = new HashSet<string> { nameof(EventPublishTrackerEntity.Status), nameof(EventPublishTrackerEntity.ConsumerCount), "Updated", "UpdatedBy" };
+                        if (!modifiedProps.IsSubsetOf(allowedProps))
+                        {
+                            throw new InvalidOperationException(
+                                $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}). Only 'Status' and 'ConsumerCount' may be adjusted.");
+                        }
+                    }
+                    else if (entry.Entity is EventConsumptionTrackerEntity)
+                    {
+                        // EventConsumptionTrackerEntity is an immutable ledger record except for consumer execution result recording
+                        var modifiedProps = entry.Properties
+                            .Where(p => p.IsModified)
+                            .Select(p => p.Metadata.Name)
+                            .ToHashSet();
+                        var allowedProps = new HashSet<string>
+                        {
+                            nameof(EventConsumptionTrackerEntity.Status),
+                            nameof(EventConsumptionTrackerEntity.CompletedAtUtc),
+                            nameof(EventConsumptionTrackerEntity.DurationMs),
+                            nameof(EventConsumptionTrackerEntity.ErrorMessage),
+                            nameof(EventConsumptionTrackerEntity.ExceptionDetails),
+                            "Updated",
+                            "UpdatedBy"
+                        };
+                        if (!modifiedProps.IsSubsetOf(allowedProps))
+                        {
+                            throw new InvalidOperationException(
+                                $"Security violation: Entity '{entry.Entity.GetType().Name}' is an immutable ledger record ({nameof(IImmutableEntity)}). Only consumption execution results may be adjusted.");
+                        }
                     }
                 }
             }
@@ -222,7 +254,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             // proceeding to physical SQL DELETE in PostgreSQL.
 
             // ─── TENANT SECURITY ──────────────────────────────────────────────────────
-            if (entry.Entity is ITenantEntity tenantEntity)
+            if (entry.Entity is TenantScopedEntity tenantEntity)
             {
                 if (entry.State == EntityState.Added)
                 {
@@ -357,8 +389,8 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             }
 
             // ─── AUDIT FIELDS ─────────────────────────────────────────────────────────
-            // 1. Strongly typed IAuditableEntity
-            if (entry.Entity is IAuditableEntity auditableEntity)
+            // 1. Strongly typed BaseEntity
+            if (entry.Entity is BaseEntity auditableEntity)
             {
                 if (entry.State == EntityState.Added)
                 {
@@ -367,14 +399,48 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     auditableEntity.Updated = now;
                     auditableEntity.UpdatedBy = currentUserId;
                 }
+                    if (entry.Entity is TenantScopedEntity scoped && scoped.Level == default)
+                    {
+                        if (entry.Entity is ProjectScopedEntity proj && proj.ProjectId.HasValue && proj.ProjectId.Value != Guid.Empty)
+                        {
+                            scoped.Level = TaskLevelEnum.Project;
+                        }
+                        else if (entry.Entity is ProgramScopedEntity prog && prog.ProgramId.HasValue && prog.ProgramId.Value != Guid.Empty)
+                        {
+                            scoped.Level = TaskLevelEnum.Program;
+                        }
+                        else
+                        {
+                            scoped.Level = TaskLevelEnum.Tenant;
+                        }
+                    }
+
+                    if (entry.Entity is AuditRecordEntity audit)
+                    {
+                        if (audit.RetentionDays == default || !Enum.IsDefined(audit.RetentionDays))
+                        {
+                            audit.RetentionDays = audit.EventType == AuditEventTypeEnum.Security
+                                ? AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays
+                                : AuditRetentionPeriodEnum.NinetyDays;
+                        }
+                        else if (audit.EventType == AuditEventTypeEnum.Security && audit.RetentionDays == AuditRetentionPeriodEnum.NinetyDays)
+                        {
+                            audit.RetentionDays = AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays;
+                        }
+                    }
+
+                    if (entry.Entity is IVersionedEntity ver && ver.VerNum <= 0)
+                    {
+                        ver.VerNum = 1;
+                    }
                 else if (entry.State == EntityState.Modified)
                 {
                     auditableEntity.Updated = now;
                     auditableEntity.UpdatedBy = currentUserId;
 
                     // Ensure creation audit properties cannot be overwritten
-                    entry.Property(nameof(IAuditableEntity.Created)).IsModified = false;
-                    entry.Property(nameof(IAuditableEntity.CreatedBy)).IsModified = false;
+                    entry.Property(nameof(BaseEntity.Created)).IsModified = false;
+                    entry.Property(nameof(BaseEntity.CreatedBy)).IsModified = false;
                 }
             }
             else
@@ -642,7 +708,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                 }
             }
 
-            var tenantId = (entry.Entity as ITenantEntity)?.TenantId ?? Guid.Empty;
+            var tenantId = (entry.Entity as TenantScopedEntity)?.TenantId ?? Guid.Empty;
             if (tenantId == Guid.Empty && tenantContext.HasActiveTenant)
             {
                 tenantId = tenantContext.TenantId;

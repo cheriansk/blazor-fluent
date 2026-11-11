@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Identity;
 using BlazorEnterprise.Core.Utilities;
 using BlazorEnterprise.Persistence.Context;
@@ -74,7 +74,7 @@ public class UserSessionService : IUserSessionService
 
         await using var dbContext = await _dbFactory.CreateDbContextAsync(ct);
         dbContext.UserSessions.Add(session);
-        await dbContext.SaveChangesAsync(ct);
+        dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(ct); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("New user session created for {Email} ({UserId}) from IP {IpAddress}. SessionId: {SessionId}",
             userEmail, userId, ipAddress, session.Id);
@@ -158,7 +158,7 @@ public class UserSessionService : IUserSessionService
             {
                 session.LastActivityAtUtc = now;
             }
-            await dbContext.SaveChangesAsync(ct);
+            dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(ct); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
         }
     }
 
@@ -202,7 +202,7 @@ public class UserSessionService : IUserSessionService
         session.RevokedAtUtc = DateTime.UtcNow;
         session.RevokedBy = revokedBy;
 
-        await dbContext.SaveChangesAsync(ct);
+        dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(ct); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogWarning("SECURITY ALERT: User session {SessionId} ({UserEmail}) REVOKED by {RevokedBy}",
             sessionId, session.UserEmail, revokedBy);

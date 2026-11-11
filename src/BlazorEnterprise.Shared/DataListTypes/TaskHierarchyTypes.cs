@@ -18,8 +18,48 @@ public enum TaskLevelEnum
     [Display(Name = "Project", Description = "Team project delivery item")]
     Project = 3,
 
-    [Display(Name = "User", Description = "Personal workload item")]
+    [Display(Name = "User", Description = "Personal user workspace")]
     User = 4
+}
+
+/// <summary>
+/// Identifies entity type in polymorphic target-centric edge relations.
+/// </summary>
+[ClassificationEnum]
+public enum RelationEntityTypeEnum
+{
+    [Display(Name = "Task", Description = "Task deliverable")]
+    Task = 1,
+
+    [Display(Name = "Risk", Description = "Enterprise risk")]
+    Risk = 2,
+
+    [Display(Name = "Issue", Description = "Active issue or impediment")]
+    Issue = 3,
+
+    [Display(Name = "Assumption", Description = "Operational assumption")]
+    Assumption = 4,
+
+    [Display(Name = "Workflow", Description = "Governing workflow pipeline")]
+    Workflow = 5,
+
+    [Display(Name = "WorkDependency", Description = "Cross-work dependency")]
+    WorkDependency = 6,
+
+    [Display(Name = "Calendar", Description = "Unified timeline/milestone calendar")]
+    Calendar = 7,
+
+    [Display(Name = "RevisionHeader", Description = "Scenario baseline revision header")]
+    RevisionHeader = 8,
+
+    [Display(Name = "KnowledgeArticle", Description = "Knowledge base article")]
+    KnowledgeArticle = 9,
+
+    [Display(Name = "Notification", Description = "System or project alert notification")]
+    Notification = 10,
+
+    [Display(Name = "Deliverable", Description = "Project or meeting deliverable")]
+    Deliverable = 11
 }
 
 /// <summary>
@@ -145,7 +185,8 @@ public enum TaskItemTypeEnum
     Assumption = 4,
     Issue = 5,
     BlockerDependency = 6,
-    Workflow = 7
+    Workflow = 7,
+    Deliverable = 8
 }
 
 /// <summary>
@@ -296,7 +337,10 @@ public enum CalendarEntryTypeEnum
     Milestone = 2,
 
     [Display(Name = "Personal", Description = "Personal user calendar appointment or reminder")]
-    Personal = 3
+    Personal = 3,
+
+    [Display(Name = "Out of Office / PTO", Description = "Planned time off, vacation, or out of office availability")]
+    OutOfOffice = 4
 }
 
 /// <summary>
@@ -344,7 +388,85 @@ public enum DependencyNodeTypeEnum
     TaskItem = 2,
 
     [Display(Name = "Manual Dependency", Description = "A manually logged external, vendor, or ad-hoc RAID dependency")]
-    ManualDependency = 3
+    ManualDependency = 3,
+
+    [Display(Name = "Sprint Task", Description = "A sprint-committed task deliverable")]
+    SprintTask = 4,
+
+    [Display(Name = "Workflow Task", Description = "A workflow pipeline step task")]
+    WorkflowTask = 5,
+
+    [Display(Name = "Misc Task", Description = "An ad-hoc or standalone backlog task")]
+    MiscTask = 6,
+
+    [Display(Name = "Risk", Description = "An enterprise or project risk")]
+    RaidRisk = 7,
+
+    [Display(Name = "Issue", Description = "An active project or program issue")]
+    RaidIssue = 8,
+
+    [Display(Name = "Assumption", Description = "A project or program assumption")]
+    RaidAssumption = 9,
+
+    [Display(Name = "Deliverable", Description = "A project or meeting deliverable outcome")]
+    Deliverable = 10
+}
+
+/// <summary>
+/// Lifecycle approval and verification status for deliverables.
+/// </summary>
+[LifecycleEnum]
+public enum DeliverableStatusEnum
+{
+    [Display(Name = "Draft", Description = "Deliverable is currently in authoring phase")]
+    Draft = 1,
+
+    [Display(Name = "Under Review", Description = "Awaiting formal stakeholder sign-off")]
+    UnderReview = 2,
+
+    [Display(Name = "Approved", Description = "Officially accepted by the lead or authority")]
+    Approved = 3,
+
+    [Display(Name = "Rejected", Description = "Returned to contributor for revisions")]
+    Rejected = 4
+}
+
+public static class DeliverableStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<DeliverableStatusEnum, IReadOnlySet<DeliverableStatusEnum>> AllowedTransitions =
+        new Dictionary<DeliverableStatusEnum, IReadOnlySet<DeliverableStatusEnum>>
+        {
+            [DeliverableStatusEnum.Draft] = new HashSet<DeliverableStatusEnum> { DeliverableStatusEnum.UnderReview, DeliverableStatusEnum.Rejected },
+            [DeliverableStatusEnum.UnderReview] = new HashSet<DeliverableStatusEnum> { DeliverableStatusEnum.Approved, DeliverableStatusEnum.Rejected, DeliverableStatusEnum.Draft },
+            [DeliverableStatusEnum.Approved] = new HashSet<DeliverableStatusEnum> { DeliverableStatusEnum.UnderReview },
+            [DeliverableStatusEnum.Rejected] = new HashSet<DeliverableStatusEnum> { DeliverableStatusEnum.Draft }
+        };
+}
+
+/// <summary>
+/// Supported parent work item types that can have deliverables attached.
+/// SubTasks and WorkDependencies are strictly excluded.
+/// </summary>
+[ClassificationEnum]
+public enum DeliverableParentTypeEnum
+{
+    [Display(Name = "Task", Description = "Backlog, sprint, or workflow task")]
+    Task = 1,
+
+    [Display(Name = "Risk", Description = "Enterprise or project risk requiring deliverables")]
+    Risk = 2,
+
+    [Display(Name = "Issue", Description = "Active project issue requiring resolution deliverables")]
+    Issue = 3,
+
+    [Display(Name = "Assumption", Description = "Operational assumption requiring validation deliverables")]
+    Assumption = 4,
+
+    [Display(Name = "Calendar / Meeting", Description = "Milestone checkpoint or meeting outcome")]
+    Calendar = 5,
+
+    [Display(Name = "Workflow", Description = "Governing workflow pipeline")]
+    Workflow = 6
 }
 
 /// <summary>

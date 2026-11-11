@@ -6,9 +6,9 @@ namespace BlazorEnterprise.Core.Domain.Resources;
 /// <summary>
 /// Daily resource allocation percentage belonging to a versioned allocation plan.
 /// </summary>
-public class ResourceAllocationEntity : TenantAuditableEntity, IVersionedEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class ResourceAllocationEntity : ProjectScopedEntity, IVersionedEntity, ISoftDeletableEntity
 {
-    public required Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     public required Guid ProjectResourceId { get; set; }
 
@@ -22,8 +22,8 @@ public class ResourceAllocationEntity : TenantAuditableEntity, IVersionedEntity,
     // --- IVersionedEntity ---
     public Guid RevisionHeaderId { get; set; }
     public Guid RelId { get; set; }
-    public int VerNum { get; set; } = 1;
-    public Guid ParentRowId { get; set; } = Guid.Empty;
+    public int VerNum { get; set; }
+    public Guid ParentRowId { get; set; }
 
     public void SetVersionNumber(int newVersion)
     {

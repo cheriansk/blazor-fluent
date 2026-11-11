@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 using BlazorEnterprise.Core.Contracts;
 
@@ -263,7 +263,7 @@ internal class AuditService : IAuditService
 
             isolatedDbContext.AuditRecords.Add(record);
 
-            await isolatedDbContext.SaveChangesAsync(cancellationToken);
+            isolatedDbContext.IsTransactionScopeCommitAuthorized = true; try { await isolatedDbContext.SaveChangesAsync(cancellationToken); } finally { isolatedDbContext.IsTransactionScopeCommitAuthorized = false; }
         }
 
         catch (Exception ex)
@@ -487,7 +487,7 @@ internal class AuditService : IAuditService
 
             isolatedDbContext.AuditRecords.Add(record);
 
-            await isolatedDbContext.SaveChangesAsync(cancellationToken);
+            isolatedDbContext.IsTransactionScopeCommitAuthorized = true; try { await isolatedDbContext.SaveChangesAsync(cancellationToken); } finally { isolatedDbContext.IsTransactionScopeCommitAuthorized = false; }
         }
 
         catch (Exception persistEx)
@@ -704,7 +704,7 @@ internal class AuditService : IAuditService
         record.Updated = now;
         record.UpdatedBy = currentUserId;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation(
             "Audit record '{Id}' retention updated from {OldRetention} to {NewRetention} by user '{User}'. Reason: {Reason}",

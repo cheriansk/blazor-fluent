@@ -1,4 +1,4 @@
-@namespace BlazorEnterprise.Web.Components.Pages.Settings
+﻿@namespace BlazorEnterprise.Web.Components.Pages.Settings
 
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Shared.Contracts.Common
@@ -19,53 +19,14 @@
                 Trace event publication and execution: inspect sender origins, senders, JSON payloads, and per-consumer telemetry.
             </CskLabel>
         </div>
-        @if (!string.IsNullOrWhiteSpace(_selectedTenantId))
-        {
+
             <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.ArrowSync" OnClick="@LoadEventsAsync">
                 Refresh
             </CskButton>
-        }
+
     </CskStack>
 
-    <!-- Tenant Filter Toolbar -->
-    <CskCard Class="p-4">
-        <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="16" Wrap="true">
-            <CskSelect TOption="TenantFilterOption" TValue="string"
-                          Items="@_availableTenants"
-                          OptionText="@(t => t.Name)"
-                          OptionValue="@(t => t.Id)"
-                          Value="@_selectedTenantId"
-                          ValueChanged="@OnTenantSelected"
-                          Disabled="@(_availableTenants.Count <= 1)"
-                          Label="Filter by Tenant"
-                          Placeholder="-- Select a tenant to view events --"
-                          Class="min-w-300" />
-
-            @if (!string.IsNullOrWhiteSpace(_selectedTenantId) && _availableTenants.Count > 1)
-            {
-                <CskButton Variant="CskButtonVariant.Text"
-                              IconStart="@CskIcons.Dismiss"
-                              OnClick="@ClearTenantFilter">
-                    Clear Filter
-                </CskButton>
-            }
-        </CskStack>
-    </CskCard>
-
-    @if (string.IsNullOrWhiteSpace(_selectedTenantId))
-    {
-        <!-- Empty State Prompt -->
-        <CskMessageBar Intent="MessageBarIntent.Info" Class="p-4">
-            <CskStack Orientation="CskOrientation.Horizontal" VerticalAlignment="CskVerticalAlignment.Center" HorizontalGap="10">
-                <CskIcon Icon="@CskIcons.Pulse" Class="csk-icon-lg" />
-                <div>
-                    <strong>No Tenant Selected:</strong> Please choose a tenant from the dropdown above to display its event ledger records.
-                </div>
-            </CskStack>
-        </CskMessageBar>
-    }
-    else
-    {
+    
         <!-- Metric Summary Cards -->
 @*         <CskGrid Spacing="3" AdaptiveRendering="true">
             <CskGridItem xs="6" sm="3">
@@ -142,7 +103,19 @@
                     <CskGridItem xs="12" sm="6">
                         <CskStack Orientation="CskOrientation.Vertical" VerticalGap="4">
                             <div><b>Trigger Origin:</b> <code>@_selectedEvent.GetEffectiveSenderOrigin()</code></div>
-                            <div><b>Correlation ID:</b> @(_selectedEvent.CorrelationId ?? "—")</div>
+                            <div>
+                                <b>Correlation ID:</b>
+                                @if (!string.IsNullOrWhiteSpace(_selectedEvent.CorrelationId))
+                                {
+                                    <span class="cursor-pointer text-primary ml-1" title="Click to filter by this Correlation ID" @onclick="@(() => FilterByCorrelationAsync(_selectedEvent.CorrelationId))">
+                                        <u>@_selectedEvent.CorrelationId</u>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </div>
                             <div><b>Tenant:</b> @_selectedEvent.TenantId</div>
                         </CskStack>
                     </CskGridItem>
@@ -259,12 +232,24 @@
                 </CskStack>
 
                 <!-- Master Events Grid -->
-                <CskDataGrid Items="@FilteredEventItems" ResizableColumns="true" GridTemplateColumns="170px 180px 220px 140px 140px 120px 110px">
+                <CskDataGrid Items="@FilteredEventItems" ResizableColumns="true" GridTemplateColumns="160px 180px 130px 200px 140px 120px 110px 100px">
                     <CskTemplateColumn Title="Published At" SortBy="@(GridSort<EventPublishTrackerEntity>.ByDescending(e => e.PublishedAtUtc))">
                         @TimeZoneService.FormatDateTime(context.PublishedAtUtc)
                     </CskTemplateColumn>
                     <CskTemplateColumn Title="Event Name" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.EventName))">
                         <b>@context.EventName</b>
+                    </CskTemplateColumn>
+                    <CskTemplateColumn Title="Correlation ID" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.CorrelationId))">
+                        @if (!string.IsNullOrWhiteSpace(context.CorrelationId))
+                        {
+                            <span class="cursor-pointer text-primary " title="Click to filter by this Correlation ID" @onclick="@(() => FilterByCorrelationAsync(context.CorrelationId))">
+                                <u>@context.CorrelationId</u>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-hint">-</span>
+                        }
                     </CskTemplateColumn>
                     <CskTemplateColumn Title="Sender Origin" SortBy="@(GridSort<EventPublishTrackerEntity>.ByAscending(e => e.GetEffectiveSenderOrigin()))">
                         <span title="@context.GetEffectiveSenderOrigin()">
@@ -328,5 +313,5 @@
                 </CskStack>
             }
         </CskCard>
-    }
+    
 </CskStack>

@@ -14,6 +14,7 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(a => a.Level)
@@ -89,18 +90,10 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(a => a.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(a => a.ProjectId)
-            .IsRequired(false);
-
-        builder.Property(a => a.MilestoneId)
-            .IsRequired(false);
-
-        builder.Property(a => a.UserId)
-            .HasMaxLength(256)
-            .IsRequired(false);
+        // Ignore [NotMapped] edge relations
+        builder.Property(a => a.ProgramId).IsRequired(false);
+        builder.Property(a => a.ProjectId).IsRequired(false);
+        builder.Ignore(a => a.MilestoneId);
 
         // Soft delete properties
         builder.Property(a => a.IsDeleted)
@@ -120,12 +113,6 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
 
         builder.HasIndex(a => new { a.TenantId, a.Level })
             .HasDatabaseName("IX_Assumptions_TenantId_Level");
-
-        builder.HasIndex(a => new { a.TenantId, a.ProgramId })
-            .HasDatabaseName("IX_Assumptions_TenantId_ProgramId");
-
-        builder.HasIndex(a => new { a.TenantId, a.ProjectId })
-            .HasDatabaseName("IX_Assumptions_TenantId_ProjectId");
 
         builder.HasIndex(a => new { a.TenantId, a.Level, a.ValidationStatus })
             .HasDatabaseName("IX_Assumptions_Tenant_Level_ValidationStatus");

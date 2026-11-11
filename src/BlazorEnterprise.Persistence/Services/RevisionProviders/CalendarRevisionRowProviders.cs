@@ -1,5 +1,4 @@
 using BlazorEnterprise.Core.Domain.Calendar;
-using BlazorEnterprise.Core.Domain.Versioning;
 using BlazorEnterprise.Core.Models;
 using BlazorEnterprise.Persistence.Context;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -24,9 +23,9 @@ public sealed class ProgramCalendarRevisionRowProvider : IRevisionRowProvider
         CancellationToken cancellationToken = default)
     {
         await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
-        var rows = await context.ProgramCalendars
+        var rows = await context.Calendars
             .AsNoTracking()
-            .Where(c => c.RevisionHeaderId == revisionHeaderId && !c.IsDeleted)
+            .Where(c => c.RevisionHeaderId == revisionHeaderId && c.Level == TaskLevelEnum.Program && !c.IsDeleted)
             .ToListAsync(cancellationToken);
 
         return rows.Select(r => new RevisionRowComparableItem
@@ -58,9 +57,9 @@ public sealed class ProjectCalendarRevisionRowProvider : IRevisionRowProvider
         CancellationToken cancellationToken = default)
     {
         await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
-        var rows = await context.ProjectCalendars
+        var rows = await context.Calendars
             .AsNoTracking()
-            .Where(c => c.RevisionHeaderId == revisionHeaderId && !c.IsDeleted)
+            .Where(c => c.RevisionHeaderId == revisionHeaderId && c.Level == TaskLevelEnum.Project && !c.IsDeleted)
             .ToListAsync(cancellationToken);
 
         return rows.Select(r => new RevisionRowComparableItem

@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Base;
+using BlazorEnterprise.Core.Domain.Calendar;
+using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Domain.Tenancy;
 using BlazorEnterprise.Core.Security;
 using BlazorEnterprise.Persistence.Context;
@@ -17,10 +19,15 @@ using Microsoft.Extensions.Logging;
 namespace BlazorEnterprise.Persistence.Interceptors;
 
 /// <summary>
-/// Defense-in-depth security interceptor enforcing Per-Project Role-Based Access Control (RBAC).
-/// Intercepts entity mutations (Insert, Update, Delete) on entities implementing <see cref="IProjectScopedEntity"/>
-/// and verifies that the current user possesses write permissions (<see cref="ProjectRoleEnumExtensions.CanWrite"/>)
-/// within the target project scope before any changes are committed to PostgreSQL.
+/// Defense-in-depth security interceptor enforcing Multi-Tier Role-Based Access Control (RBAC).
+/// Intercepts entity mutations (Insert, Update, Delete) on:
+/// 1. Entities implementing IProjectScopedEntity.
+/// 2. Entities inheriting BaseTaskEntity (SprintTasks, WorkflowTasks, MiscTasks, SubTasks, Risks, Assumptions, Issues, WorkDependencies).
+/// 3. CalendarEntity records.
+/// Enforces write permissions according to scope level:
+/// - Tenant level: Must be Tenant Admin / Root Admin.
+/// - Program level: ProgramRole >= Lead (CanWrite).
+/// - Project level: ProjectRole >= Contribute (CanWrite).
 /// </summary>
 public class ProjectSecurityInterceptor : SaveChangesInterceptor
 {
@@ -39,7 +46,7 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         DbContextEventData eventData,
         InterceptionResult<int> result)
     {
-        EnforceProjectWritePermissions(eventData.Context);
+        EnforceHierarchyWritePermissions(eventData.Context);
         return base.SavingChanges(eventData, result);
     }
 
@@ -48,121 +55,162 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        await EnforceProjectWritePermissionsAsync(eventData.Context, cancellationToken);
+        await EnforceHierarchyWritePermissionsAsync(eventData.Context, cancellationToken);
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private void EnforceProjectWritePermissions(DbContext? context)
+    private void EnforceHierarchyWritePermissions(DbContext? context)
     {
         if (context is null) return;
 
         var currentUser = (context as AppDbContext)?.CurrentUser ?? new DefaultCurrentUser();
+        if (currentUser.IsSystemDaemon || currentUser.IsRootAdmin) return;
 
-        // Verified internal background system daemons bypass per-project user gates.
-        if (currentUser.IsSystemDaemon) return;
-
-        // Host / Root Admin users bypass per-project member gates
-        if (currentUser.IsRootAdmin) return;
-
-        var scopedEntries = context.ChangeTracker
-            .Entries<IProjectScopedEntity>()
+        var entries = context.ChangeTracker
+            .Entries()
             .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             .ToList();
 
-        if (scopedEntries.Count == 0) return;
+        if (entries.Count == 0) return;
 
-        var userId = currentUser.UserId;
-        if (string.IsNullOrWhiteSpace(userId) || !currentUser.IsAuthenticated)
+        var hasSecuredEntity = entries.Any(e => e.Entity is ProjectScopedEntity or BaseTaskEntity or CalendarEntity);
+        if (!hasSecuredEntity) return;
+
+        if (!currentUser.IsAuthenticated)
         {
-            _logger.LogCritical(
-                "SECURITY INTERCEPTOR VIOLATION: Unauthenticated user attempted to mutate {Count} project-scoped entities.",
-                scopedEntries.Count);
-            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Unauthenticated write to project-scoped entity is forbidden.");
+            _logger.LogCritical("SECURITY INTERCEPTOR VIOLATION: Unauthenticated user attempted to mutate secured scoped entities.");
+            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Unauthenticated write to scoped entity is forbidden.");
         }
 
-        // Group by distinct ProjectId to minimize role lookups per SaveChanges batch
-        var distinctProjectIds = scopedEntries
-            .Select(e => e.Entity.ProjectId)
-            .Where(id => id != Guid.Empty)
-            .Distinct()
-            .ToList();
-
-        foreach (var projectId in distinctProjectIds)
+        var userId = currentUser.UserId;
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            var role = ResolveRoleForProject(context, userId, projectId);
-            if (role is null || !role.Value.CanWrite())
-            {
-                _logger.LogCritical(
-                    "SECURITY INTERCEPTOR VIOLATION: User '{UserId}' lacks write permissions on project '{ProjectId}' (Current Role: {Role}). Write operation terminated.",
-                    userId, projectId, role?.ToString() ?? "None");
+            _logger.LogCritical("SECURITY INTERCEPTOR VIOLATION: Authenticated user has empty UserId when mutating secured scoped entities.");
+            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Authenticated write requires a valid UserId.");
+        }
 
-                throw new UnauthorizedAccessException(
-                    $"Fail-Closed Security Interceptor: User '{userId}' does not have write permissions for project '{projectId}'. Database write aborted.");
+        using var scope = _scopeFactory.CreateScope();
+        InitializeTransientScope(scope, context);
+        var authService = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
+        if (authService is null) return;
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is BaseTaskEntity taskEntity)
+            {
+                ResolveAndVerifyScopedItem(context, authService, userId, taskEntity.Level, taskEntity.TenantId, taskEntity.ProgramId, taskEntity.ProjectId, taskEntity);
+            }
+            else if (entry.Entity is CalendarEntity calendarEntity)
+            {
+                ResolveAndVerifyScopedItem(context, authService, userId, calendarEntity.Level, calendarEntity.TenantId, calendarEntity.ProgramId, calendarEntity.ProjectId, calendarEntity);
+            }
+            else if (entry.Entity is ProjectScopedEntity projectScoped && projectScoped.ProjectId.HasValue && projectScoped.ProjectId.Value != Guid.Empty)
+            {
+                var role = authService.GetEffectiveProjectRoleAsync(projectScoped.ProjectId.Value, userId).GetAwaiter().GetResult();
+                if (role is null || !role.Value.CanWrite())
+                {
+                    _logger.LogCritical("SECURITY INTERCEPTOR VIOLATION: User '{UserId}' lacks write permissions on project '{ProjectId}'", userId, projectScoped.ProjectId.Value);
+                    throw new UnauthorizedAccessException($"Fail-Closed Security Interceptor: User '{userId}' does not have write permissions for project '{projectScoped.ProjectId.Value}'.");
+                }
             }
         }
     }
 
-    private async Task EnforceProjectWritePermissionsAsync(DbContext? context, CancellationToken ct)
+    private async Task EnforceHierarchyWritePermissionsAsync(DbContext? context, CancellationToken ct)
     {
         if (context is null) return;
 
         var currentUser = (context as AppDbContext)?.CurrentUser ?? new DefaultCurrentUser();
+        if (currentUser.IsSystemDaemon || currentUser.IsRootAdmin) return;
 
-        // Verified internal background system daemons bypass per-project user gates.
-        if (currentUser.IsSystemDaemon) return;
-
-        // Host / Root Admin users bypass per-project member gates
-        if (currentUser.IsRootAdmin) return;
-
-        var scopedEntries = context.ChangeTracker
-            .Entries<IProjectScopedEntity>()
+        var entries = context.ChangeTracker
+            .Entries()
             .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             .ToList();
 
-        if (scopedEntries.Count == 0) return;
+        if (entries.Count == 0) return;
 
-        var userId = currentUser.UserId;
-        if (string.IsNullOrWhiteSpace(userId) || !currentUser.IsAuthenticated)
+        var hasSecuredEntity = entries.Any(e => e.Entity is ProjectScopedEntity or BaseTaskEntity or CalendarEntity);
+        if (!hasSecuredEntity) return;
+
+        if (!currentUser.IsAuthenticated)
         {
-            _logger.LogCritical(
-                "SECURITY INTERCEPTOR VIOLATION: Unauthenticated user attempted to mutate {Count} project-scoped entities.",
-                scopedEntries.Count);
-            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Unauthenticated write to project-scoped entity is forbidden.");
+            _logger.LogCritical("SECURITY INTERCEPTOR VIOLATION: Unauthenticated user attempted to mutate secured scoped entities.");
+            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Unauthenticated write to scoped entity is forbidden.");
         }
 
-        // Group by distinct ProjectId to minimize role lookups per SaveChanges batch
-        var distinctProjectIds = scopedEntries
-            .Select(e => e.Entity.ProjectId)
-            .Where(id => id != Guid.Empty)
-            .Distinct()
-            .ToList();
-
-        foreach (var projectId in distinctProjectIds)
+        var userId = currentUser.UserId;
+        if (string.IsNullOrWhiteSpace(userId))
         {
-            var role = await ResolveRoleForProjectAsync(context, userId, projectId, ct);
-            if (role is null || !role.Value.CanWrite())
-            {
-                _logger.LogCritical(
-                    "SECURITY INTERCEPTOR VIOLATION: User '{UserId}' lacks write permissions on project '{ProjectId}' (Current Role: {Role}). Write operation terminated.",
-                    userId, projectId, role?.ToString() ?? "None");
+            _logger.LogCritical("SECURITY INTERCEPTOR VIOLATION: Authenticated user has empty UserId when mutating secured scoped entities.");
+            throw new UnauthorizedAccessException("Fail-Closed Security Interceptor: Authenticated write requires a valid UserId.");
+        }
 
-                throw new UnauthorizedAccessException(
-                    $"Fail-Closed Security Interceptor: User '{userId}' does not have write permissions for project '{projectId}'. Database write aborted.");
+        using var scope = _scopeFactory.CreateScope();
+        InitializeTransientScope(scope, context);
+        var authService = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
+        if (authService is null) return;
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is BaseTaskEntity taskEntity)
+            {
+                await ResolveAndVerifyScopedItemAsync(context, authService, userId, taskEntity.Level, taskEntity.TenantId, taskEntity.ProgramId, taskEntity.ProjectId, taskEntity, ct);
+            }
+            else if (entry.Entity is CalendarEntity calendarEntity)
+            {
+                await ResolveAndVerifyScopedItemAsync(context, authService, userId, calendarEntity.Level, calendarEntity.TenantId, calendarEntity.ProgramId, calendarEntity.ProjectId, calendarEntity, ct);
+            }
+            else if (entry.Entity is ProjectScopedEntity projectScoped && projectScoped.ProjectId.HasValue && projectScoped.ProjectId.Value != Guid.Empty)
+            {
+                var role = await authService.GetEffectiveProjectRoleAsync(projectScoped.ProjectId.Value, userId, ct);
+                if (role is null || !role.Value.CanWrite())
+                {
+                    _logger.LogCritical("SECURITY INTERCEPTOR VIOLATION: User '{UserId}' lacks write permissions on project '{ProjectId}'", userId, projectScoped.ProjectId.Value);
+                    throw new UnauthorizedAccessException($"Fail-Closed Security Interceptor: User '{userId}' does not have write permissions for project '{projectScoped.ProjectId.Value}'.");
+                }
             }
         }
     }
 
-    /// <summary>
-    /// Evaluates effective project permissions within a dedicated transient scope for synchronous calls.
-    /// <para>
-    /// DESIGN JUSTIFICATION FOR SYNCHRONOUS INVOCATION (.GetAwaiter().GetResult()):
-    /// EF Core's ISaveChangesInterceptor defines both SavingChanges (synchronous) and SavingChangesAsync (asynchronous).
-    /// When SaveChanges() is invoked synchronously by legacy callers or synchronous transaction pipelines, the interceptor
-    /// must synchronously resolve effective roles. Since IHierarchyAuthorizationService operates on in-memory roles
-    /// and pre-calculated hierarchy matrices without blocking socket I/O, synchronous resolution is safe from thread starvation.
-    /// Asynchronous callers invoke <see cref="ResolveRoleForProjectAsync"/> which is 100% non-blocking.
-    /// </para>
-    /// </summary>
+    private void ResolveAndVerifyScopedItem(DbContext context, IHierarchyAuthorizationService authService, string userId, TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, object entity)
+    {
+        (programId, projectId) = ResolveRelationsIfMissing(context, entity, programId, projectId);
+        authService.EnsureCanEditScopedItemAsync(level, tenantId, programId, projectId, userId).GetAwaiter().GetResult();
+    }
+
+    private async Task ResolveAndVerifyScopedItemAsync(DbContext context, IHierarchyAuthorizationService authService, string userId, TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, object entity, CancellationToken ct)
+    {
+        (programId, projectId) = await ResolveRelationsIfMissingAsync(context, entity, programId, projectId, ct);
+        await authService.EnsureCanEditScopedItemAsync(level, tenantId, programId, projectId, userId, ct);
+    }
+
+    private (Guid? ProgramId, Guid? ProjectId) ResolveRelationsIfMissing(DbContext context, object entity, Guid? programId, Guid? projectId)
+    {
+        if (programId.HasValue || projectId.HasValue) return (programId, projectId);
+
+        if (entity is SubTaskEntity subTask && subTask.ParentTaskId != Guid.Empty)
+        {
+            var parentTask = context.Set<TaskEntity>().AsNoTracking().FirstOrDefault(t => t.Id == subTask.ParentTaskId);
+            if (parentTask != null) return (parentTask.ProgramId, parentTask.ProjectId);
+        }
+
+        return (programId, projectId);
+    }
+
+    private async Task<(Guid? ProgramId, Guid? ProjectId)> ResolveRelationsIfMissingAsync(DbContext context, object entity, Guid? programId, Guid? projectId, CancellationToken ct)
+    {
+        if (programId.HasValue || projectId.HasValue) return (programId, projectId);
+
+        if (entity is SubTaskEntity subTask && subTask.ParentTaskId != Guid.Empty)
+        {
+            var parentTask = await context.Set<TaskEntity>().AsNoTracking().FirstOrDefaultAsync(t => t.Id == subTask.ParentTaskId, ct);
+            if (parentTask != null) return (parentTask.ProgramId, parentTask.ProjectId);
+        }
+
+        return (programId, projectId);
+    }
+
     private void InitializeTransientScope(IServiceScope scope, DbContext context)
     {
         if (context is AppDbContext appDb)
@@ -188,42 +236,6 @@ public class ProjectSecurityInterceptor : SaveChangesInterceptor
                     appDb.CurrentUser.UserName,
                     appDb.CurrentUser.IsRootAdmin);
             }
-        }
-    }
-
-    private ProjectRoleEnum? ResolveRoleForProject(DbContext context, string userId, Guid projectId)
-    {
-        try
-        {
-            using var scope = _scopeFactory.CreateScope();
-            InitializeTransientScope(scope, context);
-            var hierarchyAuth = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
-            if (hierarchyAuth is null) return null;
-
-            return hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, userId).GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to resolve project role for user '{UserId}' on project '{ProjectId}' in ProjectSecurityInterceptor.", userId, projectId);
-            return null;
-        }
-    }
-
-    private async Task<ProjectRoleEnum?> ResolveRoleForProjectAsync(DbContext context, string userId, Guid projectId, CancellationToken ct)
-    {
-        try
-        {
-            using var scope = _scopeFactory.CreateScope();
-            InitializeTransientScope(scope, context);
-            var hierarchyAuth = scope.ServiceProvider.GetService<IHierarchyAuthorizationService>();
-            if (hierarchyAuth is null) return null;
-
-            return await hierarchyAuth.GetEffectiveProjectRoleAsync(projectId, userId, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to resolve project role for user '{UserId}' on project '{ProjectId}' in ProjectSecurityInterceptor.", userId, projectId);
-            return null;
         }
     }
 }

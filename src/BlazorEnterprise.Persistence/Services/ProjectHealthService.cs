@@ -10,7 +10,7 @@ namespace BlazorEnterprise.Persistence.Services;
 
 /// <summary>
 /// Domain service calculating real-time project delivery health ratings and root-cause risk reasons.
-/// Integrates task progress, milestone delivery gate dates from ProjectCalendars,
+/// Integrates task progress, milestone delivery gate dates from Calendars,
 /// and active blockers/dependencies from WorkDependencies.
 /// </summary>
 public class ProjectHealthService : IProjectHealthService
@@ -46,7 +46,7 @@ public class ProjectHealthService : IProjectHealthService
             .Where(t => t.TenantId == tenantId && t.ProjectId == projectId && !t.IsDeleted)
             .ToListAsync(ct);
 
-        var milestones = await _context.ProjectCalendars
+        var milestones = await _context.Calendars
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && m.ProjectId == projectId && !m.IsDeleted)
             .ToListAsync(ct);
@@ -145,7 +145,7 @@ public class ProjectHealthService : IProjectHealthService
         var tenantId = _tenantContext.TenantId;
         var today = DateTime.UtcNow.Date;
 
-        var milestone = await _context.ProjectCalendars
+        var milestone = await _context.Calendars
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == milestoneId && !m.IsDeleted, ct);
 
@@ -159,7 +159,7 @@ public class ProjectHealthService : IProjectHealthService
             };
         }
 
-        await _projectAuth.EnsureCanVisitAsync(milestone.ProjectId, operation: "GetMilestoneHealth", ct: ct);
+        if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanVisitAsync(milestone.ProjectId.Value, operation: "GetMilestoneHealth", ct: ct);
 
         var tasks = await _context.Tasks
             .AsNoTracking()
@@ -210,7 +210,7 @@ public class ProjectHealthService : IProjectHealthService
             .Distinct()
             .ToList();
 
-        var predecessors = await _context.ProjectCalendars
+        var predecessors = await _context.Calendars
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && predecessorIds.Contains(m.Id) && !m.IsDeleted)
             .ToListAsync(ct);
@@ -301,7 +301,7 @@ public class ProjectHealthService : IProjectHealthService
 
         var tenantId = _tenantContext.TenantId;
 
-        var milestoneIds = await _context.ProjectCalendars
+        var milestoneIds = await _context.Calendars
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && m.ProjectId == projectId && !m.IsDeleted)
             .OrderBy(m => m.StartDate)

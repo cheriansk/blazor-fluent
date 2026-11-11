@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -23,7 +23,8 @@ public class DbContextInjectionArchitectureTests
         "DevelopmentSeeder",
         "InitialDatabaseSeeder",
         "DataProtectionKeyValidator",
-        "CircuitActivityDbInterceptor"
+        "CircuitActivityDbInterceptor",
+        "TransactionContext"
     };
 
     [Fact]

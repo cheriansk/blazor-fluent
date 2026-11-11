@@ -6,11 +6,9 @@
 <div class="entity-meta">
 <span class="badge badge-subsystem">Subsystem: Tasks</span>
 <span class="badge badge-tenant">DbSet: Tasks</span>
-<span class="badge badge-tenant" title="Database Table Name">Table: Tasks</span>
+<span class="badge badge-tenant" title="Database Table Name">Table: TaskEntity</span>
 <a class="badge badge-base" href="BaseTaskEntity.html">Base: BaseTaskEntity</a>
-<a class="badge badge-base" style="background:#004b50;" href="IProjectScopedEntity.html">Implements: IProjectScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IMilestoneLinkedEntity.html">Implements: IMilestoneLinkedEntity</a>
-<a class="badge badge-base" style="background:#004b50;" href="IUnversionedEntity.html">Implements: IUnversionedEntity</a>
 </div></div>
 <div style="display:flex; gap:8px;">
 <a href="../diagram.html" class="nav-tab active" style="display:inline-block; background:var(--primary); color:#fff; padding:6px 12px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;">🗺️ Full ER Diagram &rarr;</a>
@@ -44,14 +42,6 @@ erDiagram
     }
     IMilestoneLinkedEntity {
     }
-    IProjectScopedEntity {
-    }
-    IUnversionedEntity {
-    }
-    ProgramEntity {
-    }
-    ProjectEntity {
-    }
     SprintItemVersionEntity {
     }
     SubTaskEntity {
@@ -60,43 +50,27 @@ erDiagram
     }
     UserTaskCommentEntity {
     }
-    WorkflowEntity {
-    }
     BaseTaskEntity ||--|| TaskEntity : "extends"
-    IProjectScopedEntity ||--o{ TaskEntity : "implements"
     IMilestoneLinkedEntity ||--o{ TaskEntity : "implements"
-    IUnversionedEntity ||--o{ TaskEntity : "implements"
-    ProgramEntity ||--o{ TaskEntity : "references"
-    ProjectEntity ||--o{ TaskEntity : "references"
     TaskEntity ||--o{ SprintItemVersionEntity : "Item"
     TaskEntity ||--o{ SubTaskEntity : "SubTasks"
     TaskEntity ||--o{ UserTaskCommentEntity : "Comments"
-    WorkflowEntity ||--o{ TaskEntity : "Steps"
 </pre></div>
 </div>
 <div class="card">
 <div class="card-title">Architectural Markers & Security Gates</div>
 <div class="entity-meta">
-<span class="badge badge-tenant" title="Multi-tenant isolation active via QueryFilters.Tenant">[Tenant Isolated]</span>
 <span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
-<span class="badge badge-audit" title="Stamped with Created/Updated audit timestamps">[Auditable]</span>
-<span class="badge badge-project" title="Guarded by ProjectSecurityInterceptor write barriers">[Project Scoped]</span>
 </div>
-<div class="desc-box" style="margin-top: 14px;">Standard work item / task. Inherits from . Can act as a standalone task or as a sequential step in a . Can have one or more children delegated to team members.</div>
+<div class="desc-box" style="margin-top: 14px;">Abstract base class for executable tasks. Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, MiscTaskEntity. Inherits from .</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (44)</div>
+<div class="card-title">Properties & Fields (39)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
-<tr><td class="prop-name">EstimatedHours </td><td><span class="code-type">decimal?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Planned / estimated effort hours for the task. Not present or available on SubTaskEntity.</td></tr>
-<tr><td class="prop-name">MilestoneId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional foreign key to a project milestone. Null indicates an ad-hoc task.</td></tr>
-<tr><td class="prop-name">SprintId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional foreign key to the assigned sprint iteration. Null indicates backlog / unassigned. A task can be assigned to at most 1 sprint at a time.</td></tr>
-<tr><td class="prop-name">Sprint <span class="fk-pill">NAV</span></td><td><a href="SprintEntity.html" class="code-type">SprintEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Assigned sprint iteration.</td></tr>
-<tr><td class="prop-name">WorkflowId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional foreign key referencing the governing workflow pipeline (null for standalone tasks).</td></tr>
-<tr><td class="prop-name">WorkflowStepOrder </td><td><span class="code-type">int?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>1-based sequential execution index within the workflow (null for standalone tasks).</td></tr>
-<tr><td class="prop-name">Workflow <span class="fk-pill">NAV</span></td><td><a href="WorkflowEntity.html" class="code-type">WorkflowEntity?</a></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Governing workflow pipeline.</td></tr>
+<tr><td class="prop-name">EstimatedHours </td><td><span class="code-type">decimal?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Planned / estimated effort hours for the task.</td></tr>
+<tr><td class="prop-name">MilestoneId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional milestone association. Hydrated via MilestoneRelationEntity.</td></tr>
 <tr><td class="prop-name">SubTasks <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<SubTaskEntity></span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Collection of child subtasks directly governed by this task.</td></tr>
 <tr><td class="prop-name">Comments <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<UserTaskCommentEntity></span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Discussion comments thread.</td></tr>
-<tr><td class="prop-name">Level </td><td><span class="code-type">TaskLevelEnum</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Organizational level at which this work item exists (Tenant, Program, Project, User).</td></tr>
 <tr><td class="prop-name">Title </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Concise headline title of the work item. Required.</td></tr>
 <tr><td class="prop-name">Description </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Detailed description, reproduction steps, or context.</td></tr>
 <tr><td class="prop-name">Priority </td><td><span class="code-type">TaskPriorityEnum</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Urgency and priority rating (Low, Medium, High, Urgent).</td></tr>
@@ -112,9 +86,6 @@ erDiagram
 <tr><td class="prop-name">AssigneeEmails </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Semicolon-delimited list of assignee email addresses.</td></tr>
 <tr><td class="prop-name">WatcherEmails </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Semicolon-delimited list of stakeholder emails who monitor this work item. Watchers receive automated status change alerts and see the item on their calendars.</td></tr>
 <tr><td class="prop-name">Labels </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Comma-delimited list of classification labels/tags.</td></tr>
-<tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
-<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
-<tr><td class="prop-name">UserId <span class="fk-pill">FK</span></td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">SourceRowId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">IsEncryptedAtRest </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">IsDeleted </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
@@ -123,36 +94,39 @@ erDiagram
 <tr><td class="prop-name">IsClosed </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
-<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantAuditableEntity.html" class="badge badge-base" style="font-size:10px;">from TenantAuditableEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProjectScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProjectScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">Level </td><td><span class="code-type">TaskLevelEnum</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Id </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">Version </td><td><span class="code-type">uint</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>PostgreSQL xmin system column mapped as a row-version concurrency token. Updated automatically by PostgreSQL on every physical row modification.</td></tr>
 <tr><td class="prop-name">Created </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Creation timestamp (UTC). Stamped automatically by AuditableEntityInterceptor on insert.</td></tr>
 <tr><td class="prop-name">CreatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who created the record.</td></tr>
 <tr><td class="prop-name">Updated </td><td><span class="code-type">DateTime</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Last update timestamp (UTC). Stamped automatically by AuditableEntityInterceptor. On initial insert, matches .</td></tr>
 <tr><td class="prop-name">UpdatedBy </td><td><span class="code-type">string</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>User identifier or system actor who last modified the record. On initial insert, matches .</td></tr>
-<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation. Evaluates to true if Updated timestamp is strictly greater than Created timestamp.</td></tr>
+<tr><td class="prop-name">IsModifiedSinceCreation </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Indicates whether the entity has been modified since its initial creation.</td></tr>
+<tr><td class="prop-name">DomainEvents </td><td><span class="code-type">IReadOnlyCollection<IDomainEvent></span></td><td>No</td><td><a href="BaseEntity.html" class="badge badge-base" style="font-size:10px;">from BaseEntity</a></td><td>Collection of domain events raised by this entity during business operations. Harvested and dispatched automatically by UnitOfWork on commit.</td></tr>
 </tbody></table>
 </div>
 <div class="card">
-<div class="card-title">Inbound References (Where this entity is referenced) (5)</div>
+<div class="card-title">Inbound References (Where this entity is referenced) (4)</div>
 <table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
 <tr><td><a href="SprintItemVersionEntity.html"><b>SprintItemVersionEntity</b></a></td><td>Sprints</td><td><code>Item</code></td><td>Navigation (1:1)</td></tr>
 <tr><td><a href="SubTaskEntity.html"><b>SubTaskEntity</b></a></td><td>Tasks</td><td><code>ParentTask</code></td><td>Navigation (1:1)</td></tr>
 <tr><td><a href="UserTaskCommentEntity.html"><b>UserTaskCommentEntity</b></a></td><td>Tasks</td><td><code>Task</code></td><td>Navigation (1:1)</td></tr>
 <tr><td><a href="UserTaskCommentEntity.html"><b>UserTaskCommentEntity</b></a></td><td>Tasks</td><td><code>TaskId</code></td><td>Foreign Key FK</td></tr>
-<tr><td><a href="WorkflowEntity.html"><b>WorkflowEntity</b></a></td><td>Tasks</td><td><code>Steps</code></td><td>Collection (1:N)</td></tr>
 </tbody></table>
 </div>
 <div class="card">
 <div class="card-title">🖥️ Screen / Razor Page Usages (21)</div>
 <table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
-<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">WorkflowStepOrder</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Level</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-FluentCalendarScheduleComp.razor"><b>FluentCalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Sprint</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-FluentCalendarScheduleComp.razor"><b>FluentCalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-TaskDependencyLinkModal.razor"><b>TaskDependencyLinkModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-WorkflowStepperComp.razor"><b>WorkflowStepperComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">WorkflowStepOrder</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Level</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">UserId</span> <span class="badge-field">IsClosed</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowStepperComp.razor"><b>WorkflowStepperComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">IsClosed</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-NavMenuComp.razor"><b>NavMenuComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-DashboardKanbanBoard.razor"><b>DashboardKanbanBoard.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-HomePage.razor"><b>HomePage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/</code></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-HomePage.razor"><b>HomePage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/</code></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-MyProjectsGrid.razor"><b>MyProjectsGrid.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticView.razor"><b>ProgramHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/programs/holistic</code></td><td><span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewHomeTab.razor"><b>ProgramHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
@@ -161,12 +135,12 @@ erDiagram
 <tr><td><a href="../razor-pages.html#screen-ProjectHolisticView.razor"><b>ProjectHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/projects/holistic</code></td><td><span class="badge-field">MilestoneId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewHomeTab.razor"><b>ProjectHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewRaidLogTab.razor"><b>ProjectHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">DueDate</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SprintPlanningPage.razor"><b>SprintPlanningPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/sprints</code></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">Sprint</span> <span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SprintPlanningPage.razor"><b>SprintPlanningPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/sprints</code></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsNotificationsTab.razor"><b>SettingsNotificationsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Comments</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ProgramId</span> <span class="badge-field">UserId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SettingsTenantsTab.razor"><b>SettingsTenantsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">UserId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span> <span class="badge-field">CreatedBy</span> <span class="badge-field">Updated</span> <span class="badge-field">UpdatedBy</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProjectTasksBoardPage.razor"><b>ProjectTasksBoardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/projects/{ProjectId:guid}/tasks</code></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">MilestoneId</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Comments</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ReporterEmail</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Labels</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">IsClosed</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">Level</span> <span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">ProgramId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Comments</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SettingsTenantsTab.razor"><b>SettingsTenantsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span> <span class="badge-field">CreatedBy</span> <span class="badge-field">Updated</span> <span class="badge-field">UpdatedBy</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectTasksBoardPage.razor"><b>ProjectTasksBoardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/projects/{ProjectId:guid}/tasks</code></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">MilestoneId</span> <span class="badge-field">SubTasks</span> <span class="badge-field">Comments</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ReporterEmail</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Labels</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">IsClosed</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-WorkflowsDashboardPage.razor"><b>WorkflowsDashboardPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Tenancy</td><td><code>/workflows</code></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
 </tbody></table>
 </div>
 <div class="card" id="sectionClassHierarchy" style="padding: 20px 24px;">
@@ -175,17 +149,11 @@ erDiagram
 <div class="diag-fullview">
 <pre class="mermaid" id="classDiagramPre">
 classDiagram
-    class AuditableEntity {
-        <<abstract>>
-    }
     class BaseEntity {
         <<abstract>>
     }
     class BaseTaskEntity {
         <<abstract>>
-    }
-    class IAuditableEntity {
-        <<interface>>
     }
     class IConcurrency {
         <<interface>>
@@ -193,16 +161,7 @@ classDiagram
     class IEffectiveDatedEntity {
         <<interface>>
     }
-    class IEncryptedPayloadEntity {
-        <<interface>>
-    }
-    class IMarkerEntity {
-        <<interface>>
-    }
     class IMilestoneLinkedEntity {
-        <<interface>>
-    }
-    class IProjectScopedEntity {
         <<interface>>
     }
     class IScheduledWorkEntity {
@@ -211,64 +170,47 @@ classDiagram
     class ISoftDeletableEntity {
         <<interface>>
     }
-    class ISourceTrackedEntity {
-        <<interface>>
-    }
-    class ITenantEntity {
-        <<interface>>
-    }
     class IUnversionedEntity {
         <<interface>>
     }
-    class TaskEntity {
-    }
-    class TenantAuditableEntity {
+    class ProgramScopedEntity {
         <<abstract>>
     }
-    AuditableEntity <|-- TenantAuditableEntity : extends
-    BaseEntity <|-- AuditableEntity : extends
+    class ProjectScopedEntity {
+        <<abstract>>
+    }
+    class TaskEntity {
+        <<abstract>>
+    }
+    class TenantScopedEntity {
+        <<abstract>>
+    }
+    BaseEntity <|-- TenantScopedEntity : extends
     BaseTaskEntity <|-- TaskEntity : extends
-    IAuditableEntity <|.. BaseEntity : implements
     IConcurrency <|.. BaseEntity : implements
     IEffectiveDatedEntity <|-- IScheduledWorkEntity : extends
-    IEncryptedPayloadEntity <|.. BaseTaskEntity : implements
-    IMarkerEntity <|-- IAuditableEntity : extends
-    IMarkerEntity <|-- IEffectiveDatedEntity : extends
-    IMarkerEntity <|-- ISoftDeletableEntity : extends
-    IMarkerEntity <|-- ITenantEntity : extends
-    IMarkerEntity <|-- IUnversionedEntity : extends
     IMilestoneLinkedEntity <|.. TaskEntity : implements
-    IProjectScopedEntity <|.. TaskEntity : implements
     IScheduledWorkEntity <|.. BaseTaskEntity : implements
     ISoftDeletableEntity <|.. BaseTaskEntity : implements
-    ISourceTrackedEntity <|.. BaseTaskEntity : implements
-    ITenantEntity <|-- IProjectScopedEntity : extends
-    ITenantEntity <|.. TenantAuditableEntity : implements
     IUnversionedEntity <|.. BaseTaskEntity : implements
-    IUnversionedEntity <|.. TaskEntity : implements
-    TenantAuditableEntity <|-- BaseTaskEntity : extends
+    ProgramScopedEntity <|-- ProjectScopedEntity : extends
+    ProjectScopedEntity <|-- BaseTaskEntity : extends
+    TenantScopedEntity <|-- ProgramScopedEntity : extends
 </pre></div>
 <script>
 mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", er: { useMaxWidth: false } });
 const activeEntityRels = [
     { parent: 'BaseTaskEntity', child: 'TaskEntity', label: 'extends' },
-    { parent: 'IProjectScopedEntity', child: 'TaskEntity', label: 'implements' },
     { parent: 'IMilestoneLinkedEntity', child: 'TaskEntity', label: 'implements' },
-    { parent: 'IUnversionedEntity', child: 'TaskEntity', label: 'implements' },
-    { parent: 'ProgramEntity', child: 'TaskEntity', label: 'references' },
-    { parent: 'ProjectEntity', child: 'TaskEntity', label: 'references' },
     { parent: 'TaskEntity', child: 'SprintItemVersionEntity', label: 'Item' },
     { parent: 'TaskEntity', child: 'SubTaskEntity', label: 'SubTasks' },
     { parent: 'TaskEntity', child: 'UserTaskCommentEntity', label: 'Comments' },
-    { parent: 'WorkflowEntity', child: 'TaskEntity', label: 'Steps' },
 ];
 const entityLookup = {
     'AuditRecords': 'AuditRecordEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'ProgramCalendars': 'ProgramCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendars': 'ProjectCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'calendars': 'CalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendars': 'UserCalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
@@ -307,14 +249,14 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'Assumptions': 'AssumptionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
+    'Deliverables': 'DeliverableEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'Issues': 'IssueEntity.html',
     'IssueEntity': 'IssueEntity.html',
     'Risks': 'RiskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SubTasks': 'SubTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
-    'Tasks': 'TaskEntity.html',
-    'TaskEntity': 'TaskEntity.html',
     'TaskComments': 'UserTaskCommentEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencies': 'WorkDependencyEntity.html',
@@ -337,31 +279,30 @@ const entityLookup = {
     'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
     'DataProtectionKeys': 'DataProtectionKey.html',
     'DataProtectionKey': 'DataProtectionKey.html',
+    'MiscTasks': 'MiscTaskEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'SprintTasks': 'SprintTaskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
+    'WorkflowTasks': 'WorkflowTaskEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
-    'AuditableEntity': 'AuditableEntity.html',
     'BaseEntity': 'BaseEntity.html',
-    'IEncryptedPayloadEntity': 'IEncryptedPayloadEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
-    'IMarkerEntity': 'IMarkerEntity.html',
-    'IAuditableEntity': 'IAuditableEntity.html',
     'IAuditExemptEntity': 'IAuditExemptEntity.html',
     'IGlobalEntity': 'IGlobalEntity.html',
-    'ITenantEntity': 'ITenantEntity.html',
-    'IProjectScopedEntity': 'IProjectScopedEntity.html',
     'ISoftDeletableEntity': 'ISoftDeletableEntity.html',
     'IHardDeletableEntity': 'IHardDeletableEntity.html',
     'IImmutableEntity': 'IImmutableEntity.html',
     'IEffectiveDatedEntity': 'IEffectiveDatedEntity.html',
     'IVersionedEntity': 'IVersionedEntity.html',
-    'ISprintVersionEntity': 'ISprintVersionEntity.html',
     'IUnversionedEntity': 'IUnversionedEntity.html',
     'IMilestoneLinkedEntity': 'IMilestoneLinkedEntity.html',
     'IScheduledWorkEntity': 'IScheduledWorkEntity.html',
-    'ISourceTrackedEntity': 'ISourceTrackedEntity.html',
-    'TenantAuditableEntity': 'TenantAuditableEntity.html',
+    'ProgramScopedEntity': 'ProgramScopedEntity.html',
+    'ProjectScopedEntity': 'ProjectScopedEntity.html',
+    'TenantScopedEntity': 'TenantScopedEntity.html',
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
-    'ProgramCalendarEntity': 'ProgramCalendarEntity.html',
-    'ProjectCalendarEntity': 'ProjectCalendarEntity.html',
+    'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
@@ -382,13 +323,18 @@ const entityLookup = {
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
+    'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
+    'MiscTaskEntity': 'MiscTaskEntity.html',
+    'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
+    'SprintTaskEntity': 'SprintTaskEntity.html',
     'SubTaskEntity': 'SubTaskEntity.html',
     'TaskEntity': 'TaskEntity.html',
     'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
     'WorkDependencyEntity': 'WorkDependencyEntity.html',
     'WorkflowEntity': 'WorkflowEntity.html',
+    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'ProgramEntity': 'ProgramEntity.html',
     'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
     'ProjectEntity': 'ProjectEntity.html',

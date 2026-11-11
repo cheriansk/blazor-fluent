@@ -10,7 +10,7 @@ namespace BlazorEnterprise.Core.Domain.Events;
 /// implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
 /// and <see cref="IImmutableEntity"/> to enforce ledger integrity.
 /// </summary>
-public class EventPublishTrackerEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+public class EventPublishTrackerEntity : TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
     /// <summary>Unique identifier of the published event (UUIDv7).</summary>
     public Guid EventId { get; set; } = Guid.CreateVersion7();

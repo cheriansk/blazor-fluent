@@ -7,7 +7,7 @@ namespace BlazorEnterprise.Core.Domain.Imports;
 /// for ALL file import formats (Excel, CSV, TSV, space-delimited, XML, JSON).
 /// Eliminates the need for per-file-type staging tables and database migrations.
 /// </summary>
-public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity, IHardDeletableEntity, IUnversionedEntity
+public class StagedImportEntity : ProjectScopedEntity, IHardDeletableEntity, IUnversionedEntity
 {
     /// <summary>
     /// Shared batch identifier grouping all files uploaded together in the same session.
@@ -22,7 +22,7 @@ public class StagedImportEntity : TenantAuditableEntity, IProjectScopedEntity, I
     /// <summary>
     /// ID of the project workspace.
     /// </summary>
-    public required Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     /// <summary>
     /// Logical file template type (e.g., 'TaskExcel', 'TaskCsv', 'InvoiceXml').

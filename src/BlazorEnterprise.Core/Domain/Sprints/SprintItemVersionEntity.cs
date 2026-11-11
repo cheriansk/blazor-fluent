@@ -7,11 +7,11 @@ namespace BlazorEnterprise.Core.Domain.Sprints;
 
 /// <summary>
 /// Versioned assignment of a task item to a sprint iteration, tracking movement and effort across sprint versions.
-/// Implements ISprintVersionEntity.
+/// Implements IVersionedEntity.
 /// </summary>
-public class SprintItemVersionEntity : TenantAuditableEntity, ISprintVersionEntity, IProjectScopedEntity, ISoftDeletableEntity
+public class SprintItemVersionEntity : ProjectScopedEntity, IVersionedEntity, ISoftDeletableEntity
 {
-    public required Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     public required Guid ItemId { get; set; }
 
@@ -21,7 +21,7 @@ public class SprintItemVersionEntity : TenantAuditableEntity, ISprintVersionEnti
 
     public double ActualHours { get; set; }
 
-    public TaskStatusEnum Status { get; set; } = TaskStatusEnum.Open;
+    public TaskStatusEnum Status { get; set; }
 
     public DateTime EffectiveFromDate { get; set; }
 
@@ -30,8 +30,8 @@ public class SprintItemVersionEntity : TenantAuditableEntity, ISprintVersionEnti
     // --- ISprintVersionEntity / IVersionedEntity ---
     public Guid RevisionHeaderId { get; set; }
     public Guid RelId { get; set; }
-    public int VerNum { get; set; } = 1;
-    public Guid ParentRowId { get; set; } = Guid.Empty;
+    public int VerNum { get; set; }
+    public Guid ParentRowId { get; set; }
 
     public void SetVersionNumber(int newVersion)
     {
