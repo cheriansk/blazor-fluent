@@ -142,7 +142,7 @@ public partial class CreateWorkflowWizardModal : ComponentBase
             DueDate = wf.DueDate,
             WatcherEmails = wf.WatcherEmails,
             Steps = wf.Steps
-                .OrderBy(s => s.WorkflowStepOrder ?? 1)
+                .OrderBy(s => s.WorkflowStepOrder)
                 .Select(s => new CreateWorkflowStepDto
                 {
                     ExistingTaskId = s.Id,

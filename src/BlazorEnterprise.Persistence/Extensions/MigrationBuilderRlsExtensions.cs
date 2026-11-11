@@ -69,7 +69,7 @@ END $$;");
     }
 
     /// <summary>
-    /// Applies Layer 5 PostgreSQL Native Row-Level Security policies to all ITenantEntity tables.
+    /// Applies Layer 5 PostgreSQL Native Row-Level Security policies to all ITenantScopedEntity tables.
     /// </summary>
     public static MigrationBuilder ApplyAllTenantRowLevelSecurity(this MigrationBuilder migrationBuilder)
     {
@@ -103,7 +103,7 @@ END $$;");
     }
 
     /// <summary>
-    /// Reverts Layer 5 PostgreSQL Native Row-Level Security policies from all ITenantEntity tables.
+    /// Reverts Layer 5 PostgreSQL Native Row-Level Security policies from all ITenantScopedEntity tables.
     /// </summary>
     public static MigrationBuilder RevertAllTenantRowLevelSecurity(this MigrationBuilder migrationBuilder)
     {

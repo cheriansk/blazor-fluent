@@ -150,6 +150,7 @@ public class TaskDependencyItemDto
     public TaskStatusEnum Status { get; set; } = TaskStatusEnum.Open;
     public DateTime? ResolveByUtc { get; set; }
     public bool IsScheduleConflict { get; set; }
+    public bool CanAccessTargetItem { get; set; } = true;
 
     public bool IsResolved => Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled ||
                               DependsOnTaskStatus is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled ||

@@ -10,7 +10,7 @@ namespace BlazorEnterprise.Core.Domain.Tenancy;
 /// Implements <see cref="IScheduledWorkEntity"/> for baseline vs. actual schedule tracking.
 /// Implements <see cref="ISoftDeletableEntity"/> — projects are soft-deleted, not physically removed.
 /// </summary>
-public class ProjectEntity : TenantAuditableEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
+public class ProjectEntity : ProgramScopedEntity, IScheduledWorkEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     public required string Name { get; set; }
 
@@ -68,7 +68,7 @@ public class ProjectEntity : TenantAuditableEntity, IScheduledWorkEntity, ISoftD
     public TenantEntity? TenantEntity { get; set; }
 
     /// <summary>FK to the governing <see cref="ProgramEntity"/>.</summary>
-    public Guid? ProgramId { get; set; }
+    // Inherits ProgramId from ProgramScopedEntity
 
     /// <summary>Navigation to parent program.</summary>
     public ProgramEntity? Program { get; set; }

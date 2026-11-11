@@ -21,7 +21,7 @@
 <ul class="tree-root">
 <li class="tree-branch" data-entity="BaseEntity">
 <div class="tree-node-wrap">
-<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 1 child classes" aria-label="Expand or collapse BaseEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 5 child classes" aria-label="Expand or collapse BaseEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
 <div class="tree-card root-card" onclick="openDetailDrawer('BaseEntity')" data-search="baseentity base  " title="Click to view BaseEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">BaseEntity</span>
@@ -30,119 +30,207 @@
 </div>
 </div>
 <ul class="tree-children">
-<li class="tree-branch" data-entity="AuditableEntity">
-<div class="tree-node-wrap">
-<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 5 child classes" aria-label="Expand or collapse AuditableEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
-<div class="tree-card base-card" onclick="openDetailDrawer('AuditableEntity')" data-search="auditableentity base baseentity baseentity" title="Click to view AuditableEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">AuditableEntity</span>
-<span class="tree-subsystem-pill">Base</span>
-</div>
-<div class="tree-card-extends">extends <strong>BaseEntity</strong></div>
-</div>
-</div>
-<ul class="tree-children">
 <li class="tree-branch" data-entity="ImpersonationGrantEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card domain-card" onclick="openDetailDrawer('ImpersonationGrantEntity')" data-search="impersonationgrantentity identity auditableentity auditableentity baseentity" title="Click to view ImpersonationGrantEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('ImpersonationGrantEntity')" data-search="impersonationgrantentity identity baseentity baseentity" title="Click to view ImpersonationGrantEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ImpersonationGrantEntity</span>
 <span class="tree-subsystem-pill">Identity</span>
 </div>
-<div class="tree-card-extends">extends <strong>AuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>BaseEntity</strong></div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="KnowledgeArticleReviewerEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card domain-card" onclick="openDetailDrawer('KnowledgeArticleReviewerEntity')" data-search="knowledgearticlereviewerentity knowledge auditableentity auditableentity baseentity" title="Click to view KnowledgeArticleReviewerEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('KnowledgeArticleReviewerEntity')" data-search="knowledgearticlereviewerentity knowledge baseentity baseentity" title="Click to view KnowledgeArticleReviewerEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">KnowledgeArticleReviewerEntity</span>
 <span class="tree-subsystem-pill">Knowledge</span>
 </div>
-<div class="tree-card-extends">extends <strong>AuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>BaseEntity</strong></div>
 </div>
 </div>
 </li>
-<li class="tree-branch" data-entity="TenantAuditableEntity">
+<li class="tree-branch" data-entity="TenantEntity">
 <div class="tree-node-wrap">
-<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 24 child classes" aria-label="Expand or collapse TenantAuditableEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
-<div class="tree-card base-card" onclick="openDetailDrawer('TenantAuditableEntity')" data-search="tenantauditableentity base auditableentity auditableentity baseentity" title="Click to view TenantAuditableEntity details in slide-over drawer">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('TenantEntity')" data-search="tenantentity tenancy baseentity baseentity" title="Click to view TenantEntity details in slide-over drawer">
 <div class="tree-card-header">
-<span class="tree-entity-name">TenantAuditableEntity</span>
+<span class="tree-entity-name">TenantEntity</span>
+<span class="tree-subsystem-pill">Tenancy</span>
+</div>
+<div class="tree-card-extends">extends <strong>BaseEntity</strong></div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="TenantScopedEntity">
+<div class="tree-node-wrap">
+<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 8 child classes" aria-label="Expand or collapse TenantScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card domain-card" onclick="openDetailDrawer('TenantScopedEntity')" data-search="tenantscopedentity base baseentity baseentity" title="Click to view TenantScopedEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">TenantScopedEntity</span>
 <span class="tree-subsystem-pill">Base</span>
 </div>
-<div class="tree-card-extends">extends <strong>AuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>BaseEntity</strong></div>
 </div>
 </div>
 <ul class="tree-children">
 <li class="tree-branch" data-entity="AuditRecordEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('AuditRecordEntity')" data-search="auditrecordentity auditing tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view AuditRecordEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('AuditRecordEntity')" data-search="auditrecordentity auditing tenantscopedentity tenantscopedentity baseentity" title="Click to view AuditRecordEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">AuditRecordEntity</span>
 <span class="tree-subsystem-pill">Auditing</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
 </div>
 </div>
 </li>
+<li class="tree-branch" data-entity="EventConsumptionTrackerEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('EventConsumptionTrackerEntity')" data-search="eventconsumptiontrackerentity events tenantscopedentity tenantscopedentity baseentity" title="Click to view EventConsumptionTrackerEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">EventConsumptionTrackerEntity</span>
+<span class="tree-subsystem-pill">Events</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="EventPublishTrackerEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('EventPublishTrackerEntity')" data-search="eventpublishtrackerentity events tenantscopedentity tenantscopedentity baseentity" title="Click to view EventPublishTrackerEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">EventPublishTrackerEntity</span>
+<span class="tree-subsystem-pill">Events</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="JobExecutionEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('JobExecutionEntity')" data-search="jobexecutionentity jobs tenantscopedentity tenantscopedentity baseentity" title="Click to view JobExecutionEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">JobExecutionEntity</span>
+<span class="tree-subsystem-pill">Jobs</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="ProgramScopedEntity">
+<div class="tree-node-wrap">
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 4 child classes" aria-label="Expand or collapse ProgramScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProgramScopedEntity')" data-search="programscopedentity base tenantscopedentity tenantscopedentity baseentity" title="Click to view ProgramScopedEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">ProgramScopedEntity</span>
+<span class="tree-subsystem-pill">Base</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+<ul class="tree-children collapsed">
+<li class="tree-branch" data-entity="ProgramEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProgramEntity')" data-search="programentity tenancy programscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProgramEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">ProgramEntity</span>
+<span class="tree-subsystem-pill">Tenancy</span>
+</div>
+<div class="tree-card-extends">extends <strong>ProgramScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="ProgramUserRoleEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProgramUserRoleEntity')" data-search="programuserroleentity tenancy programscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProgramUserRoleEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">ProgramUserRoleEntity</span>
+<span class="tree-subsystem-pill">Tenancy</span>
+</div>
+<div class="tree-card-extends">extends <strong>ProgramScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="ProjectEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProjectEntity')" data-search="projectentity tenancy programscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProjectEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">ProjectEntity</span>
+<span class="tree-subsystem-pill">Tenancy</span>
+</div>
+<div class="tree-card-extends">extends <strong>ProgramScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="ProjectScopedEntity">
+<div class="tree-node-wrap">
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 14 child classes" aria-label="Expand or collapse ProjectScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProjectScopedEntity')" data-search="projectscopedentity base programscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProjectScopedEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">ProjectScopedEntity</span>
+<span class="tree-subsystem-pill">Base</span>
+</div>
+<div class="tree-card-extends">extends <strong>ProgramScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+<ul class="tree-children collapsed">
 <li class="tree-branch" data-entity="BaseCalendarEntity">
 <div class="tree-node-wrap">
-<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 3 child classes" aria-label="Expand or collapse BaseCalendarEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
-<div class="tree-card base-card" onclick="openDetailDrawer('BaseCalendarEntity')" data-search="basecalendarentity calendar tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view BaseCalendarEntity details in slide-over drawer">
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 2 child classes" aria-label="Expand or collapse BaseCalendarEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card base-card" onclick="openDetailDrawer('BaseCalendarEntity')" data-search="basecalendarentity calendar projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view BaseCalendarEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">BaseCalendarEntity</span>
 <span class="tree-subsystem-pill">Calendar</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 <ul class="tree-children collapsed">
-<li class="tree-branch" data-entity="ProgramCalendarEntity">
+<li class="tree-branch" data-entity="CalendarEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProgramCalendarEntity')" data-search="programcalendarentity calendar basecalendarentity basecalendarentity tenantauditableentity auditableentity baseentity" title="Click to view ProgramCalendarEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('CalendarEntity')" data-search="calendarentity calendar basecalendarentity basecalendarentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view CalendarEntity details in slide-over drawer">
 <div class="tree-card-header">
-<span class="tree-entity-name">ProgramCalendarEntity</span>
+<span class="tree-entity-name">CalendarEntity</span>
 <span class="tree-subsystem-pill">Calendar</span>
 </div>
 <div class="tree-card-extends">extends <strong>BaseCalendarEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="ProjectCalendarEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProjectCalendarEntity')" data-search="projectcalendarentity calendar basecalendarentity basecalendarentity tenantauditableentity auditableentity baseentity" title="Click to view ProjectCalendarEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">ProjectCalendarEntity</span>
-<span class="tree-subsystem-pill">Calendar</span>
-</div>
-<div class="tree-card-extends">extends <strong>BaseCalendarEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="UserCalendarEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('UserCalendarEntity')" data-search="usercalendarentity calendar basecalendarentity basecalendarentity tenantauditableentity auditableentity baseentity" title="Click to view UserCalendarEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('UserCalendarEntity')" data-search="usercalendarentity calendar basecalendarentity basecalendarentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view UserCalendarEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">UserCalendarEntity</span>
 <span class="tree-subsystem-pill">Calendar</span>
 </div>
 <div class="tree-card-extends">extends <strong>BaseCalendarEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
@@ -150,412 +238,391 @@
 </li>
 <li class="tree-branch" data-entity="BaseTaskEntity">
 <div class="tree-node-wrap">
-<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 7 child classes" aria-label="Expand or collapse BaseTaskEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
-<div class="tree-card base-card" onclick="openDetailDrawer('BaseTaskEntity')" data-search="basetaskentity tasks tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view BaseTaskEntity details in slide-over drawer">
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 5 child classes" aria-label="Expand or collapse BaseTaskEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card base-card" onclick="openDetailDrawer('BaseTaskEntity')" data-search="basetaskentity tasks projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view BaseTaskEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">BaseTaskEntity</span>
 <span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+<ul class="tree-children collapsed">
+<li class="tree-branch" data-entity="DeliverableEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('DeliverableEntity')" data-search="deliverableentity tasks basetaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view DeliverableEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">DeliverableEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
+</div>
+<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="RAIDTaskEntity">
+<div class="tree-node-wrap">
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 4 child classes" aria-label="Expand or collapse RAIDTaskEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card domain-card" onclick="openDetailDrawer('RAIDTaskEntity')" data-search="raidtaskentity tasks basetaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view RAIDTaskEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">RAIDTaskEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
+</div>
+<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 <ul class="tree-children collapsed">
 <li class="tree-branch" data-entity="AssumptionEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('AssumptionEntity')" data-search="assumptionentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view AssumptionEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('AssumptionEntity')" data-search="assumptionentity tasks raidtaskentity raidtaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view AssumptionEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">AssumptionEntity</span>
 <span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>RAIDTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="IssueEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('IssueEntity')" data-search="issueentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view IssueEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('IssueEntity')" data-search="issueentity tasks raidtaskentity raidtaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view IssueEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">IssueEntity</span>
 <span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>RAIDTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="RiskEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('RiskEntity')" data-search="riskentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view RiskEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('RiskEntity')" data-search="riskentity tasks raidtaskentity raidtaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view RiskEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">RiskEntity</span>
 <span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="SubTaskEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('SubTaskEntity')" data-search="subtaskentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view SubTaskEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">SubTaskEntity</span>
-<span class="tree-subsystem-pill">Tasks</span>
-</div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="TaskEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('TaskEntity')" data-search="taskentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view TaskEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">TaskEntity</span>
-<span class="tree-subsystem-pill">Tasks</span>
-</div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>RAIDTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="WorkDependencyEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('WorkDependencyEntity')" data-search="workdependencyentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view WorkDependencyEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('WorkDependencyEntity')" data-search="workdependencyentity tasks raidtaskentity raidtaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view WorkDependencyEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">WorkDependencyEntity</span>
 <span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="WorkflowEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('WorkflowEntity')" data-search="workflowentity tasks basetaskentity basetaskentity tenantauditableentity auditableentity baseentity" title="Click to view WorkflowEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">WorkflowEntity</span>
-<span class="tree-subsystem-pill">Tasks</span>
-</div>
-<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; TenantAuditableEntity &rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>RAIDTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 </ul>
 </li>
-<li class="tree-branch" data-entity="EventConsumptionTrackerEntity">
+<li class="tree-branch" data-entity="SubTaskEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('EventConsumptionTrackerEntity')" data-search="eventconsumptiontrackerentity events tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view EventConsumptionTrackerEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('SubTaskEntity')" data-search="subtaskentity tasks basetaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view SubTaskEntity details in slide-over drawer">
 <div class="tree-card-header">
-<span class="tree-entity-name">EventConsumptionTrackerEntity</span>
-<span class="tree-subsystem-pill">Events</span>
+<span class="tree-entity-name">SubTaskEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
-<li class="tree-branch" data-entity="EventPublishTrackerEntity">
+<li class="tree-branch" data-entity="TaskEntity">
+<div class="tree-node-wrap">
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 3 child classes" aria-label="Expand or collapse TaskEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<div class="tree-card domain-card" onclick="openDetailDrawer('TaskEntity')" data-search="taskentity tasks basetaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view TaskEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">TaskEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
+</div>
+<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+<ul class="tree-children collapsed">
+<li class="tree-branch" data-entity="MiscTaskEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('EventPublishTrackerEntity')" data-search="eventpublishtrackerentity events tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view EventPublishTrackerEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('MiscTaskEntity')" data-search="misctaskentity tasks taskentity taskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view MiscTaskEntity details in slide-over drawer">
 <div class="tree-card-header">
-<span class="tree-entity-name">EventPublishTrackerEntity</span>
-<span class="tree-subsystem-pill">Events</span>
+<span class="tree-entity-name">MiscTaskEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>TaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
+</li>
+<li class="tree-branch" data-entity="SprintTaskEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('SprintTaskEntity')" data-search="sprinttaskentity tasks taskentity taskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view SprintTaskEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">SprintTaskEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
+</div>
+<div class="tree-card-extends">extends <strong>TaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="WorkflowTaskEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('WorkflowTaskEntity')" data-search="workflowtaskentity tasks taskentity taskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view WorkflowTaskEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">WorkflowTaskEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
+</div>
+<div class="tree-card-extends">extends <strong>TaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseTaskEntity &rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+</ul>
+</li>
+<li class="tree-branch" data-entity="WorkflowEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('WorkflowEntity')" data-search="workflowentity tasks basetaskentity basetaskentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view WorkflowEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">WorkflowEntity</span>
+<span class="tree-subsystem-pill">Tasks</span>
+</div>
+<div class="tree-card-extends">extends <strong>BaseTaskEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProjectScopedEntity &rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+</ul>
 </li>
 <li class="tree-branch" data-entity="ImportFileEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ImportFileEntity')" data-search="importfileentity imports tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ImportFileEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('ImportFileEntity')" data-search="importfileentity imports projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ImportFileEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ImportFileEntity</span>
 <span class="tree-subsystem-pill">Imports</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="JobExecutionEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('JobExecutionEntity')" data-search="jobexecutionentity jobs tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view JobExecutionEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">JobExecutionEntity</span>
-<span class="tree-subsystem-pill">Jobs</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="KnowledgeArticleEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('KnowledgeArticleEntity')" data-search="knowledgearticleentity knowledge tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view KnowledgeArticleEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('KnowledgeArticleEntity')" data-search="knowledgearticleentity knowledge projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view KnowledgeArticleEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">KnowledgeArticleEntity</span>
 <span class="tree-subsystem-pill">Knowledge</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="NotificationEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('NotificationEntity')" data-search="notificationentity notifications tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view NotificationEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('NotificationEntity')" data-search="notificationentity notifications projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view NotificationEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">NotificationEntity</span>
 <span class="tree-subsystem-pill">Notifications</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="ProgramEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProgramEntity')" data-search="programentity tenancy tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ProgramEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">ProgramEntity</span>
-<span class="tree-subsystem-pill">Tenancy</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="ProgramUserRoleEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProgramUserRoleEntity')" data-search="programuserroleentity tenancy tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ProgramUserRoleEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">ProgramUserRoleEntity</span>
-<span class="tree-subsystem-pill">Tenancy</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="ProjectEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProjectEntity')" data-search="projectentity tenancy tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ProjectEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">ProjectEntity</span>
-<span class="tree-subsystem-pill">Tenancy</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="ProjectResourceEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProjectResourceEntity')" data-search="projectresourceentity resources tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ProjectResourceEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProjectResourceEntity')" data-search="projectresourceentity resources projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProjectResourceEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ProjectResourceEntity</span>
 <span class="tree-subsystem-pill">Resources</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="ProjectUserRoleEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ProjectUserRoleEntity')" data-search="projectuserroleentity tenancy tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ProjectUserRoleEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('ProjectUserRoleEntity')" data-search="projectuserroleentity tenancy projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProjectUserRoleEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ProjectUserRoleEntity</span>
 <span class="tree-subsystem-pill">Tenancy</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="ResourceAllocationEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ResourceAllocationEntity')" data-search="resourceallocationentity resources tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ResourceAllocationEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('ResourceAllocationEntity')" data-search="resourceallocationentity resources projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ResourceAllocationEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ResourceAllocationEntity</span>
 <span class="tree-subsystem-pill">Resources</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="ResourceRateEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('ResourceRateEntity')" data-search="resourcerateentity resources tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view ResourceRateEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('ResourceRateEntity')" data-search="resourcerateentity resources projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ResourceRateEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ResourceRateEntity</span>
 <span class="tree-subsystem-pill">Resources</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="RevisionHeaderEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('RevisionHeaderEntity')" data-search="revisionheaderentity versioning tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view RevisionHeaderEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('RevisionHeaderEntity')" data-search="revisionheaderentity versioning projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view RevisionHeaderEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">RevisionHeaderEntity</span>
 <span class="tree-subsystem-pill">Versioning</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="SprintAuditLogEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('SprintAuditLogEntity')" data-search="sprintauditlogentity sprints tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view SprintAuditLogEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">SprintAuditLogEntity</span>
-<span class="tree-subsystem-pill">Sprints</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="SprintEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('SprintEntity')" data-search="sprintentity sprints tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view SprintEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('SprintEntity')" data-search="sprintentity sprints projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view SprintEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">SprintEntity</span>
 <span class="tree-subsystem-pill">Sprints</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="SprintItemVersionEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('SprintItemVersionEntity')" data-search="sprintitemversionentity sprints tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view SprintItemVersionEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('SprintItemVersionEntity')" data-search="sprintitemversionentity sprints projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view SprintItemVersionEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">SprintItemVersionEntity</span>
 <span class="tree-subsystem-pill">Sprints</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="StagedImportEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('StagedImportEntity')" data-search="stagedimportentity imports tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view StagedImportEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('StagedImportEntity')" data-search="stagedimportentity imports projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view StagedImportEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">StagedImportEntity</span>
 <span class="tree-subsystem-pill">Imports</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="TenantUserEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('TenantUserEntity')" data-search="tenantuserentity tenancy tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view TenantUserEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">TenantUserEntity</span>
-<span class="tree-subsystem-pill">Tenancy</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
-</div>
-</div>
-</li>
-<li class="tree-branch" data-entity="UserSessionEntity">
-<div class="tree-node-wrap">
-<div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('UserSessionEntity')" data-search="usersessionentity identity tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view UserSessionEntity details in slide-over drawer">
-<div class="tree-card-header">
-<span class="tree-entity-name">UserSessionEntity</span>
-<span class="tree-subsystem-pill">Identity</span>
-</div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 <li class="tree-branch" data-entity="UserTaskCommentEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card tenant-card" onclick="openDetailDrawer('UserTaskCommentEntity')" data-search="usertaskcommententity tasks tenantauditableentity tenantauditableentity auditableentity baseentity" title="Click to view UserTaskCommentEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('UserTaskCommentEntity')" data-search="usertaskcommententity tasks projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view UserTaskCommentEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">UserTaskCommentEntity</span>
 <span class="tree-subsystem-pill">Tasks</span>
 </div>
-<div class="tree-card-extends">extends <strong>TenantAuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; AuditableEntity &rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
 </div>
 </div>
 </li>
 </ul>
 </li>
-<li class="tree-branch" data-entity="TenantEntity">
+</ul>
+</li>
+<li class="tree-branch" data-entity="SprintAuditLogEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card domain-card" onclick="openDetailDrawer('TenantEntity')" data-search="tenantentity tenancy auditableentity auditableentity baseentity" title="Click to view TenantEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('SprintAuditLogEntity')" data-search="sprintauditlogentity sprints tenantscopedentity tenantscopedentity baseentity" title="Click to view SprintAuditLogEntity details in slide-over drawer">
 <div class="tree-card-header">
-<span class="tree-entity-name">TenantEntity</span>
-<span class="tree-subsystem-pill">Tenancy</span>
+<span class="tree-entity-name">SprintAuditLogEntity</span>
+<span class="tree-subsystem-pill">Sprints</span>
 </div>
-<div class="tree-card-extends">extends <strong>AuditableEntity</strong></div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
 <div class="tree-card-ancestors">&rarr; BaseEntity</div>
 </div>
 </div>
+</li>
+<li class="tree-branch" data-entity="TenantUserEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('TenantUserEntity')" data-search="tenantuserentity tenancy tenantscopedentity tenantscopedentity baseentity" title="Click to view TenantUserEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">TenantUserEntity</span>
+<span class="tree-subsystem-pill">Tenancy</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="UserSessionEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('UserSessionEntity')" data-search="usersessionentity identity tenantscopedentity tenantscopedentity baseentity" title="Click to view UserSessionEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">UserSessionEntity</span>
+<span class="tree-subsystem-pill">Identity</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+</ul>
 </li>
 <li class="tree-branch" data-entity="UserEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
-<div class="tree-card domain-card" onclick="openDetailDrawer('UserEntity')" data-search="userentity identity auditableentity auditableentity baseentity" title="Click to view UserEntity details in slide-over drawer">
+<div class="tree-card domain-card" onclick="openDetailDrawer('UserEntity')" data-search="userentity identity baseentity baseentity" title="Click to view UserEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">UserEntity</span>
 <span class="tree-subsystem-pill">Identity</span>
 </div>
-<div class="tree-card-extends">extends <strong>AuditableEntity</strong></div>
-<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+<div class="tree-card-extends">extends <strong>BaseEntity</strong></div>
 </div>
 </div>
-</li>
-</ul>
 </li>
 </ul>
 </li>

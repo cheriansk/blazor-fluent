@@ -10,13 +10,6 @@ public class RevisionHeaderEntityConfiguration : IEntityTypeConfiguration<Revisi
     {
         builder.ToTable("RevisionHeaders", EntitySchemas.versioning.ToString(), t =>
         {
-            // PostgreSQL CHECK constraints enforcing strict scope hierarchy and lineage validity
-            t.HasCheckConstraint(
-                "CK_RevisionHeaders_Scope_Hierarchy",
-                "(\"ScopeLevel\" = 1 AND \"ProgramId\" IS NULL AND \"ProjectId\" IS NULL) OR " +
-                "(\"ScopeLevel\" = 2 AND \"ProgramId\" IS NOT NULL AND \"ProjectId\" IS NULL) OR " +
-                "(\"ScopeLevel\" = 3 AND \"ProgramId\" IS NOT NULL AND \"ProjectId\" IS NOT NULL)");
-
             t.HasCheckConstraint(
                 "CK_RevisionHeaders_Lineage_Integrity",
                 "\"VerNum\" >= 1 AND (\"ParentVerNum\" = -1 OR (\"ParentVerNum\" >= 1 AND \"ParentVerNum\" < \"VerNum\"))");
@@ -25,17 +18,12 @@ public class RevisionHeaderEntityConfiguration : IEntityTypeConfiguration<Revisi
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(r => r.ScopeLevel)
             .IsRequired()
             .HasConversion<int>();
-
-        builder.Property(r => r.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(r => r.ProjectId)
-            .IsRequired(false);
 
         builder.Property(r => r.FeatureType)
             .IsRequired()
@@ -100,22 +88,23 @@ public class RevisionHeaderEntityConfiguration : IEntityTypeConfiguration<Revisi
             .HasMaxLength(256)
             .IsRequired(false);
 
-        // --- Permanent Scenario VerNum Lock Index (Unfiltered + AreNullsDistinct(false)) ---
-        // VerNum can NEVER be reused within the same (Tenant, Program?, Project?, FeatureType) scenario,
-        // even if status is Draft, Cancelled, Superseded, or soft-deleted.
-        builder.HasIndex(r => new { r.TenantId, r.ProgramId, r.ProjectId, r.FeatureType, r.VerNum })
-            .AreNullsDistinct(false)
+        // Map ProgramId and ProjectId for scenario scoping
+        builder.Property(r => r.ProgramId)
+            .IsRequired(false);
+
+        builder.Property(r => r.ProjectId)
+            .IsRequired(false);
+
+        // --- Permanent Scenario VerNum Lock Index (Unfiltered) ---
+        builder.HasIndex(r => new { r.TenantId, r.ScopeLevel, r.FeatureType, r.ProgramId, r.ProjectId, r.VerNum })
             .IsUnique()
             .HasDatabaseName("IX_RevisionHeaders_Scenario_VerNum_Unique");
 
         // --- Partial Unique Index: Strictly ONE Active Version per Scenario ---
-        // Only one Active (Status == 4) version is allowed at any time per scenario.
-        builder.HasIndex(r => new { r.TenantId, r.ProgramId, r.ProjectId, r.FeatureType })
-            .AreNullsDistinct(false)
+        builder.HasIndex(r => new { r.TenantId, r.ScopeLevel, r.FeatureType, r.ProgramId, r.ProjectId })
             .HasFilter("\"Status\" = 4 AND \"IsDeleted\" = false")
             .IsUnique()
             .HasDatabaseName("IX_RevisionHeaders_Scenario_SingleActive");
-
         // Fast lookup index for lineage back-tracing
         builder.HasIndex(r => r.ParentRevisionHeaderId)
             .HasDatabaseName("IX_RevisionHeaders_ParentRevisionHeaderId");

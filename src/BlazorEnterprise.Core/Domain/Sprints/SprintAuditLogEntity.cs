@@ -5,7 +5,7 @@ namespace BlazorEnterprise.Core.Domain.Sprints;
 /// <summary>
 /// Audit trail record tracking mutations to sprint iteration timeline metadata.
 /// </summary>
-public class SprintAuditLogEntity : TenantAuditableEntity, IImmutableEntity, IAuditExemptEntity, IUnversionedEntity
+public class SprintAuditLogEntity : TenantScopedEntity, IImmutableEntity, IAuditExemptEntity, IUnversionedEntity
 {
     public required Guid SprintId { get; set; }
 

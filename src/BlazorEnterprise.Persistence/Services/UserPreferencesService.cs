@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BlazorEnterprise.Core.Contracts;
@@ -52,7 +52,7 @@ public class UserPreferencesService : IUserPreferencesService
             if (user != null)
             {
                 user.TimeZoneId = timeZoneId;
-                await db.SaveChangesAsync(cancellationToken);
+                db.IsTransactionScopeCommitAuthorized = true; try { await db.SaveChangesAsync(cancellationToken); } finally { db.IsTransactionScopeCommitAuthorized = false; }
                 _logger.LogInformation("Updated TimeZoneId to '{TimeZoneId}' for user '{UserId}'.", timeZoneId, userId);
             }
         }

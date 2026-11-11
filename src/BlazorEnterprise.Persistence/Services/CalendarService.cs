@@ -43,7 +43,7 @@ public class CalendarService : ICalendarService
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         // 1. Direct program calendar entries
-        var query = _context.ProgramCalendars
+        var query = _context.Calendars
             .AsNoTracking()
             .Where(c => c.ProgramId == programId && !c.IsDeleted &&
                         c.RevisionHeader!.Status == RevisionStatusEnum.Active &&
@@ -102,7 +102,7 @@ public class CalendarService : ICalendarService
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         // 1. Direct project calendar entries
-        var query = _context.ProjectCalendars
+        var query = _context.Calendars
             .AsNoTracking()
             .Where(c => c.ProjectId == projectId && !c.IsDeleted &&
                         c.RevisionHeader!.Status == RevisionStatusEnum.Active &&
@@ -205,7 +205,7 @@ public class CalendarService : ICalendarService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<ProgramCalendarEntity>> GetProgramCalendarEntitiesAsync(
+    public async Task<IReadOnlyList<CalendarEntity>> GetProgramCalendarEntitiesAsync(
         Guid tenantId,
         Guid programId,
         bool forEdit = false,
@@ -213,7 +213,7 @@ public class CalendarService : ICalendarService
         CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
-        var query = _context.ProgramCalendars
+        var query = _context.Calendars
             .WithTracking(forEdit)
             .Where(c => c.ProgramId == programId && !c.IsDeleted);
 
@@ -234,7 +234,7 @@ public class CalendarService : ICalendarService
         return await query.OrderBy(c => c.StartDate).ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<ProjectCalendarEntity>> GetProjectCalendarEntitiesAsync(
+    public async Task<IReadOnlyList<CalendarEntity>> GetProjectCalendarEntitiesAsync(
         Guid tenantId,
         Guid projectId,
         bool forEdit = false,
@@ -242,7 +242,7 @@ public class CalendarService : ICalendarService
         CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
-        var query = _context.ProjectCalendars
+        var query = _context.Calendars
             .WithTracking(forEdit)
             .Where(c => c.ProjectId == projectId && !c.IsDeleted);
 
@@ -263,7 +263,7 @@ public class CalendarService : ICalendarService
         return await query.OrderBy(c => c.StartDate).ToListAsync(ct);
     }
 
-    public async Task<Result<ProgramCalendarEntity>> CreateProgramCalendarEntryAsync(ProgramCalendarEntity entry, CancellationToken ct = default)
+    public async Task<Result<CalendarEntity>> CreateProgramCalendarEntryAsync(CalendarEntity entry, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
@@ -325,7 +325,7 @@ public class CalendarService : ICalendarService
 
                     await _context.Set<RevisionHeaderEntity>().AddAsync(activeHeader, ct);
 
-                    await _context.SaveChangesAsync(ct);
+                    _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
                 }
 
@@ -349,7 +349,7 @@ public class CalendarService : ICalendarService
 
 
 
-            var existing = await _context.ProgramCalendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entry.Id, ct);
+            var existing = await _context.Calendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entry.Id, ct);
             if (existing != null)
             {
                 existing.ProgramId = entry.ProgramId;
@@ -365,10 +365,10 @@ public class CalendarService : ICalendarService
             }
             else
             {
-                await _context.ProgramCalendars.AddAsync(entry, ct);
+                await _context.Calendars.AddAsync(entry, ct);
             }
-            await _context.SaveChangesAsync(ct);
-            return Result<ProgramCalendarEntity>.Success(existing ?? entry);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
+            return Result<CalendarEntity>.Success(existing ?? entry);
         }
         catch (Exception ex)
         {
@@ -377,11 +377,11 @@ public class CalendarService : ICalendarService
                 _context.Entry(entry).State = EntityState.Detached;
             }
             _logger.LogError(ex, "Failed to create program calendar entry for Program {ProgramId}", entry.ProgramId);
-            return Result<ProgramCalendarEntity>.Failure($"Failed to create entry: {ex.Message}");
+            return Result<CalendarEntity>.Failure($"Failed to create entry: {ex.Message}");
         }
     }
 
-    public async Task<Result<ProjectCalendarEntity>> CreateProjectCalendarEntryAsync(ProjectCalendarEntity entry, CancellationToken ct = default)
+    public async Task<Result<CalendarEntity>> CreateProjectCalendarEntryAsync(CalendarEntity entry, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
@@ -459,7 +459,7 @@ public class CalendarService : ICalendarService
 
                     await _context.Set<RevisionHeaderEntity>().AddAsync(activeHeader, ct);
 
-                    await _context.SaveChangesAsync(ct);
+                    _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
                 }
 
@@ -483,7 +483,7 @@ public class CalendarService : ICalendarService
 
 
 
-            var existing = await _context.ProjectCalendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entry.Id, ct);
+            var existing = await _context.Calendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entry.Id, ct);
             if (existing != null)
             {
                 existing.ProjectId = entry.ProjectId;
@@ -501,10 +501,10 @@ public class CalendarService : ICalendarService
             }
             else
             {
-                await _context.ProjectCalendars.AddAsync(entry, ct);
+                await _context.Calendars.AddAsync(entry, ct);
             }
-            await _context.SaveChangesAsync(ct);
-            return Result<ProjectCalendarEntity>.Success(existing ?? entry);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
+            return Result<CalendarEntity>.Success(existing ?? entry);
         }
         catch (Exception ex)
         {
@@ -513,7 +513,7 @@ public class CalendarService : ICalendarService
                 _context.Entry(entry).State = EntityState.Detached;
             }
             _logger.LogError(ex, "Failed to create project calendar entry for Project {ProjectId}", entry.ProjectId);
-            return Result<ProjectCalendarEntity>.Failure($"Failed to create entry: {ex.Message}");
+            return Result<CalendarEntity>.Failure($"Failed to create entry: {ex.Message}");
         }
     }
 
@@ -523,7 +523,7 @@ public class CalendarService : ICalendarService
         try
         {
             await _context.UserCalendars.AddAsync(entry, ct);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<UserCalendarEntity>.Success(entry);
         }
         catch (Exception ex)
@@ -540,7 +540,7 @@ public class CalendarService : ICalendarService
         {
             if (level == TaskLevelEnum.Program)
             {
-                var entry = await _context.ProgramCalendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entryId, ct);
+                var entry = await _context.Calendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");
                 entry.IsDeleted = true;
                 entry.DeletedAtUtc = DateTime.UtcNow;
@@ -548,7 +548,7 @@ public class CalendarService : ICalendarService
             }
             else if (level == TaskLevelEnum.Project)
             {
-                var entry = await _context.ProjectCalendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entryId, ct);
+                var entry = await _context.Calendars.AsTracking().FirstOrDefaultAsync(c => c.Id == entryId, ct);
                 if (entry == null) return Result<bool>.Failure("Entry not found.");
                 entry.IsDeleted = true;
                 entry.DeletedAtUtc = DateTime.UtcNow;
@@ -563,7 +563,7 @@ public class CalendarService : ICalendarService
                 entry.DeletedBy = _currentUser.Email ?? _currentUser.UserId;
             }
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -583,224 +583,253 @@ public class CalendarService : ICalendarService
         CancellationToken ct = default)
     {
         await using var context = await _dbFactory.CreateDbContextAsync(ct);
-        await using var transaction = await context.Database.BeginTransactionAsync(ct);
-        try
+
+        if (context.Database.CurrentTransaction != null)
         {
-            var actingUser = !string.IsNullOrWhiteSpace(_currentUser.Email) ? _currentUser.Email : _currentUser.UserId ?? "system@local";
-            var now = DateTime.UtcNow;
+            return await ExecuteSaveProgramCalendarScheduleAsync(context, tenantId, programId, timelineRows, revisionHeaderId, isBatchDraft, batchRevisionName, ct);
+        }
 
-            RevisionHeaderEntity targetHeader;
-            if (isBatchDraft)
+        var strategy = context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(ct);
+            try
             {
-                // Batch always creates a new Draft scenario revision
-                targetHeader = await _revisionService.CreateDraftAsync(
-                    scopeLevel: TaskLevelEnum.Program,
-                    featureType: VersionedFeatureTypeEnum.ProgramCalendar,
-                    revisionName: batchRevisionName ?? $"Batch Import - {now:yyyy-MM-dd HH:mm}",
-                    sourceRevisionHeaderId: revisionHeaderId,
-                    programId: programId,
-                    projectId: null,
-                    isBatch: true,
-                    cancellationToken: ct);
-            }
-            else if (revisionHeaderId.HasValue && revisionHeaderId.Value != Guid.Empty)
-            {
-                var header = await context.RevisionHeaders.FirstOrDefaultAsync(r => r.Id == revisionHeaderId.Value && r.TenantId == tenantId, ct);
-                if (header == null)
+                var result = await ExecuteSaveProgramCalendarScheduleAsync(context, tenantId, programId, timelineRows, revisionHeaderId, isBatchDraft, batchRevisionName, ct);
+                if (result.Succeeded)
                 {
-                    return Result<int>.Failure($"Revision header '{revisionHeaderId.Value}' was not found.");
+                    await transaction.CommitAsync(ct);
                 }
-                targetHeader = header;
-            }
-            else
-            {
-                // UI Baseline fallback
-                var activeHeader = await context.RevisionHeaders.FirstOrDefaultAsync(
-                    r => r.TenantId == tenantId && r.ScopeLevel == TaskLevelEnum.Program &&
-                         r.FeatureType == VersionedFeatureTypeEnum.ProgramCalendar && r.ProgramId == programId &&
-                         (r.Status == RevisionStatusEnum.Active || r.Status == RevisionStatusEnum.Draft) && !r.IsDeleted, ct);
-
-                if (activeHeader == null)
+                else
                 {
-                    activeHeader = new RevisionHeaderEntity
+                    await transaction.RollbackAsync(ct);
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex, "Failed to persist Program Calendar schedule for Program {ProgramId}.", programId);
+                return Result<int>.Failure($"Failed to persist program calendar: {ex.Message}");
+            }
+        });
+    }
+
+    private async Task<Result<int>> ExecuteSaveProgramCalendarScheduleAsync(
+        AppDbContext context,
+        Guid tenantId,
+        Guid programId,
+        IReadOnlyList<BlazorEnterprise.Core.Dtos.ProgramTimelineRowDto> timelineRows,
+        Guid? revisionHeaderId,
+        bool isBatchDraft,
+        string? batchRevisionName,
+        CancellationToken ct)
+    {
+        var actingUser = !string.IsNullOrWhiteSpace(_currentUser.Email) ? _currentUser.Email : _currentUser.UserId ?? "system@local";
+        var now = DateTime.UtcNow;
+
+        RevisionHeaderEntity targetHeader;
+        if (isBatchDraft)
+        {
+            targetHeader = await _revisionService.CreateDraftAsync(
+                scopeLevel: TaskLevelEnum.Program,
+                featureType: VersionedFeatureTypeEnum.ProgramCalendar,
+                revisionName: batchRevisionName ?? $"Batch Import - {now:yyyy-MM-dd HH:mm}",
+                sourceRevisionHeaderId: revisionHeaderId,
+                programId: programId,
+                projectId: null,
+                isBatch: true,
+                cancellationToken: ct);
+        }
+        else if (revisionHeaderId.HasValue && revisionHeaderId.Value != Guid.Empty)
+        {
+            var header = await context.RevisionHeaders.FirstOrDefaultAsync(r => r.Id == revisionHeaderId.Value && r.TenantId == tenantId, ct);
+            if (header == null)
+            {
+                return Result<int>.Failure($"Revision header '{revisionHeaderId.Value}' was not found.");
+            }
+            targetHeader = header;
+        }
+        else
+        {
+            var activeHeader = await context.RevisionHeaders.FirstOrDefaultAsync(
+                r => r.TenantId == tenantId && r.ScopeLevel == TaskLevelEnum.Program &&
+                     r.FeatureType == VersionedFeatureTypeEnum.ProgramCalendar && r.ProgramId == programId &&
+                     (r.Status == RevisionStatusEnum.Active || r.Status == RevisionStatusEnum.Draft) && !r.IsDeleted, ct);
+
+            if (activeHeader == null)
+            {
+                activeHeader = new RevisionHeaderEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    TenantId = tenantId,
+                    ScopeLevel = TaskLevelEnum.Program,
+                    FeatureType = VersionedFeatureTypeEnum.ProgramCalendar,
+                    ProgramId = programId,
+                    VerNum = 1,
+                    RevisionName = "Initial Baseline",
+                    Status = RevisionStatusEnum.Active,
+                    ActivatedAtUtc = now,
+                    CreatorEmail = actingUser,
+                    ParentVerNum = -1,
+                    ParentRevisionHeaderId = Guid.Empty,
+                    Created = now,
+                    CreatedBy = actingUser,
+                    Updated = now,
+                    UpdatedBy = actingUser
+                };
+                context.RevisionHeaders.Add(activeHeader);
+                context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(ct); } finally { context.IsTransactionScopeCommitAuthorized = false; }
+            }
+            targetHeader = activeHeader;
+        }
+
+        var existingRows = await context.Calendars
+            .AsTracking()
+            .Where(c => c.TenantId == tenantId && c.ProgramId == programId && !c.IsDeleted)
+            .ToListAsync(ct);
+
+        var activeBaselineRows = existingRows.Where(r => r.RevisionHeaderId == targetHeader.ParentRevisionHeaderId).ToList();
+
+        var activeTimelineIds = new HashSet<Guid>();
+        var activeMilestoneIds = new HashSet<Guid>();
+        var rowsCommitted = 0;
+
+        if (timelineRows != null)
+        {
+            foreach (var row in timelineRows)
+            {
+                var rowId = row.Id == Guid.Empty ? Guid.CreateVersion7() : row.Id;
+                activeTimelineIds.Add(rowId);
+                var rowStatus = row.Status.ToEnum(CalendarEntryStatusEnum.New);
+
+                var matchedActiveTimeline = activeBaselineRows.FirstOrDefault(r =>
+                    r.EntryType == CalendarEntryTypeEnum.Timeline &&
+                    string.Equals(r.Title, row.Title, StringComparison.OrdinalIgnoreCase));
+
+                var timelineRelId = matchedActiveTimeline?.RelId ?? Guid.CreateVersion7();
+                var timelineParentRowId = matchedActiveTimeline?.Id ?? Guid.Empty;
+
+                var existingTimeline = existingRows.FirstOrDefault(c => c.Id == rowId && c.RevisionHeaderId == targetHeader.Id);
+                if (existingTimeline != null)
+                {
+                    existingTimeline.Title = row.Title;
+                    existingTimeline.StartDate = row.StartDate ?? now.Date;
+                    existingTimeline.EndDate = row.EndDate;
+                    existingTimeline.Status = rowStatus;
+                    existingTimeline.Comments = row.Comments;
+                    existingTimeline.Updated = now;
+                    existingTimeline.UpdatedBy = actingUser;
+                }
+                else
+                {
+                    var newTimeline = new CalendarEntity
                     {
-                        Id = Guid.CreateVersion7(),
+                        Id = rowId,
                         TenantId = tenantId,
-                        ScopeLevel = TaskLevelEnum.Program,
-                        FeatureType = VersionedFeatureTypeEnum.ProgramCalendar,
                         ProgramId = programId,
-                        VerNum = 1,
-                        RevisionName = "Initial Baseline",
-                        Status = RevisionStatusEnum.Active,
-                        ActivatedAtUtc = now,
-                        CreatorEmail = actingUser,
+                        RevisionHeaderId = targetHeader.Id,
+                        RelId = timelineRelId,
+                        VerNum = targetHeader.VerNum,
+                        ParentRowId = timelineParentRowId,
+                        Title = row.Title,
+                        StartDate = row.StartDate ?? now.Date,
+                        EndDate = row.EndDate,
+                        Status = rowStatus,
+                        Comments = row.Comments,
+                        EntryType = CalendarEntryTypeEnum.Timeline,
                         Created = now,
                         CreatedBy = actingUser,
                         Updated = now,
                         UpdatedBy = actingUser
                     };
-                    context.RevisionHeaders.Add(activeHeader);
-                    await context.SaveChangesAsync(ct);
+                    context.Calendars.Add(newTimeline);
                 }
-                targetHeader = activeHeader;
-            }
+                rowsCommitted++;
 
-            // Existing rows in target revision (or active revision for RelId lineage matching)
-            var existingRows = await context.ProgramCalendars
-                .Where(c => c.TenantId == tenantId && c.ProgramId == programId && !c.IsDeleted)
-                .ToListAsync(ct);
-
-            var activeBaselineRows = existingRows.Where(r => r.RevisionHeaderId == targetHeader.ParentRevisionHeaderId).ToList();
-
-            var activeTimelineIds = new HashSet<Guid>();
-            var activeMilestoneIds = new HashSet<Guid>();
-            var rowsCommitted = 0;
-
-            if (timelineRows != null)
-            {
-                foreach (var row in timelineRows)
+                foreach (var m in row.Milestones ?? [])
                 {
-                    var rowId = row.Id == Guid.Empty ? Guid.CreateVersion7() : row.Id;
-                    activeTimelineIds.Add(rowId);
-                    var rowStatus = row.Status.ToEnum(CalendarEntryStatusEnum.New);
+                    var milestoneId = m.Id == Guid.Empty ? Guid.CreateVersion7() : m.Id;
+                    activeMilestoneIds.Add(milestoneId);
+                    var mStatus = m.Status.ToEnum(CalendarEntryStatusEnum.New);
 
-                    // Lineage RelId matching
-                    var matchedActiveTimeline = activeBaselineRows.FirstOrDefault(r =>
-                        r.EntryType == CalendarEntryTypeEnum.Timeline &&
-                        string.Equals(r.Title, row.Title, StringComparison.OrdinalIgnoreCase));
+                    var matchedActiveMilestone = activeBaselineRows.FirstOrDefault(r =>
+                        r.EntryType == CalendarEntryTypeEnum.Milestone &&
+                        string.Equals(r.Title, m.Title, StringComparison.OrdinalIgnoreCase));
 
-                    var timelineRelId = matchedActiveTimeline?.RelId ?? Guid.CreateVersion7();
-                    var timelineParentRowId = matchedActiveTimeline?.Id ?? Guid.Empty;
+                    var milestoneRelId = matchedActiveMilestone?.RelId ?? Guid.CreateVersion7();
+                    var milestoneParentRowId = matchedActiveMilestone?.Id ?? Guid.Empty;
 
-                    var existingTimeline = existingRows.FirstOrDefault(c => c.Id == rowId && c.RevisionHeaderId == targetHeader.Id);
-                    if (existingTimeline != null)
+                    var existingMilestone = existingRows.FirstOrDefault(c => c.Id == milestoneId && c.RevisionHeaderId == targetHeader.Id);
+                    if (existingMilestone != null)
                     {
-                        existingTimeline.Title = row.Title;
-                        existingTimeline.StartDate = row.StartDate ?? now.Date;
-                        existingTimeline.EndDate = row.EndDate;
-                        existingTimeline.Status = rowStatus;
-                        existingTimeline.Comments = row.Comments;
-                        existingTimeline.Updated = now;
-                        existingTimeline.UpdatedBy = actingUser;
+                        existingMilestone.ParentTimelineId = rowId;
+                        existingMilestone.Title = m.Title;
+                        existingMilestone.StartDate = m.StartDate ?? row.StartDate ?? now.Date;
+                        existingMilestone.EndDate = m.EndDate ?? row.EndDate ?? now.Date;
+                        existingMilestone.OwnerEmails = m.OwnerEmails;
+                        existingMilestone.Status = mStatus;
+                        existingMilestone.Comments = m.Comments;
+                        existingMilestone.Updated = now;
+                        existingMilestone.UpdatedBy = actingUser;
                     }
                     else
                     {
-                        var newTimeline = new ProgramCalendarEntity
+                        var newMilestone = new CalendarEntity
                         {
-                            Id = rowId,
+                            Id = milestoneId,
                             TenantId = tenantId,
                             ProgramId = programId,
                             RevisionHeaderId = targetHeader.Id,
-                            RelId = timelineRelId,
+                            RelId = milestoneRelId,
                             VerNum = targetHeader.VerNum,
-                            ParentRowId = timelineParentRowId,
-                            Title = row.Title,
-                            StartDate = row.StartDate ?? now.Date,
-                            EndDate = row.EndDate,
-                            Status = rowStatus,
-                            Comments = row.Comments,
-                            EntryType = CalendarEntryTypeEnum.Timeline,
+                            ParentRowId = milestoneParentRowId,
+                            ParentTimelineId = rowId,
+                            Title = m.Title,
+                            StartDate = m.StartDate ?? row.StartDate ?? now.Date,
+                            EndDate = m.EndDate ?? row.EndDate ?? now.Date,
+                            OwnerEmails = m.OwnerEmails,
+                            Status = mStatus,
+                            Comments = m.Comments,
+                            EntryType = CalendarEntryTypeEnum.Milestone,
                             Created = now,
                             CreatedBy = actingUser,
                             Updated = now,
                             UpdatedBy = actingUser
                         };
-                        context.ProgramCalendars.Add(newTimeline);
+                        context.Calendars.Add(newMilestone);
                     }
                     rowsCommitted++;
-
-                    foreach (var m in row.Milestones ?? [])
-                    {
-                        var milestoneId = m.Id == Guid.Empty ? Guid.CreateVersion7() : m.Id;
-                        activeMilestoneIds.Add(milestoneId);
-                        var mStatus = m.Status.ToEnum(CalendarEntryStatusEnum.New);
-
-                        var matchedActiveMilestone = activeBaselineRows.FirstOrDefault(r =>
-                            r.EntryType == CalendarEntryTypeEnum.Milestone &&
-                            string.Equals(r.Title, m.Title, StringComparison.OrdinalIgnoreCase));
-
-                        var milestoneRelId = matchedActiveMilestone?.RelId ?? Guid.CreateVersion7();
-                        var milestoneParentRowId = matchedActiveMilestone?.Id ?? Guid.Empty;
-
-                        var existingMilestone = existingRows.FirstOrDefault(c => c.Id == milestoneId && c.RevisionHeaderId == targetHeader.Id);
-                        if (existingMilestone != null)
-                        {
-                            existingMilestone.ParentTimelineId = rowId;
-                            existingMilestone.Title = m.Title;
-                            existingMilestone.StartDate = m.StartDate ?? row.StartDate ?? now.Date;
-                            existingMilestone.EndDate = m.EndDate ?? row.EndDate ?? now.Date;
-                            existingMilestone.OwnerEmails = m.OwnerEmails;
-                            existingMilestone.Status = mStatus;
-                            existingMilestone.Comments = m.Comments;
-                            existingMilestone.Updated = now;
-                            existingMilestone.UpdatedBy = actingUser;
-                        }
-                        else
-                        {
-                            var newMilestone = new ProgramCalendarEntity
-                            {
-                                Id = milestoneId,
-                                TenantId = tenantId,
-                                ProgramId = programId,
-                                RevisionHeaderId = targetHeader.Id,
-                                RelId = milestoneRelId,
-                                VerNum = targetHeader.VerNum,
-                                ParentRowId = milestoneParentRowId,
-                                ParentTimelineId = rowId,
-                                Title = m.Title,
-                                StartDate = m.StartDate ?? row.StartDate ?? now.Date,
-                                EndDate = m.EndDate ?? row.EndDate ?? now.Date,
-                                OwnerEmails = m.OwnerEmails,
-                                Status = mStatus,
-                                Comments = m.Comments,
-                                EntryType = CalendarEntryTypeEnum.Milestone,
-                                Created = now,
-                                CreatedBy = actingUser,
-                                Updated = now,
-                                UpdatedBy = actingUser
-                            };
-                            context.ProgramCalendars.Add(newMilestone);
-                        }
-                        rowsCommitted++;
-                    }
                 }
             }
-
-            // Soft-delete removed rows if editing an existing revision
-            if (!isBatchDraft)
-            {
-                var targetRevisionExisting = existingRows.Where(r => r.RevisionHeaderId == targetHeader.Id).ToList();
-                foreach (var entry in targetRevisionExisting)
-                {
-                    if (entry.EntryType == CalendarEntryTypeEnum.Timeline && !activeTimelineIds.Contains(entry.Id))
-                    {
-                        entry.IsDeleted = true;
-                        entry.DeletedAtUtc = now;
-                        entry.DeletedBy = actingUser;
-                    }
-                    else if (entry.EntryType == CalendarEntryTypeEnum.Milestone && !activeMilestoneIds.Contains(entry.Id))
-                    {
-                        entry.IsDeleted = true;
-                        entry.DeletedAtUtc = now;
-                        entry.DeletedBy = actingUser;
-                    }
-                }
-            }
-
-            await context.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
-
-            _logger.LogInformation("Saved Program {ProgramId} Calendar schedule. Draft: {IsBatchDraft}, VerNum: v{VerNum}, Committed {Count} rows.",
-                programId, isBatchDraft, targetHeader.VerNum, rowsCommitted);
-
-            return Result<int>.Success(rowsCommitted);
         }
-        catch (Exception ex)
+
+        if (!isBatchDraft)
         {
-            await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, "Failed to persist Program Calendar schedule for Program {ProgramId}.", programId);
-            return Result<int>.Failure($"Failed to persist program calendar: {ex.Message}");
+            var targetRevisionExisting = existingRows.Where(r => r.RevisionHeaderId == targetHeader.Id).ToList();
+            foreach (var entry in targetRevisionExisting)
+            {
+                if (entry.EntryType == CalendarEntryTypeEnum.Timeline && !activeTimelineIds.Contains(entry.Id))
+                {
+                    entry.IsDeleted = true;
+                    entry.DeletedAtUtc = now;
+                    entry.DeletedBy = actingUser;
+                }
+                else if (entry.EntryType == CalendarEntryTypeEnum.Milestone && !activeMilestoneIds.Contains(entry.Id))
+                {
+                    entry.IsDeleted = true;
+                    entry.DeletedAtUtc = now;
+                    entry.DeletedBy = actingUser;
+                }
+            }
         }
+
+
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(ct); } finally { context.IsTransactionScopeCommitAuthorized = false; }
+        _logger.LogInformation("Saved Program {ProgramId} Calendar schedule. Draft: {IsBatchDraft}, VerNum: v{VerNum}, Committed {Count} rows.",
+            programId, isBatchDraft, targetHeader.VerNum, rowsCommitted);
+
+        return Result<int>.Success(rowsCommitted);
     }
 
     public async Task<Result<int>> SaveProjectCalendarScheduleAsync(
@@ -814,229 +843,263 @@ public class CalendarService : ICalendarService
         CancellationToken ct = default)
     {
         await using var context = await _dbFactory.CreateDbContextAsync(ct);
-        await using var transaction = await context.Database.BeginTransactionAsync(ct);
-        try
+
+        if (context.Database.CurrentTransaction != null)
         {
-            var actingUser = !string.IsNullOrWhiteSpace(_currentUser.Email) ? _currentUser.Email : _currentUser.UserId ?? "system@local";
-            var now = DateTime.UtcNow;
+            return await ExecuteSaveProjectCalendarScheduleAsync(context, tenantId, projectId, programId, phases, revisionHeaderId, isBatchDraft, batchRevisionName, ct);
+        }
 
-            var resolvedProgramId = programId ?? Guid.Empty;
-            if (resolvedProgramId == Guid.Empty)
+        var strategy = context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(ct);
+            try
             {
-                var proj = await context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == tenantId, ct);
-                resolvedProgramId = proj?.ProgramId ?? Guid.Empty;
-            }
-
-            RevisionHeaderEntity targetHeader;
-            if (isBatchDraft)
-            {
-                // Batch always creates a new Draft scenario revision
-                targetHeader = await _revisionService.CreateDraftAsync(
-                    scopeLevel: TaskLevelEnum.Project,
-                    featureType: VersionedFeatureTypeEnum.ProjectCalendar,
-                    revisionName: batchRevisionName ?? $"Batch Import - {now:yyyy-MM-dd HH:mm}",
-                    sourceRevisionHeaderId: revisionHeaderId,
-                    programId: resolvedProgramId,
-                    projectId: projectId,
-                    isBatch: true,
-                    cancellationToken: ct);
-            }
-            else if (revisionHeaderId.HasValue && revisionHeaderId.Value != Guid.Empty)
-            {
-                var header = await context.RevisionHeaders.FirstOrDefaultAsync(r => r.Id == revisionHeaderId.Value && r.TenantId == tenantId, ct);
-                if (header == null)
+                var result = await ExecuteSaveProjectCalendarScheduleAsync(context, tenantId, projectId, programId, phases, revisionHeaderId, isBatchDraft, batchRevisionName, ct);
+                if (result.Succeeded)
                 {
-                    return Result<int>.Failure($"Revision header '{revisionHeaderId.Value}' was not found.");
+                    await transaction.CommitAsync(ct);
                 }
-                targetHeader = header;
-            }
-            else
-            {
-                var activeHeader = await context.RevisionHeaders.FirstOrDefaultAsync(
-                    r => r.TenantId == tenantId && r.ScopeLevel == TaskLevelEnum.Project &&
-                         r.FeatureType == VersionedFeatureTypeEnum.ProjectCalendar && r.ProjectId == projectId &&
-                         (r.Status == RevisionStatusEnum.Active || r.Status == RevisionStatusEnum.Draft) && !r.IsDeleted, ct);
-
-                if (activeHeader == null)
+                else
                 {
-                    activeHeader = new RevisionHeaderEntity
+                    await transaction.RollbackAsync(ct);
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(ct);
+                _logger.LogError(ex, "Failed to persist Project Calendar schedule for Project {ProjectId}.", projectId);
+                return Result<int>.Failure($"Failed to persist project calendar: {ex.Message}");
+            }
+        });
+    }
+
+    private async Task<Result<int>> ExecuteSaveProjectCalendarScheduleAsync(
+        AppDbContext context,
+        Guid tenantId,
+        Guid projectId,
+        Guid? programId,
+        IReadOnlyList<BlazorEnterprise.Core.Dtos.ProjectPhaseDto> phases,
+        Guid? revisionHeaderId,
+        bool isBatchDraft,
+        string? batchRevisionName,
+        CancellationToken ct)
+    {
+        var actingUser = !string.IsNullOrWhiteSpace(_currentUser.Email) ? _currentUser.Email : _currentUser.UserId ?? "system@local";
+        var now = DateTime.UtcNow;
+
+        var resolvedProgramId = programId ?? Guid.Empty;
+        if (resolvedProgramId == Guid.Empty)
+        {
+            var proj = await context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == projectId && p.TenantId == tenantId, ct);
+            resolvedProgramId = proj?.ProgramId ?? Guid.Empty;
+        }
+
+        RevisionHeaderEntity targetHeader;
+        if (isBatchDraft)
+        {
+            targetHeader = await _revisionService.CreateDraftAsync(
+                scopeLevel: TaskLevelEnum.Project,
+                featureType: VersionedFeatureTypeEnum.ProjectCalendar,
+                revisionName: batchRevisionName ?? $"Batch Import - {now:yyyy-MM-dd HH:mm}",
+                sourceRevisionHeaderId: revisionHeaderId,
+                programId: resolvedProgramId,
+                projectId: projectId,
+                isBatch: true,
+                cancellationToken: ct);
+        }
+        else if (revisionHeaderId.HasValue && revisionHeaderId.Value != Guid.Empty)
+        {
+            var header = await context.RevisionHeaders.FirstOrDefaultAsync(r => r.Id == revisionHeaderId.Value && r.TenantId == tenantId, ct);
+            if (header == null)
+            {
+                return Result<int>.Failure($"Revision header '{revisionHeaderId.Value}' was not found.");
+            }
+            targetHeader = header;
+        }
+        else
+        {
+            var activeHeader = await context.RevisionHeaders.FirstOrDefaultAsync(
+                r => r.TenantId == tenantId && r.ScopeLevel == TaskLevelEnum.Project &&
+                     r.FeatureType == VersionedFeatureTypeEnum.ProjectCalendar && r.ProjectId == projectId &&
+                     (r.Status == RevisionStatusEnum.Active || r.Status == RevisionStatusEnum.Draft) && !r.IsDeleted, ct);
+
+            if (activeHeader == null)
+            {
+                activeHeader = new RevisionHeaderEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    TenantId = tenantId,
+                    ScopeLevel = TaskLevelEnum.Project,
+                    FeatureType = VersionedFeatureTypeEnum.ProjectCalendar,
+                    ProgramId = resolvedProgramId,
+                    ProjectId = projectId,
+                    VerNum = 1,
+                    RevisionName = "Initial Baseline",
+                    Status = RevisionStatusEnum.Active,
+                    ActivatedAtUtc = now,
+                    CreatorEmail = actingUser,
+                    ParentVerNum = -1,
+                    ParentRevisionHeaderId = Guid.Empty,
+                    Created = now,
+                    CreatedBy = actingUser,
+                    Updated = now,
+                    UpdatedBy = actingUser
+                };
+                context.RevisionHeaders.Add(activeHeader);
+                context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(ct); } finally { context.IsTransactionScopeCommitAuthorized = false; }
+            }
+            targetHeader = activeHeader;
+        }
+
+        var existingRows = await context.Calendars
+            .AsTracking()
+            .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && !c.IsDeleted)
+            .ToListAsync(ct);
+
+        var activeBaselineRows = existingRows.Where(r => r.RevisionHeaderId == targetHeader.ParentRevisionHeaderId).ToList();
+
+        var activePhaseIds = new HashSet<Guid>();
+        var activeMilestoneIds = new HashSet<Guid>();
+        var rowsCommitted = 0;
+
+        if (phases != null)
+        {
+            foreach (var phase in phases)
+            {
+                var phaseId = phase.Id == Guid.Empty ? Guid.CreateVersion7() : phase.Id;
+                activePhaseIds.Add(phaseId);
+                var phaseStatus = phase.Status.ToEnum(CalendarEntryStatusEnum.New);
+
+                var matchedActivePhase = activeBaselineRows.FirstOrDefault(r =>
+                    r.EntryType == CalendarEntryTypeEnum.Timeline &&
+                    string.Equals(r.Title, phase.Title, StringComparison.OrdinalIgnoreCase));
+
+                var phaseRelId = matchedActivePhase?.RelId ?? Guid.CreateVersion7();
+                var phaseParentRowId = matchedActivePhase?.Id ?? Guid.Empty;
+
+                var existingPhase = existingRows.FirstOrDefault(c => c.Id == phaseId && c.RevisionHeaderId == targetHeader.Id);
+                if (existingPhase != null)
+                {
+                    existingPhase.Title = phase.Title;
+                    existingPhase.StartDate = phase.StartDate ?? now.Date;
+                    existingPhase.EndDate = phase.EndDate;
+                    existingPhase.Status = phaseStatus;
+                    existingPhase.Comments = phase.Comments;
+                    existingPhase.Updated = now;
+                    existingPhase.UpdatedBy = actingUser;
+                }
+                else
+                {
+                    var newPhase = new CalendarEntity
                     {
-                        Id = Guid.CreateVersion7(),
+                        Id = phaseId,
                         TenantId = tenantId,
-                        ScopeLevel = TaskLevelEnum.Project,
-                        FeatureType = VersionedFeatureTypeEnum.ProjectCalendar,
-                        ProgramId = resolvedProgramId,
                         ProjectId = projectId,
-                        VerNum = 1,
-                        RevisionName = "Initial Baseline",
-                        Status = RevisionStatusEnum.Active,
-                        ActivatedAtUtc = now,
-                        CreatorEmail = actingUser,
+                        ProgramId = resolvedProgramId,
+                        RevisionHeaderId = targetHeader.Id,
+                        RelId = phaseRelId,
+                        VerNum = targetHeader.VerNum,
+                        ParentRowId = phaseParentRowId,
+                        Title = phase.Title,
+                        StartDate = phase.StartDate ?? now.Date,
+                        EndDate = phase.EndDate,
+                        Status = phaseStatus,
+                        Comments = phase.Comments,
+                        EntryType = CalendarEntryTypeEnum.Timeline,
                         Created = now,
                         CreatedBy = actingUser,
                         Updated = now,
                         UpdatedBy = actingUser
                     };
-                    context.RevisionHeaders.Add(activeHeader);
-                    await context.SaveChangesAsync(ct);
+                    context.Calendars.Add(newPhase);
                 }
-                targetHeader = activeHeader;
-            }
+                rowsCommitted++;
 
-            var existingRows = await context.ProjectCalendars
-                .Where(c => c.TenantId == tenantId && c.ProjectId == projectId && !c.IsDeleted)
-                .ToListAsync(ct);
-
-            var activeBaselineRows = existingRows.Where(r => r.RevisionHeaderId == targetHeader.ParentRevisionHeaderId).ToList();
-
-            var activePhaseIds = new HashSet<Guid>();
-            var activeMilestoneIds = new HashSet<Guid>();
-            var rowsCommitted = 0;
-
-            if (phases != null)
-            {
-                foreach (var phase in phases)
+                foreach (var m in phase.Milestones ?? [])
                 {
-                    var phaseId = phase.Id == Guid.Empty ? Guid.CreateVersion7() : phase.Id;
-                    activePhaseIds.Add(phaseId);
-                    var phaseStatus = phase.Status.ToEnum(CalendarEntryStatusEnum.New);
+                    var milestoneId = m.Id == Guid.Empty ? Guid.CreateVersion7() : m.Id;
+                    activeMilestoneIds.Add(milestoneId);
+                    var mStatus = m.Status.ToEnum(CalendarEntryStatusEnum.New);
 
-                    var matchedActivePhase = activeBaselineRows.FirstOrDefault(r =>
-                        r.EntryType == CalendarEntryTypeEnum.Timeline &&
-                        string.Equals(r.Title, phase.Title, StringComparison.OrdinalIgnoreCase));
+                    var matchedActiveMilestone = activeBaselineRows.FirstOrDefault(r =>
+                        r.EntryType == CalendarEntryTypeEnum.Milestone &&
+                        string.Equals(r.Title, m.Title, StringComparison.OrdinalIgnoreCase));
 
-                    var phaseRelId = matchedActivePhase?.RelId ?? Guid.CreateVersion7();
-                    var phaseParentRowId = matchedActivePhase?.Id ?? Guid.Empty;
+                    var milestoneRelId = matchedActiveMilestone?.RelId ?? Guid.CreateVersion7();
+                    var milestoneParentRowId = matchedActiveMilestone?.Id ?? Guid.Empty;
 
-                    var existingPhase = existingRows.FirstOrDefault(c => c.Id == phaseId && c.RevisionHeaderId == targetHeader.Id);
-                    if (existingPhase != null)
+                    var existingMilestone = existingRows.FirstOrDefault(c => c.Id == milestoneId && c.RevisionHeaderId == targetHeader.Id);
+                    if (existingMilestone != null)
                     {
-                        existingPhase.Title = phase.Title;
-                        existingPhase.StartDate = phase.StartDate ?? now.Date;
-                        existingPhase.EndDate = phase.EndDate;
-                        existingPhase.Status = phaseStatus;
-                        existingPhase.Comments = phase.Comments;
-                        existingPhase.Updated = now;
-                        existingPhase.UpdatedBy = actingUser;
+                        existingMilestone.ParentTimelineId = phaseId;
+                        existingMilestone.Title = m.Title;
+                        existingMilestone.StartDate = m.StartDate ?? phase.StartDate ?? now.Date;
+                        existingMilestone.EndDate = m.EndDate ?? phase.EndDate ?? now.Date;
+                        existingMilestone.OwnerEmails = m.OwnerEmails;
+                        existingMilestone.Status = mStatus;
+                        existingMilestone.Comments = m.Comments;
+                        existingMilestone.Updated = now;
+                        existingMilestone.UpdatedBy = actingUser;
                     }
                     else
                     {
-                        var newPhase = new ProjectCalendarEntity
+                        var newMilestone = new CalendarEntity
                         {
-                            Id = phaseId,
+                            Id = milestoneId,
                             TenantId = tenantId,
                             ProjectId = projectId,
                             ProgramId = resolvedProgramId,
                             RevisionHeaderId = targetHeader.Id,
-                            RelId = phaseRelId,
+                            RelId = milestoneRelId,
                             VerNum = targetHeader.VerNum,
-                            ParentRowId = phaseParentRowId,
-                            Title = phase.Title,
-                            StartDate = phase.StartDate ?? now.Date,
-                            EndDate = phase.EndDate,
-                            Status = phaseStatus,
-                            Comments = phase.Comments,
-                            EntryType = CalendarEntryTypeEnum.Timeline,
+                            ParentRowId = milestoneParentRowId,
+                            ParentTimelineId = phaseId,
+                            Title = m.Title,
+                            StartDate = m.StartDate ?? phase.StartDate ?? now.Date,
+                            EndDate = m.EndDate ?? phase.EndDate ?? now.Date,
+                            OwnerEmails = m.OwnerEmails,
+                            Status = mStatus,
+                            Comments = m.Comments,
+                            EntryType = CalendarEntryTypeEnum.Milestone,
                             Created = now,
                             CreatedBy = actingUser,
                             Updated = now,
                             UpdatedBy = actingUser
                         };
-                        context.ProjectCalendars.Add(newPhase);
+                        context.Calendars.Add(newMilestone);
                     }
                     rowsCommitted++;
-
-                    foreach (var m in phase.Milestones ?? [])
-                    {
-                        var milestoneId = m.Id == Guid.Empty ? Guid.CreateVersion7() : m.Id;
-                        activeMilestoneIds.Add(milestoneId);
-                        var mStatus = m.Status.ToEnum(CalendarEntryStatusEnum.New);
-
-                        var matchedActiveMilestone = activeBaselineRows.FirstOrDefault(r =>
-                            r.EntryType == CalendarEntryTypeEnum.Milestone &&
-                            string.Equals(r.Title, m.Title, StringComparison.OrdinalIgnoreCase));
-
-                        var milestoneRelId = matchedActiveMilestone?.RelId ?? Guid.CreateVersion7();
-                        var milestoneParentRowId = matchedActiveMilestone?.Id ?? Guid.Empty;
-
-                        var existingMilestone = existingRows.FirstOrDefault(c => c.Id == milestoneId && c.RevisionHeaderId == targetHeader.Id);
-                        if (existingMilestone != null)
-                        {
-                            existingMilestone.ParentTimelineId = phaseId;
-                            existingMilestone.Title = m.Title;
-                            existingMilestone.StartDate = m.StartDate ?? phase.StartDate ?? now.Date;
-                            existingMilestone.EndDate = m.EndDate ?? phase.EndDate ?? now.Date;
-                            existingMilestone.OwnerEmails = m.OwnerEmails;
-                            existingMilestone.Status = mStatus;
-                            existingMilestone.Comments = m.Comments;
-                            existingMilestone.Updated = now;
-                            existingMilestone.UpdatedBy = actingUser;
-                        }
-                        else
-                        {
-                            var newMilestone = new ProjectCalendarEntity
-                            {
-                                Id = milestoneId,
-                                TenantId = tenantId,
-                                ProjectId = projectId,
-                                ProgramId = resolvedProgramId,
-                                RevisionHeaderId = targetHeader.Id,
-                                RelId = milestoneRelId,
-                                VerNum = targetHeader.VerNum,
-                                ParentRowId = milestoneParentRowId,
-                                ParentTimelineId = phaseId,
-                                Title = m.Title,
-                                StartDate = m.StartDate ?? phase.StartDate ?? now.Date,
-                                EndDate = m.EndDate ?? phase.EndDate ?? now.Date,
-                                OwnerEmails = m.OwnerEmails,
-                                Status = mStatus,
-                                Comments = m.Comments,
-                                EntryType = CalendarEntryTypeEnum.Milestone,
-                                Created = now,
-                                CreatedBy = actingUser,
-                                Updated = now,
-                                UpdatedBy = actingUser
-                            };
-                            context.ProjectCalendars.Add(newMilestone);
-                        }
-                        rowsCommitted++;
-                    }
                 }
             }
-
-            if (!isBatchDraft)
-            {
-                var targetRevisionExisting = existingRows.Where(r => r.RevisionHeaderId == targetHeader.Id).ToList();
-                foreach (var entry in targetRevisionExisting)
-                {
-                    if (entry.EntryType == CalendarEntryTypeEnum.Timeline && !activePhaseIds.Contains(entry.Id))
-                    {
-                        entry.IsDeleted = true;
-                        entry.DeletedAtUtc = now;
-                        entry.DeletedBy = actingUser;
-                    }
-                    else if (entry.EntryType == CalendarEntryTypeEnum.Milestone && !activeMilestoneIds.Contains(entry.Id))
-                    {
-                        entry.IsDeleted = true;
-                        entry.DeletedAtUtc = now;
-                        entry.DeletedBy = actingUser;
-                    }
-                }
-            }
-
-            await context.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
-
-            _logger.LogInformation("Saved Project {ProjectId} Calendar schedule. Draft: {IsBatchDraft}, VerNum: v{VerNum}, Committed {Count} rows.",
-                projectId, isBatchDraft, targetHeader.VerNum, rowsCommitted);
-
-            return Result<int>.Success(rowsCommitted);
         }
-        catch (Exception ex)
+
+        if (!isBatchDraft)
         {
-            await transaction.RollbackAsync(ct);
-            _logger.LogError(ex, "Failed to persist Project Calendar schedule for Project {ProjectId}.", projectId);
-            return Result<int>.Failure($"Failed to persist project calendar: {ex.Message}");
+            var targetRevisionExisting = existingRows.Where(r => r.RevisionHeaderId == targetHeader.Id).ToList();
+            foreach (var entry in targetRevisionExisting)
+            {
+                if (entry.EntryType == CalendarEntryTypeEnum.Timeline && !activePhaseIds.Contains(entry.Id))
+                {
+                    entry.IsDeleted = true;
+                    entry.DeletedAtUtc = now;
+                    entry.DeletedBy = actingUser;
+                }
+                else if (entry.EntryType == CalendarEntryTypeEnum.Milestone && !activeMilestoneIds.Contains(entry.Id))
+                {
+                    entry.IsDeleted = true;
+                    entry.DeletedAtUtc = now;
+                    entry.DeletedBy = actingUser;
+                }
+            }
         }
+
+
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(ct); } finally { context.IsTransactionScopeCommitAuthorized = false; }
+        _logger.LogInformation("Saved Project {ProjectId} Calendar schedule. Draft: {IsBatchDraft}, VerNum: v{VerNum}, Committed {Count} rows.",
+            projectId, isBatchDraft, targetHeader.VerNum, rowsCommitted);
+
+        return Result<int>.Success(rowsCommitted);
     }
 }

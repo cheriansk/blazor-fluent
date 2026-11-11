@@ -9,7 +9,7 @@ namespace BlazorEnterprise.Core.Domain.Jobs;
 /// Inherits <see cref="TenantAuditableEntity"/> to enforce strict multi-tenant data isolation and RLS.
 /// Implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing loops, and <see cref="IImmutableEntity"/> to enforce ledger integrity.
 /// </summary>
-public class JobExecutionEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+public class JobExecutionEntity : TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
     /// <summary>Mandatory correlation identifier linking all chained batch steps in the same pipeline.</summary>
     public required string CorrelationId { get; set; }

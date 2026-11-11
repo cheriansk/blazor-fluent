@@ -1,4 +1,4 @@
-using BlazorEnterprise.Persistence.Extensions;
+﻿using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Shared.Common;
 using System;
 using System.Collections.Generic;
@@ -104,7 +104,7 @@ public class WorkflowService : IWorkflowService
         foreach (var stepDto in request.Steps)
         {
             var isFirst = order == 1;
-            TaskEntity stepTask;
+            WorkflowTaskEntity stepTask;
 
             if (stepDto.ExistingTaskId.HasValue && stepDto.ExistingTaskId.Value != Guid.Empty)
             {
@@ -114,27 +114,50 @@ public class WorkflowService : IWorkflowService
                     ;
                 if (existing == null) return Result.Fail<WorkflowEntity>($"Existing task '{stepDto.ExistingTaskId.Value}' not found.");
 
-                if (existing.WorkflowId.HasValue && existing.WorkflowId != Guid.Empty && existing.WorkflowId != workflow.Id)
+                if (existing is WorkflowTaskEntity existingWte && existingWte.WorkflowId != Guid.Empty && existingWte.WorkflowId != workflow.Id)
                 {
                     return Result.Fail<WorkflowEntity>($"Task '{existing.Title}' already belongs to another workflow.");
                 }
 
-                existing.WorkflowId = workflow.Id;
-                existing.WorkflowStepOrder = order;
-                existing.Status = isFirst ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending;
-                if (isFirst)
+                if (existing is WorkflowTaskEntity wte)
                 {
-                    existing.StartDate = DateTime.UtcNow;
+                    wte.WorkflowId = workflow.Id;
+                    wte.WorkflowStepOrder = order;
+                    wte.Status = isFirst ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending;
+                    if (isFirst) wte.StartDate = DateTime.UtcNow;
+                    if (!string.IsNullOrWhiteSpace(stepDto.Description)) wte.Description = stepDto.Description.Trim();
+                    stepTask = wte;
                 }
-                if (!string.IsNullOrWhiteSpace(stepDto.Description))
+                else
                 {
-                    existing.Description = stepDto.Description.Trim();
+                    // Promote MiscTaskEntity to WorkflowTaskEntity
+                    var promoted = new WorkflowTaskEntity
+                    {
+                        Id = existing.Id,
+                        TenantId = existing.TenantId,
+                        Level = existing.Level,
+                        Title = existing.Title,
+                        Description = !string.IsNullOrWhiteSpace(stepDto.Description) ? stepDto.Description.Trim() : existing.Description,
+                        Priority = existing.Priority,
+                        Status = isFirst ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending,
+                        StartDate = isFirst ? DateTime.UtcNow : existing.StartDate,
+                        DueDate = existing.DueDate,
+                        ReporterEmail = existing.ReporterEmail,
+                        AssigneeEmails = existing.AssigneeEmails,
+                        WatcherEmails = existing.WatcherEmails,
+                        Labels = existing.Labels,
+                        EstimatedHours = existing.EstimatedHours,
+                        WorkflowId = workflow.Id,
+                        WorkflowStepOrder = order
+                    };
+                    _dbContext.Tasks.Remove(existing);
+                    _dbContext.WorkflowTasks.Add(promoted);
+                    stepTask = promoted;
                 }
-                stepTask = existing;
             }
             else
             {
-                stepTask = new TaskEntity
+                stepTask = new WorkflowTaskEntity
                 {
                     Id = Guid.NewGuid(),
                     TenantId = tenantId,
@@ -194,7 +217,7 @@ public class WorkflowService : IWorkflowService
         }
 
         _dbContext.Workflows.Add(workflow);
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Launched workflow '{Title}' ({Id}) at Level {Level}. Constant Owner: {Owner}. Steps: {StepCount}",
             workflow.Title, workflow.Id, workflow.Level, workflow.WorkflowOwnerEmail, workflow.Steps.Count);
@@ -288,8 +311,8 @@ public class WorkflowService : IWorkflowService
 
         var priorStepOwner = activeStep.AssigneeEmails;
         var nextStep = workflow.Steps
-            .Where(s => (s.WorkflowStepOrder ?? 0) > (activeStep.WorkflowStepOrder ?? 0) && s.Status != TaskStatusEnum.Cancelled)
-            .OrderBy(s => s.WorkflowStepOrder ?? 0)
+            .Where(s => s.WorkflowStepOrder > activeStep.WorkflowStepOrder && s.Status != TaskStatusEnum.Cancelled)
+            .OrderBy(s => s.WorkflowStepOrder)
             .FirstOrDefault();
 
         if (nextStep != null)
@@ -303,7 +326,7 @@ public class WorkflowService : IWorkflowService
             _logger.LogInformation("Advanced workflow '{Title}' ({Id}) from Step {PriorOrder} ({PriorOwner}) to Step {NextOrder} ({NextOwner})",
                 workflow.Title, workflow.Id, activeStep.WorkflowStepOrder, priorStepOwner, nextStep.WorkflowStepOrder, nextStep.AssigneeEmails);
 
-            await _dbContext.SaveChangesAsync(ct);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             // Notify next step owner
             await DispatchNotificationSilentlyAsync(
@@ -354,7 +377,7 @@ public class WorkflowService : IWorkflowService
             workflow.CurrentStepId = null;
 
             _logger.LogInformation("Completed workflow '{Title}' ({Id}) successfully. All steps delivered.", workflow.Title, workflow.Id);
-            await _dbContext.SaveChangesAsync(ct);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             var watchers = ParseEmails(workflow.WatcherEmails)
                 .Concat(workflow.Steps.Select(s => s.AssigneeEmails))
@@ -422,7 +445,7 @@ public class WorkflowService : IWorkflowService
             CommentText = $"[Step Reassigned]: Reassigned from {priorOwner} to {newOwner}. Reason: {request.Reason}"
         });
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         _logger.LogInformation("Reassigned workflow step '{StepTitle}' ({StepId}) to '{NewOwner}'. Reason: {Reason}",
             targetStep.Title, targetStep.Id, newOwner, request.Reason);
 
@@ -500,7 +523,7 @@ public class WorkflowService : IWorkflowService
         };
 
         _dbContext.SubTasks.Add(subTask);
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Added subtask '{Title}' under workflow step '{StepTitle}' delegated to '{Assignee}'",
             subTask.Title, stepTask.Title, subTask.AssigneeEmails);
@@ -535,7 +558,7 @@ public class WorkflowService : IWorkflowService
         subTask.Status = request.IsClosed ? TaskStatusEnum.Closed : TaskStatusEnum.Open;
         subTask.EndDate = request.IsClosed ? DateTime.UtcNow : null;
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         return Result.Success(subTask);
     }
 
@@ -605,18 +628,9 @@ public class WorkflowService : IWorkflowService
 
     public async Task<bool> CanUserManageWorkflowAsync(TaskLevelEnum level, Guid? programId, Guid? projectId, CancellationToken ct = default)
     {
-        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty) return false;
         var tenantId = _tenantContext.TenantId;
-        var userId = _currentUser.UserId;
-
-        return level switch
-        {
-            TaskLevelEnum.Tenant => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct),
-            TaskLevelEnum.Program => programId.HasValue && (await _hierarchyAuth.IsProgramAdminAsync(programId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
-            TaskLevelEnum.Project => projectId.HasValue && (await _hierarchyAuth.IsProjectAdminAsync(projectId.Value, userId, ct) || await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)),
-            _ => await _hierarchyAuth.IsTenantAdminAsync(tenantId, userId, ct)
-        };
+        return await _hierarchyAuth.CanEditScopedItemAsync(level, tenantId, programId, projectId, _currentUser.UserId, ct);
     }
 
     public async Task<Result<WorkflowEntity>> EditWorkflowAsync(EditWorkflowReqDto request, CancellationToken ct = default)
@@ -652,7 +666,7 @@ public class WorkflowService : IWorkflowService
         }
         workflow.WatcherEmails = request.WatcherEmails?.Trim() ?? string.Empty;
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         _logger.LogInformation("Admin '{Admin}' updated metadata for workflow '{Title}' ({Id})", _currentUser.Email, workflow.Title, workflow.Id);
         return Result.Success(workflow);
     }
@@ -721,7 +735,7 @@ public class WorkflowService : IWorkflowService
                 ct: ct);
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         return Result.Success(workflow);
     }
 
@@ -743,7 +757,7 @@ public class WorkflowService : IWorkflowService
             return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can resume this {workflow.Level} workflow.");
         }
 
-        TaskEntity? stepToActivate = null;
+        WorkflowTaskEntity? stepToActivate = null;
         if (request.NextStepTaskId.HasValue && request.NextStepTaskId.Value != Guid.Empty)
         {
             stepToActivate = workflow.Steps.FirstOrDefault(s => s.Id == request.NextStepTaskId.Value && s.Status == TaskStatusEnum.Pending);
@@ -751,7 +765,7 @@ public class WorkflowService : IWorkflowService
 
         stepToActivate ??= workflow.Steps
             .Where(s => s.Status == TaskStatusEnum.Pending)
-            .OrderBy(s => s.WorkflowStepOrder ?? 0)
+            .OrderBy(s => s.WorkflowStepOrder)
             .FirstOrDefault();
 
         if (stepToActivate == null)
@@ -778,7 +792,7 @@ public class WorkflowService : IWorkflowService
                 ct: ct);
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         _logger.LogInformation("Admin '{Admin}' resumed workflow '{Title}' ({Id}). Active step: {StepId}",
             _currentUser.Email, workflow.Title, workflow.Id, workflow.CurrentStepId);
         return Result.Success(workflow);
@@ -802,14 +816,14 @@ public class WorkflowService : IWorkflowService
             return Result.Fail<WorkflowEntity>($"Zero Trust Violation: Only designated administrators can add steps to this {workflow.Level} workflow.");
         }
 
-        var maxOrder = workflow.Steps.Count > 0 ? workflow.Steps.Max(s => s.WorkflowStepOrder ?? 0) : 0;
+        var maxOrder = workflow.Steps.Count > 0 ? workflow.Steps.Max(s => s.WorkflowStepOrder) : 0;
         var targetOrder = request.InsertAfterStepOrder.HasValue ? request.InsertAfterStepOrder.Value + 1 : maxOrder + 1;
 
         if (request.InsertAfterStepOrder.HasValue)
         {
-            foreach (var s in workflow.Steps.Where(s => (s.WorkflowStepOrder ?? 0) >= targetOrder))
+            foreach (var s in workflow.Steps.Where(s => s.WorkflowStepOrder >= targetOrder))
             {
-                s.WorkflowStepOrder = (s.WorkflowStepOrder ?? 0) + 1;
+                s.WorkflowStepOrder = s.WorkflowStepOrder + 1;
             }
         }
 
@@ -817,7 +831,7 @@ public class WorkflowService : IWorkflowService
             ? _currentUser.Email 
             : SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "AppendStepToWorkflow");
 
-        TaskEntity stepTask;
+        WorkflowTaskEntity stepTask;
         if (request.ExistingTaskId.HasValue && request.ExistingTaskId.Value != Guid.Empty)
         {
             var existing = await _dbContext.Tasks
@@ -827,25 +841,53 @@ public class WorkflowService : IWorkflowService
                 ;
             if (existing == null) return Result.Fail<WorkflowEntity>($"Task '{request.ExistingTaskId}' not found.");
 
-            if (existing.WorkflowId.HasValue && existing.WorkflowId != Guid.Empty && existing.WorkflowId != workflow.Id)
+            if (existing is WorkflowTaskEntity existingWte && existingWte.WorkflowId != Guid.Empty && existingWte.WorkflowId != workflow.Id)
             {
                 return Result.Fail<WorkflowEntity>($"Task '{existing.Title}' already belongs to another workflow.");
             }
 
-            existing.WorkflowId = workflow.Id;
-            existing.WorkflowStepOrder = targetOrder;
-            existing.Status = TaskStatusEnum.Pending;
-            if (!string.IsNullOrWhiteSpace(request.DeliverableNotes))
+            var newDesc = string.IsNullOrWhiteSpace(request.DeliverableNotes)
+                ? existing.Description
+                : (string.IsNullOrWhiteSpace(existing.Description) ? $"Deliverable: {request.DeliverableNotes.Trim()}" : $"{existing.Description}\n\nDeliverable: {request.DeliverableNotes.Trim()}");
+
+            if (existing is WorkflowTaskEntity wte)
             {
-                existing.Description = string.IsNullOrWhiteSpace(existing.Description)
-                    ? $"Deliverable: {request.DeliverableNotes.Trim()}"
-                    : $"{existing.Description}\n\nDeliverable: {request.DeliverableNotes.Trim()}";
+                wte.WorkflowId = workflow.Id;
+                wte.WorkflowStepOrder = targetOrder;
+                wte.Status = TaskStatusEnum.Pending;
+                wte.Description = newDesc;
+                stepTask = wte;
             }
-            stepTask = existing;
+            else
+            {
+                // Promote MiscTaskEntity to WorkflowTaskEntity
+                var promoted = new WorkflowTaskEntity
+                {
+                    Id = existing.Id,
+                    TenantId = existing.TenantId,
+                    Level = existing.Level,
+                    Title = existing.Title,
+                    Description = newDesc,
+                    Priority = existing.Priority,
+                    Status = TaskStatusEnum.Pending,
+                    StartDate = existing.StartDate,
+                    DueDate = existing.DueDate,
+                    ReporterEmail = existing.ReporterEmail,
+                    AssigneeEmails = existing.AssigneeEmails,
+                    WatcherEmails = existing.WatcherEmails,
+                    Labels = existing.Labels,
+                    EstimatedHours = existing.EstimatedHours,
+                    WorkflowId = workflow.Id,
+                    WorkflowStepOrder = targetOrder
+                };
+                _dbContext.Tasks.Remove(existing);
+                _dbContext.WorkflowTasks.Add(promoted);
+                stepTask = promoted;
+            }
         }
         else
         {
-            stepTask = new TaskEntity
+            stepTask = new WorkflowTaskEntity
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
@@ -868,7 +910,7 @@ public class WorkflowService : IWorkflowService
             workflow.Steps.Add(stepTask);
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
         _logger.LogInformation("Admin '{Admin}' added step #{Order} ('{Title}') to workflow '{WorkflowTitle}' ({WorkflowId})",
             _currentUser.Email, targetOrder, stepTask.Title, workflow.Title, workflow.Id);
         return Result.Success(workflow);
@@ -884,7 +926,7 @@ public class WorkflowService : IWorkflowService
 
         if (filter.ExcludeTasksWithWorkflows)
         {
-            query = query.Where(t => t.WorkflowId == null || t.WorkflowId == Guid.Empty);
+            query = query.Where(t => !(t is WorkflowTaskEntity));
         }
 
         query = filter.Level switch

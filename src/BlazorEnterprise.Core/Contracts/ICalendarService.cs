@@ -6,7 +6,7 @@ namespace BlazorEnterprise.Core.Contracts;
 
 /// <summary>
 /// Unified calendar management and aggregation service.
-/// Queries dedicated calendar tables (Program, Project, User) and concurrently aggregates
+/// Queries dedicated calendar table (CalendarEntity) and concurrently aggregates
 /// derived work item deadlines via registered IWorkItemRollupProvider plugins.
 /// </summary>
 public interface ICalendarService
@@ -34,14 +34,14 @@ public interface ICalendarService
         CancellationToken ct = default);
 
     // --- Direct Entity Retrieval ---
-    Task<IReadOnlyList<ProgramCalendarEntity>> GetProgramCalendarEntitiesAsync(
+    Task<IReadOnlyList<CalendarEntity>> GetProgramCalendarEntitiesAsync(
         Guid tenantId,
         Guid programId,
         bool forEdit = false,
         Guid? revisionHeaderId = null,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<ProjectCalendarEntity>> GetProjectCalendarEntitiesAsync(
+    Task<IReadOnlyList<CalendarEntity>> GetProjectCalendarEntitiesAsync(
         Guid tenantId,
         Guid projectId,
         bool forEdit = false,
@@ -49,8 +49,8 @@ public interface ICalendarService
         CancellationToken ct = default);
 
     // --- Direct Calendar Operations ---
-    Task<Result<ProgramCalendarEntity>> CreateProgramCalendarEntryAsync(ProgramCalendarEntity entry, CancellationToken ct = default);
-    Task<Result<ProjectCalendarEntity>> CreateProjectCalendarEntryAsync(ProjectCalendarEntity entry, CancellationToken ct = default);
+    Task<Result<CalendarEntity>> CreateProgramCalendarEntryAsync(CalendarEntity entry, CancellationToken ct = default);
+    Task<Result<CalendarEntity>> CreateProjectCalendarEntryAsync(CalendarEntity entry, CancellationToken ct = default);
     Task<Result<UserCalendarEntity>> CreateUserCalendarEntryAsync(UserCalendarEntity entry, CancellationToken ct = default);
 
     Task<Result<bool>> DeleteCalendarEntryAsync(Guid entryId, TaskLevelEnum level, CancellationToken ct = default);

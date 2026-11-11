@@ -40,7 +40,7 @@ public sealed class CalendarCloudProcessor : BaseCloudProcessor
         var sheetName = string.IsNullOrWhiteSpace(payload.SheetName) ? "Calendar" : payload.SheetName;
 
         var isProgramCalendar = string.Equals(fileType, nameof(ImportFileTypeEnum.ProgramCalendarExcel), StringComparison.OrdinalIgnoreCase);
-        var targetEntity = isProgramCalendar ? "ProgramCalendarEntity" : "ProjectCalendarEntity";
+        var targetEntity = isProgramCalendar ? "CalendarEntity" : "CalendarEntity";
 
         Guid? currentTimelineSourceRowId = null;
         string? currentTimelineTitle = null;

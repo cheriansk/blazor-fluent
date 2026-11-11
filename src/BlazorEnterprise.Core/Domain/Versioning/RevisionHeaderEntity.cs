@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Base;
 
@@ -9,7 +10,7 @@ namespace BlazorEnterprise.Core.Domain.Versioning;
 /// Allows multiple concurrent drafts/reviews while enforcing strictly one Active revision at a time.
 /// Stores soft relations (ParentVerNum and ParentRevisionHeaderId) to track draft branch lineage.
 /// </summary>
-public class RevisionHeaderEntity : TenantAuditableEntity, ISoftDeletableEntity, IUnversionedEntity
+public class RevisionHeaderEntity : ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     /// <summary>
     /// Scope level of this revision scenario (Tenant, Program, Project).
@@ -19,12 +20,12 @@ public class RevisionHeaderEntity : TenantAuditableEntity, ISoftDeletableEntity,
     /// <summary>
     /// Governing program ID if scope is Program or Project.
     /// </summary>
-    public Guid? ProgramId { get; set; }
+    // Inherits ProgramId from ProjectScopedEntity
 
     /// <summary>
     /// Governing project ID if scope is Project.
     /// </summary>
-    public Guid? ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     /// <summary>
     /// The business feature area governed by this revision (ProgramCalendar, ProjectCalendar, SprintPlan, etc.).
@@ -41,13 +42,13 @@ public class RevisionHeaderEntity : TenantAuditableEntity, ISoftDeletableEntity,
     /// Soft relation: The VerNum of the parent revision from which this draft was cloned.
     /// Sentinel value -1 indicates the root baseline version (no parent revision).
     /// </summary>
-    public int ParentVerNum { get; set; } = -1;
+    public int ParentVerNum { get; set; }
 
     /// <summary>
     /// Soft relation: The RevisionHeader ID from which this draft was cloned.
     /// Sentinel value Guid.Empty indicates the root baseline version (no parent revision).
     /// </summary>
-    public Guid ParentRevisionHeaderId { get; set; } = Guid.Empty;
+    public Guid ParentRevisionHeaderId { get; set; }
 
     /// <summary>
     /// User-defined or batch-generated human-readable scenario revision name.
@@ -59,7 +60,7 @@ public class RevisionHeaderEntity : TenantAuditableEntity, ISoftDeletableEntity,
     /// Lifecycle workflow status of this revision.
     /// Multi-draft allowed; strictly one Active revision per scenario scope.
     /// </summary>
-    public RevisionStatusEnum Status { get; set; } = RevisionStatusEnum.Draft;
+    public RevisionStatusEnum Status { get; set; }
 
     /// <summary>
     /// Immutable email or identifier of the user or batch process that created this revision.

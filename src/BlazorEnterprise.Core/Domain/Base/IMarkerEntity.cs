@@ -1,62 +1,32 @@
+using BlazorEnterprise.Shared.DataListTypes;
+
 namespace BlazorEnterprise.Core.Domain.Base;
 
 /// <summary>
 /// ⚠️ ARCHITECTURAL WARNING: CRITICAL FRAMEWORK MARKER INTERFACES
-/// DO NOT MODIFY, ALTER, OR REMOVE any interfaces in this file.
+/// DO NOT MODIFY, ALTER, OR REMOVE any interfaces in this file without architectural review.
 /// These interfaces drive EF Core SaveChanges interceptors (AuditableEntityInterceptor, ProjectSecurityInterceptor)
 /// and Named Query Filters (QueryFilters.Tenant, QueryFilters.SoftDelete) across the modular monolith.
 /// </summary>
-public interface IMarkerEntity { }
 
-/// <summary>
-/// Enables Level 1 row-level auditing. AuditableEntityInterceptor automatically stamps
-/// Created/CreatedBy on insert, and Updated/UpdatedBy on update.
-/// </summary>
-public interface IAuditableEntity : IMarkerEntity
-{
-    DateTime Created { get; set; }
-    string CreatedBy { get; set; }
-    DateTime Updated { get; set; }
-    string UpdatedBy { get; set; }
-}
 /// <summary>
 /// Exempts an entity from Level 2 before/after property diff logging in audit.AuditRecords.
 /// Applied to AuditRecordEntity and JobExecutionEntity to prevent infinite recursive audit loops.
 /// </summary>
-public interface IAuditExemptEntity : IMarkerEntity { }
+public interface IAuditExemptEntity { }
 
 /// <summary>
-/// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, JobExecutionEntity).
-/// AppDbContext enforces at startup that every entity implements either ITenantEntity or IGlobalEntity (fail-closed guard).
+/// Explicitly opts an entity OUT of tenant-level query filtering (e.g. TenantEntity, UserEntity, KnowledgeArticleReviewerEntity, ImpersonationGrantEntity).
+/// AppDbContext enforces at startup that every entity either inherits TenantScopedEntity OR implements IGlobalEntity (fail-closed guard).
 /// </summary>
-public interface IGlobalEntity : IMarkerEntity { }
-
-/// <summary>
-/// Enforces multi-tenant data isolation. All tenant-scoped entities MUST implement this interface.
-/// Protected by EF Core named query filter: QueryFilters.Tenant.
-/// TenantId is immutable after insertion (enforced by AuditableEntityInterceptor).
-/// </summary>
-public interface ITenantEntity : IMarkerEntity
-{
-    Guid TenantId { get; set; }
-}
-
-/// <summary>
-/// Scopes an entity to a specific project workspace.
-/// ProjectSecurityInterceptor intercepts write operations (Insert/Update/Delete) on this entity,
-/// validating the user's ProjectRoleEnum against required write permissions.
-/// </summary>
-public interface IProjectScopedEntity : ITenantEntity
-{
-    Guid ProjectId { get; set; }
-}
+public interface IGlobalEntity { }
 
 /// <summary>
 /// Enables automatic soft deletion. When DbContext.Remove() is invoked on this entity,
 /// AuditableEntityInterceptor intercepts the operation, setting IsDeleted = true instead of issuing a SQL DELETE.
 /// Filtered out by default via EF Core query filter: QueryFilters.SoftDelete.
 /// </summary>
-public interface ISoftDeletableEntity : IMarkerEntity
+public interface ISoftDeletableEntity
 {
     bool IsDeleted { get; set; }
     DateTime? DeletedAtUtc { get; set; }
@@ -66,20 +36,18 @@ public interface ISoftDeletableEntity : IMarkerEntity
 /// <summary>
 /// Marks an entity as hard-deletable. When DbContext.Remove() is invoked,
 /// a physical SQL DELETE is generated and executed in the database.
-/// Used for ephemeral staging tables and graph link/edge records.
 /// Mutually exclusive with <see cref="ISoftDeletableEntity"/> and <see cref="IImmutableEntity"/>.
 /// </summary>
-public interface IHardDeletableEntity : IMarkerEntity
+public interface IHardDeletableEntity
 {
 }
 
 /// <summary>
 /// Marks an entity as strictly immutable and append-only (WORM: Write-Once, Read-Many).
 /// Calling DbContext.Remove() or mutating this entity triggers an immediate exception.
-/// Used for forensic audit records, event ledgers, and background job receipts.
 /// Mutually exclusive with <see cref="ISoftDeletableEntity"/> and <see cref="IHardDeletableEntity"/>.
 /// </summary>
-public interface IImmutableEntity : IMarkerEntity
+public interface IImmutableEntity
 {
 }
 
@@ -89,7 +57,7 @@ public interface IImmutableEntity : IMarkerEntity
 /// Guarded by AuditableEntityInterceptor ensuring EndDate is never before StartDate.
 /// Queryable via LINQ extension query.WhereActive().
 /// </summary>
-public interface IEffectiveDatedEntity : IMarkerEntity
+public interface IEffectiveDatedEntity
 {
     DateTime StartDate { get; set; }
     DateTime? EndDate { get; set; }
@@ -102,7 +70,7 @@ public interface IEffectiveDatedEntity : IMarkerEntity
 /// ParentRowId provides soft lineage back to the source version row (Guid.Empty for root/new records).
 /// AuditableEntityInterceptor validates that RelId and VerNum are strictly immutable after creation.
 /// </summary>
-public interface IVersionedEntity : IMarkerEntity
+public interface IVersionedEntity
 {
     Guid RevisionHeaderId { get; set; }
     Guid RelId { get; set; }
@@ -117,19 +85,10 @@ public interface IVersionedEntity : IMarkerEntity
 }
 
 /// <summary>
-/// Versioned entity whose revisions follow Sprint Planning Lock-and-Auto-Draft lifecycle (Baseline vs Actual).
-/// Finalizing (locking) a baseline revision immediately spawns exactly one working draft.
-/// Explicit manual creation of arbitrary drafts is disallowed to preserve strict 2-stage/linear lifecycle.
-/// </summary>
-public interface ISprintVersionEntity : IVersionedEntity
-{
-}
-
-/// <summary>
 /// Explicitly marks an entity as not subject to multi-draft scenario versioning.
 /// Mutually exclusive with <see cref="IVersionedEntity"/>.
 /// Every concrete entity in the system must implement either IVersionedEntity OR IUnversionedEntity.
 /// </summary>
-public interface IUnversionedEntity : IMarkerEntity
+public interface IUnversionedEntity
 {
 }

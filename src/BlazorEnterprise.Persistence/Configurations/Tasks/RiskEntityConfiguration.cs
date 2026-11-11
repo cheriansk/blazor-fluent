@@ -14,6 +14,7 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(r => r.Level)
@@ -99,18 +100,10 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
             .IsRequired(false)
             .HasDefaultValue(string.Empty);
 
-        builder.Property(r => r.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(r => r.ProjectId)
-            .IsRequired(false);
-
-        builder.Property(r => r.MilestoneId)
-            .IsRequired(false);
-
-        builder.Property(r => r.UserId)
-            .HasMaxLength(256)
-            .IsRequired(false);
+        // Ignore [NotMapped] edge relations
+        builder.Property(r => r.ProgramId).IsRequired(false);
+        builder.Property(r => r.ProjectId).IsRequired(false);
+        builder.Ignore(r => r.MilestoneId);
 
         // Soft delete properties
         builder.Property(r => r.IsDeleted)
@@ -130,14 +123,5 @@ public class RiskEntityConfiguration : IEntityTypeConfiguration<RiskEntity>
 
         builder.HasIndex(r => new { r.TenantId, r.Level })
             .HasDatabaseName("IX_Risks_TenantId_Level");
-
-        builder.HasIndex(r => new { r.TenantId, r.ProgramId })
-            .HasDatabaseName("IX_Risks_TenantId_ProgramId");
-
-        builder.HasIndex(r => new { r.TenantId, r.ProjectId })
-            .HasDatabaseName("IX_Risks_TenantId_ProjectId");
-
-        builder.HasIndex(r => new { r.TenantId, r.Level, r.RiskStatus, r.DueDate })
-            .HasDatabaseName("IX_Risks_Tenant_Level_RiskStatus_DueDate");
     }
 }

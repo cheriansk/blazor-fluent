@@ -103,30 +103,35 @@ public class EventTrackerService : IEventTrackerService
             var actualEventId = eventId ?? Guid.CreateVersion7();
 
             var isSystemOrCron = string.Equals(triggerSource, "Cron", StringComparison.OrdinalIgnoreCase) ||
-
                                  string.Equals(triggerSource, "System", StringComparison.OrdinalIgnoreCase);
+            var isDomainEvent = string.Equals(triggerSource, "DomainEvent", StringComparison.OrdinalIgnoreCase);
 
-            Guid tenantId;
+            Guid tenantId = Guid.Empty;
 
-            if (isSystemOrCron)
+            if (_tenantContext.HasActiveTenant && _tenantContext.TenantId != Guid.Empty)
             {
-                tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
+                tenantId = _tenantContext.TenantId;
+            }
+            else if (@event != null)
+            {
+                // Fallback: Check if event payload explicitly contains a TenantId property
+                var prop = runtimeType.GetProperty("TenantId");
+                if (prop != null && prop.PropertyType == typeof(Guid))
+                {
+                    var val = (Guid?)prop.GetValue(@event);
+                    if (val.HasValue && val.Value != Guid.Empty)
+                    {
+                        tenantId = val.Value;
+                    }
+                }
             }
 
-            else
+            if (tenantId == Guid.Empty)
             {
-                if (!_tenantContext.HasActiveTenant || _tenantContext.TenantId == Guid.Empty)
-                {
-                    _logger.LogError("Mandatory tenant validation failed: User-triggered event '{EventType}' cannot be dispatched without an active tenant.", eventName);
-
-                    throw new InvalidOperationException(
-
-                        $"Mandatory tenant validation failed: User-triggered event '{eventName}' cannot be dispatched " +
-
-                        $"because TenantId is null or empty. Ensure the active tenant is properly initialized before dispatching events.");
-                }
-
-                tenantId = _tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId;
+                _logger.LogError("Mandatory tenant validation failed: Event '{EventType}' cannot be dispatched without an active tenant.", eventName);
+                throw new InvalidOperationException(
+                    $"Mandatory tenant validation failed: Event '{eventName}' cannot be dispatched " +
+                    $"because TenantId is null or empty. Ensure the active tenant is properly initialized before dispatching events.");
             }
 
             // Infer class name from source file path if not passed explicitly
@@ -159,22 +164,44 @@ public class EventTrackerService : IEventTrackerService
 
             var jobEvent = @event as IJobEvent;
             var resolvedSenderOrigin = senderOrigin ?? jobEvent?.SenderOrigin ?? triggerSource;
-            var resolvedUserId = senderUserId ?? jobEvent?.SenderUserId ?? _currentUser.UserId;
-            var resolvedUserEmail = senderUserEmail ?? jobEvent?.SenderUserEmail ?? _currentUser.Email;
 
-            if (string.IsNullOrWhiteSpace(resolvedUserId) && isSystemOrCron)
+            // Safely inspect event payload properties for UserId / UserEmail if not passed directly
+            string? payloadUserId = null;
+            string? payloadUserEmail = null;
+            if (@event != null)
             {
-                var daemonName = $"cron:{eventName.Replace("Event", string.Empty)}";
+                var uIdProp = runtimeType.GetProperty("UserId");
+                if (uIdProp != null && uIdProp.PropertyType == typeof(string))
+                {
+                    payloadUserId = (string?)uIdProp.GetValue(@event);
+                }
+                var uEmailProp = runtimeType.GetProperty("UserEmail");
+                if (uEmailProp != null && uEmailProp.PropertyType == typeof(string))
+                {
+                    payloadUserEmail = (string?)uEmailProp.GetValue(@event);
+                }
+            }
+
+            // Safe ambient user resolution: only query _currentUser if IsAuthenticated is true
+            var ambientUserId = _currentUser.IsAuthenticated ? _currentUser.UserId : null;
+            var ambientUserEmail = _currentUser.IsAuthenticated ? _currentUser.Email : null;
+
+            var resolvedUserId = senderUserId ?? jobEvent?.SenderUserId ?? payloadUserId ?? ambientUserId;
+            var resolvedUserEmail = senderUserEmail ?? jobEvent?.SenderUserEmail ?? payloadUserEmail ?? ambientUserEmail;
+
+            if (string.IsNullOrWhiteSpace(resolvedUserId) && (isSystemOrCron || isDomainEvent))
+            {
+                var daemonName = isDomainEvent ? $"event:{eventName}" : $"cron:{eventName.Replace("Event", string.Empty)}";
 
                 resolvedUserId = daemonName;
 
                 if (string.IsNullOrWhiteSpace(resolvedUserEmail))
                 {
-                    resolvedUserEmail = _jobsOptions.Value.CronServiceAccountEmail;
+                    resolvedUserEmail = _jobsOptions.Value.CronServiceAccountEmail ?? "system@blazorenterprise.local";
                 }
             }
 
-            else if (string.IsNullOrWhiteSpace(resolvedUserId) && string.IsNullOrWhiteSpace(resolvedUserEmail))
+            else if (string.IsNullOrWhiteSpace(resolvedUserId) && string.IsNullOrWhiteSpace(resolvedUserEmail) && _currentUser.IsAuthenticated)
             {
                 resolvedUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, $"PublishEvent:{eventName}");
 
@@ -223,7 +250,7 @@ public class EventTrackerService : IEventTrackerService
 
             _dbContext.EventPublishTrackers.Add(record);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation(
 
@@ -267,14 +294,16 @@ public class EventTrackerService : IEventTrackerService
             // Lookup parent publication tracker by EventId or primary key Id with AsTracking
 
             var parent = await _dbContext.EventPublishTrackers
-
                 .AsTracking()
-
                 .Where(e => e.EventId == eventId || e.Id == eventId)
+                .FirstOrDefaultAsync(cancellationToken);
 
-                .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"Event consumption worker tracking for EventId '{eventId}' ({consumerClass}.{consumerMethod})", cancellationToken);
-
-            var tenantId = parent?.TenantId ?? (_tenantContext.HasActiveTenant ? _tenantContext.TenantId : SystemIdentityUtility.Current.RootTenantId);
+            var tenantId = parent?.TenantId ?? (_tenantContext.HasActiveTenant ? _tenantContext.TenantId : Guid.Empty);
+            if (tenantId == Guid.Empty)
+            {
+                _logger.LogError("Mandatory tenant validation failed: Consumption tracking for EventId '{EventId}' cannot proceed without an active tenant.", eventId);
+                throw new InvalidOperationException($"Mandatory tenant validation failed: Consumption tracking for EventId '{eventId}' cannot proceed because TenantId is null or empty.");
+            }
             var correlationId = parent?.CorrelationId ?? eventId.ToString("N")[..12];
 
             var consumption = new EventConsumptionTrackerEntity
@@ -306,11 +335,9 @@ public class EventTrackerService : IEventTrackerService
                 {
                     parent.Status = EventTrackerStatusEnum.InProgress;
                 }
-
-                _dbContext.EventPublishTrackers.Update(parent);
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation(
 
@@ -349,14 +376,10 @@ public class EventTrackerService : IEventTrackerService
         try
         {
             var consumption = await _dbContext.EventConsumptionTrackers
-
                 .AsTracking()
-
                 .Include(c => c.PublishTracker)
-
                 .Where(c => c.Id == consumptionTrackerId)
-
-                .FirstOrDefaultWithAuditedBypassAsync(_auditService, $"Event consumption completion tracking for ConsumptionId '{consumptionTrackerId}'", cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (consumption is null)
             {
@@ -374,8 +397,6 @@ public class EventTrackerService : IEventTrackerService
             consumption.ErrorMessage = errorMessage;
 
             consumption.ExceptionDetails = exceptionDetails;
-
-            _dbContext.EventConsumptionTrackers.Update(consumption);
 
             // Recalculate parent aggregate status based on all its consumptions
 
@@ -409,11 +430,9 @@ public class EventTrackerService : IEventTrackerService
                 {
                     consumption.PublishTracker.Status = EventTrackerStatusEnum.Completed;
                 }
-
-                _dbContext.EventPublishTrackers.Update(consumption.PublishTracker);
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation(
 

@@ -15,12 +15,12 @@ namespace BlazorEnterprise.Core.Domain.Tenancy;
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="User"/>.
 /// Includes HMAC-SHA256 row-integrity anti-tampering seal.
 /// </summary>
-public class ProgramUserRoleEntity : TenantAuditableEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
+public class ProgramUserRoleEntity : ProgramScopedEntity, ISoftDeletableEntity, IHmacSignableEntity, IUnversionedEntity
 {
     /// <summary>
     /// ID of the program to which this role assignment belongs.
     /// </summary>
-    public required Guid ProgramId { get; set; }
+    // Inherits ProgramId from ProgramScopedEntity
 
     /// <summary>
     /// Foreign key to <see cref="UserEntity"/>.

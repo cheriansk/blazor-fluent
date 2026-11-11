@@ -12,18 +12,10 @@ namespace BlazorEnterprise.Web.Components.Pages.Settings;
 public partial class SettingsEventsTab : ComponentBase, IDisposable
 {
     [Inject] private IEventTrackerService EventTrackerService { get; set; } = default!;
-    [Inject] private ITenantService TenantService { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
-    [Inject] private IRootAdminService RootAdmin { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private IUserTimeZoneService TimeZoneService { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
-
-    public record TenantFilterOption(string Id, string Name);
-
-    private List<TenantFilterOption> _availableTenants = new();
-    private string? _selectedTenantId;
-    private string _selectedTenantName = string.Empty;
 
     private EventTrackerFilterReqDto _filter = new() { PageSize = 20 };
     private PagedResultRespDto<EventPublishTrackerEntity>? _eventResult;
@@ -38,74 +30,18 @@ public partial class SettingsEventsTab : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         TimeZoneService.OnChange += HandleTimeZoneChanged;
-        await LoadAvailableTenantsAsync();
-    }
-
-    private async Task LoadAvailableTenantsAsync()
-    {
-        var isRootAdmin = CurrentUser.IsRootAdmin;
-        if (isRootAdmin)
-        {
-            var dbTenants = (await TenantService.GetAllTenantsAsync())
-                .Where(t => t.IsActive)
-                .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(
-                    t.Slug,
-                    t.Slug == RootAdmin.RootTenantSlug ? $"{t.Name} (Default Root)" : t.Name))
-                .ToList();
-
-            _availableTenants = dbTenants;
-        }
-        else
-        {
-            _availableTenants = TenantContext.AllowedTenants
-                .Where(t => t.IsActive)
-                .OrderBy(t => t.Name)
-                .Select(t => new TenantFilterOption(t.Id.ToString(), t.Name))
-                .ToList();
-        }
-
-        if (_availableTenants.Count == 1)
-        {
-            await OnTenantSelected(_availableTenants[0].Id);
-        }
-    }
-
-    private async Task OnTenantSelected(string? tenantId)
-    {
-        _selectedTenantId = tenantId;
-        _selectedTenantName = _availableTenants.FirstOrDefault(t => t.Id == tenantId)?.Name ?? tenantId ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(_selectedTenantId))
-        {
-            _filter.TenantId = _selectedTenantId;
-            _filter.PageNumber = 1;
-            await LoadEventsAsync();
-        }
-        else
-        {
-            _eventResult = null;
-            _selectedEvent = null;
-        }
-    }
-
-    private void ClearTenantFilter()
-    {
-        _selectedTenantId = null;
-        _selectedTenantName = string.Empty;
-        _filter.TenantId = null;
-        _eventResult = null;
-        _selectedEvent = null;
+        await LoadEventsAsync();
     }
 
     private async Task LoadEventsAsync()
     {
-        if (string.IsNullOrWhiteSpace(_selectedTenantId)) return;
-
         _isLoading = true;
         try
         {
-            _filter.TenantId = _selectedTenantId;
+            if (TenantContext.HasActiveTenant && TenantContext.TenantId != Guid.Empty)
+            {
+                _filter.TenantId = TenantContext.TenantId.ToString();
+            }
             _eventResult = await EventTrackerService.GetEventsAsync(_filter);
         }
         finally
@@ -181,7 +117,7 @@ public partial class SettingsEventsTab : ComponentBase, IDisposable
 
     private async Task ResetFiltersAsync()
     {
-        _filter = new EventTrackerFilterReqDto { PageSize = 20, TenantId = _selectedTenantId };
+        _filter = new EventTrackerFilterReqDto { PageSize = 20, TenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : null };
         _selectedStatus = "All";
         _inGridSearchText = string.Empty;
         await LoadEventsAsync();
@@ -216,6 +152,14 @@ public partial class SettingsEventsTab : ComponentBase, IDisposable
 
     private static string Truncate(string val, int maxLen) =>
         string.IsNullOrEmpty(val) || val.Length <= maxLen ? val : val[..maxLen] + "...";
+
+    private async Task FilterByCorrelationAsync(string? correlationId)
+    {
+        if (string.IsNullOrWhiteSpace(correlationId)) return;
+        _filter.SearchTerm = correlationId;
+        _filter.PageNumber = 1;
+        await LoadEventsAsync();
+    }
 
     private void HandleTimeZoneChanged()
     {

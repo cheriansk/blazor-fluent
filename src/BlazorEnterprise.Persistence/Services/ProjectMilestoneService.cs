@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Calendar;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Dtos.Response;
@@ -10,14 +10,14 @@ using Microsoft.Extensions.Logging;
 namespace BlazorEnterprise.Persistence.Services;
 
 /// <summary>
-/// Domain service managing project delivery gate milestones in ProjectCalendars
+/// Domain service managing project delivery gate milestones in Calendars
 /// and predecessor delivery gate dependencies in WorkDependencies.
 /// </summary>
 public class ProjectMilestoneService : IProjectMilestoneService
 {
-    private static readonly Func<AppDbContext, Guid, Task<ProjectCalendarEntity?>> GetMilestoneByIdCompiled =
+    private static readonly Func<AppDbContext, Guid, Task<CalendarEntity?>> GetMilestoneByIdCompiled =
         EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
-            ctx.ProjectCalendars.AsNoTracking().FirstOrDefault(m => m.Id == id && !m.IsDeleted));
+            ctx.Calendars.AsNoTracking().FirstOrDefault(m => m.Id == id && !m.IsDeleted));
 
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantContext _tenantContext;
@@ -39,14 +39,14 @@ public class ProjectMilestoneService : IProjectMilestoneService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<ProjectCalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, Guid? revisionHeaderId = null, CancellationToken ct = default)
+    public async Task<IReadOnlyList<CalendarEntity>> GetMilestonesByProjectAsync(Guid projectId, Guid? revisionHeaderId = null, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetMilestonesByProject", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
 
-        var query = _context.ProjectCalendars
+        var query = _context.Calendars
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && m.ProjectId == projectId && !m.IsDeleted);
 
@@ -62,29 +62,29 @@ public class ProjectMilestoneService : IProjectMilestoneService
         return await query.OrderBy(m => m.StartDate).ToListAsync(ct);
     }
 
-    public async Task<ProjectCalendarEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default)
+    public async Task<CalendarEntity?> GetMilestoneByIdAsync(Guid milestoneId, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
-        var milestone = await _context.ProjectCalendars
+        var milestone = await _context.Calendars
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == milestoneId && !m.IsDeleted, ct);
 
         if (milestone != null)
         {
-            await _projectAuth.EnsureCanVisitAsync(milestone.ProjectId, operation: "GetMilestoneById", ct: ct);
+            if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanVisitAsync(milestone.ProjectId.Value, operation: "GetMilestoneById", ct: ct);
         }
 
         return milestone;
     }
 
-    public async Task<Result<ProjectCalendarEntity>> CreateMilestoneAsync(ProjectCalendarEntity milestone, CancellationToken ct = default)
+    public async Task<Result<CalendarEntity>> CreateMilestoneAsync(CalendarEntity milestone, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "CreateMilestone", ct: ct);
+            if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanEditAsync(milestone.ProjectId.Value, minRole: ProjectRoleEnum.Contribute, operation: "CreateMilestone", ct: ct);
 
             if (milestone.TenantId == Guid.Empty)
             {
@@ -93,43 +93,43 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             if (milestone.EndDate.HasValue && milestone.EndDate.Value.Date < milestone.StartDate.Date)
             {
-                return Result<ProjectCalendarEntity>.Failure("Milestone End Date cannot precede Start Date.");
+                return Result<CalendarEntity>.Failure("Milestone End Date cannot precede Start Date.");
             }
 
-            _context.ProjectCalendars.Add(milestone);
-            await _context.SaveChangesAsync(ct);
+            _context.Calendars.Add(milestone);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Milestone gate '{Title}' ({Id}) created in project {ProjectId}", milestone.Title, milestone.Id, milestone.ProjectId);
-            return Result<ProjectCalendarEntity>.Success(milestone);
+            return Result<CalendarEntity>.Success(milestone);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create milestone '{Title}'", milestone.Title);
-            return Result<ProjectCalendarEntity>.Failure($"Failed to create milestone: {ex.Message}");
+            return Result<CalendarEntity>.Failure($"Failed to create milestone: {ex.Message}");
         }
     }
 
-    public async Task<Result<ProjectCalendarEntity>> UpdateMilestoneAsync(ProjectCalendarEntity updated, CancellationToken ct = default)
+    public async Task<Result<CalendarEntity>> UpdateMilestoneAsync(CalendarEntity updated, CancellationToken ct = default)
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         try
         {
             var tenantId = _tenantContext.TenantId;
 
-            var milestone = await _context.ProjectCalendars
+            var milestone = await _context.Calendars
                 .AsTracking()
                 .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.ProjectId == updated.ProjectId && m.Id == updated.Id && !m.IsDeleted, ct);
 
             if (milestone == null)
             {
-                return Result<ProjectCalendarEntity>.Failure("Milestone not found in the specified project.");
+                return Result<CalendarEntity>.Failure("Milestone not found in the specified project.");
             }
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "UpdateMilestone", ct: ct);
+            if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanEditAsync(milestone.ProjectId.Value, minRole: ProjectRoleEnum.Contribute, operation: "UpdateMilestone", ct: ct);
 
             if (updated.EndDate.HasValue && updated.EndDate.Value.Date < updated.StartDate.Date)
             {
-                return Result<ProjectCalendarEntity>.Failure("Milestone End Date cannot precede Start Date.");
+                return Result<CalendarEntity>.Failure("Milestone End Date cannot precede Start Date.");
             }
 
             milestone.Title = updated.Title;
@@ -140,13 +140,13 @@ public class ProjectMilestoneService : IProjectMilestoneService
             milestone.EntryType = updated.EntryType;
             milestone.ParentProgramCalendarId = updated.ParentProgramCalendarId;
 
-            await _context.SaveChangesAsync(ct);
-            return Result<ProjectCalendarEntity>.Success(milestone);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
+            return Result<CalendarEntity>.Success(milestone);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update milestone {Id}", updated.Id);
-            return Result<ProjectCalendarEntity>.Failure($"Failed to update milestone: {ex.Message}");
+            return Result<CalendarEntity>.Failure($"Failed to update milestone: {ex.Message}");
         }
     }
 
@@ -157,7 +157,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
         {
             var tenantId = _tenantContext.TenantId;
 
-            var milestone = await _context.ProjectCalendars
+            var milestone = await _context.Calendars
                 .AsTracking()
                 .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == milestoneId && !m.IsDeleted, ct);
 
@@ -166,10 +166,10 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 return Result<bool>.Failure("Milestone not found.");
             }
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Admin, operation: "CompleteMilestone", ct: ct);
+            if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanEditAsync(milestone.ProjectId.Value, minRole: ProjectRoleEnum.Admin, operation: "CompleteMilestone", ct: ct);
 
             milestone.Status = CalendarEntryStatusEnum.Completed;
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Milestone gate '{Title}' ({Id}) marked Completed in project {ProjectId}", milestone.Title, milestone.Id, milestone.ProjectId);
             return Result<bool>.Success(true);
@@ -188,7 +188,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
         {
             var tenantId = _tenantContext.TenantId;
 
-            var milestone = await _context.ProjectCalendars
+            var milestone = await _context.Calendars
                 .AsTracking()
                 .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == milestoneId && !m.IsDeleted, ct);
 
@@ -197,7 +197,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
                 return Result<bool>.Failure("Milestone not found.");
             }
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "DeleteMilestone", ct: ct);
+            if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanEditAsync(milestone.ProjectId.Value, minRole: ProjectRoleEnum.Contribute, operation: "DeleteMilestone", ct: ct);
 
             // Unlink any tasks linked to this milestone (preserve tasks as ad-hoc)
             var linkedTasks = await _context.Tasks
@@ -220,7 +220,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
             milestone.IsDeleted = true;
             milestone.DeletedAtUtc = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             if (deletedCount > 0)
             {
@@ -244,13 +244,13 @@ public class ProjectMilestoneService : IProjectMilestoneService
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var tenantId = _tenantContext.TenantId;
 
-        var milestone = await _context.ProjectCalendars
+        var milestone = await _context.Calendars
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == milestoneId && !m.IsDeleted, ct);
 
         if (milestone == null) return Array.Empty<MilestoneDependencyItemDto>();
 
-        await _projectAuth.EnsureCanVisitAsync(milestone.ProjectId, operation: "GetMilestoneDependencies", ct: ct);
+        if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanVisitAsync(milestone.ProjectId.Value, operation: "GetMilestoneDependencies", ct: ct);
 
         var links = await _context.WorkDependencies
             .AsNoTracking()
@@ -269,7 +269,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
             .Distinct()
             .ToList();
 
-        var predecessors = await _context.ProjectCalendars
+        var predecessors = await _context.Calendars
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && predecessorIds.Contains(m.Id) && !m.IsDeleted)
             .ToDictionaryAsync(m => m.Id, ct);
@@ -305,15 +305,15 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             var tenantId = _tenantContext.TenantId;
 
-            var milestone = await _context.ProjectCalendars
+            var milestone = await _context.Calendars
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == milestoneId && !m.IsDeleted, ct);
 
             if (milestone == null) return Result<bool>.Failure("Successor milestone not found.");
 
-            await _projectAuth.EnsureCanEditAsync(milestone.ProjectId, minRole: ProjectRoleEnum.Contribute, operation: "AddMilestoneDependency", ct: ct);
+            if (milestone.ProjectId.HasValue) await _projectAuth.EnsureCanEditAsync(milestone.ProjectId.Value, minRole: ProjectRoleEnum.Contribute, operation: "AddMilestoneDependency", ct: ct);
 
-            var predecessor = await _context.ProjectCalendars
+            var predecessor = await _context.Calendars
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.TenantId == tenantId && m.Id == dependsOnMilestoneId && !m.IsDeleted, ct);
 
@@ -359,7 +359,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
             };
 
             _context.WorkDependencies.Add(dependency);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Added milestone delivery gate dependency: Gate {MilestoneId} depends on {DependsOnId}", milestoneId, dependsOnMilestoneId);
 
@@ -397,7 +397,7 @@ public class ProjectMilestoneService : IProjectMilestoneService
 
             link.IsDeleted = true;
             link.DeletedAtUtc = DateTime.UtcNow;
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Removed milestone dependency {DependencyId}", dependencyId);
 

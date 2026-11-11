@@ -179,7 +179,7 @@ public partial class HomePage : ComponentBase, IDisposable
 
             // 3. Tasks Aggregation across authorized projects
             var tasks = await TaskService.GetRecentTasksAsync(30);
-            var authorizedTasks = tasks.Where(t => authorizedProjectIds.Contains(t.ProjectId)).ToList();
+            var authorizedTasks = tasks.Where(t => t.ProjectId.HasValue && authorizedProjectIds.Contains(t.ProjectId.Value)).ToList();
 
             _totalTasksCount = authorizedTasks.Count;
             _completedTasksCount = authorizedTasks.Count(t => t.Status == TaskStatusEnum.Closed);

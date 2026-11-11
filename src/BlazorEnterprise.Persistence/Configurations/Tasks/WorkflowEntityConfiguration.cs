@@ -1,6 +1,5 @@
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Tasks;
-using BlazorEnterprise.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,6 +14,7 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
         builder.HasKey(w => w.Id);
 
         builder.Property(w => w.TenantId)
+            .HasColumnOrder(0)
             .IsRequired();
 
         builder.Property(w => w.Level)
@@ -81,11 +81,9 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
         builder.Property(w => w.CurrentStepId)
             .IsRequired(false);
 
-        builder.Property(w => w.ProgramId)
-            .IsRequired(false);
-
-        builder.Property(w => w.ProjectId)
-            .IsRequired(false);
+        // Ignore [NotMapped] edge relations
+        builder.Property(w => w.ProgramId).IsRequired(false);
+        builder.Property(w => w.ProjectId).IsRequired(false);
 
         builder.Property(w => w.IsDeleted)
             .IsRequired()
@@ -100,8 +98,6 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
 
         // Targeted Multi-Level Compound Indices
         builder.HasIndex(w => new { w.TenantId, w.Level });
-        builder.HasIndex(w => new { w.TenantId, w.ProgramId });
-        builder.HasIndex(w => new { w.TenantId, w.ProjectId, w.Status });
         builder.HasIndex(w => new { w.TenantId, w.AssigneeEmails });
 
         // Navigation to Tasks as Steps

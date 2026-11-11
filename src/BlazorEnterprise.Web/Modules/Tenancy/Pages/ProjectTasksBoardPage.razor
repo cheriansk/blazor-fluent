@@ -584,7 +584,17 @@ else
                                         <div class="dependency-card-info">
                                             <div class="d-flex gap-2 align-center">
                                                 <span class="dep-type-tag">@dep.DependencyType</span>
-                                                <strong>@dep.DependsOnTaskTitle</strong>
+                                                @if (dep.CanAccessTargetItem)
+                                                {
+                                                    <strong>@dep.DependsOnTaskTitle</strong>
+                                                }
+                                                else
+                                                {
+                                                    <span class="d-flex align-center gap-1 text-muted">
+                                                        <strong>@dep.DependsOnTaskTitle</strong>
+                                                        <span title="Restricted Access - View permission required on target scope">🔒</span>
+                                                    </span>
+                                                }
                                             </div>
                                             <div class="dep-meta">
                                                 <span>Status: @dep.DependsOnTaskStatus</span>
@@ -782,7 +792,7 @@ else
                         @if (_milestones.Count > 0)
                         {
                             <div class="mt-2">
-                                <CskSelect TOption="ProjectCalendarEntity"
+                                <CskSelect TOption="CalendarEntity"
                                               TValue="string"
                                               Items="@_milestones"
                                               OptionText="@(m => $"{m.Title} (Ends {m.EndDate:yyyy-MM-dd})")"

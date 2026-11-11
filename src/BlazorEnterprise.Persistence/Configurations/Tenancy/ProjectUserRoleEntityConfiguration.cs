@@ -15,8 +15,7 @@ public class ProjectUserRoleEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.Property(r => r.TenantId)
             .IsRequired();
 
-        builder.Property(r => r.ProjectId)
-            .IsRequired();
+        // ProjectId is nullable on ProjectScopedEntity; validated by Level
 
         builder.Property(r => r.UserEntityId)
             .IsRequired();

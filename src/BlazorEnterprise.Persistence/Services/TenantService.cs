@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 
 using BlazorEnterprise.Core.Configuration;
 
@@ -353,7 +353,7 @@ public class TenantService : ITenantService
 
         _dbContext.TenantUsers.Add(tenantDaemonMembership);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         // Evict global tenant directory cache across all auto-scaled instances
 
@@ -509,7 +509,7 @@ public class TenantService : ITenantService
 
         _dbContext.TenantUsers.Add(adminMembership);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Provisioned initial Tenant Administrator '{Email}' ({FullName}) for tenant '{TenantSlug}'", adminUser.Email, adminUser.FullName, tenant.Slug);
 
@@ -722,7 +722,7 @@ public class TenantService : ITenantService
             IsActive = isActive
         });
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Added user '{Email}' ({UserType}) to tenant '{TenantSlug}'", user.Email, user.UserType, tenantSlug);
 
@@ -879,7 +879,7 @@ public class TenantService : ITenantService
             tenantUser.IsActive = isActive;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Updated user '{Email}' ({UserType}, Active={Active}) in tenant '{TenantSlug}'", user.Email, user.UserType, user.IsActive, tenantSlug);
 
@@ -953,7 +953,7 @@ public class TenantService : ITenantService
 
         tenantUser.Role = isTenantAdmin ? TenantRoleEnum.TenantAdmin : TenantRoleEnum.TenantMember;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         var action = isTenantAdmin ? "Appointed Tenant Administrator" : "Revoked Tenant Administrator";
 
@@ -989,7 +989,7 @@ public class TenantService : ITenantService
 
         tenant.IsActive = isActive;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         // Evict global tenant directory cache across all auto-scaled instances
 
@@ -1209,7 +1209,7 @@ public class TenantService : ITenantService
 
         _dbContext.Projects.Add(project);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Created project '{ProjectName}' ({ShortCode}) in tenant '{TenantSlug}'", project.Name, project.ShortCode, tenantSlug);
 
@@ -1258,6 +1258,8 @@ public class TenantService : ITenantService
         ProjectStatusEnum status,
 
         Guid? programId = null,
+
+        uint version = 0,
 
         CancellationToken cancellationToken = default)
     {
@@ -1335,7 +1337,7 @@ public class TenantService : ITenantService
 
         if (programId.HasValue) project.ProgramId = programId;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Updated project '{ProjectName}' ({ShortCode}) in tenant '{TenantSlug}'", project.Name, project.ShortCode, tenantSlug);
 
@@ -1501,7 +1503,7 @@ public class TenantService : ITenantService
             }
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         return Result.Success();
     }
@@ -1634,7 +1636,7 @@ public class TenantService : ITenantService
             daemonMembership.RowSignature = daemonMembership.ComputeIntegritySignature(integrityKey);
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(cancellationToken); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation("Tenant '{TenantId}' daemon user '{Email}' active state updated to: {IsActive}", tenantId, user.Email, isActive);
 

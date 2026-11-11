@@ -9,9 +9,9 @@ namespace BlazorEnterprise.Core.Domain.Resources;
 /// <summary>
 /// Represents a user assigned as an available project resource for staffing and allocation.
 /// </summary>
-public class ProjectResourceEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+public class ProjectResourceEntity : ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
-    public required Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     public required Guid UserEntityId { get; set; }
 

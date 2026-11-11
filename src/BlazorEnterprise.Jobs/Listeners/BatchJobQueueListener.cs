@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -197,7 +197,7 @@ public class BatchJobQueueListener : BackgroundService
             };
 
             dbContext.JobExecutions.Add(execution);
-            await dbContext.SaveChangesAsync(stoppingToken);
+            dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             // ─── 3. RESOLVE HANDLER ──────────────────────────────────────────────────────
             var handlerType = typeof(IBatchJobHandler<>).MakeGenericType(eventType);
@@ -211,7 +211,7 @@ public class BatchJobQueueListener : BackgroundService
                 execution.Status = JobStatusEnum.Failed;
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"No IBatchJobHandler registered for {eventType.Name}.";
-                await dbContext.SaveChangesAsync(stoppingToken);
+                dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                 if (eventTracker != null)
                 {
@@ -238,7 +238,7 @@ public class BatchJobQueueListener : BackgroundService
                 execution.Status = JobStatusEnum.Failed;
                 execution.CompletedAt = DateTime.UtcNow;
                 execution.ErrorMessage = $"HandleAsync not found on {handlerType.Name}.";
-                await dbContext.SaveChangesAsync(stoppingToken);
+                dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
                 return;
             }
 
@@ -265,7 +265,7 @@ public class BatchJobQueueListener : BackgroundService
                     {
                         execution.AttemptCount = attempt;
                         execution.Status = JobStatusEnum.Retrying;
-                        await dbContext.SaveChangesAsync(stoppingToken);
+                        dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
                     }
 
                     var task = (Task)method.Invoke(handler, [jobEvent, stoppingToken])!;
@@ -277,7 +277,7 @@ public class BatchJobQueueListener : BackgroundService
                     execution.CompletedAt = DateTime.UtcNow;
                     execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
                     execution.ErrorMessage = null;
-                    await dbContext.SaveChangesAsync(stoppingToken);
+                    dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                     if (eventTracker != null && consumptionId != Guid.Empty)
                     {
@@ -313,7 +313,7 @@ public class BatchJobQueueListener : BackgroundService
                     execution.AttemptCount = attempt;
                     execution.Status = JobStatusEnum.Retrying;
                     execution.ErrorMessage = $"Attempt {attempt}/{MaxRetries} failed: {ex.Message}";
-                    await dbContext.SaveChangesAsync(stoppingToken);
+                    dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                     await Task.Delay(backoffDelay, stoppingToken);
                 }
@@ -330,7 +330,7 @@ public class BatchJobQueueListener : BackgroundService
             execution.CompletedAt = DateTime.UtcNow;
             execution.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
             execution.ErrorMessage = lastException?.ToString() ?? "Unknown batch job failure.";
-            await dbContext.SaveChangesAsync(stoppingToken);
+            dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(stoppingToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             if (eventTracker != null && consumptionId != Guid.Empty)
             {

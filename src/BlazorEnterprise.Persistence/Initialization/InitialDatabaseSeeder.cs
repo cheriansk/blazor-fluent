@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Identity;
@@ -93,7 +93,7 @@ public static class InitialDatabaseSeeder
             };
 
             dbContext.Tenants.Add(defaultTenant);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(cancellationToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
             logger.LogInformation("Internal root anchor tenant provisioned successfully.");
         }
 
@@ -378,7 +378,7 @@ public static class InitialDatabaseSeeder
 
         if (changesMade)
         {
-            await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(cancellationToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
             logger.LogInformation("Root super-administrators and integrity signatures synchronized successfully.");
         }
 

@@ -10,12 +10,8 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Can be scoped to Program or Project levels.
 /// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class IssueEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+public class IssueEntity : RAIDTaskEntity
 {
-    /// <summary>
-    /// Optional foreign key to a project or program milestone.
-    /// </summary>
-    public Guid? MilestoneId { get; set; }
 
     /// <summary>
     /// Unmapped convenience alias mapping to and from <see cref="BaseTaskEntity.Priority"/> to avoid duplicate storage.

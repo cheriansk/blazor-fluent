@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace BlazorEnterprise.Jobs.FileImports.Committers;
 
 /// <summary>
-/// Domain committer for ProgramCalendarEntity and ProjectCalendarEntity records.
+/// Domain committer for CalendarEntity and CalendarEntity records.
 /// Reconstructs the Timeline -> Milestone hierarchy from API-validated rows and delegates
 /// directly to ICalendarService and IRevisionService for draft creation and lineage persistence.
 /// </summary>
@@ -33,8 +33,8 @@ public sealed class CalendarBatchDomainCommitter : IBatchDomainCommitter
     }
 
     public bool CanCommit(string targetEntityName) =>
-        string.Equals(targetEntityName, "ProgramCalendarEntity", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(targetEntityName, "ProjectCalendarEntity", StringComparison.OrdinalIgnoreCase);
+        string.Equals(targetEntityName, "CalendarEntity", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(targetEntityName, "CalendarEntity", StringComparison.OrdinalIgnoreCase);
 
     public async Task<Result<int>> CommitProcessedRowsAsync(
         ImportFileEntity file,
@@ -49,7 +49,7 @@ public sealed class CalendarBatchDomainCommitter : IBatchDomainCommitter
             return Result<int>.Failure("Zero-Trust Security Violation: Cross-tenant commit detected.");
         }
 
-        var isProgram = rows.Any(r => string.Equals(r.TargetEntityName, "ProgramCalendarEntity", StringComparison.OrdinalIgnoreCase));
+        var isProgram = rows.Any(r => string.Equals(r.TargetEntityName, "CalendarEntity", StringComparison.OrdinalIgnoreCase));
         var batchRevisionName = $"Batch Import - {file.OriginalFileName} ({DateTime.UtcNow:yyyy-MM-dd HH:mm})";
 
         if (isProgram)

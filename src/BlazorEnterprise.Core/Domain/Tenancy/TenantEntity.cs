@@ -7,7 +7,7 @@ namespace BlazorEnterprise.Core.Domain.Tenancy;
 /// Not tenant-scoped itself — lives in host/admin context.
 /// Implements IEffectiveDatedEntity for subscription/contract validity.
 /// </summary>
-public class TenantEntity : AuditableEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IUnversionedEntity
+public class TenantEntity : BaseEntity, IGlobalEntity, IEffectiveDatedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     /// <summary>Short, URL-safe slug used to resolve tenants (e.g., from subdomain or header). Immutable after creation.</summary>
     public required string Slug { get; set; }

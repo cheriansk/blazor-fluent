@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Identity;
 using BlazorEnterprise.Core.Dtos.Response;
@@ -92,7 +92,7 @@ public class ImpersonationService : IImpersonationService
         };
 
         _dbContext.ImpersonationGrants.Add(grant);
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         // Forensic Security Audit Log
         await _auditService.LogSecurityEventAsync(
@@ -128,7 +128,7 @@ public class ImpersonationService : IImpersonationService
                 $"SuperAdmin '{g.SourceAdminEmail}' exited impersonation of '{g.TargetUserEmail}'.");
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         return Result.Success();
     }

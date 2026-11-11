@@ -10,7 +10,7 @@ namespace BlazorEnterprise.Core.Domain.Events;
 /// implements <see cref="IAuditExemptEntity"/> to prevent recursive auditing,
 /// and <see cref="IImmutableEntity"/> to enforce ledger integrity.
 /// </summary>
-public class EventConsumptionTrackerEntity : TenantAuditableEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
+public class EventConsumptionTrackerEntity : TenantScopedEntity, IAuditExemptEntity, IImmutableEntity, IUnversionedEntity
 {
     /// <summary>Foreign key linking to the parent publication record.</summary>
     public required Guid EventPublishTrackerId { get; set; }

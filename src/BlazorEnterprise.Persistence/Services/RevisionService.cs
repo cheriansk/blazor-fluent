@@ -78,13 +78,13 @@ public class RevisionService : IRevisionService
             int count = 0;
             if (featureType == VersionedFeatureTypeEnum.ProgramCalendar)
             {
-                count = await context.ProgramCalendars
+                count = await context.Calendars
                     .AsNoTracking()
                     .CountAsync(c => c.RevisionHeaderId == r.Id, cancellationToken);
             }
             else if (featureType == VersionedFeatureTypeEnum.ProjectCalendar)
             {
-                count = await context.ProjectCalendars
+                count = await context.Calendars
                     .AsNoTracking()
                     .CountAsync(c => c.RevisionHeaderId == r.Id, cancellationToken);
             }
@@ -320,7 +320,7 @@ public class RevisionService : IRevisionService
         {
             if (featureType == VersionedFeatureTypeEnum.ProgramCalendar && programId.HasValue)
             {
-                var sourceRows = await context.ProgramCalendars
+                var sourceRows = await context.Calendars
                     .AsNoTracking()
                     .Where(c => c.RevisionHeaderId == sourceRevision.Id && !c.IsDeleted)
                     .ToListAsync(cancellationToken);
@@ -340,7 +340,7 @@ public class RevisionService : IRevisionService
                         mappedParentTimelineId = newParentId;
                     }
 
-                    var clonedRow = new ProgramCalendarEntity
+                    var clonedRow = new CalendarEntity
                     {
                         Id = newId,
                         TenantId = tenantId,
@@ -362,13 +362,13 @@ public class RevisionService : IRevisionService
                         Updated = now,
                         UpdatedBy = creator
                     };
-                    context.ProgramCalendars.Add(clonedRow);
+                    context.Calendars.Add(clonedRow);
                     clonedCount++;
                 }
             }
             else if (featureType == VersionedFeatureTypeEnum.ProjectCalendar && projectId.HasValue)
             {
-                var sourceRows = await context.ProjectCalendars
+                var sourceRows = await context.Calendars
                     .AsNoTracking()
                     .Where(c => c.RevisionHeaderId == sourceRevision.Id && !c.IsDeleted)
                     .ToListAsync(cancellationToken);
@@ -388,7 +388,7 @@ public class RevisionService : IRevisionService
                         mappedParentTimelineId = newParentId;
                     }
 
-                    var clonedRow = new ProjectCalendarEntity
+                    var clonedRow = new CalendarEntity
                     {
                         Id = newId,
                         TenantId = tenantId,
@@ -412,7 +412,7 @@ public class RevisionService : IRevisionService
                         Updated = now,
                         UpdatedBy = creator
                     };
-                    context.ProjectCalendars.Add(clonedRow);
+                    context.Calendars.Add(clonedRow);
                     clonedCount++;
                 }
             }
@@ -422,6 +422,7 @@ public class RevisionService : IRevisionService
         var summaryAudit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = tenantId,
             UserId = _currentUser.UserId,
             UserEmail = creator,
@@ -448,7 +449,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(summaryAudit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation(
             "Created Scenario Revision Draft v{VerNum} '{RevisionName}' (HeaderId: {HeaderId}) for Scope {Scope} Feature {Feature}. Cloned {Count} rows from v{ParentVerNum}.",
@@ -490,6 +491,7 @@ public class RevisionService : IRevisionService
         var audit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = revision.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -513,7 +515,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
         return revision;
     }
 
@@ -549,6 +551,7 @@ public class RevisionService : IRevisionService
         var audit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = revision.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -572,7 +575,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
         return revision;
     }
 
@@ -603,6 +606,7 @@ public class RevisionService : IRevisionService
         var audit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = revision.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -626,7 +630,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
         return revision;
     }
 
@@ -709,6 +713,7 @@ public class RevisionService : IRevisionService
         var audit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = revision.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -733,7 +738,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation(
             "Activated Scenario Revision v{VerNum} (HeaderId: {HeaderId}). Superseded v{PrevVer}. Cancelled {CancelledCount} competing draft(s).",
@@ -769,6 +774,7 @@ public class RevisionService : IRevisionService
         var audit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = revision.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -791,7 +797,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
         return revision;
     }
 
@@ -823,12 +829,12 @@ public class RevisionService : IRevisionService
 
         if (leftHeader.FeatureType == VersionedFeatureTypeEnum.ProgramCalendar)
         {
-            var leftRows = await context.ProgramCalendars
+            var leftRows = await context.Calendars
                 .AsNoTracking()
                 .Where(c => c.RevisionHeaderId == leftHeader.Id && !c.IsDeleted)
                 .ToDictionaryAsync(c => c.RelId, cancellationToken);
 
-            var rightRows = await context.ProgramCalendars
+            var rightRows = await context.Calendars
                 .AsNoTracking()
                 .Where(c => c.RevisionHeaderId == rightHeader.Id && !c.IsDeleted)
                 .ToDictionaryAsync(c => c.RelId, cancellationToken);
@@ -900,12 +906,12 @@ public class RevisionService : IRevisionService
         }
         else if (leftHeader.FeatureType == VersionedFeatureTypeEnum.ProjectCalendar)
         {
-            var leftRows = await context.ProjectCalendars
+            var leftRows = await context.Calendars
                 .AsNoTracking()
                 .Where(c => c.RevisionHeaderId == leftHeader.Id && !c.IsDeleted)
                 .ToDictionaryAsync(c => c.RelId, cancellationToken);
 
-            var rightRows = await context.ProjectCalendars
+            var rightRows = await context.Calendars
                 .AsNoTracking()
                 .Where(c => c.RevisionHeaderId == rightHeader.Id && !c.IsDeleted)
                 .ToDictionaryAsync(c => c.RelId, cancellationToken);
@@ -1015,6 +1021,7 @@ public class RevisionService : IRevisionService
         var baselineAudit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = draft.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -1064,6 +1071,7 @@ public class RevisionService : IRevisionService
         var spawnAudit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = draft.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -1087,7 +1095,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(spawnAudit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation(
             "Finalized Baseline Revision v{VerNum} (HeaderId: {HeaderId}) and auto-spawned Working Draft v{NextVer} (HeaderId: {WorkingDraftId}).",
@@ -1142,6 +1150,7 @@ public class RevisionService : IRevisionService
         var audit = new AuditRecordEntity
         {
             Id = Guid.CreateVersion7(),
+            RetentionDays = AuditRetentionPeriodEnum.NinetyDays,
             TenantId = workingDraft.TenantId,
             UserId = _currentUser.UserId,
             UserEmail = actingUser,
@@ -1165,7 +1174,7 @@ public class RevisionService : IRevisionService
         };
         context.AuditRecords.Add(audit);
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
 
         _logger.LogInformation(
             "Cycle closed for v{VerNum} (HeaderId: {HeaderId}). Superseded previous baseline v{PrevVer}.",

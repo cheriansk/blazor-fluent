@@ -14,9 +14,9 @@ public static class ProjectAuthorizationExtensions
     public static IQueryable<T> WhereAuthorizedProject<T>(
         this IQueryable<T> query,
         IEnumerable<Guid> authorizedProjectIds)
-        where T : class, IProjectScopedEntity
+        where T : ProjectScopedEntity
     {
         var idList = authorizedProjectIds as IReadOnlyList<Guid> ?? authorizedProjectIds.ToList();
-        return query.Where(entity => idList.Contains(entity.ProjectId));
+        return query.Where(entity => entity.ProjectId.HasValue && idList.Contains(entity.ProjectId.Value));
     }
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Base;
 
@@ -6,15 +7,20 @@ namespace BlazorEnterprise.Core.Domain.Notifications;
 /// <summary>
 /// Persisted notification entity enforcing three-tier isolation:
 /// - Tenant isolation (ITenantEntity / TenantAuditableEntity)
-/// - Project isolation (IProjectScopedEntity)
+/// - Project isolation (IHierarchyScopedEntity)
 /// - Personal recipient isolation (UserId)
 /// </summary>
-public class NotificationEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+public class NotificationEntity : ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     /// <summary>
     /// Associated project ID, or Guid.Empty for system/tenant-wide generic notifications.
     /// </summary>
-    public Guid ProjectId { get; set; }
+    // Inherits ProgramId from ProjectScopedEntity
+
+    /// <summary>
+    /// Associated project ID, or null for system/tenant-wide generic notifications.
+    /// </summary>
+    // Inherits ProjectId from ProjectScopedEntity
 
     /// <summary>
     /// Target user ID. If null, this is a generic notification broadcast to authorized project/tenant members.

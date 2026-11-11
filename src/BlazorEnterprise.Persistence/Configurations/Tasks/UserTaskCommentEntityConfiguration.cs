@@ -18,8 +18,7 @@ public class UserTaskCommentEntityConfiguration : IEntityTypeConfiguration<UserT
         builder.Property(c => c.TaskId)
             .IsRequired();
 
-        builder.Property(c => c.ProjectId)
-            .IsRequired();
+        // ProjectId is nullable on ProjectScopedEntity; validated by Level
 
         builder.Property(c => c.AuthorUserEntityId)
             .IsRequired();

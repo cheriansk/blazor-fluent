@@ -8,7 +8,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Invariant: Maximum hierarchy depth is 1 (a subtask cannot have a subtask).
 /// Invariant: Intra-task blockers can only reference sibling subtasks under the same ParentTaskId.
 /// </summary>
-public class SubTaskEntity : BaseTaskEntity, IUnversionedEntity
+public class SubTaskEntity : BaseTaskEntity
 {
     /// <summary>
     /// Foreign key to the governing parent <see cref="TaskEntity"/>.

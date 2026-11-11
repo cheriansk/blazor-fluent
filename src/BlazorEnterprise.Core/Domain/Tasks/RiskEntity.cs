@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Core.Domain.Base;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Shared.Extensions;
@@ -10,12 +11,8 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 /// Can be scoped to Tenant, Program, or Project levels.
 /// Implements <see cref="IMilestoneLinkedEntity"/> for optional milestone association.
 /// </summary>
-public class RiskEntity : BaseTaskEntity, IMilestoneLinkedEntity, IUnversionedEntity
+public class RiskEntity : RAIDTaskEntity
 {
-    /// <summary>
-    /// Optional foreign key to a project or program milestone.
-    /// </summary>
-    public Guid? MilestoneId { get; set; }
 
     /// <summary>
     /// Financial, schedule, or operational impact rating (Low, Medium, High, Critical).

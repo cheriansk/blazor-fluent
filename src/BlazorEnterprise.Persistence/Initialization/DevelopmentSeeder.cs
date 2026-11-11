@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Configuration;
+﻿using BlazorEnterprise.Core.Configuration;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Identity;
@@ -124,7 +124,7 @@ public static class DevelopmentSeeder
 
             if (changesMade)
             {
-                await dbContext.SaveChangesAsync(cancellationToken);
+                dbContext.IsTransactionScopeCommitAuthorized = true; try { await dbContext.SaveChangesAsync(cancellationToken); } finally { dbContext.IsTransactionScopeCommitAuthorized = false; }
                 logger.LogInformation("DevelopmentSeeder: Completed successfully.");
             }
         }

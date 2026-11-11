@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Identity;
 using BlazorEnterprise.Core.Domain.Resources;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -71,7 +71,7 @@ public class ResourceManagementService : IResourceManagementService
         return resources.Select(r => new ProjectResourceDto
         {
             Id = r.Id,
-            ProjectId = r.ProjectId,
+            ProjectId = r.ProjectId ?? Guid.Empty,
             UserEntityId = r.UserEntityId,
             UserName = r.UserName,
             UserEmail = r.UserEmail,
@@ -120,7 +120,7 @@ public class ResourceManagementService : IResourceManagementService
             {
                 existing.IsDeleted = false;
                 existing.Role = role;
-                await context.SaveChangesAsync(cancellationToken);
+                context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
                 return existing;
             }
             throw new InvalidOperationException("User is already registered as a resource on this project.");
@@ -136,7 +136,7 @@ public class ResourceManagementService : IResourceManagementService
         };
 
         context.ProjectResources.Add(resource);
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
         return resource;
     }
 
@@ -149,7 +149,7 @@ public class ResourceManagementService : IResourceManagementService
         resource.IsDeleted = true;
         resource.DeletedAtUtc = _dateTimeProvider.UtcNow;
         resource.DeletedBy = _currentUser.UserId;
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task UpdateResourceRoleAsync(Guid projectResourceId, ProjectResourceRoleEnum newRole, CancellationToken cancellationToken = default)
@@ -159,7 +159,7 @@ public class ResourceManagementService : IResourceManagementService
         if (resource == null) return;
 
         resource.Role = newRole;
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task<RevisionHeaderEntity> GetOrCreateDraftAllocationPlanAsync(Guid projectId, CancellationToken cancellationToken = default)
@@ -338,7 +338,7 @@ public class ResourceManagementService : IResourceManagementService
             context.ResourceAllocations.Add(alloc);
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task BulkSetAllocationAsync(
@@ -411,7 +411,7 @@ public class ResourceManagementService : IResourceManagementService
         return resources.Select(r => new ProjectResourceDto
         {
             Id = r.Id,
-            ProjectId = r.ProjectId,
+            ProjectId = r.ProjectId ?? Guid.Empty,
             UserEntityId = r.UserEntityId,
             UserName = r.UserName,
             UserEmail = r.UserEmail,
@@ -464,7 +464,7 @@ public class ResourceManagementService : IResourceManagementService
             context.ResourceRates.Add(rate);
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        context.IsTransactionScopeCommitAuthorized = true; try { await context.SaveChangesAsync(cancellationToken); } finally { context.IsTransactionScopeCommitAuthorized = false; }
     }
 
     public async Task BulkSetRateByRoleAsync(

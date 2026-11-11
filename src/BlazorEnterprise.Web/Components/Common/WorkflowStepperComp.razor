@@ -137,7 +137,7 @@
     @* Visual Stepper Pipeline Track *@
     <div class="stepper-pipeline">
         @{
-            var orderedSteps = Workflow.Steps.OrderBy(s => s.WorkflowStepOrder ?? 1).ToList();
+            var orderedSteps = Workflow.Steps.OrderBy(s => s.WorkflowStepOrder).ToList();
         }
         @for (int i = 0; i < orderedSteps.Count; i++)
         {
@@ -151,25 +151,25 @@
                 <div class="step-indicator">
                     @if (isCompleted)
                     {
-                        <div class="step-circle step-circle-completed" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) completed">
+                        <div class="step-circle step-circle-completed" title="Step @(step.WorkflowStepOrder) completed">
                             <CskIcon Icon="@CskIcons.Checkmark" />
                         </div>
                     }
                     else if (step.Status == TaskStatusEnum.Cancelled)
                     {
-                        <div class="step-circle step-circle-cancelled stepper-cancelled-circle"  title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) cancelled">
+                        <div class="step-circle step-circle-cancelled stepper-cancelled-circle"  title="Step @(step.WorkflowStepOrder) cancelled">
                             <CskIcon Icon="@CskIcons.Dismiss" Class="csk-icon-error" />
                         </div>
                     }
                     else if (isCurrentActive)
                     {
-                        <div class="step-circle step-circle-active" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) currently active">
-                            <span>@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
+                        <div class="step-circle step-circle-active" title="Step @(step.WorkflowStepOrder) currently active">
+                            <span>@(step.WorkflowStepOrder)</span>
                         </div>
                     }
                     else
                     {
-                        <div class="step-circle step-circle-pending" title="Step @(step.WorkflowStepOrder ?? (stepIndex + 1)) pending completion of previous steps">
+                        <div class="step-circle step-circle-pending" title="Step @(step.WorkflowStepOrder) pending completion of previous steps">
                             <CskIcon Icon="@CskIcons.LockClosed" />
                         </div>
                     }
@@ -184,7 +184,7 @@
                     <div class="step-header">
                         <div class="stepper-step-row">
                             <span class="step-name @(step.Status == TaskStatusEnum.Cancelled ? "stepper-name-cancelled" : "")">@step.Title</span>
-                            <span class="step-order-badge">Step #@(step.WorkflowStepOrder ?? (stepIndex + 1))</span>
+                            <span class="step-order-badge">Step #@(step.WorkflowStepOrder)</span>
                         </div>
                         <span class="step-status-tag status-@(step.Status.ToString().ToLowerInvariant())">
                             @step.Status.ToString()
@@ -334,7 +334,7 @@
         <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
             <div class="stepper-modal-header">
                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
-                    <CskLabel Typo="Typography.H6">Complete Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</CskLabel>
+                    <CskLabel Typo="Typography.H6">Complete Step #@(_targetStep.WorkflowStepOrder): @_targetStep.Title</CskLabel>
                     <CskButton Variant="CskButtonVariant.Text"
                                   IconStart="@CskIcons.Dismiss"
                                   OnClick="@CancelCompleteStep" />
@@ -393,7 +393,7 @@
         <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
             <div class="stepper-modal-header">
                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
-                    <CskLabel Typo="Typography.H6">Reassign Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</CskLabel>
+                    <CskLabel Typo="Typography.H6">Reassign Step #@(_targetStep.WorkflowStepOrder): @_targetStep.Title</CskLabel>
                     <CskButton Variant="CskButtonVariant.Text"
                                   IconStart="@CskIcons.Dismiss"
                                   OnClick="@CancelReassignStep" />
@@ -457,7 +457,7 @@
         <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
             <div class="stepper-modal-header">
                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
-                    <CskLabel Typo="Typography.H6">Add Subtask under Step #@(_targetStep.WorkflowStepOrder ?? 1)</CskLabel>
+                    <CskLabel Typo="Typography.H6">Add Subtask under Step #@(_targetStep.WorkflowStepOrder)</CskLabel>
                     <CskButton Variant="CskButtonVariant.Text"
                                   IconStart="@CskIcons.Dismiss"
                                   OnClick="@CancelAddSubtask" />
@@ -519,7 +519,7 @@
         <div class="stepper-modal-dialog" @onclick:stopPropagation="true">
             <div class="stepper-modal-header">
                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center">
-                    <CskLabel Typo="Typography.H6">Cancel Step #@(_targetStep.WorkflowStepOrder ?? 1): @_targetStep.Title</CskLabel>
+                    <CskLabel Typo="Typography.H6">Cancel Step #@(_targetStep.WorkflowStepOrder): @_targetStep.Title</CskLabel>
                     <CskButton Variant="CskButtonVariant.Text"
                                   IconStart="@CskIcons.Dismiss"
                                   OnClick="@CancelCancelStep" />

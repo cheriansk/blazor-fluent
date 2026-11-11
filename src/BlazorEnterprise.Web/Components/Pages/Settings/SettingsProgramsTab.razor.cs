@@ -27,6 +27,7 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
     [Inject] private IProgramService ProgramService { get; set; } = default!;
 
     [Inject] private ICalendarService CalendarService { get; set; } = default!;
+    [Inject] private IUnitOfWork UnitOfWork { get; set; } = default!;
 
     [Inject] private IHierarchyAuthorizationService HierarchyAuth { get; set; } = default!;
 
@@ -805,6 +806,7 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
         _programWizardInitialState = new BlazorEnterprise.Core.Dtos.CreateProgramWizardState
         {
             ProgramId = trackedProgram.Id,
+            Version = trackedProgram.Version,
 
             Code = trackedProgram.Code,
 
@@ -853,110 +855,92 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         try
         {
-            Guid targetProgramId;
+            Guid targetProgramId = Guid.Empty;
+            string programName = string.Empty;
 
-            string programName;
-
-            if (_isProgramWizardEditMode && _editingProgramId.HasValue)
+            var txResult = await UnitOfWork.ExecuteInTransactionAsync(async (scope, ct) =>
             {
-                var updateResult = await ProgramService.UpdateProgramAsync(
-
-                    _editingProgramId.Value,
-
-                    state.Name,
-
-                    state.Code,
-
-                    state.Description,
-
-                    state.StartDate,
-
-                    state.EndDate,
-
-                    state.Status,
-
-                    isActive: true);
-
-                if (!updateResult.Succeeded || updateResult.Data is null)
+                if (_isProgramWizardEditMode && _editingProgramId.HasValue)
                 {
-                    var err = updateResult.Errors.FirstOrDefault() ?? "Failed to update program.";
-                    _statusMessage = err;
-                    _isError = true;
+                    var updateResult = await ProgramService.UpdateProgramAsync(
+                        _editingProgramId.Value,
+                        state.Name,
+                        state.Code,
+                        state.Description,
+                        state.StartDate,
+                        state.EndDate,
+                        state.Status,
+                        isActive: true,
+                        version: state.Version,
+                        ct: ct);
 
-                    return err;
+                    if (!updateResult.Succeeded || updateResult.Data is null)
+                    {
+                        return Result.Failure(updateResult.Errors);
+                    }
+
+                    targetProgramId = _editingProgramId.Value;
+                    programName = updateResult.Data.Name;
+                }
+                else
+                {
+                    var createResult = await ProgramService.CreateProgramAsync(
+                        _selectedTenantId,
+                        state.Name,
+                        state.Code,
+                        state.Description,
+                        state.StartDate,
+                        state.EndDate,
+                        state.Status,
+                        ct: ct);
+
+                    if (!createResult.Succeeded || createResult.Data is null)
+                    {
+                        return Result.Failure(createResult.Errors);
+                    }
+
+                    targetProgramId = createResult.Data.Id;
+                    programName = createResult.Data.Name;
                 }
 
-                targetProgramId = _editingProgramId.Value;
-
-                programName = updateResult.Data.Name;
-            }
-
-            else
-            {
-                var createResult = await ProgramService.CreateProgramAsync(
-
-                    _selectedTenantId,
-
-                    state.Name,
-
-                    state.Code,
-
-                    state.Description,
-
-                    state.StartDate,
-
-                    state.EndDate,
-
-                    state.Status);
-
-                if (!createResult.Succeeded || createResult.Data is null)
+                // Sync Program Admins
+                if (state.AdminUsers != null)
                 {
-                    var err = createResult.Errors.FirstOrDefault() ?? "Failed to create program.";
-                    _statusMessage = err;
-                    _isError = true;
+                    var adminUserIds = state.AdminUsers.Select(a => a.UserId).ToList();
+                    var adminSyncResult = await ProgramService.SyncProgramAdminsAsync(targetProgramId, adminUserIds, ct);
 
-                    return err;
+                    if (!adminSyncResult.Succeeded)
+                    {
+                        return Result.Failure(adminSyncResult.Errors);
+                    }
                 }
 
-                targetProgramId = createResult.Data.Id;
-
-                programName = createResult.Data.Name;
-            }
-
-            // Sync Program Admins
-
-            if (state.AdminUsers != null)
-            {
-                var adminUserIds = state.AdminUsers.Select(a => a.UserId).ToList();
-                var adminSyncResult = await ProgramService.SyncProgramAdminsAsync(targetProgramId, adminUserIds);
-
-                if (!adminSyncResult.Succeeded)
+                // Persist Timeline rows and Milestones via shared ICalendarService
+                var tenantGuid = ResolveSelectedTenantGuid();
+                if (tenantGuid != Guid.Empty && state.TimelineRows != null)
                 {
-                    var err = $"Failed to synchronize program administrators: {string.Join("; ", adminSyncResult.Errors)}";
-                    _statusMessage = err;
-                    _isError = true;
+                    var saveScheduleResult = await CalendarService.SaveProgramCalendarScheduleAsync(
+                        tenantId: tenantGuid,
+                        programId: targetProgramId,
+                        timelineRows: state.TimelineRows,
+                        isBatchDraft: false,
+                        ct: ct);
 
-                    return err;
+                    if (!saveScheduleResult.Succeeded)
+                    {
+                        return Result.Failure(saveScheduleResult.Errors);
+                    }
                 }
-            }
 
-            // Persist Timeline rows and Milestones via shared ICalendarService
-            var tenantGuid = ResolveSelectedTenantGuid();
-            if (tenantGuid != Guid.Empty && state.TimelineRows != null)
+                return Result.Success();
+            }, "SaveProgramWizard");
+
+            if (!txResult.Succeeded)
             {
-                var saveScheduleResult = await CalendarService.SaveProgramCalendarScheduleAsync(
-                    tenantId: tenantGuid,
-                    programId: targetProgramId,
-                    timelineRows: state.TimelineRows,
-                    isBatchDraft: false);
-
-                if (!saveScheduleResult.Succeeded)
-                {
-                    var err = saveScheduleResult.Errors.FirstOrDefault() ?? "Failed to save program schedule.";
-                    _statusMessage = err;
-                    _isError = true;
-                    return err;
-                }
+                var err = txResult.Errors.FirstOrDefault() ?? txResult.Message ?? "Failed to save program.";
+                _statusMessage = err;
+                _isError = true;
+                return err;
             }
 
             _statusMessage = _isProgramWizardEditMode
@@ -1273,130 +1257,103 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         try
         {
-            Guid targetProjectId;
+            Guid targetProjectId = Guid.Empty;
+            string projectName = string.Empty;
+            string? projectShortCode = null;
 
-            string projectName;
-
-            string? projectShortCode;
-
-            if (_isWizardEditMode && _editingProjectId.HasValue)
+            var txResult = await UnitOfWork.ExecuteInTransactionAsync(async (scope, ct) =>
             {
-                var existingProject = _programs.SelectMany(p => p.Projects).FirstOrDefault(pr => pr.Id == _editingProjectId.Value);
-                var status = existingProject?.Status ?? ProjectStatusEnum.New;
-                var location = existingProject?.Location;
-
-                var result = await TenantService.UpdateTenantProjectAsync(
-
-                    tenantSlug: _selectedTenantId,
-
-                    projectId: _editingProjectId.Value,
-
-                    name: state.Name,
-
-                    shortCode: state.ShortCode,
-
-                    location: location,
-
-                    startDate: state.StartDate,
-
-                    endDate: state.EndDate,
-
-                    scopeSummary: state.ScopeSummary,
-
-                    status: status,
-
-                    programId: state.ProgramId);
-
-                if (!result.Succeeded || result.Data is null)
+                if (_isWizardEditMode && _editingProjectId.HasValue)
                 {
-                    var err = result.Errors.FirstOrDefault() ?? "Failed to update project.";
-                    _statusMessage = err;
-                    _isError = true;
+                    var existingProject = _programs.SelectMany(p => p.Projects).FirstOrDefault(pr => pr.Id == _editingProjectId.Value);
+                    var status = existingProject?.Status ?? ProjectStatusEnum.New;
+                    var location = existingProject?.Location;
 
-                    return err;
+                    var result = await TenantService.UpdateTenantProjectAsync(
+                        tenantSlug: _selectedTenantId,
+                        projectId: _editingProjectId.Value,
+                        name: state.Name,
+                        shortCode: state.ShortCode,
+                        location: location,
+                        startDate: state.StartDate,
+                        endDate: state.EndDate,
+                        scopeSummary: state.ScopeSummary,
+                        status: status,
+                        programId: state.ProgramId,
+                        cancellationToken: ct);
+
+                    if (!result.Succeeded || result.Data is null)
+                    {
+                        return Result.Failure(result.Errors);
+                    }
+
+                    targetProjectId = _editingProjectId.Value;
+                    projectName = result.Data.Name;
+                    projectShortCode = result.Data.ShortCode;
+                }
+                else
+                {
+                    var result = await TenantService.CreateTenantProjectAsync(
+                        tenantSlug: _selectedTenantId,
+                        name: state.Name,
+                        shortCode: state.ShortCode,
+                        location: null,
+                        startDate: state.StartDate,
+                        endDate: state.EndDate,
+                        scopeSummary: state.ScopeSummary,
+                        status: ProjectStatusEnum.New,
+                        programId: state.ProgramId,
+                        cancellationToken: ct);
+
+                    if (!result.Succeeded || result.Data is null)
+                    {
+                        return Result.Failure(result.Errors);
+                    }
+
+                    targetProjectId = result.Data.Id;
+                    projectName = result.Data.Name;
+                    projectShortCode = result.Data.ShortCode;
                 }
 
-                targetProjectId = _editingProjectId.Value;
-
-                projectName = result.Data.Name;
-
-                projectShortCode = result.Data.ShortCode;
-            }
-
-            else
-            {
-                var result = await TenantService.CreateTenantProjectAsync(
-
-                    tenantSlug: _selectedTenantId,
-
-                    name: state.Name,
-
-                    shortCode: state.ShortCode,
-
-                    location: null,
-
-                    startDate: state.StartDate,
-
-                    endDate: state.EndDate,
-
-                    scopeSummary: state.ScopeSummary,
-
-                    status: ProjectStatusEnum.New,
-
-                    programId: state.ProgramId);
-
-                if (!result.Succeeded || result.Data is null)
+                // Sync Project Roster Members
+                if (state.Roster != null)
                 {
-                    var err = result.Errors.FirstOrDefault() ?? "Failed to create project.";
-                    _statusMessage = err;
-                    _isError = true;
+                    var rosterSyncResult = await TenantService.SyncProjectRosterAsync(targetProjectId, state.Roster, ct);
 
-                    return err;
+                    if (!rosterSyncResult.Succeeded)
+                    {
+                        return Result.Failure(rosterSyncResult.Errors);
+                    }
                 }
 
-                targetProjectId = result.Data.Id;
-
-                projectName = result.Data.Name;
-
-                projectShortCode = result.Data.ShortCode;
-            }
-
-            // Sync Project Roster Members
-
-            if (state.Roster != null)
-            {
-                var rosterSyncResult = await TenantService.SyncProjectRosterAsync(targetProjectId, state.Roster);
-
-                if (!rosterSyncResult.Succeeded)
+                // Persist Project timeline phases and milestones via shared ICalendarService
+                var tenantGuid = ResolveSelectedTenantGuid();
+                if (tenantGuid != Guid.Empty && state.Phases != null)
                 {
-                    var err = $"Failed to synchronize project team roster: {string.Join("; ", rosterSyncResult.Errors)}";
-                    _statusMessage = err;
-                    _isError = true;
+                    var saveScheduleResult = await CalendarService.SaveProjectCalendarScheduleAsync(
+                        tenantId: tenantGuid,
+                        projectId: targetProjectId,
+                        programId: state.ProgramId,
+                        phases: state.Phases,
+                        isBatchDraft: false,
+                        ct: ct);
 
-                    return err;
+                    if (!saveScheduleResult.Succeeded)
+                    {
+                        return Result.Failure(saveScheduleResult.Errors);
+                    }
                 }
-            }
 
-            // Persist Project timeline phases and milestones via shared ICalendarService
-            var tenantGuid = ResolveSelectedTenantGuid();
-            if (tenantGuid != Guid.Empty && state.Phases != null)
+                return Result.Success();
+            }, "SaveProjectWizard");
+
+            if (!txResult.Succeeded)
             {
-                var saveScheduleResult = await CalendarService.SaveProjectCalendarScheduleAsync(
-                    tenantId: tenantGuid,
-                    projectId: targetProjectId,
-                    programId: state.ProgramId,
-                    phases: state.Phases,
-                    isBatchDraft: false);
-
-                if (!saveScheduleResult.Succeeded)
-                {
-                    var err = saveScheduleResult.Errors.FirstOrDefault() ?? "Failed to save project schedule.";
-                    _statusMessage = err;
-                    _isError = true;
-                    return err;
-                }
+                var err = txResult.Errors.FirstOrDefault() ?? txResult.Message ?? "Failed to save project.";
+                _statusMessage = err;
+                _isError = true;
+                return err;
             }
-
             _statusMessage = _isWizardEditMode
 
                 ? $"Project '{projectName}' updated successfully."

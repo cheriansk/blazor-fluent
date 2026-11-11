@@ -3,6 +3,7 @@ namespace BlazorEnterprise.Core.Dtos;
 public class ProjectMilestoneDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public uint Version { get; set; }
     public Guid? ParentTimelineId { get; set; }
     public Guid? ParentPhaseId
     {
@@ -26,6 +27,7 @@ public class ProjectMilestoneDto
 public class ProjectPhaseDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public uint Version { get; set; }
     public string Title { get; set; } = string.Empty;
     public string PhaseName
     {
@@ -41,7 +43,7 @@ public class ProjectPhaseDto
     }
     public string Status { get; set; } = "New";
     public string? Comments { get; set; }
-    public List<ProjectMilestoneDto> Milestones { get; set; } = new();
+    public List<ProjectMilestoneDto> Milestones { get; set; } = [];
 }
 
 public class ProjectRosterMemberDto
@@ -60,6 +62,7 @@ public partial class CreateProjectWizardState
 
     // Step 1: Basic Project Details
     public Guid? ProgramId { get; set; }
+    public uint Version { get; set; }
     public string Name { get; set; } = string.Empty;
     public string ShortCode { get; set; } = string.Empty;
     public string ScopeSummary { get; set; } = string.Empty;

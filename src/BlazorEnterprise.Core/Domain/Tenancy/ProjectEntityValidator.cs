@@ -21,6 +21,10 @@ public class ProjectEntityValidator : AbstractValidator<ProjectEntity>
         RuleFor(x => x.TenantId)
             .NotEmpty().WithMessage("Project TenantId is mandatory.");
 
+        RuleFor(x => x.ProgramId)
+            .NotNull().WithMessage("Project must be assigned to a governing Program.")
+            .Must(id => id.HasValue && id.Value != Guid.Empty).WithMessage("A valid ProgramId is mandatory. Projects cannot be standalone.");
+
         RuleFor(x => x.DueDate)
             .GreaterThanOrEqualTo(x => x.StartDate)
             .WithMessage("Project due date cannot precede start date.");

@@ -9,11 +9,11 @@ namespace BlazorEnterprise.Core.Domain.Knowledge;
 /// <summary>
 /// Represents a knowledge base article.
 /// Extends <see cref="TenantAuditableEntity"/> and <see cref="ISoftDeletableEntity"/>.
-/// Can be scoped to a project via <see cref="IProjectScopedEntity"/> or be cross-project/tenant/global.
+/// Can be scoped to a project via Target-Centric Edge Relations (<c>ProjectRelationEntity</c>) or be cross-project/tenant/global.
 /// Enforces 3NF relational normalization by persisting only <see cref="AuthorUserEntityId"/> and <see cref="ApprovedByUserEntityId"/>
 /// while exposing <see cref="NotMappedAttribute"/> convenience properties from <see cref="AuthorUser"/> and <see cref="ApprovedByUser"/>.
 /// </summary>
-public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntity, IProjectScopedEntity, IUnversionedEntity
+public class KnowledgeArticleEntity : ProjectScopedEntity, ISoftDeletableEntity, IUnversionedEntity
 {
     /// <summary>
     /// Concise headline title of the article. Required. Max 100 characters.
@@ -50,13 +50,14 @@ public class KnowledgeArticleEntity : TenantAuditableEntity, ISoftDeletableEntit
     public required KnowledgeArticleStatusEnum Status { get; set; }
 
     /// <summary>
-    /// Optional project to which the article belongs.
+    /// Optional project to which the article belongs (populated via ProjectRelationEntity).
     /// </summary>
-    public Guid ProjectId { get; set; }
+    // Inherits ProjectId from ProjectScopedEntity
 
     /// <summary>
-    /// Optional project navigation.
+    /// Optional project navigation forwarder.
     /// </summary>
+    [NotMapped]
     public ProjectEntity? Project { get; set; }
 
     // --- Author Foreign Key & Navigation ---

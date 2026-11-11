@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -51,7 +51,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
 
         file.Status = ImportStatusEnum.Validating;
         file.StepStage = "Validate";
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         var errors = new List<FileValidationError>();
         var maxErrors = config.MaxErrorThreshold > 0 ? config.MaxErrorThreshold : 500;
@@ -279,7 +279,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
                 file.ValidationErrorsJson = JsonSerializer.Serialize(errors, JsonDefaults.StandardOptions);
                 file.ErrorMessage = $"Validation failed with {errors.Count} error(s). All-or-nothing policy aborted staging.";
                 file.ProcessedAtUtc = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync(ct);
+                _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                 return Result<int>.Failure(file.ErrorMessage);
             }
@@ -287,7 +287,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             // Stage into 'staging.StagedImports' in chunks of ChunkSize (1,000 rows default)
             file.Status = ImportStatusEnum.Staging;
             file.StepStage = "Stage";
-            await _dbContext.SaveChangesAsync(ct);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             // Remove any prior uncommitted staged chunks for idempotency
             var existingChunks = await _dbContext.StagedImports
@@ -296,7 +296,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             if (existingChunks.Count > 0)
             {
                 _dbContext.StagedImports.RemoveRange(existingChunks);
-                await _dbContext.SaveChangesAsync(ct);
+                _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
             }
 
             foreach (var chunk in stagedChunksToPersist)
@@ -337,7 +337,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
                 _dbContext.StagedImports.Add(stagedEntity);
             }
 
-            await _dbContext.SaveChangesAsync(ct);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             int totalStagedRows = stagedChunksToPersist.Sum(c => c.RowCount);
             file.Status = ImportStatusEnum.StagingSuccess;
@@ -346,7 +346,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             file.ValidRowsCount = totalStagedRows;
             file.ErrorRowsCount = 0;
             file.ErrorMessage = null;
-            await _dbContext.SaveChangesAsync(ct);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation(
                 "Successfully staged {RowCount} rows across {ChunkCount} canonical JSON chunk(s) into staging.StagedImports for FileId={FileId}.",
@@ -361,7 +361,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             file.StepStage = "ValidationFailed";
             file.ErrorMessage = $"Staging failure: {ex.Message}";
             file.ProcessedAtUtc = DateTime.UtcNow;
-            await _dbContext.SaveChangesAsync(ct);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             return Result<int>.Failure(file.ErrorMessage);
         }

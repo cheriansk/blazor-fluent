@@ -43,7 +43,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private ProjectEntity? _currentProject;
     private List<ProjectEntity> _availableProjects = [];
     private List<TaskEntity> _tasks = [];
-    private List<ProjectCalendarEntity> _milestones = [];
+    private List<CalendarEntity> _milestones = [];
     private List<MilestoneHealthSummaryDto> _milestonesHealth = [];
     private ProjectHealthSummaryDto _projectHealth = new();
     private Dictionary<Guid, string> _milestoneLookup = new();
@@ -67,7 +67,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private string _createErrorMessage = string.Empty;
     private string _milestoneErrorMessage = string.Empty;
 
-    private TaskEntity _newTask = new()
+    private MiscTaskEntity _newTask = new()
     {
         Level = TaskLevelEnum.Project,
         Title = string.Empty,
@@ -105,7 +105,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private string? _newDepNotes;
 
     // Milestone create form
-    private ProjectCalendarEntity _newMilestone = new()
+    private CalendarEntity _newMilestone = new()
     {
         Title = string.Empty,
         StartDate = DateTime.UtcNow.Date,
@@ -298,7 +298,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private void OpenCreateTaskModal()
     {
         _createErrorMessage = string.Empty;
-        _newTask = new TaskEntity
+        _newTask = new MiscTaskEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
             Priority = TaskPriorityEnum.Medium,
@@ -320,7 +320,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private void OpenMilestonesModal()
     {
         _milestoneErrorMessage = string.Empty;
-        _newMilestone = new ProjectCalendarEntity
+        _newMilestone = new CalendarEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
             Title = string.Empty,

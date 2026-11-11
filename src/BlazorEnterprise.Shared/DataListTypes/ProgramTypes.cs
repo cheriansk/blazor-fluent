@@ -80,6 +80,24 @@ public static class ProgramRoleExtensions
 {
     public static bool Satisfies(this ProgramRoleEnum role, ProgramRoleEnum requiredRole) =>
         (int)role >= (int)requiredRole;
+
+    /// <summary>
+    /// Returns true if the role has permission to view program data (ReadOnly and above).
+    /// </summary>
+    public static bool CanRead(this ProgramRoleEnum role) =>
+        (int)role >= (int)ProgramRoleEnum.ReadOnly;
+
+    /// <summary>
+    /// Returns true if the role has permission to write/mutate program-level data (Lead and above).
+    /// </summary>
+    public static bool CanWrite(this ProgramRoleEnum role) =>
+        (int)role >= (int)ProgramRoleEnum.Lead;
+
+    /// <summary>
+    /// Returns true if the role has full administrative control over the program (Admin).
+    /// </summary>
+    public static bool CanManageAccess(this ProgramRoleEnum role) =>
+        (int)role >= (int)ProgramRoleEnum.Admin;
 }
 
 /// <summary>
@@ -140,4 +158,5 @@ public class CrossProjectDependencyDto
     public DateTime? ResolveByUtc { get; set; }
     public bool IsResolved { get; set; }
     public bool IsOverdue => !IsResolved && ResolveByUtc.HasValue && ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
+    public bool CanAccessTargetItem { get; set; } = true;
 }

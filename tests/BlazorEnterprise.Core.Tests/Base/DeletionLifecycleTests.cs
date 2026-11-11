@@ -75,7 +75,7 @@ public class DeletionLifecycleTests
 
     [Theory]
     [InlineData(typeof(TenantEntity))]
-    [InlineData(typeof(ProjectCalendarEntity))]
+    [InlineData(typeof(CalendarEntity))]
     [InlineData(typeof(WorkDependencyEntity))]
     [InlineData(typeof(ProjectEntity))]
     [InlineData(typeof(ProgramEntity))]

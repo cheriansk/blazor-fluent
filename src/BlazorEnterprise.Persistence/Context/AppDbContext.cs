@@ -48,12 +48,23 @@ namespace BlazorEnterprise.Persistence.Context;
 public class AppDbContext : DbContext, IDataProtectionKeyContext
 
 {
+    /// <summary>
+    /// Internal flag authorized only when saving through a managed TransactionContext (ITransactionScope).
+    /// Direct SaveChanges / SaveChangesAsync calls without this flag set fail-closed.
+    /// </summary>
+    public bool IsTransactionScopeCommitAuthorized { get; set; }
+
+    /// <summary>
+    /// Flag indicating if this DbContext is managed by an ambient TransactionContext.
+    /// Prevents premature disposal of shared context during nested service calls.
+    /// </summary>
+    public bool IsManagedByAmbientScope { get; set; }
 
     /// <summary>
 
     /// Explicit whitelist of host-wide global platform entities allowed to omit TenantId.
 
-    /// Any other entity attempting to register without ITenantEntity will trigger an immediate startup exception.
+    /// Any other entity attempting to register without TenantScopedEntity will trigger an immediate startup exception.
 
     /// </summary>
 
@@ -146,6 +157,10 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ImpersonationGrantEntity> ImpersonationGrants => Set<ImpersonationGrantEntity>();
 
     public DbSet<TaskEntity> Tasks => Set<TaskEntity>();
+    public DbSet<SprintTaskEntity> SprintTasks => Set<SprintTaskEntity>();
+    public DbSet<WorkflowTaskEntity> WorkflowTasks => Set<WorkflowTaskEntity>();
+    public DbSet<MiscTaskEntity> MiscTasks => Set<MiscTaskEntity>();
+    public DbSet<DeliverableEntity> Deliverables => Set<DeliverableEntity>();
 
     public DbSet<SubTaskEntity> SubTasks => Set<SubTaskEntity>();
 
@@ -156,10 +171,11 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<IssueEntity> Issues => Set<IssueEntity>();
 
     public DbSet<WorkDependencyEntity> WorkDependencies => Set<WorkDependencyEntity>();
+                        public DbSet<CalendarEntity> Calendars => Set<CalendarEntity>();
 
-    public DbSet<ProgramCalendarEntity> ProgramCalendars => Set<ProgramCalendarEntity>();
+    
 
-    public DbSet<ProjectCalendarEntity> ProjectCalendars => Set<ProjectCalendarEntity>();
+    
 
     public DbSet<UserCalendarEntity> UserCalendars => Set<UserCalendarEntity>();
 
@@ -216,6 +232,16 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
         base.OnModelCreating(modelBuilder);
 
+        // Enforce Zero-Slug multi-tenant column ordering: TenantId is strictly Column 0 on all tenant entities
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(TenantScopedEntity).IsAssignableFrom(entity.ClrType))
+            {
+                var tenantProp = entity.FindProperty(nameof(TenantScopedEntity.TenantId));
+                tenantProp?.SetColumnOrder(0);
+            }
+        }
+
 
 
         // 1. Discovers and applies all IEntityTypeConfiguration classes in this assembly
@@ -256,19 +282,19 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
                     $"Every entity must inherit from '{nameof(BaseEntity)}'.");
             }
 
-            // Fail-closed TenantAuditableEntity Rule: Every entity MUST inherit TenantAuditableEntity unless in the 4-entity global whitelist
-            if (!typeof(TenantAuditableEntity).IsAssignableFrom(clrType) && !WhitelistedGlobalEntities.Contains(clrType))
+            // Fail-closed TenantScopedEntity Rule: Every entity MUST inherit TenantScopedEntity unless in the 4-entity global whitelist
+            if (!typeof(TenantScopedEntity).IsAssignableFrom(clrType) && !WhitelistedGlobalEntities.Contains(clrType))
             {
                 throw new InvalidOperationException(
                     $"Entity '{clrType.Name}' violates multi-tenant security architecture! " +
-                    $"Every entity must extend '{nameof(TenantAuditableEntity)}' unless explicitly whitelisted in '{nameof(WhitelistedGlobalEntities)}'.");
+                    $"Every entity must extend '{nameof(TenantScopedEntity)}' unless explicitly whitelisted in '{nameof(WhitelistedGlobalEntities)}'.");
             }
 
 
 
             var isGlobal = typeof(IGlobalEntity).IsAssignableFrom(clrType);
 
-            var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
+            var isTenant = typeof(TenantScopedEntity).IsAssignableFrom(clrType);
 
             var isSoftDeletable = typeof(ISoftDeletableEntity).IsAssignableFrom(clrType);
 
@@ -276,7 +302,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
             var isImmutable = typeof(IImmutableEntity).IsAssignableFrom(clrType);
 
-            var isProjectScoped = typeof(IProjectScopedEntity).IsAssignableFrom(clrType);
+            var isProjectScoped = typeof(ProjectScopedEntity).IsAssignableFrom(clrType);
             var isVersioned = typeof(IVersionedEntity).IsAssignableFrom(clrType);
             var isUnversioned = typeof(IUnversionedEntity).IsAssignableFrom(clrType);
 
@@ -328,6 +354,14 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
             }
 
+            // Fail-closed Non-Overlap Rule: An entity cannot be both IGlobalEntity and TenantScopedEntity
+            if (isGlobal && isTenant)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{clrType.Name}' violates architectural non-overlap rules! " +
+                    $"It cannot simultaneously implement '{nameof(IGlobalEntity)}' and inherit from '{nameof(TenantScopedEntity)}'.");
+            }
+
 
 
             // Fail-closed Global Whitelist Guard: Only approved platform tables may omit TenantId
@@ -356,7 +390,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
                     $"Entity '{clrType.Name}' violates multi-tenant security architecture! " +
 
-                    $"It must implement '{nameof(ITenantEntity)}' (for tenant-level isolation). " +
+                    $"It must implement '{nameof(TenantScopedEntity)}' (for tenant-level isolation). " +
 
                     $"Global entities are strictly limited to the approved platform whitelist.");
 
@@ -364,7 +398,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
 
 
-            // Fail-closed Project-Scoped Rule: every IProjectScopedEntity MUST also implement ITenantEntity
+            // Fail-closed Project-Scoped Rule: every ProjectScopedEntity MUST also inherit TenantScopedEntity
 
             if (isProjectScoped && !isTenant)
 
@@ -372,7 +406,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
                 throw new InvalidOperationException(
 
-                    $"Entity '{clrType.Name}' implements '{nameof(IProjectScopedEntity)}' but violates multi-tenant architecture by not implementing '{nameof(ITenantEntity)}'! " +
+                    $"Entity '{clrType.Name}' implements '{nameof(ProjectScopedEntity)}' but violates multi-tenant architecture by not implementing '{nameof(TenantScopedEntity)}'! " +
 
                     $"All project-level tables must be strictly partitioned by both TenantId and ProjectId.");
 
@@ -380,72 +414,56 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
 
 
-            // Fail-closed Validation Rule: every entity must have a registered IValidator<TEntity>
-
-            if (_serviceProvider is not null)
-
+            // Fail-closed Validation Rule: every concrete entity must have a registered IValidator<TEntity>
+            if (_serviceProvider is not null && !clrType.IsAbstract)
             {
-
                 var validatorType = typeof(IValidator<>).MakeGenericType(clrType);
 
                 if (_serviceProvider.GetService(validatorType) is null)
-
                 {
-
                     throw new InvalidOperationException(
-
                         $"Entity '{clrType.Name}' violates the mandatory entity validation architecture! " +
-
                         $"It lacks a registered 'IValidator<{clrType.Name}>' in DI. " +
-
                         $"Every business entity must have a companion validator class.");
-
                 }
-
             }
 
 
 
             // Apply EF Core 10 Named Global Query Filters & Indexes
+            // Note: In EF Core, Global Query Filters may ONLY be specified on the root entity of an inheritance hierarchy
+            var isRootEntity = entityType.BaseType == null;
 
             if (isTenant)
-
             {
-
-                var method = typeof(AppDbContext)
-
-                    .GetMethod(nameof(ConfigureNamedTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
-
-                    .MakeGenericMethod(clrType);
-
-                method.Invoke(this, [modelBuilder]);
-
-
-
-                modelBuilder.Entity(clrType, builder =>
-
+                if (isRootEntity)
                 {
+                    var method = typeof(AppDbContext)
+                        .GetMethod(nameof(ConfigureNamedTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                        .MakeGenericMethod(clrType);
 
-                    builder.HasIndex(nameof(ITenantEntity.TenantId));
+                    method.Invoke(this, [modelBuilder]);
+                }
 
-                });
+                var hasTenantIndex = entityType.GetIndexes().Any(idx =>
+                    idx.Properties.Count == 1 && idx.Properties[0].Name == nameof(TenantScopedEntity.TenantId));
 
+                if (!hasTenantIndex)
+                {
+                    modelBuilder.Entity(clrType, builder =>
+                    {
+                        builder.HasIndex(nameof(TenantScopedEntity.TenantId));
+                    });
+                }
             }
 
-
-
-            if (isSoftDeletable)
-
+            if (isSoftDeletable && isRootEntity)
             {
-
                 var method = typeof(AppDbContext)
-
                     .GetMethod(nameof(ConfigureNamedSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
-
                     .MakeGenericMethod(clrType);
 
                 method.Invoke(this, [modelBuilder]);
-
             }
 
 
@@ -468,26 +486,26 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
             }
             // Enforce audit columns (Updated is audit-only, not a concurrency token)
-            if (typeof(IAuditableEntity).IsAssignableFrom(clrType))
+            if (typeof(BaseEntity).IsAssignableFrom(clrType))
             {
                 modelBuilder.Entity(clrType, builder =>
                 {
-                    builder.Property(nameof(IAuditableEntity.Created))
+                    builder.Property(nameof(BaseEntity.Created))
                         .HasColumnName("Created")
                         .HasColumnType(timestampColumnType)
                         .IsRequired();
 
-                    builder.Property(nameof(IAuditableEntity.CreatedBy))
+                    builder.Property(nameof(BaseEntity.CreatedBy))
                         .HasColumnName("CreatedBy")
                         .HasMaxLength(256)
                         .IsRequired();
 
-                    builder.Property(nameof(IAuditableEntity.Updated))
+                    builder.Property(nameof(BaseEntity.Updated))
                         .HasColumnName("Updated")
                         .HasColumnType(timestampColumnType)
                         .IsRequired();
 
-                    builder.Property(nameof(IAuditableEntity.UpdatedBy))
+                    builder.Property(nameof(BaseEntity.UpdatedBy))
                         .HasColumnName("UpdatedBy")
                         .HasMaxLength(256)
                         .IsRequired(false);
@@ -554,7 +572,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
             {
 
-                entityType.FindProperty(nameof(ITenantEntity.TenantId))?
+                entityType.FindProperty(nameof(TenantScopedEntity.TenantId))?
 
                     .SetAfterSaveBehavior(PropertySaveBehavior.Throw);
 
@@ -619,7 +637,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
     private void ConfigureNamedTenantFilter<TEntity>(ModelBuilder modelBuilder)
 
-        where TEntity : class, ITenantEntity
+        where TEntity : TenantScopedEntity
 
     {
 
@@ -657,5 +675,34 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
     }
 
-}
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        if (BlazorEnterprise.Persistence.Services.AmbientTransactionContext.Current is { } scope && ReferenceEquals(scope.DbContext, this))
+        {
+            scope.IngestTrackedEntityDomainEvents();
+        }
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        if (BlazorEnterprise.Persistence.Services.AmbientTransactionContext.Current is { } scope && ReferenceEquals(scope.DbContext, this))
+        {
+            scope.IngestTrackedEntityDomainEvents();
+        }
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    public override void Dispose()
+    {
+        if (IsManagedByAmbientScope) return;
+        base.Dispose();
+    }
+
+    public override ValueTask DisposeAsync()
+    {
+        if (IsManagedByAmbientScope) return ValueTask.CompletedTask;
+        return base.DisposeAsync();
+    }
+}

@@ -440,7 +440,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
             .AsNoTracking()
 
-            .AnyAsync(r => projectIdsInProgram.Contains(r.ProjectId) &&
+            .AnyAsync(r => r.ProjectId.HasValue && projectIdsInProgram.Contains(r.ProjectId.Value) &&
 
                            ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
 
@@ -539,7 +539,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                         !r.IsDeleted)
 
-            .Select(r => r.ProgramId)
+            .Where(r => r.ProgramId.HasValue).Select(r => r.ProgramId!.Value)
 
             .ToListAsync(ct);
 
@@ -553,7 +553,7 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
 
                         !r.IsDeleted)
 
-            .Select(r => r.ProjectId)
+            .Where(r => r.ProjectId.HasValue).Select(r => r.ProjectId!.Value)
 
             .ToListAsync(ct);
 
@@ -664,29 +664,22 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
             return projectRoleEntity.Role;
         }
 
-        // 2. Check parent Program membership (The "ReadOnly Floor" rule)
-
+        // 2. Check parent Program Admin rights
         if (project.ProgramId.HasValue)
         {
             var programRoleEntity = await _context.ProgramUserRoles
-
                 .AsNoTracking()
-
                 .Where(r => r.ProgramId == project.ProgramId.Value &&
-
                             ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
-
                             !r.IsDeleted)
-
                 .FirstOrDefaultAsync(ct);
 
-            if (programRoleEntity != null)
+            if (programRoleEntity != null && programRoleEntity.Role == ProgramRoleEnum.Admin)
             {
                 var integritySecret = _securityOptions.IntegritySecret;
-
                 if (string.IsNullOrWhiteSpace(integritySecret) || programRoleEntity.VerifyIntegritySignature(integritySecret))
                 {
-                    return ProjectRoleEnum.ReadOnly;
+                    return ProjectRoleEnum.Admin;
                 }
             }
         }
@@ -902,5 +895,167 @@ public class HierarchyAuthorizationService : IHierarchyAuthorizationService
         }
 
         return false;
+    }
+
+    public async Task<ProgramRoleEnum?> GetEffectiveProgramRoleAsync(Guid programId, string? userId = null, CancellationToken ct = default)
+    {
+        await using var _context = await _dbFactory.CreateDbContextAsync(ct);
+        if (programId == Guid.Empty) return null;
+
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : _currentUser.Email);
+
+        if (string.IsNullOrWhiteSpace(targetUserId)) return null;
+
+        var program = await _context.Programs
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(p => p.Id == programId && !p.IsDeleted)
+            .Select(p => new { p.TenantId })
+            .FirstOrDefaultAsync(ct);
+
+        if (program == null) return null;
+
+        // Tenant Admin has overarching Admin rights on all child programs
+        if (await IsTenantAdminAsync(program.TenantId, targetUserId, ct))
+        {
+            return ProgramRoleEnum.Admin;
+        }
+
+        var normalizedUser = targetUserId.Trim().ToLowerInvariant();
+        var hasGuid = Guid.TryParse(normalizedUser, out var userGuid);
+
+        var programRoleEntity = await _context.ProgramUserRoles
+            .AsNoTracking()
+            .Where(r => r.ProgramId == programId &&
+                        ((hasGuid && r.UserEntityId == userGuid) || r.User!.Email.ToLower() == normalizedUser) &&
+                        !r.IsDeleted)
+            .FirstOrDefaultAsync(ct);
+
+        if (programRoleEntity != null)
+        {
+            var integritySecret = _securityOptions.IntegritySecret;
+            if (!string.IsNullOrWhiteSpace(integritySecret) && !programRoleEntity.VerifyIntegritySignature(integritySecret))
+            {
+                await _auditService.LogSecurityEventAsync(
+                    "TamperedProgramUserRoleDetected",
+                    AuditSeverityEnum.Critical,
+                    $"ProgramUserRole {programRoleEntity.Id} for user '{targetUserId}' on program '{programId}' failed HMAC integrity verification. Access denied.",
+                    ct);
+                return null;
+            }
+
+            return programRoleEntity.Role;
+        }
+
+        return null;
+    }
+
+    public async Task<bool> HasProgramClearanceAsync(Guid programId, ProgramRoleEnum minimumTier, string? userId = null, CancellationToken ct = default)
+    {
+        var effectiveRole = await GetEffectiveProgramRoleAsync(programId, userId, ct);
+        return effectiveRole.HasValue && (int)effectiveRole.Value >= (int)minimumTier;
+    }
+
+    public async Task EnsureHasProgramClearanceAsync(Guid programId, ProgramRoleEnum minimumTier, string? userId = null, CancellationToken ct = default)
+    {
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : "anonymous");
+
+        var effectiveRole = await GetEffectiveProgramRoleAsync(programId, targetUserId, ct);
+        if (!effectiveRole.HasValue || (int)effectiveRole.Value < (int)minimumTier)
+        {
+            _logger.LogWarning(
+                "AUDIT [Security]: Program clearance denied. UserId='{UserId}', ProgramId='{ProgramId}', RequiredTier='{RequiredTier}', ActualTier='{ActualTier}'",
+                targetUserId, programId, minimumTier, effectiveRole?.ToString() ?? "None");
+
+            await _auditService.LogSecurityEventAsync(
+                "ProgramClearanceDenied",
+                AuditSeverityEnum.Warning,
+                $"Program clearance denied. Required: {minimumTier}, Actual: {effectiveRole?.ToString() ?? "None"}. ProgramId: {programId}",
+                ct);
+
+            throw new System.Security.SecurityException(
+                $"Zero Trust Security Violation: User lacks required clearance ({minimumTier}) for program {programId}.");
+        }
+    }
+
+    public async Task EnsureIsTenantAdminAsync(Guid tenantId, string? userId = null, CancellationToken ct = default)
+    {
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : "anonymous");
+
+        if (!await IsTenantAdminAsync(tenantId, targetUserId, ct))
+        {
+            _logger.LogWarning(
+                "AUDIT [Security]: Tenant Admin clearance denied. UserId='{UserId}', TenantId='{TenantId}'",
+                targetUserId, tenantId);
+
+            await _auditService.LogSecurityEventAsync(
+                "TenantAdminClearanceDenied",
+                AuditSeverityEnum.Warning,
+                $"Tenant Admin clearance denied. TenantId: {tenantId}, UserId: {targetUserId}",
+                ct);
+
+            throw new System.Security.SecurityException(
+                $"Zero Trust Security Violation: User is not an authorized Tenant Administrator for tenant {tenantId}.");
+        }
+    }
+
+    public async Task<bool> CanViewScopedItemAsync(TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default)
+    {
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : _currentUser.Email);
+
+        if (string.IsNullOrWhiteSpace(targetUserId)) return false;
+
+        if (await IsTenantAdminAsync(tenantId, targetUserId, ct)) return true;
+
+        return level switch
+        {
+            TaskLevelEnum.Tenant => false, // Only tenant admin
+            TaskLevelEnum.Program => programId.HasValue && await HasProgramClearanceAsync(programId.Value, ProgramRoleEnum.ReadOnly, targetUserId, ct),
+            TaskLevelEnum.Project => projectId.HasValue && await HasProjectClearanceAsync(projectId.Value, ProjectRoleEnum.ReadOnly, targetUserId, ct),
+            _ => true
+        };
+    }
+
+    public async Task<bool> CanEditScopedItemAsync(TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default)
+    {
+        var targetUserId = !string.IsNullOrWhiteSpace(userId)
+            ? userId
+            : (!string.IsNullOrWhiteSpace(_currentUser.UserId) ? _currentUser.UserId : _currentUser.Email);
+
+        if (string.IsNullOrWhiteSpace(targetUserId)) return false;
+
+        if (await IsTenantAdminAsync(tenantId, targetUserId, ct)) return true;
+
+        return level switch
+        {
+            TaskLevelEnum.Tenant => false, // Only tenant admin
+            TaskLevelEnum.Program => programId.HasValue && await HasProgramClearanceAsync(programId.Value, ProgramRoleEnum.Lead, targetUserId, ct),
+            TaskLevelEnum.Project => projectId.HasValue && await HasProjectClearanceAsync(projectId.Value, ProjectRoleEnum.Contribute, targetUserId, ct),
+            _ => true
+        };
+    }
+
+    public async Task EnsureCanViewScopedItemAsync(TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default)
+    {
+        if (!await CanViewScopedItemAsync(level, tenantId, programId, projectId, userId, ct))
+        {
+            throw new System.Security.SecurityException($"Zero Trust Security Violation: User lacks View access for {level} scoped item.");
+        }
+    }
+
+    public async Task EnsureCanEditScopedItemAsync(TaskLevelEnum level, Guid tenantId, Guid? programId, Guid? projectId, string? userId = null, CancellationToken ct = default)
+    {
+        if (!await CanEditScopedItemAsync(level, tenantId, programId, projectId, userId, ct))
+        {
+            throw new System.Security.SecurityException($"Zero Trust Security Violation: User lacks Edit/Mutate clearance for {level} scoped item.");
+        }
     }
 }

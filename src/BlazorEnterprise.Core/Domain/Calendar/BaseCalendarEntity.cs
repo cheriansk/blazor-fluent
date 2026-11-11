@@ -10,7 +10,7 @@ namespace BlazorEnterprise.Core.Domain.Calendar;
 /// Tied to tenant via sequential UUIDv7 <see cref="TenantAuditableEntity.TenantId"/>.
 /// Implements <see cref="IEffectiveDatedEntity"/> (StartDate and EndDate) and <see cref="ISoftDeletableEntity"/>.
 /// </summary>
-public abstract class BaseCalendarEntity : TenantAuditableEntity, IEffectiveDatedEntity, ISoftDeletableEntity
+public abstract class BaseCalendarEntity : ProjectScopedEntity, IEffectiveDatedEntity, ISoftDeletableEntity
 {
     /// <summary>
     /// Title for the Event

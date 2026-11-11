@@ -1,62 +1,26 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Base;
-using BlazorEnterprise.Core.Domain.Sprints;
 
 namespace BlazorEnterprise.Core.Domain.Tasks;
 
 /// <summary>
-/// Standard work item / task.
+/// Abstract base class for executable tasks.
+/// Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, MiscTaskEntity.
 /// Inherits from <see cref="BaseTaskEntity"/>.
-/// Can act as a standalone task or as a sequential step in a <see cref="WorkflowEntity"/>.
-/// Can have one or more <see cref="SubTaskEntity"/> children delegated to team members.
 /// </summary>
-public partial class TaskEntity : BaseTaskEntity, IProjectScopedEntity, IMilestoneLinkedEntity, IUnversionedEntity
+public abstract partial class TaskEntity : BaseTaskEntity, IMilestoneLinkedEntity
 {
     /// <summary>
-    /// ID of the project to which this task belongs (when Level is Project).
-    /// </summary>
-    public new Guid ProjectId
-    {
-        get => base.ProjectId ?? Guid.Empty;
-        set => base.ProjectId = value == Guid.Empty ? null : value;
-    }
-
-    /// <summary>
     /// Planned / estimated effort hours for the task.
-    /// Not present or available on SubTaskEntity.
     /// </summary>
     public decimal? EstimatedHours { get; set; }
 
     /// <summary>
-    /// Optional foreign key to a project milestone. Null indicates an ad-hoc task.
+    /// Optional milestone association. Hydrated via MilestoneRelationEntity.
     /// </summary>
+    [NotMapped]
     public Guid? MilestoneId { get; set; }
-
-    /// <summary>
-    /// Optional foreign key to the assigned sprint iteration. Null indicates backlog / unassigned.
-    /// A task can be assigned to at most 1 sprint at a time.
-    /// </summary>
-    public Guid? SprintId { get; set; }
-
-    /// <summary>
-    /// Assigned sprint iteration.
-    /// </summary>
-    public SprintEntity? Sprint { get; set; }
-
-    /// <summary>
-    /// Optional foreign key referencing the governing workflow pipeline (null for standalone tasks).
-    /// </summary>
-    public Guid? WorkflowId { get; set; }
-
-    /// <summary>
-    /// 1-based sequential execution index within the workflow (null for standalone tasks).
-    /// </summary>
-    public int? WorkflowStepOrder { get; set; }
-
-    /// <summary>
-    /// Governing workflow pipeline.
-    /// </summary>
-    public WorkflowEntity? Workflow { get; set; }
 
     /// <summary>
     /// Collection of child subtasks directly governed by this task.

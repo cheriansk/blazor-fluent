@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using BlazorEnterprise.Shared.Models;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -142,7 +142,7 @@ public class ImportFileService : IImportFileService
 
             // 2. Atomically persist all ImportFileEntity records in PostgreSQL
             _context.ImportFiles.AddRange(importFiles);
-            await _context.SaveChangesAsync(ct);
+            _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
 
             _logger.LogInformation("Batch {ImportId} with {FileCount} file(s) uploaded and encrypted for Tenant {TenantId}, Project {ProjectId}",
                 importId, importFiles.Count, tenantGuid, request.ProjectId);
@@ -236,7 +236,7 @@ public class ImportFileService : IImportFileService
             .Select(f => new ImportFileSummaryDto(
                 f.Id,
                 f.ImportId,
-                f.ProjectId,
+                f.ProjectId ?? Guid.Empty,
                 f.OriginalFileName,
                 f.StorageFolder,
                 f.FileType,
@@ -265,7 +265,7 @@ public class ImportFileService : IImportFileService
             .Select(f => new ImportFileSummaryDto(
                 f.Id,
                 f.ImportId,
-                f.ProjectId,
+                f.ProjectId ?? Guid.Empty,
                 f.OriginalFileName,
                 f.StorageFolder,
                 f.FileType,
@@ -309,7 +309,7 @@ public class ImportFileService : IImportFileService
 
         return new ImportFileDetailsDto(
             file.Id,
-            file.ProjectId,
+            file.ProjectId ?? Guid.Empty,
             file.OriginalFileName,
             file.BlobUri,
             file.FileType,
@@ -345,7 +345,7 @@ public class ImportFileService : IImportFileService
             .Where(s => s.TenantId == tenantId && s.ProjectId == projectId && s.ImportFileId == importFileId)
             .ExecuteDeleteAsync(ct);
 
-        await _context.SaveChangesAsync(ct);
+        _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
         return Result<bool>.Success(true);
     }
 

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using BlazorEnterprise.Core.Exceptions;
 using BlazorEnterprise.Persistence.Context;
 using FluentValidation;
@@ -68,6 +68,65 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
         foreach (var entry in entries)
         {
             var entityType = entry.Entity.GetType();
+            // Hierarchy Scoping Invariants Verification
+            if (entry.Entity is BlazorEnterprise.Core.Domain.Base.TenantScopedEntity tenantScoped)
+            {
+                if (tenantScoped.TenantId == Guid.Empty)
+                {
+                    var entityName = entityType.Name;
+                    if (!errors.ContainsKey(entityName)) errors[entityName] = new();
+                    errors[entityName].Add("TenantId must not be empty.");
+                }
+                if (entry.Entity is BlazorEnterprise.Core.Domain.Base.ProgramScopedEntity progScoped)
+                {
+                    var projScoped = entry.Entity as BlazorEnterprise.Core.Domain.Base.ProjectScopedEntity;
+                    var projectId = projScoped?.ProjectId;
+                    var programId = progScoped.ProgramId;
+
+                    switch (tenantScoped.Level)
+                    {
+                        case BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum.Tenant:
+                            if (programId.HasValue || projectId.HasValue)
+                            {
+                                var entityName = entityType.Name;
+                                if (!errors.ContainsKey(entityName)) errors[entityName] = new();
+                                errors[entityName].Add("Tenant-level entities must have null ProgramId and ProjectId.");
+                            }
+                            break;
+                        case BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum.Program:
+                            if (!programId.HasValue || programId.Value == Guid.Empty || projectId.HasValue)
+                            {
+                                var entityName = entityType.Name;
+                                if (!errors.ContainsKey(entityName)) errors[entityName] = new();
+                                errors[entityName].Add("Program-level entities must have a valid ProgramId and null ProjectId.");
+                            }
+                            break;
+                        case BlazorEnterprise.Shared.DataListTypes.TaskLevelEnum.Project:
+                            if (!projectId.HasValue || projectId.Value == Guid.Empty)
+                            {
+                                var entityName = entityType.Name;
+                                if (!errors.ContainsKey(entityName)) errors[entityName] = new();
+                                errors[entityName].Add("Project-level entities must have a valid ProjectId.");
+                            }
+                            break;
+                    }
+                }
+            }
+
+            if (entry.Entity is BlazorEnterprise.Core.Domain.Auditing.AuditRecordEntity audit)
+            {
+                if (audit.RetentionDays == 0 || !Enum.IsDefined(audit.RetentionDays))
+                {
+                    audit.RetentionDays = audit.EventType == BlazorEnterprise.Shared.DataListTypes.AuditEventTypeEnum.Security
+                        ? BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays
+                        : BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.NinetyDays;
+                }
+                else if (audit.EventType == BlazorEnterprise.Shared.DataListTypes.AuditEventTypeEnum.Security && audit.RetentionDays == BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.NinetyDays)
+                {
+                    audit.RetentionDays = BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays;
+                }
+            }
+
             var validatorType = _validatorTypeCache.GetOrAdd(
                 entityType,
                 t => typeof(IValidator<>).MakeGenericType(t));
@@ -130,6 +189,20 @@ public class EntityValidationInterceptor : SaveChangesInterceptor
         foreach (var entry in entries)
         {
             var entityType = entry.Entity.GetType();
+            if (entry.Entity is BlazorEnterprise.Core.Domain.Auditing.AuditRecordEntity audit)
+            {
+                if (audit.RetentionDays == 0 || !Enum.IsDefined(audit.RetentionDays))
+                {
+                    audit.RetentionDays = audit.EventType == BlazorEnterprise.Shared.DataListTypes.AuditEventTypeEnum.Security
+                        ? BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays
+                        : BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.NinetyDays;
+                }
+                else if (audit.EventType == BlazorEnterprise.Shared.DataListTypes.AuditEventTypeEnum.Security && audit.RetentionDays == BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.NinetyDays)
+                {
+                    audit.RetentionDays = BlazorEnterprise.Shared.DataListTypes.AuditRetentionPeriodEnum.ThreeHundredSixtyFiveDays;
+                }
+            }
+
             var validatorType = _validatorTypeCache.GetOrAdd(
                 entityType,
                 t => typeof(IValidator<>).MakeGenericType(t));

@@ -208,7 +208,7 @@ namespace TemplateGuard.Analyzers
                 RuleTg001, RuleTg002, RuleTg003, RuleTg004, RuleTg005, RuleTg006,
                 RuleTg007, RuleTg008, RuleTg009, RuleTg010, RuleTg011, RuleTg012, RuleTg013,
                 RuleTg014, RuleTg015, RuleTg016, RuleTg017, RuleTg018, RuleTg019,
-                RuleTg020, RuleTg021, RuleTg022, RuleTg023, RuleTg024, RuleTg025, RuleTg026);
+                RuleTg020, RuleTg021, RuleTg022, RuleTg023, RuleTg024, RuleTg025, RuleTg026, RuleTg027);
 
         public static readonly DiagnosticDescriptor RuleTg020 = new(
             id: "TG020",
@@ -240,6 +240,14 @@ namespace TemplateGuard.Analyzers
             description: "Direct dispatch to message queues or channels without Outbox tracking risks message loss on failure. Use the transactional Outbox pattern.",
             helpLinkUri: HelpBaseUrl + "#tg023");
 
+                public static readonly DiagnosticDescriptor RuleTg027 = new(
+            id: "TG027",
+            title: "Hardcoded property default value prohibited in domain entity",
+            messageFormat: "Property '{0}.{1}' has a hardcoded default initializer. Domain entities must not hardcode business/enum/scalar defaults in property definitions. ALLOWED APPROACH: Remove the default initializer and assign values in services/interceptors, or if reviewed and approved, suppress via '#pragma warning disable TG027 // Approved: <reason>' or '[SuppressMessage(\"Architecture\", \"TG027\", Justification = \"Approved: <reason>\")]'.",
+            category: "Architecture",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Domain entity properties must not specify hardcoded default values unless reviewed and explicitly suppressed.");
         public static readonly DiagnosticDescriptor RuleTg026 = new(
             id: "TG026",
             title: "Task.WhenAll and parallel query execution is forbidden in Blazor UI components and Persistence services",
@@ -740,15 +748,52 @@ namespace TemplateGuard.Analyzers
                     RuleTg008,
                     location,
                     namedType.Name,
-                    "must inherit from 'BaseEntity' (directly or via 'AuditableEntity' / 'TenantAuditableEntity')"));
+                    "must inherit from 'BaseEntity' (directly or via 'TenantScopedEntity' / 'ProgramScopedEntity' / 'ProjectScopedEntity')"));
                 return;
+            }
+
+            // Anti-redundancy & Non-Overlap Rule for all entities:
+            // 1. A class cannot directly re-declare an interface already implemented by its base class.
+            if (namedType.BaseType != null)
+            {
+                foreach (var iface in namedType.Interfaces)
+                {
+                    if (ImplementsInterface(namedType.BaseType, iface.Name))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            RuleTg008,
+                            location,
+                            namedType.Name,
+                            $"redundantly re-declares interface '{iface.Name}' which is already inherited from base class '{namedType.BaseType.Name}'"));
+                    }
+                }
+            }
+
+            // 2. An entity cannot declare both IScheduledWorkEntity and IEffectiveDatedEntity directly
+            var directInterfaceNames = new HashSet<string>(namedType.Interfaces.Select(i => i.Name));
+            if (directInterfaceNames.Contains("IScheduledWorkEntity") && directInterfaceNames.Contains("IEffectiveDatedEntity"))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "declares overlapping temporal contracts: both 'IScheduledWorkEntity' and 'IEffectiveDatedEntity'. Declare only 'IScheduledWorkEntity'"));
             }
 
             // Rules below apply to concrete entity tables
             if (namedType.IsAbstract) return;
 
-            var isTenant = ImplementsInterface(namedType, "ITenantEntity");
+            var isTenant = InheritsFrom(namedType, "TenantScopedEntity");
             var isGlobal = ImplementsInterface(namedType, "IGlobalEntity");
+
+            if (isTenant && isGlobal)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "violates non-overlap rules: cannot simultaneously inherit 'TenantScopedEntity' and implement 'IGlobalEntity'"));
+            }
 
             if (!isTenant && !isGlobal)
             {
@@ -756,7 +801,7 @@ namespace TemplateGuard.Analyzers
                     RuleTg008,
                     location,
                     namedType.Name,
-                    "must declare its tenancy boundary by implementing either 'ITenantEntity' (for tenant-scoped data) or 'IGlobalEntity' (for platform-wide data)"));
+                    "must declare its tenancy boundary by either inheriting 'TenantScopedEntity' (for tenant-scoped data) or implementing 'IGlobalEntity' (for platform-wide data)"));
             }
 
             var isSoft = ImplementsInterface(namedType, "ISoftDeletableEntity");
@@ -781,17 +826,26 @@ namespace TemplateGuard.Analyzers
                     "implements multiple conflicting deletion markers. An entity must implement at most ONE of 'ISoftDeletableEntity', 'IHardDeletableEntity', or 'IImmutableEntity'"));
             }
 
-            var isProjectScoped = ImplementsInterface(namedType, "IProjectScopedEntity");
-            if (isProjectScoped && !isTenant)
+            // Versioning non-overlap
+            var isVersioned = ImplementsInterface(namedType, "IVersionedEntity");
+            var isUnversioned = ImplementsInterface(namedType, "IUnversionedEntity");
+            if (!isVersioned && !isUnversioned)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     RuleTg008,
                     location,
                     namedType.Name,
-                    "implements 'IProjectScopedEntity' but violates multi-tenant architecture by not implementing 'ITenantEntity'. All project tables must be tenant-scoped"));
+                    "must implement either 'IVersionedEntity' or 'IUnversionedEntity'"));
+            }
+            else if (isVersioned && isUnversioned)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    RuleTg008,
+                    location,
+                    namedType.Name,
+                    "implements multiple conflicting versioning markers: cannot implement both 'IVersionedEntity' and 'IUnversionedEntity'"));
             }
         }
-
         private void AnalyzeEntityProperties(SymbolAnalysisContext context, INamedTypeSymbol namedType)
         {
             var isImmutable = ImplementsInterface(namedType, "IImmutableEntity");
@@ -800,6 +854,30 @@ namespace TemplateGuard.Analyzers
             {
                 if (member is not IPropertySymbol property || property.IsImplicitlyDeclared) continue;
 
+                                // Rule TG027: Prohibit hardcoded property initializers on domain entities
+                if (property.DeclaringSyntaxReferences.Length > 0)
+                {
+                    var propSyntax = property.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken) as Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax;
+                    if (propSyntax?.Initializer != null)
+                    {
+                        var initText = propSyntax.Initializer.Value.ToString().Trim();
+                        // Allow structural/null-safety framework initializers:
+                        bool isApprovedStructural =
+                            initText == "string.Empty" ||
+                            initText.StartsWith("Guid.CreateVersion7", StringComparison.Ordinal) ||
+                            initText == "new()" ||
+                            initText.StartsWith("new List<", StringComparison.Ordinal) ||
+                            initText.StartsWith("new HashSet<", StringComparison.Ordinal) ||
+                            property.Type.Name.StartsWith("ICollection", StringComparison.Ordinal) ||
+                            property.Type.Name.StartsWith("IList", StringComparison.Ordinal);
+
+                        if (!isApprovedStructural)
+                        {
+                            var location = propSyntax.Initializer.GetLocation();
+                            context.ReportDiagnostic(Diagnostic.Create(RuleTg027, location, namedType.Name, property.Name));
+                        }
+                    }
+                }
                 // Rule TG011: Strict prohibition of DateOnly
                 var propTypeName = property.Type.Name;
                 if (property.Type is INamedTypeSymbol namedPropType && namedPropType.IsGenericType && namedPropType.Name == "Nullable")

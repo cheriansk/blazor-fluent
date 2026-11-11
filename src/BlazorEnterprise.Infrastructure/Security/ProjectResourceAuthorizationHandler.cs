@@ -11,7 +11,7 @@ public class OperationAuthorizationRequirement : IAuthorizationRequirement
     public OperationAuthorizationRequirement(string name) => Name = name;
 }
 
-public class ProjectResourceAuthorizationHandler : AuthorizationHandler<OperationAuthorizationRequirement, IProjectScopedEntity>
+public class ProjectResourceAuthorizationHandler : AuthorizationHandler<OperationAuthorizationRequirement, ProjectScopedEntity>
 {
     private readonly IProjectAuthorizationService _projectAuth;
 
@@ -23,7 +23,7 @@ public class ProjectResourceAuthorizationHandler : AuthorizationHandler<Operatio
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         OperationAuthorizationRequirement requirement,
-        IProjectScopedEntity resource)
+        ProjectScopedEntity resource)
     {
         var minRole = requirement.Name switch
         {
@@ -33,7 +33,7 @@ public class ProjectResourceAuthorizationHandler : AuthorizationHandler<Operatio
             _ => ProjectRoleEnum.ReadOnly
         };
 
-        var canAccess = await _projectAuth.CanVisitAsync(resource.ProjectId, minRole);
+        var canAccess = await _projectAuth.CanVisitAsync(resource.ProjectId ?? Guid.Empty, minRole);
         if (canAccess)
         {
             context.Succeed(requirement);
