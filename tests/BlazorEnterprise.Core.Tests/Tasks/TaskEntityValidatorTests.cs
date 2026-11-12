@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Domain.Tasks;
+﻿using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Domain.Tasks.Validators;
 using BlazorEnterprise.Shared.DataListTypes;
 using FluentAssertions;
@@ -8,11 +8,11 @@ namespace BlazorEnterprise.Core.Tests.Tasks;
 
 public class TaskEntityValidatorTests
 {
-    private readonly MiscTaskEntityValidator _miscValidator = new();
+    private readonly ActivityTaskEntityValidator _activityValidator = new();
     private readonly WorkflowTaskEntityValidator _workflowValidator = new();
     private readonly SprintTaskEntityValidator _sprintValidator = new();
 
-    private static MiscTaskEntity CreateMiscTask() => new()
+    private static ActivityTaskEntity CreateActivityTask() => new()
     {
         Id = Guid.CreateVersion7(),
         TenantId = Guid.CreateVersion7(),
@@ -64,10 +64,10 @@ public class TaskEntityValidatorTests
     };
 
     [Fact]
-    public void Validate_MiscTask_Passes()
+    public void Validate_ActivityTask_Passes()
     {
-        var task = CreateMiscTask();
-        var result = _miscValidator.Validate(task);
+        var task = CreateActivityTask();
+        var result = _activityValidator.Validate(task);
 
         result.IsValid.Should().BeTrue();
         result.Errors.Should().BeEmpty();

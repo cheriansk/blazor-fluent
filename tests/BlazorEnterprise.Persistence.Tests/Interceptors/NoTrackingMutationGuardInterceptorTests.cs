@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -55,7 +55,7 @@ public class NoTrackingMutationGuardInterceptorTests : IDisposable
         using (var setup = new AppDbContext(options, mockTime.Object, mockTenant.Object, mockUser.Object))
         {
             setup.Database.EnsureCreated();
-            setup.Tasks.Add(new MiscTaskEntity
+            setup.Tasks.Add(new ActivityTaskEntity
             {
                 Id = taskId,
                 TenantId = tenantId,

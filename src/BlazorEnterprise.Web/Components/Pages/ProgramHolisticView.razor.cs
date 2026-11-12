@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Dtos.Tasks;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -27,7 +27,7 @@ public partial class ProgramHolisticView : ComponentBase, IDisposable
     private CreationTaskTypeEnum _selectedCreationType = CreationTaskTypeEnum.Risk;
     private static readonly List<CreationTaskTypeEnum> _allowedProgramTaskTypes =
     [
-        CreationTaskTypeEnum.MiscTask,
+        CreationTaskTypeEnum.ActivityTask,
         CreationTaskTypeEnum.Risk,
         CreationTaskTypeEnum.Assumption,
         CreationTaskTypeEnum.Issue

@@ -63,7 +63,7 @@ public sealed class TaskBatchDomainCommitter : IBatchDomainCommitter
                 dueDateUtc = parsedDue;
             }
 
-            var taskEntity = new MiscTaskEntity
+            var taskEntity = new ActivityTaskEntity
             {
                 Id = Guid.CreateVersion7(),
                 TenantId = file.TenantId,

@@ -543,7 +543,7 @@ public class SprintPlanningService : ISprintPlanningService
                     }
                     else
                     {
-                        // Promote MiscTaskEntity to SprintTaskEntity
+                        // Promote ActivityTaskEntity to SprintTaskEntity
                         var sprintTask = new SprintTaskEntity
                         {
                             Id = task.Id,
@@ -568,10 +568,10 @@ public class SprintPlanningService : ISprintPlanningService
                 }
                 else
                 {
-                    // Moving to backlog (null sprint) -> ensure it is a MiscTaskEntity
+                    // Moving to backlog (null sprint) -> ensure it is a ActivityTaskEntity
                     if (task is SprintTaskEntity st)
                     {
-                        var miscTask = new MiscTaskEntity
+                        var activityTask = new ActivityTaskEntity
                         {
                             Id = task.Id,
                             TenantId = task.TenantId,
@@ -589,7 +589,7 @@ public class SprintPlanningService : ISprintPlanningService
                             EstimatedHours = task.EstimatedHours
                         };
                         context.Tasks.Remove(task);
-                        context.MiscTasks.Add(miscTask);
+                        context.ActivityTasks.Add(activityTask);
                     }
                 }
             }

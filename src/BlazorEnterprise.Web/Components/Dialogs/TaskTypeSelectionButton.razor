@@ -1,4 +1,4 @@
-@namespace BlazorEnterprise.Web.Components.Dialogs
+﻿@namespace BlazorEnterprise.Web.Components.Dialogs
 @using BlazorEnterprise.Core.Dtos.Tasks
 @using BlazorEnterprise.Shared.UI.Components
 
@@ -30,12 +30,12 @@
                     </button>
                 }
 
-                @if (IsAllowed(CreationTaskTypeEnum.MiscTask))
+                @if (IsAllowed(CreationTaskTypeEnum.ActivityTask))
                 {
-                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.MiscTask)">
+                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.ActivityTask)">
                         <span class="type-icon"><CskIcon Icon="@CskIcons.Document" Size="20" /></span>
                         <div class="type-info">
-                            <span class="type-name">Misc Task</span>
+                            <span class="type-name">Activity Task</span>
                             <span class="type-desc">Ad-hoc directive or unparented backlog task</span>
                         </div>
                     </button>

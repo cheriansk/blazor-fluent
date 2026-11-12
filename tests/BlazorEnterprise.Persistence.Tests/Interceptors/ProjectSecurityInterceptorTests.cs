@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -32,7 +32,7 @@ public class ProjectSecurityInterceptorTests : IDisposable
         _connection.Dispose();
     }
 
-    private MiscTaskEntity CreateTestTask(string title) => new()
+    private ActivityTaskEntity CreateTestTask(string title) => new()
     {
         Id = Guid.NewGuid(),
         TenantId = _tenantId,

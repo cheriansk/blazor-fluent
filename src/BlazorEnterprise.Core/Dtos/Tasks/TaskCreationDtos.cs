@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using BlazorEnterprise.Shared.Attributes;
@@ -15,8 +15,8 @@ public enum CreationTaskTypeEnum
     [Display(Name = "Sprint Task", Description = "Task assigned directly to a sprint iteration")]
     SprintTask = 1,
 
-    [Display(Name = "Misc Task", Description = "Ad-hoc or backlog task")]
-    MiscTask = 2,
+    [Display(Name = "Activity Task", Description = "Developer activity or work task with associated action items")]
+    ActivityTask = 2,
 
     [Display(Name = "Risk", Description = "Formal enterprise RAID risk")]
     Risk = 3,
@@ -58,10 +58,15 @@ public class TaskCreationRequestDto
     public string? AcceptanceCriteria { get; set; }
 
     // Misc Task Specific
-    public string? MiscCategory { get; set; }
+    public string? ActivityCategory { get; set; }
     public string? RelatedLink { get; set; }
     public string? Recurrence { get; set; }
     public DateTime? RecurrenceEndDate { get; set; }
+
+    /// <summary>
+    /// Optional action checklist items created directly with this task.
+    /// </summary>
+    public List<CreateActionItemDto> ActionItems { get; set; } = [];
 
     // Risk Specific
     public string? RiskCategory { get; set; }

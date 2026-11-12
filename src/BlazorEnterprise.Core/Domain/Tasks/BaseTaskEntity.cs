@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Shared.Extensions;
 using BlazorEnterprise.Core.Domain.Base;
@@ -196,4 +196,6 @@ public abstract class BaseTaskEntity : ProjectScopedEntity, IScheduledWorkEntity
 
     /// <summary>Cancels this work item with a stated reason.</summary>
     public virtual void Cancel(DateTime utcNow, string reason = "") => TransitionTo(TaskStatusEnum.Cancelled, utcNow, reason: reason);
+
+
 }

@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProjectHolisticView.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor.cs
-generated_at_utc: 2026-11-12T16:18:57Z
-source_hash_sha256: 2e535e4c6769025c
+generated_at_utc: 2026-11-12T17:50:03Z
+source_hash_sha256: 3c543db44e290331
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticView`
 

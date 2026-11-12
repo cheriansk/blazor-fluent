@@ -1,4 +1,4 @@
-using BlazorEnterprise.Shared.Attributes;
+﻿using BlazorEnterprise.Shared.Attributes;
 using System.ComponentModel.DataAnnotations;
 
 namespace BlazorEnterprise.Shared.DataListTypes;
@@ -396,8 +396,8 @@ public enum DependencyNodeTypeEnum
     [Display(Name = "Workflow Task", Description = "A workflow pipeline step task")]
     WorkflowTask = 5,
 
-    [Display(Name = "Misc Task", Description = "An ad-hoc or standalone backlog task")]
-    MiscTask = 6,
+    [Display(Name = "Activity Task", Description = "A developer activity or work task with associated action items")]
+    ActivityTask = 6,
 
     [Display(Name = "Risk", Description = "An enterprise or project risk")]
     RaidRisk = 7,

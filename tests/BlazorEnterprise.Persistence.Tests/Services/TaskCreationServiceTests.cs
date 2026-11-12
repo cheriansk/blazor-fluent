@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,7 +99,7 @@ public class TaskCreationServiceTests : IDisposable
 
         var request = new TaskCreationRequestDto
         {
-            TaskType = CreationTaskTypeEnum.MiscTask,
+            TaskType = CreationTaskTypeEnum.ActivityTask,
             Title = ""
         };
 

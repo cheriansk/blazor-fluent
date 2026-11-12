@@ -1,4 +1,4 @@
-using BlazorEnterprise.Shared.UI.Components;
+﻿using BlazorEnterprise.Shared.UI.Components;
 ﻿using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Calendar;
@@ -67,7 +67,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private string _createErrorMessage = string.Empty;
     private string _milestoneErrorMessage = string.Empty;
 
-    private MiscTaskEntity _newTask = new()
+    private ActivityTaskEntity _newTask = new()
     {
         Level = TaskLevelEnum.Project,
         Title = string.Empty,
@@ -298,7 +298,7 @@ public partial class ProjectTasksBoardPage : ComponentBase, IDisposable
     private void OpenCreateTaskModal()
     {
         _createErrorMessage = string.Empty;
-        _newTask = new MiscTaskEntity
+        _newTask = new ActivityTaskEntity
         {
             ProjectId = _currentProject?.Id ?? ProjectId,
             Priority = TaskPriorityEnum.Medium,

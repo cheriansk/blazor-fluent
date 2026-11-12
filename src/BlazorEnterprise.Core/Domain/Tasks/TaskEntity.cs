@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Base;
 
@@ -6,7 +6,7 @@ namespace BlazorEnterprise.Core.Domain.Tasks;
 
 /// <summary>
 /// Abstract base class for executable tasks.
-/// Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, MiscTaskEntity.
+/// Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, ActivityTaskEntity.
 /// Inherits from <see cref="BaseTaskEntity"/>.
 /// </summary>
 public abstract partial class TaskEntity : BaseTaskEntity, IMilestoneLinkedEntity

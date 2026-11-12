@@ -4,18 +4,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BlazorEnterprise.Persistence.Configurations.Tasks;
 
-public class MiscTaskEntityConfiguration : IEntityTypeConfiguration<MiscTaskEntity>
+public class ActivityTaskEntityConfiguration : IEntityTypeConfiguration<ActivityTaskEntity>
 {
-    public void Configure(EntityTypeBuilder<MiscTaskEntity> builder)
+    public void Configure(EntityTypeBuilder<ActivityTaskEntity> builder)
     {
-        builder.ToTable("MiscTasks", EntitySchemas.tasks.ToString());
+        builder.ToTable("ActivityTasks", EntitySchemas.tasks.ToString());
 
         // Targeted High-Performance Compound Indexes
-
         builder.HasIndex(m => new { m.TenantId, m.Level })
-            .HasDatabaseName("IX_MiscTasks_TenantId_Level");
+            .HasDatabaseName("IX_ActivityTasks_TenantId_Level");
 
         builder.HasIndex(m => new { m.TenantId, m.Level, m.Status, m.DueDate })
-            .HasDatabaseName("IX_MiscTasks_Tenant_Level_Status_DueDate");
+            .HasDatabaseName("IX_ActivityTasks_Tenant_Level_Status_DueDate");
     }
 }

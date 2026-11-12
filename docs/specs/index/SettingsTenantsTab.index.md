@@ -3,8 +3,8 @@
 target_spec: docs/specs/SettingsTenantsTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor.cs
-generated_at_utc: 2026-11-12T16:18:56Z
-source_hash_sha256: 6c8128050dc1f31b
+generated_at_utc: 2026-11-12T18:22:37Z
+source_hash_sha256: a3eb1206a82b0b9e
 ============================================================================ -->
 # AI Navigation Index: `SettingsTenantsTab`
 

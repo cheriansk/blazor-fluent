@@ -2084,6 +2084,112 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.ToTable("SprintItemVersions", "tasks");
                 });
 
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.ActionItemEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BlockingReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("Complexity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Created");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CreatedBy");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<decimal>("EstimatedHours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ParentSubTaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ParentTaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("Updated");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("UpdatedBy");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentTaskId")
+                        .HasDatabaseName("IX_ActionItems_ParentTaskId");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_ActionItems_TenantId");
+
+                    b.HasIndex("ParentSubTaskId", "OrderIndex")
+                        .HasDatabaseName("IX_ActionItems_ParentSubTaskId_Order");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("IX_ActionItems_Tenant_Status");
+
+                    b.ToTable("ActionItems", "tasks");
+                });
+
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.AssumptionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4123,17 +4229,17 @@ namespace BlazorEnterprise.Persistence.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
-            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.MiscTaskEntity", b =>
+            modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.ActivityTaskEntity", b =>
                 {
                     b.HasBaseType("BlazorEnterprise.Core.Domain.Tasks.TaskEntity");
 
                     b.HasIndex("TenantId", "Level")
-                        .HasDatabaseName("IX_MiscTasks_TenantId_Level");
+                        .HasDatabaseName("IX_ActivityTasks_TenantId_Level");
 
                     b.HasIndex("TenantId", "Level", "Status", "DueDate")
-                        .HasDatabaseName("IX_MiscTasks_Tenant_Level_Status_DueDate");
+                        .HasDatabaseName("IX_ActivityTasks_Tenant_Level_Status_DueDate");
 
-                    b.ToTable("MiscTasks", "tasks");
+                    b.ToTable("ActivityTasks", "tasks");
                 });
 
             modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.SprintTaskEntity", b =>
