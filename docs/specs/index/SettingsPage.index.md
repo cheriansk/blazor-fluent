@@ -3,7 +3,7 @@
 target_spec: docs/specs/SettingsPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor.cs
-generated_at_utc: 2026-11-11T19:51:45Z
+generated_at_utc: 2026-11-12T16:18:56Z
 source_hash_sha256: d6008596789748d3
 ============================================================================ -->
 # AI Navigation Index: `SettingsPage`

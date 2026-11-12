@@ -3,7 +3,7 @@
 target_spec: docs/specs/ProjectHolisticViewMilestoneTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor.cs
-generated_at_utc: 2026-11-11T18:51:48Z
+generated_at_utc: 2026-11-12T16:18:57Z
 source_hash_sha256: 488a239e288f3003
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticViewMilestoneTab`

@@ -3,7 +3,7 @@
 target_spec: docs/specs/HomePage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/HomePage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/HomePage.razor.cs
-generated_at_utc: 2026-11-11T19:51:45Z
+generated_at_utc: 2026-11-12T16:18:57Z
 source_hash_sha256: e32f6430d8ce00e3
 ============================================================================ -->
 # AI Navigation Index: `HomePage`

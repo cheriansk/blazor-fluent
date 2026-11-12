@@ -1,10 +1,10 @@
 # Component Registration Warnings (Validation Report)
 
-> **Last Generated**: `2026-11-11 14:51:45 -05:00`  
+> **Last Generated**: `2026-11-12 11:18:58 -05:00`  
 > **Manifest**: [specs-manifest.json](../specs-manifest.json) | **Catalog**: [README.md](../README.md)
 
 > [!CAUTION]
-> **21 Unregistered Child Component(s) detected across 5 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
+> **31 Unregistered Child Component(s) detected across 11 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
 
 ## Parent: `BlazorEnterprise.Web/Components/Layout/MainLayout.razor` ([docs/specs/MainLayout.requirements.md](../../docs/specs/MainLayout.requirements.md))
 
@@ -224,6 +224,152 @@
       "category": "Home page UI",
       "thinking_level": "low",
       "description": "Child component <DashboardAuditTrail /> rendered by HomePage.razor at L60 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/ProgramHolisticView.razor` ([docs/specs/ProgramHolisticView.requirements.md](../../docs/specs/ProgramHolisticView.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<TaskTypeSelectionButton />` | `BlazorEnterprise.Web/Components/Dialogs/TaskTypeSelectionButton.razor` | `L30` | `ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty` |
+| `<TaskCreationDialog />` | `BlazorEnterprise.Web/Components/Dialogs/TaskCreationDialog.razor` | `L43` | `ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty` |
+
+### Ready-to-Paste JSON for `ProgramHolisticView.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Dialogs/TaskTypeSelectionButton.razor",
+      "category": "Program Management UI",
+      "thinking_level": "low",
+      "description": "Child component <TaskTypeSelectionButton /> rendered by ProgramHolisticView.razor at L30 (Gate: ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Dialogs/TaskCreationDialog.razor",
+      "category": "Program Management UI",
+      "thinking_level": "low",
+      "description": "Child component <TaskCreationDialog /> rendered by ProgramHolisticView.razor at L43 (Gate: ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewTimelineTab.razor` ([docs/specs/ProgramHolisticViewTimelineTab.requirements.md](../../docs/specs/ProgramHolisticViewTimelineTab.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<RevisionToolbarComp />` | `BlazorEnterprise.Web/Components/Common/RevisionToolbarComp.razor` | `L7` | `Unconditional` |
+
+### Ready-to-Paste JSON for `ProgramHolisticViewTimelineTab.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/RevisionToolbarComp.razor",
+      "category": "Program Management UI",
+      "thinking_level": "low",
+      "description": "Child component <RevisionToolbarComp /> rendered by ProgramHolisticViewTimelineTab.razor at L7 (Gate: Unconditional).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor` ([docs/specs/ProjectHolisticView.requirements.md](../../docs/specs/ProjectHolisticView.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<TaskTypeSelectionButton />` | `BlazorEnterprise.Web/Components/Dialogs/TaskTypeSelectionButton.razor` | `L30` | `ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty` |
+| `<TaskCreationDialog />` | `BlazorEnterprise.Web/Components/Dialogs/TaskCreationDialog.razor` | `L42` | `ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty` |
+
+### Ready-to-Paste JSON for `ProjectHolisticView.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Dialogs/TaskTypeSelectionButton.razor",
+      "category": "Project Management UI",
+      "thinking_level": "low",
+      "description": "Child component <TaskTypeSelectionButton /> rendered by ProjectHolisticView.razor at L30 (Gate: ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Dialogs/TaskCreationDialog.razor",
+      "category": "Project Management UI",
+      "thinking_level": "low",
+      "description": "Child component <TaskCreationDialog /> rendered by ProjectHolisticView.razor at L42 (Gate: ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor` ([docs/specs/ProjectHolisticViewTimelineTab.requirements.md](../../docs/specs/ProjectHolisticViewTimelineTab.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<RevisionToolbarComp />` | `BlazorEnterprise.Web/Components/Common/RevisionToolbarComp.razor` | `L7` | `Unconditional` |
+
+### Ready-to-Paste JSON for `ProjectHolisticViewTimelineTab.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/RevisionToolbarComp.razor",
+      "category": "Project Management UI",
+      "thinking_level": "low",
+      "description": "Child component <RevisionToolbarComp /> rendered by ProjectHolisticViewTimelineTab.razor at L7 (Gate: Unconditional).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor` ([docs/specs/ResourceManagementPage.requirements.md](../../docs/specs/ResourceManagementPage.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<RevisionToolbarComp />` | `BlazorEnterprise.Web/Components/Common/RevisionToolbarComp.razor` | `L44` | `_planSummary != null` |
+| `<ResourceSelectionModal />` | `BlazorEnterprise.Web/Components/Pages/Resources/ResourceSelectionModal.razor` | `L203` | `_isReadOnly` |
+
+### Ready-to-Paste JSON for `ResourceManagementPage.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/RevisionToolbarComp.razor",
+      "category": "General",
+      "thinking_level": "low",
+      "description": "Child component <RevisionToolbarComp /> rendered by ResourceManagementPage.razor at L44 (Gate: _planSummary != null).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Resources/ResourceSelectionModal.razor",
+      "category": "General",
+      "thinking_level": "low",
+      "description": "Child component <ResourceSelectionModal /> rendered by ResourceManagementPage.razor at L203 (Gate: _isReadOnly).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor` ([docs/specs/SprintPlanningPage.requirements.md](../../docs/specs/SprintPlanningPage.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<TaskTypeSelectionButton />` | `BlazorEnterprise.Web/Components/Dialogs/TaskTypeSelectionButton.razor` | `L36` | `!ProjectContext.HasProject` |
+| `<TaskCreationDialog />` | `BlazorEnterprise.Web/Components/Dialogs/TaskCreationDialog.razor` | `L48` | `!ProjectContext.HasProject` |
+
+### Ready-to-Paste JSON for `SprintPlanningPage.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Dialogs/TaskTypeSelectionButton.razor",
+      "category": "Pages",
+      "thinking_level": "low",
+      "description": "Child component <TaskTypeSelectionButton /> rendered by SprintPlanningPage.razor at L36 (Gate: !ProjectContext.HasProject).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Dialogs/TaskCreationDialog.razor",
+      "category": "Pages",
+      "thinking_level": "low",
+      "description": "Child component <TaskCreationDialog /> rendered by SprintPlanningPage.razor at L48 (Gate: !ProjectContext.HasProject).",
       "enabled": true
     }
 ]

@@ -3,7 +3,7 @@
 target_spec: docs/specs/MainLayout.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Layout/MainLayout.razor
 code_behind: src/BlazorEnterprise.Web/Components/Layout/MainLayout.razor.cs
-generated_at_utc: 2026-11-11T19:51:45Z
+generated_at_utc: 2026-11-12T16:18:55Z
 source_hash_sha256: c631057133b73bbb
 ============================================================================ -->
 # AI Navigation Index: `MainLayout`

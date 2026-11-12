@@ -3,7 +3,7 @@
 target_spec: docs/specs/TabContainerComp.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor
 code_behind: src/BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor.cs
-generated_at_utc: 2026-11-11T18:52:10Z
+generated_at_utc: 2026-11-12T16:18:57Z
 source_hash_sha256: 8a22118d0a025c1e
 ============================================================================ -->
 # AI Navigation Index: `TabContainerComp`

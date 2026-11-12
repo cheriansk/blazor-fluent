@@ -3,42 +3,44 @@
 target_spec: docs/specs/SprintPlanningPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor.cs
-generated_at_utc: 2026-11-11T18:52:02Z
-source_hash_sha256: d80f4d3414ad4e4f
+generated_at_utc: 2026-11-12T16:18:58Z
+source_hash_sha256: 46b01ede7f3233fe
 ============================================================================ -->
 # AI Navigation Index: `SprintPlanningPage`
 
 ## 1. UI Map (`SprintPlanningPage.razor`)
 - **Injected**: `SprintPlanningService:ISprintPlanningService`, `ProjectContext:IProjectContext`
 - **Registered Child Components**:
-  - `<TabContainerComp />` @ `L52` | Gate: `_isLoading` | Params: `Tabs="_tabs" @bind-ActiveTabId="_activeTabId"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
+  - `<TabContainerComp />` @ `L63` | Gate: `_isLoading` | Params: `Tabs="_tabs" @bind-ActiveTabId="_activeTabId"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L56` | `L17: @if (!ProjectContext.HasProject)`, `L43: @if (_isLoading)` | Buttons: `Btn("Refresh" -> submit)@L35` <br> Components: `PageTitle@L14`, `TabContainerComp@L52` |
-| **Move to Sprint Modal** | `L57-L89` | `@if (_showMoveModal)` | Buttons: `Btn("Cancel" -> submit)@L84`, `Btn("Move Items" -> submit)@L85` |
+| **Header & Top-Level Controls** | `L1-L67` | `L18: @if (!ProjectContext.HasProject)`, `L54: @if (_isLoading)` | Buttons: `Btn("Refresh" -> submit)@L40` <br> Components: `PageTitle@L15`, `TaskTypeSelectionButton(AllowedTypes=_allowedSprintTaskTypes)@L36`, `TaskCreationDialog(ProjectId=ProjectContext.ProjectId, ProgramId=ProjectContext.ProgramId)@L48`, `TabContainerComp@L63` |
+| **Move to Sprint Modal** | `L68-L100` | `@if (_showMoveModal)` | Buttons: `Btn("Cancel" -> submit)@L95`, `Btn("Move Items" -> submit)@L96` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitializedAsync` | `L30-L34` | [INIT] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
-| `HandleProjectChanged` | `L36-L43` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
-| `Dispose` | `L45-L48` | [HELPER] | Local UI State |
-| `LoadDataAsync` | `L50-L87` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
-| `LoadSummaryTabDataAsync` | `L89-L93` | [HELPER] | `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
-| `LoadPlannerTabDataAsync` | `L95-L112` | [HELPER] | `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
-| `OnSummarySprintChanged` | `L114-L127` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
-| `OnPlannerSprintChanged` | `L129-L142` | [HELPER] | `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
-| `ToggleItemSelection` | `L144-L154` | [HELPER] | Local UI State |
-| `ToggleAllItems` | `L156-L166` | [HELPER] | Local UI State |
-| `OpenMoveModal` | `L168-L180` | [HELPER] | Local UI State |
-| `CloseMoveModal` | `L182-L186` | [HELPER] | Local UI State |
-| `ExecuteMoveAsync` | `L188-L206` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.MoveItemsToSprintAsync` -> `SprintPlanningService.GetProjectSprintsAsync` |
-| `BuildTabs` | `L208-L227` | [HELPER] | `local:RenderSummaryTab()` -> `local:RenderPlannerTab()` |
-| `RenderSummaryTab` | `L229-L231` | [HELPER] | Local UI State |
-| `RenderPlannerTab` | `L356-L358` | [HELPER] | Local UI State |
-| `RenderKpiCard` | `L583-L596` | [HELPER] | Local UI State |
-| `GetStatusBadgeClass` | `L598-L604` | [HELPER] | Local UI State |
+| `OpenCreateDialog` | `L39-L43` | [HELPER] | Local UI State |
+| `HandleTaskCreated` | `L45-L48` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
+| `OnInitializedAsync` | `L50-L54` | [INIT] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
+| `HandleProjectChanged` | `L56-L63` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
+| `Dispose` | `L65-L68` | [HELPER] | Local UI State |
+| `LoadDataAsync` | `L70-L107` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
+| `LoadSummaryTabDataAsync` | `L109-L113` | [HELPER] | `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
+| `LoadPlannerTabDataAsync` | `L115-L132` | [HELPER] | `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
+| `OnSummarySprintChanged` | `L134-L147` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
+| `OnPlannerSprintChanged` | `L149-L162` | [HELPER] | `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
+| `ToggleItemSelection` | `L164-L174` | [HELPER] | Local UI State |
+| `ToggleAllItems` | `L176-L186` | [HELPER] | Local UI State |
+| `OpenMoveModal` | `L188-L200` | [HELPER] | Local UI State |
+| `CloseMoveModal` | `L202-L206` | [HELPER] | Local UI State |
+| `ExecuteMoveAsync` | `L208-L226` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.MoveItemsToSprintAsync` -> `SprintPlanningService.GetProjectSprintsAsync` |
+| `BuildTabs` | `L228-L247` | [HELPER] | `local:RenderSummaryTab()` -> `local:RenderPlannerTab()` |
+| `RenderSummaryTab` | `L249-L251` | [HELPER] | Local UI State |
+| `RenderPlannerTab` | `L376-L378` | [HELPER] | Local UI State |
+| `RenderKpiCard` | `L603-L616` | [HELPER] | Local UI State |
+| `GetStatusBadgeClass` | `L618-L624` | [HELPER] | Local UI State |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |

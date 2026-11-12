@@ -3,7 +3,7 @@
 target_spec: docs/specs/ProgramHolisticViewTimelineTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewTimelineTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewTimelineTab.razor.cs
-generated_at_utc: 2026-11-11T18:51:39Z
+generated_at_utc: 2026-11-12T16:18:57Z
 source_hash_sha256: a2af0ced03cc2097
 ============================================================================ -->
 # AI Navigation Index: `ProgramHolisticViewTimelineTab`

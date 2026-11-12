@@ -3,7 +3,7 @@
 target_spec: docs/specs/ResourceManagementPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor.cs
-generated_at_utc: 2026-11-11T18:51:54Z
+generated_at_utc: 2026-11-12T16:18:58Z
 source_hash_sha256: 68cf8dd1964bb4d5
 ============================================================================ -->
 # AI Navigation Index: `ResourceManagementPage`
