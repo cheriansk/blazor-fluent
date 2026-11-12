@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Shared.Contracts.Common;
@@ -12,7 +13,9 @@ public abstract class DataFetchReqDto
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     public string? SearchTerm { get; set; }
+    [AllowHardcodedDefault("Standard baseline pagination starting at page 1")]
     public int PageNumber { get; set; } = 1;
+    [AllowHardcodedDefault("Standard baseline pagination default page size is 20")]
     public int PageSize { get; set; } = 20;
 }
 

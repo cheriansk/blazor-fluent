@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Dtos;
@@ -28,6 +29,7 @@ public class ProgramMilestoneDto
         set => EndDate = value;
     }
     public string OwnerEmails { get; set; } = string.Empty;
+    [AllowHardcodedDefault("Initial default status for program milestone draft")]
     public string Status { get; set; } = "New";
     public string? Comments { get; set; }
     public string? Description
@@ -44,6 +46,7 @@ public class ProgramTimelineRowDto
     public string Title { get; set; } = string.Empty;
     public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
     public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddMonths(3);
+    [AllowHardcodedDefault("Initial default status for program timeline row draft")]
     public string Status { get; set; } = "New";
     public string? Comments { get; set; }
     public List<ProgramMilestoneDto> Milestones { get; set; } = new();
@@ -56,9 +59,9 @@ public partial class CreateProgramWizardState
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public ProgramStatusEnum Status { get; set; } = ProgramStatusEnum.Planning;
-    public DateTime? StartDate { get; set; } = DateTime.UtcNow.Date;
-    public DateTime? EndDate { get; set; } = DateTime.UtcNow.Date.AddYears(1);
+    public ProgramStatusEnum Status { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public List<ProgramAdminUserDto> AdminUsers { get; set; } = new();
     public List<ProgramTimelineRowDto> TimelineRows { get; set; } = new();

@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProjectHolisticViewRaidLogTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewRaidLogTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewRaidLogTab.razor.cs
-generated_at_utc: 2026-11-03T02:50:49Z
-source_hash_sha256: fcb841d88b67f941
+generated_at_utc: 2026-11-12T16:18:58Z
+source_hash_sha256: b644c97a6bc79a07
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticViewRaidLogTab`
 

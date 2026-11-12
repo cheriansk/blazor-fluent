@@ -3,7 +3,7 @@
 target_spec: docs/specs/SessionTimeoutModal.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Common/SessionTimeoutModal.razor
 code_behind: src/BlazorEnterprise.Web/Components/Common/SessionTimeoutModal.razor.cs
-generated_at_utc: 2026-11-03T02:50:45Z
+generated_at_utc: 2026-11-12T16:18:55Z
 source_hash_sha256: 4ca88cea30f9d172
 ============================================================================ -->
 # AI Navigation Index: `SessionTimeoutModal`
@@ -22,16 +22,16 @@ source_hash_sha256: 4ca88cea30f9d172
 | :--- | :--- | :--- | :--- |
 | `OnInitialized` | `L34-L38` | [INIT] | `local:RunTimeoutWatchdogAsync()` |
 | `OnAfterRenderAsync` | `L40-L60` | [INIT] | `JSRuntime.InvokeVoidAsync()` |
-| `RunTimeoutWatchdogAsync` | `L62-L125` | [HELPER] | `local:HandleLogout()` -> `SessionService.RevokeSessionAsync(DB[W]:UserSessions)` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` |
-| `OnUserActivityDetected` | `L128-L151` | [HELPER] | `SessionService.UpdateHeartbeatAsync(DB[W]:UserSessions)` |
-| `HandleStayLoggedIn` | `L153-L172` | [HELPER] | `SessionService.UpdateHeartbeatAsync(DB[W]:UserSessions)` |
-| `HandleLogout` | `L174-L201` | OnClick@L38, OnClick@L75 | `SessionService.RevokeSessionAsync(DB[W]:UserSessions)` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` |
+| `RunTimeoutWatchdogAsync` | `L62-L125` | [HELPER] | `local:HandleLogout()` -> `SessionService.RevokeSessionAsync(DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` |
+| `OnUserActivityDetected` | `L128-L151` | [HELPER] | `SessionService.UpdateHeartbeatAsync(DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` |
+| `HandleStayLoggedIn` | `L153-L172` | [HELPER] | `SessionService.UpdateHeartbeatAsync(DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` |
+| `HandleLogout` | `L174-L201` | OnClick@L38, OnClick@L75 | `SessionService.RevokeSessionAsync(DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` |
 | `FormatTimeRemaining` | `L203-L209` | [HELPER] | Local UI State |
 | `DisposeAsync` | `L211-L223` | [HELPER] | `JSRuntime.InvokeVoidAsync()` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `UserSessionService.RevokeSessionAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L181-L203` | - | `DB[W]: UserSessions` |
-| `UserSessionService.UpdateHeartbeatAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L139-L165` | - | `DB[W]: UserSessions` |
+| `UserSessionService.RevokeSessionAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L189-L211` | - | `DB[W]: UserSessions,IsTransactionScopeCommitAuthorized` |
+| `UserSessionService.UpdateHeartbeatAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L137-L163` | - | `DB[W]: UserSessions,IsTransactionScopeCommitAuthorized` |
 

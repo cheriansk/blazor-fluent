@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Dtos;
@@ -11,6 +12,7 @@ public class ProjectResourceDto
     public string UserEmail { get; set; } = string.Empty;
     public ProjectResourceRoleEnum Role { get; set; }
     public decimal? HourlyRate { get; set; }
+    [AllowHardcodedDefault("Standard baseline financial ISO currency default")]
     public string CurrencyCode { get; set; } = "USD";
 }
 

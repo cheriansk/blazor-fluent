@@ -3,7 +3,7 @@
 target_spec: docs/specs/NotificationBellPopup.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Layout/NotificationBellPopup.razor
 code_behind: src/BlazorEnterprise.Web/Components/Layout/NotificationBellPopup.razor.cs
-generated_at_utc: 2026-11-03T02:50:45Z
+generated_at_utc: 2026-11-12T16:18:56Z
 source_hash_sha256: 684fb96c4b464bd9
 ============================================================================ -->
 # AI Navigation Index: `NotificationBellPopup`
@@ -29,9 +29,9 @@ source_hash_sha256: 684fb96c4b464bd9
 | `RefreshNotificationsAsync` | `L57-L83` | [HELPER] | `local:LoadUnreadCountsAsync()` -> `MyNotificationService.GetNotificationsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` -> `MyNotificationService.GetUnreadCountsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` |
 | `LoadUnreadCountsAsync` | `L85-L101` | [HELPER] | `MyNotificationService.GetUnreadCountsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` |
 | `GetActiveTabUnreadCount` | `L103-L106` | [HELPER] | Local UI State |
-| `MarkAsReadAsync` | `L108-L121` | OnClick@L166 | `local:LoadUnreadCountsAsync()` -> `MyNotificationService.MarkAsReadAsync[IsRootAdmin,TenantBoundaryGate](DB[W]:Notifications)` -> `MyNotificationService.GetUnreadCountsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` |
-| `MarkAllAsReadAsync` | `L123-L132` | [HELPER] | `local:LoadUnreadCountsAsync()` -> `MyNotificationService.MarkAllAsReadAsync[IsRootAdmin,TenantBoundaryGate](DB[W]:Notifications)` -> `MyNotificationService.GetUnreadCountsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` |
-| `NavigateToLink` | `L134-L146` | OnClick@L157 | `local:MarkAsReadAsync()` -> `NavigationManager.NavigateTo()` -> `MyNotificationService.MarkAsReadAsync[IsRootAdmin,TenantBoundaryGate](DB[W]:Notifications)` |
+| `MarkAsReadAsync` | `L108-L121` | OnClick@L166 | `local:LoadUnreadCountsAsync()` -> `MyNotificationService.MarkAsReadAsync[IsRootAdmin,TenantBoundaryGate](DB[W]:Notifications,IsTransactionScopeCommitAuthorized)` -> `MyNotificationService.GetUnreadCountsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` |
+| `MarkAllAsReadAsync` | `L123-L132` | [HELPER] | `local:LoadUnreadCountsAsync()` -> `MyNotificationService.MarkAllAsReadAsync[IsRootAdmin,TenantBoundaryGate](DB[W]:Notifications,IsTransactionScopeCommitAuthorized)` -> `MyNotificationService.GetUnreadCountsAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Notifications)` |
+| `NavigateToLink` | `L134-L146` | OnClick@L157 | `local:MarkAsReadAsync()` -> `NavigationManager.NavigateTo()` -> `MyNotificationService.MarkAsReadAsync[IsRootAdmin,TenantBoundaryGate](DB[W]:Notifications,IsTransactionScopeCommitAuthorized)` |
 | `GetRelativeTime` | `L148-L155` | [HELPER] | `TimeZoneService.FormatDate` |
 
 ## 3. Service Map
@@ -39,7 +39,7 @@ source_hash_sha256: 684fb96c4b464bd9
 | :--- | :--- | :--- | :--- |
 | `NotificationService.GetUnreadCountsAsync` | `BlazorEnterprise.Persistence/Services/NotificationService.cs#L282-L328` | `IsRootAdmin, TenantBoundaryGate` | `DB[R]: Notifications` |
 | `NotificationService.GetNotificationsAsync` | `BlazorEnterprise.Persistence/Services/NotificationService.cs#L178-L280` | `IsRootAdmin, TenantBoundaryGate` | `DB[R]: Notifications` |
-| `NotificationService.MarkAsReadAsync` | `BlazorEnterprise.Persistence/Services/NotificationService.cs#L330-L380` | `IsRootAdmin, TenantBoundaryGate` | `DB[W]: Notifications` |
-| `NotificationService.MarkAllAsReadAsync` | `BlazorEnterprise.Persistence/Services/NotificationService.cs#L382-L441` | `IsRootAdmin, TenantBoundaryGate` | `DB[W]: Notifications` |
+| `NotificationService.MarkAsReadAsync` | `BlazorEnterprise.Persistence/Services/NotificationService.cs#L330-L380` | `IsRootAdmin, TenantBoundaryGate` | `DB[W]: Notifications,IsTransactionScopeCommitAuthorized` |
+| `NotificationService.MarkAllAsReadAsync` | `BlazorEnterprise.Persistence/Services/NotificationService.cs#L382-L442` | `IsRootAdmin, TenantBoundaryGate` | `DB[W]: Notifications,IsTransactionScopeCommitAuthorized` |
 | `UserTimeZoneService.FormatDate` | `BlazorEnterprise.Web/Services/UserTimeZoneService.cs#L183-L188` | - | In-Memory |
 

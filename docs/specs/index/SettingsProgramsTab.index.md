@@ -3,81 +3,92 @@
 target_spec: docs/specs/SettingsProgramsTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor.cs
-generated_at_utc: 2026-11-03T02:50:47Z
-source_hash_sha256: d334b867fd1d9c07
+generated_at_utc: 2026-11-12T16:18:56Z
+source_hash_sha256: 4939332d6e7d12d9
 ============================================================================ -->
 # AI Navigation Index: `SettingsProgramsTab`
 
 ## 1. UI Map (`SettingsProgramsTab.razor`)
-- **Injected**: `TenantContext:ITenantContext`, `TenantService:ITenantService`, `ProgramService:IProgramService`, `CalendarService:ICalendarService`, `HierarchyAuth:IHierarchyAuthorizationService`, `CurrentUser:ICurrentUser`, `TimeZoneService:IUserTimeZoneService`, `UnsavedChanges:IUnsavedChangesStateService`
+- **Injected**: `TenantContext:ITenantContext`, `TenantService:ITenantService`, `ProgramService:IProgramService`, `CalendarService:ICalendarService`, `UnitOfWork:IUnitOfWork`, `HierarchyAuth:IHierarchyAuthorizationService`, `CurrentUser:ICurrentUser`, `TimeZoneService:IUserTimeZoneService`, `UnsavedChanges:IUnsavedChangesStateService`, `BlazorEnterprise:private`
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L38` | `L22: @if (_isTenantAdmin || CurrentUser.IsRootAdmin)`, `L30: @if (!string.IsNullOrWhiteSpace(_statusMessage))` | Buttons: `Btn("Add Program" -> OpenCreateProgramWizard)@L24` |
-| **Programs DataGrid** | `L39-L217` | `L58: @if (_isLoading)`, `L64: @if (_programs.Count == 0)`, `L128: @if (_isTenantAdmin || CurrentUser.IsRootAdmin || _programAdminIds.Contains(context.Id))`, `L143: @if (_expandedProgramIds.Contains(context.Id))`, `L149: @if (context.Projects.Count == 0)` | Inputs: `CskTextInput("Filter programs by name, ...": _programSearchText)@L48` <br> Buttons: `Btn("@(_expandedProgramIds.Contains(context.Id) ? " -> ToggleProgramExpanded)@L76`, `Btn("Add Project to Program" -> OpenCreateProjectWizard)@L114`, `Btn("View Program Details" -> OpenViewProgramWizard)@L121`, `Btn("Edit Program" -> OpenEditProgramWizard)@L130`, `Btn(OpenViewProjectWizard)@L187`, `Btn(OpenEditProjectWizard)@L193` <br> Grids: `CskDataGrid(Items=FilteredPrograms, Cols=[Code, Program Name, Status, Timeline, Projects, Actions])@L73` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L138`, `DetailTemplate@L142` |
-| **Selected Program Workspace Panel** | `L218-L253` | `@if (_selectedProgram is not null)` | Tabs: `Tab[tab-health] @L240` <br> Buttons: `Btn("Close Panel" -> _selectedProgram = null)@L233` |
-| **Health KPI Cards** | `L254-L333` | `L298: @if (_healthSummary.CrossProjectDependencies.Count == 0)`, `L317: @if (context.IsResolved)` | Grids: `CskDataGrid(Items=_healthSummary.CrossProjectDependencies.AsQueryable(), Cols=[Blocked Task, Relation, Depends On (Blocker), Blocker Status])@L306` |
-| **Tab 2: Projects in this Program** | `L334-L354` | `L344: @if (_canManageSelectedProgramProjects)` | Tabs: `Tab[tab-projects] @L335` <br> Buttons: `Btn(OpenAddProjectModal)@L346` |
-| **Add Project Sub-Card** | `L355-L449` | `@if (_showAddProjectModal)` | Inputs: `CskTextInput("Project Name": _projName)@L364`, `CskTextInput("Short Code": _projShortCode)@L365`, `CskTextInput("Location": _projLocation)@L369`, `DataListSelect("Status": _projStatus)@L371`, `CskDatePicker("Tentative Start Date": _projStartDate)@L376`, `CskDatePicker("Tentative End Date": _projEndDate)@L377`, `CskTextArea("Brief summary of project ...": _projScopeSummary)@L382` <br> Buttons: `Btn("Save Project" -> CreateProgramProjectAsync)@L386`, `Btn("Cancel" -> CloseProjectModal)@L391` <br> Grids: `CskDataGrid(Items=_programProjects.AsQueryable(), Cols=[Code, Project Name, Status, Timeline, Actions])@L411` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L441` |
-| **Tab 3: Program Calendar & Deadlines** | `L450-L472` | `L458: @if (_isLoadingCalendar)` | Tabs: `Tab[tab-calendar] @L451` <br> Components: `FluentCalendarScheduleComp(Items=_programCalendarItems, ReadOnly=(!_canManageSelectedProgramProjects), OnAddEntry=OpenAddProgramCalendarModal)@L464` |
-| **Tab 4: Program R.A.I.D. Log** | `L473-L596` | `L489: @if (_selectedRaidCategory == "Risks")`, `L491: @if (_programRisks.Count == 0)`, `L513: @if (_selectedRaidCategory == "Assumptions")`, `L515: @if (_programAssumptions.Count == 0)`, `L532: @if (_selectedRaidCategory == "Issues")`, `L534: @if (_programIssues.Count == 0)`, `L552: @if (_selectedRaidCategory == "Blockers")`, `L554: @if (_programBlockers.Count == 0)`, `L566: @if (context.IsScheduleConflict)`, `L573: @if (context.IsResolved)` | Tabs: `Tab[tab-raid] @L474` <br> Inputs: `CskRadioGroup(_selectedRaidCategory)@L482` <br> Grids: `CskDataGrid(Items=_programRisks.AsQueryable(), Cols=[Risk Title, Impact, Probability, Exposure, Status, Target Due Date])@L497`, `CskDataGrid(Items=_programAssumptions.AsQueryable(), Cols=[Assumption, Validation Criteria, Status, Impact if Invalid, Validation Due Date])@L521`, `CskDataGrid(Items=_programIssues.AsQueryable(), Cols=[Issue Title, Severity, Status, Workaround, Resolution, Resolution Due Date])@L540`, `CskDataGrid(Items=_programBlockers.AsQueryable(), Cols=[Dependent Item (Blocked), Prerequisite Item (Blocking), Criticality, Status, Impact Details, SLA Resolve Due Date])@L560` |
-| **Create/View/Edit Program Wizard Modal** | `L597-L605` | Unconditional | Components: `CreateProgramWizardModal(IsOpen=_showCreateProgramWizard, IsReadOnly=_isProgramWizardReadOnly, IsEditMode=_isProgramWizardEditMode, Title=_programWizardTitle, InitialState=_programWizardInitialState, OnProgramCreated=OnProgramWizardSavedAsync)@L598` |
-| **Create/View/Edit Project Wizard Modal** | `L606-L615` | Unconditional | Components: `CreateProjectWizardModal(IsOpen=_showCreateProjectWizard, IsReadOnly=_isWizardReadOnly, IsEditMode=_isWizardEditMode, Title=_wizardTitle, InitialState=_wizardInitialState, OnProjectCreated=OnProjectWizardSavedAsync)@L607` |
+| **Header & Top-Level Controls** | `L1-L60` | `L35: @if (_isTenantAdmin || CurrentUser.IsRootAdmin)`, `L49: @if (!string.IsNullOrWhiteSpace(_statusMessage))` | Buttons: `Btn("Add Program" -> OpenCreateProgramWizard)@L39` |
+| **Programs DataGrid** | `L61-L380` | `L97: @if (_isLoading)`, `L109: @if (_programs.Count == 0)`, `L247: @if (_expandedProgramIds.Contains(context.Id))`, `L257: @if (context.Projects.Count == 0)` | Inputs: `CskTextInput("Filter programs by name, ...": _programSearchText)@L79` <br> Buttons: `Btn("@(_expandedProgramIds.Contains(context.Id) ? " -> ToggleProgramExpanded)@L133`, `Btn("Add Project to Program" -> OpenCreateProjectWizard)@L209`, `Btn("View Program Details" -> OpenViewProgramWizard)@L223`, `Btn(OpenViewProjectWizard)@L333` <br> Grids: `CskDataGrid(Items=FilteredPrograms, Cols=[Code, Program Name, Status, Timeline, Projects, Actions])@L127` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L237`, `DetailTemplate@L245` |
+| **Selected Program Workspace Panel** | `L381-L450` | `L383: @if (_selectedProgram is not null)`, `L437: @if (_isLoadingHealth)`, `L445: @if (_healthSummary is not null)` | Tabs: `Tab[tab-health] @L423` <br> Buttons: `Btn("Close Panel" -> _selectedProgram = null)@L411` |
+| **Health KPI Cards** | `L451-L600` | `L531: @if (_healthSummary.CrossProjectDependencies.Count == 0)`, `L569: @if (context.IsResolved)` | Grids: `CskDataGrid(Items=_healthSummary.CrossProjectDependencies.AsQueryable(), Cols=[Blocked Task, Relation, Depends On (Blocker), Blocker Status])@L547` |
+| **Tab 2: Projects in this Program** | `L601-L640` | `L621: @if (_canManageSelectedProgramProjects)` | Tabs: `Tab[tab-projects] @L603` <br> Buttons: `Btn(OpenAddProjectModal)@L625` |
+| **Add Project Sub-Card** | `L641-L818` | `L643: @if (_showAddProjectModal)`, `L719: @if (_isLoadingProjects)`, `L727: @if (_programProjects.Count == 0)` | Inputs: `CskTextInput("Project Name": _projName)@L659`, `CskTextInput("Short Code": _projShortCode)@L661`, `CskTextInput("Location": _projLocation)@L667`, `DataListSelect("Status": _projStatus)@L671`, `CskDatePicker("Tentative Start Date": _projStartDate)@L679`, `CskDatePicker("Tentative End Date": _projEndDate)@L681`, `CskTextArea("Brief summary of project ...": _projScopeSummary)@L689` <br> Buttons: `Btn(CreateProgramProjectAsync)@L695`, `Btn("Cancel" -> CloseProjectModal)@L705` <br> Grids: `CskDataGrid(Items=_programProjects.AsQueryable(), Cols=[Code, Project Name, Status, Timeline, Actions])@L743` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L803` |
+| **Tab 3: Program Calendar & Deadlines** | `L819-L862` | `L835: @if (_isLoadingCalendar)` | Tabs: `Tab[tab-calendar] @L821` <br> Components: `FluentCalendarScheduleComp(Items=_programCalendarItems, ReadOnly=(!_canManageSelectedProgramProjects), OnAddEntry=OpenAddProgramCalendarModal)@L847` |
+| **Tab 4: Program R.A.I.D. Log** | `L863-L1106` | `L893: @if (_selectedRaidCategory == "Risks")`, `L897: @if (_programRisks.Count == 0)`, `L941: @if (_selectedRaidCategory == "Assumptions")`, `L945: @if (_programAssumptions.Count == 0)`, `L979: @if (_selectedRaidCategory == "Issues")`, `L983: @if (_programIssues.Count == 0)`, `L1019: @if (_selectedRaidCategory == "Blockers")`, `L1023: @if (_programBlockers.Count == 0)`, `L1047: @if (context.IsScheduleConflict)`, `L1061: @if (context.IsResolved)` | Tabs: `Tab[tab-raid] @L865` <br> Inputs: `CskRadioGroup(_selectedRaidCategory)@L881` <br> Grids: `CskDataGrid(Items=_programRisks.AsQueryable(), Cols=[Risk Title, Impact, Probability, Exposure, Status, Target Due Date])@L909`, `CskDataGrid(Items=_programAssumptions.AsQueryable(), Cols=[Assumption, Validation Criteria, Status, Impact if Invalid, Validation Due Date])@L957`, `CskDataGrid(Items=_programIssues.AsQueryable(), Cols=[Issue Title, Severity, Status, Workaround, Resolution, Resolution Due Date])@L995`, `CskDataGrid(Items=_programBlockers.AsQueryable(), Cols=[Dependent Item (Blocked), Prerequisite Item (Blocking), Criticality, Status, Impact Details, SLA Resolve Due Date])@L1035` |
+| **Create/View/Edit Program Wizard Modal** | `L1107-L1126` | Unconditional | Components: `CreateProgramWizardModal(IsOpen=_showCreateProgramWizard, IsReadOnly=_isProgramWizardReadOnly, IsEditMode=_isProgramWizardEditMode, Title=_programWizardTitle, InitialState=_programWizardInitialState, OnEditRequested=HandleEditProgramFromWizardAsync)@L1109` |
+| **Create/View/Edit Project Wizard Modal** | `L1127-L1147` | Unconditional | Components: `CreateProjectWizardModal(IsOpen=_showCreateProjectWizard, IsReadOnly=_isWizardReadOnly, IsEditMode=_isWizardEditMode, Title=_wizardTitle, InitialState=_wizardInitialState, OnEditRequested=HandleEditProjectFromWizardAsync)@L1129` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `TenantFilterOption` | `L23-L23` | [HELPER] | Local UI State |
-| `OnInitializedAsync` | `L112-L115` | [INIT] | `local:LoadAvailableTenantsAsync()` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` |
-| `LoadAvailableTenantsAsync` | `L117-L154` | [HELPER] | `[IsRootAdmin,TenantBoundaryGate]` -> `local:TenantFilterOption()` -> `local:OnTenantSelectedAsync()` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` |
-| `OnTenantSelectedAsync` | `L156-L172` | [HELPER] | `local:LoadProgramsAsync()` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` |
-| `LoadProgramsAsync` | `L174-L221` | [HELPER] | `[IsRootAdmin,TenantAdminGate,ProgramAccessGate]` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` |
-| `SelectProgramAsync` | `L223-L232` | [HELPER] | `[IsRootAdmin]` -> `local:LoadProgramCalendarAsync()` -> `local:LoadProgramRaidAsync()` -> `local:LoadProgramHealthAsync()` -> `local:LoadProgramProjectsAsync()` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramProjectsAsync[ProgramAccessGate](DB[R]:Projects)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:ProgramCalendars)` |
-| `LoadProgramCalendarAsync` | `L234-L254` | [HELPER] | `CalendarService.GetProgramCalendarAsync(DB[R]:ProgramCalendars)` |
-| `LoadProgramRaidAsync` | `L256-L272` | [HELPER] | `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` |
-| `OpenAddProgramCalendarModal` | `L274-L279` | OnAddEntry@L467 | Local UI State |
-| `LoadProgramHealthAsync` | `L281-L298` | [HELPER] | `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` |
-| `LoadProgramProjectsAsync` | `L300-L318` | [HELPER] | `ProgramService.GetProgramProjectsAsync[ProgramAccessGate](DB[R]:Projects)` |
-| `OpenCreateProgramModal` | `L320-L331` | [HELPER] | `UnsavedChanges.RegisterChange` |
-| `OpenEditProgramModal` | `L333-L344` | [HELPER] | `UnsavedChanges.RegisterChange` |
-| `CloseProgramModal` | `L346-L350` | [HELPER] | `UnsavedChanges.ClearChange` |
-| `SaveProgramAsync` | `L352-L410` | [HELPER] | `local:LoadProgramsAsync()` -> `local:SelectProgramAsync()` -> `local:CloseProgramModal()` -> `ProgramService.UpdateProgramAsync[ProgramAccessGate](DB[W]:Programs; Audit:LogUserActivityAsync)` -> `ProgramService.CreateProgramAsync[TenantAdminGate](DB[W]:Tenants,Programs; Audit:LogUserActivityAsync)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` -> `UnsavedChanges.ClearChange` |
-| `OpenAddProjectModal` | `L412-L423` | OnClick@L349 | `UnsavedChanges.RegisterChange` |
-| `CloseProjectModal` | `L425-L429` | OnClick@L391 | `UnsavedChanges.ClearChange` |
-| `CreateProgramProjectAsync` | `L431-L459` | OnClick@L388 | `local:LoadProgramHealthAsync()` -> `local:LoadProgramProjectsAsync()` -> `local:CloseProjectModal()` -> `TenantService.CreateTenantProjectAsync[TenantBoundaryGate](DB[W]:Projects; Audit:LogUserActivityAsync,LogSecurityEventAsync)` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramProjectsAsync[ProgramAccessGate](DB[R]:Projects)` -> `UnsavedChanges.ClearChange` |
-| `OpenCreateProgramWizard` | `L461-L475` | OnClick@L24 | Local UI State |
-| `OpenViewProgramWizard` | `L477-L503` | OnClick@L125 | Local UI State |
-| `OpenEditProgramWizard` | `L505-L531` | OnClick@L134 | Local UI State |
-| `OnProgramWizardSavedAsync` | `L533-L605` | OnProgramCreated@L605 | `local:LoadProgramsAsync()` -> `local:SelectProgramAsync()` -> `ProgramService.UpdateProgramAsync[ProgramAccessGate](DB[W]:Programs; Audit:LogUserActivityAsync)` -> `ProgramService.CreateProgramAsync[TenantAdminGate](DB[W]:Tenants,Programs; Audit:LogUserActivityAsync)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` |
-| `ToggleProgramExpanded` | `L607-L617` | OnClick@L80 | Local UI State |
-| `GetProjectStatusBadgeColor` | `L619-L624` | [HELPER] | Local UI State |
-| `OpenCreateProjectWizard` | `L626-L638` | OnClick@L118 | Local UI State |
-| `OpenViewProjectWizard` | `L640-L656` | OnClick@L190 | Local UI State |
-| `OpenEditProjectWizard` | `L658-L674` | OnClick@L196 | Local UI State |
-| `OnProjectWizardSavedAsync` | `L676-L748` | OnProjectCreated@L614 | `local:LoadProgramsAsync()` -> `TenantService.UpdateTenantProjectAsync(DB[W]:Projects; Audit:LogUserActivityAsync,LogSecurityEventAsync)` -> `TenantService.CreateTenantProjectAsync[TenantBoundaryGate](DB[W]:Projects; Audit:LogUserActivityAsync,LogSecurityEventAsync)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` |
-| `Dispose` | `L750-L753` | [HELPER] | `UnsavedChanges.ClearChange` |
+| `TenantFilterOption` | `L41-L41` | [HELPER] | Local UI State |
+| `OnInitializedAsync` | `L135-L138` | [INIT] | `local:LoadAvailableTenantsAsync()` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` |
+| `LoadAvailableTenantsAsync` | `L140-L189` | [HELPER] | `[IsRootAdmin,TenantBoundaryGate]` -> `local:TenantFilterOption()` -> `local:OnTenantSelectedAsync()` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` |
+| `OnTenantSelectedAsync` | `L191-L208` | [HELPER] | `local:LoadProgramsAsync()` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` |
+| `LoadProgramsAsync` | `L210-L261` | [HELPER] | `[IsRootAdmin,TenantAdminGate,ProgramAccessGate]` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` |
+| `SelectProgramAsync` | `L263-L276` | [HELPER] | `[IsRootAdmin]` -> `local:LoadProgramCalendarAsync()` -> `local:LoadProgramRaidAsync()` -> `local:LoadProgramHealthAsync()` -> `local:LoadProgramProjectsAsync()` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramProjectsAsync[ProgramAccessGate](DB[R]:Projects)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:Calendars)` |
+| `ResolveSelectedTenantGuid` | `L278-L296` | [HELPER] | `[TenantBoundaryGate]` |
+| `LoadProgramCalendarAsync` | `L298-L322` | [HELPER] | `local:ResolveSelectedTenantGuid()` -> `CalendarService.GetProgramCalendarAsync(DB[R]:Calendars)` |
+| `LoadProgramRaidAsync` | `L324-L343` | [HELPER] | `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` |
+| `OpenAddProgramCalendarModal` | `L345-L350` | OnAddEntry@L853 | Local UI State |
+| `LoadProgramHealthAsync` | `L352-L373` | [HELPER] | `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` |
+| `LoadProgramProjectsAsync` | `L375-L397` | [HELPER] | `ProgramService.GetProgramProjectsAsync[ProgramAccessGate](DB[R]:Projects)` |
+| `OpenCreateProgramModal` | `L399-L411` | [HELPER] | `UnsavedChanges.RegisterChange` |
+| `OpenEditProgramModal` | `L413-L426` | [HELPER] | `UnsavedChanges.RegisterChange` |
+| `CloseProgramModal` | `L428-L433` | [HELPER] | `UnsavedChanges.ClearChange` |
+| `SaveProgramAsync` | `L435-L519` | [HELPER] | `local:LoadProgramsAsync()` -> `local:SelectProgramAsync()` -> `local:CloseProgramModal()` -> `ProgramService.UpdateProgramAsync[ProgramAccessGate](DB[R]:Programs,ApplyOriginalVersion; Audit:LogUserActivityAsync)` -> `ProgramService.CreateProgramAsync[TenantAdminGate](DB[W]:Tenants,Programs,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` -> `UnsavedChanges.ClearChange` |
+| `OpenAddProjectModal` | `L521-L533` | OnClick@L631 | `UnsavedChanges.RegisterChange` |
+| `CloseProjectModal` | `L535-L540` | OnClick@L705 | `UnsavedChanges.ClearChange` |
+| `CreateProgramProjectAsync` | `L542-L583` | OnClick@L699 | `local:LoadProgramHealthAsync()` -> `local:LoadProgramProjectsAsync()` -> `local:CloseProjectModal()` -> `TenantService.CreateTenantProjectAsync[TenantBoundaryGate](DB[W]:Projects,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync,LogSecurityEventAsync)` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramProjectsAsync[ProgramAccessGate](DB[R]:Projects)` -> `UnsavedChanges.ClearChange` |
+| `HandleEditProgramFromWizardAsync` | `L585-L596` | OnEditRequested@L1123 | `local:OpenEditProgramWizard()` -> `ProgramService.GetProgramByIdAsync[ProgramAccessGate](DB[R]:Programs)` -> `CalendarService.GetProgramCalendarEntitiesAsync(DB[R]:Calendars)` |
+| `HandleEditProjectFromWizardAsync` | `L598-L611` | OnEditRequested@L1143 | `local:OpenEditProjectWizard()` -> `TenantService.GetProjectsByTenantIdAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Projects)` -> `CalendarService.GetProjectCalendarEntitiesAsync(DB[R]:Calendars)` |
+| `OpenCreateProgramWizard` | `L613-L632` | OnClick@L39 | Local UI State |
+| `OpenViewProgramWizard` | `L634-L732` | OnClick@L231 | `local:ResolveSelectedTenantGuid()` -> `CalendarService.GetProgramCalendarEntitiesAsync(DB[R]:Calendars)` |
+| `OpenEditProgramWizard` | `L734-L844` | [HELPER] | `local:ResolveSelectedTenantGuid()` -> `ProgramService.GetProgramByIdAsync[ProgramAccessGate](DB[R]:Programs)` -> `CalendarService.GetProgramCalendarEntitiesAsync(DB[R]:Calendars)` |
+| `OnProgramWizardSavedAsync` | `L846-L984` | OnSaveAsync@L1125 | `local:LoadProgramsAsync()` -> `local:SelectProgramAsync()` -> `local:ResolveSelectedTenantGuid()` -> `ProgramService.UpdateProgramAsync[ProgramAccessGate](DB[R]:Programs,ApplyOriginalVersion; Audit:LogUserActivityAsync)` -> `ProgramService.CreateProgramAsync[TenantAdminGate](DB[W]:Tenants,Programs,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` -> `ProgramService.SyncProgramAdminsAsync(DB[W]:Programs,ProgramUserRoles,IsTransactionScopeCommitAuthorized)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `CalendarService.SaveProgramCalendarScheduleAsync` -> `UnitOfWork.ExecuteInTransactionAsync()` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` | Fails: `updateResult.Errors; createResult.Errors; adminSyncResult.Errors; saveScheduleResult.Errors` |
+| `ToggleProgramExpanded` | `L986-L997` | OnClick@L141 | Local UI State |
+| `GetProjectStatusBadgeColor` | `L999-L1006` | [HELPER] | Local UI State |
+| `OpenCreateProjectWizard` | `L1008-L1023` | OnClick@L217 | Local UI State |
+| `OpenViewProjectWizard` | `L1025-L1129` | OnClick@L339 | `local:ResolveSelectedTenantGuid()` -> `CalendarService.GetProjectCalendarEntitiesAsync(DB[R]:Calendars)` |
+| `OpenEditProjectWizard` | `L1131-L1246` | [HELPER] | `local:ResolveSelectedTenantGuid()` -> `TenantService.GetProjectsByTenantIdAsync[IsRootAdmin,TenantBoundaryGate](DB[R]:Projects)` -> `CalendarService.GetProjectCalendarEntitiesAsync(DB[R]:Calendars)` |
+| `OnProjectWizardSavedAsync` | `L1248-L1393` | OnSaveAsync@L1145 | `local:LoadProgramsAsync()` -> `local:ResolveSelectedTenantGuid()` -> `TenantService.UpdateTenantProjectAsync(DB[W]:Projects,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync,LogSecurityEventAsync)` -> `TenantService.CreateTenantProjectAsync[TenantBoundaryGate](DB[W]:Projects,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync,LogSecurityEventAsync)` -> `TenantService.SyncProjectRosterAsync[HmacRowSignature](DB[W]:Projects,ProjectUserRoles,Users,TenantUsers,IsTransactionScopeCommitAuthorized)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` -> `CalendarService.SaveProjectCalendarScheduleAsync` -> `UnitOfWork.ExecuteInTransactionAsync()` -> `HierarchyAuth.IsTenantAdminAsync[TenantAdminGate](DB[R]:Tenants)` -> `HierarchyAuth.GetAccessibleProgramIdsAsync(DB[R]:Tenants)` -> `HierarchyAuth.IsProgramAdminAsync[TenantAdminGate,ProgramAccessGate,HmacRowSignature](DB[R]:Programs,ProgramUserRoles; Audit:LogSecurityEventAsync)` | Fails: `result.Errors; rosterSyncResult.Errors; saveScheduleResult.Errors` |
+| `Dispose` | `L1395-L1398` | [HELPER] | `UnsavedChanges.ClearChange` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L99-L121` | `IsRootAdmin` | `DB[R]: Tenants` |
-| `ProgramService.GetProgramsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L41-L70` | - | `DB[R]: Tenants,Programs` |
-| `HierarchyAuthorizationService.IsTenantAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L145-L173` | `TenantAdminGate` | `DB[R]: Tenants` |
-| `HierarchyAuthorizationService.GetAccessibleProgramIdsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L813-L829` | - | `DB[R]: Tenants` |
-| `HierarchyAuthorizationService.IsProgramAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L177-L257` | `TenantAdminGate, ProgramAccessGate, HmacRowSignature` | `DB[R]: Programs,ProgramUserRoles` `Audit: LogSecurityEventAsync` |
-| `ProgramService.GetProgramRisksAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L351-L358` | - | `DB[R]: Risks` |
-| `ProgramService.GetProgramAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L360-L367` | - | `DB[R]: Assumptions` |
-| `ProgramService.GetProgramIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L369-L376` | - | `DB[R]: Issues` |
-| `ProgramService.GetProgramBlockersAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L378-L385` | - | `DB[R]: WorkDependencies` |
-| `ProgramService.GetProgramHealthAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L234-L349` | - | `DB[R]: Programs,Tasks,WorkDependencies` |
-| `ProgramService.GetProgramProjectsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L220-L232` | `ProgramAccessGate` | `DB[R]: Projects` |
-| `CalendarService.GetProgramCalendarAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L30-L76` | - | `DB[R]: ProgramCalendars` |
+| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L137-L171` | `IsRootAdmin` | `DB[R]: Tenants` |
+| `ProgramService.GetProgramsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L45-L79` | - | `DB[R]: Tenants,Programs` |
+| `HierarchyAuthorizationService.IsTenantAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L107-L126` | `TenantAdminGate` | `DB[R]: Tenants` |
+| `HierarchyAuthorizationService.GetAccessibleProgramIdsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L579-L592` | - | `DB[R]: Tenants` |
+| `HierarchyAuthorizationService.IsProgramAdminAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L128-L183` | `TenantAdminGate, ProgramAccessGate, HmacRowSignature` | `DB[R]: Programs,ProgramUserRoles` `Audit: LogSecurityEventAsync` |
+| `ProgramService.GetProgramRisksAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L468-L477` | - | `DB[R]: Risks` |
+| `ProgramService.GetProgramAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L479-L488` | - | `DB[R]: Assumptions` |
+| `ProgramService.GetProgramIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L490-L499` | - | `DB[R]: Issues` |
+| `ProgramService.GetProgramBlockersAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L501-L510` | - | `DB[R]: WorkDependencies` |
+| `ProgramService.GetProgramHealthAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L331-L466` | - | `DB[R]: Programs,Tasks,WorkDependencies` |
+| `ProgramService.GetProgramProjectsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L316-L329` | `ProgramAccessGate` | `DB[R]: Projects` |
+| `CalendarService.GetProgramCalendarAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L37-L94` | - | `DB[R]: Calendars` |
 | `UnsavedChangesStateService.RegisterChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L18-L24` | - | In-Memory |
 | `UnsavedChangesStateService.ClearChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L26-L34` | - | In-Memory |
-| `ProgramService.UpdateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L160-L218` | `ProgramAccessGate` | `DB[W]: Programs` `Audit: LogUserActivityAsync` |
-| `ProgramService.CreateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L94-L158` | `TenantAdminGate` | `DB[W]: Tenants,Programs` `Audit: LogUserActivityAsync` |
-| `TenantService.CreateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L776-L859` | `TenantBoundaryGate` | `DB[W]: Projects` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
-| `TenantService.UpdateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L861-L943` | - | `DB[W]: Projects` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
+| `ProgramService.UpdateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L175-L249` | `ProgramAccessGate` | `DB[R]: Programs,ApplyOriginalVersion` `Audit: LogUserActivityAsync` |
+| `ProgramService.CreateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L108-L173` | `TenantAdminGate` | `DB[W]: Tenants,Programs,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync` |
+| `TenantService.CreateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1112-L1238` | `TenantBoundaryGate` | `DB[W]: Projects,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
+| `ProgramService.GetProgramByIdAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L81-L106` | `ProgramAccessGate` | `DB[R]: Programs` |
+| `CalendarService.GetProgramCalendarEntitiesAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L208-L235` | - | `DB[R]: Calendars` |
+| `TenantService.GetProjectsByTenantIdAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1702-L1738` | `IsRootAdmin, TenantBoundaryGate` | `DB[R]: Projects` |
+| `CalendarService.GetProjectCalendarEntitiesAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L237-L264` | - | `DB[R]: Calendars` |
+| `ProgramService.SyncProgramAdminsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L251-L314` | - | `DB[W]: Programs,ProgramUserRoles,IsTransactionScopeCommitAuthorized` |
+| `CalendarService.SaveProgramCalendarScheduleAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L576-L616` | - | In-Memory |
+| `TenantService.UpdateTenantProjectAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1240-L1366` | - | `DB[W]: Projects,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync,LogSecurityEventAsync` |
+| `TenantService.SyncProjectRosterAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1368-L1509` | `HmacRowSignature` | `DB[W]: Projects,ProjectUserRoles,Users,TenantUsers,IsTransactionScopeCommitAuthorized` |
+| `CalendarService.SaveProjectCalendarScheduleAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L835-L876` | - | In-Memory |
 
 ## 4. Validation Rules
 
@@ -89,6 +100,8 @@ source_hash_sha256: d334b867fd1d9c07
 - Access Denied: You do not have administrative permissions to edit this progr...
 - Program not found.
 - A program with code '{code}' already exists in this tenant.
+- Concurrency Conflict: Another user updated this program while you were editi...
+- saveResult.Message
 
 ### ProgramService.CreateProgramAsync
 
@@ -108,6 +121,21 @@ source_hash_sha256: d334b867fd1d9c07
 - End date cannot precede start date.
 - A project with name '{trimmedName}' or short code '{trimmedCode}' already e...
 
+### ProgramService.GetProgramByIdAsync
+
+- Invalid Program ID.
+- Access Denied: You do not have permissions to access this program.
+- Program not found.
+
+### ProgramService.SyncProgramAdminsAsync
+
+- Invalid Program ID.
+- Program not found.
+
+### CalendarService.SaveProgramCalendarScheduleAsync
+
+- Failed to persist program calendar: {ex.Message}
+
 ### TenantService.UpdateTenantProjectAsync
 
 - Project Name is required.
@@ -116,4 +144,13 @@ source_hash_sha256: d334b867fd1d9c07
 - Tenant '{tenantSlug}' was not found.
 - Project was not found in tenant '{tenantSlug}'.
 - Another project with name '{trimmedName}' or short code '{trimmedCode}' alr...
+
+### TenantService.SyncProjectRosterAsync
+
+- Invalid Project ID.
+- Project not found.
+
+### CalendarService.SaveProjectCalendarScheduleAsync
+
+- Failed to persist project calendar: {ex.Message}
 

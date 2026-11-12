@@ -3,8 +3,8 @@
 target_spec: docs/specs/TabContainerComp.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor
 code_behind: src/BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor.cs
-generated_at_utc: 2026-11-03T02:50:48Z
-source_hash_sha256: 62671066a84bdb5f
+generated_at_utc: 2026-11-12T16:18:57Z
+source_hash_sha256: 8a22118d0a025c1e
 ============================================================================ -->
 # AI Navigation Index: `TabContainerComp`
 
@@ -17,7 +17,7 @@ source_hash_sha256: 62671066a84bdb5f
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Shared/TabContainerComp.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitialized` | `L42-L54` | [INIT] | Local UI State |
-| `OnParametersSet` | `L56-L67` | [INIT] | Local UI State |
-| `IsTabLoaded` | `L69-L69` | [HELPER] | Local UI State |
+| `OnInitialized` | `L43-L55` | [INIT] | Local UI State |
+| `OnParametersSet` | `L57-L68` | [INIT] | Local UI State |
+| `IsTabLoaded` | `L70-L70` | [HELPER] | Local UI State |
 

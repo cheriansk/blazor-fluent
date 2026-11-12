@@ -1,0 +1,79 @@
+@namespace BlazorEnterprise.Web.Components.Dialogs
+@using BlazorEnterprise.Core.Dtos.Tasks
+@using BlazorEnterprise.Shared.UI.Components
+
+<div class="task-type-selector-root @Class">
+    <div class="btn-group-dropdown">
+        <CskButton Variant="CskButtonVariant.Filled"
+                   IconStart="@(Icon ?? CskIcons.Add)"
+                   OnClick="ToggleDropdown"
+                   Disabled="@Disabled"
+                   Class="btn-new-task-main">
+            @ButtonText
+            <CskIcon Icon="@(_isOpen ? CskIcons.ChevronUp : CskIcons.ChevronDown)" Class="ml-2 icon-dropdown-caret" />
+        </CskButton>
+
+        @if (_isOpen)
+        {
+            <div class="dropdown-backdrop" @onclick="CloseDropdown"></div>
+            <div class="task-type-menu">
+                <div class="menu-header">Select Work Item Type</div>
+
+                @if (IsAllowed(CreationTaskTypeEnum.SprintTask))
+                {
+                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.SprintTask)">
+                        <span class="type-icon"><CskIcon Icon="@CskIcons.TaskListSquare" Size="20" /></span>
+                        <div class="type-info">
+                            <span class="type-name">Sprint Task</span>
+                            <span class="type-desc">Iteration delivery task committed to a sprint</span>
+                        </div>
+                    </button>
+                }
+
+                @if (IsAllowed(CreationTaskTypeEnum.MiscTask))
+                {
+                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.MiscTask)">
+                        <span class="type-icon"><CskIcon Icon="@CskIcons.Document" Size="20" /></span>
+                        <div class="type-info">
+                            <span class="type-name">Misc Task</span>
+                            <span class="type-desc">Ad-hoc directive or unparented backlog task</span>
+                        </div>
+                    </button>
+                }
+
+                @if (IsAllowed(CreationTaskTypeEnum.Risk))
+                {
+                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.Risk)">
+                        <span class="type-icon"><CskIcon Icon="@CskIcons.Shield" Size="20" /></span>
+                        <div class="type-info">
+                            <span class="type-name">Risk</span>
+                            <span class="type-desc">Formal RAID risk with exposure rating</span>
+                        </div>
+                    </button>
+                }
+
+                @if (IsAllowed(CreationTaskTypeEnum.Assumption))
+                {
+                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.Assumption)">
+                        <span class="type-icon"><CskIcon Icon="@CskIcons.LightbulbPulse" Size="20" /></span>
+                        <div class="type-info">
+                            <span class="type-name">Assumption</span>
+                            <span class="type-desc">Planning hypothesis requiring validation</span>
+                        </div>
+                    </button>
+                }
+
+                @if (IsAllowed(CreationTaskTypeEnum.Issue))
+                {
+                    <button type="button" class="menu-item" @onclick="() => SelectType(CreationTaskTypeEnum.Issue)">
+                        <span class="type-icon"><CskIcon Icon="@CskIcons.Warning" Size="20" /></span>
+                        <div class="type-info">
+                            <span class="type-name">Issue</span>
+                            <span class="type-desc">Active delivery impediment or blocker</span>
+                        </div>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>

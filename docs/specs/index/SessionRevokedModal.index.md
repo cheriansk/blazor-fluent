@@ -3,7 +3,7 @@
 target_spec: docs/specs/SessionRevokedModal.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor
 code_behind: src/BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor.cs
-generated_at_utc: 2026-11-03T02:50:44Z
+generated_at_utc: 2026-11-12T16:18:55Z
 source_hash_sha256: 66e369c1485fdedb
 ============================================================================ -->
 # AI Navigation Index: `SessionRevokedModal`
@@ -19,13 +19,13 @@ source_hash_sha256: 66e369c1485fdedb
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Common/SessionRevokedModal.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitialized` | `L18-L22` | [INIT] | `local:RunRevocationWatchdogAsync()` -> `SessionService.IsSessionRevokedAsync(DB[R]:UserSessions)` |
-| `RunRevocationWatchdogAsync` | `L24-L49` | [HELPER] | `SessionService.IsSessionRevokedAsync(DB[R]:UserSessions)` |
+| `OnInitialized` | `L18-L22` | [INIT] | `local:RunRevocationWatchdogAsync()` -> `SessionService.IsSessionRevokedAsync(DB[R]:UserSessions; Audit:LogSecurityEventAsync)` |
+| `RunRevocationWatchdogAsync` | `L24-L49` | [HELPER] | `SessionService.IsSessionRevokedAsync(DB[R]:UserSessions; Audit:LogSecurityEventAsync)` |
 | `HandleRedirectToLogin` | `L51-L61` | [HELPER] | `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` |
 | `Dispose` | `L63-L66` | [HELPER] | Local UI State |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `UserSessionService.IsSessionRevokedAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L167-L179` | - | `DB[R]: UserSessions` |
+| `UserSessionService.IsSessionRevokedAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L165-L187` | - | `DB[R]: UserSessions` `Audit: LogSecurityEventAsync` |
 

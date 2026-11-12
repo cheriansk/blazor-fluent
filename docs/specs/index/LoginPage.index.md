@@ -3,7 +3,7 @@
 target_spec: docs/specs/LoginPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/LoginPage.razor.cs
-generated_at_utc: 2026-11-03T02:50:48Z
+generated_at_utc: 2026-11-12T16:18:56Z
 source_hash_sha256: a7499318fa2f1f0b
 ============================================================================ -->
 # AI Navigation Index: `LoginPage`
@@ -27,15 +27,15 @@ source_hash_sha256: a7499318fa2f1f0b
 | `HandleMicrosoftSignIn` | `L74-L86` | [HELPER] | `NavigationManager.NavigateTo()` |
 | `HandleLocalEmailSignInAsync` | `L88-L99` | [HELPER] | `local:TestSignInAsync()` -> `AuthVerificationService.VerifyLoginCredentialsAsync()` -> `NavigationManager.NavigateTo()` |
 | `TestSignInAsync` | `L101-L133` | [HELPER] | `local:ProcessAuthSuccessAsync()` -> `AuthVerificationService.VerifyLoginCredentialsAsync()` -> `NavigationManager.NavigateTo()` |
-| `ProcessAuthSuccessAsync` | `L135-L160` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
-| `HandleConfirmTenantSelectionAsync` | `L162-L170` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
+| `ProcessAuthSuccessAsync` | `L135-L160` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
+| `HandleConfirmTenantSelectionAsync` | `L162-L170` | [HELPER] | `local:CompleteLoginAsync()` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
 | `CancelTenantSelection` | `L172-L178` | [HELPER] | Local UI State |
-| `CompleteLoginAsync` | `L180-L255` | [HELPER] | `[IsRootAdmin]` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
+| `CompleteLoginAsync` | `L180-L255` | [HELPER] | `[IsRootAdmin]` -> `TenantContext.Initialize()` -> `SessionService.CreateSessionAsync[TenantBoundaryGate](DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` -> `AuditService.LogUserActivityAsync` -> `SessionStorage.SetAsync()` -> `AuthStateProvider.NotifyUserChanged()` -> `TimeZoneService.ApplyUserTimeZone` -> `NavigationManager.NavigateTo()` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `UserSessionService.CreateSessionAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L37-L85` | `TenantBoundaryGate` | `DB[W]: UserSessions` |
-| `AuditService.LogUserActivityAsync` | `BlazorEnterprise.Persistence/Services/AuditService.cs#L241-L303` | - | In-Memory |
+| `UserSessionService.CreateSessionAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L37-L83` | `TenantBoundaryGate` | `DB[W]: UserSessions,IsTransactionScopeCommitAuthorized` |
+| `AuditService.LogUserActivityAsync` | `BlazorEnterprise.Persistence/Services/AuditService.cs#L186-L237` | - | In-Memory |
 | `UserTimeZoneService.ApplyUserTimeZone` | `BlazorEnterprise.Web/Services/UserTimeZoneService.cs#L51-L57` | - | In-Memory |
 

@@ -78,7 +78,7 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <!-- TemplateGuard Roslyn Governance Package -->
-    <PackageVersion Include="BlazorEnterprise.TemplateGuard" Version="1.0.12" />
+    <PackageVersion Include="BlazorEnterprise.TemplateGuard" Version="1.0.16" />
     <PackageVersion Include="migration_command_control.TemplateGuard" Version="1.0.0" />
   </ItemGroup>
 </Project>

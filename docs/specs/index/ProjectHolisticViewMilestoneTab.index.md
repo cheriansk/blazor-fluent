@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProjectHolisticViewMilestoneTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor.cs
-generated_at_utc: 2026-11-03T02:50:49Z
-source_hash_sha256: 3ae2d85abec51ec4
+generated_at_utc: 2026-11-12T16:18:57Z
+source_hash_sha256: 488a239e288f3003
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticViewMilestoneTab`
 
@@ -12,10 +12,12 @@ source_hash_sha256: 3ae2d85abec51ec4
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L48` | `L6: @if (Milestones == null || Milestones.Count == 0)`, `L32: @if (!string.IsNullOrWhiteSpace(m.Description))` | - |
+| **Header & Top-Level Controls** | `L1-L61` | `L6: @if (Milestones == null || Milestones.Count == 0)`, `L34: @if (!string.IsNullOrWhiteSpace(parentStage))`, `L42: @if (!string.IsNullOrWhiteSpace(m.Comments ?? m.Description))` | - |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `GetStatusChipClass` | `L11-L20` | [HELPER] | Local UI State |
+| `GetParentTimelineTitle` | `L17-L24` | [HELPER] | Local UI State |
+| `GetLinkedWorkItemsCount` | `L26-L31` | [HELPER] | Local UI State |
+| `GetStatusChipClass` | `L33-L42` | [HELPER] | Local UI State |
 

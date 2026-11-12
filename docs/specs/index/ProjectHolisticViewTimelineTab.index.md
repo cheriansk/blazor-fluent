@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProjectHolisticViewTimelineTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor.cs
-generated_at_utc: 2026-11-03T02:50:49Z
-source_hash_sha256: 855cebda0edd9c95
+generated_at_utc: 2026-11-12T16:18:57Z
+source_hash_sha256: 005465351b614113
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticViewTimelineTab`
 
@@ -12,9 +12,10 @@ source_hash_sha256: 855cebda0edd9c95
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L43` | `L6: @if (Events == null || Events.Count == 0)`, `L27: @if (ev.IsOverdue)`, `L34: @if (!string.IsNullOrWhiteSpace(ev.Description))` | - |
+| **Header & Top-Level Controls** | `L1-L101` | `L19: @if (TimelineRows.Count == 0)`, `L44: @if (!string.IsNullOrWhiteSpace(row.Comments ?? row.Description))`, `L55: @if (milestones.Count == 0)`, `L88: @if (!string.IsNullOrWhiteSpace(m.Comments ?? m.Description))` | Components: `RevisionToolbarComp(ProjectId=ProjectId)@L7` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
+| `GetMilestonesForTimeline` | `L37-L38` | [HELPER] | Local UI State |
 

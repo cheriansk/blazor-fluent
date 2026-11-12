@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Web.Models.Dashboard;
@@ -15,6 +16,7 @@ public sealed class ProjectCardItemDto
     public Guid? ProgramId { get; set; }
     public string? ProgramName { get; set; }
     public ProjectStatusEnum Status { get; set; }
+    [AllowHardcodedDefault("Dashboard card default initial health calculation rating")]
     public ProjectHealthRatingEnum Health { get; set; } = ProjectHealthRatingEnum.OnTrack;
     public ProjectRoleEnum? UserRole { get; set; }
     public double ProgressPercentage { get; set; }

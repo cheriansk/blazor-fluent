@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Dtos;
@@ -7,13 +8,16 @@ namespace BlazorEnterprise.Core.Dtos;
 /// </summary>
 public record SendNotificationReqDto
 {
-    public Guid ProjectId { get; init; } = Guid.Empty;
+    public Guid ProjectId { get; init; }
     public string? UserId { get; init; }
+    [AllowHardcodedDefault("Standard baseline category for system notifications")]
     public NotificationCategoryEnum Category { get; init; } = NotificationCategoryEnum.Generic;
+    [AllowHardcodedDefault("Standard baseline severity for informational notifications")]
     public NotificationSeverityEnum Severity { get; init; } = NotificationSeverityEnum.Info;
     public string Title { get; init; } = string.Empty;
     public string Message { get; init; } = string.Empty;
     public string? LinkUrl { get; init; }
+    [AllowHardcodedDefault("Default delivery channel is InApp notification")]
     public NotificationChannelsEnum Channels { get; init; } = NotificationChannelsEnum.InApp;
     public string? MetadataJson { get; init; }
 }
@@ -23,7 +27,7 @@ public record SendNotificationReqDto
 /// </summary>
 public record NotificationFilterReqDto
 {
-    public NotificationCategoryEnum? Category { get; init; } = NotificationCategoryEnum.Generic;
+    public NotificationCategoryEnum? Category { get; init; }
     public bool OnlyUnread { get; init; }
     public bool? IsRead { get; init; }
     public NotificationSeverityEnum? Severity { get; init; }
@@ -32,7 +36,8 @@ public record NotificationFilterReqDto
     public DateTime? FromDateUtc { get; init; }
     public DateTime? ToDateUtc { get; init; }
     public string? SearchTerm { get; init; }
-    public int Skip { get; init; } = 0;
+    public int Skip { get; init; }
+    [AllowHardcodedDefault("Default query page size is 30")]
     public int Take { get; init; } = 30;
 }
 

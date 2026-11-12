@@ -25,24 +25,7 @@ MANDATORY AGENT RULES (READ BEFORE TAKING ANY ACTION):
 ## 1. Pending Changes (Write in Plain English)
 <!-- Write plain English below. For complex items, optionally prefix with [UI], [DATA], [SECURITY], [VALIDATION], [BUGFIX], or [PERFORMANCE] and add 'Acceptance Criteria:' bullets. Then prompt: Implement @[docs/specs/TabContainerComp.requirements.md] -->
 <!-- BEGIN PENDING CHANGES -->
-- [UI] Create a reusable TabContainerComp component in src/BlazorEnterprise.Web/Components/Shared/ for multi-tab views.
-  Acceptance Criteria:
-    - Accepts TabDefinition list parameter (TabId, TabLabel, TabIcon, TabContent as RenderFragment, BadgeContent as string?)
-    - Uses MudTabs component with consistent styling matching MudBlazor theme
-    - Supports lazy-loading of tab content on activation (via callback)
-    - Maintains selected tab state
-    - Supports optional badge indicators for notifications/counts on tabs
-    - Responsive design (collapsible on mobile if needed)
-    - Emits OnTabSelected callback when tab is changed
-    - Clean, semantic HTML structure
-    
-- [DATA] Create TabDefinition model/record in src/BlazorEnterprise.Web/Models/ with:
-  Acceptance Criteria:
-    - TabId: string (unique identifier)
-    - TabLabel: string (display name)
-    - TabIcon: string (MudBlazor icon name or empty)
-    - TabContent: RenderFragment (lazy-loaded or pre-rendered)
-    - BadgeContent: string? (optional notification/count badge)
+- [ ] *(Add new/modified requirements here, then prompt: `Implement @[docs/specs/TabContainerComp.requirements.md]`)*
 <!-- END PENDING CHANGES -->
 
 ## 2. Permanent & Implementation Rules

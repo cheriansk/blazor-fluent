@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProgramHolisticView.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProgramHolisticView.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProgramHolisticView.razor.cs
-generated_at_utc: 2026-11-03T02:50:48Z
-source_hash_sha256: 9e53770ed25eaee1
+generated_at_utc: 2026-11-12T16:18:57Z
+source_hash_sha256: 22e1eaf3cb3bf371
 ============================================================================ -->
 # AI Navigation Index: `ProgramHolisticView`
 
@@ -12,29 +12,31 @@ source_hash_sha256: 9e53770ed25eaee1
 - **Auth**: `Authorize`
 - **Injected**: `ProjectContext:IProjectContext`, `ProgramService:IProgramService`, `CalendarService:ICalendarService`, `TenantContext:ITenantContext`, `NavigationManager:NavigationManager`
 - **Registered Child Components**:
-  - `<TabContainerComp />` @ `L65` | Gate: `_isLoading` | Params: `Tabs="@_tabs"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
+  - `<TabContainerComp />` @ `L76` | Gate: `_isLoading` | Params: `Tabs="@_tabs"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L67` | `L26: @if (ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty)`, `L37: @if (!ProjectContext.ProgramId.HasValue || ProjectContext.ProgramId.Value == Guid.Empty)`, `L56: @if (_isLoading)` | Buttons: `Btn("Refresh" -> RefreshProgramDataAsync)@L28`, `Btn("Return to Dashboard" -> (() => NavigationManager.NavigateTo()@L48` <br> Components: `PageTitle@L19`, `CskSectionHeader(Title=(string.IsNullOrWhiteSpace(ProjectContext.ProgramName) ?, Icon=CskIcons.FolderDocument)@L22`, `Actions@L25`, `TabContainerComp(Tabs=_tabs)@L65` |
+| **Header & Top-Level Controls** | `L1-L78` | `L28: @if (ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId.Value != Guid.Empty)`, `L48: @if (!ProjectContext.ProgramId.HasValue || ProjectContext.ProgramId.Value == Guid.Empty)`, `L67: @if (_isLoading)` | Buttons: `Btn("Refresh" -> RefreshProgramDataAsync)@L34`, `Btn("Return to Dashboard" -> (() => NavigationManager.NavigateTo()@L59` <br> Components: `PageTitle@L21`, `CskSectionHeader(Title=(string.IsNullOrWhiteSpace(ProjectContext.ProgramName) ?, Icon=CskIcons.FolderDocument)@L24`, `Actions@L27`, `TaskTypeSelectionButton(AllowedTypes=_allowedProgramTaskTypes)@L30`, `TaskCreationDialog(ProgramId=ProjectContext.ProgramId)@L43`, `TabContainerComp(Tabs=_tabs)@L76` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/ProgramHolisticView.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitializedAsync` | `L23-L27` | [INIT] | `local:LoadDataAsync()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:ProgramCalendars)` |
-| `HandleProjectContextChanged` | `L29-L36` | [HELPER] | `local:LoadDataAsync()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:ProgramCalendars)` |
-| `RefreshProgramDataAsync` | `L38-L41` | OnClick@L30 | `local:LoadDataAsync()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:ProgramCalendars)` |
-| `LoadDataAsync` | `L43-L97` | [HELPER] | `[TenantBoundaryGate]` -> `local:BuildTabs()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:ProgramCalendars)` |
-| `BuildTabs` | `L99-L161` | [HELPER] | Local UI State |
-| `Dispose` | `L163-L166` | [HELPER] | Local UI State |
+| `OpenCreateDialog` | `L36-L40` | [HELPER] | Local UI State |
+| `HandleTaskCreated` | `L42-L45` | [HELPER] | `local:RefreshProgramDataAsync()` |
+| `OnInitializedAsync` | `L47-L51` | [INIT] | `local:LoadDataAsync()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:Calendars)` |
+| `HandleProjectContextChanged` | `L53-L60` | [HELPER] | `local:LoadDataAsync()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:Calendars)` |
+| `RefreshProgramDataAsync` | `L62-L65` | OnClick@L36 | `local:LoadDataAsync()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:Calendars)` |
+| `LoadDataAsync` | `L67-L147` | [HELPER] | `[TenantBoundaryGate]` -> `local:BuildTabs()` -> `local:Dispose()` -> `ProgramService.GetProgramHealthAsync(DB[R]:Programs,Tasks,WorkDependencies)` -> `ProgramService.GetProgramRisksAsync(DB[R]:Risks)` -> `ProgramService.GetProgramAssumptionsAsync(DB[R]:Assumptions)` -> `ProgramService.GetProgramIssuesAsync(DB[R]:Issues)` -> `ProgramService.GetProgramBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProgramCalendarAsync(DB[R]:Calendars)` |
+| `BuildTabs` | `L149-L215` | [HELPER] | `[TenantBoundaryGate]` |
+| `Dispose` | `L217-L226` | [HELPER] | Local UI State |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `ProgramService.GetProgramHealthAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L234-L349` | - | `DB[R]: Programs,Tasks,WorkDependencies` |
-| `ProgramService.GetProgramRisksAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L351-L358` | - | `DB[R]: Risks` |
-| `ProgramService.GetProgramAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L360-L367` | - | `DB[R]: Assumptions` |
-| `ProgramService.GetProgramIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L369-L376` | - | `DB[R]: Issues` |
-| `ProgramService.GetProgramBlockersAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L378-L385` | - | `DB[R]: WorkDependencies` |
-| `CalendarService.GetProgramCalendarAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L30-L76` | - | `DB[R]: ProgramCalendars` |
+| `ProgramService.GetProgramHealthAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L331-L466` | - | `DB[R]: Programs,Tasks,WorkDependencies` |
+| `ProgramService.GetProgramRisksAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L468-L477` | - | `DB[R]: Risks` |
+| `ProgramService.GetProgramAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L479-L488` | - | `DB[R]: Assumptions` |
+| `ProgramService.GetProgramIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L490-L499` | - | `DB[R]: Issues` |
+| `ProgramService.GetProgramBlockersAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L501-L510` | - | `DB[R]: WorkDependencies` |
+| `CalendarService.GetProgramCalendarAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L37-L94` | - | `DB[R]: Calendars` |
 

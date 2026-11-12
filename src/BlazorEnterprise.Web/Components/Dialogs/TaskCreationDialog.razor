@@ -1,0 +1,372 @@
+@namespace BlazorEnterprise.Web.Components.Dialogs
+@using BlazorEnterprise.Core.Contracts
+@using BlazorEnterprise.Core.Dtos.Tasks
+@using BlazorEnterprise.Core.Domain.Tasks
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.UI.Components
+@using BlazorEnterprise.Web.Components.Common
+
+@if (IsOpen)
+{
+    <div class="task-dialog-backdrop" @onclick="HandleBackdropClick" @onkeydown="HandleKeyDown" tabindex="-1">
+        <div class="task-dialog-modal" @onclick:stopPropagation="true">
+            <!-- Dialog Header -->
+            <div class="task-dialog-header">
+                <div class="header-left">
+                    <span class="header-icon"><CskIcon Icon="@GetTaskTypeIcon(_request.TaskType)" Size="24" /></span>
+                    <h2 class="header-title">Create @TaskCreationService.GetTaskTypeDisplayName(_request.TaskType)</h2>
+                    <span class="task-badge @GetTaskTypeBadgeClass(_request.TaskType)">
+                        @TaskCreationService.GetTaskTypeDisplayName(_request.TaskType)
+                    </span>
+                </div>
+                <div class="header-actions">
+                    <CskButton Variant="CskButtonVariant.Text" IconStart="@CskIcons.Dismiss" OnClick="CloseAsync" />
+                </div>
+            </div>
+
+            <!-- Dialog Body -->
+            <div class="task-dialog-body">
+                @if (_errors.Count > 0)
+                {
+                    <div class="dialog-error-banner mb-4">
+                        <CskMessageBar Intent="MessageBarIntent.Error">
+                            <ul class="error-list">
+                                @foreach (var err in _errors)
+                                {
+                                    <li>@err</li>
+                                }
+                            </ul>
+                        </CskMessageBar>
+                    </div>
+                }
+
+                @if (_showSuccessMessage)
+                {
+                    <div class="dialog-success-banner mb-4">
+                        <CskMessageBar Intent="MessageBarIntent.Success">
+                            <span>Successfully created <strong>@_createdTaskTitle</strong>!</span>
+                            <div class="mt-2">
+                                <CskButton Variant="CskButtonVariant.Outlined" OnClick="ResetForAnotherAsync">Create Another</CskButton>
+                                <CskButton Variant="CskButtonVariant.Filled" OnClick="CloseAsync" Class="ml-2">Done</CskButton>
+                            </div>
+                        </CskMessageBar>
+                    </div>
+                }
+
+                <!-- Always Visible BaseTaskEntity Fields -->
+                <div class="form-section">
+                    <h3 class="section-title">General Details</h3>
+                    <div class="form-row">
+                        <div class="form-col full">
+                            <CskTextInput Label="Title"
+                                          Required="true"
+                                          Placeholder="Concise headline of the work item..."
+                                          @bind-Value="_request.Title"
+                                          Class="w-full" />
+                        </div>
+                    </div>
+
+                    <div class="form-row mt-3">
+                        <div class="form-col full">
+                            <CskTextArea Label="Description & Context"
+                                         Rows="3"
+                                         Placeholder="Add details, reproduction steps, or background..."
+                                         @bind-Value="_request.Description"
+                                         Class="w-full" />
+                        </div>
+                    </div>
+
+                    <div class="form-row grid-2 mt-3">
+                        <div class="form-col">
+                            <label class="form-field-label">Priority <span class="required-star">*</span></label>
+                            <CskSelect TOption="TaskPriorityEnum"
+                                       TValue="TaskPriorityEnum"
+                                       @bind-Value="_request.Priority"
+                                       Class="w-full">
+                                <CskOption Value="TaskPriorityEnum.Low">Low</CskOption>
+                                <CskOption Value="TaskPriorityEnum.Medium">Medium</CskOption>
+                                <CskOption Value="TaskPriorityEnum.High">High</CskOption>
+                                <CskOption Value="TaskPriorityEnum.Urgent">Critical / Urgent</CskOption>
+                            </CskSelect>
+                        </div>
+                        <div class="form-col">
+                            <label class="form-field-label">Status</label>
+                            <CskSelect TOption="TaskStatusEnum"
+                                       TValue="TaskStatusEnum"
+                                       @bind-Value="_request.Status"
+                                       Class="w-full">
+                                <CskOption Value="TaskStatusEnum.Open">Open / Planned</CskOption>
+                                <CskOption Value="TaskStatusEnum.InProgress">In Progress</CskOption>
+                                <CskOption Value="TaskStatusEnum.Pending">Pending</CskOption>
+                                <CskOption Value="TaskStatusEnum.Paused">Paused / Blocked</CskOption>
+                                <CskOption Value="TaskStatusEnum.Closed">Completed / Closed</CskOption>
+                            </CskSelect>
+                        </div>
+                    </div>
+
+                    <div class="form-row grid-3 mt-3">
+                        <div class="form-col">
+                            <CskDatePicker Label="Start Date"
+                                           @bind-Value="_request.StartDate"
+                                           Class="w-full" />
+                        </div>
+                        <div class="form-col">
+                            <CskDatePicker Label="Due Date"
+                                           @bind-Value="_request.DueDate"
+                                           Class="w-full" />
+                        </div>
+                        <div class="form-col">
+                            <CskTextInput Label="Estimated Hours"
+                                          Type="number"
+                                          Placeholder="e.g. 8.0"
+                                          Value="@_estimatedHoursText"
+                                          ValueChanged="OnEstimatedHoursChanged"
+                                          Class="w-full" />
+                        </div>
+                    </div>
+
+                    <div class="form-row grid-2 mt-3">
+                        <div class="form-col">
+                            <CskTenantUserPicker Label="Assignee(s)"
+                                                 @bind-Value="_request.AssigneeEmails"
+                                                 MultiSelect="true"
+                                                 Placeholder="Select team members..."
+                                                 Class="w-full" />
+                        </div>
+                        <div class="form-col">
+                            <CskTextInput Label="Labels / Tags"
+                                          Placeholder="Frontend, Backend, Urgent"
+                                          @bind-Value="_request.Labels"
+                                          Class="w-full" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Type-Specific Dynamic Section -->
+                @if (_request.TaskType == CreationTaskTypeEnum.SprintTask)
+                {
+                    <div class="form-section mt-4 type-specific-section">
+                        <h3 class="section-title">Sprint Task Details</h3>
+                        <div class="form-row grid-2">
+                            <div class="form-col">
+                                <label class="form-field-label">Target Sprint <span class="required-star">*</span></label>
+                                <CskSelect TOption="Guid?"
+                                           TValue="Guid?"
+                                           @bind-Value="_request.SprintId"
+                                           Class="w-full">
+                                    <CskOption Value="@((Guid?)null)">-- Select a Sprint --</CskOption>
+                                    @foreach (var sprint in _relatedData.Sprints)
+                                    {
+                                        <CskOption Value="@((Guid?)sprint.Id)">
+                                            Sprint @sprint.Number: @sprint.Name @(sprint.IsCompleted ? "(Completed)" : "")
+                                        </CskOption>
+                                    }
+                                </CskSelect>
+                            </div>
+                            <div class="form-col">
+                                <CskTextInput Label="Story Points"
+                                              Type="number"
+                                              Placeholder="e.g. 3, 5, 8"
+                                              Value="@_storyPointsText"
+                                              ValueChanged="OnStoryPointsChanged"
+                                              Class="w-full" />
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-col full">
+                                <CskTextArea Label="Acceptance Criteria"
+                                             Rows="3"
+                                             Placeholder="Conditions that must be met to mark this task complete..."
+                                             @bind-Value="_request.AcceptanceCriteria"
+                                             Class="w-full" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (_request.TaskType == CreationTaskTypeEnum.MiscTask)
+                {
+                    <div class="form-section mt-4 type-specific-section">
+                        <h3 class="section-title">Misc Task Details</h3>
+                        <div class="form-row grid-2">
+                            <div class="form-col">
+                                <CskTextInput Label="Category"
+                                              Placeholder="Admin, Docs, Cleanup, Other..."
+                                              @bind-Value="_request.MiscCategory"
+                                              Class="w-full" />
+                            </div>
+                            <div class="form-col">
+                                <CskTextInput Label="Related Link / URL"
+                                              Placeholder="https://..."
+                                              @bind-Value="_request.RelatedLink"
+                                              Class="w-full" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (_request.TaskType == CreationTaskTypeEnum.Risk)
+                {
+                    <div class="form-section mt-4 type-specific-section">
+                        <h3 class="section-title">Risk Assessment & Mitigation</h3>
+                        <div class="form-row grid-3">
+                            <div class="form-col">
+                                <label class="form-field-label">Probability <span class="required-star">*</span></label>
+                                <CskSelect TOption="RiskProbabilityEnum"
+                                           TValue="RiskProbabilityEnum"
+                                           @bind-Value="_request.Probability"
+                                           Class="w-full">
+                                    <CskOption Value="RiskProbabilityEnum.Low">Low (1)</CskOption>
+                                    <CskOption Value="RiskProbabilityEnum.Medium">Medium (2)</CskOption>
+                                    <CskOption Value="RiskProbabilityEnum.High">High (3)</CskOption>
+                                </CskSelect>
+                            </div>
+                            <div class="form-col">
+                                <label class="form-field-label">Impact <span class="required-star">*</span></label>
+                                <CskSelect TOption="RiskImpactEnum"
+                                           TValue="RiskImpactEnum"
+                                           @bind-Value="_request.Impact"
+                                           Class="w-full">
+                                    <CskOption Value="RiskImpactEnum.Low">Low (1)</CskOption>
+                                    <CskOption Value="RiskImpactEnum.Medium">Medium (2)</CskOption>
+                                    <CskOption Value="RiskImpactEnum.High">High (3)</CskOption>
+                                    <CskOption Value="RiskImpactEnum.Critical">Critical (4)</CskOption>
+                                </CskSelect>
+                            </div>
+                            <div class="form-col exposure-box-col">
+                                <label class="form-field-label">Exposure Score</label>
+                                <div class="exposure-badge-display @GetExposureBadgeClass(ExposureScore)">
+                                    Score: @ExposureScore (@GetExposureLabel(ExposureScore))
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-col full">
+                                <CskTextArea Label="Mitigation Strategy (Proactive action required - min 10 chars)"
+                                             Rows="3"
+                                             Placeholder="Detail proactive steps to minimize probability or impact..."
+                                             @bind-Value="_request.MitigationStrategy"
+                                             Class="w-full" />
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-col full">
+                                <CskTextArea Label="Contingency Plan (Optional fall-back)"
+                                             Rows="2"
+                                             Placeholder="Steps if the risk materializes..."
+                                             @bind-Value="_request.ContingencyPlan"
+                                             Class="w-full" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (_request.TaskType == CreationTaskTypeEnum.Assumption)
+                {
+                    <div class="form-section mt-4 type-specific-section">
+                        <h3 class="section-title">Assumption Details</h3>
+                        <div class="form-row grid-2">
+                            <div class="form-col">
+                                <label class="form-field-label">Validation Status</label>
+                                <CskSelect TOption="AssumptionValidationStatusEnum"
+                                           TValue="AssumptionValidationStatusEnum"
+                                           @bind-Value="_request.ValidationStatus"
+                                           Class="w-full">
+                                    <CskOption Value="AssumptionValidationStatusEnum.Unconfirmed">Unconfirmed</CskOption>
+                                    <CskOption Value="AssumptionValidationStatusEnum.Validated">Validated</CskOption>
+                                    <CskOption Value="AssumptionValidationStatusEnum.Invalidated">Invalidated</CskOption>
+                                </CskSelect>
+                            </div>
+                            <div class="form-col">
+                                <CskDatePicker Label="Target Validation Date"
+                                               @bind-Value="_request.ValidationDate"
+                                               Class="w-full" />
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-col full">
+                                <CskTextArea Label="Validation Criteria (How will this be verified? - min 10 chars)"
+                                             Rows="3"
+                                             Placeholder="Describe concrete criteria or tests to prove this assumption true..."
+                                             @bind-Value="_request.ValidationCriteria"
+                                             Class="w-full" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (_request.TaskType == CreationTaskTypeEnum.Issue)
+                {
+                    <div class="form-section mt-4 type-specific-section">
+                        <h3 class="section-title">Issue Details & Impediment</h3>
+                        <div class="form-row grid-2">
+                            <div class="form-col">
+                                <label class="form-field-label">Severity Level <span class="required-star">*</span></label>
+                                <CskSelect TOption="IssueSeverityEnum"
+                                           TValue="IssueSeverityEnum"
+                                           @bind-Value="_request.Severity"
+                                           Class="w-full">
+                                    <CskOption Value="IssueSeverityEnum.Low">Low</CskOption>
+                                    <CskOption Value="IssueSeverityEnum.Medium">Medium</CskOption>
+                                    <CskOption Value="IssueSeverityEnum.High">High</CskOption>
+                                    <CskOption Value="IssueSeverityEnum.Critical">Critical Blocker</CskOption>
+                                </CskSelect>
+                            </div>
+                            <div class="form-col">
+                                <CskDatePicker Label="Target Resolution Date"
+                                               @bind-Value="_request.TargetResolutionDate"
+                                               Class="w-full" />
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-col full">
+                                <CskTextArea Label="Root Cause (Identified source of problem - min 10 chars)"
+                                             Rows="2"
+                                             Placeholder="Describe why this issue happened..."
+                                             @bind-Value="_request.RootCause"
+                                             Class="w-full" />
+                            </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                            <div class="form-col full">
+                                <CskTextArea Label="Temporary Workaround (Tactical fix to keep moving)"
+                                             Rows="2"
+                                             Placeholder="Any workaround in place while permanent fix is developed..."
+                                             @bind-Value="_request.Workaround"
+                                             Class="w-full" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Dialog Footer -->
+            <div class="task-dialog-footer">
+                <div class="footer-hint">
+                    <span class="text-hint">Press <kbd>ESC</kbd> to cancel, <kbd>Ctrl+Enter</kbd> to create</span>
+                </div>
+                <div class="footer-buttons">
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="CloseAsync" Disabled="_isSubmitting">
+                        Cancel
+                    </CskButton>
+                    <CskButton Variant="CskButtonVariant.Filled"
+                               OnClick="SubmitAsync"
+                               Disabled="_isSubmitting || _showSuccessMessage"
+                               Class="btn-create-submit">
+                        @if (_isSubmitting)
+                        {
+                            <CskSpinner Size="CskSpinnerSize.Small" Class="mr-2" />
+                            <span>Creating...</span>
+                        }
+                        else
+                        {
+                            <span>Create @TaskCreationService.GetTaskTypeDisplayName(_request.TaskType)</span>
+                        }
+                    </CskButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}

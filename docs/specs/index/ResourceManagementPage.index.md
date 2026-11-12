@@ -3,8 +3,8 @@
 target_spec: docs/specs/ResourceManagementPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor.cs
-generated_at_utc: 2026-11-06T18:56:58Z
-source_hash_sha256: 3b2b2e9ade7088d1
+generated_at_utc: 2026-11-12T16:18:58Z
+source_hash_sha256: 68cf8dd1964bb4d5
 ============================================================================ -->
 # AI Navigation Index: `ResourceManagementPage`
 
@@ -20,27 +20,27 @@ source_hash_sha256: 3b2b2e9ade7088d1
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/Resources/ResourceManagementPage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitializedAsync` | `L46-L50` | [INIT] | `local:LoadPageDataAsync()` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `HandleProjectChanged` | `L52-L59` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `LoadPageDataAsync` | `L61-L84` | [HELPER] | `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `HandleRevisionChanged` | `L86-L93` | [HELPER] | `ResourceService.GetResourcePlanSummaryAsync` |
-| `HandleDataMutated` | `L95-L98` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `OpenAddResourceModal` | `L100-L105` | [HELPER] | `ResourceService.GetAvailableProjectUsersAsync` |
-| `HandleUsersSelected` | `L107-L118` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.AddResourceAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `RemoveResource` | `L120-L124` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.RemoveResourceAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `UpdateResourceRole` | `L126-L133` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.UpdateResourceRoleAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `SetCellAllocation` | `L135-L144` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.SetResourceAllocationAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
-| `GetCellCssClass` | `L146-L152` | [HELPER] | Local UI State |
-| `Dispose` | `L154-L157` | [HELPER] | Local UI State |
+| `OnInitializedAsync` | `L48-L52` | [INIT] | `local:LoadPageDataAsync()` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `HandleProjectChanged` | `L54-L61` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `LoadPageDataAsync` | `L63-L86` | [HELPER] | `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `HandleRevisionChanged` | `L88-L95` | [HELPER] | `ResourceService.GetResourcePlanSummaryAsync` |
+| `HandleDataMutated` | `L97-L100` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `OpenAddResourceModal` | `L102-L107` | [HELPER] | `ResourceService.GetAvailableProjectUsersAsync` |
+| `HandleUsersSelected` | `L109-L120` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.AddResourceAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `RemoveResource` | `L122-L126` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.RemoveResourceAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `UpdateResourceRole` | `L128-L135` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.UpdateResourceRoleAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `SetCellAllocation` | `L137-L146` | [HELPER] | `local:LoadPageDataAsync()` -> `ResourceService.SetResourceAllocationAsync` -> `ResourceService.GetAllocationPlanHistoryAsync` -> `ResourceService.GetResourcePlanSummaryAsync` |
+| `GetCellCssClass` | `L148-L154` | [HELPER] | Local UI State |
+| `Dispose` | `L156-L159` | [HELPER] | Local UI State |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `ResourceManagementService.GetAllocationPlanHistoryAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L482-L489` | - | In-Memory |
-| `ResourceManagementService.GetResourcePlanSummaryAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L188-L290` | - | In-Memory |
-| `ResourceManagementService.GetAvailableProjectUsersAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L82-L100` | - | In-Memory |
-| `ResourceManagementService.AddResourceAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L102-L136` | - | In-Memory |
-| `ResourceManagementService.RemoveResourceAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L138-L148` | - | In-Memory |
-| `ResourceManagementService.UpdateResourceRoleAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L150-L158` | - | In-Memory |
-| `ResourceManagementService.SetResourceAllocationAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L292-L336` | - | In-Memory |
+| `ResourceManagementService.GetAllocationPlanHistoryAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L489-L496` | - | In-Memory |
+| `ResourceManagementService.GetResourcePlanSummaryAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L193-L295` | - | In-Memory |
+| `ResourceManagementService.GetAvailableProjectUsersAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L84-L105` | - | In-Memory |
+| `ResourceManagementService.AddResourceAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L107-L141` | - | In-Memory |
+| `ResourceManagementService.RemoveResourceAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L143-L153` | - | In-Memory |
+| `ResourceManagementService.UpdateResourceRoleAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L155-L163` | - | In-Memory |
+| `ResourceManagementService.SetResourceAllocationAsync` | `BlazorEnterprise.Persistence/Services/ResourceManagementService.cs#L297-L342` | - | In-Memory |
 

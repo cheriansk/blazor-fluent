@@ -3,7 +3,7 @@
 target_spec: docs/specs/AppErrorBoundaryComp.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Common/AppErrorBoundaryComp.razor
 code_behind: src/BlazorEnterprise.Web/Components/Common/AppErrorBoundaryComp.razor.cs
-generated_at_utc: 2026-11-03T02:50:45Z
+generated_at_utc: 2026-11-12T16:18:56Z
 source_hash_sha256: e27d1e1b907f1d5a
 ============================================================================ -->
 # AI Navigation Index: `AppErrorBoundaryComp`
@@ -24,5 +24,5 @@ source_hash_sha256: e27d1e1b907f1d5a
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `AuditService.LogExceptionAsync` | `BlazorEnterprise.Persistence/Services/AuditService.cs#L475-L649` | - | In-Memory |
+| `AuditService.LogExceptionAsync` | `BlazorEnterprise.Persistence/Services/AuditService.cs#L359-L499` | - | In-Memory |
 

@@ -21,7 +21,7 @@ public record KnowledgeArticleListDto(
     uint Version = 0
 ) : IConcurrency
 {
-    public uint Version { get; set; } = Version;
+    public uint Version { get; set; }
 }
 
 public record ArticleReviewerDto(
@@ -54,7 +54,7 @@ public record KnowledgeArticleDetailDto(
     uint Version = 0
 ) : IConcurrency
 {
-    public uint Version { get; set; } = Version;
+    public uint Version { get; set; }
 }
 
 public record CreateArticleDto

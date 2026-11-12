@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProjectHolisticView.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor.cs
-generated_at_utc: 2026-11-03T02:50:49Z
-source_hash_sha256: c0e57cf5a14cbce9
+generated_at_utc: 2026-11-12T16:18:57Z
+source_hash_sha256: 2e535e4c6769025c
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticView`
 
@@ -12,29 +12,31 @@ source_hash_sha256: c0e57cf5a14cbce9
 - **Auth**: `Authorize`
 - **Injected**: `ProjectContext:IProjectContext`, `ProjectHealthService:IProjectHealthService`, `CalendarService:ICalendarService`, `TenantContext:ITenantContext`, `NavigationManager:NavigationManager`
 - **Registered Child Components**:
-  - `<TabContainerComp />` @ `L65` | Gate: `_isLoading` | Params: `Tabs="@_tabs"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
+  - `<TabContainerComp />` @ `L76` | Gate: `_isLoading` | Params: `Tabs="@_tabs"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L67` | `L26: @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty)`, `L37: @if (!ProjectContext.ProjectId.HasValue || ProjectContext.ProjectId.Value == Guid.Empty)`, `L56: @if (_isLoading)` | Buttons: `Btn("Refresh" -> RefreshProjectDataAsync)@L28`, `Btn("Return to Dashboard" -> (() => NavigationManager.NavigateTo()@L48` <br> Components: `PageTitle@L19`, `CskSectionHeader(Title=(string.IsNullOrWhiteSpace(ProjectContext.ProjectName) ?, Icon=CskIcons.TaskList)@L22`, `Actions@L25`, `TabContainerComp(Tabs=_tabs)@L65` |
+| **Header & Top-Level Controls** | `L1-L78` | `L28: @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty)`, `L48: @if (!ProjectContext.ProjectId.HasValue || ProjectContext.ProjectId.Value == Guid.Empty)`, `L67: @if (_isLoading)` | Buttons: `Btn("Refresh" -> RefreshProjectDataAsync)@L33`, `Btn("Return to Dashboard" -> (() => NavigationManager.NavigateTo()@L59` <br> Components: `PageTitle@L21`, `CskSectionHeader(Title=(string.IsNullOrWhiteSpace(ProjectContext.ProjectName) ?, Icon=CskIcons.TaskList)@L24`, `Actions@L27`, `TaskTypeSelectionButton@L30`, `TaskCreationDialog(ProjectId=ProjectContext.ProjectId, ProgramId=ProjectContext.ProgramId)@L42`, `TabContainerComp(Tabs=_tabs)@L76` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/ProjectHolisticView.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitializedAsync` | `L23-L27` | [INIT] | `local:LoadDataAsync()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,ProjectCalendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:ProjectCalendars)` |
-| `HandleProjectContextChanged` | `L29-L36` | [HELPER] | `local:LoadDataAsync()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,ProjectCalendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:ProjectCalendars)` |
-| `RefreshProjectDataAsync` | `L38-L41` | OnClick@L30 | `local:LoadDataAsync()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,ProjectCalendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:ProjectCalendars)` |
-| `LoadDataAsync` | `L43-L97` | [HELPER] | `[TenantBoundaryGate]` -> `local:BuildTabs()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,ProjectCalendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:ProjectCalendars)` |
-| `BuildTabs` | `L99-L161` | [HELPER] | Local UI State |
-| `Dispose` | `L163-L166` | [HELPER] | Local UI State |
+| `OpenCreateDialog` | `L30-L34` | [HELPER] | Local UI State |
+| `HandleTaskCreated` | `L36-L39` | [HELPER] | `local:RefreshProjectDataAsync()` |
+| `OnInitializedAsync` | `L41-L45` | [INIT] | `local:LoadDataAsync()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,Calendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:Calendars)` |
+| `HandleProjectContextChanged` | `L47-L54` | [HELPER] | `local:LoadDataAsync()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,Calendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:Calendars)` |
+| `RefreshProjectDataAsync` | `L56-L59` | OnClick@L35 | `local:LoadDataAsync()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,Calendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:Calendars)` |
+| `LoadDataAsync` | `L61-L159` | [HELPER] | `[TenantBoundaryGate]` -> `local:BuildTabs()` -> `local:Dispose()` -> `ProjectHealthService.GetProjectHealthAsync(DB[R]:Projects,Tasks,Calendars,WorkDependencies)` -> `ProjectHealthService.GetProjectRisksAsync(DB[R]:Risks)` -> `ProjectHealthService.GetProjectAssumptionsAsync(DB[R]:Assumptions)` -> `ProjectHealthService.GetProjectIssuesAsync(DB[R]:Issues)` -> `ProjectHealthService.GetProjectBlockersAsync(DB[R]:WorkDependencies)` -> `CalendarService.GetProjectCalendarAsync(DB[R]:Calendars)` |
+| `BuildTabs` | `L161-L228` | [HELPER] | `[TenantBoundaryGate]` |
+| `Dispose` | `L230-L239` | [HELPER] | Local UI State |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `ProjectHealthService.GetProjectHealthAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L32-L139` | - | `DB[R]: Projects,Tasks,ProjectCalendars,WorkDependencies` |
-| `ProjectHealthService.GetProjectRisksAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L318-L327` | - | `DB[R]: Risks` |
-| `ProjectHealthService.GetProjectAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L329-L338` | - | `DB[R]: Assumptions` |
-| `ProjectHealthService.GetProjectIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L340-L349` | - | `DB[R]: Issues` |
-| `ProjectHealthService.GetProjectBlockersAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L351-L363` | - | `DB[R]: WorkDependencies` |
-| `CalendarService.GetProjectCalendarAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L78-L124` | - | `DB[R]: ProjectCalendars` |
+| `ProjectHealthService.GetProjectHealthAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L32-L140` | - | `DB[R]: Projects,Tasks,Calendars,WorkDependencies` |
+| `ProjectHealthService.GetProjectRisksAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L321-L331` | - | `DB[R]: Risks` |
+| `ProjectHealthService.GetProjectAssumptionsAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L333-L343` | - | `DB[R]: Assumptions` |
+| `ProjectHealthService.GetProjectIssuesAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L345-L355` | - | `DB[R]: Issues` |
+| `ProjectHealthService.GetProjectBlockersAsync` | `BlazorEnterprise.Persistence/Services/ProjectHealthService.cs#L357-L370` | - | `DB[R]: WorkDependencies` |
+| `CalendarService.GetProjectCalendarAsync` | `BlazorEnterprise.Persistence/Services/CalendarService.cs#L96-L153` | - | `DB[R]: Calendars` |
 

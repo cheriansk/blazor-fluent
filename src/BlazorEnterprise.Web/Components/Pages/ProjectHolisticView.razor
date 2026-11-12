@@ -16,6 +16,8 @@
 @inject NavigationManager NavigationManager
 @implements IDisposable
 
+@using BlazorEnterprise.Web.Components.Dialogs
+
 <PageTitle>Project Holistic View — BlazorEnterprise</PageTitle>
 
 <div class="holistic-page-container">
@@ -25,6 +27,9 @@
         <Actions>
             @if (ProjectContext.ProjectId.HasValue && ProjectContext.ProjectId.Value != Guid.Empty)
             {
+                <TaskTypeSelectionButton ButtonText="New Work Item"
+                                         OnTaskTypeSelected="OpenCreateDialog"
+                                         Class="mr-2" />
                 <CskButton Variant="CskButtonVariant.Outlined"
                            IconStart="@CskIcons.ArrowSync"
                            OnClick="@RefreshProjectDataAsync">
@@ -33,6 +38,12 @@
             }
         </Actions>
     </CskSectionHeader>
+
+    <TaskCreationDialog @bind-IsOpen="_isCreateDialogOpen"
+                        DefaultTaskType="_selectedCreationType"
+                        ProjectId="@ProjectContext.ProjectId"
+                        ProgramId="@ProjectContext.ProgramId"
+                        OnTaskCreated="HandleTaskCreated" />
 
     @if (!ProjectContext.ProjectId.HasValue || ProjectContext.ProjectId.Value == Guid.Empty)
     {
