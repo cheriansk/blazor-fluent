@@ -6,6 +6,7 @@
 @using BlazorEnterprise.Shared.DataListTypes
 @using BlazorEnterprise.Shared.UI.Components
 @using BlazorEnterprise.Web.Components.Common
+@using BlazorEnterprise.Web.Components.Dialogs
 @using BlazorEnterprise.Web.Components.Shared
 @inject ISprintPlanningService SprintPlanningService
 @inject IProjectContext ProjectContext
@@ -32,6 +33,10 @@
                 <span class="page-subtitle">Manage sprint iterations, metrics, and capacity for <strong>@ProjectContext.ProjectName</strong></span>
             </div>
             <div class="header-actions">
+                <TaskTypeSelectionButton ButtonText="New Work Item"
+                                         AllowedTypes="@_allowedSprintTaskTypes"
+                                         OnTaskTypeSelected="OpenCreateDialog"
+                                         Class="mr-2" />
                 <CskButton Variant="CskButtonVariant.Outlined"
                            IconStart="@CskIcons.ArrowSync"
                            OnClick="LoadDataAsync">
@@ -39,6 +44,12 @@
                 </CskButton>
             </div>
         </div>
+
+        <TaskCreationDialog @bind-IsOpen="_isCreateDialogOpen"
+                            DefaultTaskType="_selectedCreationType"
+                            ProjectId="@ProjectContext.ProjectId"
+                            ProgramId="@ProjectContext.ProgramId"
+                            OnTaskCreated="HandleTaskCreated" />
 
         @if (_isLoading)
         {

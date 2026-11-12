@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Dtos;
@@ -9,7 +10,7 @@ public record CreateWorkflowSubTaskDto
 {
     public string Title { get; set; } = string.Empty;
     public string AssigneeEmail { get; set; } = string.Empty;
-    public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(3);
+    public DateTime? DueDate { get; set; }
 }
 
 /// <summary>
@@ -22,7 +23,7 @@ public record CreateWorkflowStepDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string StepOwnerEmail { get; set; } = string.Empty;
-    public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(3);
+    public DateTime? DueDate { get; set; }
     public List<CreateWorkflowSubTaskDto> SubTasks { get; set; } = new();
 }
 
@@ -31,14 +32,14 @@ public record CreateWorkflowStepDto
 /// </summary>
 public record CreateWorkflowReqDto
 {
-    public TaskLevelEnum Level { get; set; } = TaskLevelEnum.Project;
+    public TaskLevelEnum Level { get; set; }
     public Guid? ProgramId { get; set; }
     public Guid? ProjectId { get; set; }
     public string WorkflowOwnerEmail { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public TaskPriorityEnum Priority { get; set; } = TaskPriorityEnum.Medium;
-    public DateTime? DueDate { get; set; } = DateTime.UtcNow.AddDays(14);
+    public TaskPriorityEnum Priority { get; set; }
+    public DateTime? DueDate { get; set; }
     public string WatcherEmails { get; set; } = string.Empty;
     public List<CreateWorkflowStepDto> Steps { get; set; } = new();
 }
@@ -101,7 +102,7 @@ public record EditWorkflowReqDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string WorkflowOwnerEmail { get; set; } = string.Empty;
-    public TaskPriorityEnum Priority { get; set; } = TaskPriorityEnum.Medium;
+    public TaskPriorityEnum Priority { get; set; }
     public DateTime? DueDate { get; set; }
     public string WatcherEmails { get; set; } = string.Empty;
 }

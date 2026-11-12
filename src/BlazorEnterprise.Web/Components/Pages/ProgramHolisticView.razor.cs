@@ -1,5 +1,6 @@
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
+using BlazorEnterprise.Core.Dtos.Tasks;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Web.Components.Pages.ProgramHolisticViewTabs;
@@ -21,6 +22,27 @@ public partial class ProgramHolisticView : ComponentBase, IDisposable
     private IReadOnlyList<IssueEntity> _issues = Array.Empty<IssueEntity>();
     private IReadOnlyList<WorkDependencyEntity> _blockers = Array.Empty<WorkDependencyEntity>();
     private List<TabItemModel> _tabs = new();
+
+    private bool _isCreateDialogOpen;
+    private CreationTaskTypeEnum _selectedCreationType = CreationTaskTypeEnum.Risk;
+    private static readonly List<CreationTaskTypeEnum> _allowedProgramTaskTypes =
+    [
+        CreationTaskTypeEnum.MiscTask,
+        CreationTaskTypeEnum.Risk,
+        CreationTaskTypeEnum.Assumption,
+        CreationTaskTypeEnum.Issue
+    ];
+
+    private void OpenCreateDialog(CreationTaskTypeEnum taskType)
+    {
+        _selectedCreationType = taskType;
+        _isCreateDialogOpen = true;
+    }
+
+    private async Task HandleTaskCreated(TaskCreationRequestDto request)
+    {
+        await RefreshProgramDataAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {

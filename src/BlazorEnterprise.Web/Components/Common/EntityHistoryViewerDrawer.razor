@@ -154,7 +154,7 @@
         public string UserEmail { get; set; } = string.Empty;
         public string? UserType { get; set; }
         public List<EntityFieldHistoryRespDto> Items { get; set; } = new();
-        public bool IsExpanded { get; set; } = false;
+        public bool IsExpanded { get; set; }
     }
 
     private List<HistoryGroupModel> GroupedHistory

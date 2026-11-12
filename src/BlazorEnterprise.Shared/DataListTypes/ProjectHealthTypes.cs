@@ -58,6 +58,7 @@ public class ProjectHealthSummaryDto
 {
     public Guid ProjectId { get; set; }
     public string ProjectName { get; set; } = string.Empty;
+    [AllowHardcodedDefault("Default initial health rating for newly instantiated health rollups")]
     public ProjectHealthRatingEnum Health { get; set; } = ProjectHealthRatingEnum.OnTrack;
     public int TotalTasks { get; set; }
     public int CompletedTasks { get; set; }
@@ -81,7 +82,9 @@ public class MilestoneHealthSummaryDto
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public CalendarEntryStatusEnum Status { get; set; }
+    [AllowHardcodedDefault("Milestone summary default discriminator")]
     public CalendarEntryTypeEnum EntryType { get; set; } = CalendarEntryTypeEnum.Milestone;
+    [AllowHardcodedDefault("Default initial health rating for newly instantiated milestone rollups")]
     public ProjectHealthRatingEnum Health { get; set; } = ProjectHealthRatingEnum.OnTrack;
     public int TotalTasks { get; set; }
     public int CompletedTasks { get; set; }
@@ -103,8 +106,10 @@ public class TaskDependencyItemDto
     public Guid DependencyId { get; set; }
 
     // --- Side B: Dependent / Successor ---
+    [AllowHardcodedDefault("Dependency item type default to TaskItem")]
     public DependencyNodeTypeEnum DependentType { get; set; } = DependencyNodeTypeEnum.TaskItem;
     public Guid? DependentItemId { get; set; }
+    [AllowHardcodedDefault("Dependency item level default to Project")]
     public TaskLevelEnum DependentLevel { get; set; } = TaskLevelEnum.Project;
     public Guid? ProjectId { get; set; }
     public Guid? ProgramId { get; set; }
@@ -117,8 +122,10 @@ public class TaskDependencyItemDto
     }
 
     // --- Side A: Prerequisite / Predecessor ---
+    [AllowHardcodedDefault("Dependency item type default to TaskItem")]
     public DependencyNodeTypeEnum DependsOnType { get; set; } = DependencyNodeTypeEnum.TaskItem;
     public Guid? DependsOnItemId { get; set; }
+    [AllowHardcodedDefault("Dependency item level default to Project")]
     public TaskLevelEnum DependsOnLevel { get; set; } = TaskLevelEnum.Project;
     public Guid? DependsOnProjectId { get; set; }
     public Guid? DependsOnProgramId { get; set; }
@@ -137,7 +144,9 @@ public class TaskDependencyItemDto
         set => DependsOnTitle = value;
     }
 
+    [AllowHardcodedDefault("Dependency task status default to Open")]
     public TaskStatusEnum DependsOnTaskStatus { get; set; } = TaskStatusEnum.Open;
+    [AllowHardcodedDefault("Dependency status string default to Open")]
     public string DependsOnStatus { get; set; } = "Open";
     public string DependsOnAssigneeEmails { get; set; } = string.Empty;
     public DateTime? DependsOnDueDate { get; set; }
@@ -145,11 +154,15 @@ public class TaskDependencyItemDto
     // --- Dependency & RAID Metadata ---
     public string Title { get; set; } = string.Empty;
     public string ImpactDetails { get; set; } = string.Empty;
+    [AllowHardcodedDefault("Dependency type default to Blocks")]
     public TaskDependencyTypeEnum DependencyType { get; set; } = TaskDependencyTypeEnum.Blocks;
+    [AllowHardcodedDefault("Dependency criticality default to Medium")]
     public TaskPriorityEnum Criticality { get; set; } = TaskPriorityEnum.Medium;
+    [AllowHardcodedDefault("Dependency status default to Open")]
     public TaskStatusEnum Status { get; set; } = TaskStatusEnum.Open;
     public DateTime? ResolveByUtc { get; set; }
     public bool IsScheduleConflict { get; set; }
+    [AllowHardcodedDefault("Target item is accessible by default")]
     public bool CanAccessTargetItem { get; set; } = true;
 
     public bool IsResolved => Status is TaskStatusEnum.Closed or TaskStatusEnum.Cancelled ||

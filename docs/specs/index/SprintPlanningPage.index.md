@@ -3,13 +3,13 @@
 target_spec: docs/specs/SprintPlanningPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor.cs
-generated_at_utc: 2026-11-06T19:41:36Z
-source_hash_sha256: 284eead56c02c87e
+generated_at_utc: 2026-11-11T18:52:02Z
+source_hash_sha256: d80f4d3414ad4e4f
 ============================================================================ -->
 # AI Navigation Index: `SprintPlanningPage`
 
 ## 1. UI Map (`SprintPlanningPage.razor`)
-- **Injected**: `SprintPlanningService:ISprintPlanningService`, `ProjectContext:IProjectContext`, `SnackbarService:ISnackbarService`
+- **Injected**: `SprintPlanningService:ISprintPlanningService`, `ProjectContext:IProjectContext`
 - **Registered Child Components**:
   - `<TabContainerComp />` @ `L52` | Gate: `_isLoading` | Params: `Tabs="_tabs" @bind-ActiveTabId="_activeTabId"` | Spec: [TabContainerComp.requirements.md](../TabContainerComp.requirements.md)
 
@@ -21,19 +21,19 @@ source_hash_sha256: 284eead56c02c87e
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitializedAsync` | `L29-L33` | [INIT] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SnackbarService.Show()` |
-| `HandleProjectChanged` | `L35-L42` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SnackbarService.Show()` |
-| `Dispose` | `L44-L47` | [HELPER] | Local UI State |
-| `LoadDataAsync` | `L49-L86` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` -> `SnackbarService.Show()` |
-| `LoadSummaryTabDataAsync` | `L88-L92` | [HELPER] | `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
-| `LoadPlannerTabDataAsync` | `L94-L111` | [HELPER] | `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
-| `OnSummarySprintChanged` | `L113-L126` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
-| `OnPlannerSprintChanged` | `L128-L141` | [HELPER] | `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
-| `ToggleItemSelection` | `L143-L153` | [HELPER] | Local UI State |
-| `ToggleAllItems` | `L155-L165` | [HELPER] | Local UI State |
-| `OpenMoveModal` | `L167-L179` | [HELPER] | `SnackbarService.Show()` |
-| `CloseMoveModal` | `L181-L185` | [HELPER] | Local UI State |
-| `ExecuteMoveAsync` | `L187-L206` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.MoveItemsToSprintAsync` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SnackbarService.Show()` |
+| `OnInitializedAsync` | `L30-L34` | [INIT] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
+| `HandleProjectChanged` | `L36-L43` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.GetProjectSprintsAsync` |
+| `Dispose` | `L45-L48` | [HELPER] | Local UI State |
+| `LoadDataAsync` | `L50-L87` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetProjectSprintsAsync` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
+| `LoadSummaryTabDataAsync` | `L89-L93` | [HELPER] | `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
+| `LoadPlannerTabDataAsync` | `L95-L112` | [HELPER] | `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
+| `OnSummarySprintChanged` | `L114-L127` | [HELPER] | `local:LoadSummaryTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintMetricsAsync` -> `SprintPlanningService.GetSprintItemsAsync` |
+| `OnPlannerSprintChanged` | `L129-L142` | [HELPER] | `local:LoadPlannerTabDataAsync()` -> `local:BuildTabs()` -> `SprintPlanningService.GetSprintItemsAsync` -> `SprintPlanningService.CalculateResourceCapacityAsync` |
+| `ToggleItemSelection` | `L144-L154` | [HELPER] | Local UI State |
+| `ToggleAllItems` | `L156-L166` | [HELPER] | Local UI State |
+| `OpenMoveModal` | `L168-L180` | [HELPER] | Local UI State |
+| `CloseMoveModal` | `L182-L186` | [HELPER] | Local UI State |
+| `ExecuteMoveAsync` | `L188-L206` | [HELPER] | `local:LoadDataAsync()` -> `SprintPlanningService.MoveItemsToSprintAsync` -> `SprintPlanningService.GetProjectSprintsAsync` |
 | `BuildTabs` | `L208-L227` | [HELPER] | `local:RenderSummaryTab()` -> `local:RenderPlannerTab()` |
 | `RenderSummaryTab` | `L229-L231` | [HELPER] | Local UI State |
 | `RenderPlannerTab` | `L356-L358` | [HELPER] | Local UI State |
@@ -44,8 +44,8 @@ source_hash_sha256: 284eead56c02c87e
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
 | `SprintPlanningService.GetProjectSprintsAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L38-L82` | - | In-Memory |
-| `SprintPlanningService.GetSprintMetricsAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L259-L330` | - | In-Memory |
-| `SprintPlanningService.GetSprintItemsAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L332-L391` | - | In-Memory |
-| `SprintPlanningService.CalculateResourceCapacityAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L532-L571` | - | In-Memory |
-| `SprintPlanningService.MoveItemsToSprintAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L428-L530` | - | In-Memory |
+| `SprintPlanningService.GetSprintMetricsAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L291-L362` | - | In-Memory |
+| `SprintPlanningService.GetSprintItemsAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L364-L423` | - | In-Memory |
+| `SprintPlanningService.CalculateResourceCapacityAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L629-L668` | - | In-Memory |
+| `SprintPlanningService.MoveItemsToSprintAsync` | `BlazorEnterprise.Persistence/Services/SprintPlanningService.cs#L460-L627` | - | In-Memory |
 

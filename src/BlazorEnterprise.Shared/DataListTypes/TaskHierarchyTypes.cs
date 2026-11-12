@@ -480,18 +480,24 @@ public class CalendarItemDto
     public DateTime StartUtc { get; set; }
     public DateTime EndUtc { get; set; }
     public bool IsAllDay { get; set; }
+    [AllowHardcodedDefault("Default category for general calendar items")]
     public string ItemCategory { get; set; } = "Event"; // "Event", "Task", "SubTask", "Risk", "Assumption", "Issue", "Blocker"
+    [AllowHardcodedDefault("Default criticality for calendar visualization")]
     public string PriorityOrCriticality { get; set; } = "Medium";
+    [AllowHardcodedDefault("Default status for calendar visualization")]
     public string Status { get; set; } = "Open";
     public string OwnerOrAssignee { get; set; } = string.Empty;
     public string? OwnerEmails { get; set; }
     public string? Comments { get; set; }
     public Guid? ParentTimelineId { get; set; }
     public DateTime? DueDate { get; set; }
+    [AllowHardcodedDefault("Default brand color hex for calendar visualization")]
     public string ColorHex { get; set; } = "#0078d4";
+    [AllowHardcodedDefault("Default icon badge for calendar visualization")]
     public string BadgeIcon { get; set; } = "Calendar";
     public Guid? SourceTaskId { get; set; }
     public Guid? ScopeId { get; set; }
+    [AllowHardcodedDefault("Default hierarchy level for calendar visualization")]
     public TaskLevelEnum Level { get; set; } = TaskLevelEnum.Project;
     public bool IsOverdue => Status != "Closed" && Status != "Completed" && EndUtc.Date < DateTime.UtcNow.Date;
 }

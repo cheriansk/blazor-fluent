@@ -1,3 +1,5 @@
+using BlazorEnterprise.Shared.Attributes;
+
 namespace BlazorEnterprise.Core.Dtos;
 
 public class ProjectMilestoneDto
@@ -20,6 +22,7 @@ public class ProjectMilestoneDto
     }
     public string OwnerEmails { get; set; } = string.Empty;
     public string Deliverable { get; set; } = string.Empty;
+    [AllowHardcodedDefault("Initial default status for project milestone draft")]
     public string Status { get; set; } = "New";
     public string? Comments { get; set; }
 }
@@ -41,6 +44,7 @@ public class ProjectPhaseDto
         get => EndDate;
         set => EndDate = value;
     }
+    [AllowHardcodedDefault("Initial default status for project phase draft")]
     public string Status { get; set; } = "New";
     public string? Comments { get; set; }
     public List<ProjectMilestoneDto> Milestones { get; set; } = [];
@@ -58,6 +62,7 @@ public class ProjectRosterMemberDto
 
 public partial class CreateProjectWizardState
 {
+    [AllowHardcodedDefault("Wizard base template default discriminator")]
     public string SelectedTemplateId { get; set; } = "base";
 
     // Step 1: Basic Project Details
@@ -79,6 +84,7 @@ public partial class CreateProjectWizardState
     public List<ProjectRosterMemberDto> Roster { get; set; } = [];
 
     // Extensibility property bag for downstream custom steps
+    [AllowHardcodedDefault("Extensibility property bag initialized as case-insensitive dictionary")]
     public Dictionary<string, object?> CustomStepData { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public T GetCustom<T>(string key, T fallback = default!)

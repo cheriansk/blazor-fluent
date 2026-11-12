@@ -3,40 +3,42 @@
 target_spec: docs/specs/MainLayout.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Layout/MainLayout.razor
 code_behind: src/BlazorEnterprise.Web/Components/Layout/MainLayout.razor.cs
-generated_at_utc: 2026-11-03T02:50:44Z
-source_hash_sha256: 81e6b74e062d224e
+generated_at_utc: 2026-11-11T19:51:45Z
+source_hash_sha256: c631057133b73bbb
 ============================================================================ -->
 # AI Navigation Index: `MainLayout`
 
 ## 1. UI Map (`MainLayout.razor`)
-- **Injected**: `CurrentUser:ICurrentUser`, `TenantContext:ITenantContext`, `AuthStateProvider:CurrentUserAuthenticationStateProvider`, `NavigationManager:NavigationManager`, `SessionStorage:ProtectedSessionStorage`, `SessionService:IUserSessionService`, `CircuitTracker:ICircuitSessionTracker`, `AuthVerificationService:IInternalAuthenticationService`, `Logger:ILogger<MainLayout>`, `NavState:INavigationStateService`, `ProjectContext:IProjectContext`, `TimeZoneService:IUserTimeZoneService`
+- **Injected**: `CurrentUser:ICurrentUser`, `TenantContext:ITenantContext`, `AuthStateProvider:CurrentUserAuthenticationStateProvider`, `NavigationManager:NavigationManager`, `SessionStorage:ProtectedSessionStorage`, `SessionService:IUserSessionService`, `CircuitTracker:ICircuitSessionTracker`, `AuthVerificationService:IInternalAuthenticationService`, `Logger:ILogger<MainLayout>`, `NavState:INavigationStateService`, `ProjectContext:IProjectContext`, `TimeZoneService:IUserTimeZoneService`, `CircuitActivity:ICircuitActivityTracker`
 - **Registered Child Components**:
   - `<ImpersonationBannerComp />` @ `L4` | Gate: `Unconditional` | Params: `None` | Spec: [ImpersonationBannerComp.requirements.md](../ImpersonationBannerComp.requirements.md)
   - `<SessionRevokedModal />` @ `L5` | Gate: `Unconditional` | Params: `None` | Spec: [SessionRevokedModal.requirements.md](../SessionRevokedModal.requirements.md)
   - `<SessionTimeoutModal />` @ `L6` | Gate: `Unconditional` | Params: `None` | Spec: [SessionTimeoutModal.requirements.md](../SessionTimeoutModal.requirements.md)
-  - `<PendingChangesIndicatorComp />` @ `L24` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [PendingChangesIndicatorComp.requirements.md](../PendingChangesIndicatorComp.requirements.md)
-  - `<NotificationBellPopup />` @ `L25` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [NotificationBellPopup.requirements.md](../NotificationBellPopup.requirements.md)
-  - `<NavMenuComp />` @ `L58` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [NavMenuComp.requirements.md](../NavMenuComp.requirements.md)
-  - `<AppErrorBoundaryComp />` @ `L63` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [AppErrorBoundaryComp.requirements.md](../AppErrorBoundaryComp.requirements.md)
+  - `<PendingChangesIndicatorComp />` @ `L26` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [PendingChangesIndicatorComp.requirements.md](../PendingChangesIndicatorComp.requirements.md)
+  - `<NotificationBellPopup />` @ `L27` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [NotificationBellPopup.requirements.md](../NotificationBellPopup.requirements.md)
+  - `<NavMenuComp />` @ `L64` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [NavMenuComp.requirements.md](../NavMenuComp.requirements.md)
+  - `<AppErrorBoundaryComp />` @ `L69` | Gate: `HasActiveTenantSession` | Params: `None` | Spec: [AppErrorBoundaryComp.requirements.md](../AppErrorBoundaryComp.requirements.md)
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L111` | `L10: @if (HasActiveTenantSession)`, `L20: @if (HasActiveTenantSession)`, `L32: @if (CurrentUser.IsAuthenticated)`, `L43: @if (!IsAnonymousPage)`, `L55: @if (HasActiveTenantSession)`, `L64: @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)` | Buttons: `Btn("@(NavState.IsCollapsed ? " -> NavState.Toggle)@L12`, `Btn("Settings" -> (() => NavigationManager.NavigateTo()@L26`, `Btn("Sign Out" -> submit)@L34`, `Btn((() => NavigationManager.NavigateTo()@L45`, `Btn(submit)@L96` <br> Components: `ImpersonationBannerComp@L4`, `SessionRevokedModal@L5`, `SessionTimeoutModal@L6`, `CskSpacer@L19`, `CalendarQuickViewPopup@L22`, `ProgramAndProjectSwitcherComp@L23`, `PendingChangesIndicatorComp@L24`, `NotificationBellPopup@L25`, `NavMenuComp@L58`, `AppErrorBoundaryComp@L63`, `CskSpacer@L95` |
+| **Header & Top-Level Controls** | `L1-L117` | `L12: @if (HasActiveTenantSession)`, `L22: @if (HasActiveTenantSession)`, `L34: @if (CurrentUser.IsAuthenticated)`, `L45: @if (!IsAnonymousPage)`, `L54: @if (CircuitActivity.IsBusy)`, `L61: @if (HasActiveTenantSession)`, `L70: @if (!IsAnonymousPage && !CurrentUser.IsAuthenticatedTenantUser)` | Buttons: `Btn("@(NavState.IsCollapsed ? " -> NavState.Toggle)@L14`, `Btn("Settings" -> (() => NavigationManager.NavigateTo()@L28`, `Btn("Sign Out" -> submit)@L36`, `Btn((() => NavigationManager.NavigateTo()@L47`, `Btn(submit)@L102` <br> Components: `ImpersonationBannerComp@L4`, `SessionRevokedModal@L5`, `SessionTimeoutModal@L6`, `NavigationLock(ConfirmExternalNavigation=CircuitActivity.IsMutating)@L9`, `CskSpacer@L21`, `CalendarQuickViewPopup@L24`, `ProgramAndProjectSwitcherComp@L25`, `PendingChangesIndicatorComp@L26`, `NotificationBellPopup@L27`, `NavMenuComp@L64`, `AppErrorBoundaryComp@L69`, `CskSpacer@L101` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Layout/MainLayout.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
 | :--- | :--- | :--- | :--- |
-| `OnInitialized` | `L37-L41` | [INIT] | Local UI State |
-| `HandleNavStateChanged` | `L43-L46` | [HELPER] | Local UI State |
-| `HandleTimeZoneChanged` | `L48-L51` | [HELPER] | Local UI State |
-| `Dispose` | `L53-L57` | [HELPER] | Local UI State |
-| `OnAfterRenderAsync` | `L59-L180` | [INIT] | `[IsRootAdmin,TenantBoundaryGate]` -> `TenantContext.Initialize()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.ToAbsoluteUri()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `AuthVerificationService.VerifyAndRehydrateSessionAsync()` -> `ProjectContext.Initialize()` -> `TimeZoneService.InitializeAsync` -> `TimeZoneService.ApplyUserTimeZone` |
-| `SignOut` | `L182-L208` | [HELPER] | `TenantContext.Reset()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `SessionService.RevokeSessionAsync(DB[W]:UserSessions)` -> `ProjectContext.Reset()` |
+| `OnInitialized` | `L38-L43` | [INIT] | Local UI State |
+| `HandleNavStateChanged` | `L45-L48` | [HELPER] | Local UI State |
+| `HandleTimeZoneChanged` | `L50-L53` | [HELPER] | Local UI State |
+| `HandleCircuitActivityChanged` | `L56-L59` | [HELPER] | Local UI State |
+| `HandleBeforeInternalNavigation` | `L61-L67` | [HELPER] | Local UI State |
+| `Dispose` | `L68-L73` | [HELPER] | Local UI State |
+| `OnAfterRenderAsync` | `L75-L196` | [INIT] | `[IsRootAdmin,TenantBoundaryGate]` -> `TenantContext.Initialize()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.ToAbsoluteUri()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `AuthVerificationService.VerifyAndRehydrateSessionAsync()` -> `ProjectContext.Initialize()` -> `TimeZoneService.InitializeAsync` -> `TimeZoneService.ApplyUserTimeZone` |
+| `SignOut` | `L198-L224` | [HELPER] | `TenantContext.Reset()` -> `AuthStateProvider.NotifyUserChanged()` -> `NavigationManager.NavigateTo()` -> `SessionStorage.DeleteAsync()` -> `SessionService.RevokeSessionAsync(DB[W]:UserSessions,IsTransactionScopeCommitAuthorized)` -> `ProjectContext.Reset()` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
 | `UserTimeZoneService.InitializeAsync` | `BlazorEnterprise.Web/Services/UserTimeZoneService.cs#L59-L103` | - | In-Memory |
 | `UserTimeZoneService.ApplyUserTimeZone` | `BlazorEnterprise.Web/Services/UserTimeZoneService.cs#L51-L57` | - | In-Memory |
-| `UserSessionService.RevokeSessionAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L181-L203` | - | `DB[W]: UserSessions` |
+| `UserSessionService.RevokeSessionAsync` | `BlazorEnterprise.Persistence/Services/UserSessionService.cs#L189-L211` | - | `DB[W]: UserSessions,IsTransactionScopeCommitAuthorized` |
 

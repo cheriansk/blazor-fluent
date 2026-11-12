@@ -3,8 +3,8 @@
 target_spec: docs/specs/ProjectHolisticViewHomeTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor.cs
-generated_at_utc: 2026-11-03T02:50:49Z
-source_hash_sha256: 85fb2c8cce0a7a24
+generated_at_utc: 2026-11-11T18:51:47Z
+source_hash_sha256: 0f352a4fb87ecc50
 ============================================================================ -->
 # AI Navigation Index: `ProjectHolisticViewHomeTab`
 

@@ -3,8 +3,8 @@
 target_spec: docs/specs/SettingsTenantsTab.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor.cs
-generated_at_utc: 2026-11-03T02:50:47Z
-source_hash_sha256: b085ffad60854af6
+generated_at_utc: 2026-11-11T19:51:45Z
+source_hash_sha256: 6c8128050dc1f31b
 ============================================================================ -->
 # AI Navigation Index: `SettingsTenantsTab`
 
@@ -13,25 +13,25 @@ source_hash_sha256: b085ffad60854af6
 
 | UI Section | Lines | Visibility Gate | Fields (@bind), Buttons (OnClick) & Grids |
 | :--- | :--- | :--- | :--- |
-| **Header & Top-Level Controls** | `L1-L37` | `L16: @if (IsRootAdmin)`, `L24: @if (!_canEditTenants && !IsRootAdmin)`, `L31: @if (!string.IsNullOrWhiteSpace(_statusMessage))` | Buttons: `Btn("Add Tenant" -> StartAddTenant)@L18` |
-| **Step 1: Provision New Tenant Form** | `L38-L47` | `@if (_showAddModal && !_showConfirmCreate)` | Inputs: `CskTextInput("Tenant Slug (Unique, URL-...": _newSlug)@L44`, `CskTextInput("Display Name": _newName)@L46` |
-| **Internal Email Domains (1-5)** | `L48-L75` | `L65: @if (_newInternalDomains.Count < 5)` | Inputs: `CskTextInput("e.g. @@microsoft.com": _tempInternalDomain)@L68` <br> Buttons: `Btn("+ Add Domain" -> AddInternalDomain)@L69` |
-| **External Email Domains (1-5)** | `L76-L108` | `L93: @if (_newExternalDomains.Count < 5)` | Inputs: `CskTextInput("e.g. @@salesforce.com": _tempExternalDomain)@L96`, `CskDatePicker("Start Date": _newStartDate)@L105`, `CskDatePicker("End Date": _newEndDate)@L106` <br> Buttons: `Btn("+ Add Domain" -> AddExternalDomain)@L97` |
-| **Initial Mandatory Tenant Administrator** | `L109-L138` | Unconditional | Inputs: `CskTextInput("Admin Full Name": _newAdminFullName)@L119`, `CskTextInput("Admin Email": _newAdminEmail)@L122` <br> Buttons: `Btn("Review & Confirm" -> PromptConfirmCreate)@L132`, `Btn("Cancel" -> CancelAdd)@L133` |
-| **Step 2: Mandatory Permanent Configuration Confirmation Modal** | `L139-L169` | `@if (_showConfirmCreate)` | Buttons: `Btn("Confirm & Provision Tenant" -> CreateTenantAsync)@L160`, `Btn("Back to Edit" -> _showConfirmCreate = false)@L163` |
-| **Separate View / Edit Tenant Details Modal Window** | `L170-L248` | `L174: @if (_selectedTenantModal is not null)`, `L192: @if (_selectedTenantModal is not null)`, `L221: @if (_isModalEditMode)`, `L236: @if (_isModalEditMode)` | Inputs: `CskDatePicker("Start Date": _editStartDate)@L223`, `CskDatePicker("End Date": _editEndDate)@L224` <br> Buttons: `Btn("Save Dates" -> SaveDatesAsync)@L238`, `Btn("Cancel" -> CloseTenantModalAsync)@L239`, `Btn("Close" -> CloseTenantModalAsync)@L243` <br> Components: `CskDialog@L171`, `CskDialogBody@L172` |
-| **Tenant User Management Panel** | `L249-L271` | `@if (_managingUsersTenant is not null)` | Buttons: `Btn("Add User" -> OpenAddUserForm)@L263`, `Btn("Close" -> CloseUserManagement)@L266` <br> Components: `EntityHistoryButton(EntityId=_managingUsersTenant.Id.ToString())@L259` |
-| **Automated Background Processing Kill Switch Card** | `L272-L296` | `L281: @if (IsRootAdmin || _canEditTenants)` | Inputs: `CskSwitch("@(_isDaemonActive ? ": _isDaemonActive -> ToggleDaemonStatusAsync)@L283` |
-| **Add User Sub-Card** | `L297-L348` | `@if (_showAddUserForm)` | Inputs: `CskTextInput("Full Name": _userFullName)@L303`, `CskTextInput("Email Address": _userEmail -> OnUserEmailChanged)@L307`, `CskTextInput(GetUserTypeDisplay())@L316`, `CskDatePicker("Start Date": _userStartDate)@L328`, `CskDatePicker("End Date": _userEndDate)@L329`, `CskSwitch("Active": _userIsActive)@L331` <br> Buttons: `Btn("Save User" -> CreateTenantUserAsync)@L336`, `Btn("Cancel" -> _showAddUserForm = false)@L341` |
-| **Edit User Sub-Card** | `L349-L402` | `@if (_editingUser is not null)` | Inputs: `CskTextInput("Full Name": _editUserFullName)@L358`, `CskTextInput("Email Address": _editUserEmail -> OnEditUserEmailChanged)@L362`, `CskTextInput(GetEditUserTypeDisplay())@L370`, `CskDatePicker("Start Date": _editUserStartDate)@L382`, `CskDatePicker("End Date": _editUserEndDate)@L383`, `CskSwitch("@(_editUserIsActive ? ": _editUserIsActive)@L385` <br> Buttons: `Btn("Update User" -> SaveEditUserAsync)@L390`, `Btn("Cancel" -> _editingUser = null)@L395` <br> Components: `EntityHistoryButton(EntityId=_editingUser.Id.ToString())@L355` |
-| **Search & Filter Toolbar for Users** | `L403-L484` | `L418: @if (_isLoadingUsers)`, `L422: @if (!_tenantUsers.Any())`, `L434: @if (context.UserKind == UserKindEnum.SystemDaemon)`, `L438: @if (context.UserType == UserTypeEnum.CompanyUser)`, `L461: @if (context.UserKind != UserKindEnum.SystemDaemon)` | Inputs: `CskTextInput("Filter users by name or e...": _userSearchText)@L405` <br> Buttons: `Btn("Edit User" -> StartEditUser)@L463` <br> Grids: `CskDataGrid(Items=FilteredTenantUsers, Cols=[Name, Email, Type, Start Date, End Date, Status, Actions])@L430` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L477` |
-| **Tenant Program Management Panel** | `L485-L508` | `@if (_managingProgramsTenant is not null)` | Buttons: `Btn("Add Program" -> OpenAddProgramForm)@L499`, `Btn("Close" -> CloseProgramManagement)@L503` |
-| **Add / Edit Program Sub-Card** | `L509-L548` | `@if (_showAddProgramForm)` | Inputs: `CskTextInput("Program Code": _progCode)@L518`, `CskTextInput("Program Name": _progName)@L519`, `CskDatePicker("Start Date": _progStartDate)@L523`, `CskDatePicker("Target Completion Date": _progEndDate)@L524`, `DataListSelect("Status": _progStatus)@L526`, `CskTextArea("Brief summary of program ...": _progDescription)@L532` <br> Buttons: `Btn(SaveTenantProgramAsync)@L536`, `Btn("Cancel" -> CloseProgramForm)@L541` |
-| **Search & Filter Toolbar for Programs** | `L549-L624` | `L564: @if (_isLoadingPrograms)`, `L568: @if (!_tenantPrograms.Any())`, `L607: @if (IsRootAdmin || _canEditTenants)` | Inputs: `CskTextInput("Filter programs by name, ...": _programSearchText)@L551` <br> Buttons: `Btn("Edit Program" -> StartEditProgram)@L609` <br> Grids: `CskDataGrid(Items=FilteredTenantPrograms, Cols=[Code, Name, Status, Start Date, Target Date, Actions])@L576` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L617` |
-| **Manage Tenant Tasks & Risks Card** | `L625-L645` | `@if (_managingTasksTenant is not null)` | Tabs: `Tab[tasks] @L644` <br> Buttons: `Btn("Close" -> CloseTenantTasksManagement)@L638` |
-| **Quick Add Task** | `L646-L704` | `L661: @if (_loadingTenantWorkItems)`, `L665: @if (_tenantTasks.Count == 0)` | Tabs: `Tab[risks] @L703` <br> Inputs: `CskTextInput("Task Title": _newTenantTaskTitle)@L649`, `CskTextInput("Description": _newTenantTaskDesc)@L650`, `DataListSelect("Priority": _newTenantTaskPriority)@L652`, `CskDatePicker("Due Date": _newTenantTaskDueDate)@L654` <br> Buttons: `Btn("Add Task" -> CreateTenantTaskAsync)@L655`, `Btn(ToggleTenantTaskStatusAsync)@L692` <br> Grids: `CskDataGrid(Items=_tenantTasks.AsQueryable(), Cols=[Task Title, Priority, Status, Due Date, Owner, Actions])@L673` |
-| **Quick Add Risk** | `L705-L762` | `L722: @if (_loadingTenantWorkItems)`, `L726: @if (_tenantRisks.Count == 0)` | Inputs: `CskTextInput("Risk Title": _newTenantRiskTitle)@L708`, `CskTextInput("Description": _newTenantRiskDesc)@L709`, `DataListSelect("Probability": _newTenantRiskProb)@L711`, `DataListSelect("Impact": _newTenantRiskImpact)@L714` <br> Buttons: `Btn("Add Risk" -> CreateTenantRiskAsync)@L716` <br> Grids: `CskDataGrid(Items=_tenantRisks.AsQueryable(), Cols=[Risk Title, Probability, Impact, Exposure Score, Status, Reported By])@L734` |
-| **Tenants Table (built-in grid search)** | `L763-L809` | `@if (_isLoading)` | Buttons: `Btn("View Tenant Details" -> OpenTenantModalAsync)@L799`, `Btn("Edit Tenant Dates" -> OpenTenantModalAsync)@L802` <br> Grids: `CskDataGrid(Items=_tenants.AsQueryable(), Cols=[Slug, Name, Internal Domains, External Domains, Status, Start Date, End Date, Actions])@L770` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L804` |
+| **Header & Top-Level Controls** | `L1-L35` | `L14: @if (IsRootAdmin)`, `L22: @if (!_canEditTenants && !IsRootAdmin)`, `L29: @if (!string.IsNullOrWhiteSpace(_statusMessage))` | Buttons: `Btn("Add Tenant" -> StartAddTenant)@L16` |
+| **Step 1: Provision New Tenant Form** | `L36-L45` | `@if (_showAddModal && !_showConfirmCreate)` | Inputs: `CskTextInput("Tenant Slug (Unique, URL-...": _newSlug)@L42`, `CskTextInput("Display Name": _newName)@L44` |
+| **Internal Email Domains (1-5)** | `L46-L73` | `L63: @if (_newInternalDomains.Count < 5)` | Inputs: `CskTextInput("e.g. @@microsoft.com": _tempInternalDomain)@L66` <br> Buttons: `Btn("+ Add Domain" -> AddInternalDomain)@L67` |
+| **External Email Domains (1-5)** | `L74-L106` | `L91: @if (_newExternalDomains.Count < 5)` | Inputs: `CskTextInput("e.g. @@salesforce.com": _tempExternalDomain)@L94`, `CskDatePicker("Start Date": _newStartDate)@L103`, `CskDatePicker("End Date": _newEndDate)@L104` <br> Buttons: `Btn("+ Add Domain" -> AddExternalDomain)@L95` |
+| **Initial Mandatory Tenant Administrator** | `L107-L136` | Unconditional | Inputs: `CskTextInput("Admin Full Name": _newAdminFullName)@L117`, `CskTextInput("Admin Email": _newAdminEmail)@L120` <br> Buttons: `Btn("Review & Confirm" -> PromptConfirmCreate)@L130`, `Btn("Cancel" -> CancelAdd)@L131` |
+| **Step 2: Mandatory Permanent Configuration Confirmation Modal** | `L137-L167` | `@if (_showConfirmCreate)` | Buttons: `Btn("Confirm & Provision Tenant" -> CreateTenantAsync)@L158`, `Btn("Back to Edit" -> _showConfirmCreate = false)@L161` |
+| **Separate View / Edit Tenant Details Modal Window** | `L168-L246` | `L172: @if (_selectedTenantModal is not null)`, `L190: @if (_selectedTenantModal is not null)`, `L219: @if (_isModalEditMode)`, `L234: @if (_isModalEditMode)` | Inputs: `CskDatePicker("Start Date": _editStartDate)@L221`, `CskDatePicker("End Date": _editEndDate)@L222` <br> Buttons: `Btn("Save Dates" -> SaveDatesAsync)@L236`, `Btn("Cancel" -> CloseTenantModalAsync)@L237`, `Btn("Close" -> CloseTenantModalAsync)@L241` <br> Components: `CskDialog@L169`, `CskDialogBody@L170` |
+| **Tenant User Management Panel** | `L247-L269` | `@if (_managingUsersTenant is not null)` | Buttons: `Btn("Add User" -> OpenAddUserForm)@L261`, `Btn("Close" -> CloseUserManagement)@L264` <br> Components: `EntityHistoryButton(EntityId=_managingUsersTenant.Id.ToString())@L257` |
+| **Automated Background Processing Kill Switch Card** | `L270-L294` | `L279: @if (IsRootAdmin || _canEditTenants)` | Inputs: `CskSwitch("@(_isDaemonActive ? ": _isDaemonActive -> ToggleDaemonStatusAsync)@L281` |
+| **Add User Sub-Card** | `L295-L346` | `@if (_showAddUserForm)` | Inputs: `CskTextInput("Full Name": _userFullName)@L301`, `CskTextInput("Email Address": _userEmail -> OnUserEmailChanged)@L305`, `CskTextInput(GetUserTypeDisplay())@L314`, `CskDatePicker("Start Date": _userStartDate)@L326`, `CskDatePicker("End Date": _userEndDate)@L327`, `CskSwitch("Active": _userIsActive)@L329` <br> Buttons: `Btn("Save User" -> CreateTenantUserAsync)@L334`, `Btn("Cancel" -> _showAddUserForm = false)@L339` |
+| **Edit User Sub-Card** | `L347-L400` | `@if (_editingUser is not null)` | Inputs: `CskTextInput("Full Name": _editUserFullName)@L356`, `CskTextInput("Email Address": _editUserEmail -> OnEditUserEmailChanged)@L360`, `CskTextInput(GetEditUserTypeDisplay())@L368`, `CskDatePicker("Start Date": _editUserStartDate)@L380`, `CskDatePicker("End Date": _editUserEndDate)@L381`, `CskSwitch("@(_editUserIsActive ? ": _editUserIsActive)@L383` <br> Buttons: `Btn("Update User" -> SaveEditUserAsync)@L388`, `Btn("Cancel" -> _editingUser = null)@L393` <br> Components: `EntityHistoryButton(EntityId=_editingUser.Id.ToString())@L353` |
+| **Search & Filter Toolbar for Users** | `L401-L482` | `L416: @if (_isLoadingUsers)`, `L420: @if (!_tenantUsers.Any())`, `L432: @if (context.UserKind == UserKindEnum.SystemDaemon)`, `L436: @if (context.UserType == UserTypeEnum.CompanyUser)`, `L459: @if (context.UserKind != UserKindEnum.SystemDaemon)` | Inputs: `CskTextInput("Filter users by name or e...": _userSearchText)@L403` <br> Buttons: `Btn("Edit User" -> StartEditUser)@L461` <br> Grids: `CskDataGrid(Items=FilteredTenantUsers, Cols=[Name, Email, Type, Start Date, End Date, Status, Actions])@L428` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L475` |
+| **Tenant Program Management Panel** | `L483-L506` | `@if (_managingProgramsTenant is not null)` | Buttons: `Btn("Add Program" -> OpenAddProgramForm)@L497`, `Btn("Close" -> CloseProgramManagement)@L501` |
+| **Add / Edit Program Sub-Card** | `L507-L546` | `@if (_showAddProgramForm)` | Inputs: `CskTextInput("Program Code": _progCode)@L516`, `CskTextInput("Program Name": _progName)@L517`, `CskDatePicker("Start Date": _progStartDate)@L521`, `CskDatePicker("Target Completion Date": _progEndDate)@L522`, `DataListSelect("Status": _progStatus)@L524`, `CskTextArea("Brief summary of program ...": _progDescription)@L530` <br> Buttons: `Btn(SaveTenantProgramAsync)@L534`, `Btn("Cancel" -> CloseProgramForm)@L539` |
+| **Search & Filter Toolbar for Programs** | `L547-L622` | `L562: @if (_isLoadingPrograms)`, `L566: @if (!_tenantPrograms.Any())`, `L605: @if (IsRootAdmin || _canEditTenants)` | Inputs: `CskTextInput("Filter programs by name, ...": _programSearchText)@L549` <br> Buttons: `Btn("Edit Program" -> StartEditProgram)@L607` <br> Grids: `CskDataGrid(Items=FilteredTenantPrograms, Cols=[Code, Name, Status, Start Date, Target Date, Actions])@L574` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L615` |
+| **Manage Tenant Tasks & Risks Card** | `L623-L643` | `@if (_managingTasksTenant is not null)` | Tabs: `Tab[tasks] @L642` <br> Buttons: `Btn("Close" -> CloseTenantTasksManagement)@L636` |
+| **Quick Add Task** | `L644-L702` | `L659: @if (_loadingTenantWorkItems)`, `L663: @if (_tenantTasks.Count == 0)` | Tabs: `Tab[risks] @L701` <br> Inputs: `CskTextInput("Task Title": _newTenantTaskTitle)@L647`, `CskTextInput("Description": _newTenantTaskDesc)@L648`, `DataListSelect("Priority": _newTenantTaskPriority)@L650`, `CskDatePicker("Due Date": _newTenantTaskDueDate)@L652` <br> Buttons: `Btn("Add Task" -> CreateTenantTaskAsync)@L653`, `Btn(ToggleTenantTaskStatusAsync)@L690` <br> Grids: `CskDataGrid(Items=_tenantTasks.AsQueryable(), Cols=[Task Title, Priority, Status, Due Date, Owner, Actions])@L671` |
+| **Quick Add Risk** | `L703-L760` | `L720: @if (_loadingTenantWorkItems)`, `L724: @if (_tenantRisks.Count == 0)` | Inputs: `CskTextInput("Risk Title": _newTenantRiskTitle)@L706`, `CskTextInput("Description": _newTenantRiskDesc)@L707`, `DataListSelect("Probability": _newTenantRiskProb)@L709`, `DataListSelect("Impact": _newTenantRiskImpact)@L712` <br> Buttons: `Btn("Add Risk" -> CreateTenantRiskAsync)@L714` <br> Grids: `CskDataGrid(Items=_tenantRisks.AsQueryable(), Cols=[Risk Title, Probability, Impact, Exposure Score, Status, Reported By])@L732` |
+| **Tenants Table (built-in grid search)** | `L761-L807` | `@if (_isLoading)` | Buttons: `Btn("View Tenant Details" -> OpenTenantModalAsync)@L797`, `Btn("Edit Tenant Dates" -> OpenTenantModalAsync)@L800` <br> Grids: `CskDataGrid(Items=_tenants.AsQueryable(), Cols=[Slug, Name, Internal Domains, External Domains, Status, Start Date, End Date, Actions])@L768` <br> Components: `EntityHistoryButton(EntityId=context.Id.ToString())@L802` |
 
 ## 2. Method Map (`BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor.cs`)
 | Method | Lines | Role / Trigger | End-to-End Call Chain ([PreGates] -> Service.Method[Gates](DB/Audit)) |
@@ -39,69 +39,69 @@ source_hash_sha256: b085ffad60854af6
 | `OnInitializedAsync` | `L98-L103` | [INIT] | `[IsRootAdmin,TenantBoundaryGate,TenantAdminGate]` -> `local:LoadTenantsAsync()` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` -> `TenantService.GetTenantByIdentifierAsync[TenantBoundaryGate]` -> `HierarchyAuth.CanEditTenantSettingsAsync[TenantAdminGate]` |
 | `LoadTenantsAsync` | `L105-L129` | [HELPER] | `[IsRootAdmin,TenantBoundaryGate]` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` -> `TenantService.GetTenantByIdentifierAsync[TenantBoundaryGate]` |
 | `NormalizeDomain` | `L131-L135` | [HELPER] | Local UI State |
-| `AddInternalDomain` | `L137-L167` | OnClick@L69 | `local:NormalizeDomain()` |
+| `AddInternalDomain` | `L137-L167` | OnClick@L67 | `local:NormalizeDomain()` |
 | `RemoveInternalDomain` | `L169-L172` | [HELPER] | Local UI State |
-| `AddExternalDomain` | `L174-L204` | OnClick@L97 | `local:NormalizeDomain()` |
+| `AddExternalDomain` | `L174-L204` | OnClick@L95 | `local:NormalizeDomain()` |
 | `RemoveExternalDomain` | `L206-L209` | [HELPER] | Local UI State |
-| `PromptConfirmCreate` | `L211-L284` | OnClick@L132 | Local UI State |
-| `CreateTenantAsync` | `L286-L313` | OnClick@L160 | `[IsRootAdmin]` -> `local:LoadTenantsAsync()` -> `local:CancelAdd()` -> `TenantService.CreateTenantWithAdminAsync[IsRootAdmin,HmacRowSignature](DB[W]:Users,TenantUsers; Audit:LogUserActivityAsync)` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` -> `TenantService.GetTenantByIdentifierAsync[TenantBoundaryGate]` -> `UnsavedChanges.ClearChange` |
-| `StartAddTenant` | `L315-L320` | OnClick@L18 | `UnsavedChanges.RegisterChange` |
-| `CancelAdd` | `L322-L337` | OnClick@L133 | `UnsavedChanges.ClearChange` |
-| `ToggleStatusAsync` | `L339-L355` | [HELPER] | `[IsRootAdmin]` -> `TenantService.UpdateTenantStatusAsync[IsRootAdmin](DB[W]:Tenants; Audit:LogSecurityEventAsync)` |
-| `OpenTenantModalAsync` | `L357-L374` | OnClick@L799, OnClick@L802 | `[IsRootAdmin]` -> `UnsavedChanges.RegisterChange` |
-| `CloseTenantModalAsync` | `L376-L385` | OnClick@L239, OnClick@L243 | `UnsavedChanges.ClearChange` |
-| `SaveDatesAsync` | `L387-L419` | OnClick@L238 | `[IsRootAdmin]` -> `local:CloseTenantModalAsync()` -> `TenantService.UpdateTenantDatesAsync[IsRootAdmin](DB[W]:Tenants; Audit:LogUserActivityAsync)` -> `UnsavedChanges.ClearChange` |
+| `PromptConfirmCreate` | `L211-L284` | OnClick@L130 | Local UI State |
+| `CreateTenantAsync` | `L286-L313` | OnClick@L158 | `[IsRootAdmin]` -> `local:LoadTenantsAsync()` -> `local:CancelAdd()` -> `TenantService.CreateTenantWithAdminAsync[IsRootAdmin,HmacRowSignature](DB[W]:Users,TenantUsers,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` -> `TenantService.GetAllTenantsAsync[IsRootAdmin](DB[R]:Tenants)` -> `TenantService.GetTenantByIdentifierAsync[TenantBoundaryGate]` -> `UnsavedChanges.ClearChange` |
+| `StartAddTenant` | `L315-L320` | OnClick@L16 | `UnsavedChanges.RegisterChange` |
+| `CancelAdd` | `L322-L337` | OnClick@L131 | `UnsavedChanges.ClearChange` |
+| `ToggleStatusAsync` | `L339-L355` | [HELPER] | `[IsRootAdmin]` -> `TenantService.UpdateTenantStatusAsync[IsRootAdmin](DB[W]:Tenants,IsTransactionScopeCommitAuthorized; Audit:LogSecurityEventAsync)` |
+| `OpenTenantModalAsync` | `L357-L374` | OnClick@L797, OnClick@L800 | `[IsRootAdmin]` -> `UnsavedChanges.RegisterChange` |
+| `CloseTenantModalAsync` | `L376-L385` | OnClick@L237, OnClick@L241 | `UnsavedChanges.ClearChange` |
+| `SaveDatesAsync` | `L387-L419` | OnClick@L236 | `[IsRootAdmin]` -> `local:CloseTenantModalAsync()` -> `TenantService.UpdateTenantDatesAsync[IsRootAdmin](DB[R]:Tenants,ApplyOriginalVersion; Audit:LogUserActivityAsync)` -> `UnsavedChanges.ClearChange` |
 | `OpenUserManagement` | `L422-L439` | [HELPER] | `[IsRootAdmin]` -> `local:LoadTenantUsersAsync()` -> `TenantService.GetTenantUsersAsync[TenantBoundaryGate](DB[R]:TenantUsers)` -> `TenantService.IsTenantDaemonActiveAsync` |
-| `OpenAddUserForm` | `L441-L445` | OnClick@L263 | Local UI State |
-| `CloseUserManagement` | `L447-L453` | OnClick@L266 | Local UI State |
+| `OpenAddUserForm` | `L441-L445` | OnClick@L261 | Local UI State |
+| `CloseUserManagement` | `L447-L453` | OnClick@L264 | Local UI State |
 | `LoadTenantUsersAsync` | `L457-L474` | [HELPER] | `TenantService.GetTenantUsersAsync[TenantBoundaryGate](DB[R]:TenantUsers)` -> `TenantService.IsTenantDaemonActiveAsync` |
-| `ToggleDaemonStatusAsync` | `L476-L493` | ValueChanged@L284 | `[IsRootAdmin]` -> `TenantService.SetTenantDaemonActiveAsync[IsRootAdmin,HmacRowSignature](DB[W]:TenantUsers; Audit:LogUserActivityAsync)` |
-| `OnUserEmailChanged` | `L495-L524` | ValueChanged@L309 | Local UI State |
+| `ToggleDaemonStatusAsync` | `L476-L493` | ValueChanged@L282 | `[IsRootAdmin]` -> `TenantService.SetTenantDaemonActiveAsync[IsRootAdmin,HmacRowSignature](DB[W]:TenantUsers,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` |
+| `OnUserEmailChanged` | `L495-L524` | ValueChanged@L307 | Local UI State |
 | `GetUserTypeDisplay` | `L526-L534` | [HELPER] | Local UI State |
-| `CreateTenantUserAsync` | `L544-L572` | OnClick@L338 | `[IsRootAdmin]` -> `local:LoadTenantUsersAsync()` -> `TenantService.AddTenantUserAsync[TenantBoundaryGate,HmacRowSignature](DB[W]:TenantUsers,Users; Audit:LogUserActivityAsync)` -> `TenantService.GetTenantUsersAsync[TenantBoundaryGate](DB[R]:TenantUsers)` -> `TenantService.IsTenantDaemonActiveAsync` |
-| `StartEditUser` | `L575-L586` | OnClick@L467 | Local UI State |
-| `OnEditUserEmailChanged` | `L588-L617` | ValueChanged@L364 | Local UI State |
+| `CreateTenantUserAsync` | `L544-L572` | OnClick@L336 | `[IsRootAdmin]` -> `local:LoadTenantUsersAsync()` -> `TenantService.AddTenantUserAsync[TenantBoundaryGate,HmacRowSignature](DB[W]:TenantUsers,Users,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` -> `TenantService.GetTenantUsersAsync[TenantBoundaryGate](DB[R]:TenantUsers)` -> `TenantService.IsTenantDaemonActiveAsync` |
+| `StartEditUser` | `L575-L586` | OnClick@L465 | Local UI State |
+| `OnEditUserEmailChanged` | `L588-L617` | ValueChanged@L362 | Local UI State |
 | `GetEditUserTypeDisplay` | `L619-L627` | [HELPER] | Local UI State |
-| `SaveEditUserAsync` | `L638-L663` | OnClick@L392 | `[IsRootAdmin]` -> `local:LoadTenantUsersAsync()` -> `TenantService.UpdateTenantUserAsync[TenantBoundaryGate,HmacRowSignature](DB[W]:TenantUsers,Users; Audit:LogUserActivityAsync)` -> `TenantService.GetTenantUsersAsync[TenantBoundaryGate](DB[R]:TenantUsers)` -> `TenantService.IsTenantDaemonActiveAsync` |
+| `SaveEditUserAsync` | `L638-L663` | OnClick@L390 | `[IsRootAdmin]` -> `local:LoadTenantUsersAsync()` -> `TenantService.UpdateTenantUserAsync[TenantBoundaryGate,HmacRowSignature](DB[W]:TenantUsers,Users,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` -> `TenantService.GetTenantUsersAsync[TenantBoundaryGate](DB[R]:TenantUsers)` -> `TenantService.IsTenantDaemonActiveAsync` |
 | `OpenProgramManagement` | `L703-L711` | [HELPER] | `local:LoadTenantProgramsAsync()` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` |
-| `CloseProgramManagement` | `L713-L719` | OnClick@L503 | Local UI State |
+| `CloseProgramManagement` | `L713-L719` | OnClick@L501 | Local UI State |
 | `LoadTenantProgramsAsync` | `L721-L734` | [HELPER] | `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` |
-| `OpenAddProgramForm` | `L736-L746` | OnClick@L499 | Local UI State |
-| `StartEditProgram` | `L748-L758` | OnClick@L613 | Local UI State |
-| `CloseProgramForm` | `L760-L764` | OnClick@L541 | Local UI State |
-| `SaveTenantProgramAsync` | `L766-L819` | OnClick@L538 | `local:LoadTenantProgramsAsync()` -> `local:CloseProgramForm()` -> `ProgramService.CreateProgramAsync[TenantAdminGate](DB[W]:Tenants,Programs; Audit:LogUserActivityAsync)` -> `ProgramService.UpdateProgramAsync[ProgramAccessGate](DB[W]:Programs; Audit:LogUserActivityAsync)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` |
-| `OpenTenantTasksManagement` | `L842-L848` | [HELPER] | `local:LoadTenantWorkItemsAsync()` -> `TaskService.GetTenantTasksAsync(DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync(DB[R]:Risks)` |
-| `CloseTenantTasksManagement` | `L850-L855` | OnClick@L638 | Local UI State |
-| `LoadTenantWorkItemsAsync` | `L857-L875` | [HELPER] | `TaskService.GetTenantTasksAsync(DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync(DB[R]:Risks)` |
-| `CreateTenantTaskAsync` | `L877-L913` | OnClick@L655 | `local:LoadTenantWorkItemsAsync()` -> `TaskService.CreateTaskAsync(DB[W]:Tasks)` -> `TaskService.GetTenantTasksAsync(DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync(DB[R]:Risks)` |
-| `CreateTenantRiskAsync` | `L915-L953` | OnClick@L716 | `local:LoadTenantWorkItemsAsync()` -> `TaskService.CreateRiskAsync(DB[W]:Risks)` -> `TaskService.GetTenantTasksAsync(DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync(DB[R]:Risks)` |
-| `ToggleTenantTaskStatusAsync` | `L955-L965` | OnClick@L694 | `TaskService.UpdateTaskAsync(DB[W]:Tasks)` |
+| `OpenAddProgramForm` | `L736-L746` | OnClick@L497 | Local UI State |
+| `StartEditProgram` | `L748-L758` | OnClick@L611 | Local UI State |
+| `CloseProgramForm` | `L760-L764` | OnClick@L539 | Local UI State |
+| `SaveTenantProgramAsync` | `L766-L819` | OnClick@L536 | `local:LoadTenantProgramsAsync()` -> `local:CloseProgramForm()` -> `ProgramService.CreateProgramAsync[TenantAdminGate](DB[W]:Tenants,Programs,IsTransactionScopeCommitAuthorized; Audit:LogUserActivityAsync)` -> `ProgramService.UpdateProgramAsync[ProgramAccessGate](DB[R]:Programs,ApplyOriginalVersion; Audit:LogUserActivityAsync)` -> `ProgramService.GetProgramsAsync(DB[R]:Tenants,Programs)` |
+| `OpenTenantTasksManagement` | `L842-L848` | [HELPER] | `local:LoadTenantWorkItemsAsync()` -> `TaskService.GetTenantTasksAsync[TenantAdminGate](DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync[TenantAdminGate](DB[R]:Risks)` |
+| `CloseTenantTasksManagement` | `L850-L855` | OnClick@L636 | Local UI State |
+| `LoadTenantWorkItemsAsync` | `L857-L875` | [HELPER] | `TaskService.GetTenantTasksAsync[TenantAdminGate](DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync[TenantAdminGate](DB[R]:Risks)` |
+| `CreateTenantTaskAsync` | `L877-L913` | OnClick@L653 | `local:LoadTenantWorkItemsAsync()` -> `TaskService.CreateTaskAsync(DB[W]:Tasks,IsTransactionScopeCommitAuthorized)` -> `TaskService.GetTenantTasksAsync[TenantAdminGate](DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync[TenantAdminGate](DB[R]:Risks)` |
+| `CreateTenantRiskAsync` | `L915-L953` | OnClick@L714 | `local:LoadTenantWorkItemsAsync()` -> `TaskService.CreateRiskAsync(DB[W]:Risks,IsTransactionScopeCommitAuthorized)` -> `TaskService.GetTenantTasksAsync[TenantAdminGate](DB[R]:Tasks)` -> `TaskService.GetTenantRisksAsync[TenantAdminGate](DB[R]:Risks)` |
+| `ToggleTenantTaskStatusAsync` | `L955-L965` | OnClick@L692 | `TaskService.UpdateTaskAsync(DB[W]:Tasks,IsTransactionScopeCommitAuthorized)` |
 | `Dispose` | `L967-L970` | [HELPER] | `UnsavedChanges.ClearChange` |
 
 ## 3. Service Map
 | Service Method | Source Location | Security Gates | DB & Audit |
 | :--- | :--- | :--- | :--- |
-| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L99-L121` | `IsRootAdmin` | `DB[R]: Tenants` |
-| `TenantService.GetTenantByIdentifierAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L123-L136` | `TenantBoundaryGate` | In-Memory |
-| `HierarchyAuthorizationService.CanEditTenantSettingsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L417-L425` | `TenantAdminGate` | In-Memory |
-| `TenantService.CreateTenantWithAdminAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L266-L370` | `IsRootAdmin, HmacRowSignature` | `DB[W]: Users,TenantUsers` `Audit: LogUserActivityAsync` |
+| `TenantService.GetAllTenantsAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L137-L171` | `IsRootAdmin` | `DB[R]: Tenants` |
+| `TenantService.GetTenantByIdentifierAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L173-L190` | `TenantBoundaryGate` | In-Memory |
+| `HierarchyAuthorizationService.CanEditTenantSettingsAsync` | `BlazorEnterprise.Persistence/Services/HierarchyAuthorizationService.cs#L296-L302` | `TenantAdminGate` | In-Memory |
+| `TenantService.CreateTenantWithAdminAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L377-L525` | `IsRootAdmin, HmacRowSignature` | `DB[W]: Users,TenantUsers,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync` |
 | `UnsavedChangesStateService.ClearChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L26-L34` | - | In-Memory |
 | `UnsavedChangesStateService.RegisterChange` | `BlazorEnterprise.Persistence/Services/UnsavedChangesStateService.cs#L18-L24` | - | In-Memory |
-| `TenantService.UpdateTenantStatusAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L685-L720` | `IsRootAdmin` | `DB[W]: Tenants` `Audit: LogSecurityEventAsync` |
-| `TenantService.UpdateTenantDatesAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L722-L754` | `IsRootAdmin` | `DB[W]: Tenants` `Audit: LogUserActivityAsync` |
-| `TenantService.GetTenantUsersAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L384-L404` | `TenantBoundaryGate` | `DB[R]: TenantUsers` |
-| `TenantService.IsTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L993-L1001` | - | In-Memory |
-| `TenantService.SetTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1003-L1053` | `IsRootAdmin, HmacRowSignature` | `DB[W]: TenantUsers` `Audit: LogUserActivityAsync` |
-| `TenantService.AddTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L406-L518` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users` `Audit: LogUserActivityAsync` |
-| `TenantService.UpdateTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L520-L631` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users` `Audit: LogUserActivityAsync` |
-| `ProgramService.GetProgramsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L41-L70` | - | `DB[R]: Tenants,Programs` |
-| `ProgramService.CreateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L94-L158` | `TenantAdminGate` | `DB[W]: Tenants,Programs` `Audit: LogUserActivityAsync` |
-| `ProgramService.UpdateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L160-L218` | `ProgramAccessGate` | `DB[W]: Programs` `Audit: LogUserActivityAsync` |
-| `UserTaskService.GetTenantTasksAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L994-L1001` | - | `DB[R]: Tasks` |
-| `UserTaskService.GetTenantRisksAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L1003-L1010` | - | `DB[R]: Risks` |
-| `UserTaskService.CreateTaskAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L159-L195` | - | `DB[W]: Tasks` |
-| `UserTaskService.CreateRiskAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L1012-L1025` | - | `DB[W]: Risks` |
-| `UserTaskService.UpdateTaskAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L197-L241` | - | `DB[W]: Tasks` |
+| `TenantService.UpdateTenantStatusAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L971-L1020` | `IsRootAdmin` | `DB[W]: Tenants,IsTransactionScopeCommitAuthorized` `Audit: LogSecurityEventAsync` |
+| `TenantService.UpdateTenantDatesAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1022-L1081` | `IsRootAdmin` | `DB[R]: Tenants,ApplyOriginalVersion` `Audit: LogUserActivityAsync` |
+| `TenantService.GetTenantUsersAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L546-L577` | `TenantBoundaryGate` | `DB[R]: TenantUsers` |
+| `TenantService.IsTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1576-L1587` | - | In-Memory |
+| `TenantService.SetTenantDaemonActiveAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L1589-L1652` | `IsRootAdmin, HmacRowSignature` | `DB[W]: TenantUsers,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync` |
+| `TenantService.AddTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L579-L738` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync` |
+| `TenantService.UpdateTenantUserAsync` | `BlazorEnterprise.Persistence/Services/TenantService.cs#L740-L895` | `TenantBoundaryGate, HmacRowSignature` | `DB[W]: TenantUsers,Users,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync` |
+| `ProgramService.GetProgramsAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L45-L79` | - | `DB[R]: Tenants,Programs` |
+| `ProgramService.CreateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L108-L173` | `TenantAdminGate` | `DB[W]: Tenants,Programs,IsTransactionScopeCommitAuthorized` `Audit: LogUserActivityAsync` |
+| `ProgramService.UpdateProgramAsync` | `BlazorEnterprise.Persistence/Services/ProgramService.cs#L175-L249` | `ProgramAccessGate` | `DB[R]: Programs,ApplyOriginalVersion` `Audit: LogUserActivityAsync` |
+| `UserTaskService.GetTenantTasksAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L1087-L1096` | `TenantAdminGate` | `DB[R]: Tasks` |
+| `UserTaskService.GetTenantRisksAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L1098-L1107` | `TenantAdminGate` | `DB[R]: Risks` |
+| `UserTaskService.CreateTaskAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L166-L211` | - | `DB[W]: Tasks,IsTransactionScopeCommitAuthorized` |
+| `UserTaskService.CreateRiskAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L1109-L1123` | - | `DB[W]: Risks,IsTransactionScopeCommitAuthorized` |
+| `UserTaskService.UpdateTaskAsync` | `BlazorEnterprise.Persistence/Services/UserTaskService.cs#L213-L262` | - | `DB[W]: Tasks,IsTransactionScopeCommitAuthorized` |
 
 ## 4. Validation Rules
 
@@ -125,6 +125,8 @@ source_hash_sha256: b085ffad60854af6
 - End date cannot precede start date.
 - Tenant not found.
 - The default system root anchor tenant cannot be modified.
+- Concurrency Conflict: Another user modified this tenant's contract dates whi...
+- saveResult.Message
 
 ### TenantService.IsTenantDaemonActiveAsync
 
@@ -178,6 +180,8 @@ source_hash_sha256: b085ffad60854af6
 - Access Denied: You do not have administrative permissions to edit this progr...
 - Program not found.
 - A program with code '{code}' already exists in this tenant.
+- Concurrency Conflict: Another user updated this program while you were editi...
+- saveResult.Message
 
 ### UserTaskService.CreateTaskAsync
 

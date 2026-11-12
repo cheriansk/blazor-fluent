@@ -1,6 +1,231 @@
 # Component Registration Warnings (Validation Report)
 
-> **Last Generated**: `2026-11-06 14:41:36 -05:00`  
+> **Last Generated**: `2026-11-11 14:51:45 -05:00`  
 > **Manifest**: [specs-manifest.json](../specs-manifest.json) | **Catalog**: [README.md](../README.md)
 
-All discovered child Razor components are registered in `specs-manifest.json` or listed in `component_discovery.ignore_components`.
+> [!CAUTION]
+> **21 Unregistered Child Component(s) detected across 5 parent component(s)!** Copy desired entries below into `"children"` of the respective parent in `docs/specs/specs-manifest.json` (or add shared UI widgets to `component_discovery.ignore_components`).
+
+## Parent: `BlazorEnterprise.Web/Components/Layout/MainLayout.razor` ([docs/specs/MainLayout.requirements.md](../../docs/specs/MainLayout.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<CalendarQuickViewPopup />` | `BlazorEnterprise.Web/Components/Layout/CalendarQuickViewPopup.razor` | `L24` | `HasActiveTenantSession` |
+| `<ProgramAndProjectSwitcherComp />` | `BlazorEnterprise.Web/Components/Layout/ProgramAndProjectSwitcherComp.razor` | `L25` | `HasActiveTenantSession` |
+
+### Ready-to-Paste JSON for `MainLayout.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/CalendarQuickViewPopup.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <CalendarQuickViewPopup /> rendered by MainLayout.razor at L24 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Layout/ProgramAndProjectSwitcherComp.razor",
+      "category": "Layout",
+      "thinking_level": "low",
+      "description": "Child component <ProgramAndProjectSwitcherComp /> rendered by MainLayout.razor at L25 (Gate: HasActiveTenantSession).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/Settings/SettingsPage.razor` ([docs/specs/SettingsPage.requirements.md](../../docs/specs/SettingsPage.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<SettingsJobsTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsJobsTab.razor` | `L113` | `_activeTabId == "jobs" && _visitedTabs.Contains("jobs")` |
+| `<SettingsEventsTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsEventsTab.razor` | `L117` | `_activeTabId == "events" && _visitedTabs.Contains("events")` |
+| `<SettingsAuditTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsAuditTab.razor` | `L121` | `_activeTabId == "auditing" && _visitedTabs.Contains("auditing")` |
+| `<SettingsSessionsTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsSessionsTab.razor` | `L125` | `_activeTabId == "sessions" && _visitedTabs.Contains("sessions")` |
+| `<SettingsUserTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsUserTab.razor` | `L129` | `_activeTabId == "user" && _visitedTabs.Contains("user")` |
+| `<SettingsUserCalendarTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsUserCalendarTab.razor` | `L133` | `_activeTabId == "calendar" && _visitedTabs.Contains("calendar")` |
+| `<SettingsRateCardTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsRateCardTab.razor` | `L137` | `_activeTabId == "ratecard" && _visitedTabs.Contains("ratecard")` |
+| `<SettingsSprintTimelineTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsSprintTimelineTab.razor` | `L141` | `_activeTabId == "sprinttimeline" && _visitedTabs.Contains("sprinttimeline")` |
+| `<SettingsNotificationsTab />` | `BlazorEnterprise.Web/Components/Pages/Settings/SettingsNotificationsTab.razor` | `L145` | `_activeTabId == "notifications" && _visitedTabs.Contains("notifications")` |
+
+### Ready-to-Paste JSON for `SettingsPage.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsJobsTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsJobsTab /> rendered by SettingsPage.razor at L113 (Gate: _activeTabId == 'jobs' && _visitedTabs.Contains('jobs')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsEventsTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsEventsTab /> rendered by SettingsPage.razor at L117 (Gate: _activeTabId == 'events' && _visitedTabs.Contains('events')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsAuditTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsAuditTab /> rendered by SettingsPage.razor at L121 (Gate: _activeTabId == 'auditing' && _visitedTabs.Contains('auditing')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsSessionsTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsSessionsTab /> rendered by SettingsPage.razor at L125 (Gate: _activeTabId == 'sessions' && _visitedTabs.Contains('sessions')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsUserTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsUserTab /> rendered by SettingsPage.razor at L129 (Gate: _activeTabId == 'user' && _visitedTabs.Contains('user')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsUserCalendarTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsUserCalendarTab /> rendered by SettingsPage.razor at L133 (Gate: _activeTabId == 'calendar' && _visitedTabs.Contains('calendar')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsRateCardTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsRateCardTab /> rendered by SettingsPage.razor at L137 (Gate: _activeTabId == 'ratecard' && _visitedTabs.Contains('ratecard')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsSprintTimelineTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsSprintTimelineTab /> rendered by SettingsPage.razor at L141 (Gate: _activeTabId == 'sprinttimeline' && _visitedTabs.Contains('sprinttimeline')).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/SettingsNotificationsTab.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <SettingsNotificationsTab /> rendered by SettingsPage.razor at L145 (Gate: _activeTabId == 'notifications' && _visitedTabs.Contains('notifications')).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/Settings/SettingsTenantsTab.razor` ([docs/specs/SettingsTenantsTab.requirements.md](../../docs/specs/SettingsTenantsTab.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<EntityHistoryButton />` | `BlazorEnterprise.Web/Components/Common/EntityHistoryButton.razor` | `L257` | `_managingUsersTenant is not null` |
+| `<DataListSelect />` | `BlazorEnterprise.Web/Components/Common/DataListSelect.razor` | `L524` | `_showAddProgramForm` |
+
+### Ready-to-Paste JSON for `SettingsTenantsTab.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/EntityHistoryButton.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <EntityHistoryButton /> rendered by SettingsTenantsTab.razor at L257 (Gate: _managingUsersTenant is not null).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/DataListSelect.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <DataListSelect /> rendered by SettingsTenantsTab.razor at L524 (Gate: _showAddProgramForm).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/Settings/SettingsProgramsTab.razor` ([docs/specs/SettingsProgramsTab.requirements.md](../../docs/specs/SettingsProgramsTab.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<EntityHistoryButton />` | `BlazorEnterprise.Web/Components/Common/EntityHistoryButton.razor` | `L237` | `_programs.Count == 0` |
+| `<DataListSelect />` | `BlazorEnterprise.Web/Components/Common/DataListSelect.razor` | `L671` | `_showAddProjectModal` |
+| `<CreateProgramWizardModal />` | `BlazorEnterprise.Web/Components/Pages/Settings/ProgramWizard/CreateProgramWizardModal.razor` | `L1109` | `context.IsResolved` |
+| `<CreateProjectWizardModal />` | `BlazorEnterprise.Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardModal.razor` | `L1129` | `context.IsResolved` |
+
+### Ready-to-Paste JSON for `SettingsProgramsTab.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/EntityHistoryButton.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <EntityHistoryButton /> rendered by SettingsProgramsTab.razor at L237 (Gate: _programs.Count == 0).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Common/DataListSelect.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <DataListSelect /> rendered by SettingsProgramsTab.razor at L671 (Gate: _showAddProjectModal).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/ProgramWizard/CreateProgramWizardModal.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <CreateProgramWizardModal /> rendered by SettingsProgramsTab.razor at L1109 (Gate: context.IsResolved).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardModal.razor",
+      "category": "Settings UI",
+      "thinking_level": "low",
+      "description": "Child component <CreateProjectWizardModal /> rendered by SettingsProgramsTab.razor at L1129 (Gate: context.IsResolved).",
+      "enabled": true
+    }
+]
+```
+
+## Parent: `BlazorEnterprise.Web/Components/Pages/HomePage.razor` ([docs/specs/HomePage.requirements.md](../../docs/specs/HomePage.requirements.md))
+
+| Unregistered Component | Source Path | Line | Gate Condition |
+| :--- | :--- | :--- | :--- |
+| `<ProgramSummaryCard />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/ProgramSummaryCard.razor` | `L52` | `!_isRootAdminOnly` |
+| `<MyProjectsGrid />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/MyProjectsGrid.razor` | `L55` | `!_isRootAdminOnly` |
+| `<DashboardKanbanBoard />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardKanbanBoard.razor` | `L59` | `!_isRootAdminOnly` |
+| `<DashboardAuditTrail />` | `BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardAuditTrail.razor` | `L60` | `!_isRootAdminOnly` |
+
+### Ready-to-Paste JSON for `HomePage.razor`
+```json
+"children": [
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/ProgramSummaryCard.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <ProgramSummaryCard /> rendered by HomePage.razor at L52 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/MyProjectsGrid.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <MyProjectsGrid /> rendered by HomePage.razor at L55 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardKanbanBoard.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <DashboardKanbanBoard /> rendered by HomePage.razor at L59 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    },
+    {
+      "path": "BlazorEnterprise.Web/Components/Pages/Dashboard/DashboardAuditTrail.razor",
+      "category": "Home page UI",
+      "thinking_level": "low",
+      "description": "Child component <DashboardAuditTrail /> rendered by HomePage.razor at L60 (Gate: !_isRootAdminOnly).",
+      "enabled": true
+    }
+]
+```
+

@@ -1,6 +1,7 @@
 using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Dtos;
+using BlazorEnterprise.Core.Dtos.Tasks;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Web.Components.Shared;
 using Microsoft.AspNetCore.Components;
@@ -26,6 +27,25 @@ public partial class SprintPlanningPage : ComponentBase, IDisposable
     private bool _showMoveModal;
     private string _targetMoveSprintId = string.Empty;
     private string? _moveError;
+
+    private bool _isCreateDialogOpen;
+    private CreationTaskTypeEnum _selectedCreationType = CreationTaskTypeEnum.SprintTask;
+    private static readonly List<CreationTaskTypeEnum> _allowedSprintTaskTypes =
+    [
+        CreationTaskTypeEnum.SprintTask,
+        CreationTaskTypeEnum.MiscTask
+    ];
+
+    private void OpenCreateDialog(CreationTaskTypeEnum taskType)
+    {
+        _selectedCreationType = taskType;
+        _isCreateDialogOpen = true;
+    }
+
+    private async Task HandleTaskCreated(TaskCreationRequestDto request)
+    {
+        await LoadDataAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {

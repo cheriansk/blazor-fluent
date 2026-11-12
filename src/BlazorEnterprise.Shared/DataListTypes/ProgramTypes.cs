@@ -125,6 +125,7 @@ public class ProgramHealthSummaryDto
     public string ProgramName { get; set; } = string.Empty;
     public string ProgramCode { get; set; } = string.Empty;
     public ProgramStatusEnum Status { get; set; }
+    [AllowHardcodedDefault("Default initial health projection for newly calculated summaries")]
     public ProgramHealthRatingEnum Health { get; set; } = ProgramHealthRatingEnum.OnTrack;
     public int TotalProjects { get; set; }
     public int ActiveProjects { get; set; }
@@ -158,5 +159,6 @@ public class CrossProjectDependencyDto
     public DateTime? ResolveByUtc { get; set; }
     public bool IsResolved { get; set; }
     public bool IsOverdue => !IsResolved && ResolveByUtc.HasValue && ResolveByUtc.Value.Date < DateTime.UtcNow.Date;
+    [AllowHardcodedDefault("Target item is accessible by default unless restricted by tenancy boundaries")]
     public bool CanAccessTargetItem { get; set; } = true;
 }

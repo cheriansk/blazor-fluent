@@ -240,14 +240,14 @@ namespace TemplateGuard.Analyzers
             description: "Direct dispatch to message queues or channels without Outbox tracking risks message loss on failure. Use the transactional Outbox pattern.",
             helpLinkUri: HelpBaseUrl + "#tg023");
 
-                public static readonly DiagnosticDescriptor RuleTg027 = new(
+        public static readonly DiagnosticDescriptor RuleTg027 = new(
             id: "TG027",
-            title: "Hardcoded property default value prohibited in domain entity",
-            messageFormat: "Property '{0}.{1}' has a hardcoded default initializer. Domain entities must not hardcode business/enum/scalar defaults in property definitions. ALLOWED APPROACH: Remove the default initializer and assign values in services/interceptors, or if reviewed and approved, suppress via '#pragma warning disable TG027 // Approved: <reason>' or '[SuppressMessage(\"Architecture\", \"TG027\", Justification = \"Approved: <reason>\")]'.",
+            title: "Hardcoded property default value prohibited in entities, models, DTOs, and records",
+            messageFormat: "Property '{0}.{1}' has a hardcoded default initializer. Entities, models, DTOs, and records must not hardcode business/enum/scalar defaults in property definitions. ALLOWED APPROACH: Remove the default initializer and assign values explicitly in services/constructors/factories, or if intentionally required, annotate with '[AllowHardcodedDefault(\"reason\")]' or suppress via '#pragma warning disable TG027 // Approved: <reason>'.",
             category: "Architecture",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "Domain entity properties must not specify hardcoded default values unless reviewed and explicitly suppressed.");
+            description: "Entity, model, DTO, and record properties must not specify hardcoded default values unless reviewed and explicitly approved.");
         public static readonly DiagnosticDescriptor RuleTg026 = new(
             id: "TG026",
             title: "Task.WhenAll and parallel query execution is forbidden in Blazor UI components and Persistence services",
@@ -686,11 +686,12 @@ namespace TemplateGuard.Analyzers
                 return;
             }
 
-            if (namedType.TypeKind != TypeKind.Class) return;
-
-            AnalyzeEntity(context, namedType);
-
-            AnalyzePageRoute(context, namedType);
+            if (namedType.TypeKind == TypeKind.Class || namedType.IsRecord)
+            {
+                AnalyzeEntity(context, namedType);
+                AnalyzeDtoOrModelHardcodedDefaults(context, namedType);
+                AnalyzePageRoute(context, namedType);
+            }
         }
 
         private void AnalyzeEntity(SymbolAnalysisContext context, INamedTypeSymbol namedType)
@@ -846,6 +847,84 @@ namespace TemplateGuard.Analyzers
                     "implements multiple conflicting versioning markers: cannot implement both 'IVersionedEntity' and 'IUnversionedEntity'"));
             }
         }
+        private static bool IsApprovedStructuralInitializer(string initText, IPropertySymbol property)
+        {
+            if (initText == "string.Empty" || initText == "\"\"" ||
+                initText.StartsWith("Guid.CreateVersion7", StringComparison.Ordinal) ||
+                initText.StartsWith("Guid.NewGuid", StringComparison.Ordinal) ||
+                initText.StartsWith("DateTime.UtcNow", StringComparison.Ordinal) ||
+                initText == "new()" || initText == "[]" ||
+                initText.StartsWith("new List<", StringComparison.Ordinal) ||
+                initText.StartsWith("new HashSet<", StringComparison.Ordinal) ||
+                initText.StartsWith("new Dictionary<", StringComparison.Ordinal) ||
+                property.Type.Name.StartsWith("ICollection", StringComparison.Ordinal) ||
+                property.Type.Name.StartsWith("IList", StringComparison.Ordinal) ||
+                property.Type.Name.StartsWith("IReadOnlyList", StringComparison.Ordinal) ||
+                property.Type.Name.StartsWith("ISet", StringComparison.Ordinal) ||
+                property.Type.Name.StartsWith("IDictionary", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasAllowHardcodedDefaultAttribute(IPropertySymbol property)
+        {
+            return property.GetAttributes().Any(a =>
+                a.AttributeClass?.Name is "AllowHardcodedDefaultAttribute" or "AllowHardcodedDefault");
+        }
+
+        private void CheckPropertyHardcodedDefault(SymbolAnalysisContext context, INamedTypeSymbol namedType, IPropertySymbol property)
+        {
+            if (property.DeclaringSyntaxReferences.Length == 0) return;
+
+            var propSyntax = property.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken) as Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax;
+            if (propSyntax?.Initializer == null) return;
+
+            if (HasAllowHardcodedDefaultAttribute(property)) return;
+
+            var initText = propSyntax.Initializer.Value.ToString().Trim();
+            if (!IsApprovedStructuralInitializer(initText, property))
+            {
+                var location = propSyntax.Initializer.GetLocation();
+                context.ReportDiagnostic(Diagnostic.Create(RuleTg027, location, namedType.Name, property.Name));
+            }
+        }
+
+        private void AnalyzeDtoOrModelHardcodedDefaults(SymbolAnalysisContext context, INamedTypeSymbol namedType)
+        {
+            if (namedType.IsImplicitlyDeclared || namedType.Name.StartsWith("<")) return;
+
+            var ns = namedType.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+            if (ns.Contains(".Migrations") || ns.EndsWith(".Migrations") || ns.Equals("Migrations", StringComparison.OrdinalIgnoreCase)) return;
+            if (namedType.Locations.Any(loc => loc.SourceTree?.FilePath != null && loc.SourceTree.FilePath.Replace('\\', '/').Contains("/Migrations/"))) return;
+
+            // Check if this type is a DTO, Model, Request/Response contract, or Record
+            var name = namedType.Name;
+            bool isTargetType =
+                name.EndsWith("Dto", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith("Request", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith("Req", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith("Response", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith("Resp", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith("Model", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith("ViewModel", StringComparison.OrdinalIgnoreCase) ||
+                ns.Contains(".Dtos") ||
+                (namedType.IsRecord && (ns.Contains(".Dtos") || ns.Contains(".Models") || ns.Contains(".Contracts")));
+
+            if (!isTargetType) return;
+
+            // If it's already analyzed under BaseEntity, skip to avoid duplicate diagnostic
+            if (InheritsFrom(namedType, "BaseEntity")) return;
+
+            foreach (var member in namedType.GetMembers())
+            {
+                if (member is not IPropertySymbol property || property.IsImplicitlyDeclared) continue;
+                CheckPropertyHardcodedDefault(context, namedType, property);
+            }
+        }
+
         private void AnalyzeEntityProperties(SymbolAnalysisContext context, INamedTypeSymbol namedType)
         {
             var isImmutable = ImplementsInterface(namedType, "IImmutableEntity");
@@ -854,30 +933,8 @@ namespace TemplateGuard.Analyzers
             {
                 if (member is not IPropertySymbol property || property.IsImplicitlyDeclared) continue;
 
-                                // Rule TG027: Prohibit hardcoded property initializers on domain entities
-                if (property.DeclaringSyntaxReferences.Length > 0)
-                {
-                    var propSyntax = property.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken) as Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax;
-                    if (propSyntax?.Initializer != null)
-                    {
-                        var initText = propSyntax.Initializer.Value.ToString().Trim();
-                        // Allow structural/null-safety framework initializers:
-                        bool isApprovedStructural =
-                            initText == "string.Empty" ||
-                            initText.StartsWith("Guid.CreateVersion7", StringComparison.Ordinal) ||
-                            initText == "new()" ||
-                            initText.StartsWith("new List<", StringComparison.Ordinal) ||
-                            initText.StartsWith("new HashSet<", StringComparison.Ordinal) ||
-                            property.Type.Name.StartsWith("ICollection", StringComparison.Ordinal) ||
-                            property.Type.Name.StartsWith("IList", StringComparison.Ordinal);
-
-                        if (!isApprovedStructural)
-                        {
-                            var location = propSyntax.Initializer.GetLocation();
-                            context.ReportDiagnostic(Diagnostic.Create(RuleTg027, location, namedType.Name, property.Name));
-                        }
-                    }
-                }
+                // Rule TG027: Prohibit hardcoded property initializers on domain entities
+                CheckPropertyHardcodedDefault(context, namedType, property);
                 // Rule TG011: Strict prohibition of DateOnly
                 var propTypeName = property.Type.Name;
                 if (property.Type is INamedTypeSymbol namedPropType && namedPropType.IsGenericType && namedPropType.Name == "Nullable")

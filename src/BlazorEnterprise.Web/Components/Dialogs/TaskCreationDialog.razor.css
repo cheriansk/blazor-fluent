@@ -1,0 +1,204 @@
+.task-dialog-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    animation: fadeInModal 0.2s ease-out;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.task-dialog-modal {
+    width: 85%;
+    max-width: 1200px;
+    max-height: 90vh;
+    background-color: var(--csk-color-surface, #ffffff);
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.task-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--csk-color-border, #e0e0e0);
+    background-color: var(--csk-color-surface-variant, #fafafa);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.dialog-error-banner, .dialog-success-banner {
+    display: block;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    font-size: 1.5rem;
+}
+
+.header-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--csk-color-text-primary, #212121);
+    margin: 0;
+}
+
+.task-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-sprint { background-color: #e3f2fd; color: #1976d2; }
+.badge-misc { background-color: #f3e5f5; color: #7b1fa2; }
+.badge-risk { background-color: #ffebee; color: #c62828; }
+.badge-assumption { background-color: #fff8e1; color: #f57f17; }
+.badge-issue { background-color: #fff3e0; color: #e65100; }
+.badge-default { background-color: #eeeeee; color: #616161; }
+
+.task-dialog-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.form-section {
+    background: var(--csk-color-surface, #ffffff);
+    border: 1px solid var(--csk-color-border, #e0e0e0);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.type-specific-section {
+    border-left: 4px solid var(--csk-color-primary, #0078d4);
+    background-color: #fafbfc;
+}
+
+.section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--csk-color-text-primary, #212121);
+    margin-bottom: 16px;
+    margin-top: 0;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+
+.form-row.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-row.grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-col.full {
+    width: 100%;
+}
+
+.form-field-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--csk-color-text-secondary, #616161);
+    margin-bottom: 6px;
+}
+
+.required-star {
+    color: #d32f2f;
+}
+
+.exposure-box-col {
+    justify-content: flex-end;
+}
+
+.exposure-badge-display {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.exposure-high { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.exposure-med { background-color: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+.exposure-low { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+
+.task-dialog-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--csk-color-border, #e0e0e0);
+    background-color: var(--csk-color-surface-variant, #fafafa);
+}
+
+.footer-hint {
+    font-size: 0.75rem;
+    color: var(--csk-color-text-secondary, #757575);
+}
+
+.text-hint {
+    color: var(--csk-color-text-secondary, #757575);
+}
+
+.btn-create-submit {
+    min-width: 140px;
+}
+
+kbd {
+    background-color: #eee;
+    border-radius: 3px;
+    border: 1px solid #b4b4b4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    color: #333;
+    display: inline-block;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4px;
+}
+
+.footer-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.error-list {
+    margin: 0;
+    padding-left: 20px;
+}

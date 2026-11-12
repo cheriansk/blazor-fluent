@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.Models;
 using BlazorEnterprise.Shared.DataListTypes;
 
@@ -10,8 +11,10 @@ namespace BlazorEnterprise.Core.Dtos.Imports;
 public class UploadFileRequest
 {
     public Guid ProjectId { get; set; }
+    [AllowHardcodedDefault("TaskExcel is default file type for import wizard")]
     public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.TaskExcel;
     public string FileName { get; set; } = string.Empty;
+    [AllowHardcodedDefault("Standard MIME fallback for arbitrary file streams")]
     public string ContentType { get; set; } = "application/octet-stream";
     public long FileSizeBytes { get; set; }
     public Stream? ContentStream { get; set; }
@@ -23,8 +26,10 @@ public class UploadFileRequest
 public class UploadBatchFileItem
 {
     public string FileName { get; set; } = string.Empty;
+    [AllowHardcodedDefault("Standard MIME fallback for arbitrary file streams")]
     public string ContentType { get; set; } = "application/octet-stream";
     public long FileSizeBytes { get; set; }
+    [AllowHardcodedDefault("TaskExcel is default file type for import wizard")]
     public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.TaskExcel;
     public Stream? ContentStream { get; set; }
 }

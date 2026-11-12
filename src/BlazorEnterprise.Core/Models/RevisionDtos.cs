@@ -1,3 +1,4 @@
+using BlazorEnterprise.Shared.Attributes;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Models;
@@ -13,7 +14,9 @@ public class RevisionSummaryDto
     public Guid? ProjectId { get; set; }
     public VersionedFeatureTypeEnum FeatureType { get; set; }
     public int VerNum { get; set; }
+    [AllowHardcodedDefault("Sentinel value -1 indicates root revision with no parent")]
     public int ParentVerNum { get; set; } = -1;
+    [AllowHardcodedDefault("Guid.Empty indicates root revision header")]
     public Guid ParentRevisionHeaderId { get; set; } = Guid.Empty;
     public string RevisionName { get; set; } = string.Empty;
     public RevisionStatusEnum Status { get; set; }
