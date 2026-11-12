@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Domain.Base;
+﻿using BlazorEnterprise.Core.Domain.Base;
 using BlazorEnterprise.Shared.DataListTypes;
 
 namespace BlazorEnterprise.Core.Domain.Tasks;
@@ -29,6 +29,8 @@ public class SubTaskEntity : BaseTaskEntity
     // --- Navigation Properties ---
     public TaskEntity? ParentTask { get; set; }
     public SubTaskEntity? BlockedBySubTask { get; set; }
+
+
 
     /// <summary>Subtask category discriminator for transition validation.</summary>
     public override string GetDefaultCategory() => TaskStatusEnumDefinitions.Categories.SubTask;

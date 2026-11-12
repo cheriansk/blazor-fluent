@@ -130,7 +130,7 @@ public class WorkflowService : IWorkflowService
                 }
                 else
                 {
-                    // Promote MiscTaskEntity to WorkflowTaskEntity
+                    // Promote ActivityTaskEntity to WorkflowTaskEntity
                     var promoted = new WorkflowTaskEntity
                     {
                         Id = existing.Id,
@@ -860,7 +860,7 @@ public class WorkflowService : IWorkflowService
             }
             else
             {
-                // Promote MiscTaskEntity to WorkflowTaskEntity
+                // Promote ActivityTaskEntity to WorkflowTaskEntity
                 var promoted = new WorkflowTaskEntity
                 {
                     Id = existing.Id,

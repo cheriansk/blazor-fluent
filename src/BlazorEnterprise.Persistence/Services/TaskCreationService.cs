@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -71,13 +71,16 @@ public class TaskCreationService : ITaskCreationService
         {
             var db = await _dbFactory.CreateDbContextAsync(token);
 
-            // Resolve program ID from project if omitted
-            var resolvedProgramId = request.ProgramId;
-            if ((!resolvedProgramId.HasValue || resolvedProgramId == Guid.Empty) && request.ProjectId.HasValue)
-            {
-                var proj = await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == request.ProjectId.Value, token);
-                resolvedProgramId = proj?.ProgramId;
-            }
+            // Strict Hierarchy Scoping Invariants (BaseTaskEntityValidator):
+            // 1. Project level: ProjectId mandatory, ProgramId strictly null (inherited via Project.ProgramId).
+            // 2. Program level: ProgramId mandatory, ProjectId strictly null.
+            // 3. Tenant level: strictly no ProgramId or ProjectId.
+            var targetLevel = request.ProjectId.HasValue
+                ? TaskLevelEnum.Project
+                : (request.ProgramId.HasValue && request.ProgramId.Value != Guid.Empty ? TaskLevelEnum.Program : TaskLevelEnum.Tenant);
+
+            var scopedProjectId = targetLevel == TaskLevelEnum.Project ? request.ProjectId : null;
+            var scopedProgramId = targetLevel == TaskLevelEnum.Program ? request.ProgramId : null;
 
             var now = DateTime.UtcNow;
             var startDate = request.StartDate ?? now;
@@ -95,8 +98,8 @@ public class TaskCreationService : ITaskCreationService
                     {
                         Id = Guid.CreateVersion7(),
                         TenantId = tenantId,
-                        ProgramId = resolvedProgramId,
-                        ProjectId = request.ProjectId,
+                        ProgramId = scopedProgramId,
+                        ProjectId = scopedProjectId,
                         Level = TaskLevelEnum.Project,
                         Title = request.Title.Trim(),
                         Description = request.Description?.Trim(),
@@ -117,14 +120,14 @@ public class TaskCreationService : ITaskCreationService
                     createdEntity = sprintTask;
                     break;
 
-                case CreationTaskTypeEnum.MiscTask:
-                    var miscTask = new MiscTaskEntity
+                case CreationTaskTypeEnum.ActivityTask:
+                    var activityTask = new ActivityTaskEntity
                     {
                         Id = Guid.CreateVersion7(),
                         TenantId = tenantId,
-                        ProgramId = resolvedProgramId,
-                        ProjectId = request.ProjectId,
-                        Level = request.ProjectId.HasValue ? TaskLevelEnum.Project : (resolvedProgramId.HasValue ? TaskLevelEnum.Program : TaskLevelEnum.Tenant),
+                        ProgramId = scopedProgramId,
+                        ProjectId = scopedProjectId,
+                        Level = targetLevel,
                         Title = request.Title.Trim(),
                         Description = request.Description?.Trim(),
                         Priority = request.Priority,
@@ -139,8 +142,37 @@ public class TaskCreationService : ITaskCreationService
                         ReporterEmail = _currentUser.Email
                     };
 
-                    scope.StageInsert(miscTask);
-                    createdEntity = miscTask;
+                    if (request.ActionItems != null && request.ActionItems.Count > 0)
+                    {
+                        int order = 0;
+                        foreach (var item in request.ActionItems)
+                        {
+                            if (!string.IsNullOrWhiteSpace(item.Title))
+                            {
+                                scope.StageInsert(new ActionItemEntity
+                                {
+                                    Id = Guid.CreateVersion7(),
+                                    TenantId = tenantId,
+                                    ProgramId = scopedProgramId,
+                                    ProjectId = scopedProjectId,
+                                    Level = targetLevel,
+                                    ParentTaskId = activityTask.Id,
+                                    ParentSubTaskId = null,
+                                    Title = item.Title.Trim(),
+                                    Description = item.Description?.Trim(),
+                                    Status = item.Status == 0 ? ActionItemStatusEnum.Open : item.Status,
+                                    Complexity = item.Complexity < 1 ? 1 : item.Complexity,
+                                    EstimatedHours = item.EstimatedHours,
+                                    OrderIndex = order++,
+                                    IsBlocked = item.IsBlocked,
+                                    BlockingReason = item.BlockingReason
+                                });
+                            }
+                        }
+                    }
+
+                    scope.StageInsert(activityTask);
+                    createdEntity = activityTask;
                     break;
 
                 case CreationTaskTypeEnum.Risk:
@@ -148,9 +180,9 @@ public class TaskCreationService : ITaskCreationService
                     {
                         Id = Guid.CreateVersion7(),
                         TenantId = tenantId,
-                        ProgramId = resolvedProgramId,
-                        ProjectId = request.ProjectId,
-                        Level = request.ProjectId.HasValue ? TaskLevelEnum.Project : (resolvedProgramId.HasValue ? TaskLevelEnum.Program : TaskLevelEnum.Tenant),
+                        ProgramId = scopedProgramId,
+                        ProjectId = scopedProjectId,
+                        Level = targetLevel,
                         Title = request.Title.Trim(),
                         Description = request.Description?.Trim(),
                         Priority = request.Priority,
@@ -178,9 +210,9 @@ public class TaskCreationService : ITaskCreationService
                     {
                         Id = Guid.CreateVersion7(),
                         TenantId = tenantId,
-                        ProgramId = resolvedProgramId,
-                        ProjectId = request.ProjectId,
-                        Level = request.ProjectId.HasValue ? TaskLevelEnum.Project : (resolvedProgramId.HasValue ? TaskLevelEnum.Program : TaskLevelEnum.Tenant),
+                        ProgramId = scopedProgramId,
+                        ProjectId = scopedProjectId,
+                        Level = targetLevel,
                         Title = request.Title.Trim(),
                         Description = request.Description?.Trim(),
                         Priority = request.Priority,
@@ -206,9 +238,9 @@ public class TaskCreationService : ITaskCreationService
                     {
                         Id = Guid.CreateVersion7(),
                         TenantId = tenantId,
-                        ProgramId = resolvedProgramId,
-                        ProjectId = request.ProjectId,
-                        Level = request.ProjectId.HasValue ? TaskLevelEnum.Project : (resolvedProgramId.HasValue ? TaskLevelEnum.Program : TaskLevelEnum.Tenant),
+                        ProgramId = scopedProgramId,
+                        ProjectId = scopedProjectId,
+                        Level = targetLevel,
                         Title = request.Title.Trim(),
                         Description = request.Description?.Trim(),
                         Priority = request.Priority,
@@ -350,7 +382,7 @@ public class TaskCreationService : ITaskCreationService
     public string GetTaskTypeDisplayName(CreationTaskTypeEnum taskType) => taskType switch
     {
         CreationTaskTypeEnum.SprintTask => "Sprint Task",
-        CreationTaskTypeEnum.MiscTask => "Misc Task",
+        CreationTaskTypeEnum.ActivityTask => "Activity Task",
         CreationTaskTypeEnum.Risk => "Risk",
         CreationTaskTypeEnum.Assumption => "Assumption",
         CreationTaskTypeEnum.Issue => "Issue",

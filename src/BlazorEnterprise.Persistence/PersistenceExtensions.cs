@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Persistence.Context;
 using BlazorEnterprise.Persistence.Interceptors;
 using BlazorEnterprise.Persistence.Services;
@@ -175,6 +175,7 @@ public static class PersistenceExtensions
         // 15. Project Work Item & Task Management Service
         services.TryAddScoped<IUserTaskService, UserTaskService>();
         services.TryAddScoped<ITaskCreationService, TaskCreationService>();
+        services.TryAddScoped<IActionItemService, ActionItemService>();
 
         // 16. Knowledge Management Service
         services.TryAddScoped<IKnowledgeBaseService, KnowledgeBaseService>();

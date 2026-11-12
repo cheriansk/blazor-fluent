@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Models;
+﻿using BlazorEnterprise.Core.Models;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Identity;
 using BlazorEnterprise.Core.Domain.Sprints;
@@ -158,7 +158,7 @@ public class SprintPlanningServiceTests : IDisposable
 
         var sprint = await service.CreateSprintAsync(_projectId, "Sprint 1", 1, projStart.AddDays(1), projStart.AddDays(14), null);
 
-        var task = new MiscTaskEntity
+        var task = new ActivityTaskEntity
         {
             Id = Guid.NewGuid(),
             TenantId = _tenantId,
@@ -203,7 +203,7 @@ public class SprintPlanningServiceTests : IDisposable
 
         var sprint = await service.CreateSprintAsync(_projectId, "Sprint 1", 1, projStart.AddDays(1), projStart.AddDays(14), null);
 
-        var task1 = new MiscTaskEntity
+        var task1 = new ActivityTaskEntity
         {
             Id = Guid.NewGuid(),
             TenantId = _tenantId,
@@ -217,7 +217,7 @@ public class SprintPlanningServiceTests : IDisposable
             CreatedBy = "system",
             UpdatedBy = "system"
         };
-        var task2 = new MiscTaskEntity
+        var task2 = new ActivityTaskEntity
         {
             Id = Guid.NewGuid(),
             TenantId = _tenantId,

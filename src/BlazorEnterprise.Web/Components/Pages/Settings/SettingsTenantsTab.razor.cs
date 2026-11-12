@@ -1,4 +1,4 @@
-using BlazorEnterprise.Shared.UI.Components;
+﻿using BlazorEnterprise.Shared.UI.Components;
 ﻿using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Identity;
@@ -879,7 +879,7 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         if (string.IsNullOrWhiteSpace(_newTenantTaskTitle) || _managingTasksTenant == null) return;
         try
         {
-            var task = new MiscTaskEntity
+            var task = new ActivityTaskEntity
             {
                 TenantId = _managingTasksTenant.Id,
                 Level = TaskLevelEnum.Tenant,

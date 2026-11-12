@@ -1,4 +1,4 @@
-@namespace BlazorEnterprise.Web.Components.Dialogs
+﻿@namespace BlazorEnterprise.Web.Components.Dialogs
 @using BlazorEnterprise.Core.Contracts
 @using BlazorEnterprise.Core.Dtos.Tasks
 @using BlazorEnterprise.Core.Domain.Tasks
@@ -184,15 +184,15 @@
                         </div>
                     </div>
                 }
-                else if (_request.TaskType == CreationTaskTypeEnum.MiscTask)
+                else if (_request.TaskType == CreationTaskTypeEnum.ActivityTask)
                 {
                     <div class="form-section mt-4 type-specific-section">
-                        <h3 class="section-title">Misc Task Details</h3>
+                        <h3 class="section-title">Activity Task Details</h3>
                         <div class="form-row grid-2">
                             <div class="form-col">
                                 <CskTextInput Label="Category"
                                               Placeholder="Admin, Docs, Cleanup, Other..."
-                                              @bind-Value="_request.MiscCategory"
+                                              @bind-Value="_request.ActivityCategory"
                                               Class="w-full" />
                             </div>
                             <div class="form-col">

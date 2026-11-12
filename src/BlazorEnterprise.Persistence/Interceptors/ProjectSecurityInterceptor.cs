@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,7 +22,7 @@ namespace BlazorEnterprise.Persistence.Interceptors;
 /// Defense-in-depth security interceptor enforcing Multi-Tier Role-Based Access Control (RBAC).
 /// Intercepts entity mutations (Insert, Update, Delete) on:
 /// 1. Entities implementing IProjectScopedEntity.
-/// 2. Entities inheriting BaseTaskEntity (SprintTasks, WorkflowTasks, MiscTasks, SubTasks, Risks, Assumptions, Issues, WorkDependencies).
+/// 2. Entities inheriting BaseTaskEntity (SprintTasks, WorkflowTasks, ActivityTasks, SubTasks, Risks, Assumptions, Issues, WorkDependencies).
 /// 3. CalendarEntity records.
 /// Enforces write permissions according to scope level:
 /// - Tenant level: Must be Tenant Admin / Root Admin.

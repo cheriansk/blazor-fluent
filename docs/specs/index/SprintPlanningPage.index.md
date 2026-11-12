@@ -3,8 +3,8 @@
 target_spec: docs/specs/SprintPlanningPage.requirements.md
 source_file: src/BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor
 code_behind: src/BlazorEnterprise.Web/Components/Pages/Sprints/SprintPlanningPage.razor.cs
-generated_at_utc: 2026-11-12T16:18:58Z
-source_hash_sha256: 46b01ede7f3233fe
+generated_at_utc: 2026-11-12T18:22:38Z
+source_hash_sha256: 5b57b644b9346c0b
 ============================================================================ -->
 # AI Navigation Index: `SprintPlanningPage`
 

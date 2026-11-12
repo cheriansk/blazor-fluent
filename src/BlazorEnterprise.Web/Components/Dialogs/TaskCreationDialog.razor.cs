@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BlazorEnterprise.Core.Contracts;
@@ -172,7 +172,7 @@ public partial class TaskCreationDialog : ComponentBase
     private static string GetTaskTypeIcon(CreationTaskTypeEnum type) => type switch
     {
         CreationTaskTypeEnum.SprintTask => CskIcons.TaskListSquare,
-        CreationTaskTypeEnum.MiscTask => CskIcons.Document,
+        CreationTaskTypeEnum.ActivityTask => CskIcons.Document,
         CreationTaskTypeEnum.Risk => CskIcons.Shield,
         CreationTaskTypeEnum.Assumption => CskIcons.LightbulbPulse,
         CreationTaskTypeEnum.Issue => CskIcons.Warning,
@@ -182,7 +182,7 @@ public partial class TaskCreationDialog : ComponentBase
     private static string GetTaskTypeBadgeClass(CreationTaskTypeEnum type) => type switch
     {
         CreationTaskTypeEnum.SprintTask => "badge-sprint",
-        CreationTaskTypeEnum.MiscTask => "badge-misc",
+        CreationTaskTypeEnum.ActivityTask => "badge-activity",
         CreationTaskTypeEnum.Risk => "badge-risk",
         CreationTaskTypeEnum.Assumption => "badge-assumption",
         CreationTaskTypeEnum.Issue => "badge-issue",

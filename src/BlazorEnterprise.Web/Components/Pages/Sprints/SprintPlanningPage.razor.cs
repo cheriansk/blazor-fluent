@@ -1,4 +1,4 @@
-using BlazorEnterprise.Shared.UI.Components;
+﻿using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Dtos;
 using BlazorEnterprise.Core.Dtos.Tasks;
@@ -33,7 +33,7 @@ public partial class SprintPlanningPage : ComponentBase, IDisposable
     private static readonly List<CreationTaskTypeEnum> _allowedSprintTaskTypes =
     [
         CreationTaskTypeEnum.SprintTask,
-        CreationTaskTypeEnum.MiscTask
+        CreationTaskTypeEnum.ActivityTask
     ];
 
     private void OpenCreateDialog(CreationTaskTypeEnum taskType)

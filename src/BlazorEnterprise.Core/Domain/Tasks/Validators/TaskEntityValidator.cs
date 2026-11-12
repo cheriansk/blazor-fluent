@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace BlazorEnterprise.Core.Domain.Tasks.Validators;
 
@@ -37,9 +37,9 @@ public class WorkflowTaskEntityValidator : TaskEntityValidator<WorkflowTaskEntit
     }
 }
 
-public class MiscTaskEntityValidator : TaskEntityValidator<MiscTaskEntity>
+public class ActivityTaskEntityValidator : TaskEntityValidator<ActivityTaskEntity>
 {
-    public MiscTaskEntityValidator()
+    public ActivityTaskEntityValidator()
     {
     }
 }

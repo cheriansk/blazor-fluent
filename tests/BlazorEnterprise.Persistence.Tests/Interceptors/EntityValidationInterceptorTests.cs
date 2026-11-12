@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Contracts;
+﻿using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Domain.Tenancy;
 using BlazorEnterprise.Core.Exceptions;
@@ -30,7 +30,7 @@ public class EntityValidationInterceptorTests : IDisposable
         _connection.Dispose();
     }
 
-    private static MiscTaskEntity CreateTestTask(string title) => new()
+    private static ActivityTaskEntity CreateTestTask(string title) => new()
     {
         Id = Guid.NewGuid(),
         TenantId = Guid.NewGuid(),

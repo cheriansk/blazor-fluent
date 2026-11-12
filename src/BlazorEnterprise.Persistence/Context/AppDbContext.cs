@@ -1,4 +1,4 @@
-using BlazorEnterprise.Core.Domain.Versioning;
+﻿using BlazorEnterprise.Core.Domain.Versioning;
 using BlazorEnterprise.Core.Domain.Resources;
 using BlazorEnterprise.Core.Domain.Sprints;
 using System.Reflection;
@@ -159,7 +159,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<TaskEntity> Tasks => Set<TaskEntity>();
     public DbSet<SprintTaskEntity> SprintTasks => Set<SprintTaskEntity>();
     public DbSet<WorkflowTaskEntity> WorkflowTasks => Set<WorkflowTaskEntity>();
-    public DbSet<MiscTaskEntity> MiscTasks => Set<MiscTaskEntity>();
+    public DbSet<ActivityTaskEntity> ActivityTasks => Set<ActivityTaskEntity>();
+    public DbSet<ActionItemEntity> ActionItems => Set<ActionItemEntity>();
     public DbSet<DeliverableEntity> Deliverables => Set<DeliverableEntity>();
 
     public DbSet<SubTaskEntity> SubTasks => Set<SubTaskEntity>();
