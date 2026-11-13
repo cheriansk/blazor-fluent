@@ -14,6 +14,7 @@ public partial class ResourceManagementPage : ComponentBase, IDisposable
     [Inject] private IRevisionService RevisionService { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;
     [Inject] private NavigationManager NavManager { get; set; } = default!;
+    [Inject] private ILogger<ResourceManagementPage> Logger { get; set; } = default!;
 
     private ResourcePlanSummaryDto? _planSummary;
     private List<RevisionSummaryDto> _revisions = new();
@@ -53,11 +54,18 @@ public partial class ResourceManagementPage : ComponentBase, IDisposable
 
     private async void HandleProjectChanged()
     {
-        await InvokeAsync(async () =>
+        try
         {
-            await LoadPageDataAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await LoadPageDataAsync();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh resource management page on project change.");
+        }
     }
 
     private async Task LoadPageDataAsync()

@@ -137,13 +137,13 @@ All shared domain enums live in `BlazorEnterprise.Shared/DataListTypes/`. Never 
 | **Category-Scoped Lifecycle Transition Law (`TG015`)** | Every enum decorated with `[LifecycleEnum]` must declare companion definitions containing an `AllowedTransitions` dictionary, scoped by Category where multiple entity workflows share an enum (e.g. `AllowedTransitions[Categories.Task]` vs `AllowedTransitions[Categories.Risk]`). State mutations must execute through entity domain transition methods (`entity.TransitionTo()`, `task.StartWork()`, `task.Complete()`). Enforced at compile-time by Roslyn Analyzer rule **`TG015`**. |
 | **Mandatory Extension Method Law (`TG013`)** | Direct calls to `Enum.TryParse`, `Enum.Parse`, `Enum.GetValues`, or `Enum.GetNames` are strictly prohibited across all code. All enum parsing, conversion, and metadata lookups must use `DataListExtensions` methods (`.ToEnum<T>()`, `.TryToEnum<T>()`, `.ToEnumOrNull<T>()`, `.GetDisplayName()`, `.GetCode()`, `.ToInt()`). Enforced at compile-time by Roslyn Analyzer rule **`TG013`**. |
 | **Multi-Category Membership** | `[DataListCategory]` supports `AllowMultiple = true`. Enums shared across multiple entity subtypes (e.g. `Open` and `Closed` shared by Tasks, SubTasks, and Risks) declare multiple category tags using strongly-typed companion constants (e.g. `[DataListCategory(Categories.Task)]`). |
-| **Strongly-Typed `<DataListSelect>` UI Standard** | Never author raw `<FluentSelect>` with manual `.ToString()` / `v.ToEnum(...)` for domain enums. Use `<DataListSelect TEnum="..." TValue="..." Label="..." @bind-Value="..." />`. When passed `Category="..."` or `CurrentState="..."`, it automatically filters dropdown choices to valid moves in the transition matrix. |
+| **Strongly-Typed `<DataListSelect>` UI Standard** | Never author raw `<CskSelect>` with manual `.ToString()` / `v.ToEnum(...)` for domain enums. Use `<DataListSelect TEnum="..." TValue="..." Label="..." @bind-Value="..." />`. When passed `Category="..."` or `CurrentState="..."`, it automatically filters dropdown choices to valid moves in the transition matrix. |
 | **Clean Code Identifiers** | Enum entries use alphanumeric codes with zero spaces or symbols (e.g. `ClientUser`, `CompanyUser`, `Admin`). This code is used in logic and database persistence. |
 | **Mandatory Display & Optional Description** | Every enum member, Category, and Filter declares `[Display(Name = "...", Description = "...")]` with mandatory `Name` and optional `Description`. Never use display names for logic comparisons. Retrieve via `.GetDisplayName()` and `.GetDescription()`. |
 | **Companion Definition Classes** | Enums define structured companion classes in the same file (e.g. `{EnumName}Definitions.Categories`, `{EnumName}Definitions.Filters`) declaring `const string` codes with `[Display]`. |
 | **Code-Only Attribute Signature** | `[DataListCategory(Definitions.Categories.Code)]` and `[DataListFilterCriterias(Definitions.Filters.Code)]` accept **only the constant code**, eliminating string repetition across members. |
 | **Rich Metadata Resolution** | `DataListExtensions` inspects companion definition classes via cached reflection ($O(1)$) to link each enum member to its `CategoryInfo` and `FilterInfo` records (resolving `Code`, `DisplayName`, and `Description`). |
-| **UI Projection & Filtering** | Use `DataListExtensions.GetDataListItems<TEnum>()` (or `enumVal.GetDataListItems()`) for unfiltered items, and `GetFilteredDataListItems<TEnum>(criteria)` (or `enumVal.GetFilteredDataListItems(criteria)`) for filtered items. In `<FluentSelect>`, bind `TValue="string"` with `OptionText="@(i => i.DisplayName)"` and `OptionValue="@(i => i.Code)"` to display user-friendly names while persisting raw enum codes. |
+| **UI Projection & Filtering** | Use `DataListExtensions.GetDataListItems<TEnum>()` (or `enumVal.GetDataListItems()`) for unfiltered items, and `GetFilteredDataListItems<TEnum>(criteria)` (or `enumVal.GetFilteredDataListItems(criteria)`) for filtered items. In `<CskSelect>`, bind `TValue="string"` with `<CskOption Value="@item.Code">@item.DisplayName</CskOption>` to display user-friendly names while persisting raw enum codes. |
 
 ### 1.4 Primary Keys
 
@@ -420,31 +420,6 @@ This project uses native Material Design 3 components (`Csk*`) housed in `Blazor
 | **Native SVG Icons (`CskIcons`)** | Icons are rendered via `<CskIcon Icon="CskIcons.*" />` using lightweight native SVG path records without external font files or style attributes. |
 | **Decoupled RCL** | All shared components live in `BlazorEnterprise.Shared.UI` and are imported into consumer applications via `@using BlazorEnterprise.Shared.UI.Components`.
 
-### 5.2.1 Fluent UI Blazor MCP Server Governance & V5 Exclusivity Standard
-All developers and AI assistants working on UI components **MUST ALWAYS** consult the `fluent-ui-blazor` MCP server before implementing, refactoring, or referencing components:
-1. **Tool Verification**: Use `search_components`, `get_component_details`, `get_component_enums`, `get_component_migration`, and `get_icon_usage` to verify exact parameter names, types, and supported appearance enums.
-2. **Strict V5 Exclusivity**: Legacy V4 components and patterns are strictly forbidden. The build enforces `<WarningsAsErrors>CS0618</WarningsAsErrors>` to reject obsolete components at compile time.
-3. **Repository Verification**: All PRs and UI changes must pass `./scripts/verify-fluent-v5.ps1`.
-4. **No Assumptions**: Never guess parameter signatures or event callbacks—verify them via MCP tool calls first.
-
-#### Mandatory V4 → V5 Component Migration Matrix
-
-| Legacy / V4 Component | Status | Mandatory V5 Replacement |
-| :--- | :--- | :--- |
-| `<FluentProgressRing ... />` | **Obsolete / Renamed** | `<FluentSpinner Size="@SpinnerSize.*" ... />` |
-| `<FluentSearch ... />` | **Removed** | `<FluentTextInput ...><StartTemplate><FluentIcon Value="@(new Icons.Regular.Size16.Search())" /></StartTemplate></FluentTextInput>` |
-| `<FluentTextField ... />` | **Removed** | `<FluentTextInput ... />` |
-| `<FluentNumberField ... />` | **Removed** | `<FluentNumberInput ... />` |
-| `<FluentAnchor ... />` | **Removed** | `<FluentLink ... />` |
-| `<FluentDialogProvider />` (isolated) | **Legacy** | `<FluentProviders />` (umbrella provider for dialogs, toasts, tooltips, message bars) |
-| `<FluentBreadcrumb>` / Item | **Removed** | Custom hierarchy using `FluentLink` |
-| `<FluentToolbar ... />` | **Removed** | `<FluentStack Orientation="Orientation.Horizontal">` |
-| `<FluentSplitter ... />` | **Removed** | `<FluentMultiSplitter ... />` |
-| `<FluentNavMenu>` / Group / Link | **Removed** | `<FluentNav>`, `<FluentNavItem>`, `<FluentNavCategory>` |
-| `<FluentValidationMessage ... />` | **Removed** | `<FluentField ... MessageState="..." />` |
-| `<FluentSelect TOption>` (single generic) | **Breaking Change** | `<FluentSelect TOption="..." TValue="...">` (dual generics strictly required) |
-| `FluentInputAppearance` | **Removed** | `TextInputAppearance` or `ListAppearance` |
-
 ### 5.3 Reusable Components
 
 | Component | Purpose | Location |
@@ -688,7 +663,7 @@ BlazorEnterprise/
 | Architectural Requirement | Implementation Rule |
 |---------------------------|---------------------|
 | **Decoupled RCL Package** | Reusable wizard templates reside in `BlazorEnterprise.Shared.UI` (NuGet-ready Razor Class Library), keeping presentation patterns decoupled from specific business domain logic. |
-| **Declarative Composition** | Developers compose multi-step wizards declaratively using `<FluentWizardModal TState="...">` and child `<WizardStep TState="...">` tags. |
+| **Declarative Composition** | Developers compose multi-step wizards declaratively using `<CskWizardModal TState="...">` and child `<WizardStep TState="...">` tags. |
 | **In-Memory State Preservation** | State is held in-memory via reference in generic `WizardContext<TState>` across all step transitions. Form inputs bind directly to state properties without intermediate database round-trips. |
 | **Accidental Dismissal Lock** | Backdrop clicks are locked from dismissing the modal. The cancel/close action evaluates `Context.IsDirty`; if dirty, a confirmation modal prompts before discarding user input. |
 | **Per-Step Async Validation** | Step advancement triggers `OnValidateAsync(Context)`. Advancing is blocked and errors are mapped into `Context.StepErrors` if validation fails. |
@@ -705,7 +680,7 @@ BlazorEnterprise/
 | **Forward-Only Sequential Gates** | Steps transition sequentially (Step 1 -> Step 2 -> ... -> Completed). Completing Step K activates Step K+1 while preserving the constant `WorkflowOwnerEmail`. |
 | **Multi-Party Notification Broadcast** | On step transitions, the next step owner receives an urgent "Action Required" notification, while the constant workflow owner and watchers receive progress milestone alerts via `INotifyService`. |
 | **Dedicated Workflows Hub** | Centralized dashboard at `/workflows` (`WorkflowsDashboardPage`) allowing cross-scope filtering (Tenant / Program / Project), KPI metrics, launch wizards, and step management. |
-| **100% Fluent UI Blazor V5 Compliance** | All workflow UI components (`WorkflowStepperComp`, `CreateWorkflowWizardModal`, `WorkflowsDashboardPage`) strictly utilize V5 components (`FluentTextInput`, `FluentTextArea`, `FluentDatePicker`, `FluentBadge`, `FluentIcon`, `FluentStack`, `FluentNav`). |
+| **100% Native Material Design 3 (`Csk*`) Compliance** | All workflow UI components (`WorkflowStepperComp`, `CreateWorkflowWizardModal`, `WorkflowsDashboardPage`) strictly utilize `Csk*` components (`CskTextInput`, `CskTextArea`, `CskDatePicker`, `CskBadge`, `CskIcon`, `CskStack`, `CskTabs`). |
 
 ---
 
@@ -717,12 +692,12 @@ For deep-dive architectural specifications, security walkthroughs, and code reci
 - [**`docs/01-Getting-Started.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/01-Getting-Started.md) — Setup, `Rename-Project.ps1`, configuration dictionary, and migrations.
 - [**`docs/02-Architecture.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/02-Architecture.md) — Clean Architecture 6-project topology, DI rules, interceptors, and background channels.
 - [**`docs/03-Security-Model.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/03-Security-Model.md) — Defense-in-depth, HMAC seals, tenant isolation, and session management.
-- [**`docs/04-Task-Hierarchy-and-Workflows.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/04-Task-Hierarchy-and-Workflows.md) — Task scoping, sequential workflows, step owners, and `<FluentWizardModal>`.
+- [**`docs/04-Task-Hierarchy-and-Workflows.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/04-Task-Hierarchy-and-Workflows.md) — Task scoping, sequential workflows, step owners, and `<CskWizardModal>`.
 - [**`docs/05-UI-Conventions-Fluent-V5.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/05-UI-Conventions-Fluent-V5.md) — Component taxonomy (`*Page/*Comp/*Modal`), catalog, and V5 pitfall patterns.
 - [**`docs/06-How-To-Extend.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/06-How-To-Extend.md) — Step-by-step copy-paste recipes for extending features.
 - [**`docs/07-AI-Agent-Rules.md`**](file:///c:/Users/cheri/source/repos/BlazorEnterprise/docs/07-AI-Agent-Rules.md) — Operational guardrails and instructions for AI coding assistants.
 
 ---
 
-> **Last Updated**: October 2026 | **Target Framework**: .NET 10 | **UI**: Microsoft Fluent UI Blazor V5
+> **Last Updated**: October 2026 | **Target Framework**: .NET 10 | **UI**: Native Material Design 3 (`Csk*`)
 

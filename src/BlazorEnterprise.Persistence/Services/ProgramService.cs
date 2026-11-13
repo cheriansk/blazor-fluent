@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Persistence.Extensions;
+using BlazorEnterprise.Persistence.Extensions;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.DataListTypes;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -66,6 +66,7 @@ public class ProgramService : IProgramService
 
         return await _context.Programs
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(p => p.TenantId == tenant.Id &&
                         accessibleProgramIds.Contains(p.Id) &&
                         !p.IsDeleted)
@@ -92,6 +93,7 @@ public class ProgramService : IProgramService
 
         var program = await _context.Programs
             .WithTracking(forEdit)
+            .AsSplitQuery()
             .Include(p => p.Projects.Where(pr => !pr.IsDeleted))
                 .ThenInclude(pr => pr.UserRoles.Where(ur => !ur.IsDeleted))
                     .ThenInclude(ur => ur.User)

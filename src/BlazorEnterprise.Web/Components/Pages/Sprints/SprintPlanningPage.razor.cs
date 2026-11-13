@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Shared.UI.Components;
+using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Dtos;
 using BlazorEnterprise.Core.Dtos.Tasks;
@@ -55,11 +55,18 @@ public partial class SprintPlanningPage : ComponentBase, IDisposable
 
     private async void HandleProjectChanged()
     {
-        await InvokeAsync(async () =>
+        try
         {
-            await LoadDataAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await LoadDataAsync();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh sprint planning page on project change.");
+        }
     }
 
     public void Dispose()

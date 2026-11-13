@@ -11,9 +11,11 @@ public partial class SessionRevokedModal : ComponentBase, IDisposable
     [Inject] private IUserSessionService SessionService { get; set; } = default!;
     [Inject] private CurrentUserAuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private ILogger<SessionRevokedModal> Logger { get; set; } = default!;
 
     private bool _isRevoked;
     private PeriodicTimer? _timer;
+    private readonly CancellationTokenSource _cts = new();
 
     protected override void OnInitialized()
     {
@@ -27,7 +29,7 @@ public partial class SessionRevokedModal : ComponentBase, IDisposable
 
         try
         {
-            while (await _timer.WaitForNextTickAsync())
+            while (await _timer.WaitForNextTickAsync(_cts.Token))
             {
                 if (!CurrentUser.IsAuthenticated || string.IsNullOrWhiteSpace(CurrentUser.SessionId))
                     continue;
@@ -45,7 +47,10 @@ public partial class SessionRevokedModal : ComponentBase, IDisposable
             }
         }
         catch (OperationCanceledException) { }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Session revocation watchdog encountered an unexpected error.");
+        }
     }
 
     private void HandleRedirectToLogin()
@@ -62,6 +67,8 @@ public partial class SessionRevokedModal : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        _cts.Cancel();
+        _cts.Dispose();
         _timer?.Dispose();
     }
 }

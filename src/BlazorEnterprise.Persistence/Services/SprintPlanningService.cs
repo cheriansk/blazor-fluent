@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Sprints;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Domain.Versioning;
@@ -47,17 +47,25 @@ public class SprintPlanningService : ISprintPlanningService
         var now = _dateTimeProvider.UtcNow;
         var result = new List<SprintDto>();
 
+        var sprintIds = sprints.Select(s => s.Id).ToList();
+        var sprintStats = await context.SprintItemVersions
+            .AsNoTracking()
+            .Where(iv => iv.SprintId.HasValue && sprintIds.Contains(iv.SprintId.Value) && !iv.IsDeleted && iv.EffectiveToDate == null)
+            .GroupBy(iv => iv.SprintId!.Value)
+            .Select(g => new
+            {
+                SprintId = g.Key,
+                ItemCount = g.Count(),
+                TotalHours = g.Sum(iv => (double?)iv.EstimatedHours) ?? 0
+            })
+            .ToDictionaryAsync(x => x.SprintId, cancellationToken);
+
         foreach (var s in sprints)
         {
             var calculatedStatus = CalculateSprintStatus(s.StartDate, s.EndDate, now);
-            var itemCount = await context.SprintItemVersions
-                .AsNoTracking()
-                .CountAsync(iv => iv.SprintId == s.Id && !iv.IsDeleted && iv.EffectiveToDate == null, cancellationToken);
-
-            var totalHours = await context.SprintItemVersions
-                .AsNoTracking()
-                .Where(iv => iv.SprintId == s.Id && !iv.IsDeleted && iv.EffectiveToDate == null)
-                .SumAsync(iv => (double?)iv.EstimatedHours, cancellationToken) ?? 0;
+            sprintStats.TryGetValue(s.Id, out var stats);
+            var itemCount = stats?.ItemCount ?? 0;
+            var totalHours = stats?.TotalHours ?? 0;
 
             result.Add(new SprintDto
             {

@@ -73,21 +73,22 @@ public class RevisionService : IRevisionService
             .ToListAsync(cancellationToken);
 
         var dtos = new List<RevisionSummaryDto>();
+        var revisionIds = revisions.Select(r => r.Id).ToList();
+        Dictionary<Guid, int> calendarCountsByRevision = [];
+
+        if ((featureType == VersionedFeatureTypeEnum.ProgramCalendar || featureType == VersionedFeatureTypeEnum.ProjectCalendar) && revisionIds.Count > 0)
+        {
+            calendarCountsByRevision = await context.Calendars
+                .AsNoTracking()
+                .Where(c => revisionIds.Contains(c.RevisionHeaderId) && !c.IsDeleted)
+                .GroupBy(c => c.RevisionHeaderId)
+                .Select(g => new { RevisionId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.RevisionId, x => x.Count, cancellationToken);
+        }
+
         foreach (var r in revisions)
         {
-            int count = 0;
-            if (featureType == VersionedFeatureTypeEnum.ProgramCalendar)
-            {
-                count = await context.Calendars
-                    .AsNoTracking()
-                    .CountAsync(c => c.RevisionHeaderId == r.Id, cancellationToken);
-            }
-            else if (featureType == VersionedFeatureTypeEnum.ProjectCalendar)
-            {
-                count = await context.Calendars
-                    .AsNoTracking()
-                    .CountAsync(c => c.RevisionHeaderId == r.Id, cancellationToken);
-            }
+            int count = calendarCountsByRevision.GetValueOrDefault(r.Id, 0);
 
             dtos.Add(new RevisionSummaryDto
             {

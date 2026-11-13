@@ -21,6 +21,10 @@ public static class InfrastructureExtensions
     {
         // 1. Outbound External Notification Senders (HTTP Webhooks & SMTP Email)
         services.AddHttpClient();
+        services.AddHttpClient("TeamsWebhook", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
         services.TryAddScoped<ITeamsNotificationSender, TeamsNotificationSender>();
         services.TryAddScoped<IEmailNotificationSender, EmailNotificationSender>();
 

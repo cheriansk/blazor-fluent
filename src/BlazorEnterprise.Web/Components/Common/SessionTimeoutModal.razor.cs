@@ -29,6 +29,7 @@ public partial class SessionTimeoutModal : ComponentBase, IAsyncDisposable
     private bool _isLoggingOut;
 
     private PeriodicTimer? _timer;
+    private readonly CancellationTokenSource _cts = new();
     private DotNetObjectReference<SessionTimeoutModal>? _dotNetRef;
 
     protected override void OnInitialized()
@@ -65,7 +66,7 @@ public partial class SessionTimeoutModal : ComponentBase, IAsyncDisposable
 
         try
         {
-            while (await _timer.WaitForNextTickAsync())
+            while (await _timer.WaitForNextTickAsync(_cts.Token))
             {
                 if (!CurrentUser.IsAuthenticated || string.IsNullOrWhiteSpace(CurrentUser.SessionId) || _isLoggingOut)
                 {
@@ -210,6 +211,8 @@ public partial class SessionTimeoutModal : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _cts.Cancel();
+        _cts.Dispose();
         _timer?.Dispose();
         try
         {
@@ -219,6 +222,9 @@ public partial class SessionTimeoutModal : ComponentBase, IAsyncDisposable
                 _dotNetRef.Dispose();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Ignored JS interop disposal error on session timeout modal unmount.");
+        }
     }
 }
