@@ -11,6 +11,7 @@ public partial class SettingsRateCardTab : ComponentBase, IDisposable
     [Inject] private IResourceManagementService ResourceService { get; set; } = default!;
     [Inject] private IRevisionService RevisionService { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;
+    [Inject] private ILogger<SettingsRateCardTab> Logger { get; set; } = default!;
 
     private List<ProjectResourceDto> _resources = new();
     private List<RevisionSummaryDto> _revisions = new();
@@ -34,11 +35,18 @@ public partial class SettingsRateCardTab : ComponentBase, IDisposable
 
     private async void HandleProjectChanged()
     {
-        await InvokeAsync(async () =>
+        try
         {
-            await LoadRatesAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await LoadRatesAsync();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh rate card tab on project change.");
+        }
     }
 
     private async Task LoadRatesAsync()

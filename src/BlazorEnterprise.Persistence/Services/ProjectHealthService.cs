@@ -300,19 +300,185 @@ public class ProjectHealthService : IProjectHealthService
         await _projectAuth.EnsureCanVisitAsync(projectId, operation: "GetProjectMilestonesHealth", ct: ct);
 
         var tenantId = _tenantContext.TenantId;
+        var today = DateTime.UtcNow.Date;
 
-        var milestoneIds = await _context.Calendars
+        var milestones = await _context.Calendars
             .AsNoTracking()
             .Where(m => m.TenantId == tenantId && m.ProjectId == projectId && !m.IsDeleted)
             .OrderBy(m => m.StartDate)
-            .Select(m => m.Id)
             .ToListAsync(ct);
 
-        var results = new List<MilestoneHealthSummaryDto>();
-        foreach (var mid in milestoneIds)
+        if (milestones.Count == 0)
         {
-            var summary = await GetMilestoneHealthAsync(mid, ct);
-            results.Add(summary);
+            return [];
+        }
+
+        var milestoneIds = milestones.Select(m => m.Id).ToHashSet();
+
+        // 1. Batch load all milestone-associated tasks for this project
+        var allTasks = await _context.Tasks
+            .AsNoTracking()
+            .Where(t => t.TenantId == tenantId && t.ProjectId == projectId && t.MilestoneId.HasValue && milestoneIds.Contains(t.MilestoneId.Value) && !t.IsDeleted)
+            .ToListAsync(ct);
+
+        var tasksByMilestone = allTasks
+            .GroupBy(t => t.MilestoneId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var allTaskIds = allTasks.Select(t => t.Id).ToHashSet();
+
+        // 2. Batch load all blocking dependencies for milestone tasks
+        var allBlockingDependencies = await _context.WorkDependencies
+            .AsNoTracking()
+            .Where(d => d.TenantId == tenantId &&
+                        d.ProjectId == projectId &&
+                        d.DependentType == DependencyNodeTypeEnum.TaskItem &&
+                        d.DependentItemId.HasValue &&
+                        allTaskIds.Contains(d.DependentItemId.Value) &&
+                        d.DependencyType == TaskDependencyTypeEnum.Blocks &&
+                        !d.IsDeleted)
+            .ToListAsync(ct);
+
+        // Map task to blocking dependencies
+        var blockingDepsByTaskId = allBlockingDependencies
+            .GroupBy(d => d.DependentItemId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // 3. Batch load predecessor milestone dependencies
+        var allMilestoneDeps = await _context.WorkDependencies
+            .AsNoTracking()
+            .Where(d => d.TenantId == tenantId &&
+                        d.DependentType == DependencyNodeTypeEnum.CalendarGate &&
+                        d.DependentItemId.HasValue &&
+                        milestoneIds.Contains(d.DependentItemId.Value) &&
+                        d.DependsOnType == DependencyNodeTypeEnum.CalendarGate &&
+                        !d.IsDeleted)
+            .ToListAsync(ct);
+
+        var predecessorIds = allMilestoneDeps
+            .Where(d => d.DependsOnItemId.HasValue)
+            .Select(d => d.DependsOnItemId!.Value)
+            .Distinct()
+            .ToList();
+
+        var allPredecessors = await _context.Calendars
+            .AsNoTracking()
+            .Where(m => m.TenantId == tenantId && predecessorIds.Contains(m.Id) && !m.IsDeleted)
+            .ToDictionaryAsync(m => m.Id, ct);
+
+        var results = new List<MilestoneHealthSummaryDto>();
+
+        foreach (var milestone in milestones)
+        {
+            tasksByMilestone.TryGetValue(milestone.Id, out var tasks);
+            tasks ??= [];
+
+            var activeBlockersCount = 0;
+            var overdueBlockersCount = 0;
+
+            foreach (var task in tasks)
+            {
+                if (blockingDepsByTaskId.TryGetValue(task.Id, out var deps))
+                {
+                    foreach (var dep in deps)
+                    {
+                        if (!dep.IsResolved)
+                        {
+                            activeBlockersCount++;
+                            if (dep.DueDate.Date < today || dep.IsScheduleConflict)
+                            {
+                                overdueBlockersCount++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var milestoneDeps = allMilestoneDeps
+                .Where(d => d.DependentItemId == milestone.Id && d.DependsOnItemId.HasValue)
+                .Select(d => d.DependsOnItemId!.Value)
+                .Distinct();
+
+            var hasOverduePredecessors = false;
+            var riskReasons = new List<string>();
+            var predecessorNames = new List<string>();
+
+            foreach (var predId in milestoneDeps)
+            {
+                if (allPredecessors.TryGetValue(predId, out var pred))
+                {
+                    predecessorNames.Add(pred.Title);
+                    if (pred.Status != CalendarEntryStatusEnum.Completed && pred.EndDate.HasValue && pred.EndDate.Value.Date < today)
+                    {
+                        hasOverduePredecessors = true;
+                        riskReasons.Add($"Predecessor gate '{pred.Title}' end date expired ({pred.EndDate:yyyy-MM-dd}) and is not completed.");
+                    }
+                }
+            }
+
+            var totalTasks = tasks.Count(t => t.Status != TaskStatusEnum.Cancelled);
+            var completedTasks = tasks.Count(t => t.Status == TaskStatusEnum.Closed);
+            var inProgressTasks = tasks.Count(t => t.Status == TaskStatusEnum.InProgress);
+            var overdueTasks = tasks.Count(t => !t.IsClosed && t.DueDate.Date < today);
+            var daysRemaining = milestone.EndDate.HasValue ? (int)Math.Ceiling((milestone.EndDate.Value.Date - today).TotalDays) : 0;
+
+            if (overdueBlockersCount > 0)
+            {
+                riskReasons.Add($"{overdueBlockersCount} blocking dependency deadline(s) are overdue.");
+            }
+            else if (activeBlockersCount > 0)
+            {
+                riskReasons.Add($"{activeBlockersCount} active blocker(s) impeding milestone tasks.");
+            }
+
+            if (overdueTasks > 0)
+            {
+                riskReasons.Add($"{overdueTasks} task(s) assigned to this milestone are past their due date.");
+            }
+
+            if (milestone.Status != CalendarEntryStatusEnum.Completed && daysRemaining < 0)
+            {
+                riskReasons.Add($"Milestone target deadline has passed ({Math.Abs(daysRemaining)} days overdue).");
+            }
+
+            // Health Rating calculation
+            ProjectHealthRatingEnum health;
+            if (milestone.Status == CalendarEntryStatusEnum.Completed)
+            {
+                health = ProjectHealthRatingEnum.OnTrack;
+            }
+            else if (daysRemaining < 0 || overdueBlockersCount > 0 || (overdueTasks > 2 && daysRemaining <= 3))
+            {
+                health = ProjectHealthRatingEnum.Critical;
+            }
+            else if (activeBlockersCount > 0 || overdueTasks > 0 || hasOverduePredecessors || (daysRemaining <= 3 && completedTasks < totalTasks))
+            {
+                health = ProjectHealthRatingEnum.AtRisk;
+            }
+            else
+            {
+                health = ProjectHealthRatingEnum.OnTrack;
+            }
+
+            results.Add(new MilestoneHealthSummaryDto
+            {
+                MilestoneId = milestone.Id,
+                MilestoneName = milestone.Title,
+                StartDate = milestone.StartDate,
+                EndDate = milestone.EndDate,
+                Status = milestone.Status,
+                EntryType = milestone.EntryType,
+                Health = health,
+                TotalTasks = totalTasks,
+                CompletedTasks = completedTasks,
+                InProgressTasks = inProgressTasks,
+                OverdueTasks = overdueTasks,
+                ActiveBlockersCount = activeBlockersCount,
+                DaysRemaining = daysRemaining,
+                HasOverduePredecessors = hasOverduePredecessors,
+                PredecessorMilestoneNames = predecessorNames,
+                RiskReasons = riskReasons
+            });
         }
 
         return results;

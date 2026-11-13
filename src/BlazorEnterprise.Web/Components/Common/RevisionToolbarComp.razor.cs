@@ -15,10 +15,10 @@ public partial class RevisionToolbarComp : ComponentBase
     [Parameter] public EventCallback<Guid> OnRevisionChanged { get; set; }
     [Parameter] public EventCallback OnDataMutated { get; set; }
 
-    [Parameter] public List<RevisionSummaryDto>? Revisions { get; set; }
+    [Parameter] public IReadOnlyList<RevisionSummaryDto>? Revisions { get; set; }
     [Parameter] public Guid? SelectedRevisionId { get; set; }
 
-    protected List<RevisionSummaryDto> EffectiveRevisions => Revisions ?? _internalRevisions;
+    protected IReadOnlyList<RevisionSummaryDto> EffectiveRevisions => Revisions ?? _internalRevisions;
     private List<RevisionSummaryDto> _internalRevisions = new();
     protected RevisionSummaryDto? CurrentRevision => EffectiveRevisions.FirstOrDefault(r => r.Id == SelectedRevisionId);
     protected bool IsLoading { get; set; }

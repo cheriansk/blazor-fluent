@@ -10816,6 +10816,14 @@
         "TaskCreationRequestDto.RecurrenceEndDate.get",
         "set_RecurrenceEndDate",
         "TaskCreationRequestDto.RecurrenceEndDate.set",
+        "\u003CActionItems\u003Ek__BackingField",
+        "TaskCreationRequestDto.ActionItems.field",
+        "ActionItems",
+        "TaskCreationRequestDto.ActionItems",
+        "get_ActionItems",
+        "TaskCreationRequestDto.ActionItems.get",
+        "set_ActionItems",
+        "TaskCreationRequestDto.ActionItems.set",
         "\u003CRiskCategory\u003Ek__BackingField",
         "TaskCreationRequestDto.RiskCategory.field",
         "RiskCategory",
@@ -13278,6 +13286,8 @@
     "Infrastructure/Alerting/TeamsAlertSink.cs": {
       "RelativePath": "Infrastructure/Alerting/TeamsAlertSink.cs",
       "KnownMembers": [
+        "DefaultSharedHttpClient",
+        "TeamsAlertSink.DefaultSharedHttpClient",
         "_options",
         "TeamsAlertSink._options",
         "_httpClient",
@@ -13307,7 +13317,9 @@
         "ProcessQueueAsync",
         "TeamsAlertSink.ProcessQueueAsync()",
         "Dispose",
-        "TeamsAlertSink.Dispose()"
+        "TeamsAlertSink.Dispose()",
+        ".cctor",
+        "TeamsAlertSink.TeamsAlertSink()"
       ],
       "MemberSyntaxHashes": {
         "TeamsAlertSink.Emit(LogEvent)": "4691aa27b2240cb850258eadf8ef9fb4266568f9ceaa97d05fbde4a6fd8b30d2",
@@ -13438,7 +13450,7 @@
         "InfrastructureExtensions.AddInfrastructure(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "InfrastructureExtensions.AddInfrastructure(IServiceCollection, IConfiguration)": "10062e0f01aef4ec05cb1c31c49cb7bd13efc388117bf9882d40ba9e9473e0f0"
+        "InfrastructureExtensions.AddInfrastructure(IServiceCollection, IConfiguration)": "1b35fca42d28d84700fdb4ce2b5b121e004d62c9827d8db0efda0a800e171557"
       }
     },
     "Infrastructure/Notifications/EmailNotificationSender.cs": {
@@ -16308,6 +16320,33 @@
         "entity_redeisgn.BuildTargetModel(ModelBuilder)": "470034a6248ba181b7078aebb19e3e4ae1c7255e5d266d0477586c8ffb60f9a2"
       }
     },
+    "Persistence/Migrations/20261112184446_Activities.cs": {
+      "RelativePath": "Persistence/Migrations/20261112184446_Activities.cs",
+      "KnownMembers": [
+        "Up",
+        "Activities.Up(MigrationBuilder)",
+        "Down",
+        "Activities.Down(MigrationBuilder)",
+        ".ctor",
+        "Activities.Activities()"
+      ],
+      "MemberSyntaxHashes": {
+        "Activities.Up(MigrationBuilder)": "d17a5f6a9a9fe5a89219ed6b61c9e1d9795e4e4ea55d51be8dfc4fa047d10f1d",
+        "Activities.Down(MigrationBuilder)": "a58cd66f7b692af4c1809dbbe3c1499ea3cc15106439418257443d88eb89d020"
+      }
+    },
+    "Persistence/Migrations/20261112184446_Activities.Designer.cs": {
+      "RelativePath": "Persistence/Migrations/20261112184446_Activities.Designer.cs",
+      "KnownMembers": [
+        "BuildTargetModel",
+        "Activities.BuildTargetModel(ModelBuilder)",
+        ".ctor",
+        "Activities.Activities()"
+      ],
+      "MemberSyntaxHashes": {
+        "Activities.BuildTargetModel(ModelBuilder)": "40f33a2dde743825ac89efdf70fdbd43f9219305569d04680d435ca0781cfb85"
+      }
+    },
     "Persistence/Migrations/AppDbContextModelSnapshot.cs": {
       "RelativePath": "Persistence/Migrations/AppDbContextModelSnapshot.cs",
       "KnownMembers": [
@@ -16317,7 +16356,7 @@
         "AppDbContextModelSnapshot.AppDbContextModelSnapshot()"
       ],
       "MemberSyntaxHashes": {
-        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "eb27a565ee6c84d1353058ce80319e805788945fb60e2f15165884985a9aba57"
+        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "62099e7f9361b19aeb2d84ae2ea58478b851f12cd6cbbed3c79605897f057fc8"
       }
     },
     "Persistence/PersistenceExtensions.cs": {
@@ -17183,8 +17222,8 @@
         "ProgramService.GetProgramBlockersAsync(Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ProgramService.GetProgramsAsync(string, CancellationToken)": "4efdc4f4a882b5a70df420617f51c0aa0198acc171671341ddd76b4fee1cdf7c",
-        "ProgramService.GetProgramByIdAsync(Guid, bool, CancellationToken)": "f7d2224614720b5a03eb4bd5f13d3339a0e735fdf370611f7b2938e9f58b28e5",
+        "ProgramService.GetProgramsAsync(string, CancellationToken)": "ff403e3729cb62cfc97ec6c85aca23c28950cd6acd5aaff78c71f922c387879e",
+        "ProgramService.GetProgramByIdAsync(Guid, bool, CancellationToken)": "87a9deecf0882b14b5be70831a7c1c6440a7b4dfac5223438cf7c3176fd35621",
         "ProgramService.CreateProgramAsync(string, string, string, string, DateTime?, DateTime?, ProgramStatusEnum, CancellationToken)": "4cee32ced12fcd44ef322217bebdef5512b7f3cd727d81f7d51a076a8ec7f7a6",
         "ProgramService.UpdateProgramAsync(Guid, string, string, string, DateTime?, DateTime?, ProgramStatusEnum, bool, uint, CancellationToken)": "c38c0afbd9b168572730a383e8ae6e71996c931b3d2240b5f0bbdf0ee3e6c506",
         "ProgramService.SyncProgramAdminsAsync(Guid, IEnumerable\u003CGuid\u003E, CancellationToken)": "8662f7c0ce4b9ba3f80ada9627e5051d4c173ab616cb78edcdaf6a35dfdb8697",
@@ -17353,7 +17392,7 @@
       "MemberSyntaxHashes": {
         "ProjectHealthService.GetProjectHealthAsync(Guid, CancellationToken)": "c837395915d3618a4c05e0efac7e17f7de8aff6317951ac1875ca2fe973f995f",
         "ProjectHealthService.GetMilestoneHealthAsync(Guid, CancellationToken)": "f00da051923c42c83898fef3f7a514845b9b27002458b11428dc233ffa88b0d1",
-        "ProjectHealthService.GetProjectMilestonesHealthAsync(Guid, CancellationToken)": "91a9100f3abce8723afcf211db6c3ffb5789dfb7914693a8569dc9311a9e044c",
+        "ProjectHealthService.GetProjectMilestonesHealthAsync(Guid, CancellationToken)": "037c70dea543d6add950bb082b1e7f48991b8a8e4a1f85008aba671f62286903",
         "ProjectHealthService.GetProjectRisksAsync(Guid, CancellationToken)": "4d903dd3c470f03877a8edcc870bab2a69dc60a001d22c2303ddc67fe8d71fb1",
         "ProjectHealthService.GetProjectAssumptionsAsync(Guid, CancellationToken)": "33a63fb7925693dc7cd83df1ebe10536611b33187fa182d63973676050394372",
         "ProjectHealthService.GetProjectIssuesAsync(Guid, CancellationToken)": "43d8b43287460c68688c8ee126ebeea340cbc82bb26c2981c450964508cfd4ad",
@@ -17575,11 +17614,11 @@
         "ResourceManagementService.GetOrCreateDraftAllocationPlanAsync(Guid, CancellationToken)": "163600d66638ee928b65af686e1050ef93beca7886eb663dbad72959a43d1d1f",
         "ResourceManagementService.GetResourcePlanSummaryAsync(Guid, Guid?, CancellationToken)": "b3dd0a557e9fd44ab1ecc4095f5fa8fa0a9f6d14fba8b62e890dc7788ea07eb7",
         "ResourceManagementService.SetResourceAllocationAsync(Guid, Guid, DateOnly, int, CancellationToken)": "474ee0ca3b06beba2bd22738cbac5ef686fa3e10af23d9e6e4951f05ee752856",
-        "ResourceManagementService.BulkSetAllocationAsync(Guid, Guid, DateOnly, DateOnly, int, CancellationToken)": "e3ca287fb7d6f62b6ed5dc6f7e8678aae3c1d1ab4d522f8b39616b8f023f05c5",
+        "ResourceManagementService.BulkSetAllocationAsync(Guid, Guid, DateOnly, DateOnly, int, CancellationToken)": "e7c132d8c2720b2bd38c0e13db7a57591e9538e11d77441de94f6602805e8bbd",
         "ResourceManagementService.CopyPreviousDayAllocationAsync(Guid, Guid, DateOnly, CancellationToken)": "c94e018f91cd20fb4493f0ec69e56c5d1cbccc326839e65e75324cc551b3160f",
         "ResourceManagementService.GetRateCardAsync(Guid, Guid?, CancellationToken)": "b7186e206d64605ab34c73b4e622ecd161c499a75cdde807692ad1c644e72776",
         "ResourceManagementService.SetResourceRateAsync(Guid, Guid, decimal, string, CancellationToken)": "f44dae27aee42980de73b3f8441c898db69a4c03b03acf0d95ab3f7c73b39cd7",
-        "ResourceManagementService.BulkSetRateByRoleAsync(Guid, Guid, ProjectResourceRoleEnum, decimal, string, CancellationToken)": "f71609f40a24684fc09e88a509da3ce9cfaeec39d0eef22f76b85eaea5704edc",
+        "ResourceManagementService.BulkSetRateByRoleAsync(Guid, Guid, ProjectResourceRoleEnum, decimal, string, CancellationToken)": "2c99b756a4324c8b90bcdb8e7e1deadee459746a39b1ec4e09e5611e224e9054",
         "ResourceManagementService.GetAllocationPlanHistoryAsync(Guid, CancellationToken)": "c957e6828ebbc3421906d8523d3847d73e7ee6ca498f8f3fa375a75b183bc572",
         "ResourceManagementService.IsAllocationPlanLockedAsync(Guid, CancellationToken)": "563601d264111ff88708e6528bda161650f2c4b87f1becc5e9880d952f730849"
       }
@@ -17682,7 +17721,7 @@
         "RevisionService.CloseCycleAsync(Guid, string?, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "RevisionService.GetRevisionsAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "8beeb83161cba65114b51270527eba42f2bf9826ca5360238eccc0759bfd2bb3",
+        "RevisionService.GetRevisionsAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "0f2a0f27d065f817593fbafbb7c4858ed8996c64e17dc7cb338b52ab9af75468",
         "RevisionService.GetActiveRevisionAsync(TaskLevelEnum, VersionedFeatureTypeEnum, Guid?, Guid?, CancellationToken)": "3c4bd858e3ad4c33c3abbe81b2c201f22131c47e74cb122ce4e6456634e3ff62",
         "RevisionService.CreateDraftAsync(TaskLevelEnum, VersionedFeatureTypeEnum, string, Guid?, Guid?, Guid?, bool, CancellationToken)": "4430eb33dcd5aaaaee6fc92fb13b952289122e9747d66b62358d0c448e47f422",
         "RevisionService.SubmitForReviewAsync(Guid, string, string?, CancellationToken)": "43b265347bfdf9070fa1522ff05a42823f362ff3fb6ea80791da7000ce30b4f6",
@@ -17769,7 +17808,7 @@
         "SprintPlanningService.CalculateSprintStatus(DateTime, DateTime, DateTime)"
       ],
       "MemberSyntaxHashes": {
-        "SprintPlanningService.GetProjectSprintsAsync(Guid, CancellationToken)": "c883fc2f0d05c850ae2773cc48a8389294f0d0300d85cbccec1a0501755f3585",
+        "SprintPlanningService.GetProjectSprintsAsync(Guid, CancellationToken)": "fbf4b0aad889ba5dbe34d7164a199a7669ae3d70f7fe8535370e176ef9b97821",
         "SprintPlanningService.GetSprintByIdAsync(Guid, CancellationToken)": "7214db527f0f3ad9c07db9e5b0cd3b1cf01c5b6176a9f21b8abb7ac0444020c5",
         "SprintPlanningService.CreateSprintAsync(Guid, string, int, DateTime, DateTime, string?, CancellationToken)": "87036e2153b6724181a1fef3e4122c01c1eb1dd5d16a5093e41f295b70ba7a69",
         "SprintPlanningService.UpdateSprintAsync(Guid, string, DateTime, DateTime, string?, CancellationToken)": "dec27f59565613b0a7c81ade3a0551b4e55b63c6fd415320e74f253541a7a760",
@@ -17814,7 +17853,7 @@
         "TaskCreationService.GetTaskTypeDisplayName(CreationTaskTypeEnum)"
       ],
       "MemberSyntaxHashes": {
-        "TaskCreationService.CreateTaskAsync(TaskCreationRequestDto, CancellationToken)": "402c95116014951e47920da8e396f3d0ba8fe3eaddfff97dcf962175c886e8d0",
+        "TaskCreationService.CreateTaskAsync(TaskCreationRequestDto, CancellationToken)": "cc21159753335320806e38afcae5e13107f694e4fce2440761fc4993a25a6b28",
         "TaskCreationService.ValidateTaskDataAsync(TaskCreationRequestDto, CancellationToken)": "609d02a7edcf025fbbd4a46387ae4682ae852e0f8ce44eaeeeb8a5958d67ff33",
         "TaskCreationService.GetRelatedDataAsync(Guid, CreationTaskTypeEnum, CancellationToken)": "bb1964a2d522b72145c325368770a1136abbabcd96f7e7ae153aaec81e6d4f69",
         "TaskCreationService.CalculateRiskExposure(RiskProbabilityEnum, RiskImpactEnum)": "9ffce9f119886e0e1074b49c646a86ca4b444ddf33367f7973be0033f04b81fd",
@@ -27281,6 +27320,14 @@
         "AppErrorBoundaryComp.CurrentUser.get",
         "set_CurrentUser",
         "AppErrorBoundaryComp.CurrentUser.set",
+        "\u003CCorrelationContext\u003Ek__BackingField",
+        "AppErrorBoundaryComp.CorrelationContext.field",
+        "CorrelationContext",
+        "AppErrorBoundaryComp.CorrelationContext",
+        "get_CorrelationContext",
+        "AppErrorBoundaryComp.CorrelationContext.get",
+        "set_CorrelationContext",
+        "AppErrorBoundaryComp.CorrelationContext.set",
         "_errorReferenceId",
         "AppErrorBoundaryComp._errorReferenceId",
         "OnErrorAsync",
@@ -27291,7 +27338,7 @@
         "AppErrorBoundaryComp.AppErrorBoundaryComp()"
       ],
       "MemberSyntaxHashes": {
-        "AppErrorBoundaryComp.OnErrorAsync(Exception)": "b13bcedc54e11b807fb0f3e8b83b1d09d0a4b8b5633de8eced76b7a538734103",
+        "AppErrorBoundaryComp.OnErrorAsync(Exception)": "6065ac07539ea44c081d7edba082457eba9edbd817b0bd783fd14c9ba00cde11",
         "AppErrorBoundaryComp.RecoverAndReload()": "cc3be0e4fea05e5c1a6ba5a7fb9a7151bb16f26ea01e695c15cd36cc6718c24e"
       }
     },
@@ -28074,10 +28121,20 @@
         "SessionRevokedModal.NavigationManager.get",
         "set_NavigationManager",
         "SessionRevokedModal.NavigationManager.set",
+        "\u003CLogger\u003Ek__BackingField",
+        "SessionRevokedModal.Logger.field",
+        "Logger",
+        "SessionRevokedModal.Logger",
+        "get_Logger",
+        "SessionRevokedModal.Logger.get",
+        "set_Logger",
+        "SessionRevokedModal.Logger.set",
         "_isRevoked",
         "SessionRevokedModal._isRevoked",
         "_timer",
         "SessionRevokedModal._timer",
+        "_cts",
+        "SessionRevokedModal._cts",
         "OnInitialized",
         "SessionRevokedModal.OnInitialized()",
         "RunRevocationWatchdogAsync",
@@ -28091,9 +28148,9 @@
       ],
       "MemberSyntaxHashes": {
         "SessionRevokedModal.OnInitialized()": "e7c7d65797cea11d0061c47eb80be0e76d6ce42075331f1ee567770724ffc823",
-        "SessionRevokedModal.RunRevocationWatchdogAsync()": "4ebeb5af3bf1a23cc6b23755859e8a1b6649363e22507a5cda5be29fbede0ad6",
+        "SessionRevokedModal.RunRevocationWatchdogAsync()": "039d0c272c985fc92c437305eb8102f61537b301de4d6f97750efe219cf5f679",
         "SessionRevokedModal.HandleRedirectToLogin()": "210106979a6859cfeb1a4ceb5145316c669fe9b6b36b1b3f57e22c1dc0f64db9",
-        "SessionRevokedModal.Dispose()": "93a2dec9fa3acdc04e135ef31624b3f18e7ff23da52e10b2e35b79a1b14fbfb4"
+        "SessionRevokedModal.Dispose()": "ea158e0a8fc9072e11efc465f722d90f8581af94e1b7ade9df00995c1439bffe"
       }
     },
     "Web/Components/Common/SessionTimeoutModal.razor.cs": {
@@ -28173,6 +28230,8 @@
         "SessionTimeoutModal._isLoggingOut",
         "_timer",
         "SessionTimeoutModal._timer",
+        "_cts",
+        "SessionTimeoutModal._cts",
         "_dotNetRef",
         "SessionTimeoutModal._dotNetRef",
         "OnInitialized",
@@ -28197,12 +28256,12 @@
       "MemberSyntaxHashes": {
         "SessionTimeoutModal.OnInitialized()": "91d8e740b3877d6a55018daca080d809c859df3d6aaac78d0df224a637dd22b9",
         "SessionTimeoutModal.OnAfterRenderAsync(bool)": "71c05eb070ef353ec620cd1f84b339f664ac222dab202368ff69d9e1c7995f3c",
-        "SessionTimeoutModal.RunTimeoutWatchdogAsync()": "40a312b5c3f9066faf8bf645a2493ae0699f0452dd2fcbe5fcf5068da857e250",
+        "SessionTimeoutModal.RunTimeoutWatchdogAsync()": "1fabf3cb2afe099ae2fbaa7c00c08e3632ee9bbed1a383870fe5afcd13f39556",
         "SessionTimeoutModal.OnUserActivityDetected()": "b61172529f2aea8f4e2a607a430cfb0403eb5552666e1aae4d6c303fcd4fe2f6",
         "SessionTimeoutModal.HandleStayLoggedIn()": "94237690f866fbfc247d612021a829ec97176d16e08e9acbb0251e74e4810d61",
         "SessionTimeoutModal.HandleLogout(string)": "ee48150bbb52ff29c5b21fc150a906dde0beaaa853b4f014c6efc02c8fa94950",
         "SessionTimeoutModal.FormatTimeRemaining(int)": "941d349b5cdc4db4e8e3790e02fa23218f2babb0f2bddab871a99e0a39e44e87",
-        "SessionTimeoutModal.DisposeAsync()": "68a6ce2fd4ec13ad3c2ce8fa41cd467deb4916da33ec13999e513fee6d33ced6"
+        "SessionTimeoutModal.DisposeAsync()": "b3d2ce84732fde5fd16ca57d80a1da119043983f38059530c1f13b6fdf72a893"
       }
     },
     "Web/Components/Common/SwimlaneColumn.cs": {
@@ -29659,7 +29718,7 @@
         "ProgramHolisticView.OpenCreateDialog(CreationTaskTypeEnum)": "ab6a41dd8f2dff7e741d875059d3ede7a6e5b9917f7d70ca8bb005b46c655d7a",
         "ProgramHolisticView.HandleTaskCreated(TaskCreationRequestDto)": "73fd2672e7b5c81444ad5479ef06c3e20a81dd753d6142a9819e7c24be774699",
         "ProgramHolisticView.OnInitializedAsync()": "8589967c4abdde68e566d783a9bbfe7d46b24d6a36b8efea4a7016ce56231336",
-        "ProgramHolisticView.HandleProjectContextChanged()": "9d83ac5fca8b5ba95fb0210c5f9f471f2547c201246bc34e5f9e7af3bf0791f3",
+        "ProgramHolisticView.HandleProjectContextChanged()": "52d507fce7928c304e5fb741513d00c7c7899e7ffd4d611de090d112213a98ee",
         "ProgramHolisticView.RefreshProgramDataAsync()": "0efd193b1bff345b196b560b851f7f729751aef0b83f0874e3838c941125106f",
         "ProgramHolisticView.LoadDataAsync()": "d6993ddfc35695c07525bc24f24cf9d1eb7544448d5a9b98c831980ac7f339c5",
         "ProgramHolisticView.BuildTabs()": "a3535f19098bd0c58295ff437d1f7c7c8b6f8bcbe450c7fc53d451da509fa72d",
@@ -29898,7 +29957,7 @@
         "ProjectHolisticView.OpenCreateDialog(CreationTaskTypeEnum)": "ab6a41dd8f2dff7e741d875059d3ede7a6e5b9917f7d70ca8bb005b46c655d7a",
         "ProjectHolisticView.HandleTaskCreated(TaskCreationRequestDto)": "a332bddd49d02e89f332944728b6b7e7ff9fad102313792f7e571d962639ddcd",
         "ProjectHolisticView.OnInitializedAsync()": "8589967c4abdde68e566d783a9bbfe7d46b24d6a36b8efea4a7016ce56231336",
-        "ProjectHolisticView.HandleProjectContextChanged()": "9d83ac5fca8b5ba95fb0210c5f9f471f2547c201246bc34e5f9e7af3bf0791f3",
+        "ProjectHolisticView.HandleProjectContextChanged()": "3f6dd7feaa1ff096ce0e8c3902834bd9460e5c3a4555de5267d1d1b266101cc0",
         "ProjectHolisticView.RefreshProjectDataAsync()": "61b3ee18f5eb3d5c5154208ac756657b18b285d4072ce45d6302b0d6122b9ff6",
         "ProjectHolisticView.LoadDataAsync()": "1b6815bc1a529921254e2bf7498d2ca6b4fada8bb515dc201aa261edb190f5dc",
         "ProjectHolisticView.BuildTabs()": "1ecdb2b94b92edfc05cce3f8a44904657a8112b7595e1d88a305df168f04ab75",
@@ -30129,6 +30188,14 @@
         "ResourceManagementPage.NavManager.get",
         "set_NavManager",
         "ResourceManagementPage.NavManager.set",
+        "\u003CLogger\u003Ek__BackingField",
+        "ResourceManagementPage.Logger.field",
+        "Logger",
+        "ResourceManagementPage.Logger",
+        "get_Logger",
+        "ResourceManagementPage.Logger.get",
+        "set_Logger",
+        "ResourceManagementPage.Logger.set",
         "_planSummary",
         "ResourceManagementPage._planSummary",
         "_revisions",
@@ -30180,7 +30247,7 @@
       ],
       "MemberSyntaxHashes": {
         "ResourceManagementPage.OnInitializedAsync()": "c68e2ee83afa09182a33a2d9b1dcb9d8d7836992953b68973b40d391ecb8e441",
-        "ResourceManagementPage.HandleProjectChanged()": "0ae5de76dc17a6f17e5c55f76e62fb30c9a2da0b6818d60c9e693393d534ded4",
+        "ResourceManagementPage.HandleProjectChanged()": "ccebe90081a10f1eced2ef67ccb19cde45020d11e060e088b336f8960defa120",
         "ResourceManagementPage.LoadPageDataAsync()": "b099cb54f9fcd91d602aaee60e66e4237579a0733cb1ad2a5f1855a8b9a3477a",
         "ResourceManagementPage.HandleRevisionChanged(Guid)": "3680d11692ccffc8969b2548203c1201c388a25996c15cc2d0563ff8903eca49",
         "ResourceManagementPage.HandleDataMutated()": "1e602124d9e389cc077e093745c3f712234b92ce8e82e0a425acc5631e2accd5",
@@ -31428,6 +31495,14 @@
         "SettingsRateCardTab.ProjectContext.get",
         "set_ProjectContext",
         "SettingsRateCardTab.ProjectContext.set",
+        "\u003CLogger\u003Ek__BackingField",
+        "SettingsRateCardTab.Logger.field",
+        "Logger",
+        "SettingsRateCardTab.Logger",
+        "get_Logger",
+        "SettingsRateCardTab.Logger.get",
+        "set_Logger",
+        "SettingsRateCardTab.Logger.set",
         "_resources",
         "SettingsRateCardTab._resources",
         "_revisions",
@@ -31465,7 +31540,7 @@
       ],
       "MemberSyntaxHashes": {
         "SettingsRateCardTab.OnInitializedAsync()": "71b20b7ede0d5720941fa2f5213dc67c55f30a2a14db204377525cdd037faba8",
-        "SettingsRateCardTab.HandleProjectChanged()": "ceec6ec5dd6f420e671c84c88f2a8e4cd4ac66f684a8d1110f710929c5a12074",
+        "SettingsRateCardTab.HandleProjectChanged()": "1878932d7840f534d81963d2be177424259823c413ff91ad601521f2f624c26d",
         "SettingsRateCardTab.LoadRatesAsync()": "8d110029efbfdc54d1124e09cf502fd657e7b6bc8b716e5696fec6aa75bd0279",
         "SettingsRateCardTab.OnRevisionSelected(ChangeEventArgs)": "6abe1317abebf5df3adf663a2c34477b7177d167bac2c4403be3a7e74e164e71",
         "SettingsRateCardTab.UpdateHourlyRate(Guid, string?)": "af8330b131d6779a56c52a41a81f8cfa848afefa824a3be3af6a21c288ddd56d",
@@ -31632,6 +31707,14 @@
         "SettingsSprintTimelineTab.ProjectContext.get",
         "set_ProjectContext",
         "SettingsSprintTimelineTab.ProjectContext.set",
+        "\u003CLogger\u003Ek__BackingField",
+        "SettingsSprintTimelineTab.Logger.field",
+        "Logger",
+        "SettingsSprintTimelineTab.Logger",
+        "get_Logger",
+        "SettingsSprintTimelineTab.Logger.get",
+        "set_Logger",
+        "SettingsSprintTimelineTab.Logger.set",
         "_sprints",
         "SettingsSprintTimelineTab._sprints",
         "_filterStatus",
@@ -31683,7 +31766,7 @@
       ],
       "MemberSyntaxHashes": {
         "SettingsSprintTimelineTab.OnInitializedAsync()": "dbb4af485d1fed72ab4ed748b060a7147a2bf0f63a0d9ab1039f270132253483",
-        "SettingsSprintTimelineTab.HandleProjectChanged()": "508896f766f9f3880c7313e21f15657134ff7938c5a4e82b3381ff5b93edeb5d",
+        "SettingsSprintTimelineTab.HandleProjectChanged()": "ef34058ef3b7a325cbf9c1b166da1f882d7ebc71f5cef6ff406696fa11092805",
         "SettingsSprintTimelineTab.LoadSprintsAsync()": "56c3aee815f3c49c1b4d182e3bee26f47c78b37841577094be92d5bcf43386dc",
         "SettingsSprintTimelineTab.OpenCreateModal()": "749261237b02930901ec59628393578a2d06569293b4cf302ae65832c00c2f0a",
         "SettingsSprintTimelineTab.OpenEditModal(SprintDto)": "5f5dacb8230b630549c39822e0c0320b42322a43897afbc563cc7a730eee8577",
@@ -32295,7 +32378,7 @@
         "SprintPlanningPage.OpenCreateDialog(CreationTaskTypeEnum)": "ab6a41dd8f2dff7e741d875059d3ede7a6e5b9917f7d70ca8bb005b46c655d7a",
         "SprintPlanningPage.HandleTaskCreated(TaskCreationRequestDto)": "b05d306c484775653d0c5987088fd110ab2f39b355f61a12d68960a55000807f",
         "SprintPlanningPage.OnInitializedAsync()": "8fb38c9fcee95169c14b7c34434910a568c08f7a4e74f909fbc3d4830b6a39f1",
-        "SprintPlanningPage.HandleProjectChanged()": "110eb5137f9354c64c2a4d76fe36e6f84d80a1464077a5cdf2ba3eb55bb9ba1a",
+        "SprintPlanningPage.HandleProjectChanged()": "ca42d23107e5552269d51ca20f156782a5824cf39fd78cd84540324d3417d4a9",
         "SprintPlanningPage.Dispose()": "048f28e833f34a3caa4fb1071bd3cc76d615d95bd84ba82d9eb5396c8cfdfbee",
         "SprintPlanningPage.LoadDataAsync()": "cc0856a4f0715865ad53faea42afded2ab40b975c68fbcfce64fba4236541346",
         "SprintPlanningPage.LoadSummaryTabDataAsync()": "01a985fdd764cec8b07db644f0fd1898dff6b7dff9edfb58bf789186907e3e61",
@@ -34426,6 +34509,13 @@
         "$Markup": "417e9a4af87353d01849401f26cde1c913a15148960d2cca94ec9142bf2f1c8b"
       }
     },
+    "Shared.UI/Components/RichText/CskRichTextEditor.razor": {
+      "RelativePath": "Shared.UI/Components/RichText/CskRichTextEditor.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "36046f623722762100c8f2a3680c75404c2a4fd0aa2de5b996474bb2921144c8"
+      }
+    },
     "Shared.UI/Components/SectionHeader/CskSectionHeader.razor": {
       "RelativePath": "Shared.UI/Components/SectionHeader/CskSectionHeader.razor",
       "KnownMembers": [],
@@ -34487,6 +34577,13 @@
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Markup": "e5c2342798fd741812ce8554da180f1eb17f254a94b84072cecdf40e47ddb7fc"
+      }
+    },
+    "Shared.UI/Components/TagInput/CskTagInput.razor": {
+      "RelativePath": "Shared.UI/Components/TagInput/CskTagInput.razor",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Markup": "647a0346751e42393e5f476d5cb6fd084ac8791cd74d89fe7ab1d0d19c380142"
       }
     },
     "Shared.UI/Components/TextArea/CskTextArea.razor": {
@@ -34622,25 +34719,11 @@
         "$Markup": "2cfdc6ec1ea0b3a2391c28687bafae876179a12e3eb8f09df34abb3dbf062900"
       }
     },
-    "Web/Components/Common/FluentRichTextEditor.razor": {
-      "RelativePath": "Web/Components/Common/FluentRichTextEditor.razor",
-      "KnownMembers": [],
-      "MemberSyntaxHashes": {
-        "$Markup": "99920dbdbfae706ca11ae99d835dec16b95de3cace987f5b1bd5233d47c59ac5"
-      }
-    },
     "Web/Components/Common/FluentSwimlaneBoardComp.razor": {
       "RelativePath": "Web/Components/Common/FluentSwimlaneBoardComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Markup": "6aaa665d93d2fb0a18b8e7a05435a88bccb48b2c5d24f4e4a1ab5f32939989aa"
-      }
-    },
-    "Web/Components/Common/FluentTagInput.razor": {
-      "RelativePath": "Web/Components/Common/FluentTagInput.razor",
-      "KnownMembers": [],
-      "MemberSyntaxHashes": {
-        "$Markup": "a4be2cfe2ad3876bfaf2c854deae04dcd9a2b8f6b4640ec853be2be8dea04141"
       }
     },
     "Web/Components/Common/FormNavigationGuardComp.razor": {
@@ -34808,7 +34891,7 @@
       "RelativePath": "Web/Components/Layout/TenantSwitcherComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "faf375b5b5132deba1b225f11b132816ed860878c57331a2305bd784c34cfbed"
+        "$Markup": "10e0c601723047718b81de2f6e3192a8c377268820ce54125c8655400c67b94f"
       }
     },
     "Web/Components/Pages/AuthErrorPage.razor": {
@@ -34878,7 +34961,7 @@
       "RelativePath": "Web/Components/Pages/ProgramHolisticView.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "cb8a0fbc2b3f144564bc33a8b15f14886c5c11c49ed75a49151c42c2c1030acb"
+        "$Markup": "c73ff3da6010fbda13f90af284dd6d77600e13170357cdb0505c7f8dd406d3f3"
       }
     },
     "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewHomeTab.razor": {
@@ -34913,7 +34996,7 @@
       "RelativePath": "Web/Components/Pages/ProjectHolisticView.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "27239f0a66ef7327d6ddc0f1008353e2aca1abdb6cf81a30bc6b8b966cf662e8"
+        "$Markup": "a18659f3f4c2e6ec85f0a268a1aafc6a933176761d8718d971cd29a4995065c9"
       }
     },
     "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor": {
@@ -35123,7 +35206,7 @@
       "RelativePath": "Web/Components/Pages/Sprints/SprintPlanningPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "74d63e2a998ad940b8f06ef52b3aa9ee73cb6e54a11197588ff17f79833b5186"
+        "$Markup": "0cada573fbd159b2f357339716b5401944c64173c4cdeeaf767f885b7370b701"
       }
     },
     "Web/Components/Routes.razor": {
@@ -35172,7 +35255,7 @@
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4c19469f6e0c5492017ff3cb5c5944e2e6d4e46b2aef26e5ee93cf72dc4bd158"
+        "$Markup": "9e6984ea0b90d081024e3bb88560729b67e83ff408ccb7c30855fd537f5f5d87"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor": {
@@ -35364,6 +35447,13 @@
         "$Content": "3484f063ab9ae737e2106f16774fe1bc8993977842a171c49c917f47d36ec44a"
       }
     },
+    "Shared.UI/Components/RichText/CskRichTextEditor.razor.css": {
+      "RelativePath": "Shared.UI/Components/RichText/CskRichTextEditor.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "f1df84aff61156309d2155e67f7c7fe6cd84638a59b996e4a876b09fbaa9485a"
+      }
+    },
     "Shared.UI/Components/SectionHeader/CskSectionHeader.razor.css": {
       "RelativePath": "Shared.UI/Components/SectionHeader/CskSectionHeader.razor.css",
       "KnownMembers": [],
@@ -35420,6 +35510,13 @@
         "$Content": "684c5b533536feeec1ef4d9fc71f6e88fa84fde368d328a080fcdc713694a97c"
       }
     },
+    "Shared.UI/Components/TagInput/CskTagInput.razor.css": {
+      "RelativePath": "Shared.UI/Components/TagInput/CskTagInput.razor.css",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "4bb2db78292b0177e300f40aad7ac50b6334f7e1e418a67f460284030d87da94"
+      }
+    },
     "Shared.UI/Components/TextArea/CskTextArea.razor.css": {
       "RelativePath": "Shared.UI/Components/TextArea/CskTextArea.razor.css",
       "KnownMembers": [],
@@ -35460,6 +35557,13 @@
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Content": "aa116c3218b1d51550bcfd9c8c3f416c9b39aef1aa43ac647cc201b8dbc2439a"
+      }
+    },
+    "Shared.UI/wwwroot/js/quill-interop.js": {
+      "RelativePath": "Shared.UI/wwwroot/js/quill-interop.js",
+      "KnownMembers": [],
+      "MemberSyntaxHashes": {
+        "$Content": "82c8a1c1b747f0f6eb0a275efda8d2b5d86ef7574649b49cc853d6c8cf1cf221"
       }
     },
     "Web/Components/Common/AppErrorBoundaryComp.razor.css": {
@@ -35518,25 +35622,11 @@
         "$Content": "8d75e546fa5cd6ecd9d29451dad5df973242aaacc3c8c2253eed7f2e583c10d2"
       }
     },
-    "Web/Components/Common/FluentRichTextEditor.razor.css": {
-      "RelativePath": "Web/Components/Common/FluentRichTextEditor.razor.css",
-      "KnownMembers": [],
-      "MemberSyntaxHashes": {
-        "$Content": "88177688ec955e392782e2b032cb9878a81d87124b538257bcde924e383e11fc"
-      }
-    },
     "Web/Components/Common/FluentSwimlaneBoardComp.razor.css": {
       "RelativePath": "Web/Components/Common/FluentSwimlaneBoardComp.razor.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Content": "2180a0efe8caafbe2f1a1a6a47d7db5ccd8473bfa8989d3f01a9f7850d819763"
-      }
-    },
-    "Web/Components/Common/FluentTagInput.razor.css": {
-      "RelativePath": "Web/Components/Common/FluentTagInput.razor.css",
-      "KnownMembers": [],
-      "MemberSyntaxHashes": {
-        "$Content": "4bb2db78292b0177e300f40aad7ac50b6334f7e1e418a67f460284030d87da94"
       }
     },
     "Web/Components/Common/ImpersonationBannerComp.razor.css": {

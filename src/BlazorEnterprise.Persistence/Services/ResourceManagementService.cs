@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Identity;
 using BlazorEnterprise.Core.Domain.Resources;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -349,9 +349,61 @@ public class ResourceManagementService : IResourceManagementService
         int allocationPercentage,
         CancellationToken cancellationToken = default)
     {
+        await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var header = await context.RevisionHeaders.FindAsync([revisionHeaderId], cancellationToken);
+        if (header == null) throw new InvalidOperationException("Allocation plan not found.");
+        if (header.Status != RevisionStatusEnum.Draft)
+            throw new InvalidOperationException("Cannot modify finalized or locked plan.");
+
+        var resource = await context.ProjectResources.FindAsync([projectResourceId], cancellationToken);
+        if (resource == null) throw new InvalidOperationException("Resource not found.");
+
+        var startDateTime = startDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var endDateTime = endDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        var existingAllocations = await context.ResourceAllocations
+            .Where(a => a.RevisionHeaderId == revisionHeaderId &&
+                        a.ProjectResourceId == projectResourceId &&
+                        a.AllocationDate >= startDateTime &&
+                        a.AllocationDate <= endDateTime)
+            .ToListAsync(cancellationToken);
+
+        var allocationsByDate = existingAllocations.ToDictionary(a => a.AllocationDate, a => a);
+
         for (var d = startDate; d <= endDate; d = d.AddDays(1))
         {
-            await SetResourceAllocationAsync(revisionHeaderId, projectResourceId, d, allocationPercentage, cancellationToken);
+            var allocDateTime = d.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            if (allocationsByDate.TryGetValue(allocDateTime, out var existing))
+            {
+                existing.AllocationPercentage = allocationPercentage;
+                existing.IsDeleted = false;
+            }
+            else
+            {
+                var alloc = new ResourceAllocationEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    TenantId = _tenantContext.TenantId,
+                    ProjectId = resource.ProjectId,
+                    ProjectResourceId = projectResourceId,
+                    RevisionHeaderId = revisionHeaderId,
+                    RelId = Guid.CreateVersion7(),
+                    VerNum = header.VerNum,
+                    AllocationDate = allocDateTime,
+                    AllocationPercentage = allocationPercentage
+                };
+                context.ResourceAllocations.Add(alloc);
+            }
+        }
+
+        context.IsTransactionScopeCommitAuthorized = true;
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        finally
+        {
+            context.IsTransactionScopeCommitAuthorized = false;
         }
     }
 
@@ -476,13 +528,58 @@ public class ResourceManagementService : IResourceManagementService
         CancellationToken cancellationToken = default)
     {
         await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var header = await context.RevisionHeaders.FindAsync([revisionHeaderId], cancellationToken);
+        if (header == null) throw new InvalidOperationException("Allocation plan not found.");
+        if (header.Status != RevisionStatusEnum.Draft)
+            throw new InvalidOperationException("Cannot modify finalized or locked plan.");
+
         var resources = await context.ProjectResources
             .Where(r => r.ProjectId == projectId && r.Role == role && !r.IsDeleted)
             .ToListAsync(cancellationToken);
 
+        if (resources.Count == 0) return;
+
+        var resourceIds = resources.Select(r => r.Id).ToList();
+        var existingRates = await context.ResourceRates
+            .Where(r => r.RevisionHeaderId == revisionHeaderId && resourceIds.Contains(r.ProjectResourceId))
+            .ToListAsync(cancellationToken);
+
+        var ratesByResource = existingRates.ToDictionary(r => r.ProjectResourceId, r => r);
+
         foreach (var res in resources)
         {
-            await SetResourceRateAsync(revisionHeaderId, res.Id, hourlyRate, currency, cancellationToken);
+            if (ratesByResource.TryGetValue(res.Id, out var existing))
+            {
+                existing.HourlyRate = hourlyRate;
+                existing.CurrencyCode = currency;
+                existing.IsDeleted = false;
+            }
+            else
+            {
+                var rate = new ResourceRateEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    TenantId = _tenantContext.TenantId,
+                    ProjectId = projectId,
+                    ProjectResourceId = res.Id,
+                    RevisionHeaderId = revisionHeaderId,
+                    RelId = Guid.CreateVersion7(),
+                    VerNum = header.VerNum,
+                    HourlyRate = hourlyRate,
+                    CurrencyCode = currency
+                };
+                context.ResourceRates.Add(rate);
+            }
+        }
+
+        context.IsTransactionScopeCommitAuthorized = true;
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        finally
+        {
+            context.IsTransactionScopeCommitAuthorized = false;
         }
     }
 

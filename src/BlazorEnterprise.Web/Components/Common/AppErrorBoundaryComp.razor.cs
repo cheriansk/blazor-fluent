@@ -1,5 +1,6 @@
 using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Shared.Contracts.Engine.Client;
 using BlazorEnterprise.Shared.DataListTypes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ public partial class AppErrorBoundaryComp : Microsoft.AspNetCore.Components.Erro
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
+    [Inject] private ICorrelationContext CorrelationContext { get; set; } = default!;
 
     private string? _errorReferenceId;
 
@@ -21,18 +23,22 @@ public partial class AppErrorBoundaryComp : Microsoft.AspNetCore.Components.Erro
         var currentUri = NavigationManager.Uri;
         var tenantId = TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "none";
         var userId = CurrentUser.IsAuthenticated ? CurrentUser.UserId : "anonymous";
+        
+        // Use active CorrelationId as the universal Incident Reference ID for instant dev & prod log trace connectivity
+        _errorReferenceId = !string.IsNullOrWhiteSpace(CorrelationContext.CorrelationId)
+            ? CorrelationContext.CorrelationId
+            : CorrelationContext.Renew();
 
         try
         {
-            _errorReferenceId = await AuditService.LogExceptionAsync(
+            await AuditService.LogExceptionAsync(
                 exception,
-                $"Razor Page Rendering Error at URL: {currentUri} (Tenant: {tenantId}, User: {userId})",
+                $"Razor Page Rendering Error [Correlation: {_errorReferenceId}] at URL: {currentUri} (Tenant: {tenantId}, User: {userId})",
                 AuditSeverityEnum.Critical);
         }
         catch (Exception logEx)
         {
-            Logger.LogCritical(logEx, "Failed to log UI exception to AuditService. Original message: {Message}", exception.Message);
-            _errorReferenceId = $"ERR-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+            Logger.LogCritical(logEx, "Failed to log UI exception to AuditService for CorrelationId '{CorrelationId}'. Original message: {Message}", _errorReferenceId, exception.Message);
         }
 
         Logger.LogCritical(

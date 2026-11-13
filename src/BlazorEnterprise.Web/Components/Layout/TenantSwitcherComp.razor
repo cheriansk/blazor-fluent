@@ -5,6 +5,7 @@
 @inject IAuditService AuditService
 @inject ProtectedSessionStorage SessionStorage
 @inject NavigationManager NavigationManager
+@inject ILogger<TenantSwitcherComp> Logger
 
 @if (!TenantContext.HasActiveTenant)
 {
@@ -85,7 +86,10 @@ else
         {
             await SessionStorage.DeleteAsync("app_session");
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Could not delete app_session during tenant switch.");
+        }
 
         // 3. Reset in-memory tenant context
         TenantContext.Reset();

@@ -109,7 +109,7 @@
                         </span>
                     </CskLabel>
 
-                    <FluentTagInput @bind-Tags="@_model.Labels" MinTags="1" MaxTags="10" />
+                    <CskTagInput @bind-Tags="@_model.Labels" MinTags="1" MaxTags="10" />
 
                     @if (_labelsError)
                     {
@@ -170,7 +170,7 @@
                         </span>
                     </CskLabel>
 
-                    <FluentRichTextEditor @bind-Value="@_model.Content" MaxLength="20000" MinHeight="280px" />
+                    <CskRichTextEditor @bind-Value="@_model.Content" MaxLength="20000" MinHeight="280px" />
 
                     @if (_contentError)
                     {

@@ -9,6 +9,7 @@ public partial class SettingsSprintTimelineTab : ComponentBase, IDisposable
 {
     [Inject] private ISprintPlanningService SprintService { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;
+    [Inject] private ILogger<SettingsSprintTimelineTab> Logger { get; set; } = default!;
 
     private List<SprintDto> _sprints = new();
     private string _filterStatus = string.Empty;
@@ -35,11 +36,18 @@ public partial class SettingsSprintTimelineTab : ComponentBase, IDisposable
 
     private async void HandleProjectChanged()
     {
-        await InvokeAsync(async () =>
+        try
         {
-            await LoadSprintsAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await LoadSprintsAsync();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh sprint timeline tab on project change.");
+        }
     }
 
     private async Task LoadSprintsAsync()

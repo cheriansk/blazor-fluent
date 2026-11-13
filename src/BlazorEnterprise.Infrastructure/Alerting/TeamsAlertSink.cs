@@ -15,6 +15,16 @@ namespace BlazorEnterprise.Infrastructure.Alerting;
 /// </summary>
 public sealed class TeamsAlertSink : ILogEventSink, IDisposable
 {
+    private static readonly HttpClient DefaultSharedHttpClient = new(new SocketsHttpHandler
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+        ConnectTimeout = TimeSpan.FromSeconds(5)
+    })
+    {
+        Timeout = TimeSpan.FromSeconds(5)
+    };
+
     private readonly TeamsAlertOptions _options;
     private readonly HttpClient _httpClient;
     private readonly Channel<string> _channel;
@@ -26,7 +36,7 @@ public sealed class TeamsAlertSink : ILogEventSink, IDisposable
     public TeamsAlertSink(TeamsAlertOptions options, HttpClient? httpClient = null)
     {
         _options = options;
-        _httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        _httpClient = httpClient ?? DefaultSharedHttpClient;
         _minLevel = ParseMinLevel(options.MinLevel);
 
         // Bounded channel to prevent memory leaks if webhook is unreachable

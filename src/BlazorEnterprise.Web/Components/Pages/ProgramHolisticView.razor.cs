@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Dtos.Tasks;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -50,13 +50,20 @@ public partial class ProgramHolisticView : ComponentBase, IDisposable
         await LoadDataAsync();
     }
 
-    private void HandleProjectContextChanged()
+    private async void HandleProjectContextChanged()
     {
-        _ = InvokeAsync(async () =>
+        try
         {
-            await LoadDataAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await LoadDataAsync();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh program holistic view after context change.");
+        }
     }
 
     private async Task RefreshProgramDataAsync()

@@ -7,7 +7,7 @@ namespace BlazorEnterprise.Web.Components.Pages.Resources;
 public partial class ResourceSelectionModal : ComponentBase
 {
     [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public List<UserEntity> AvailableUsers { get; set; } = new();
+    [Parameter] public IReadOnlyList<UserEntity> AvailableUsers { get; set; } = [];
     [Parameter] public EventCallback<List<(Guid UserId, ProjectResourceRoleEnum Role)>> OnConfirm { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
