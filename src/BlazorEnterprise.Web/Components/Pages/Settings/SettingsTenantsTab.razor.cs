@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Shared.UI.Components;
+using BlazorEnterprise.Shared.UI.Components;
 ﻿using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Identity;
@@ -21,6 +21,8 @@ public partial class SettingsTenantsTab : ComponentBase, IDisposable
     [Inject] private IUnsavedChangesStateService UnsavedChanges { get; set; } = default!;
     [Inject] private IUserTimeZoneService TimeZoneService { get; set; } = default!;
     [Inject] private IUserTaskService TaskService { get; set; } = default!;
+    [Inject] private ILogger<SettingsTenantsTab> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
 
 private bool IsRootAdmin => CurrentUser.IsRootAdmin;
     private List<TenantEntity> _tenants = [];
@@ -865,7 +867,8 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load tenant work items: {ex.Message}";
+            Logger.LogError(ex, "Failed to load tenant work items. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load tenant work items", CorrelationContext?.CorrelationId);
             _isError = true;
         }
         finally
@@ -907,7 +910,8 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Error creating tenant task: {ex.Message}";
+            Logger.LogError(ex, "Failed to create tenant task. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("create tenant task", CorrelationContext?.CorrelationId);
             _isError = true;
         }
     }
@@ -947,7 +951,8 @@ private bool IsRootAdmin => CurrentUser.IsRootAdmin;
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Error creating tenant risk: {ex.Message}";
+            Logger.LogError(ex, "Failed to create tenant risk. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("create tenant risk", CorrelationContext?.CorrelationId);
             _isError = true;
         }
     }

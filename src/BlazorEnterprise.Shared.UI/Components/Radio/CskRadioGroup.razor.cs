@@ -63,9 +63,9 @@ public partial class CskRadioGroup<TValue> : ComponentBase, ICskRadioGroup
                     typedValue = (TValue)Convert.ChangeType(value, underlying);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is not InvalidOperationException)
             {
-                typedValue = default;
+                throw new InvalidOperationException($"Failed to convert value '{value}' to {typeof(TValue).Name} in CskRadioGroup.", ex);
             }
         }
 

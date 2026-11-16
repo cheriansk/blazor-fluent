@@ -71,7 +71,8 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, _systemIdentity, normalizedEmail, "VerifyLogin");
 
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+        await using var dbContext = await dbFactory.CreateDbContextAsync(ct);
 
         // Security Gate: Reject background system daemon identity logins
         if (_systemIdentity.IsSystemDaemon(normalizedEmail))
@@ -170,7 +171,8 @@ public class InternalAuthenticationService : IInternalAuthenticationService
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
         SystemIdentityUtility.EstablishPreAuthContext(currentUser, tenantContext, _systemIdentity, userId, "RehydrateSession");
 
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+        await using var dbContext = await dbFactory.CreateDbContextAsync(ct);
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         // ARCHITECTURAL ZERO-TRUST EXEMPTION:

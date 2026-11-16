@@ -57,9 +57,9 @@
                 await _module.DisposeAsync();
             }
         }
-        catch
+        catch (Microsoft.JSInterop.JSDisconnectedException)
         {
-            // Ignore JS interop disposal errors on unmount
+            // Circuit disconnected cleanly
         }
         finally
         {

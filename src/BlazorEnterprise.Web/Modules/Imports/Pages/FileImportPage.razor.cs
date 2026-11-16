@@ -19,6 +19,8 @@ namespace BlazorEnterprise.Modules.Imports.Pages;
 
 public partial class FileImportPage : ComponentBase, IDisposable
 {
+    [Inject] private ILogger<FileImportPage> Logger { get; set; } = default!;
+    [Inject] private ICorrelationContext CorrelationContext { get; set; } = default!;
     [Inject] private IImportFileService ImportService { get; set; } = default!;
     [Inject] private IFileTemplateDownloadService TemplateDownloadService { get; set; } = default!;
     [Inject] private ICircuitActivityTracker CircuitActivity { get; set; } = default!;
@@ -77,14 +79,21 @@ public partial class FileImportPage : ComponentBase, IDisposable
             ?? _availableTypes.FirstOrDefault();
     }
 
-    private void HandleProjectContextChanged()
+    private async void HandleProjectContextChanged()
     {
-        _ = InvokeAsync(async () =>
+        try
         {
-            await SyncActiveProjectAsync();
-            await RefreshHistoryAsync();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                await SyncActiveProjectAsync();
+                await RefreshHistoryAsync();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh project context for FileImportPage. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+        }
     }
 
     public void Dispose()
@@ -167,7 +176,8 @@ public partial class FileImportPage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             _messageIntent = MessageBarIntent.Error;
-            _statusMessage = $"Failed to download template: {ex.Message}";
+            Logger.LogError(ex, "Failed to download template. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("download template", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -236,7 +246,8 @@ public partial class FileImportPage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             _messageIntent = MessageBarIntent.Error;
-            _statusMessage = $"Failed to import and stage file: {ex.Message}";
+            Logger.LogError(ex, "Failed to import and stage file. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("import and stage file", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -265,7 +276,8 @@ public partial class FileImportPage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             _messageIntent = MessageBarIntent.Error;
-            _statusMessage = $"Failed to load import history: {ex.Message}";
+            Logger.LogError(ex, "Failed to load import history. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load import history", CorrelationContext?.CorrelationId);
         }
         finally
         {

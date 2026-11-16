@@ -113,7 +113,7 @@
         <div class="articles-list">
             @foreach (var article in _articles)
             {
-                <div @onclick="@(() => NavigationManager.NavigateTo($"/knowledge/{article.Id}"))"
+                <div @key="article.Id" @onclick="@(() => NavigationManager.NavigateTo($"/knowledge/{article.Id}"))"
                      class="article-card">
 
                     <!-- Top Row: Scope, Status, Labels & Date -->

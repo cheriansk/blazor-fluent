@@ -47,7 +47,7 @@
                             <tbody>
                                 @foreach (var diff in Diffs)
                                 {
-                                    <tr class="@(diff.HasConflict ? "diff-row-conflict" : "diff-row-normal")">
+                                    <tr @key="diff.PropertyName" class="@(diff.HasConflict ? "diff-row-conflict" : "diff-row-normal")">
                                         <td class="diff-td-field">
                                             <strong>@diff.PropertyName</strong>
                                         </td>
@@ -123,11 +123,7 @@
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", value);
             _copyFeedback = $"Copied {fieldName} to clipboard!";
             StateHasChanged();
-            _ = Task.Delay(2500).ContinueWith(_ =>
-            {
-                _copyFeedback = null;
-                InvokeAsync(StateHasChanged);
-            });
+            _ = ClearCopyFeedbackAfterDelayAsync();
         }
         catch
         {
@@ -145,5 +141,19 @@
     {
         if (_dialog is not null) await _dialog.HideAsync();
         await OnCancel.InvokeAsync();
+    }
+
+    private async Task ClearCopyFeedbackAfterDelayAsync()
+    {
+        try
+        {
+            await Task.Delay(2500);
+            _copyFeedback = null;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            // Safe ignore on component unmount
+        }
     }
 }

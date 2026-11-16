@@ -166,7 +166,7 @@ public class ResourceManagementServiceTests : IDisposable
         var resource = await service.AddResourceAsync(_projectId, user.Id, ProjectResourceRoleEnum.Developer);
         var plan = await service.GetOrCreateDraftAllocationPlanAsync(_projectId);
 
-        var allocDate = DateOnly.FromDateTime(project.StartDate);
+        var allocDate = project.StartDate.Date;
         await service.SetResourceAllocationAsync(plan.Id, resource.Id, allocDate, 100);
         await service.SetResourceRateAsync(plan.Id, resource.Id, 150m);
 

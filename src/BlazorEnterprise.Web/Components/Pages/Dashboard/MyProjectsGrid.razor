@@ -33,7 +33,7 @@
         <div class="mat-project-grid">
             @foreach (var proj in Projects)
             {
-                <div class="mat-project-card" @onclick="@(() => OnOpenProject.InvokeAsync(proj.Id))">
+                <div @key="proj.Id" class="mat-project-card" @onclick="@(() => OnOpenProject.InvokeAsync(proj.Id))">
                     <!-- Card Header: Title, ShortCode, Role -->
                     <div class="project-card-header">
                         <div class="project-identity">

@@ -25,9 +25,9 @@
         }
         else
         {
-            @foreach (var audit in Activities)
-            {
-                <div class="mat-activity-item">
+            <Virtualize Items="Activities as ICollection<AuditActivityItem> ?? Activities.ToList()" Context="audit">
+
+                <div @key="audit.Id" class="mat-activity-item">
                     <div class="mat-activity-icon">
                         <CskIcon Icon="@audit.Icon" Class="csk-icon-sm" />
                     </div>
@@ -38,7 +38,7 @@
                     </div>
                     <CskStatusChip Text="@audit.BadgeText" Variant="@audit.BadgeVariant" />
                 </div>
-            }
+            </Virtualize>
         }
     </div>
 </div>

@@ -177,6 +177,8 @@ try
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddScoped<BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext, BlazorEnterprise.Shared.Contracts.Engine.Client.CorrelationContext>();
+    builder.Services.AddProblemDetails();
+    builder.Services.AddExceptionHandler<BlazorEnterprise.Web.Infrastructure.Observability.WebExceptionHandler>();
 
     builder.Services.AddScoped<INavigationStateService, NavigationStateService>();
 

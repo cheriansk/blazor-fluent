@@ -10,6 +10,8 @@ public partial class SettingsUserTab : ComponentBase, IDisposable
     [Inject] private IUserTimeZoneService TimeZoneService { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private IUnsavedChangesStateService UnsavedChanges { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
+    [Inject] private ILogger<SettingsUserTab> Logger { get; set; } = default!;
 
 private const string UnsavedKey = "settings_user_timezone";
     private List<TimeZoneInfo> _availableTimeZones = new();
@@ -19,7 +21,8 @@ private const string UnsavedKey = "settings_user_timezone";
     private bool _saving;
     private string? _statusMessage;
     private bool _isError;
-    private System.Threading.Timer? _clockTimer;
+    private PeriodicTimer? _clockTimer;
+    private CancellationTokenSource? _clockCts;
 
     private string _previewLocalTime = string.Empty;
     private string _previewUtcTime = string.Empty;
@@ -32,14 +35,9 @@ private const string UnsavedKey = "settings_user_timezone";
         _initialTimeZoneId = _selectedTimeZoneId;
         UpdateLivePreviews();
 
-        _clockTimer = new System.Threading.Timer(_ =>
-        {
-            InvokeAsync(() =>
-            {
-                UpdateLivePreviews();
-                StateHasChanged();
-            });
-        }, null, 1000, 1000);
+        _clockCts = new CancellationTokenSource();
+        _clockTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = RunClockLoopAsync(_clockCts.Token);
     }
 
     private void UpdateLivePreviews()
@@ -98,8 +96,9 @@ private const string UnsavedKey = "settings_user_timezone";
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to save timezone. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
             _isError = true;
-            _statusMessage = $"Failed to save timezone: {ex.Message}";
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("save timezone", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -114,7 +113,28 @@ private const string UnsavedKey = "settings_user_timezone";
 
     public void Dispose()
     {
+        _clockCts?.Cancel();
+        _clockCts?.Dispose();
         _clockTimer?.Dispose();
         UnsavedChanges.ClearChange(UnsavedKey);
+    }
+
+    private async Task RunClockLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _clockTimer!.WaitForNextTickAsync(ct))
+            {
+                await InvokeAsync(() =>
+                {
+                    UpdateLivePreviews();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Clean circuit shutdown
+        }
     }
 }

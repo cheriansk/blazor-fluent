@@ -296,7 +296,7 @@
 
                                                 {
 
-                                                    <tr class="csk-datagrid-row">
+                                                    <tr @key="proj.Id" class="csk-datagrid-row">
 
                                                         <td class="csk-datagrid-td">
 
@@ -844,7 +844,7 @@
 
                         {
 
-                            <FluentCalendarScheduleComp Items="@_programCalendarItems"
+                            <CalendarScheduleComp Items="@_programCalendarItems"
 
                                                         @bind-SelectedDate="_selectedCalendarDate"
 

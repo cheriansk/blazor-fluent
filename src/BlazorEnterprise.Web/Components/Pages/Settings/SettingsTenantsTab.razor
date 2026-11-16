@@ -203,7 +203,7 @@
                                 <strong>Internal Domains:</strong>
                                 @foreach (var d in _selectedTenantModal.GetInternalDomains())
                                 {
-                                    <CskBadge Appearance="BadgeAppearance.Filled" Class="mr-1">@d</CskBadge>
+                                    <CskBadge @key="d" Appearance="BadgeAppearance.Filled" Class="mr-1">@d</CskBadge>
                                 }
                             </div>
 
@@ -211,7 +211,7 @@
                                 <strong>External Domains:</strong>
                                 @foreach (var d in _selectedTenantModal.GetExternalDomains())
                                 {
-                                    <CskBadge Appearance="BadgeAppearance.Tint" Class="mr-1">@d</CskBadge>
+                                    <CskBadge @key="d" Appearance="BadgeAppearance.Tint" Class="mr-1">@d</CskBadge>
                                 }
                             </div>
 
@@ -771,13 +771,13 @@
                 <CskTemplateColumn Title="Internal Domains" SearchBy="@(t => t.InternalEmailDomains)" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.InternalEmailDomains))">
                     @foreach (var d in context.GetInternalDomains())
                     {
-                        <CskBadge Appearance="BadgeAppearance.Filled" Class="mr-1 font-size-xs">@d</CskBadge>
+                        <CskBadge @key="d" Appearance="BadgeAppearance.Filled" Class="mr-1 font-size-xs">@d</CskBadge>
                     }
                 </CskTemplateColumn>
                 <CskTemplateColumn Title="External Domains" SearchBy="@(t => t.ExternalEmailDomains)" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.ExternalEmailDomains))">
                     @foreach (var d in context.GetExternalDomains())
                     {
-                        <CskBadge Appearance="BadgeAppearance.Tint" Class="mr-1 font-size-xs">@d</CskBadge>
+                        <CskBadge @key="d" Appearance="BadgeAppearance.Tint" Class="mr-1 font-size-xs">@d</CskBadge>
                     }
                 </CskTemplateColumn>
                 <CskTemplateColumn Title="Status" SortBy="@(GridSort<TenantEntity>.ByAscending(t => t.IsActive))">

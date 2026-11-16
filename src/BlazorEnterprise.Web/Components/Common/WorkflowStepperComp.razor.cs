@@ -1,3 +1,4 @@
+using BlazorEnterprise.Web.Components.Common;
 using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -13,6 +14,8 @@ public partial class WorkflowStepperComp : ComponentBase
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private INotifyService NotifyService { get; set; } = default!;
     [Inject] private IHierarchyAuthorizationService HierarchyAuth { get; set; } = default!;
+    [Inject] private ILogger<WorkflowStepperComp> Logger { get; set; } = default!;
+    [Inject] private ICorrelationContext CorrelationContext { get; set; } = default!;
 
     [Parameter, EditorRequired]
     public WorkflowEntity Workflow { get; set; } = default!;
@@ -42,6 +45,39 @@ public partial class WorkflowStepperComp : ComponentBase
     private bool _isSubmitting;
     private bool _isTenantAdmin;
     private bool _canManage;
+
+    private int _lastStepsCount = -1;
+    private TaskStatusEnum? _lastWorkflowStatus;
+    private bool _lastSubmitting;
+    private bool _lastCompleteOpen;
+    private bool _lastReassignOpen;
+    private bool _lastAddSubtaskOpen;
+    private bool _lastCancelOpen;
+
+    protected override bool ShouldRender()
+    {
+        if (Workflow == null) return true;
+        var should = (Workflow.Steps?.Count ?? 0) != _lastStepsCount ||
+                     Workflow.Status != _lastWorkflowStatus ||
+                     _isSubmitting != _lastSubmitting ||
+                     _isCompleteModalOpen != _lastCompleteOpen ||
+                     _isReassignModalOpen != _lastReassignOpen ||
+                     _isAddSubtaskModalOpen != _lastAddSubtaskOpen ||
+                     _isCancelModalOpen != _lastCancelOpen;
+
+        if (should)
+        {
+            _lastStepsCount = Workflow.Steps?.Count ?? 0;
+            _lastWorkflowStatus = Workflow.Status;
+            _lastSubmitting = _isSubmitting;
+            _lastCompleteOpen = _isCompleteModalOpen;
+            _lastReassignOpen = _isReassignModalOpen;
+            _lastAddSubtaskOpen = _isAddSubtaskModalOpen;
+            _lastCancelOpen = _isCancelModalOpen;
+        }
+
+        return should;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -87,7 +123,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Workflow step execution failure. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown"); _errorMessage = UserFacingError.For("process workflow step", CorrelationContext?.CorrelationId);
         }
     }
 
@@ -141,7 +177,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Workflow step execution failure. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown"); _errorMessage = UserFacingError.For("process workflow step", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -188,7 +224,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Workflow step execution failure. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown"); _errorMessage = UserFacingError.For("process workflow step", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -243,7 +279,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Workflow step execution failure. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown"); _errorMessage = UserFacingError.For("process workflow step", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -295,7 +331,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Workflow step execution failure. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown"); _errorMessage = UserFacingError.For("process workflow step", CorrelationContext?.CorrelationId);
         }
         finally
         {
@@ -316,7 +352,7 @@ public partial class WorkflowStepperComp : ComponentBase
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Workflow step execution failure. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown"); _errorMessage = UserFacingError.For("process workflow step", CorrelationContext?.CorrelationId);
         }
         finally
         {

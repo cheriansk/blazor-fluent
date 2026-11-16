@@ -36,9 +36,9 @@
                 <div class="form-group">
                     <label>Role:</label>
                     <select class="csk-select" @bind="_bulkRole">
-                        @foreach (var role in Enum.GetValues<ProjectResourceRoleEnum>())
+                        @foreach (var role in DataListExtensions.GetDataListItems<ProjectResourceRoleEnum>())
                         {
-                            <option value="@role">@role</option>
+                            <option value="@role.DisplayName">@role.DisplayName</option>
                         }
                     </select>
                 </div>
@@ -80,7 +80,7 @@
                 {
                     @foreach (var res in FilteredResources)
                     {
-                        <tr>
+                        <tr @key="res.Id">
                             <td><strong>@res.UserName</strong></td>
                             <td class="text-muted">@res.UserEmail</td>
                             <td><span class="role-badge">@res.Role</span></td>

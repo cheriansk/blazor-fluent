@@ -19,12 +19,19 @@ namespace BlazorEnterprise.Infrastructure.Security;
 public class TenantTokenService : ITenantTokenService
 {
     private readonly IOptions<EngineOptions> _engineOptions;
+    private readonly IOptions<AuthOptions> _authOptions;
     private readonly ICorrelationContext _correlationContext;
 
-    public TenantTokenService(IOptions<EngineOptions> engineOptions, ICorrelationContext correlationContext)
+    public TenantTokenService(IOptions<EngineOptions> engineOptions, IOptions<AuthOptions> authOptions, ICorrelationContext correlationContext)
     {
         _engineOptions = engineOptions;
         _correlationContext = correlationContext;
+        _authOptions = authOptions;
+    }
+
+    public TenantTokenService(IOptions<EngineOptions> engineOptions, ICorrelationContext correlationContext)
+        : this(engineOptions, Microsoft.Extensions.Options.Options.Create(new AuthOptions()), correlationContext)
+    {
     }
 
     public string GenerateS2SToken(Guid tenantId, string actorType = "BatchWorker")
@@ -58,8 +65,8 @@ public class TenantTokenService : ITenantTokenService
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Issuer = "blazorenterprise-worker",
-            Audience = "https://api.blazorenterprise.com",
+            Issuer = !string.IsNullOrWhiteSpace(_authOptions.Value.S2S?.Issuer) ? _authOptions.Value.S2S.Issuer : "blazorenterprise-worker",
+            Audience = !string.IsNullOrWhiteSpace(_authOptions.Value.S2S?.Audience) ? _authOptions.Value.S2S.Audience : "https://api.blazorenterprise.com",
             Subject = new ClaimsIdentity(new[]
             {
                 new Claim("tid", tenantId),

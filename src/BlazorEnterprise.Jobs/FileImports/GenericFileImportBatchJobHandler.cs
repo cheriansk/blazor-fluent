@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Imports;
@@ -41,6 +41,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
     private readonly IEngineClient? _engineClient;
     private readonly IEnumerable<BlazorEnterprise.Jobs.FileImports.Committers.IBatchDomainCommitter> _domainCommitters;
     private readonly ILogger<GenericFileImportBatchJobHandler> _logger;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, FileTemplateConfig?> _templateCache = new(StringComparer.OrdinalIgnoreCase);
 
     public GenericFileImportBatchJobHandler(
         AppDbContext dbContext,
@@ -110,6 +111,18 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         _logger.LogInformation("Finished processing all {Count} files for Batch {ImportId}.", orderedFiles.Count, jobEvent.ImportId);
     }
 
+    private async Task<FileTemplateConfig?> GetTemplateConfigCachedAsync(string fileType, CancellationToken ct)
+    {
+        if (_templateRepository == null) return null;
+        if (_templateCache.TryGetValue(fileType, out var cached))
+        {
+            return cached;
+        }
+        var config = await _templateRepository.GetConfigAsync(fileType, ct);
+        _templateCache[fileType] = config;
+        return config;
+    }
+
     private async Task<List<ImportFileEntity>> OrderFilesByDependenciesAsync(List<ImportFileEntity> files, CancellationToken ct)
     {
         if (_templateRepository == null || files.Count <= 1)
@@ -126,7 +139,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             if (visited.Contains(file.Id)) return;
             if (!visiting.Add(file.Id)) return; // Guard against circular dependency in config
 
-            var template = await _templateRepository.GetConfigAsync(file.FileType.ToString(), ct);
+            var template = await GetTemplateConfigCachedAsync(file.FileType.ToString(), ct);
             if (template?.DependsOn is { Count: > 0 })
             {
                 foreach (var depType in template.DependsOn)
@@ -163,7 +176,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         try
         {
-            var templateConfig = _templateRepository is null ? null : await _templateRepository.GetConfigAsync(file.FileType.ToString(), ct);
+            var templateConfig = await GetTemplateConfigCachedAsync(file.FileType.ToString(), ct);
             if (templateConfig == null || _batchStagerResolver == null || _engineClient == null)
             {
                 var errorMsg = $"No declarative FileTemplateConfig or Canonical Batch Stager registered for file type '{file.FileType}'.";

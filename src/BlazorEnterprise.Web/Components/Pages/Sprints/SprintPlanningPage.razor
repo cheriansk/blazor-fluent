@@ -11,6 +11,7 @@
 @inject ISprintPlanningService SprintPlanningService
 @inject IProjectContext ProjectContext
 @inject ILogger<SprintPlanningPage> Logger
+@inject BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext
 
 
 <PageTitle>Sprint Planning - BlazorEnterprise</PageTitle>
@@ -61,7 +62,9 @@
         }
         else
         {
-            <TabContainerComp Tabs="_tabs" @bind-ActiveTabId="_activeTabId" />
+            <AppErrorBoundaryComp>
+                <TabContainerComp Tabs="_tabs" @bind-ActiveTabId="_activeTabId" />
+            </AppErrorBoundaryComp>
         }
     }
 </div>
@@ -83,7 +86,7 @@
                         <option value="">Backlog (No Sprint)</option>
                         @foreach (var sprint in _sprints.Where(s => s.Status != SprintStatusEnum.Completed))
                         {
-                            <option value="@sprint.Id">Sprint @sprint.SprintNumber: @sprint.SprintName (@sprint.Status)</option>
+                            <option @key="sprint.Id" value="@sprint.Id">Sprint @sprint.SprintNumber: @sprint.SprintName (@sprint.Status)</option>
                         }
                     </select>
                 </div>

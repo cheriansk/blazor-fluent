@@ -54,7 +54,7 @@
                     <div class="history-groups-list">
                         @foreach (var group in GroupedHistory)
                         {
-                            <div class="history-group-card">
+                            <div @key="group.Key" class="history-group-card">
                                 <!-- Group Header -->
                                 <div class="history-group-header"
                                      @onclick="@(() => ToggleGroup(group.Key))">
@@ -102,7 +102,7 @@
                                             <tbody>
                                                 @foreach (var item in group.Items)
                                                 {
-                                                    <tr class="history-table-row">
+                                                    <tr @key="item.PropertyName + item.Operation" class="history-table-row">
                                                         <td class="history-td-action">
                                                             <CskBadge Appearance="@GetOperationBadgeAppearance(item.Operation)" Class="whitespace-nowrap">
                                                                 @item.Operation

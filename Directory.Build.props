@@ -1,4 +1,16 @@
 <Project>
+  <!-- Guarantee Central Package Management import across all projects and Visual Studio design-time evaluation -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackagesPropsPath Condition="'$(CentralPackagesPropsPath)' == ''">$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)'))</CentralPackagesPropsPath>
+  </PropertyGroup>
+  <Import Project="$(CentralPackagesPropsPath)" Condition="'$(CentralPackagesPropsPath)' != '' and Exists('$(CentralPackagesPropsPath)') and '$(CentralPackageVersionsFileImported)' != 'true'" />
+  <PropertyGroup>
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
+    <!-- Disable buggy .NET 11 StaticWebAssets file cache that causes zero-byte JSON corruption during Visual Studio parallel builds -->
+    <StaticWebAssetsCacheDefineStaticWebAssetsEnabled>false</StaticWebAssetsCacheDefineStaticWebAssetsEnabled>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!--
       NuGet CVE Auditing (NuGet 6.8+, built into .NET 8+ SDK).

@@ -197,7 +197,7 @@ else
     @if (_activeSubTab == "tasks")
     {
         <!-- Reusable 6-Column Swimlane Board -->
-        <FluentSwimlaneBoardComp TItem="TaskEntity"
+        <SwimlaneBoardComp TItem="TaskEntity"
                                  Columns="@_columns"
                                  Items="@FilteredTasks"
                                  OnItemClick="OpenTaskDetailsModal">
@@ -271,7 +271,7 @@ else
                     </div>
                 </CskCard>
             </ItemTemplate>
-        </FluentSwimlaneBoardComp>
+        </SwimlaneBoardComp>
     }
     else
     {

@@ -100,6 +100,7 @@
 
     <!-- Active Tab Content Area with Lazy Load Preservation -->
     <div class="settings-tab-content">
+        <AppErrorBoundaryComp>
         @if (_activeTabId == "tenants" && _visitedTabs.Contains("tenants"))
         {
             <SettingsTenantsTab />
@@ -144,5 +145,6 @@
         {
             <SettingsNotificationsTab />
         }
+        </AppErrorBoundaryComp>
     </div>
 </div>

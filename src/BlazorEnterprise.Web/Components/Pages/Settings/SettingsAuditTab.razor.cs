@@ -1,3 +1,4 @@
+using BlazorEnterprise.Web.Components.Common;
 using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Auditing;
@@ -10,6 +11,8 @@ namespace BlazorEnterprise.Web.Components.Pages.Settings;
 
 public partial class SettingsAuditTab : ComponentBase, IDisposable
 {
+    [Inject] private ILogger<SettingsAuditTab> Logger { get; set; } = default!;
+    [Inject] private ICorrelationContext CorrelationContext { get; set; } = default!;
     [Inject] private IAuditService AuditService { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
@@ -311,7 +314,8 @@ public partial class SettingsAuditTab : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            _retentionErrorMessage = ex.Message;
+            Logger.LogError(ex, "Failed to apply retention policy. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _retentionErrorMessage = UserFacingError.For("apply retention policy", CorrelationContext?.CorrelationId);
         }
         finally
         {

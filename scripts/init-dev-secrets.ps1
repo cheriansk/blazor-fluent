@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # init-dev-secrets.ps1
 # Developer Onboarding & User-Secrets Initialization Helper
 # Securely initializes local development user-secrets outside the Git tree.
@@ -43,6 +43,15 @@ param(
 
     [Parameter(Mandatory = $false)]
     [string]$AuthAudience = "blazorenterprise-api",
+
+    [Parameter(Mandatory = $false)]
+    [string]$AuthS2SIssuer = "blazorenterprise-worker",
+
+    [Parameter(Mandatory = $false)]
+    [string]$AuthS2SAudience = "https://api.blazorenterprise.com",
+
+    [Parameter(Mandatory = $false)]
+    [int]$AuthAccessTokenLifetimeMinutes = 60,
 
     [Parameter(Mandatory = $false)]
     [string]$AuthSigningKey,
@@ -214,6 +223,11 @@ $webDevSettings = [ordered]@{
         RootAdmins = $RootAdminEmail
     }
     Auth = @{
+        AccessTokenLifetimeMinutes = $AuthAccessTokenLifetimeMinutes
+        S2S = @{
+            Issuer = $AuthS2SIssuer
+            Audience = $AuthS2SAudience
+        }
         DevLogin = @{
             Enabled = $true
             Users = @(
@@ -275,6 +289,11 @@ if (Test-Path $apiProject) {
             Issuer = $AuthIssuer
             Audience = $AuthAudience
             SigningKey = $AuthSigningKey
+            AccessTokenLifetimeMinutes = $AuthAccessTokenLifetimeMinutes
+            S2S = @{
+                Issuer = $AuthS2SIssuer
+                Audience = $AuthS2SAudience
+            }
         }
         ProprietaryStorage = @{
             VaultMasterKey = $vaultMasterKey

@@ -47,6 +47,9 @@ public class ProjectUserRoleEntityConfiguration : IEntityTypeConfiguration<Proje
         builder.HasIndex(r => r.TenantId)
             .HasDatabaseName("IX_ProjectUserRoles_TenantId");
 
+        builder.HasIndex(r => new { r.TenantId, r.UserEntityId, r.IsDeleted })
+            .HasDatabaseName("IX_ProjectUserRoles_TenantId_UserEntityId_IsDeleted");
+
         builder.HasIndex(r => new { r.TenantId, r.ProjectId, r.UserEntityId })
             .IsUnique()
             .HasDatabaseName("IX_ProjectUserRoles_Tenant_Project_User")

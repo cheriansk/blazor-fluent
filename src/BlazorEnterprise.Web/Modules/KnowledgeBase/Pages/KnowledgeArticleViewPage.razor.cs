@@ -14,6 +14,8 @@ public partial class KnowledgeArticleViewPage : ComponentBase
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
+    [Inject] private ILogger<KnowledgeArticleViewPage> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
 
 [Parameter] public Guid Id { get; set; }
 
@@ -43,7 +45,8 @@ public partial class KnowledgeArticleViewPage : ComponentBase
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Error loading article: {ex.Message}";
+            Logger.LogError(ex, "Failed to load article. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load article", CorrelationContext?.CorrelationId);
             _isStatusError = true;
             _article = null;
         }
@@ -73,7 +76,8 @@ public partial class KnowledgeArticleViewPage : ComponentBase
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Error during approval: {ex.Message}";
+            Logger.LogError(ex, "Failed to approve article. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("approve article", CorrelationContext?.CorrelationId);
             _isStatusError = true;
         }
         finally

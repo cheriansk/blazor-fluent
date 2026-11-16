@@ -1,3 +1,4 @@
+using BlazorEnterprise.Web.Components.Common;
 using BlazorEnterprise.Shared.UI.Components;
 using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Core.Domain.Tasks;
@@ -11,6 +12,8 @@ namespace BlazorEnterprise.Components.Common;
 
 public partial class CreateWorkflowWizardModal : ComponentBase
 {
+    [Inject] private ILogger<CreateWorkflowWizardModal> Logger { get; set; } = default!;
+    [Inject] private ICorrelationContext CorrelationContext { get; set; } = default!;
     [Inject] private IWorkflowService WorkflowService { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
@@ -433,7 +436,8 @@ public partial class CreateWorkflowWizardModal : ComponentBase
         }
         catch (Exception ex)
         {
-            _cancelStepError = ex.Message;
+            Logger.LogError(ex, "Failed to cancel workflow step. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _cancelStepError = UserFacingError.For("cancel workflow step", CorrelationContext?.CorrelationId);
         }
     }
 

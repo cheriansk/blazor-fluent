@@ -8,6 +8,8 @@ namespace BlazorEnterprise.Web.Components.Common;
 
 public partial class TaskDependencyLinkModal : ComponentBase
 {
+    [Inject] private Microsoft.Extensions.Logging.ILogger<TaskDependencyLinkModal> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
     [Inject] private IUserTaskService UserTaskService { get; set; } = default!;
 
     [Parameter] public bool IsOpen { get; set; }
@@ -103,7 +105,8 @@ public partial class TaskDependencyLinkModal : ComponentBase
         }
         catch (Exception ex)
         {
-            _modalError = $"Error creating link: {ex.Message}";
+            Logger.LogError(ex, "Failed to create task dependency link. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _modalError = UserFacingError.For("create task dependency link", CorrelationContext?.CorrelationId);
         }
         finally
         {

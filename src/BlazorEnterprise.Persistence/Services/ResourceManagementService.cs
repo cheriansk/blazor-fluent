@@ -219,11 +219,11 @@ public class ResourceManagementService : IResourceManagementService
             header = await GetOrCreateDraftAllocationPlanAsync(projectId, cancellationToken);
         }
 
-        var startDate = DateOnly.FromDateTime(project.StartDate);
-        var endDate = DateOnly.FromDateTime(project.DueDate);
+        var startDate = project.StartDate.Date;
+        var endDate = project.DueDate.Date;
         if (endDate < startDate) endDate = startDate.AddDays(14);
 
-        var dates = new List<DateOnly>();
+        var dates = new List<DateTime>();
         for (var d = startDate; d <= endDate; d = d.AddDays(1))
         {
             dates.Add(d);
@@ -252,8 +252,8 @@ public class ResourceManagementService : IResourceManagementService
 
         foreach (var res in resources)
         {
-            var resAlloc = allocations.Where(a => a.ProjectResourceId == res.Id).ToDictionary(a => DateOnly.FromDateTime(a.AllocationDate), a => a.AllocationPercentage);
-            var allocMap = new Dictionary<DateOnly, int>();
+            var resAlloc = allocations.Where(a => a.ProjectResourceId == res.Id).ToDictionary(a => a.AllocationDate.Date, a => a.AllocationPercentage);
+            var allocMap = new Dictionary<DateTime, int>();
             double totalHours = 0;
 
             foreach (var d in dates)
@@ -297,7 +297,7 @@ public class ResourceManagementService : IResourceManagementService
     public async Task SetResourceAllocationAsync(
         Guid revisionHeaderId,
         Guid projectResourceId,
-        DateOnly date,
+        DateTime date,
         int allocationPercentage,
         CancellationToken cancellationToken = default)
     {
@@ -310,7 +310,7 @@ public class ResourceManagementService : IResourceManagementService
         var resource = await context.ProjectResources.FindAsync([projectResourceId], cancellationToken);
         if (resource == null) throw new InvalidOperationException("Resource not found.");
 
-        var allocDateTime = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var allocDateTime = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var existing = await context.ResourceAllocations
             .FirstOrDefaultAsync(a => a.RevisionHeaderId == revisionHeaderId &&
                                       a.ProjectResourceId == projectResourceId &&
@@ -344,8 +344,8 @@ public class ResourceManagementService : IResourceManagementService
     public async Task BulkSetAllocationAsync(
         Guid revisionHeaderId,
         Guid projectResourceId,
-        DateOnly startDate,
-        DateOnly endDate,
+        DateTime startDate,
+        DateTime endDate,
         int allocationPercentage,
         CancellationToken cancellationToken = default)
     {
@@ -358,8 +358,8 @@ public class ResourceManagementService : IResourceManagementService
         var resource = await context.ProjectResources.FindAsync([projectResourceId], cancellationToken);
         if (resource == null) throw new InvalidOperationException("Resource not found.");
 
-        var startDateTime = startDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var endDateTime = endDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var startDateTime = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
+        var endDateTime = DateTime.SpecifyKind(endDate.Date, DateTimeKind.Utc);
 
         var existingAllocations = await context.ResourceAllocations
             .Where(a => a.RevisionHeaderId == revisionHeaderId &&
@@ -372,7 +372,7 @@ public class ResourceManagementService : IResourceManagementService
 
         for (var d = startDate; d <= endDate; d = d.AddDays(1))
         {
-            var allocDateTime = d.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var allocDateTime = DateTime.SpecifyKind(d.Date, DateTimeKind.Utc);
             if (allocationsByDate.TryGetValue(allocDateTime, out var existing))
             {
                 existing.AllocationPercentage = allocationPercentage;
@@ -410,11 +410,11 @@ public class ResourceManagementService : IResourceManagementService
     public async Task CopyPreviousDayAllocationAsync(
         Guid revisionHeaderId,
         Guid projectResourceId,
-        DateOnly targetDate,
+        DateTime targetDate,
         CancellationToken cancellationToken = default)
     {
         var prevDate = targetDate.AddDays(-1);
-        var prevDateTime = prevDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var prevDateTime = DateTime.SpecifyKind(prevDate.Date, DateTimeKind.Utc);
         await using var context = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var prev = await context.ResourceAllocations
             .AsNoTracking()

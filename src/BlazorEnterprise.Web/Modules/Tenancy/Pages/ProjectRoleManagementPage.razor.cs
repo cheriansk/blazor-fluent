@@ -20,6 +20,8 @@ public partial class ProjectRoleManagementPage : ComponentBase
     [Inject] private IImpersonationService ImpersonationService { get; set; } = default!;
     [Inject] private CurrentUserAuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private ILogger<ProjectRoleManagementPage> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
 
 private List<ProjectEntity> _projects = new();
     private string? _selectedProjectId;
@@ -137,7 +139,8 @@ private List<ProjectEntity> _projects = new();
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load projects: {ex.Message}";
+            Logger.LogError(ex, "Failed to load projects. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load projects", CorrelationContext?.CorrelationId);
             _isError = true;
             _projects = new List<ProjectEntity>();
         }
@@ -164,7 +167,8 @@ private List<ProjectEntity> _projects = new();
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load members: {ex.Message}";
+            Logger.LogError(ex, "Failed to load members. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load members", CorrelationContext?.CorrelationId);
             _isError = true;
         }
 
@@ -260,7 +264,8 @@ private List<ProjectEntity> _projects = new();
 
         catch (Exception ex)
         {
-            _statusMessage = $"Error saving assignment: {ex.Message}";
+            Logger.LogError(ex, "Failed to save assignment. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("save assignment", CorrelationContext?.CorrelationId);
             _isError = true;
         }
     }
@@ -290,7 +295,8 @@ private List<ProjectEntity> _projects = new();
 
         catch (Exception ex)
         {
-            _statusMessage = $"Error revoking role: {ex.Message}";
+            Logger.LogError(ex, "Failed to revoke role. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("revoke role", CorrelationContext?.CorrelationId);
             _isError = true;
         }
     }

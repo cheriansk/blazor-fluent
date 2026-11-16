@@ -525,11 +525,24 @@ public class SprintPlanningService : ISprintPlanningService
             }
         }
 
+        var currentVersionsList = await context.SprintItemVersions
+            .AsTracking()
+            .Include(iv => iv.Sprint)
+            .Where(iv => itemIds.Contains(iv.ItemId) && !iv.IsDeleted && iv.EffectiveToDate == null)
+            .ToListAsync(cancellationToken);
+        var currentVersionsMap = currentVersionsList.ToDictionary(iv => iv.ItemId);
+
+        var tasksList = await context.Tasks
+            .AsTracking()
+            .Where(t => itemIds.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+        var tasksMap = tasksList.ToDictionary(t => t.Id);
+
         foreach (var itemId in itemIds)
         {
-            var currentVersion = await context.SprintItemVersions
-                .Include(iv => iv.Sprint)
-                .FirstOrDefaultAsync(iv => iv.ItemId == itemId && !iv.IsDeleted && iv.EffectiveToDate == null, cancellationToken);
+            currentVersionsMap.TryGetValue(itemId, out var currentVersion);
+
+
 
             if (currentVersion?.Sprint != null)
             {
@@ -540,7 +553,7 @@ public class SprintPlanningService : ISprintPlanningService
                 }
             }
 
-            var task = await context.Tasks.FindAsync([itemId], cancellationToken);
+            tasksMap.TryGetValue(itemId, out var task);
             if (task != null)
             {
                 if (targetSprintId.HasValue)

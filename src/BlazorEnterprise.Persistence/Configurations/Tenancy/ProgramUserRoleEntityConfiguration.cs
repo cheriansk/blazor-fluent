@@ -31,6 +31,7 @@ public class ProgramUserRoleEntityConfiguration : IEntityTypeConfiguration<Progr
             .IsRequired(false);
 
         builder.HasIndex(r => r.TenantId);
+        builder.HasIndex(r => new { r.TenantId, r.UserEntityId, r.IsDeleted });
         builder.HasIndex(r => new { r.TenantId, r.ProgramId, r.UserEntityId }).IsUnique().HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(r => new { r.ProgramId, r.Role });
 

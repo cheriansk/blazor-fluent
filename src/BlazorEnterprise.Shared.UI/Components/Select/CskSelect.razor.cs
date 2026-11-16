@@ -132,9 +132,9 @@ public partial class CskSelect<TOption, TValue> : ComponentBase, ICskSelect
             }
             return (TValue?)Convert.ChangeType(value, underlyingType);
         }
-        catch
+        catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            return default;
+            throw new InvalidOperationException($"Failed to convert value '{value}' to {underlyingType.Name} in CskSelect.", ex);
         }
     }
 }

@@ -19,9 +19,9 @@ public interface IResourceManagementService
     // --- Versioned Allocation Plan ---
     Task<RevisionHeaderEntity> GetOrCreateDraftAllocationPlanAsync(Guid projectId, CancellationToken cancellationToken = default);
     Task<ResourcePlanSummaryDto> GetResourcePlanSummaryAsync(Guid projectId, Guid? revisionHeaderId = null, CancellationToken cancellationToken = default);
-    Task SetResourceAllocationAsync(Guid revisionHeaderId, Guid projectResourceId, DateOnly date, int allocationPercentage, CancellationToken cancellationToken = default);
-    Task BulkSetAllocationAsync(Guid revisionHeaderId, Guid projectResourceId, DateOnly startDate, DateOnly endDate, int allocationPercentage, CancellationToken cancellationToken = default);
-    Task CopyPreviousDayAllocationAsync(Guid revisionHeaderId, Guid projectResourceId, DateOnly targetDate, CancellationToken cancellationToken = default);
+    Task SetResourceAllocationAsync(Guid revisionHeaderId, Guid projectResourceId, DateTime date, int allocationPercentage, CancellationToken cancellationToken = default);
+    Task BulkSetAllocationAsync(Guid revisionHeaderId, Guid projectResourceId, DateTime startDate, DateTime endDate, int allocationPercentage, CancellationToken cancellationToken = default);
+    Task CopyPreviousDayAllocationAsync(Guid revisionHeaderId, Guid projectResourceId, DateTime targetDate, CancellationToken cancellationToken = default);
 
     // --- Rates & Rate Card ---
     Task<List<ProjectResourceDto>> GetRateCardAsync(Guid projectId, Guid? revisionHeaderId = null, CancellationToken cancellationToken = default);
