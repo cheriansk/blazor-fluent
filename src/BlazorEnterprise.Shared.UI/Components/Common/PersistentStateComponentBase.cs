@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace BlazorEnterprise.Components.Common;
+namespace BlazorEnterprise.Shared.UI.Components;
 
 public abstract class PersistentStateComponentBase : ComponentBase, IDisposable
 {

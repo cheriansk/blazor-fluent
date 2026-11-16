@@ -173,6 +173,12 @@ try
     });
 
     builder.Services.AddSharedUI();
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+        options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+    });
 
     builder.Services.AddHttpContextAccessor();
 
@@ -633,6 +639,8 @@ try
     // 7. HTTP Security Headers (Clickjacking, MIME sniffing, and cross-origin protection)
 
     app.UseSecurityHeaders();
+
+    app.UseResponseCompression();
 
     app.UseMiddleware<BlazorEnterprise.Web.Infrastructure.Middleware.CorrelationIdMiddleware>();
 

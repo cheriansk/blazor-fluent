@@ -20,8 +20,14 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Shared Serilog setup
 builder.Host.UseSharedSerilog("BlazorEnterprise.Api");
 
-// 2. Add endpoints exploration
+// 2. Add endpoints exploration & response compression
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+});
 
 // 3. Register Correlation Context (ambient scoped context)
 builder.Services.AddScoped<ICorrelationContext, CorrelationContext>();
@@ -259,6 +265,7 @@ var app = builder.Build();
 
 // 10. Middleware Pipeline
 app.UseExceptionHandler();
+app.UseResponseCompression();
 app.UseSecurityHeaders();
 app.UseHttpsRedirection();
 app.UseCors();

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorEnterprise.Web.Components.Shared;
 
@@ -7,6 +8,7 @@ namespace BlazorEnterprise.Web.Components.Shared;
 /// </summary>
 public partial class TabContainerComp : ComponentBase
 {
+    [Inject] private ILogger<TabContainerComp> Logger { get; set; } = default!;
     [Parameter]
     public IReadOnlyList<TabItemModel> Tabs { get; set; } = Array.Empty<TabItemModel>();
 
@@ -35,8 +37,21 @@ public partial class TabContainerComp : ComponentBase
                 {
                     _loadedTabIds.Add(value);
                 }
-                _ = ActiveTabIdChanged.InvokeAsync(value);
+                NotifyActiveTabChanged(value);
             }
+        }
+    }
+
+    private async void NotifyActiveTabChanged(string? value)
+    {
+        try
+        {
+            await ActiveTabIdChanged.InvokeAsync(value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to invoke ActiveTabIdChanged for tab '{TabId}'.", value);
+            await DispatchExceptionAsync(ex);
         }
     }
 

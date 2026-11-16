@@ -121,7 +121,8 @@ public partial class SessionTimeoutModal : ComponentBase, IAsyncDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            Logger.LogDebug(ex, "Timeout watchdog stopped.");
+            Logger.LogError(ex, "Timeout watchdog terminated unexpectedly.");
+            await DispatchExceptionAsync(ex);
         }
     }
 

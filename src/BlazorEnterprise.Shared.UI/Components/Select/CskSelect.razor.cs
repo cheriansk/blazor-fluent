@@ -14,7 +14,7 @@ public partial class CskSelect<TOption, TValue> : ComponentBase, ICskSelect
     [Parameter] public TValue? Value { get; set; }
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public Expression<Func<TValue>>? ValueExpression { get; set; }
-    [Parameter] public IEnumerable<TOption>? Items { get; set; }
+    [Parameter] public IReadOnlyList<TOption>? Items { get; set; }
     [Parameter] public Func<TOption, string>? OptionText { get; set; }
     [Parameter] public Func<TOption, object?>? OptionValue { get; set; }
     [Parameter] public Func<TOption, bool>? OptionDisabled { get; set; }

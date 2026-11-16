@@ -285,23 +285,29 @@ public partial class UserTaskService : IUserTaskService
                 .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status != TaskStatusEnum.Closed)
                 .ToListAsync(ct);
 
+            var dependentTaskIds = blockers
+                .Where(b => b.DependentItemId.HasValue)
+                .Select(b => b.DependentItemId!.Value)
+                .Distinct()
+                .ToList();
+
+            var sourceTasksMap = dependentTaskIds.Count > 0
+                ? await _context.Tasks.AsNoTracking().Where(t => dependentTaskIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id, ct)
+                : new Dictionary<Guid, TaskEntity>();
+
             foreach (var blocker in blockers)
             {
                 blocker.Status = TaskStatusEnum.Closed;
                 blocker.EndDate = DateTime.UtcNow;
 
-                if (blocker.DependentItemId.HasValue)
+                if (blocker.DependentItemId.HasValue && sourceTasksMap.TryGetValue(blocker.DependentItemId.Value, out var sourceTask))
                 {
-                    var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.DependentItemId.Value, ct);
-                    if (sourceTask != null)
+                    var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
+                    foreach (var recipient in recipients)
                     {
-                        var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
-                        foreach (var recipient in recipients)
-                        {
-                            await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
-                                $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
-                                NotificationSeverityEnum.Info, sourceTask.ProjectId ?? Guid.Empty, ct);
-                        }
+                        await SendBlockerAlertAsync(recipient, $"Prerequisite Resolved: '{task.Title}'",
+                            $"The prerequisite task '{task.Title}' blocking your task '{sourceTask.Title}' has been closed. Blocker contract is now resolved.",
+                            NotificationSeverityEnum.Info, sourceTask.ProjectId ?? Guid.Empty, ct);
                     }
                 }
             }
@@ -340,23 +346,29 @@ public partial class UserTaskService : IUserTaskService
                 .Where(b => b.TenantId == tenantId && b.DependsOnItemId == taskId && !b.IsDeleted && b.Status == TaskStatusEnum.Closed)
                 .ToListAsync(ct);
 
+            var dependentTaskIds = blockers
+                .Where(b => b.DependentItemId.HasValue)
+                .Select(b => b.DependentItemId!.Value)
+                .Distinct()
+                .ToList();
+
+            var sourceTasksMap = dependentTaskIds.Count > 0
+                ? await _context.Tasks.AsNoTracking().Where(t => dependentTaskIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id, ct)
+                : new Dictionary<Guid, TaskEntity>();
+
             foreach (var blocker in blockers)
             {
                 blocker.Status = TaskStatusEnum.Open;
                 blocker.EndDate = null;
 
-                if (blocker.DependentItemId.HasValue)
+                if (blocker.DependentItemId.HasValue && sourceTasksMap.TryGetValue(blocker.DependentItemId.Value, out var sourceTask))
                 {
-                    var sourceTask = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == blocker.DependentItemId.Value, ct);
-                    if (sourceTask != null)
+                    var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
+                    foreach (var recipient in recipients)
                     {
-                        var recipients = sourceTask.GetParsedAssigneeEmails().Concat(blocker.GetParsedWatcherEmails()).Distinct().ToList();
-                        foreach (var recipient in recipients)
-                        {
-                            await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
-                                $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
-                                NotificationSeverityEnum.Warning, sourceTask.ProjectId ?? Guid.Empty, ct);
-                        }
+                        await SendBlockerAlertAsync(recipient, $"Prerequisite Reopened: '{task.Title}'",
+                            $"WARNING: Prerequisite task '{task.Title}' blocking '{sourceTask.Title}' was reopened! The blocker is active again.",
+                            NotificationSeverityEnum.Warning, sourceTask.ProjectId ?? Guid.Empty, ct);
                     }
                 }
             }
@@ -1128,6 +1140,7 @@ public partial class UserTaskService : IUserTaskService
             .AsNoTracking()
             .Where(t => t.TenantId == tenantId && !t.IsDeleted)
             .OrderByDescending(t => t.Created)
+            .ThenBy(t => t.Id)
             .Take(limit * 2)
             .ToListAsync(ct);
 
