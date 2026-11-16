@@ -15076,7 +15076,7 @@
         "AuditRecordEntityConfiguration.AuditRecordEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "AuditRecordEntityConfiguration.Configure(EntityTypeBuilder\u003CAuditRecordEntity\u003E)": "2d556a5de986700974f1558254fb25e2abd4fdc2637b0837915dc49c0b73e86d"
+        "AuditRecordEntityConfiguration.Configure(EntityTypeBuilder\u003CAuditRecordEntity\u003E)": "7d4a22c78d87d72355a7f3ac508a2812cd3a95b1e56248e5beaab790feac42f3"
       }
     },
     "Persistence/Configurations/Calendar/CalendarEntityConfiguration.cs": {
@@ -15088,7 +15088,7 @@
         "CalendarEntityConfiguration.CalendarEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "CalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CCalendarEntity\u003E)": "8d4804249a43b4a8526a26d166201253f3a6b74fafd24367fddaeadfa4a949a3"
+        "CalendarEntityConfiguration.Configure(EntityTypeBuilder\u003CCalendarEntity\u003E)": "0866e620a60ee3d83f90d3ee1a640a19858c544714062fad5b50e94177a48fdb"
       }
     },
     "Persistence/Configurations/Calendar/UserCalendarEntityConfiguration.cs": {
@@ -15168,7 +15168,7 @@
         "UserEntityConfiguration.UserEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "UserEntityConfiguration.Configure(EntityTypeBuilder\u003CUserEntity\u003E)": "bf8aa6d4ce09aec4ce4afc222d13449fea2063ebb82abc3310ea8847e0f7e4f3"
+        "UserEntityConfiguration.Configure(EntityTypeBuilder\u003CUserEntity\u003E)": "8c8aca077deef8e55ff4acca9101e6202f0d4fd6b776266238532f3219db6e7e"
       }
     },
     "Persistence/Configurations/Identity/UserSessionEntityConfiguration.cs": {
@@ -15240,7 +15240,7 @@
         "KnowledgeArticleReviewerEntityConfiguration.KnowledgeArticleReviewerEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "KnowledgeArticleReviewerEntityConfiguration.Configure(EntityTypeBuilder\u003CKnowledgeArticleReviewerEntity\u003E)": "7d7bd89e10f9797278258e3641102a98fbd9bd0a4725cec1b12b57c4a3a3c15a"
+        "KnowledgeArticleReviewerEntityConfiguration.Configure(EntityTypeBuilder\u003CKnowledgeArticleReviewerEntity\u003E)": "6d4a825ef05e6770845eedb2be01997f7df909020b5d868c9314a13095cd7760"
       }
     },
     "Persistence/Configurations/Notifications/NotificationEntityConfiguration.cs": {
@@ -15324,7 +15324,7 @@
         "AssumptionEntityConfiguration.AssumptionEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "AssumptionEntityConfiguration.Configure(EntityTypeBuilder\u003CAssumptionEntity\u003E)": "73adbacd27e9218cb383a284913df4a7d339d58223440db43ee93a8a9ec9f41f"
+        "AssumptionEntityConfiguration.Configure(EntityTypeBuilder\u003CAssumptionEntity\u003E)": "a50bb8d09f4be0068022f2b72b760e1c713ee781852cab781f6a27094a194621"
       }
     },
     "Persistence/Configurations/Tasks/DeliverableEntityConfiguration.cs": {
@@ -15336,7 +15336,7 @@
         "DeliverableEntityConfiguration.DeliverableEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "DeliverableEntityConfiguration.Configure(EntityTypeBuilder\u003CDeliverableEntity\u003E)": "6cb9ee35072c0bfe09db98fa171a44c6a0695d31e7f1933f1f42196d5715f3b0"
+        "DeliverableEntityConfiguration.Configure(EntityTypeBuilder\u003CDeliverableEntity\u003E)": "f31d4fbc95e68ee274684ea01864f8385a33aeacc354e8d8c2209767a4d68dca"
       }
     },
     "Persistence/Configurations/Tasks/IssueEntityConfiguration.cs": {
@@ -15348,7 +15348,7 @@
         "IssueEntityConfiguration.IssueEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "IssueEntityConfiguration.Configure(EntityTypeBuilder\u003CIssueEntity\u003E)": "688d7d8bd42781bb6a602c07186bcdb6d8acf1be17828849a314bad4d55b3582"
+        "IssueEntityConfiguration.Configure(EntityTypeBuilder\u003CIssueEntity\u003E)": "3bd2bcb22b7e39b267ff871a03251e5ed44ed425037c1884c53802e46c9b484f"
       }
     },
     "Persistence/Configurations/Tasks/RiskEntityConfiguration.cs": {
@@ -15360,7 +15360,7 @@
         "RiskEntityConfiguration.RiskEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "RiskEntityConfiguration.Configure(EntityTypeBuilder\u003CRiskEntity\u003E)": "e383c4a86d0ed6d3a9c1751fb7b79ec81081841c41f0cc4a7c135496ad84949c"
+        "RiskEntityConfiguration.Configure(EntityTypeBuilder\u003CRiskEntity\u003E)": "56b23896d5997d108c4431631e714d04083afead8c5aebf269d835483704387c"
       }
     },
     "Persistence/Configurations/Tasks/SprintTaskEntityConfiguration.cs": {
@@ -15384,7 +15384,7 @@
         "SubTaskEntityConfiguration.SubTaskEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "SubTaskEntityConfiguration.Configure(EntityTypeBuilder\u003CSubTaskEntity\u003E)": "e289484f350693425bf13bd66b7f95de2ef2888efdec38cc14ecfc19226413c2"
+        "SubTaskEntityConfiguration.Configure(EntityTypeBuilder\u003CSubTaskEntity\u003E)": "6926a9035229be3f1e9df534352d4e3d1227873e539aaa69ad0f6c0c96b0229f"
       }
     },
     "Persistence/Configurations/Tasks/TaskEntityConfiguration.cs": {
@@ -15398,7 +15398,7 @@
         "TaskEntityConfiguration.TaskEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "TaskEntityConfiguration.Configure(EntityTypeBuilder\u003CTaskEntity\u003E)": "c3ac28d4dbfccdaa163f28fa685ff8e1fc7a7e9320391d0acf3bfe01df43da25",
+        "TaskEntityConfiguration.Configure(EntityTypeBuilder\u003CTaskEntity\u003E)": "5c9fcc208c66daf76de3e434bc62cfe84233e4183de025206e30a5632bbab88b",
         "TaskEntityConfiguration.OnConfigureCustom(EntityTypeBuilder\u003CTaskEntity\u003E)": "35cc17da7b744303d29f751a93dc98c781f63baca632d40bcdd7694dab3d3fdd"
       }
     },
@@ -15423,7 +15423,7 @@
         "WorkDependencyConfiguration.WorkDependencyConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "WorkDependencyConfiguration.Configure(EntityTypeBuilder\u003CWorkDependencyEntity\u003E)": "b59474ad4bb49c403341671486bb08dde1b4d0e24e89bf8bcde5c70cbfec414d"
+        "WorkDependencyConfiguration.Configure(EntityTypeBuilder\u003CWorkDependencyEntity\u003E)": "4dbba7476d1ec2311605579815ecfea9d15e369ff4d1b445b3fb7bb4ff4f6be9"
       }
     },
     "Persistence/Configurations/Tasks/WorkflowEntityConfiguration.cs": {
@@ -15435,7 +15435,7 @@
         "WorkflowEntityConfiguration.WorkflowEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "WorkflowEntityConfiguration.Configure(EntityTypeBuilder\u003CWorkflowEntity\u003E)": "ea2dc2e948d5fd14d117a09ee1dbcef971fcac48465b53f92bb9d9b2d1a1ced0"
+        "WorkflowEntityConfiguration.Configure(EntityTypeBuilder\u003CWorkflowEntity\u003E)": "df181dd240462739a51d5b9dcfbb276877177266e6ff55c8bb38371f7b0b261d"
       }
     },
     "Persistence/Configurations/Tasks/WorkflowTaskEntityConfiguration.cs": {
@@ -15483,7 +15483,7 @@
         "ProjectEntityConfiguration.ProjectEntityConfiguration()"
       ],
       "MemberSyntaxHashes": {
-        "ProjectEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectEntity\u003E)": "bc1875e6345050bb0677f872673e7195e67b7a09fcebf8160c85af5ba9356a1f"
+        "ProjectEntityConfiguration.Configure(EntityTypeBuilder\u003CProjectEntity\u003E)": "bddd878633930f269d2c571fce7eadfdac4c07f6938ef50cc4e085d7a714503a"
       }
     },
     "Persistence/Configurations/Tenancy/ProjectUserRoleEntityConfiguration.cs": {
@@ -16379,16 +16379,47 @@
         "Activities.BuildTargetModel(ModelBuilder)": "40f33a2dde743825ac89efdf70fdbd43f9219305569d04680d435ca0781cfb85"
       }
     },
+    "Persistence/Migrations/20261116052313_PendingChanges.cs": {
+      "RelativePath": "Persistence/Migrations/20261116052313_PendingChanges.cs",
+      "KnownMembers": [
+        "Up",
+        "_20261116052313_PendingChanges.Up(MigrationBuilder)",
+        "Down",
+        "_20261116052313_PendingChanges.Down(MigrationBuilder)",
+        ".ctor",
+        "_20261116052313_PendingChanges._20261116052313_PendingChanges()"
+      ],
+      "MemberSyntaxHashes": {
+        "_20261116052313_PendingChanges.Up(MigrationBuilder)": "8d24a5028f49f67459c3855e20f415bf4c9e5b35464b44601e5ca6beb20008a3",
+        "_20261116052313_PendingChanges.Down(MigrationBuilder)": "f2ca05f2aa7cad24005588b2ab5e2255c5f708b4a8c71e570674ab16c04d2dfd"
+      }
+    },
+    "Persistence/Migrations/20261116052313_PendingChanges.Designer.cs": {
+      "RelativePath": "Persistence/Migrations/20261116052313_PendingChanges.Designer.cs",
+      "KnownMembers": [
+        "BuildTargetModel",
+        "_20261116052313_PendingChanges.BuildTargetModel(ModelBuilder)",
+        ".ctor",
+        "_20261116052313_PendingChanges._20261116052313_PendingChanges()"
+      ],
+      "MemberSyntaxHashes": {
+        "_20261116052313_PendingChanges.BuildTargetModel(ModelBuilder)": "675e3751aee16cf9cc3942c91633a0e43cab8aa7014c973fa2e561b1cb460dbf"
+      }
+    },
     "Persistence/Migrations/AppDbContextModelSnapshot.cs": {
       "RelativePath": "Persistence/Migrations/AppDbContextModelSnapshot.cs",
       "KnownMembers": [
+        "LastMigrationId",
+        "AppDbContextModelSnapshot.LastMigrationId",
+        "get_LastMigrationId",
+        "AppDbContextModelSnapshot.LastMigrationId.get",
         "BuildModel",
         "AppDbContextModelSnapshot.BuildModel(ModelBuilder)",
         ".ctor",
         "AppDbContextModelSnapshot.AppDbContextModelSnapshot()"
       ],
       "MemberSyntaxHashes": {
-        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "62099e7f9361b19aeb2d84ae2ea58478b851f12cd6cbbed3c79605897f057fc8"
+        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "5e42959729eac0656656a2d3945a459760bc8d6ea117ffdebd5fb6fcee14243e"
       }
     },
     "Persistence/PersistenceExtensions.cs": {
@@ -35538,7 +35569,7 @@
       "RelativePath": "Web/Components/Routes.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "173cd11e6e1712dd2e734c6f679783f4fb85ae99db22d4de5a4aee19c601bf63"
+        "$Markup": "b5e45d63343ae0c0a5b94ddd2780f2e9e1819ff61f47e858789377b2d89ba2e3"
       }
     },
     "Shared/TabContainerComp.razor": {
