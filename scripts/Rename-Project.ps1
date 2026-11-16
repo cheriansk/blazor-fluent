@@ -483,18 +483,20 @@ foreach ($slnx in $slnxFiles) {
     }
 }
 
-# 3. Strip AutoUpdateBaseManifestOnBuild target from Directory.Build.targets
+# 3. Strip TemplateGuard.Tool / generate-base-manifest.ps1 from Directory.Build.targets (keep docs, diagram, verify-no-hardcode, and sync-ai-skills)
 $buildTargetsPath = Join-Path $RepoRoot "Directory.Build.targets"
 if (Test-Path $buildTargetsPath) {
     $targetsContent = Get-Content -Path $buildTargetsPath -Raw -Encoding utf8
-    if ($targetsContent -match 'AutoUpdateBaseManifestOnBuild' -or $targetsContent -match 'OnRebuildGovernanceAndDocs') {
-        # Strip AutoUpdate target and UpToDateCheck items for basefiles.json
+    if ($targetsContent -match 'TemplateGuard\.Tool|generate-base-manifest\.ps1|AutoUpdateBaseManifestOnBuild') {
         $newTargets = $targetsContent -replace '(?s)\s*<!-- Visual Studio FastUpToDateCheck.*?AutoUpdateBaseManifestOnBuild.*?</Target>', ''
+        $newTargets = $newTargets -replace '(?m)^\s*<!-- 1\. Base Manifest Scan[^\r\n]*-->\r?\n', ''
+        $newTargets = $newTargets -replace '(?s)\s*<Exec\s+Command="[^"]*TemplateGuard\.Tool[^"]*"[^>]*/>\s*', "`r`n"
+        $newTargets = $newTargets -replace '(?m)^\s*<Exec\s+Command="[^"]*generate-base-manifest\.ps1[^"]*"[^>]*/>\r?\n', ''
         if (-not $DryRun) {
             Set-Content -Path $buildTargetsPath -Value $newTargets -NoNewline -Encoding utf8
-            Write-Host "  Removed AutoUpdateBaseManifestOnBuild target from Directory.Build.targets." -ForegroundColor Green
+            Write-Host "  Removed TemplateGuard.Tool & generate-base-manifest.ps1 from Directory.Build.targets." -ForegroundColor Green
         } else {
-            Write-Host "  [DRY RUN] Would remove AutoUpdateBaseManifestOnBuild target from Directory.Build.targets." -ForegroundColor Magenta
+            Write-Host "  [DRY RUN] Would remove TemplateGuard.Tool & generate-base-manifest.ps1 from Directory.Build.targets." -ForegroundColor Magenta
         }
     }
 }

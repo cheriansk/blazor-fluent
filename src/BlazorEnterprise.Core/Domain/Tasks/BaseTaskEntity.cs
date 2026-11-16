@@ -197,5 +197,8 @@ public abstract class BaseTaskEntity : ProjectScopedEntity, IScheduledWorkEntity
     /// <summary>Cancels this work item with a stated reason.</summary>
     public virtual void Cancel(DateTime utcNow, string reason = "") => TransitionTo(TaskStatusEnum.Cancelled, utcNow, reason: reason);
 
-
+    /// <summary>
+    /// Collection of action items directly attached to this task or grouped under its subtasks.
+    /// </summary>
+    public ICollection<ActionItemEntity> ActionItems { get; set; } = new List<ActionItemEntity>();
 }
