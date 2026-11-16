@@ -17,7 +17,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261116052313_PendingChanges";
+    public override string LastMigrationId => "20261116163922_AddDocumentParsingTables";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -73,9 +73,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasColumnType("integer");
 
                 b.Property<int>("RetentionDays")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(90);
+                    .HasColumnType("integer");
 
                 b.Property<int>("Severity")
                     .HasColumnType("integer");
@@ -176,9 +174,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue(false);
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<string>("OwnerEmails")
                     .ValueGeneratedOnAdd()
@@ -381,6 +377,253 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDatabaseName("IX_UserCalendars_User_Start_End");
 
                 b.ToTable("UserCalendars", "calendar");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingConfigEntity", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<DateTime>("Created")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Created");
+
+                b.Property<string>("CreatedBy")
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("CreatedBy");
+
+                b.Property<DateTime?>("DeletedAtUtc")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("DeletedBy")
+                    .HasColumnType("text");
+
+                b.Property<string>("DocumentType")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<bool>("IsDeleted")
+                    .HasColumnType("boolean");
+
+                b.Property<int>("Level")
+                    .HasColumnType("integer");
+
+                b.Property<double>("MinConfidenceThreshold")
+                    .HasColumnType("double precision");
+
+                b.Property<string>("ModelBlobPath")
+                    .IsRequired()
+                    .HasMaxLength(1024)
+                    .HasColumnType("character varying(1024)");
+
+                b.Property<string>("ParsingRulesJson")
+                    .IsRequired()
+                    .HasColumnType("jsonb");
+
+                b.Property<Guid>("TenantId")
+                    .HasColumnType("uuid")
+                    .HasColumnOrder(0);
+
+                b.Property<DateTime>("Updated")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Updated");
+
+                b.Property<string>("UpdatedBy")
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("UpdatedBy");
+
+                b.Property<uint>("Version")
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasColumnType("xid")
+                    .HasColumnName("xmin");
+
+                b.HasKey("Id");
+
+                b.HasIndex("TenantId");
+
+                b.HasIndex("TenantId", "DocumentType")
+                    .HasDatabaseName("IX_DocumentParsingConfigs_TenantId_DocumentType");
+
+                b.HasIndex("TenantId", "IsDeleted")
+                    .HasDatabaseName("IX_DocumentParsingConfigs_TenantId_IsDeleted");
+
+                b.ToTable("DocumentParsingConfigs", "core");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingResultEntity", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<double>("ConfidenceScore")
+                    .HasColumnType("double precision");
+
+                b.Property<DateTime>("Created")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Created");
+
+                b.Property<string>("CreatedBy")
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("CreatedBy");
+
+                b.Property<DateTime?>("DeletedAtUtc")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("DeletedBy")
+                    .HasColumnType("text");
+
+                b.Property<string>("DocumentType")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<string>("ExtractedDataJson")
+                    .IsRequired()
+                    .HasColumnType("jsonb");
+
+                b.Property<Guid>("ImportFileId")
+                    .HasColumnType("uuid");
+
+                b.Property<bool>("IsDeleted")
+                    .HasColumnType("boolean");
+
+                b.Property<int>("Level")
+                    .HasColumnType("integer");
+
+                b.Property<Guid?>("ProgramId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid?>("ProjectId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("TenantId")
+                    .HasColumnType("uuid")
+                    .HasColumnOrder(0);
+
+                b.Property<DateTime>("Updated")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Updated");
+
+                b.Property<string>("UpdatedBy")
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("UpdatedBy");
+
+                b.Property<uint>("Version")
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasColumnType("xid")
+                    .HasColumnName("xmin");
+
+                b.HasKey("Id");
+
+                b.HasIndex("ImportFileId");
+
+                b.HasIndex("TenantId");
+
+                b.HasIndex("TenantId", "DocumentType")
+                    .HasDatabaseName("IX_DocumentParsingResults_TenantId_DocumentType");
+
+                b.HasIndex("TenantId", "IsDeleted")
+                    .HasDatabaseName("IX_DocumentParsingResults_TenantId_IsDeleted");
+
+                b.HasIndex("TenantId", "ProjectId")
+                    .HasDatabaseName("IX_DocumentParsingResults_TenantId_ProjectId");
+
+                b.ToTable("DocumentParsingResults", "core");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.DocumentParsing.JsonComparisonResultEntity", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<DateTime>("Created")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Created");
+
+                b.Property<string>("CreatedBy")
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("CreatedBy");
+
+                b.Property<DateTime?>("DeletedAtUtc")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("DeletedBy")
+                    .HasColumnType("text");
+
+                b.Property<string>("DiffResultJson")
+                    .IsRequired()
+                    .HasColumnType("jsonb");
+
+                b.Property<bool>("IsDeleted")
+                    .HasColumnType("boolean");
+
+                b.Property<int>("Level")
+                    .HasColumnType("integer");
+
+                b.Property<Guid?>("ProgramId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid?>("ProjectId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("SourceFileId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("SummaryMetricsJson")
+                    .IsRequired()
+                    .HasColumnType("jsonb");
+
+                b.Property<Guid>("TargetFileId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid>("TenantId")
+                    .HasColumnType("uuid")
+                    .HasColumnOrder(0);
+
+                b.Property<DateTime>("Updated")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Updated");
+
+                b.Property<string>("UpdatedBy")
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("UpdatedBy");
+
+                b.Property<uint>("Version")
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasColumnType("xid")
+                    .HasColumnName("xmin");
+
+                b.HasKey("Id");
+
+                b.HasIndex("SourceFileId");
+
+                b.HasIndex("TargetFileId");
+
+                b.HasIndex("TenantId");
+
+                b.HasIndex("TenantId", "IsDeleted")
+                    .HasDatabaseName("IX_JsonComparisonResults_TenantId_IsDeleted");
+
+                b.HasIndex("TenantId", "ProjectId")
+                    .HasDatabaseName("IX_JsonComparisonResults_TenantId_ProjectId");
+
+                b.ToTable("JsonComparisonResults", "core");
             });
 
         modelBuilder.Entity("BlazorEnterprise.Core.Domain.Events.EventConsumptionTrackerEntity", b =>
@@ -763,10 +1006,8 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
 
                 b.Property<string>("UserKind")
                     .IsRequired()
-                    .ValueGeneratedOnAdd()
                     .HasMaxLength(32)
-                    .HasColumnType("character varying(32)")
-                    .HasDefaultValue("Human");
+                    .HasColumnType("character varying(32)");
 
                 b.Property<int>("UserType")
                     .HasColumnType("integer");
@@ -2095,6 +2336,9 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .ValueGeneratedOnAdd()
                     .HasColumnType("uuid");
 
+                b.Property<Guid?>("AssumptionEntityId")
+                    .HasColumnType("uuid");
+
                 b.Property<string>("BlockingReason")
                     .HasMaxLength(1000)
                     .HasColumnType("character varying(1000)");
@@ -2119,6 +2363,9 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasMaxLength(256)
                     .HasColumnType("character varying(256)");
 
+                b.Property<Guid?>("DeliverableEntityId")
+                    .HasColumnType("uuid");
+
                 b.Property<string>("Description")
                     .HasMaxLength(2000)
                     .HasColumnType("character varying(2000)");
@@ -2132,6 +2379,9 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("boolean");
+
+                b.Property<Guid?>("IssueEntityId")
+                    .HasColumnType("uuid");
 
                 b.Property<int>("Level")
                     .HasColumnType("integer");
@@ -2151,8 +2401,17 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                 b.Property<Guid?>("ProjectId")
                     .HasColumnType("uuid");
 
+                b.Property<Guid?>("RiskEntityId")
+                    .HasColumnType("uuid");
+
                 b.Property<int>("Status")
                     .HasColumnType("integer");
+
+                b.Property<Guid?>("SubTaskEntityId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid?>("TaskEntityId")
+                    .HasColumnType("uuid");
 
                 b.Property<Guid>("TenantId")
                     .HasColumnType("uuid")
@@ -2178,13 +2437,35 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasColumnType("xid")
                     .HasColumnName("xmin");
 
+                b.Property<Guid?>("WorkDependencyEntityId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid?>("WorkflowEntityId")
+                    .HasColumnType("uuid");
+
                 b.HasKey("Id");
+
+                b.HasIndex("AssumptionEntityId");
+
+                b.HasIndex("DeliverableEntityId");
+
+                b.HasIndex("IssueEntityId");
 
                 b.HasIndex("ParentTaskId")
                     .HasDatabaseName("IX_ActionItems_ParentTaskId");
 
+                b.HasIndex("RiskEntityId");
+
+                b.HasIndex("SubTaskEntityId");
+
+                b.HasIndex("TaskEntityId");
+
                 b.HasIndex("TenantId")
                     .HasDatabaseName("IX_ActionItems_TenantId");
+
+                b.HasIndex("WorkDependencyEntityId");
+
+                b.HasIndex("WorkflowEntityId");
 
                 b.HasIndex("ParentSubTaskId", "OrderIndex")
                     .HasDatabaseName("IX_ActionItems_ParentSubTaskId_Order");
@@ -2264,9 +2545,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<int>("Priority")
                     .HasColumnType("integer");
@@ -2423,9 +2702,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<Guid>("ParentItemId")
                     .HasColumnType("uuid");
@@ -2457,9 +2734,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasColumnType("character varying(5000)");
 
                 b.Property<int>("SignOffStatus")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(1);
+                    .HasColumnType("integer");
 
                 b.Property<Guid?>("SourceRowId")
                     .HasColumnType("uuid");
@@ -2583,9 +2858,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<int>("Priority")
                     .HasColumnType("integer");
@@ -2749,9 +3022,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<string>("MitigationStrategy")
                     .ValueGeneratedOnAdd()
@@ -2900,9 +3171,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<int>("OrderIndex")
                     .ValueGeneratedOnAdd()
@@ -3054,9 +3323,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasColumnType("character varying(500)");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<Guid?>("MilestoneId")
                     .HasColumnType("uuid");
@@ -3297,9 +3564,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<int>("Priority")
                     .HasColumnType("integer");
@@ -3440,9 +3705,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDefaultValue("");
 
                 b.Property<int>("Level")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(3);
+                    .HasColumnType("integer");
 
                 b.Property<int>("Priority")
                     .HasColumnType("integer");
@@ -3776,9 +4039,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasColumnType("timestamp with time zone");
 
                 b.Property<int>("Status")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("integer")
-                    .HasDefaultValue(1);
+                    .HasColumnType("integer");
 
                 b.Property<string>("TeamsWebhookUrl")
                     .HasMaxLength(2000)
@@ -4332,6 +4593,36 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                 b.Navigation("User");
             });
 
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingResultEntity", b =>
+            {
+                b.HasOne("BlazorEnterprise.Core.Domain.Imports.ImportFileEntity", "ImportFile")
+                    .WithMany()
+                    .HasForeignKey("ImportFileId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
+
+                b.Navigation("ImportFile");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.DocumentParsing.JsonComparisonResultEntity", b =>
+            {
+                b.HasOne("BlazorEnterprise.Core.Domain.Imports.ImportFileEntity", "SourceFile")
+                    .WithMany()
+                    .HasForeignKey("SourceFileId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Imports.ImportFileEntity", "TargetFile")
+                    .WithMany()
+                    .HasForeignKey("TargetFileId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
+
+                b.Navigation("SourceFile");
+
+                b.Navigation("TargetFile");
+            });
+
         modelBuilder.Entity("BlazorEnterprise.Core.Domain.Events.EventConsumptionTrackerEntity", b =>
             {
                 b.HasOne("BlazorEnterprise.Core.Domain.Events.EventPublishTrackerEntity", "PublishTracker")
@@ -4481,6 +4772,41 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                 b.Navigation("RevisionHeader");
 
                 b.Navigation("Sprint");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.ActionItemEntity", b =>
+            {
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.AssumptionEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("AssumptionEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.DeliverableEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("DeliverableEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.IssueEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("IssueEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.RiskEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("RiskEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.SubTaskEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("SubTaskEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.TaskEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("TaskEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.WorkDependencyEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("WorkDependencyEntityId");
+
+                b.HasOne("BlazorEnterprise.Core.Domain.Tasks.WorkflowEntity", null)
+                    .WithMany("ActionItems")
+                    .HasForeignKey("WorkflowEntityId");
             });
 
         modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.SubTaskEntity", b =>
@@ -4658,15 +4984,49 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                 b.Navigation("Items");
             });
 
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.AssumptionEntity", b =>
+            {
+                b.Navigation("ActionItems");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.DeliverableEntity", b =>
+            {
+                b.Navigation("ActionItems");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.IssueEntity", b =>
+            {
+                b.Navigation("ActionItems");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.RiskEntity", b =>
+            {
+                b.Navigation("ActionItems");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.SubTaskEntity", b =>
+            {
+                b.Navigation("ActionItems");
+            });
+
         modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.TaskEntity", b =>
             {
+                b.Navigation("ActionItems");
+
                 b.Navigation("Comments");
 
                 b.Navigation("SubTasks");
             });
 
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.WorkDependencyEntity", b =>
+            {
+                b.Navigation("ActionItems");
+            });
+
         modelBuilder.Entity("BlazorEnterprise.Core.Domain.Tasks.WorkflowEntity", b =>
             {
+                b.Navigation("ActionItems");
+
                 b.Navigation("Steps");
             });
 

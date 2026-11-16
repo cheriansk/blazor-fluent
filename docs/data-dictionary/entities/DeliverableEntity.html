@@ -56,7 +56,7 @@ erDiagram
 <div class="desc-box" style="margin-top: 14px;">Enterprise deliverable entity modeling tangible outputs, review artifacts, sign-offs, and meeting outcomes. Extends to inherit enterprise scheduling, levels, assignments, watchers, and variance tracking. Linked to parent tasks, RAID items, or calendar milestones/meeting outcomes via . Subtasks and WorkDependencies are strictly excluded from having deliverables. Mapped via EF Core to physical table 'tasks.Deliverables'.</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (43)</div>
+<div class="card-title">Properties & Fields (44)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">ParentType </td><td><span class="code-type">DeliverableParentTypeEnum</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Classification of the parent work item holding this deliverable (Task, Risk, Issue, Assumption, CalendarGate, Workflow). Subtasks and WorkDependencies are strictly excluded.</td></tr>
 <tr><td class="prop-name">ParentItemId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Primary key identifier of the parent work item holding this deliverable.</td></tr>
@@ -89,6 +89,7 @@ erDiagram
 <tr><td class="prop-name">IsClosed </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ActionItems <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<ActionItemEntity></span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Collection of action items directly attached to this task or grouped under its subtasks.</td></tr>
 <tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProjectScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProjectScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
@@ -199,6 +200,12 @@ const entityLookup = {
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
     'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
+    'DocumentParsingConfigEntity': 'DocumentParsingConfigEntity.html',
+    'DocumentParsingResultEntity': 'DocumentParsingResultEntity.html',
+    'DocumentParsingConfigEntityValidator': 'DocumentParsingConfigEntityValidator.html',
+    'DocumentParsingResultEntityValidator': 'DocumentParsingResultEntityValidator.html',
+    'JsonComparisonResultEntityValidator': 'JsonComparisonResultEntityValidator.html',
+    'JsonComparisonResultEntity': 'JsonComparisonResultEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
     'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',

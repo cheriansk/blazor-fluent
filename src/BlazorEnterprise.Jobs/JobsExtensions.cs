@@ -49,6 +49,10 @@ public static class JobsExtensions
         services.TryAddSingleton<IFileTemplateConfigRepository, JsonFileTemplateConfigRepository>();
         services.TryAddScoped<ILocalBatchStagerResolver, LocalBatchStagerResolver>();
 
+        // 8. Register Local ML.NET Document Parsing & JSON Comparison Services
+        services.TryAddScoped<IDocumentParsingService, Services.DocumentParsing.DocumentParsingService>();
+        services.TryAddScoped<IJsonComparisonService, Services.JsonAnalysis.JsonComparisonService>();
+
         return services;
     }
 

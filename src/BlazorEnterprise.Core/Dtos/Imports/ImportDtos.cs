@@ -41,6 +41,7 @@ public class UploadBatchRequest
 {
     public Guid ProjectId { get; set; }
     public List<UploadBatchFileItem> Files { get; set; } = new();
+    public bool EnableDocumentParsing { get; set; }
 }
 
 /// <summary>

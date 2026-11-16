@@ -56,7 +56,7 @@ erDiagram
 <div class="desc-box" style="margin-top: 14px;">Abstract base class for executable tasks. Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, ActivityTaskEntity. Inherits from .</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (39)</div>
+<div class="card-title">Properties & Fields (40)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">EstimatedHours </td><td><span class="code-type">decimal?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Planned / estimated effort hours for the task.</td></tr>
 <tr><td class="prop-name">MilestoneId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Optional milestone association. Hydrated via MilestoneRelationEntity.</td></tr>
@@ -85,6 +85,7 @@ erDiagram
 <tr><td class="prop-name">IsClosed </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ActionItems <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<ActionItemEntity></span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Collection of action items directly attached to this task or grouped under its subtasks.</td></tr>
 <tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProjectScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProjectScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
@@ -216,6 +217,12 @@ const entityLookup = {
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
     'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
+    'DocumentParsingConfigEntity': 'DocumentParsingConfigEntity.html',
+    'DocumentParsingResultEntity': 'DocumentParsingResultEntity.html',
+    'DocumentParsingConfigEntityValidator': 'DocumentParsingConfigEntityValidator.html',
+    'DocumentParsingResultEntityValidator': 'DocumentParsingResultEntityValidator.html',
+    'JsonComparisonResultEntityValidator': 'JsonComparisonResultEntityValidator.html',
+    'JsonComparisonResultEntity': 'JsonComparisonResultEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
     'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
