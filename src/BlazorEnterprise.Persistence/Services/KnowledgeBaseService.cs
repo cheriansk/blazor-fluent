@@ -131,6 +131,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
 
         var a = await _context.KnowledgeArticles
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(x => x.AuthorUser)
             .Include(x => x.ApprovedByUser)
             .Include(x => x.Reviewers)

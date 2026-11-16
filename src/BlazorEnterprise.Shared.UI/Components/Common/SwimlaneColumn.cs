@@ -1,4 +1,4 @@
-namespace BlazorEnterprise.Components.Common;
+namespace BlazorEnterprise.Shared.UI.Components;
 
 /// <summary>
 /// Definition of a single column inside a <see cref="FluentSwimlaneBoard{TItem}"/>.

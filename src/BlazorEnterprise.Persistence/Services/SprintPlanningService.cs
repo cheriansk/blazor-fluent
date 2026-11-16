@@ -336,19 +336,17 @@ public class SprintPlanningService : ISprintPlanningService
         }
         else
         {
-            // Backlog (unallocated items)
-            var backlogItems = await context.Tasks
+            // Backlog (unallocated items) — filter in SQL before materialization
+            var unassigned = await context.Tasks
                 .AsNoTracking()
-                .Where(t => t.ProjectId == projectId && !t.IsDeleted)
+                .Where(t => t.ProjectId == projectId && !t.IsDeleted &&
+                    !context.SprintItemVersions.Any(iv =>
+                        iv.ProjectId == projectId &&
+                        !iv.IsDeleted &&
+                        iv.EffectiveToDate == null &&
+                        iv.SprintId != null &&
+                        iv.ItemId == t.Id))
                 .ToListAsync(cancellationToken);
-
-            var activeAssignedItemIds = await context.SprintItemVersions
-                .AsNoTracking()
-                .Where(iv => iv.ProjectId == projectId && !iv.IsDeleted && iv.EffectiveToDate == null && iv.SprintId != null)
-                .Select(iv => iv.ItemId)
-                .ToListAsync(cancellationToken);
-
-            var unassigned = backlogItems.Where(b => !activeAssignedItemIds.Contains(b.Id)).ToList();
             var planned = 0.0;
 
             return new SprintMetricsDto
