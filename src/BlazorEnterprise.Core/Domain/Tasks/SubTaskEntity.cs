@@ -30,11 +30,6 @@ public class SubTaskEntity : BaseTaskEntity
     public TaskEntity? ParentTask { get; set; }
     public SubTaskEntity? BlockedBySubTask { get; set; }
 
-    /// <summary>
-    /// Collection of action items grouped under this subtask for file-level organization.
-    /// </summary>
-    public ICollection<ActionItemEntity> ActionItems { get; set; } = new List<ActionItemEntity>();
-
 
 
     /// <summary>Subtask category discriminator for transition validation.</summary>

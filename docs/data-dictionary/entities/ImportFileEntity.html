@@ -97,8 +97,12 @@ erDiagram
 </tbody></table>
 </div>
 <div class="card">
-<div class="card-title">Inbound References (Where this entity is referenced) (1)</div>
+<div class="card-title">Inbound References (Where this entity is referenced) (5)</div>
 <table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="DocumentParsingResultEntity.html"><b>DocumentParsingResultEntity</b></a></td><td>DocumentParsing</td><td><code>ImportFile</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="DocumentParsingResultEntity.html"><b>DocumentParsingResultEntity</b></a></td><td>DocumentParsing</td><td><code>ImportFileId</code></td><td>Foreign Key FK</td></tr>
+<tr><td><a href="JsonComparisonResultEntity.html"><b>JsonComparisonResultEntity</b></a></td><td>DocumentParsing</td><td><code>SourceFile</code></td><td>Navigation (1:1)</td></tr>
+<tr><td><a href="JsonComparisonResultEntity.html"><b>JsonComparisonResultEntity</b></a></td><td>DocumentParsing</td><td><code>TargetFile</code></td><td>Navigation (1:1)</td></tr>
 <tr><td><a href="StagedImportEntity.html"><b>StagedImportEntity</b></a></td><td>Imports</td><td><code>ImportFileId</code></td><td>Foreign Key FK</td></tr>
 </tbody></table>
 </div>
@@ -171,6 +175,12 @@ const entityLookup = {
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
     'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
+    'DocumentParsingConfigEntity': 'DocumentParsingConfigEntity.html',
+    'DocumentParsingResultEntity': 'DocumentParsingResultEntity.html',
+    'DocumentParsingConfigEntityValidator': 'DocumentParsingConfigEntityValidator.html',
+    'DocumentParsingResultEntityValidator': 'DocumentParsingResultEntityValidator.html',
+    'JsonComparisonResultEntityValidator': 'JsonComparisonResultEntityValidator.html',
+    'JsonComparisonResultEntity': 'JsonComparisonResultEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
     'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',

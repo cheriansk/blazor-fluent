@@ -68,7 +68,7 @@
 </li>
 <li class="tree-branch" data-entity="TenantScopedEntity">
 <div class="tree-node-wrap">
-<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 8 child classes" aria-label="Expand or collapse TenantScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<button class="toggle-btn" onclick="toggleNode(this, event)" title="Expand/Collapse 9 child classes" aria-label="Expand or collapse TenantScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
 <div class="tree-card domain-card" onclick="openDetailDrawer('TenantScopedEntity')" data-search="tenantscopedentity base baseentity baseentity" title="Click to view TenantScopedEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">TenantScopedEntity</span>
@@ -85,6 +85,19 @@
 <div class="tree-card-header">
 <span class="tree-entity-name">AuditRecordEntity</span>
 <span class="tree-subsystem-pill">Auditing</span>
+</div>
+<div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="DocumentParsingConfigEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('DocumentParsingConfigEntity')" data-search="documentparsingconfigentity documentparsing tenantscopedentity tenantscopedentity baseentity" title="Click to view DocumentParsingConfigEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">DocumentParsingConfigEntity</span>
+<span class="tree-subsystem-pill">DocumentParsing</span>
 </div>
 <div class="tree-card-extends">extends <strong>TenantScopedEntity</strong></div>
 <div class="tree-card-ancestors">&rarr; BaseEntity</div>
@@ -184,7 +197,7 @@
 </li>
 <li class="tree-branch" data-entity="ProjectScopedEntity">
 <div class="tree-node-wrap">
-<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 15 child classes" aria-label="Expand or collapse ProjectScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
+<button class="toggle-btn collapsed" onclick="toggleNode(this, event)" title="Expand/Collapse 17 child classes" aria-label="Expand or collapse ProjectScopedEntity child classes"><svg class="chevron-icon" viewBox="0 0 16 16" width="12" height="12"><path fill="currentColor" d="M3.2 5.2a.75.75 0 0 1 1.06 0L8 8.94l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.26a.75.75 0 0 1 0-1.06z"/></svg></button>
 <div class="tree-card domain-card" onclick="openDetailDrawer('ProjectScopedEntity')" data-search="projectscopedentity base programscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view ProjectScopedEntity details in slide-over drawer">
 <div class="tree-card-header">
 <span class="tree-entity-name">ProjectScopedEntity</span>
@@ -424,6 +437,19 @@
 </li>
 </ul>
 </li>
+<li class="tree-branch" data-entity="DocumentParsingResultEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('DocumentParsingResultEntity')" data-search="documentparsingresultentity documentparsing projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view DocumentParsingResultEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">DocumentParsingResultEntity</span>
+<span class="tree-subsystem-pill">DocumentParsing</span>
+</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
 <li class="tree-branch" data-entity="ImportFileEntity">
 <div class="tree-node-wrap">
 <div class="toggle-spacer"></div>
@@ -431,6 +457,19 @@
 <div class="tree-card-header">
 <span class="tree-entity-name">ImportFileEntity</span>
 <span class="tree-subsystem-pill">Imports</span>
+</div>
+<div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
+<div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>
+</div>
+</div>
+</li>
+<li class="tree-branch" data-entity="JsonComparisonResultEntity">
+<div class="tree-node-wrap">
+<div class="toggle-spacer"></div>
+<div class="tree-card domain-card" onclick="openDetailDrawer('JsonComparisonResultEntity')" data-search="jsoncomparisonresultentity documentparsing projectscopedentity projectscopedentity programscopedentity tenantscopedentity baseentity" title="Click to view JsonComparisonResultEntity details in slide-over drawer">
+<div class="tree-card-header">
+<span class="tree-entity-name">JsonComparisonResultEntity</span>
+<span class="tree-subsystem-pill">DocumentParsing</span>
 </div>
 <div class="tree-card-extends">extends <strong>ProjectScopedEntity</strong></div>
 <div class="tree-card-ancestors">&rarr; ProgramScopedEntity &rarr; TenantScopedEntity &rarr; BaseEntity</div>

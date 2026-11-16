@@ -52,7 +52,7 @@ erDiagram
 <div class="desc-box" style="margin-top: 14px;">Universal enterprise dependency contract ("D" of RAID). Single intermediate table modeling all dependencies across the enterprise: intra-project, cross-project (same program or cross-program), cross-level (Program/Project), task-to-task, gate-to-gate, task-to-gate, and manual external vendor dependencies. Side B (Dependent item waiting) depends on Side A (Prerequisite item blocking). Subtype of mapped to table 'tasks.work_dependencies'.</div>
 </div>
 <div class="card">
-<div class="card-title">Properties & Fields (49)</div>
+<div class="card-title">Properties & Fields (50)</div>
 <table><thead><tr><th>Property</th><th>Type</th><th>Nullable</th><th>Origin / Inheritance</th><th>Description</th></tr></thead><tbody>
 <tr><td class="prop-name">DependentType </td><td><span class="code-type">DependencyNodeTypeEnum</span></td><td>No</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>Endpoint classification for Side B (CalendarGate, TaskItem, ManualDependency).</td></tr>
 <tr><td class="prop-name">DependentItemId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><span class="badge badge-tenant" style="font-size:10px; background:#107c10;">Declared</span></td><td>ID of the dependent entity (Task ID if TaskItem, Calendar ID if CalendarGate, null if general RAID ManualDependency).</td></tr>
@@ -91,6 +91,7 @@ erDiagram
 <tr><td class="prop-name">IsClosed </td><td><span class="code-type">bool</span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedAtUtc </td><td><span class="code-type">DateTime?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ClosedBy </td><td><span class="code-type">string?</span></td><td>Yes</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>-</td></tr>
+<tr><td class="prop-name">ActionItems <span class="fk-pill">1:N</span></td><td><span class="code-type">ICollection<ActionItemEntity></span></td><td>No</td><td><a href="BaseTaskEntity.html" class="badge badge-base" style="font-size:10px;">from BaseTaskEntity</a></td><td>Collection of action items directly attached to this task or grouped under its subtasks.</td></tr>
 <tr><td class="prop-name">ProjectId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProjectScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProjectScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">ProgramId <span class="fk-pill">FK</span></td><td><span class="code-type">Guid?</span></td><td>Yes</td><td><a href="ProgramScopedEntity.html" class="badge badge-base" style="font-size:10px;">from ProgramScopedEntity</a></td><td>-</td></tr>
 <tr><td class="prop-name">TenantId </td><td><span class="code-type">Guid</span></td><td>No</td><td><a href="TenantScopedEntity.html" class="badge badge-base" style="font-size:10px;">from TenantScopedEntity</a></td><td>-</td></tr>
@@ -201,6 +202,12 @@ const entityLookup = {
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
     'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
+    'DocumentParsingConfigEntity': 'DocumentParsingConfigEntity.html',
+    'DocumentParsingResultEntity': 'DocumentParsingResultEntity.html',
+    'DocumentParsingConfigEntityValidator': 'DocumentParsingConfigEntityValidator.html',
+    'DocumentParsingResultEntityValidator': 'DocumentParsingResultEntityValidator.html',
+    'JsonComparisonResultEntityValidator': 'JsonComparisonResultEntityValidator.html',
+    'JsonComparisonResultEntity': 'JsonComparisonResultEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
     'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',

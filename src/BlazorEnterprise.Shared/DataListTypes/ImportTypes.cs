@@ -70,7 +70,67 @@ public enum ImportFileTypeEnum
     [Display(Name = "Project Calendar & Milestones (Excel .xlsx)", Description = "Single-sheet project timeline phases and milestones workbook.")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
-    ProjectCalendarExcel = 6
+    ProjectCalendarExcel = 6,
+
+    [Display(Name = "Scan Findings (.docx)", Description = "Scan findings Word document parsed locally via ML.NET and OpenXML.")]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
+    ScanFindingsWord = 10,
+
+    [Display(Name = "Statement Of Work (.docx)", Description = "Statement of Work Word document (stored without AI parsing).")]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
+    StatementOfWorkWord = 11,
+
+    [Display(Name = "Deliverables (.docx)", Description = "Deliverables Word document (stored without AI parsing).")]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
+    DeliverablesWord = 12,
+
+    [Display(Name = "JSON Comparison", Description = "RFC 6902 JSON Patch comparison between two parsed documents.")]
+    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
+    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
+    JsonComparison = 13
+}
+
+#endregion
+
+#region DocumentParsingStatusEnum Definitions
+
+public static class DocumentParsingStatusEnumDefinitions
+{
+    public static readonly IReadOnlyDictionary<DocumentParsingStatusEnum, IReadOnlySet<DocumentParsingStatusEnum>> AllowedTransitions =
+        new Dictionary<DocumentParsingStatusEnum, IReadOnlySet<DocumentParsingStatusEnum>>
+        {
+            [DocumentParsingStatusEnum.PendingReview] = new HashSet<DocumentParsingStatusEnum>
+            {
+                DocumentParsingStatusEnum.ReviewComplete,
+                DocumentParsingStatusEnum.Finalized
+            },
+            [DocumentParsingStatusEnum.ReviewComplete] = new HashSet<DocumentParsingStatusEnum>
+            {
+                DocumentParsingStatusEnum.PendingReview,
+                DocumentParsingStatusEnum.Finalized
+            },
+            [DocumentParsingStatusEnum.Finalized] = new HashSet<DocumentParsingStatusEnum>()
+        };
+}
+
+/// <summary>
+/// Review and finalization lifecycle state for parsed document extraction results.
+/// Once <see cref="Finalized"/>, the record is permanently locked and immutable.
+/// </summary>
+[LifecycleEnum]
+public enum DocumentParsingStatusEnum
+{
+    [Display(Name = "Pending Review", Description = "Extracted data is open for human review and correction.")]
+    PendingReview = 1,
+
+    [Display(Name = "Review Complete", Description = "Review completed; read-only unless reopened to Pending Review.")]
+    ReviewComplete = 2,
+
+    [Display(Name = "Finalized", Description = "Permanently locked ground-truth record; immutable forever.")]
+    Finalized = 3
 }
 
 #endregion

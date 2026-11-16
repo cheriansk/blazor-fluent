@@ -74,6 +74,36 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
             AcceptAttribute = ".xml,application/xml,text/xml",
             Description = "XML document containing root <Tasks> with child <Task> elements.",
             SampleFileName = "Tasks_Template.xml"
+        },
+        new ImportFileTypeMetadata
+        {
+            FileType = ImportFileTypeEnum.ScanFindingsWord,
+            DisplayName = "Scan Findings (.docx)",
+            Extension = ".docx",
+            ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            AcceptAttribute = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            Description = "Scan findings Word document parsed locally via ML.NET and OpenXML.",
+            SampleFileName = "ScanFindings_Template.docx"
+        },
+        new ImportFileTypeMetadata
+        {
+            FileType = ImportFileTypeEnum.StatementOfWorkWord,
+            DisplayName = "Statement Of Work (.docx)",
+            Extension = ".docx",
+            ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            AcceptAttribute = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            Description = "Statement of Work Word document (stored without AI parsing).",
+            SampleFileName = "StatementOfWork_Template.docx"
+        },
+        new ImportFileTypeMetadata
+        {
+            FileType = ImportFileTypeEnum.DeliverablesWord,
+            DisplayName = "Deliverables (.docx)",
+            Extension = ".docx",
+            ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            AcceptAttribute = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            Description = "Deliverables Word document (stored without AI parsing).",
+            SampleFileName = "Deliverables_Template.docx"
         }
     };
 

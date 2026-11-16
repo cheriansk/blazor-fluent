@@ -185,6 +185,7 @@ public static class PersistenceExtensions
 
         // 18. Multi-Tenant File Ingestion & Processing Pipeline Service
         services.TryAddScoped<IImportFileService, ImportFileService>();
+        services.TryAddScoped<IDocumentParsingReviewService, DocumentParsingReviewService>();
 
         // 19. Zero-Trust Internal Authentication Verification Service (runs in isolated system scope)
         services.TryAddScoped<IInternalAuthenticationService, InternalAuthenticationService>();

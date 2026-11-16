@@ -42,6 +42,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
     // File type configuration & state
     private IReadOnlyList<ImportFileTypeMetadata> _availableTypes = Array.Empty<ImportFileTypeMetadata>();
     private ImportFileTypeEnum _selectedFileType = ImportFileTypeEnum.ProgramCalendarExcel;
+    private bool _enableDocumentParsing;
     private ImportFileTypeMetadata? _selectedMetadata;
 
     // Selected file
@@ -120,6 +121,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
         if (newCode.TryToEnum<ImportFileTypeEnum>(out var fileType))
         {
             _selectedFileType = fileType;
+            _enableDocumentParsing = fileType == ImportFileTypeEnum.ScanFindingsWord;
             UpdateSelectedMetadata();
             // Clear current file if its extension does not match the new type
             if (_selectedFile != null && _selectedMetadata != null)
@@ -227,7 +229,8 @@ public partial class FileImportPage : ComponentBase, IDisposable
             var request = new UploadBatchRequest
             {
                 ProjectId = _currentProject.Id,
-                Files = new List<UploadBatchFileItem> { fileItem }
+                Files = new List<UploadBatchFileItem> { fileItem },
+                EnableDocumentParsing = _enableDocumentParsing
             };
 
             var result = await ImportService.UploadBatchAndQueueAsync(request);

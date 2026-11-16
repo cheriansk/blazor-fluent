@@ -9,6 +9,9 @@
 	<ItemGroup>
     <PackageReference Include="Cronos" />
     <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="JsonDiffPatch.Net" />
+    <PackageReference Include="Microsoft.ML" />
+    <PackageReference Include="Microsoft.ML.AutoML" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" />
   </ItemGroup>

@@ -90,8 +90,10 @@ erDiagram
 </tbody></table>
 </div>
 <div class="card">
-<div class="card-title">Inbound References (Where this entity is referenced) (0)</div>
-<p style="color:#605e5c;">No inbound foreign keys or navigations detected.</p>
+<div class="card-title">Inbound References (Where this entity is referenced) (1)</div>
+<table><thead><tr><th>Source Entity</th><th>Subsystem</th><th>Referencing Property</th><th>Relation Type</th></tr></thead><tbody>
+<tr><td><a href="BaseTaskEntity.html"><b>BaseTaskEntity</b></a></td><td>Tasks</td><td><code>ActionItems</code></td><td>Collection (1:N)</td></tr>
+</tbody></table>
 </div>
 <div class="card">
 <div class="card-title">🖥️ Screen / Razor Page Usages (0)</div>
@@ -161,6 +163,12 @@ const entityLookup = {
     'BaseCalendarEntity': 'BaseCalendarEntity.html',
     'CalendarEntity': 'CalendarEntity.html',
     'UserCalendarEntity': 'UserCalendarEntity.html',
+    'DocumentParsingConfigEntity': 'DocumentParsingConfigEntity.html',
+    'DocumentParsingResultEntity': 'DocumentParsingResultEntity.html',
+    'DocumentParsingConfigEntityValidator': 'DocumentParsingConfigEntityValidator.html',
+    'DocumentParsingResultEntityValidator': 'DocumentParsingResultEntityValidator.html',
+    'JsonComparisonResultEntityValidator': 'JsonComparisonResultEntityValidator.html',
+    'JsonComparisonResultEntity': 'JsonComparisonResultEntity.html',
     'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
     'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
     'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',

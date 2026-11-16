@@ -1,0 +1,119 @@
+@page "/document-parsing"
+@namespace BlazorEnterprise.Modules.Imports.Pages
+@inherits BlazorEnterprise.Components.Common.AuthorizedPageComponentBase
+@using BlazorEnterprise.Shared.DataListTypes
+@using BlazorEnterprise.Shared.Extensions
+
+<PageTitle>Document Parsing Review</PageTitle>
+
+<div>
+    <PageHeaderComp Title="Document Parsing Review"
+                    Subtitle="Review, correct, and permanently finalize locally extracted Word (.docx) data.">
+        <Actions>
+            <CskButton Variant="CskButtonVariant.Filled"
+                       Disabled="@(_selectedIds.Count == 0 || _isBusy)"
+                       OnClick="@PromptFinalizeSelectedAsync">
+                Finalize Selected (@_selectedIds.Count)
+            </CskButton>
+        </Actions>
+    </PageHeaderComp>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <CskMessageBar Intent="@(_isError ? MessageBarIntent.Error : MessageBarIntent.Success)" Class="mb-4">
+            @_statusMessage
+        </CskMessageBar>
+    }
+
+    @if (_isLoading)
+    {
+        <CskSpinner />
+    }
+    else if (_items.Count == 0)
+    {
+        <EmptyStateComp Title="No Parsed Documents Yet"
+                        Description="Upload a Word (.docx) document on the File Import page to run local ML.NET + OpenXML extraction." />
+    }
+    else
+    {
+        <CskCard>
+            <CskDataGrid Items="@_items.AsQueryable()">
+                <CskTemplateColumn Title="Select">
+                    @if (context.Status != DocumentParsingStatusEnum.Finalized)
+                    {
+                        <CskCheckbox Value="@_selectedIds.Contains(context.Id)"
+                                     ValueChanged="@((bool chk) => ToggleSelection(context.Id, chk))" />
+                    }
+                </CskTemplateColumn>
+                <CskPropertyColumn Property="@(x => x.FileName)" Title="Document" Sortable="true" />
+                <CskPropertyColumn Property="@(x => x.DocumentType)" Title="Type" Sortable="true" />
+                <CskTemplateColumn Title="Confidence">
+                    <span>@context.ConfidenceScore.ToString("P0")</span>
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Status">
+                    <CskStatusChip Text="@context.Status.GetDisplayName()"
+                                   Variant="@GetStatusVariant(context.Status)" />
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Updated">
+                    <UserDateTime Value="@(context.Updated ?? context.Created)" />
+                </CskTemplateColumn>
+                <CskTemplateColumn Title="Actions">
+                    <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="8">
+                        <CskButton Variant="CskButtonVariant.Outlined"
+                                   Size="CskButtonSize.Small"
+                                   OnClick="@(() => OpenReviewModal(context))">
+                            @(context.Status == DocumentParsingStatusEnum.PendingReview ? "Edit" : "View")
+                        </CskButton>
+                        <EntityHistoryButton EntityName="DocumentParsingResultEntity"
+                                             EntityId="@context.Id.ToString()" />
+                    </CskStack>
+                </CskTemplateColumn>
+            </CskDataGrid>
+        </CskCard>
+    }
+</div>
+
+<CskDialog @ref="_reviewDialog" Modal="true" Class="dialog-confirm-width">
+    <CskDialogBody>
+        <TitleTemplate>
+            <CskLabel Typo="Typography.H6">
+                @(_activeItem?.FileName ?? "Parsed Document") — @(_activeItem?.Status.GetDisplayName())
+            </CskLabel>
+        </TitleTemplate>
+        <ChildContent>
+            @if (_activeItem is not null)
+            {
+                <CskStack Orientation="CskOrientation.Vertical" VerticalGap="12">
+                    <CskTextArea Label="Extracted JSON"
+                                 Rows="14"
+                                 @bind-Value="_editableJson"
+                                 Disabled="@(_activeItem.Status != DocumentParsingStatusEnum.PendingReview)" />
+                </CskStack>
+            }
+        </ChildContent>
+        <ActionTemplate>
+            @if (_activeItem?.Status == DocumentParsingStatusEnum.PendingReview)
+            {
+                <CskButton Variant="CskButtonVariant.Outlined" Disabled="@_isBusy" OnClick="@SaveEditsAsync">
+                    Save Corrections
+                </CskButton>
+                <CskButton Variant="CskButtonVariant.Filled" Disabled="@_isBusy" OnClick="@(() => ChangeActiveStatusAsync(DocumentParsingStatusEnum.ReviewComplete))">
+                    Mark Review Complete
+                </CskButton>
+            }
+            else if (_activeItem?.Status == DocumentParsingStatusEnum.ReviewComplete)
+            {
+                <CskButton Variant="CskButtonVariant.Outlined" Disabled="@_isBusy" OnClick="@(() => ChangeActiveStatusAsync(DocumentParsingStatusEnum.PendingReview))">
+                    Reopen to Pending Review
+                </CskButton>
+            }
+            <CskButton Variant="CskButtonVariant.Text" OnClick="@CloseReviewModalAsync">Close</CskButton>
+        </ActionTemplate>
+    </CskDialogBody>
+</CskDialog>
+
+<ConfirmDialogModal @ref="_finalizeConfirmModal"
+                    Title="Permanently Finalize Selected Results?"
+                    Message="Finalizing locks these records forever. Neither extracted data nor status can be modified afterward."
+                    ConfirmLabel="Finalize Forever"
+                    OnConfirmed="@ConfirmFinalizeAsync" />
