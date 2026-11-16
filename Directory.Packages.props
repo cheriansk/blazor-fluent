@@ -66,8 +66,8 @@
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="11.0.0" />
     <!-- Roslyn Compiler & Analyzer Tooling -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.12.0" />
     <PackageVersion Include="System.Text.Json" Version="11.0.0" />
     <!-- Unit Testing & Benchmarking -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
