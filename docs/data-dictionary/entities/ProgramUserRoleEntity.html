@@ -6,7 +6,7 @@
 <div class="entity-meta">
 <span class="badge badge-subsystem">Subsystem: Tenancy</span>
 <span class="badge badge-tenant">DbSet: ProgramUserRoles</span>
-<span class="badge badge-tenant" title="Database Table Name">Table: program_user_roles</span>
+<span class="badge badge-tenant" title="Database Table Name">Table: ProgramUserRoleEntity</span>
 <a class="badge badge-base" href="ProgramScopedEntity.html">Base: ProgramScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="ISoftDeletableEntity.html">Implements: ISoftDeletableEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IHmacSignableEntity.html">Implements: IHmacSignableEntity</a>
@@ -46,20 +46,14 @@ erDiagram
     }
     IUnversionedEntity {
     }
-    ProgramEntity {
-    }
     ProgramScopedEntity {
     }
     ProgramUserRoleEntity {
-    }
-    UserEntity {
     }
     ProgramScopedEntity ||--|| ProgramUserRoleEntity : "extends"
     ISoftDeletableEntity ||--o{ ProgramUserRoleEntity : "implements"
     IHmacSignableEntity ||--o{ ProgramUserRoleEntity : "implements"
     IUnversionedEntity ||--o{ ProgramUserRoleEntity : "implements"
-    ProgramEntity ||--o{ ProgramUserRoleEntity : "UserRoles"
-    UserEntity ||--o{ ProgramUserRoleEntity : "ProgramRoles"
 </pre></div>
 </div>
 <div class="card">
@@ -150,88 +144,8 @@ const activeEntityRels = [
     { parent: 'ISoftDeletableEntity', child: 'ProgramUserRoleEntity', label: 'implements' },
     { parent: 'IHmacSignableEntity', child: 'ProgramUserRoleEntity', label: 'implements' },
     { parent: 'IUnversionedEntity', child: 'ProgramUserRoleEntity', label: 'implements' },
-    { parent: 'ProgramEntity', child: 'ProgramUserRoleEntity', label: 'UserRoles' },
-    { parent: 'UserEntity', child: 'ProgramUserRoleEntity', label: 'ProgramRoles' },
 ];
 const entityLookup = {
-    'AuditRecords': 'AuditRecordEntity.html',
-    'AuditRecordEntity': 'AuditRecordEntity.html',
-    'calendars': 'CalendarEntity.html',
-    'CalendarEntity': 'CalendarEntity.html',
-    'UserCalendars': 'UserCalendarEntity.html',
-    'UserCalendarEntity': 'UserCalendarEntity.html',
-    'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
-    'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
-    'EventPublishTrackers': 'EventPublishTrackerEntity.html',
-    'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
-    'ImpersonationGrants': 'ImpersonationGrantEntity.html',
-    'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
-    'Users': 'UserEntity.html',
-    'UserEntity': 'UserEntity.html',
-    'UserSessions': 'UserSessionEntity.html',
-    'UserSessionEntity': 'UserSessionEntity.html',
-    'ImportFiles': 'ImportFileEntity.html',
-    'ImportFileEntity': 'ImportFileEntity.html',
-    'StagedImports': 'StagedImportEntity.html',
-    'StagedImportEntity': 'StagedImportEntity.html',
-    'JobExecutions': 'JobExecutionEntity.html',
-    'JobExecutionEntity': 'JobExecutionEntity.html',
-    'KnowledgeArticles': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleReviewers': 'KnowledgeArticleReviewerEntity.html',
-    'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
-    'Notifications': 'NotificationEntity.html',
-    'NotificationEntity': 'NotificationEntity.html',
-    'ProjectResources': 'ProjectResourceEntity.html',
-    'ProjectResourceEntity': 'ProjectResourceEntity.html',
-    'ResourceAllocations': 'ResourceAllocationEntity.html',
-    'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
-    'ResourceRates': 'ResourceRateEntity.html',
-    'ResourceRateEntity': 'ResourceRateEntity.html',
-    'SprintAuditLogs': 'SprintAuditLogEntity.html',
-    'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
-    'Sprints': 'SprintEntity.html',
-    'SprintEntity': 'SprintEntity.html',
-    'SprintItemVersions': 'SprintItemVersionEntity.html',
-    'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
-    'Assumptions': 'AssumptionEntity.html',
-    'AssumptionEntity': 'AssumptionEntity.html',
-    'Deliverables': 'DeliverableEntity.html',
-    'DeliverableEntity': 'DeliverableEntity.html',
-    'Issues': 'IssueEntity.html',
-    'IssueEntity': 'IssueEntity.html',
-    'Risks': 'RiskEntity.html',
-    'RiskEntity': 'RiskEntity.html',
-    'SubTasks': 'SubTaskEntity.html',
-    'SubTaskEntity': 'SubTaskEntity.html',
-    'TaskComments': 'UserTaskCommentEntity.html',
-    'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
-    'WorkDependencies': 'WorkDependencyEntity.html',
-    'WorkDependencyEntity': 'WorkDependencyEntity.html',
-    'Workflows': 'WorkflowEntity.html',
-    'WorkflowEntity': 'WorkflowEntity.html',
-    'programs': 'ProgramEntity.html',
-    'ProgramEntity': 'ProgramEntity.html',
-    'program_user_roles': 'ProgramUserRoleEntity.html',
-    'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
-    'Projects': 'ProjectEntity.html',
-    'ProjectEntity': 'ProjectEntity.html',
-    'ProjectUserRoles': 'ProjectUserRoleEntity.html',
-    'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
-    'Tenants': 'TenantEntity.html',
-    'TenantEntity': 'TenantEntity.html',
-    'tenant_users': 'TenantUserEntity.html',
-    'TenantUserEntity': 'TenantUserEntity.html',
-    'RevisionHeaders': 'RevisionHeaderEntity.html',
-    'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
-    'DataProtectionKeys': 'DataProtectionKey.html',
-    'DataProtectionKey': 'DataProtectionKey.html',
-    'MiscTasks': 'MiscTaskEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
-    'SprintTasks': 'SprintTaskEntity.html',
-    'SprintTaskEntity': 'SprintTaskEntity.html',
-    'WorkflowTasks': 'WorkflowTaskEntity.html',
-    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
     'BaseEntity': 'BaseEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
@@ -268,11 +182,12 @@ const entityLookup = {
     'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
     'SprintEntity': 'SprintEntity.html',
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+    'ActionItemEntity': 'ActionItemEntity.html',
+    'ActivityTaskEntity': 'ActivityTaskEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
     'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
     'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SprintTaskEntity': 'SprintTaskEntity.html',

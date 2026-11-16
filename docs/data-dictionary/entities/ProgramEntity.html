@@ -6,7 +6,7 @@
 <div class="entity-meta">
 <span class="badge badge-subsystem">Subsystem: Tenancy</span>
 <span class="badge badge-tenant">DbSet: Programs</span>
-<span class="badge badge-tenant" title="Database Table Name">Table: programs</span>
+<span class="badge badge-tenant" title="Database Table Name">Table: ProgramEntity</span>
 <a class="badge badge-base" href="ProgramScopedEntity.html">Base: ProgramScopedEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="IScheduledWorkEntity.html">Implements: IScheduledWorkEntity</a>
 <a class="badge badge-base" style="background:#004b50;" href="ISoftDeletableEntity.html">Implements: ISoftDeletableEntity</a>
@@ -50,19 +50,10 @@ erDiagram
     }
     ProgramScopedEntity {
     }
-    ProgramUserRoleEntity {
-    }
-    ProjectEntity {
-    }
-    TenantEntity {
-    }
     ProgramScopedEntity ||--|| ProgramEntity : "extends"
     IScheduledWorkEntity ||--o{ ProgramEntity : "implements"
     ISoftDeletableEntity ||--o{ ProgramEntity : "implements"
     IUnversionedEntity ||--o{ ProgramEntity : "implements"
-    ProgramEntity ||--o{ ProgramUserRoleEntity : "UserRoles"
-    ProgramEntity ||--o{ ProjectEntity : "Projects"
-    TenantEntity ||--o{ ProgramEntity : "Programs"
 </pre></div>
 </div>
 <div class="card">
@@ -118,7 +109,7 @@ erDiagram
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticView.razor"><b>ProgramHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/programs/holistic</code></td><td><span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewHomeTab.razor"><b>ProgramHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewMilestoneTab.razor"><b>ProgramHolisticViewMilestoneTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewTimelineTab.razor"><b>ProgramHolisticViewTimelineTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramSummaryCard.razor"><b>ProgramSummaryCard.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramDetailsStep.razor"><b>ProgramDetailsStep.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Name</span> <span class="badge-field">Code</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
@@ -180,89 +171,8 @@ const activeEntityRels = [
     { parent: 'IScheduledWorkEntity', child: 'ProgramEntity', label: 'implements' },
     { parent: 'ISoftDeletableEntity', child: 'ProgramEntity', label: 'implements' },
     { parent: 'IUnversionedEntity', child: 'ProgramEntity', label: 'implements' },
-    { parent: 'ProgramEntity', child: 'ProgramUserRoleEntity', label: 'UserRoles' },
-    { parent: 'ProgramEntity', child: 'ProjectEntity', label: 'Projects' },
-    { parent: 'TenantEntity', child: 'ProgramEntity', label: 'Programs' },
 ];
 const entityLookup = {
-    'AuditRecords': 'AuditRecordEntity.html',
-    'AuditRecordEntity': 'AuditRecordEntity.html',
-    'calendars': 'CalendarEntity.html',
-    'CalendarEntity': 'CalendarEntity.html',
-    'UserCalendars': 'UserCalendarEntity.html',
-    'UserCalendarEntity': 'UserCalendarEntity.html',
-    'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
-    'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
-    'EventPublishTrackers': 'EventPublishTrackerEntity.html',
-    'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
-    'ImpersonationGrants': 'ImpersonationGrantEntity.html',
-    'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
-    'Users': 'UserEntity.html',
-    'UserEntity': 'UserEntity.html',
-    'UserSessions': 'UserSessionEntity.html',
-    'UserSessionEntity': 'UserSessionEntity.html',
-    'ImportFiles': 'ImportFileEntity.html',
-    'ImportFileEntity': 'ImportFileEntity.html',
-    'StagedImports': 'StagedImportEntity.html',
-    'StagedImportEntity': 'StagedImportEntity.html',
-    'JobExecutions': 'JobExecutionEntity.html',
-    'JobExecutionEntity': 'JobExecutionEntity.html',
-    'KnowledgeArticles': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleReviewers': 'KnowledgeArticleReviewerEntity.html',
-    'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
-    'Notifications': 'NotificationEntity.html',
-    'NotificationEntity': 'NotificationEntity.html',
-    'ProjectResources': 'ProjectResourceEntity.html',
-    'ProjectResourceEntity': 'ProjectResourceEntity.html',
-    'ResourceAllocations': 'ResourceAllocationEntity.html',
-    'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
-    'ResourceRates': 'ResourceRateEntity.html',
-    'ResourceRateEntity': 'ResourceRateEntity.html',
-    'SprintAuditLogs': 'SprintAuditLogEntity.html',
-    'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
-    'Sprints': 'SprintEntity.html',
-    'SprintEntity': 'SprintEntity.html',
-    'SprintItemVersions': 'SprintItemVersionEntity.html',
-    'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
-    'Assumptions': 'AssumptionEntity.html',
-    'AssumptionEntity': 'AssumptionEntity.html',
-    'Deliverables': 'DeliverableEntity.html',
-    'DeliverableEntity': 'DeliverableEntity.html',
-    'Issues': 'IssueEntity.html',
-    'IssueEntity': 'IssueEntity.html',
-    'Risks': 'RiskEntity.html',
-    'RiskEntity': 'RiskEntity.html',
-    'SubTasks': 'SubTaskEntity.html',
-    'SubTaskEntity': 'SubTaskEntity.html',
-    'TaskComments': 'UserTaskCommentEntity.html',
-    'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
-    'WorkDependencies': 'WorkDependencyEntity.html',
-    'WorkDependencyEntity': 'WorkDependencyEntity.html',
-    'Workflows': 'WorkflowEntity.html',
-    'WorkflowEntity': 'WorkflowEntity.html',
-    'programs': 'ProgramEntity.html',
-    'ProgramEntity': 'ProgramEntity.html',
-    'program_user_roles': 'ProgramUserRoleEntity.html',
-    'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
-    'Projects': 'ProjectEntity.html',
-    'ProjectEntity': 'ProjectEntity.html',
-    'ProjectUserRoles': 'ProjectUserRoleEntity.html',
-    'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
-    'Tenants': 'TenantEntity.html',
-    'TenantEntity': 'TenantEntity.html',
-    'tenant_users': 'TenantUserEntity.html',
-    'TenantUserEntity': 'TenantUserEntity.html',
-    'RevisionHeaders': 'RevisionHeaderEntity.html',
-    'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
-    'DataProtectionKeys': 'DataProtectionKey.html',
-    'DataProtectionKey': 'DataProtectionKey.html',
-    'MiscTasks': 'MiscTaskEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
-    'SprintTasks': 'SprintTaskEntity.html',
-    'SprintTaskEntity': 'SprintTaskEntity.html',
-    'WorkflowTasks': 'WorkflowTaskEntity.html',
-    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
     'BaseEntity': 'BaseEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
@@ -299,11 +209,12 @@ const entityLookup = {
     'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
     'SprintEntity': 'SprintEntity.html',
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+    'ActionItemEntity': 'ActionItemEntity.html',
+    'ActivityTaskEntity': 'ActivityTaskEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
     'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
     'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SprintTaskEntity': 'SprintTaskEntity.html',

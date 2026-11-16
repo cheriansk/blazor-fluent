@@ -15,19 +15,33 @@
                      Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj') And 
                      '$(MSBuildProjectName.EndsWith(&quot;.Web&quot;))' == 'true' And 
                      '$(RunHeavyScansOnRebuild)' == 'true'">
-    <Message Text="==&gt; [Rebuild Automation] Updating base manifest, verifying zero-hardcode, and regenerating data model docs..." Importance="high" />
+    <Message Text="==&gt; [Rebuild Automation] Updating base manifest, verifying zero-hardcode, regenerating docs/diagrams, and syncing AI skills..." Importance="high" />
 
-    <!-- 1. Base Manifest Scan -->
+    <!-- 1. Base Manifest Scan (TemplateGuard.Tool + generate-base-manifest.ps1) -->
     <Exec Command="&quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net11.0\TemplateGuard.Tool.exe&quot; &quot;$(MSBuildThisFileDirectory).&quot;" 
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
           Condition="Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net11.0\TemplateGuard.Tool.exe')" />
     <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj&quot; -- &quot;$(MSBuildThisFileDirectory).&quot;" 
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
           Condition="!Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net11.0\TemplateGuard.Tool.exe')" />
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\generate-base-manifest.ps1&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
 
     <!-- 2. Verify Zero-Hardcode -->
-	  <!--  <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\verify-no-hardcode.ps1&quot;" />-->
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\verify-no-hardcode.ps1&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
 
     <!-- 3. Generate Data Model Docs (Markdown) -->
-    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\Generate-DataModelDocs.ps1&quot; -Format Markdown" />
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\Generate-DataModelDocs.ps1&quot; -Format Markdown"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+
+    <!-- 4. Generate Data Model Diagram -->
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\Generate-DataModelDiagram.ps1&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+
+    <!-- 5. Sync AI Skills (.gemini/skills -> .cursor, .claude, .github) -->
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\sync-ai-skills.ps1&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
   </Target>
 
   <!--

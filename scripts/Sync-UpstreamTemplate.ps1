@@ -410,6 +410,19 @@ switch ($Mode) {
                 Write-Host "  [GOVERNANCE] Updated tools/TemplateGuard/$($pkg.Name)" -ForegroundColor Green
             }
 
+            # Ensure TemplateGuard.Tool / generate-base-manifest.ps1 are stripped from downstream Directory.Build.targets
+            $downstreamTargetsPath = Join-Path $DownstreamFolder "Directory.Build.targets"
+            if (Test-Path $downstreamTargetsPath) {
+                $targetsContent = Get-Content -Path $downstreamTargetsPath -Raw -Encoding utf8
+                if ($targetsContent -match 'TemplateGuard\.Tool|generate-base-manifest\.ps1') {
+                    $newTargets = $targetsContent -replace '(?m)^\s*<!-- 1\. Base Manifest Scan[^\r\n]*-->\r?\n', ''
+                    $newTargets = $newTargets -replace '(?s)\s*<Exec\s+Command="[^"]*TemplateGuard\.Tool[^"]*"[^>]*/>\s*', "`r`n"
+                    $newTargets = $newTargets -replace '(?m)^\s*<Exec\s+Command="[^"]*generate-base-manifest\.ps1[^"]*"[^>]*/>\r?\n', ''
+                    Set-Content -Path $downstreamTargetsPath -Value $newTargets -NoNewline -Encoding utf8
+                    Write-Host "  [GOVERNANCE] Stripped TemplateGuard.Tool & generate-base-manifest.ps1 from Directory.Build.targets" -ForegroundColor Green
+                }
+            }
+
             Write-Host ""
             Write-Host "==> AutoApply synchronization completed successfully!" -ForegroundColor Green
 

@@ -6,7 +6,7 @@
 <div class="entity-meta">
 <span class="badge badge-subsystem">Subsystem: Tasks</span>
 <span class="badge badge-tenant">DbSet: Issues</span>
-<span class="badge badge-tenant" title="Database Table Name">Table: Issues</span>
+<span class="badge badge-tenant" title="Database Table Name">Table: IssueEntity</span>
 <a class="badge badge-base" href="RAIDTaskEntity.html">Base: RAIDTaskEntity</a>
 </div></div>
 <div style="display:flex; gap:8px;">
@@ -102,12 +102,12 @@ erDiagram
 <div class="card">
 <div class="card-title">🖥️ Screen / Razor Page Usages (7)</div>
 <table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
-<tr><td><a href="../razor-pages.html#screen-FluentCalendarScheduleComp.razor"><b>FluentCalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-CalendarScheduleComp.razor"><b>CalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticView.razor"><b>ProgramHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/programs/holistic</code></td><td><span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewHomeTab.razor"><b>ProgramHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">ResolutionStrategy</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">ProjectId</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProjectHolisticView.razor"><b>ProjectHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/projects/holistic</code></td><td><span class="badge-field">MilestoneId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">TenantId</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewRaidLogTab.razor"><b>ProjectHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">ResolutionStrategy</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">DueDate</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">ResolutionStrategy</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectHolisticView.razor"><b>ProjectHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/projects/holistic</code></td><td><span class="badge-field">MilestoneId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewRaidLogTab.razor"><b>ProjectHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">ResolutionStrategy</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">DueDate</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Workaround</span> <span class="badge-field">ResolutionStrategy</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
 </tbody></table>
 </div>
@@ -175,84 +175,6 @@ const activeEntityRels = [
     { parent: 'RAIDTaskEntity', child: 'IssueEntity', label: 'extends' },
 ];
 const entityLookup = {
-    'AuditRecords': 'AuditRecordEntity.html',
-    'AuditRecordEntity': 'AuditRecordEntity.html',
-    'calendars': 'CalendarEntity.html',
-    'CalendarEntity': 'CalendarEntity.html',
-    'UserCalendars': 'UserCalendarEntity.html',
-    'UserCalendarEntity': 'UserCalendarEntity.html',
-    'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
-    'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
-    'EventPublishTrackers': 'EventPublishTrackerEntity.html',
-    'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
-    'ImpersonationGrants': 'ImpersonationGrantEntity.html',
-    'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
-    'Users': 'UserEntity.html',
-    'UserEntity': 'UserEntity.html',
-    'UserSessions': 'UserSessionEntity.html',
-    'UserSessionEntity': 'UserSessionEntity.html',
-    'ImportFiles': 'ImportFileEntity.html',
-    'ImportFileEntity': 'ImportFileEntity.html',
-    'StagedImports': 'StagedImportEntity.html',
-    'StagedImportEntity': 'StagedImportEntity.html',
-    'JobExecutions': 'JobExecutionEntity.html',
-    'JobExecutionEntity': 'JobExecutionEntity.html',
-    'KnowledgeArticles': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleReviewers': 'KnowledgeArticleReviewerEntity.html',
-    'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
-    'Notifications': 'NotificationEntity.html',
-    'NotificationEntity': 'NotificationEntity.html',
-    'ProjectResources': 'ProjectResourceEntity.html',
-    'ProjectResourceEntity': 'ProjectResourceEntity.html',
-    'ResourceAllocations': 'ResourceAllocationEntity.html',
-    'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
-    'ResourceRates': 'ResourceRateEntity.html',
-    'ResourceRateEntity': 'ResourceRateEntity.html',
-    'SprintAuditLogs': 'SprintAuditLogEntity.html',
-    'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
-    'Sprints': 'SprintEntity.html',
-    'SprintEntity': 'SprintEntity.html',
-    'SprintItemVersions': 'SprintItemVersionEntity.html',
-    'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
-    'Assumptions': 'AssumptionEntity.html',
-    'AssumptionEntity': 'AssumptionEntity.html',
-    'Deliverables': 'DeliverableEntity.html',
-    'DeliverableEntity': 'DeliverableEntity.html',
-    'Issues': 'IssueEntity.html',
-    'IssueEntity': 'IssueEntity.html',
-    'Risks': 'RiskEntity.html',
-    'RiskEntity': 'RiskEntity.html',
-    'SubTasks': 'SubTaskEntity.html',
-    'SubTaskEntity': 'SubTaskEntity.html',
-    'TaskComments': 'UserTaskCommentEntity.html',
-    'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
-    'WorkDependencies': 'WorkDependencyEntity.html',
-    'WorkDependencyEntity': 'WorkDependencyEntity.html',
-    'Workflows': 'WorkflowEntity.html',
-    'WorkflowEntity': 'WorkflowEntity.html',
-    'programs': 'ProgramEntity.html',
-    'ProgramEntity': 'ProgramEntity.html',
-    'program_user_roles': 'ProgramUserRoleEntity.html',
-    'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
-    'Projects': 'ProjectEntity.html',
-    'ProjectEntity': 'ProjectEntity.html',
-    'ProjectUserRoles': 'ProjectUserRoleEntity.html',
-    'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
-    'Tenants': 'TenantEntity.html',
-    'TenantEntity': 'TenantEntity.html',
-    'tenant_users': 'TenantUserEntity.html',
-    'TenantUserEntity': 'TenantUserEntity.html',
-    'RevisionHeaders': 'RevisionHeaderEntity.html',
-    'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
-    'DataProtectionKeys': 'DataProtectionKey.html',
-    'DataProtectionKey': 'DataProtectionKey.html',
-    'MiscTasks': 'MiscTaskEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
-    'SprintTasks': 'SprintTaskEntity.html',
-    'SprintTaskEntity': 'SprintTaskEntity.html',
-    'WorkflowTasks': 'WorkflowTaskEntity.html',
-    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
     'BaseEntity': 'BaseEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
@@ -289,11 +211,12 @@ const entityLookup = {
     'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
     'SprintEntity': 'SprintEntity.html',
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+    'ActionItemEntity': 'ActionItemEntity.html',
+    'ActivityTaskEntity': 'ActivityTaskEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
     'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
     'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SprintTaskEntity': 'SprintTaskEntity.html',

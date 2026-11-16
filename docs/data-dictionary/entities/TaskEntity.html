@@ -42,19 +42,10 @@ erDiagram
     }
     IMilestoneLinkedEntity {
     }
-    SprintItemVersionEntity {
-    }
-    SubTaskEntity {
-    }
     TaskEntity {
-    }
-    UserTaskCommentEntity {
     }
     BaseTaskEntity ||--|| TaskEntity : "extends"
     IMilestoneLinkedEntity ||--o{ TaskEntity : "implements"
-    TaskEntity ||--o{ SprintItemVersionEntity : "Item"
-    TaskEntity ||--o{ SubTaskEntity : "SubTasks"
-    TaskEntity ||--o{ UserTaskCommentEntity : "Comments"
 </pre></div>
 </div>
 <div class="card">
@@ -62,7 +53,7 @@ erDiagram
 <div class="entity-meta">
 <span class="badge badge-softdelete" title="Soft-deletable record via QueryFilters.SoftDelete">[Soft Deletable]</span>
 </div>
-<div class="desc-box" style="margin-top: 14px;">Abstract base class for executable tasks. Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, MiscTaskEntity. Inherits from .</div>
+<div class="desc-box" style="margin-top: 14px;">Abstract base class for executable tasks. Concrete subtypes use EF Core TPC mapping: SprintTaskEntity, WorkflowTaskEntity, ActivityTaskEntity. Inherits from .</div>
 </div>
 <div class="card">
 <div class="card-title">Properties & Fields (39)</div>
@@ -118,11 +109,13 @@ erDiagram
 </tbody></table>
 </div>
 <div class="card">
-<div class="card-title">🖥️ Screen / Razor Page Usages (21)</div>
+<div class="card-title">🖥️ Screen / Razor Page Usages (23)</div>
 <table><thead><tr><th>Screen / Component</th><th>Type</th><th>Subsystem</th><th>Route Directive</th><th>Fields & Properties Referenced</th></tr></thead><tbody>
+<tr><td><a href="../razor-pages.html#screen-CalendarScheduleComp.razor"><b>CalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-CreateWorkflowWizardModal.razor"><b>CreateWorkflowWizardModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-FluentCalendarScheduleComp.razor"><b>FluentCalendarScheduleComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-TaskCreationDialog.razor"><b>TaskCreationDialog.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Labels</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-TaskDependencyLinkModal.razor"><b>TaskDependencyLinkModal.razor</b></a></td><td><span class="badge badge-modal">Modal</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Modal</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-TaskTypeSelectionButton.razor"><b>TaskTypeSelectionButton.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-WorkflowStepperComp.razor"><b>WorkflowStepperComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Common</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">SubTasks</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">AssigneeEmails</span> <span class="badge-field">WatcherEmails</span> <span class="badge-field">IsClosed</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Level</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-NavMenuComp.razor"><b>NavMenuComp.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Layout</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-DashboardKanbanBoard.razor"><b>DashboardKanbanBoard.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Title</span></td></tr>
@@ -130,12 +123,12 @@ erDiagram
 <tr><td><a href="../razor-pages.html#screen-MyProjectsGrid.razor"><b>MyProjectsGrid.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span> <span class="badge-field">DueDate</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticView.razor"><b>ProgramHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/programs/holistic</code></td><td><span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewHomeTab.razor"><b>ProgramHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">ProjectId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProgramHolisticViewRaidLogTab.razor"><b>ProgramHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProgramSummaryCard.razor"><b>ProgramSummaryCard.razor</b></a></td><td><span class="badge badge-component">Component</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Component</span></td><td><span class="badge-field">Status</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProjectHolisticView.razor"><b>ProjectHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/projects/holistic</code></td><td><span class="badge-field">MilestoneId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">TenantId</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectHolisticView.razor"><b>ProjectHolisticView.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/projects/holistic</code></td><td><span class="badge-field">MilestoneId</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewHomeTab.razor"><b>ProjectHolisticViewHomeTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span style="color:#8a8886;font-style:italic;">Entity instance / collection reference</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewRaidLogTab.razor"><b>ProjectHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">DueDate</span></td></tr>
-<tr><td><a href="../razor-pages.html#screen-SprintPlanningPage.razor"><b>SprintPlanningPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/sprints</code></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ProjectId</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-ProjectHolisticViewRaidLogTab.razor"><b>ProjectHolisticViewRaidLogTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Pages</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">DueDate</span> <span class="badge-field">Id</span></td></tr>
+<tr><td><a href="../razor-pages.html#screen-SprintPlanningPage.razor"><b>SprintPlanningPage.razor</b></a></td><td><span class="badge badge-page">Page</span></td><td>Pages</td><td><code>/sprints</code></td><td><span class="badge-field">EstimatedHours</span> <span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">ProjectId</span> <span class="badge-field">ProgramId</span> <span class="badge-field">Id</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsNotificationsTab.razor"><b>SettingsNotificationsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Status</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Created</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsProgramsTab.razor"><b>SettingsProgramsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Comments</span> <span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">IsDeleted</span> <span class="badge-field">ProgramId</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span></td></tr>
 <tr><td><a href="../razor-pages.html#screen-SettingsTenantsTab.razor"><b>SettingsTenantsTab.razor</b></a></td><td><span class="badge badge-settingstab">Settings Tab</span></td><td>Settings</td><td><span style="color:#8a8886;font-style:italic;">Settings Tab</span></td><td><span class="badge-field">Title</span> <span class="badge-field">Description</span> <span class="badge-field">Priority</span> <span class="badge-field">Status</span> <span class="badge-field">StartDate</span> <span class="badge-field">DueDate</span> <span class="badge-field">EndDate</span> <span class="badge-field">TenantId</span> <span class="badge-field">Id</span> <span class="badge-field">Version</span> <span class="badge-field">CreatedBy</span> <span class="badge-field">Updated</span> <span class="badge-field">UpdatedBy</span></td></tr>
@@ -202,89 +195,8 @@ mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose"
 const activeEntityRels = [
     { parent: 'BaseTaskEntity', child: 'TaskEntity', label: 'extends' },
     { parent: 'IMilestoneLinkedEntity', child: 'TaskEntity', label: 'implements' },
-    { parent: 'TaskEntity', child: 'SprintItemVersionEntity', label: 'Item' },
-    { parent: 'TaskEntity', child: 'SubTaskEntity', label: 'SubTasks' },
-    { parent: 'TaskEntity', child: 'UserTaskCommentEntity', label: 'Comments' },
 ];
 const entityLookup = {
-    'AuditRecords': 'AuditRecordEntity.html',
-    'AuditRecordEntity': 'AuditRecordEntity.html',
-    'calendars': 'CalendarEntity.html',
-    'CalendarEntity': 'CalendarEntity.html',
-    'UserCalendars': 'UserCalendarEntity.html',
-    'UserCalendarEntity': 'UserCalendarEntity.html',
-    'EventConsumptionTrackers': 'EventConsumptionTrackerEntity.html',
-    'EventConsumptionTrackerEntity': 'EventConsumptionTrackerEntity.html',
-    'EventPublishTrackers': 'EventPublishTrackerEntity.html',
-    'EventPublishTrackerEntity': 'EventPublishTrackerEntity.html',
-    'ImpersonationGrants': 'ImpersonationGrantEntity.html',
-    'ImpersonationGrantEntity': 'ImpersonationGrantEntity.html',
-    'Users': 'UserEntity.html',
-    'UserEntity': 'UserEntity.html',
-    'UserSessions': 'UserSessionEntity.html',
-    'UserSessionEntity': 'UserSessionEntity.html',
-    'ImportFiles': 'ImportFileEntity.html',
-    'ImportFileEntity': 'ImportFileEntity.html',
-    'StagedImports': 'StagedImportEntity.html',
-    'StagedImportEntity': 'StagedImportEntity.html',
-    'JobExecutions': 'JobExecutionEntity.html',
-    'JobExecutionEntity': 'JobExecutionEntity.html',
-    'KnowledgeArticles': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleEntity': 'KnowledgeArticleEntity.html',
-    'KnowledgeArticleReviewers': 'KnowledgeArticleReviewerEntity.html',
-    'KnowledgeArticleReviewerEntity': 'KnowledgeArticleReviewerEntity.html',
-    'Notifications': 'NotificationEntity.html',
-    'NotificationEntity': 'NotificationEntity.html',
-    'ProjectResources': 'ProjectResourceEntity.html',
-    'ProjectResourceEntity': 'ProjectResourceEntity.html',
-    'ResourceAllocations': 'ResourceAllocationEntity.html',
-    'ResourceAllocationEntity': 'ResourceAllocationEntity.html',
-    'ResourceRates': 'ResourceRateEntity.html',
-    'ResourceRateEntity': 'ResourceRateEntity.html',
-    'SprintAuditLogs': 'SprintAuditLogEntity.html',
-    'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
-    'Sprints': 'SprintEntity.html',
-    'SprintEntity': 'SprintEntity.html',
-    'SprintItemVersions': 'SprintItemVersionEntity.html',
-    'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
-    'Assumptions': 'AssumptionEntity.html',
-    'AssumptionEntity': 'AssumptionEntity.html',
-    'Deliverables': 'DeliverableEntity.html',
-    'DeliverableEntity': 'DeliverableEntity.html',
-    'Issues': 'IssueEntity.html',
-    'IssueEntity': 'IssueEntity.html',
-    'Risks': 'RiskEntity.html',
-    'RiskEntity': 'RiskEntity.html',
-    'SubTasks': 'SubTaskEntity.html',
-    'SubTaskEntity': 'SubTaskEntity.html',
-    'TaskComments': 'UserTaskCommentEntity.html',
-    'UserTaskCommentEntity': 'UserTaskCommentEntity.html',
-    'WorkDependencies': 'WorkDependencyEntity.html',
-    'WorkDependencyEntity': 'WorkDependencyEntity.html',
-    'Workflows': 'WorkflowEntity.html',
-    'WorkflowEntity': 'WorkflowEntity.html',
-    'programs': 'ProgramEntity.html',
-    'ProgramEntity': 'ProgramEntity.html',
-    'program_user_roles': 'ProgramUserRoleEntity.html',
-    'ProgramUserRoleEntity': 'ProgramUserRoleEntity.html',
-    'Projects': 'ProjectEntity.html',
-    'ProjectEntity': 'ProjectEntity.html',
-    'ProjectUserRoles': 'ProjectUserRoleEntity.html',
-    'ProjectUserRoleEntity': 'ProjectUserRoleEntity.html',
-    'Tenants': 'TenantEntity.html',
-    'TenantEntity': 'TenantEntity.html',
-    'tenant_users': 'TenantUserEntity.html',
-    'TenantUserEntity': 'TenantUserEntity.html',
-    'RevisionHeaders': 'RevisionHeaderEntity.html',
-    'RevisionHeaderEntity': 'RevisionHeaderEntity.html',
-    'DataProtectionKeys': 'DataProtectionKey.html',
-    'DataProtectionKey': 'DataProtectionKey.html',
-    'MiscTasks': 'MiscTaskEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
-    'SprintTasks': 'SprintTaskEntity.html',
-    'SprintTaskEntity': 'SprintTaskEntity.html',
-    'WorkflowTasks': 'WorkflowTaskEntity.html',
-    'WorkflowTaskEntity': 'WorkflowTaskEntity.html',
     'AuditRecordEntity': 'AuditRecordEntity.html',
     'BaseEntity': 'BaseEntity.html',
     'IHmacSignableEntity': 'IHmacSignableEntity.html',
@@ -321,11 +233,12 @@ const entityLookup = {
     'SprintAuditLogEntity': 'SprintAuditLogEntity.html',
     'SprintEntity': 'SprintEntity.html',
     'SprintItemVersionEntity': 'SprintItemVersionEntity.html',
+    'ActionItemEntity': 'ActionItemEntity.html',
+    'ActivityTaskEntity': 'ActivityTaskEntity.html',
     'AssumptionEntity': 'AssumptionEntity.html',
     'BaseTaskEntity': 'BaseTaskEntity.html',
     'DeliverableEntity': 'DeliverableEntity.html',
     'IssueEntity': 'IssueEntity.html',
-    'MiscTaskEntity': 'MiscTaskEntity.html',
     'RAIDTaskEntity': 'RAIDTaskEntity.html',
     'RiskEntity': 'RiskEntity.html',
     'SprintTaskEntity': 'SprintTaskEntity.html',
