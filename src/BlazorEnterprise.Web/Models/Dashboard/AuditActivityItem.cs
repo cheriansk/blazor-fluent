@@ -4,6 +4,7 @@ namespace BlazorEnterprise.Web.Models.Dashboard;
 
 public sealed class AuditActivityItem
 {
+    public Guid Id { get; set; } = Guid.CreateVersion7();
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string User { get; set; } = string.Empty;

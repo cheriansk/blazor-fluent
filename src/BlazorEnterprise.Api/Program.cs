@@ -5,6 +5,7 @@ using BlazorEnterprise.Api.Admin;
 using BlazorEnterprise.Api.Auth;
 using BlazorEnterprise.Api.Endpoints;
 using BlazorEnterprise.Api.Middleware;
+using BlazorEnterprise.Infrastructure.Security;
 using BlazorEnterprise.RulesEngine.BatchProcessing;
 using BlazorEnterprise.RulesEngine.BatchProcessing.Processors;
 using BlazorEnterprise.Shared.Contracts.Engine.Client;
@@ -82,12 +83,14 @@ builder.Services.AddOptions<BlazorEnterprise.Core.Configuration.ProprietaryStora
 
 // 5. JWT Bearer Authentication (Zero-Trust Fail-Fast Configuration Validation)
 var authIssuer = builder.Configuration["Auth:Issuer"];
+var authAudience = builder.Configuration["Auth:Audience"];
+var s2sIssuer = builder.Configuration["Auth:S2S:Issuer"] ?? "blazorenterprise-worker";
+var s2sAudience = builder.Configuration["Auth:S2S:Audience"] ?? "https://api.blazorenterprise.com";
+
 if (string.IsNullOrWhiteSpace(authIssuer))
 {
     throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Issuer' must be explicitly configured.");
 }
-
-var authAudience = builder.Configuration["Auth:Audience"];
 if (string.IsNullOrWhiteSpace(authAudience))
 {
     throw new InvalidOperationException("Zero-Trust Security Violation: 'Auth:Audience' must be explicitly configured.");
@@ -106,8 +109,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuers = [authIssuer, s2sIssuer],
+            ValidateAudience = true,
+            ValidAudiences = [authAudience, s2sAudience],
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256Signature, SecurityAlgorithms.HmacSha256],
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
@@ -130,9 +138,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore parsing error and fallback to master key
+                    // Fail closed for corrupt tokens without throwing unhandled exceptions
+                    // (resolver will fallback to master key)
                 }
 
                 // Also allow the central Cloud Master Signing Key for user login tokens
@@ -241,12 +250,16 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // 9. Add Health Checks
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<BlazorEnterprise.Api.Infrastructure.GlobalExceptionHandler>();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
 
 // 10. Middleware Pipeline
+app.UseExceptionHandler();
+app.UseSecurityHeaders();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseMiddleware<EnforceMandatoryCorrelationIdMiddleware>();

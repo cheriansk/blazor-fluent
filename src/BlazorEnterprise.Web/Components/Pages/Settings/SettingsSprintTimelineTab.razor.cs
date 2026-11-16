@@ -10,6 +10,7 @@ public partial class SettingsSprintTimelineTab : ComponentBase, IDisposable
     [Inject] private ISprintPlanningService SprintService { get; set; } = default!;
     [Inject] private IProjectContext ProjectContext { get; set; } = default!;
     [Inject] private ILogger<SettingsSprintTimelineTab> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
 
     private List<SprintDto> _sprints = new();
     private string _filterStatus = string.Empty;
@@ -143,7 +144,8 @@ public partial class SettingsSprintTimelineTab : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Failed to save sprint. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _errorMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("save sprint", CorrelationContext?.CorrelationId);
         }
     }
 
@@ -157,7 +159,8 @@ public partial class SettingsSprintTimelineTab : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            Logger.LogError(ex, "Failed to save sprint. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _errorMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("save sprint", CorrelationContext?.CorrelationId);
         }
     }
 

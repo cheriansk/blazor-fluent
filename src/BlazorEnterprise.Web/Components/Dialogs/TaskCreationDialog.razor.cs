@@ -1,4 +1,5 @@
-﻿using System;
+using BlazorEnterprise.Web.Components.Common;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BlazorEnterprise.Core.Contracts;
@@ -13,6 +14,8 @@ namespace BlazorEnterprise.Web.Components.Dialogs;
 
 public partial class TaskCreationDialog : ComponentBase
 {
+    [Inject] private Microsoft.Extensions.Logging.ILogger<TaskCreationDialog> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
     [Inject] private ITaskCreationService TaskCreationService { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
@@ -133,7 +136,8 @@ public partial class TaskCreationDialog : ComponentBase
         }
         catch (Exception ex)
         {
-            _errors = [ex.Message];
+            Logger.LogError(ex, "Failed to create work item. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _errors = [UserFacingError.For("create work item", CorrelationContext?.CorrelationId)];
         }
         finally
         {

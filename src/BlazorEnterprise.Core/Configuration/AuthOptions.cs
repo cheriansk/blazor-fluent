@@ -12,4 +12,11 @@ public class AuthOptions
     public string Audience { get; set; } = string.Empty;
     public string SigningKey { get; set; } = string.Empty;
     public int AccessTokenLifetimeMinutes { get; set; } = 60;
+    public S2SOptions S2S { get; set; } = new();
+
+    public class S2SOptions
+    {
+        public string Issuer { get; set; } = string.Empty;
+        public string Audience { get; set; } = string.Empty;
+    }
 }

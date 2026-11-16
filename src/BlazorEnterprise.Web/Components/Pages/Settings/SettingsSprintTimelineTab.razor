@@ -28,9 +28,9 @@
         <div class="filter-bar">
             <select class="csk-select" @bind="_filterStatus">
                 <option value="">All Statuses</option>
-                @foreach (var st in Enum.GetValues<SprintStatusEnum>())
+                @foreach (var st in DataListExtensions.GetDataListItems<SprintStatusEnum>())
                 {
-                    <option value="@st">@st</option>
+                    <option value="@st.DisplayName">@st.DisplayName</option>
                 }
             </select>
             <span class="total-badge">Total Sprints: @_sprints.Count</span>
@@ -60,7 +60,7 @@
                     @foreach (var s in FilteredSprints)
                     {
                         var isCompleted = s.Status == SprintStatusEnum.Completed;
-                        <tr>
+                        <tr @key="s.Id">
                             <td><strong>@s.SprintNumber</strong></td>
                             <td>@s.SprintName</td>
                             <td>@s.StartDate.ToString("MMM dd, yyyy") - @s.EndDate.ToString("MMM dd, yyyy")</td>

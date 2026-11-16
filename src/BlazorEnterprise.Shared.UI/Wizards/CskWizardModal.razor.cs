@@ -16,6 +16,7 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
     [Parameter] public EventCallback<TState> OnFinish { get; set; }
     [Parameter] public Func<TState, Task<string?>>? OnSaveAsync { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<Exception> OnError { get; set; }
     [Parameter] public EventCallback OnEditRequested { get; set; }
     [Parameter] public RenderFragment? Steps { get; set; }
     [Parameter] public WizardFlowDefinition<TState>? FlowDefinition { get; set; }
@@ -283,7 +284,9 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
                 }
                 catch (Exception ex)
                 {
-                    _activeErrorMessage = ex.Message;
+                    _activeErrorMessage = "An error occurred during step validation. Please review inputs.";
+                    if (OnError.HasDelegate) await OnError.InvokeAsync(ex);
+                    else throw;
                     return false;
                 }
             }
@@ -300,7 +303,9 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
             }
             catch (Exception ex)
             {
-                _activeErrorMessage = ex.Message;
+                    _activeErrorMessage = "An error occurred during step validation. Please review inputs.";
+                    if (OnError.HasDelegate) await OnError.InvokeAsync(ex);
+                    else throw;
                 return false;
             }
         }
@@ -408,7 +413,9 @@ public partial class CskWizardModal<TState> : ComponentBase, IWizardHost, IDispo
         }
         catch (Exception ex)
         {
-            _activeErrorMessage = ex.Message;
+            _activeErrorMessage = "An error occurred while completing the wizard.";
+            if (OnError.HasDelegate) await OnError.InvokeAsync(ex);
+            else throw;
         }
         finally
         {

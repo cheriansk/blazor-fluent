@@ -51,9 +51,9 @@ public class WizardContext<TState>
         {
             _initialStateJson = State != null ? JsonSerializer.Serialize(State) : null;
         }
-        catch
+        catch (Exception ex)
         {
-            _initialStateJson = null;
+            throw new InvalidOperationException("Wizard state must be JSON-serializable.", ex);
         }
     }
 
@@ -67,9 +67,9 @@ public class WizardContext<TState>
         {
             return JsonSerializer.Deserialize<TState>(_initialStateJson);
         }
-        catch
+        catch (Exception ex)
         {
-            return default;
+            throw new InvalidOperationException("Failed to deserialize wizard initial state snapshot.", ex);
         }
     }
 
@@ -85,9 +85,9 @@ public class WizardContext<TState>
             var currentJson = State != null ? JsonSerializer.Serialize(State) : null;
             return !string.Equals(_initialStateJson, currentJson, StringComparison.Ordinal);
         }
-        catch
+        catch (Exception ex)
         {
-            return IsDirty;
+            throw new InvalidOperationException("Failed to serialize wizard state during diff check.", ex);
         }
     }
 

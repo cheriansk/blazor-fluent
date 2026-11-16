@@ -24,7 +24,7 @@
             <div class="kanban-cards-stack">
                 @foreach (var task in Tasks.Where(t => t.Column == "ToDo"))
                 {
-                    <div class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
+                    <div @key="task.Key" class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
                         <div class="task-card-header">
                             <span class="task-key">@task.Key</span>
                             <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
@@ -50,7 +50,7 @@
             <div class="kanban-cards-stack">
                 @foreach (var task in Tasks.Where(t => t.Column == "InProgress"))
                 {
-                    <div class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
+                    <div @key="task.Key" class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
                         <div class="task-card-header">
                             <span class="task-key">@task.Key</span>
                             <CskStatusChip Text="@task.PriorityText" Variant="@task.PriorityVariant" />
@@ -76,7 +76,7 @@
             <div class="kanban-cards-stack">
                 @foreach (var task in Tasks.Where(t => t.Column == "Done"))
                 {
-                    <div class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
+                    <div @key="task.Key" class="mat-kanban-card" @onclick="@(() => OnNavigateToTasks.InvokeAsync())">
                         <div class="task-card-header">
                             <span class="task-key">@task.Key</span>
                             <CskStatusChip Text="Resolved" Variant="CskStatusChip.ChipVariant.Success" />
@@ -98,4 +98,16 @@
 @code {
     [Parameter] public IReadOnlyList<KanbanTaskItem> Tasks { get; set; } = Array.Empty<KanbanTaskItem>();
     [Parameter] public EventCallback OnNavigateToTasks { get; set; }
+
+    private int _lastCount = -1;
+
+    protected override bool ShouldRender()
+    {
+        if (Tasks.Count != _lastCount)
+        {
+            _lastCount = Tasks.Count;
+            return true;
+        }
+        return false;
+    }
 }

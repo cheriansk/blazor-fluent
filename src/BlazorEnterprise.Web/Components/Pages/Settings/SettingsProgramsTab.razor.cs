@@ -1,3 +1,4 @@
+using BlazorEnterprise.Web.Components.Common;
 using BlazorEnterprise.Shared.UI.Components;
 
 using BlazorEnterprise.Components.Common;
@@ -20,6 +21,7 @@ namespace BlazorEnterprise.Web.Components.Pages.Settings;
 
 public partial class SettingsProgramsTab : ComponentBase, IDisposable
 {
+    [Inject] private ILogger<SettingsProgramsTab> Logger { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
 
     [Inject] private ITenantService TenantService { get; set; } = default!;
@@ -249,7 +251,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load programs: {ex.Message}";
+            Logger.LogError(ex, "Failed to load programs. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _statusMessage = UserFacingError.For("load programs", CorrelationContext?.CorrelationId);
             _isError = true;
             _programs.Clear();
         }
@@ -311,7 +314,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load program calendar: {ex.Message}";
+            Logger.LogError(ex, "Failed to load program calendar. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _statusMessage = UserFacingError.For("load program calendar", CorrelationContext?.CorrelationId);
             _isError = true;
         }
 
@@ -337,7 +341,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load program RAID items: {ex.Message}";
+            Logger.LogError(ex, "Failed to load program RAID items. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _statusMessage = UserFacingError.For("load program RAID items", CorrelationContext?.CorrelationId);
             _isError = true;
         }
     }
@@ -362,7 +367,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to calculate program health: {ex.Message}";
+            Logger.LogError(ex, "Failed to calculate program health. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _statusMessage = UserFacingError.For("calculate program health", CorrelationContext?.CorrelationId);
             _isError = true;
         }
 
@@ -386,7 +392,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load program projects: {ex.Message}";
+            Logger.LogError(ex, "Failed to load program projects. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            _statusMessage = UserFacingError.For("load program projects", CorrelationContext?.CorrelationId);
             _isError = true;
         }
 
@@ -971,7 +978,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            var err = $"An error occurred while saving the program: {ex.Message}";
+            Logger.LogError(ex, "Failed to save program. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            var err = UserFacingError.For("save the program", CorrelationContext?.CorrelationId);
             return err;
         }
 
@@ -1380,7 +1388,8 @@ public partial class SettingsProgramsTab : ComponentBase, IDisposable
 
         catch (Exception ex)
         {
-            var err = $"An error occurred while saving the project: {ex.Message}";
+            Logger.LogError(ex, "Failed to save project. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            var err = UserFacingError.For("save the project", CorrelationContext?.CorrelationId);
             return err;
         }
 

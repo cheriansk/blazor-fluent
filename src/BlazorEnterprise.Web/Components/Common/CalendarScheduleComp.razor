@@ -72,7 +72,7 @@
                     var hasBlocker = dayItems.Any(i => i.ItemCategory == "Blocker");
                     var hasOverdue = dayItems.Any(i => i.IsOverdue);
 
-                    <div class="calendar-day-cell @(isCurrentMonth ? "" : "other-month") @(isToday ? "today" : "") @(isSelected ? "selected" : "")"
+                    <div @key="day" class="calendar-day-cell @(isCurrentMonth ? "" : "other-month") @(isToday ? "today" : "") @(isSelected ? "selected" : "")"
                          @onclick="() => SelectDate(day)">
                         <div class="day-cell-header">
                             <span class="day-number">@day.Day</span>
@@ -89,7 +89,7 @@
                         <div class="day-cell-items">
                             @foreach (var item in dayItems.Take(3))
                             {
-                                <div class="cell-item-chip @GetCategoryClass(item.ItemCategory)"
+                                <div @key="item.Id" class="cell-item-chip @GetCategoryClass(item.ItemCategory)"
                                      @onclick:stopPropagation="true"
                                      @onclick="() => OnItemClick.InvokeAsync(item)"
                                      title="@item.Title (@item.ItemCategory)">
@@ -122,7 +122,7 @@
                 {
                     @foreach (var item in GetItemsForDate(SelectedDate))
                     {
-                        <div class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                        <div @key="item.Id" class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
                             <div class="card-indicator @GetCategoryClass(item.ItemCategory)"></div>
                             <div class="card-content">
                                 <div class="card-title-row">
@@ -166,7 +166,7 @@
             {
                 @foreach (var group in FilteredItems.GroupBy(i => i.StartUtc.Date).OrderBy(g => g.Key))
                 {
-                    <div class="agenda-date-group">
+                    <div @key="group.Key" class="agenda-date-group">
                         <div class="agenda-date-header">
                             <span class="agenda-date-title">@group.Key.ToString("dddd, MMMM d, yyyy")</span>
                             <span class="agenda-date-count">@group.Count() items</span>
@@ -174,7 +174,7 @@
                         <div class="agenda-items-list">
                             @foreach (var item in group)
                             {
-                                <div class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                                <div @key="item.Id" class="schedule-item-card" @onclick="() => OnItemClick.InvokeAsync(item)">
                                     <div class="card-indicator @GetCategoryClass(item.ItemCategory)"></div>
                                     <div class="card-content">
                                         <div class="card-title-row">
@@ -220,7 +220,7 @@
                 <div class="agenda-items-list">
                     @foreach (var item in OverdueItems.OrderBy(i => i.EndUtc))
                     {
-                        <div class="schedule-item-card overdue-card" @onclick="() => OnItemClick.InvokeAsync(item)">
+                        <div @key="item.Id" class="schedule-item-card overdue-card" @onclick="() => OnItemClick.InvokeAsync(item)">
                             <div class="card-indicator cat-blocker"></div>
                             <div class="card-content">
                                 <div class="card-title-row">
@@ -261,6 +261,32 @@
     private DateTime _currentMonth = new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
     private string _currentView = "Month";
     private string _categoryFilter = "All";
+
+    private int _lastItemsCount = -1;
+    private DateTime _lastRenderedDate;
+    private string _lastRenderedView = "";
+    private string _lastCategoryFilter = "";
+    private DateTime _lastRenderedMonth;
+
+    protected override bool ShouldRender()
+    {
+        var should = Items.Count != _lastItemsCount ||
+                     SelectedDate != _lastRenderedDate ||
+                     _currentView != _lastRenderedView ||
+                     _categoryFilter != _lastCategoryFilter ||
+                     _currentMonth != _lastRenderedMonth;
+
+        if (should)
+        {
+            _lastItemsCount = Items.Count;
+            _lastRenderedDate = SelectedDate;
+            _lastRenderedView = _currentView;
+            _lastCategoryFilter = _categoryFilter;
+            _lastRenderedMonth = _currentMonth;
+        }
+
+        return should;
+    }
 
     private IReadOnlyList<CalendarItemDto> FilteredItems =>
         _categoryFilter == "All"

@@ -16,6 +16,8 @@ public partial class KnowledgeArticleEditPage : ComponentBase
 {
     [Inject] private IKnowledgeBaseService KnowledgeService { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private ILogger<KnowledgeArticleEditPage> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
 
 [Parameter] public Guid? Id { get; set; }
 
@@ -63,7 +65,8 @@ public partial class KnowledgeArticleEditPage : ComponentBase
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Error loading article form: {ex.Message}";
+            Logger.LogError(ex, "Failed to load article form. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load article form", CorrelationContext?.CorrelationId);
             _isStatusError = true;
         }
         finally
@@ -164,7 +167,8 @@ public partial class KnowledgeArticleEditPage : ComponentBase
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Error saving article: {ex.Message}";
+            Logger.LogError(ex, "Failed to save article. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("save article", CorrelationContext?.CorrelationId);
             _isStatusError = true;
         }
         finally

@@ -86,9 +86,9 @@
                 <div class="filter-item">
                     <select class="csk-select" @bind="_filterRole">
                         <option value="">All Roles</option>
-                        @foreach (var role in Enum.GetValues<ProjectResourceRoleEnum>())
+                        @foreach (var role in DataListExtensions.GetDataListItems<ProjectResourceRoleEnum>())
                         {
-                            <option value="@role">@role</option>
+                            <option @key="role.Code" value="@role.DisplayName">@role.DisplayName</option>
                         }
                     </select>
                 </div>
@@ -111,7 +111,7 @@
                             <th class="col-fixed col-rate">Hourly Rate</th>
                             @foreach (var date in _planSummary.Dates)
                             {
-                                <th class="col-date @(date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday ? "weekend" : "")">
+                                <th @key="date" class="col-date @(date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday ? "weekend" : "")">
                                     <div class="date-header-day">@date.ToString("ddd")</div>
                                     <div class="date-header-num">@date.ToString("MM/dd")</div>
                                 </th>
@@ -124,7 +124,7 @@
                     <tbody>
                         @foreach (var res in FilteredResources)
                         {
-                            <tr>
+                            <tr @key="res.ProjectResourceId">
                                 <td class="col-fixed col-name">
                                     <div class="resource-cell">
                                         <div class="avatar-circle">@res.ResourceName[..1].ToUpper()</div>
@@ -139,9 +139,9 @@
                                     else
                                     {
                                         <select class="csk-select-sm" value="@res.Role" @onchange="(e) => UpdateResourceRole(res.ProjectResourceId, e.Value?.ToString())">
-                                            @foreach (var role in Enum.GetValues<ProjectResourceRoleEnum>())
+                                            @foreach (var role in DataListExtensions.GetDataListItems<ProjectResourceRoleEnum>())
                                             {
-                                                <option value="@role">@role</option>
+                                                <option @key="role.Code" value="@role.DisplayName">@role.DisplayName</option>
                                             }
                                         </select>
                                     }
@@ -153,7 +153,7 @@
                                 {
                                     var pct = res.Allocations.TryGetValue(date, out var val) ? val : 0;
                                     var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                                    <td class="col-cell @GetCellCssClass(pct) @(isWeekend ? "cell-weekend" : "")">
+                                    <td @key="date" class="col-cell @GetCellCssClass(pct) @(isWeekend ? "cell-weekend" : "")">
                                         @if (_isReadOnly)
                                         {
                                             <span>@pct%</span>

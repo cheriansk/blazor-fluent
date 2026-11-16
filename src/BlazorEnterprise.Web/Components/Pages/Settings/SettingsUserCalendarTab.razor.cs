@@ -13,6 +13,7 @@ public partial class SettingsUserCalendarTab : ComponentBase
     [Inject] private ICurrentUser CurrentUser { get; set; } = default!;
     [Inject] private ITenantContext TenantContext { get; set; } = default!;
     [Inject] private ILogger<SettingsUserCalendarTab> Logger { get; set; } = default!;
+    [Inject] private BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
 
     private bool _isLoading = true;
     private bool _isSaving;
@@ -48,7 +49,8 @@ public partial class SettingsUserCalendarTab : ComponentBase
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to load schedule: {ex.Message}";
+            Logger.LogError(ex, "Failed to load schedule. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _statusMessage = BlazorEnterprise.Web.Components.Common.UserFacingError.For("load schedule", CorrelationContext?.CorrelationId);
             _isError = true;
         }
         finally
@@ -128,7 +130,8 @@ public partial class SettingsUserCalendarTab : ComponentBase
         }
         catch (Exception ex)
         {
-            _modalError = $"Error creating event: {ex.Message}";
+            Logger.LogError(ex, "Failed to create event. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _modalError = BlazorEnterprise.Web.Components.Common.UserFacingError.For("create event", CorrelationContext?.CorrelationId);
         }
         finally
         {

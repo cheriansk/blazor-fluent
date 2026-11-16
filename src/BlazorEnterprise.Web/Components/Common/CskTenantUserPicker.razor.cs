@@ -147,12 +147,7 @@ public partial class CskTenantUserPicker : ComponentBase
     private void OnInputBlur()
     {
         // Give time for click inside dropdown to execute
-        Task.Delay(200).ContinueWith(_ =>
-        {
-            _isOpen = false;
-            ValidateEmails(Value);
-            InvokeAsync(StateHasChanged);
-        });
+        _ = CloseDropdownAfterDelayAsync();
     }
 
     private void ToggleDropdown()
@@ -193,6 +188,21 @@ public partial class CskTenantUserPicker : ComponentBase
             _validationError = invalidEmails.Count == 1
                 ? $"User '{invalidEmails[0]}' is not a member of this tenant."
                 : $"Users [{string.Join(", ", invalidEmails)}] are not members of this tenant.";
+        }
+    }
+
+    private async Task CloseDropdownAfterDelayAsync()
+    {
+        try
+        {
+            await Task.Delay(200);
+            _isOpen = false;
+            ValidateEmails(Value);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            // Safe ignore on component unmount
         }
     }
 }

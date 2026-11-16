@@ -1,4 +1,4 @@
-﻿using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Contracts;
 using BlazorEnterprise.Shared.Contracts.Engine.Client;
 using BlazorEnterprise.Shared.Contracts.Engine.Transforms;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -481,6 +481,11 @@ public partial class UserTaskService : IUserTaskService
 
         if (dependencies.Count == 0) return Array.Empty<TaskDependencyItemDto>();
 
+        var targetItemIds = dependencies.Where(d => d.DependsOnItemId.HasValue).Select(d => d.DependsOnItemId!.Value).Distinct().ToList();
+        var targetTasksMap = await _context.Tasks.AsNoTracking().Where(t => targetItemIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id, ct);
+        var remainingIds = targetItemIds.Where(id => !targetTasksMap.ContainsKey(id)).ToList();
+        var targetRisksMap = remainingIds.Count > 0 ? await _context.Risks.AsNoTracking().Where(r => remainingIds.Contains(r.Id)).ToDictionaryAsync(r => r.Id, ct) : new Dictionary<Guid, RiskEntity>();
+
         var results = new List<TaskDependencyItemDto>();
         foreach (var dep in dependencies)
         {
@@ -494,8 +499,7 @@ public partial class UserTaskService : IUserTaskService
 
             if (dep.DependsOnItemId.HasValue)
             {
-                var targetTask = await _context.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == dep.DependsOnItemId.Value, ct);
-                if (targetTask != null)
+                if (targetTasksMap.TryGetValue(dep.DependsOnItemId.Value, out var targetTask))
                 {
                     liveTitle = targetTask.Title;
                     liveStatus = targetTask.Status.ToString();
@@ -505,24 +509,18 @@ public partial class UserTaskService : IUserTaskService
                     targetProjectId = targetTask.ProjectId;
                     targetProgramId = targetTask.ProgramId;
                 }
-                else
+                else if (targetRisksMap.TryGetValue(dep.DependsOnItemId.Value, out var targetRisk))
                 {
-                    var targetRisk = await _context.Risks.AsNoTracking().FirstOrDefaultAsync(r => r.Id == dep.DependsOnItemId.Value, ct);
-                    if (targetRisk != null)
-                    {
-                        liveTitle = targetRisk.Title;
-                        liveStatus = targetRisk.Status.ToString();
-                        liveDueDate = targetRisk.DueDate;
-                        liveAssignees = targetRisk.AssigneeEmails ?? string.Empty;
-                        targetLevel = targetRisk.Level;
-                        targetProjectId = targetRisk.ProjectId;
-                        targetProgramId = targetRisk.ProgramId;
-                    }
+                    liveTitle = targetRisk.Title;
+                    liveStatus = targetRisk.Status.ToString();
+                    liveDueDate = targetRisk.DueDate;
+                    liveAssignees = targetRisk.AssigneeEmails ?? string.Empty;
+                    targetLevel = targetRisk.Level;
+                    targetProjectId = targetRisk.ProjectId;
+                    targetProgramId = targetRisk.ProgramId;
                 }
             }
-
             var canAccess = await _hierarchyAuth.CanViewScopedItemAsync(targetLevel, tenantId, targetProgramId, targetProjectId, ct: ct);
-
             results.Add(new TaskDependencyItemDto
             {
                 DependencyId = dep.Id,

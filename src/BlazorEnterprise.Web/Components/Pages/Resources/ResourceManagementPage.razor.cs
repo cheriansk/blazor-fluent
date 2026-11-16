@@ -142,7 +142,7 @@ public partial class ResourceManagementPage : ComponentBase, IDisposable
         }
     }
 
-    private async Task SetCellAllocation(Guid projectResourceId, DateOnly date, string? valueStr)
+    private async Task SetCellAllocation(Guid projectResourceId, DateTime date, string? valueStr)
     {
         if (_planSummary == null) return;
         if (int.TryParse(valueStr, out var pct))

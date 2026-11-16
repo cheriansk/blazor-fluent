@@ -5,7 +5,7 @@
     {
         var colItems = _groupedItems.TryGetValue(col, out var list) ? list : (IReadOnlyList<TItem>)[];
 
-        <div class="swimlane-column">
+        <div @key="col.Title" class="swimlane-column">
             <!-- Column Header -->
             <div class="swimlane-header">
                 <div class="swimlane-header-left">
@@ -32,7 +32,7 @@
                 {
                     @foreach (var item in colItems)
                     {
-                        <div class="swimlane-card-wrapper" @onclick="() => HandleItemClick(item)">
+                        <div @key="item" class="swimlane-card-wrapper" @onclick="() => HandleItemClick(item)">
                             @if (ItemTemplate is not null)
                             {
                                 @ItemTemplate(item)
@@ -59,6 +59,19 @@
     public EventCallback<TItem> OnItemClick { get; set; }
 
     private readonly Dictionary<SwimlaneColumn<TItem>, IReadOnlyList<TItem>> _groupedItems = new();
+    private int _lastItemCount = -1;
+    private int _lastColumnCount = -1;
+
+    protected override bool ShouldRender()
+    {
+        var should = Items.Count != _lastItemCount || Columns.Count != _lastColumnCount;
+        if (should)
+        {
+            _lastItemCount = Items.Count;
+            _lastColumnCount = Columns.Count;
+        }
+        return should;
+    }
 
     protected override void OnParametersSet()
     {

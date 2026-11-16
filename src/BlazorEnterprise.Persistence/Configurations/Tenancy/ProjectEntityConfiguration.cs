@@ -80,6 +80,9 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false AND \"ShortCode\" IS NOT NULL AND \"ShortCode\" <> ''");
 
+        builder.HasIndex(p => new { p.TenantId, p.IsDeleted, p.Status })
+            .HasDatabaseName("IX_Projects_TenantId_IsDeleted_Status");
+
         builder.HasIndex(p => p.ProgramId)
             .HasDatabaseName("IX_Projects_ProgramId");
 

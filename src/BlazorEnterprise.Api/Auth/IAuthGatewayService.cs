@@ -132,7 +132,7 @@ public class AuthGatewayService : IAuthGatewayService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(8),
+            Expires = DateTime.UtcNow.AddMinutes(_authOptions?.Value.AccessTokenLifetimeMinutes is > 0 ? _authOptions.Value.AccessTokenLifetimeMinutes : 60),
             Issuer = issuer,
             Audience = audience,
             SigningCredentials = new SigningCredentials(GetSigningKey(), SecurityAlgorithms.HmacSha256Signature)
@@ -144,7 +144,7 @@ public class AuthGatewayService : IAuthGatewayService
         var response = new TokenResponseDto(
             AccessToken: tokenString,
             TokenType: "Bearer",
-            ExpiresInSeconds: 28800,
+            ExpiresInSeconds: (_authOptions?.Value.AccessTokenLifetimeMinutes is > 0 ? _authOptions.Value.AccessTokenLifetimeMinutes : 60) * 60,
             TenantId: record.User.TenantId,
             UserEmail: record.User.Email
         );

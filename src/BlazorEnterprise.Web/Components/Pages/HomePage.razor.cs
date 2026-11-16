@@ -11,6 +11,8 @@ namespace BlazorEnterprise.Components.Pages;
 
 public partial class HomePage : ComponentBase, IDisposable
 {
+    [Inject] internal Microsoft.Extensions.Logging.ILogger<HomePage> Logger { get; set; } = default!;
+    [Inject] internal BlazorEnterprise.Shared.Contracts.Engine.Client.ICorrelationContext CorrelationContext { get; set; } = default!;
     [Inject] internal ITenantService TenantService { get; set; } = default!;
     [Inject] internal IUserTaskService TaskService { get; set; } = default!;
     [Inject] internal IAuditService AuditService { get; set; } = default!;
@@ -21,7 +23,6 @@ public partial class HomePage : ComponentBase, IDisposable
     [Inject] internal IProjectAuthorizationService ProjectAuthService { get; set; } = default!;
     [Inject] internal IProjectHealthService ProjectHealthService { get; set; } = default!;
     [Inject] internal IProjectContext ProjectContext { get; set; } = default!;
-    [Inject] internal ILogger<HomePage> Logger { get; set; } = default!;
 
     private bool _isLoading = true;
     private bool _isRootAdminOnly;
@@ -55,17 +56,24 @@ public partial class HomePage : ComponentBase, IDisposable
         await LoadDashboardDataAsync();
     }
 
-    private void HandleProjectContextChanged()
+    private async void HandleProjectContextChanged()
     {
-        _ = InvokeAsync(async () =>
+        try
         {
-            if (ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId != _selectedProgramId)
+            await InvokeAsync(async () =>
             {
-                _selectedProgramId = ProjectContext.ProgramId.Value;
-                _programHealth = await ProgramService.GetProgramHealthAsync(_selectedProgramId.Value);
-                StateHasChanged();
-            }
-        });
+                if (ProjectContext.ProgramId.HasValue && ProjectContext.ProgramId != _selectedProgramId)
+                {
+                    _selectedProgramId = ProjectContext.ProgramId.Value;
+                    _programHealth = await ProgramService.GetProgramHealthAsync(_selectedProgramId.Value);
+                    StateHasChanged();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to update project context for HomePage. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+    }
     }
 
     public void Dispose()
@@ -205,6 +213,7 @@ public partial class HomePage : ComponentBase, IDisposable
             var auditTrail = await AuditService.GetAuditTrailAsync(new AuditTrailFilterReqDto { PageNumber = 1, PageSize = 5 });
             _auditActivities = auditTrail.Items.Select(a => new AuditActivityItem
             {
+                Id = a.Id,
                 Title = a.EventType.ToString(),
                 Description = a.Description ?? string.Empty,
                 User = !string.IsNullOrWhiteSpace(a.UserEmail) ? a.UserEmail : "System",

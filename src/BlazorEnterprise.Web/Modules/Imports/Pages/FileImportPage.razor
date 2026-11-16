@@ -34,6 +34,7 @@
     </Actions>
 </PageHeaderComp>
 
+<AppErrorBoundaryComp>
 <CskTabs @bind-ActiveTabId="_activeTabId" Class="mt-3">
     <!-- TAB 1: IMPORT FILE -->
     <CskTab Id="tab-import" Label="Import File">
@@ -289,6 +290,7 @@
         </CskCard>
     </CskTab>
 </CskTabs>
+</AppErrorBoundaryComp>
 
 <!-- Diagnostics Modal -->
 <ImportErrorsModal @ref="_errorsModal" />

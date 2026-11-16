@@ -22,6 +22,26 @@ public partial class SettingsRateCardTab : ComponentBase, IDisposable
     private ProjectResourceRoleEnum _bulkRole = ProjectResourceRoleEnum.Developer;
     private decimal _bulkRate = 100m;
 
+    private int _lastResourceCount = -1;
+    private Guid _lastRevId = Guid.Empty;
+    private string _lastSearch = "";
+
+    protected override bool ShouldRender()
+    {
+        var should = _resources.Count != _lastResourceCount ||
+                     _selectedRevisionId != _lastRevId ||
+                     _searchTerm != _lastSearch;
+
+        if (should)
+        {
+            _lastResourceCount = _resources.Count;
+            _lastRevId = _selectedRevisionId;
+            _lastSearch = _searchTerm;
+        }
+
+        return should;
+    }
+
     private IEnumerable<ProjectResourceDto> FilteredResources => _resources
         .Where(r => string.IsNullOrWhiteSpace(_searchTerm) ||
                     r.UserName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||

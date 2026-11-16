@@ -102,7 +102,7 @@
                     <div class="bell-list-stack">
                         @foreach (var notification in _notifications)
                         {
-                            <div class="bell-item-card @(notification.IsRead ? "is-read" : "")">
+                            <div @key="notification.Id" class="bell-item-card @(notification.IsRead ? "is-read" : "")">
                                 <div class="bell-item-row">
                                     <div class="bell-item-icon">
                                         @switch (notification.Severity)

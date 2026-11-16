@@ -228,7 +228,8 @@ public partial class SprintPlanningPage : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            _moveError = ex.Message;
+            Logger.LogError(ex, "Failed to move work items. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "ambient");
+            _moveError = BlazorEnterprise.Web.Components.Common.UserFacingError.For("move work items", CorrelationContext?.CorrelationId);
         }
     }
 

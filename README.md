@@ -1,11 +1,12 @@
 # ⚡ BlazorEnterprise
 
 > **Enterprise Cloud-Native SaaS Starter Kit & Reference Architecture**  
-> Built with **.NET 10**, **Interactive Server Blazor**, **Microsoft Fluent UI Blazor V5**, **EF Core 10**, **PostgreSQL Native RLS**, and **.NET Aspire Orchestration**.
+> Built with **.NET 11**, **Interactive Server Blazor**, **Native Material Design 3 (Csk*)**, **EF Core 11**, **PostgreSQL Native RLS**, and **.NET Aspire Orchestration**.
 
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET 11](https://img.shields.io/badge/.NET-11.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Aspire 13.4](https://img.shields.io/badge/Aspire-13.4-512BD4?logo=dotnet)](https://learn.microsoft.com/dotnet/aspire/)
-[![Fluent UI Blazor V5](https://img.shields.io/badge/Fluent_UI_Blazor-V5.0-0078D4?logo=fluentui)](https://www.fluentui-blazor.net/)
+[![Native Material Design 3](https://img.shields.io/badge/UI-Native_Material_3_(Csk*)-0078D4)](src/BlazorEnterprise.Shared.UI)
+[![Baseline Locked](https://img.shields.io/badge/Baseline-Audited_%26_Locked-success.svg)](docs/ARCHITECTURE_DECISIONS.md)
 [![PostgreSQL Native RLS](https://img.shields.io/badge/PostgreSQL-Native_RLS-336791?logo=postgresql)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Zero-Trust Security](https://img.shields.io/badge/Security-Fail--Closed_Defense--in--Depth-red.svg)](docs/03-Security-Model-and-Defense-in-Depth.md)
@@ -21,12 +22,13 @@ Rather than providing simple CRUD templates, BlazorEnterprise delivers productio
 - 🐘 **Layer 5 Defense-in-Depth (PostgreSQL Native RLS)**: Tenant isolation is physically guaranteed at the database engine level via `TenantDbConnectionInterceptor` and native PostgreSQL Row-Level Security policies.
 - 📐 **Clean Architecture (12-Project Topology)**: Strictly enforced inward dependency direction, separating domain core, persistence, infrastructure, API gateway, standalone worker host, and orchestration.
 - ☁️ **.NET Aspire Orchestration**: Turnkey local orchestration with distributed OpenTelemetry tracing, live metrics, and dual-mode database routing (Native Local PostgreSQL vs Docker containerized PostgreSQL/pgAdmin).
-- ⚙️ **Dual-Mode Asynchronous Worker Host (`BlazorEnterprise.Worker`)**: Thin standalone console host shell (`net10.0` Worker SDK) for distributed, horizontally scalable background queues with zero code duplication from `BlazorEnterprise.Jobs`.
+- ⚙️ **Dual-Mode Asynchronous Worker Host (`BlazorEnterprise.Worker`)**: Thin standalone console host shell (`net11.0` Worker SDK) for distributed, horizontally scalable background queues with zero code duplication from `BlazorEnterprise.Jobs`.
 - 🔐 **Zero-Trust Multi-Tenancy Isolation**: Ephemeral 5-minute S2S JWTs signed via private `TenantLicenseKey`, dynamic API key resolver, masked claims (`tid: tnt_...`, zero PII), and cross-tenant quarantine barriers.
 - ⚡ **100% In-Memory Rules Engine (`BlazorEnterprise.RulesEngine`)**: Sub-millisecond calculation pipeline for regulatory, financial, and business rule evaluations with zero database contention.
 - 🔐 **Zero-Knowledge Envelope Encryption**: Hardware-accelerated AES-256-GCM authenticated stream encryption with dynamic per-tenant keys derived via HKDF-SHA256.
 - ⏱️ **Thread-Isolated Asynchronous Ingestion**: Bounded `System.Threading.Channels` queues with a 4-stage batch pipeline (Ingestion -> Queue -> Validation/Staging -> Domain Promotion).
-- 🎨 **Microsoft Fluent UI Blazor V5**: Modern Microsoft Fluent 2 design language with zero legacy V4 tokens, custom design tokens, and automated Roslyn compliance verification.
+- 🎨 **Native Material Design 3 (Csk*) UI**: Custom Material Design 3 framework RCL (BlazorEnterprise.Shared.UI) with zero third-party UI dependencies, zero inline styles, and strict Content Security Policy (CSP).
+- 🔍 **Universal Observability & Zero Error Leakage**: Ambient ICorrelationContext.CorrelationId surfaced on screen as the universal Reference ID with RFC 7807 ProblemDetails handling across API and Web.
 - 🛡️ **TemplateGuard Governance**: Custom Roslyn Analyzer and AST manifest locking (`.basefiles.json`) that protects core files while enabling downstream customizations via `.Custom.cs` partial classes.
 
 ---
@@ -43,7 +45,7 @@ flowchart TD
     end
 
     subgraph Presentation ["Presentation Layer"]
-        Web["BlazorEnterprise.Web\n(Interactive Server Blazor, Fluent UI V5)"]
+        Web["BlazorEnterprise.Web\n(Interactive Server Blazor, Native Material Design 3)"]
         Templates["BlazorEnterprise.UI.Templates\n(Enterprise Wizard RCL)"]
     end
 
