@@ -19,8 +19,7 @@ public class WorkDependencyConfiguration : IEntityTypeConfiguration<WorkDependen
 
         builder.Property(w => w.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         // Ignore [NotMapped] edge relations and live-resolved metadata (3NF pure)
         builder.Property(w => w.ProgramId).IsRequired(false);

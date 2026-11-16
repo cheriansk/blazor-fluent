@@ -19,8 +19,7 @@ public class SubTaskEntityConfiguration : IEntityTypeConfiguration<SubTaskEntity
 
         builder.Property(s => s.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(s => s.ParentTaskId)
             .IsRequired();

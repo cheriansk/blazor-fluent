@@ -19,8 +19,7 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
 
         builder.Property(w => w.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(w => w.Title)
             .HasMaxLength(200)

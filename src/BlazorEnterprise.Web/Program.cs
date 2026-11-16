@@ -617,7 +617,19 @@ try
         app.UseHsts();
     }
 
-    app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+    app.UseWhen(
+        context =>
+        {
+            var path = context.Request.Path.Value ?? string.Empty;
+            var accept = context.Request.Headers.Accept.ToString();
+            return accept.Contains("text/html", StringComparison.OrdinalIgnoreCase)
+                && !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase)
+                && !path.StartsWith("/_vs", StringComparison.OrdinalIgnoreCase)
+                && !path.StartsWith("/_blazor", StringComparison.OrdinalIgnoreCase)
+                && !path.StartsWith("/_framework", StringComparison.OrdinalIgnoreCase)
+                && !path.StartsWith("/_content", StringComparison.OrdinalIgnoreCase);
+        },
+        branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 
     // 6. Reverse Proxy & Forwarded Headers (preserves real client IP and HTTPS scheme behind Azure App Service / Cloudflare)
 
@@ -658,11 +670,18 @@ try
 
                 return LogEventLevel.Error;
 
+            var path = httpContext.Request.Path.Value;
+
+            if (path != null && (
+                path.StartsWith("/_vs", StringComparison.OrdinalIgnoreCase) ||
+                path.Equals("/not-found", StringComparison.OrdinalIgnoreCase)))
+            {
+                return LogEventLevel.Verbose;
+            }
+
             if (httpContext.Response.StatusCode >= 400)
 
                 return LogEventLevel.Warning;
-
-            var path = httpContext.Request.Path.Value;
 
             if (path != null && (
 

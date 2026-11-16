@@ -51,11 +51,14 @@
         var corrId = CorrelationContext.Renew();
         using (LogContext.PushProperty("CorrelationId", corrId))
         {
-            Logger.LogDebug("Razor Navigation Router Initialized: CurrentUri='{Uri}', AuthenticatedTenantUser={IsAuthenticatedTenantUser}, Tenant='{TenantId}', User='{UserId}'",
-                NavigationManager.Uri,
-                CurrentUser.IsAuthenticatedTenantUser,
-                TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "(no-active-tenant)",
-                CurrentUser.IsAuthenticated ? CurrentUser.UserId : "(unauthenticated)");
+            if (!NavigationManager.Uri.EndsWith("/not-found", StringComparison.OrdinalIgnoreCase))
+            {
+                Logger.LogDebug("Razor Navigation Router Initialized: CurrentUri='{Uri}', AuthenticatedTenantUser={IsAuthenticatedTenantUser}, Tenant='{TenantId}', User='{UserId}'",
+                    NavigationManager.Uri,
+                    CurrentUser.IsAuthenticatedTenantUser,
+                    TenantContext.HasActiveTenant ? TenantContext.TenantId.ToString() : "(no-active-tenant)",
+                    CurrentUser.IsAuthenticated ? CurrentUser.UserId : "(unauthenticated)");
+            }
         }
     }
 

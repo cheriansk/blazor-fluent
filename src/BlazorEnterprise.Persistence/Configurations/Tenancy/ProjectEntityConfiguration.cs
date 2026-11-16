@@ -54,8 +54,7 @@ public class ProjectEntityConfiguration : IEntityTypeConfiguration<ProjectEntity
             .IsRequired(false);
 
         builder.Property(p => p.Status)
-            .IsRequired()
-            .HasDefaultValue(ProjectStatusEnum.New);
+            .IsRequired();
 
         builder.Property(p => p.IsActive)
             .IsRequired()

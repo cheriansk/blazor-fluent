@@ -20,8 +20,7 @@ public partial class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEnti
 
         builder.Property(t => t.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(t => t.Title)
             .HasMaxLength(200)

@@ -51,7 +51,6 @@ public class AuditRecordEntityConfiguration : IEntityTypeConfiguration<AuditReco
 
         builder.Property(a => a.RetentionDays)
             .HasConversion<int>()
-            .HasDefaultValue(AuditRetentionPeriodEnum.NinetyDays)
             .IsRequired();
 
         // Indexes for high performance querying

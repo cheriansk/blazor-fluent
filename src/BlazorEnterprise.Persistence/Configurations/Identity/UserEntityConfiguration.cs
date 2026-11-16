@@ -24,7 +24,6 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
         builder.Property(u => u.UserKind)
             .HasConversion<string>()
             .HasMaxLength(32)
-            .HasDefaultValue(UserKindEnum.Human)
             .IsRequired();
 
         builder.Property(u => u.UserType)

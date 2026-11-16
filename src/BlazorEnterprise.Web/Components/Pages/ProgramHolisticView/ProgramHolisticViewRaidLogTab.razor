@@ -46,7 +46,7 @@
             <div class="raid-grid">
                 @foreach (var risk in Risks)
                 {
-                    <div class="raid-card">
+                    <div @key="risk.Id" class="raid-card">
                         <div class="raid-card-header">
                             <span class="exposure-badge @GetExposureBadgeClass(risk.ExposureScore)">
                                 Score: @risk.ExposureScore
@@ -84,7 +84,7 @@
             <div class="raid-grid">
                 @foreach (var item in Assumptions)
                 {
-                    <div class="raid-card">
+                    <div @key="item.Id" class="raid-card">
                         <div class="raid-card-header">
                             <span class="raid-tag">Assumption</span>
                             <span class="raid-status-chip">@(item.ValidationStatus == AssumptionValidationStatusEnum.Validated ? "Validated" : item.ValidationStatus.ToString())</span>
@@ -120,7 +120,7 @@
             <div class="raid-grid">
                 @foreach (var issue in Issues)
                 {
-                    <div class="raid-card issue-card">
+                    <div @key="issue.Id" class="raid-card issue-card">
                         <div class="raid-card-header">
                             <span class="severity-chip @GetSeverityClass(issue.Severity)">
                                 @issue.Severity
@@ -158,7 +158,7 @@
             <div class="raid-grid">
                 @foreach (var dep in Blockers)
                 {
-                    <div class="raid-card blocker-card">
+                    <div @key="dep.Id" class="raid-card blocker-card">
                         <div class="raid-card-header">
                             <span class="blocker-badge">@dep.DependencyType</span>
                             <span class="raid-status-chip">@(!dep.IsResolved ? "Blocking" : "Resolved")</span>

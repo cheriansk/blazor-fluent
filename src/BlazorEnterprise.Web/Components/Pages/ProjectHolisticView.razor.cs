@@ -57,6 +57,7 @@ public partial class ProjectHolisticView : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh project holistic view after context change.");
+            await DispatchExceptionAsync(ex);
         }
     }
 
