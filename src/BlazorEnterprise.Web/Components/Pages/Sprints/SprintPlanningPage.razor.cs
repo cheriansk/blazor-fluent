@@ -66,6 +66,7 @@ public partial class SprintPlanningPage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh sprint planning page on project change.");
+            await DispatchExceptionAsync(ex);
         }
     }
 

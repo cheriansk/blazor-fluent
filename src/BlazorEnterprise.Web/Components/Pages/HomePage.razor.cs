@@ -73,7 +73,8 @@ public partial class HomePage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to update project context for HomePage. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
-    }
+            await DispatchExceptionAsync(ex);
+        }
     }
 
     public void Dispose()

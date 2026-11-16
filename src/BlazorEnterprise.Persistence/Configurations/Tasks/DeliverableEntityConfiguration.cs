@@ -19,8 +19,7 @@ public class DeliverableEntityConfiguration : IEntityTypeConfiguration<Deliverab
 
         builder.Property(d => d.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(d => d.ParentType)
             .IsRequired()
@@ -39,8 +38,7 @@ public class DeliverableEntityConfiguration : IEntityTypeConfiguration<Deliverab
 
         builder.Property(d => d.SignOffStatus)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(DeliverableStatusEnum.Draft);
+            .HasConversion<int>();
 
         builder.Property(d => d.ArtifactUrl)
             .HasMaxLength(2000)

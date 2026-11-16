@@ -63,6 +63,7 @@ public partial class ProgramHolisticView : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh program holistic view after context change.");
+            await DispatchExceptionAsync(ex);
         }
     }
 

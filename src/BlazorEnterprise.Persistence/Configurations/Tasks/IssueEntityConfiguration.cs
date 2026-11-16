@@ -19,8 +19,7 @@ public class IssueEntityConfiguration : IEntityTypeConfiguration<IssueEntity>
 
         builder.Property(i => i.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(i => i.Title)
             .HasMaxLength(200)

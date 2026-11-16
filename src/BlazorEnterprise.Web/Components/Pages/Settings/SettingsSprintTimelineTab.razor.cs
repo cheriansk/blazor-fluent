@@ -48,6 +48,7 @@ public partial class SettingsSprintTimelineTab : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh sprint timeline tab on project change.");
+            await DispatchExceptionAsync(ex);
         }
     }
 

@@ -22,7 +22,7 @@
                         <select class="csk-select" @bind="_defaultRole">
                             @foreach (var role in DataListExtensions.GetDataListItems<ProjectResourceRoleEnum>())
                             {
-                                <option value="@role.DisplayName">@role.DisplayName</option>
+                                <option @key="role.Code" value="@role.DisplayName">@role.DisplayName</option>
                             }
                         </select>
                     </div>
@@ -38,7 +38,7 @@
                         @foreach (var user in FilteredUsers)
                         {
                             var isSelected = _selectedUserIds.Contains(user.Id);
-                            <div class="user-row @(isSelected ? "selected" : "")" @onclick="() => ToggleUserSelection(user.Id)">
+                            <div @key="user.Id" class="user-row @(isSelected ? "selected" : "")" @onclick="() => ToggleUserSelection(user.Id)">
                                 <input type="checkbox" checked="@isSelected" @onclick:stopPropagation="true" @onchange="() => ToggleUserSelection(user.Id)" />
                                 <div class="user-avatar">
                                     @(user.FullName?.Length > 0 ? user.FullName[..1].ToUpper() : "U")

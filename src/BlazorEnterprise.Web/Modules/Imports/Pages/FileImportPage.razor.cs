@@ -93,6 +93,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh project context for FileImportPage. CorrelationId: {CorrelationId}", CorrelationContext?.CorrelationId ?? "unknown");
+            await DispatchExceptionAsync(ex);
         }
     }
 

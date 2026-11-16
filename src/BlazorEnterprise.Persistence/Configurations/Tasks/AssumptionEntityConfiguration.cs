@@ -19,8 +19,7 @@ public class AssumptionEntityConfiguration : IEntityTypeConfiguration<Assumption
 
         builder.Property(a => a.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(a => a.Title)
             .HasMaxLength(200)

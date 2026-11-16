@@ -79,8 +79,8 @@ All code is governed at compile time by `TemplateGuard.Analyzers`:
 - **`TG013` – `TG015` (DataList Enum Taxonomy & Extensions)**:
   - Decorate every enum in `DataListTypes` with `[LifecycleEnum]` (requiring `AllowedTransitions` in a companion `*Definitions` class) or `[ClassificationEnum]`, and decorate every member with `[Display(Name = "...")]`.
   - Direct calls to `Enum.Parse`, `Enum.TryParse`, `Enum.GetValues`, or `Enum.GetNames` are **forbidden (`TG013`)**. Always use `DataListExtensions` (`.ToEnum<T>()`, `.TryToEnum<T>()`, `.GetDisplayName()`, `.GetCode()`, `DataListExtensions.GetDataListItems<TEnum>()`).
-- **`TG027` (Zero Hardcoding Law Across Entities, DTOs, Models & Records)**:
-  - Governs all classes inheriting `BaseEntity`, all types ending in `Dto`, `Request`, `Response`, `Model`, `ViewModel`, `Record`, and all C# `record` types.
+- **`TG027` (Zero Hardcoding & Zero Defaulting Law Across Entities, DTOs, Models, Configs & Migrations)**:
+  - Governs all classes inheriting `BaseEntity`, all types ending in `Dto`, `Request`, `Response`, `Model`, `ViewModel`, `Record`, all C# `record` types, all `IEntityTypeConfiguration<T>` classes, and all EF Core `Migration` files.
   - **Permitted Initializers (Structural & Null-Safety only)**:
     - Empty strings: `""` or `string.Empty`
     - Empty collections: `[]`, `new()`, `new List<...>()`, `new HashSet<...>()`, `new Dictionary<...>()`
@@ -93,6 +93,7 @@ All code is governed at compile time by `TemplateGuard.Analyzers`:
     - Booleans (e.g., `= true`, `= false`)
     - Dates (e.g., `= DateTime.UtcNow`)
   - **UI Form Defaulting**: Default values belong in component lifecycle initialization (e.g., `OnInitialized()`), never baked into contracts or entity definitions.
+  - **Zero Database / EF Core / Migration Defaulting (Fail-Closed)**: Never configure `.HasDefaultValue(...)`, `.HasDefaultValueSql(...)`, or `defaultValue:` / `defaultValueSql:` in `IEntityTypeConfiguration<T>` or EF Core migrations for domain/business properties (enums, status, level, flags, amounts). All required values must be explicitly supplied by the application/validators so missing values fail closed rather than silently defaulting.
 
 ---
 
@@ -121,10 +122,11 @@ All code is governed at compile time by `TemplateGuard.Analyzers`:
   - Strictly use the native **`Csk*`** components from `BlazorEnterprise.Shared.UI` (`<CskButton>`, `<CskTextInput>`, `<CskTextArea>`, `<CskSelect TOption="..." TValue="...">`, `<CskOption>`, `<CskDatePicker>`, `<CskCheckbox>`, `<CskSwitch>`, `<CskRadioGroup>`, `<CskDataGrid>`, `<CskDialog>`, `<CskCard>`, `<CskBadge>`, `<CskMessageBar>`, `<CskSpinner>`, `<CskTabs>`, `<CskTooltip>`, `<CskWizardModal TState="...">`, and `<CskIcon Icon="CskIcons.*" />`).
   - Use `<DataListSelect TEnum="..." TValue="..." />` (which wraps `<CskSelect>`) for domain `DataListTypes` enums.
   - Never introduce third-party UI libraries or external CSS frameworks (Fluent UI V5, MudBlazor, Bootstrap, Tailwind).
-- **Strict Content Security Policy (CSP)**:
-  - Never generate inline `<script>` tags, inline event attributes (`onclick`, `onload`), or `eval()`.
-  - Zero inline `style="..."` attributes; use scoped CSS (`.razor.css`), Material 3 design tokens, or stylesheet classes.
-  - Isolate JS interop in dedicated `.razor.js` ES modules loaded via `IJSRuntime`.
+- **Strict Content Security Policy (CSP) Security Law (`PureStrict`)**:
+  - **Zero Inline Scripts or Event Handlers**: Never generate inline `<script>` tags, `javascript:` URIs, inline DOM event attributes (`onclick`, `onload`, `onchange`), `eval()`, `new Function()`, or `unsafe-inline` / `unsafe-eval` CSP directives.
+  - **Zero Inline Styles**: Never use inline `style="..."` attributes or `<style>` blocks in `.razor` files; use scoped CSS (`.razor.css`), Material 3 design tokens, or stylesheet classes.
+  - **Self-Hosted Assets Only**: Never load external CDN scripts, stylesheets, or fonts; all static assets must be self-hosted under `wwwroot` or `_content/BlazorEnterprise.Shared.UI/...`.
+  - **Isolated JS Interop**: All JavaScript interop must live in dedicated `.razor.js` ES modules loaded via `IJSRuntime` (`Import` / `InvokeAsync`), never via raw script injection.
 
 ---
 

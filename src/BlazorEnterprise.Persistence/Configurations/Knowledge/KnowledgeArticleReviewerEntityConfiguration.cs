@@ -30,6 +30,8 @@ public class KnowledgeArticleReviewerEntityConfiguration : IEntityTypeConfigurat
             .HasForeignKey(r => r.ArticleId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasQueryFilter(r => !r.Article.IsDeleted);
+
         builder.HasOne(r => r.User)
             .WithMany()
             .HasForeignKey(r => r.UserEntityId)

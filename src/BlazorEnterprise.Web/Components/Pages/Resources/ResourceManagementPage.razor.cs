@@ -65,6 +65,7 @@ public partial class ResourceManagementPage : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh resource management page on project change.");
+            await DispatchExceptionAsync(ex);
         }
     }
 

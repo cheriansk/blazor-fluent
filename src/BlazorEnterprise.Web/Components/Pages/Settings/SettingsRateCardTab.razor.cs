@@ -66,6 +66,7 @@ public partial class SettingsRateCardTab : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh rate card tab on project change.");
+            await DispatchExceptionAsync(ex);
         }
     }
 

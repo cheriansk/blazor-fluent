@@ -49,8 +49,7 @@ public class CalendarEntityConfiguration : IEntityTypeConfiguration<CalendarEnti
 
         builder.Property(c => c.Level)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(TaskLevelEnum.Project);
+            .HasConversion<int>();
 
         builder.Property(c => c.ParentProgramCalendarId)
             .IsRequired(false);

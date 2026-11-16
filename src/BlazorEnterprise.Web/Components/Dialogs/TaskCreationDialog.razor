@@ -33,7 +33,7 @@
                             <ul class="error-list">
                                 @foreach (var err in _errors)
                                 {
-                                    <li>@err</li>
+                                    <li @key="err">@err</li>
                                 }
                             </ul>
                         </CskMessageBar>
@@ -157,7 +157,7 @@
                                     <CskOption Value="@((Guid?)null)">-- Select a Sprint --</CskOption>
                                     @foreach (var sprint in _relatedData.Sprints)
                                     {
-                                        <CskOption Value="@((Guid?)sprint.Id)">
+                                        <CskOption @key="sprint.Id" Value="@((Guid?)sprint.Id)">
                                             Sprint @sprint.Number: @sprint.Name @(sprint.IsCompleted ? "(Completed)" : "")
                                         </CskOption>
                                     }
