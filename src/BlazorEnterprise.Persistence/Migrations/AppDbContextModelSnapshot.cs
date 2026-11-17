@@ -17,7 +17,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261116163922_AddDocumentParsingTables";
+    public override string LastMigrationId => "20261117171433_SyncPendingModelChanges";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -490,6 +490,13 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .IsRequired()
                     .HasColumnType("jsonb");
 
+                b.Property<DateTime?>("FinalizedAtUtc")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("FinalizedBy")
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)");
+
                 b.Property<Guid>("ImportFileId")
                     .HasColumnType("uuid");
 
@@ -504,6 +511,9 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
 
                 b.Property<Guid?>("ProjectId")
                     .HasColumnType("uuid");
+
+                b.Property<int>("Status")
+                    .HasColumnType("integer");
 
                 b.Property<Guid>("TenantId")
                     .HasColumnType("uuid")

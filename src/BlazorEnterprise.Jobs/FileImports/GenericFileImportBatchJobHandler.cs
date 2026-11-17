@@ -178,6 +178,14 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
         try
         {
+            if (file.FileType.IsWordDocument())
+            {
+                _logger.LogInformation(
+                    "Skipping tabular batch staging for Word document file '{FileName}' ({FileId}, Type={FileType}).",
+                    file.OriginalFileName, file.Id, file.FileType);
+                return;
+            }
+
             var templateConfig = await GetTemplateConfigCachedAsync(file.FileType.ToString(), ct);
             if (templateConfig == null || _batchStagerResolver == null || _engineClient == null)
             {
@@ -192,6 +200,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     new FileValidationError("System", 0, "FileType", errorMsg, file.FileType.ToString())
                 });
                 file.ProcessedAtUtc = DateTime.UtcNow;
+                _dbContext.ImportFiles.Update(file);
                 _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                 await SendNotificationAsync(file, "Import Failed", errorMsg, NotificationSeverityEnum.Error, ct);
@@ -208,6 +217,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             file.StepStage = "Failed";
             file.ErrorMessage = $"Unhandled pipeline error: {ex.Message}";
             file.ProcessedAtUtc = DateTime.UtcNow;
+            _dbContext.ImportFiles.Update(file);
             _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             await SendNotificationAsync(
@@ -248,6 +258,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             file.ErrorMessage = errorSummary;
             file.ErrorRowsCount = 1;
             file.ProcessedAtUtc = DateTime.UtcNow;
+            _dbContext.ImportFiles.Update(file);
             _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             await _eventPublisher.PublishAsync(new FileStagingCompletedJobEvent(
@@ -277,6 +288,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         file.TotalRowsCount = stageOutcome.Value;
         file.ValidRowsCount = stageOutcome.Value;
         file.ErrorRowsCount = 0;
+        _dbContext.ImportFiles.Update(file);
         _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         await _eventPublisher.PublishAsync(new FileStagingCompletedJobEvent(
@@ -375,6 +387,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             file.ErrorRowsCount = allCloudErrors.Count;
             file.ValidationErrorsJson = JsonDefaults.ToJson(allCloudErrors);
             file.ProcessedAtUtc = DateTime.UtcNow;
+            _dbContext.ImportFiles.Update(file);
+            _dbContext.StagedImports.UpdateRange(orderedChunks);
             _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
             await _eventPublisher.PublishAsync(new FileProcessingCompletedJobEvent(
@@ -424,6 +438,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 file.StepStage = "ProcessingFailed";
                 file.ErrorMessage = missingCommitterMsg;
                 file.ProcessedAtUtc = DateTime.UtcNow;
+                _dbContext.ImportFiles.Update(file);
+                _dbContext.StagedImports.UpdateRange(orderedChunks);
                 _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                 await SendNotificationAsync(file, "Commit Failed", missingCommitterMsg, NotificationSeverityEnum.Error, ct);
@@ -447,6 +463,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 file.StepStage = "ProcessingFailed";
                 file.ErrorMessage = commitErrMsg;
                 file.ProcessedAtUtc = DateTime.UtcNow;
+                _dbContext.ImportFiles.Update(file);
+                _dbContext.StagedImports.UpdateRange(orderedChunks);
                 _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
                 await _eventPublisher.PublishAsync(new FileProcessingCompletedJobEvent(
@@ -480,6 +498,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         file.ValidRowsCount = allProcessedRows.Count;
         file.ProcessedAtUtc = nowUtc;
 
+        _dbContext.ImportFiles.Update(file);
+        _dbContext.StagedImports.UpdateRange(orderedChunks);
         _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
 
         await _eventPublisher.PublishAsync(new FileProcessingCompletedJobEvent(

@@ -110,6 +110,8 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
 
         _serviceProvider = serviceProvider;
 
+        Database.AutoTransactionBehavior = AutoTransactionBehavior.Always;
+
     }
 
 

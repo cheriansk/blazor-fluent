@@ -203,6 +203,15 @@ public class AppCurrentUser : ICurrentUser
         IsAuthenticated = true;
     }
 
+    public void ClearSystemDaemon()
+    {
+        IsSystemDaemon = false;
+        _userId = null;
+        _userName = null;
+        _email = string.Empty;
+        IsAuthenticated = false;
+    }
+
     public void RestoreUserContext(string userId, string email, string userName, bool isRootAdmin = false)
     {
         _userId = userId;

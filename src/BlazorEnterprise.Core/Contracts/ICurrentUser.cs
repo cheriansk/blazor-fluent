@@ -92,6 +92,10 @@ public interface ICurrentUser
     /// Restores an authenticated user identity into a background execution scope (e.g. queue listeners).
     /// </summary>
     void RestoreUserContext(string userId, string email, string userName, bool isRootAdmin = false);
+    /// <summary>
+    /// Clears any temporary background daemon flag from this scope.
+    /// </summary>
+    void ClearSystemDaemon();
 }
 
 public class DefaultCurrentUser : ICurrentUser
@@ -162,6 +166,13 @@ public class DefaultCurrentUser : ICurrentUser
         _isSystemDaemon = true;
         _daemonName = daemonName;
         _daemonEmail = resolvedEmail;
+    }
+
+    public void ClearSystemDaemon()
+    {
+        _isSystemDaemon = false;
+        _daemonName = null;
+        _daemonEmail = null;
     }
 
     public void RestoreUserContext(string userId, string email, string userName, bool isRootAdmin = false)
