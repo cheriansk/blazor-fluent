@@ -77,6 +77,26 @@ public sealed class DocumentParsingJobHandler : IBatchJobHandler<DocumentParsing
                 }, cancellationToken);
             }
         }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogWarning(ex,
+                "Skipping document parsing for ImportFileId {ImportFileId} because the source blob was not found in storage. CorrelationId: {CorrelationId}",
+                jobEvent.ImportFileId, jobEvent.CorrelationId);
+
+            await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+            var importFile = await db.ImportFiles
+                .AsTracking()
+                .FirstOrDefaultAsync(f => f.TenantId == jobEvent.TenantId && f.Id == jobEvent.ImportFileId && !f.IsDeleted, cancellationToken);
+            if (importFile != null)
+            {
+                importFile.Status = ImportStatusEnum.ProcessingFailed;
+                importFile.StepStage = "Failed";
+                importFile.ErrorMessage = "Source document file was not found in blob storage.";
+                importFile.ProcessedAtUtc = DateTime.UtcNow;
+                db.IsTransactionScopeCommitAuthorized = true;
+                try { await db.SaveChangesAsync(cancellationToken); } finally { db.IsTransactionScopeCommitAuthorized = false; }
+            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "DocumentParsingJobHandler failed for ImportFileId {ImportFileId}. CorrelationId: {CorrelationId}",

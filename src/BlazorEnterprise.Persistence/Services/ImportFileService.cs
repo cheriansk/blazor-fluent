@@ -55,6 +55,7 @@ public class ImportFileService : IImportFileService
     {
         await using var _context = await _dbFactory.CreateDbContextAsync(ct);
         var uploadedBlobPaths = new List<string>();
+        bool isDbCommitted = false;
 
         try
         {
@@ -118,6 +119,9 @@ public class ImportFileService : IImportFileService
                 var blobUri = await _blobStorageService.UploadBlobAsync(itemStoragePath, encryptedStream, "application/octet-stream", ct);
                 uploadedBlobPaths.Add(blobUri);
 
+                var isUnparsedWordDoc = item.FileType.IsWordDocument() &&
+                    !(request.EnableDocumentParsing && item.FileType == ImportFileTypeEnum.ScanFindingsWord);
+
                 importFiles.Add(new ImportFileEntity
                 {
                     Id = fileId,
@@ -125,7 +129,7 @@ public class ImportFileService : IImportFileService
                     TenantId = tenantGuid,
                     ProjectId = request.ProjectId,
                     StorageFolder = batchFolder,
-                    StepStage = "Uploaded",
+                    StepStage = isUnparsedWordDoc ? "Completed" : "Uploaded",
                     FileName = sanitizedFileName,
                     OriginalFileName = item.FileName,
                     BlobUri = blobUri,
@@ -133,7 +137,7 @@ public class ImportFileService : IImportFileService
                     FileSizeBytes = item.FileSizeBytes,
                     Sha256Checksum = checksum,
                     FileType = item.FileType,
-                    Status = ImportStatusEnum.Uploaded,
+                    Status = isUnparsedWordDoc ? ImportStatusEnum.Completed : ImportStatusEnum.Uploaded,
                     TotalRowsCount = 0,
                     ValidRowsCount = 0,
                     ErrorRowsCount = 0
@@ -143,6 +147,7 @@ public class ImportFileService : IImportFileService
             // 2. Atomically persist all ImportFileEntity records in PostgreSQL
             _context.ImportFiles.AddRange(importFiles);
             _context.IsTransactionScopeCommitAuthorized = true; try { await _context.SaveChangesAsync(ct); } finally { _context.IsTransactionScopeCommitAuthorized = false; }
+            isDbCommitted = true;
 
             _logger.LogInformation("Batch {ImportId} with {FileCount} file(s) uploaded and encrypted for Tenant {TenantId}, Project {ProjectId}",
                 importId, importFiles.Count, tenantGuid, request.ProjectId);
@@ -153,16 +158,19 @@ public class ImportFileService : IImportFileService
             var senderUserId = SystemIdentityUtility.ResolveAuditableUserId(_currentUser, "UploadBatch");
             var senderUserEmail = _currentUser.Email;
 
-            var batchEvent = new FileImportBatchJobEvent(
-                ImportId: importId,
-                ProjectId: request.ProjectId,
-                TenantId: tenantGuid,
-                CorrelationId: correlationId,
-                SenderOrigin: senderOrigin,
-                SenderUserId: senderUserId,
-                SenderUserEmail: senderUserEmail);
+            if (importFiles.Any(f => !f.FileType.IsWordDocument()))
+            {
+                var batchEvent = new FileImportBatchJobEvent(
+                    ImportId: importId,
+                    ProjectId: request.ProjectId,
+                    TenantId: tenantGuid,
+                    CorrelationId: correlationId,
+                    SenderOrigin: senderOrigin,
+                    SenderUserId: senderUserId,
+                    SenderUserEmail: senderUserEmail);
 
-            await _eventTracker.TrackPublishAsync(batchEvent, eventId: importId, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
+                await _eventTracker.TrackPublishAsync(batchEvent, eventId: batchEvent.EventId, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
+            }
 
             // 3b. Enqueue local ML.NET + OpenXML parsing for uploaded Word (.docx) documents
             foreach (var file in importFiles)
@@ -179,7 +187,7 @@ public class ImportFileService : IImportFileService
                         SenderUserId: senderUserId,
                         SenderUserEmail: senderUserEmail);
 
-                    await _eventTracker.TrackPublishAsync(parsingEvent, eventId: file.Id, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
+                    await _eventTracker.TrackPublishAsync(parsingEvent, eventId: parsingEvent.EventId, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
                 }
             }
 
@@ -197,16 +205,19 @@ public class ImportFileService : IImportFileService
         {
             _logger.LogError(ex, "Failed to upload batch for project {ProjectId}. Rolling back any uploaded blobs.", request.ProjectId);
 
-            // Rollback: clean up any blobs uploaded during this failed batch
-            foreach (var blobPath in uploadedBlobPaths)
+            // Rollback: only clean up blobs if the ImportFileEntity database commit has not yet succeeded
+            if (!isDbCommitted)
             {
-                try
+                foreach (var blobPath in uploadedBlobPaths)
                 {
-                    await _blobStorageService.DeleteBlobAsync(blobPath, CancellationToken.None);
-                }
-                catch (Exception cleanupEx)
-                {
-                    _logger.LogError(cleanupEx, "Failed to delete blob '{BlobPath}' during batch rollback.", blobPath);
+                    try
+                    {
+                        await _blobStorageService.DeleteBlobAsync(blobPath, CancellationToken.None);
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        _logger.LogError(cleanupEx, "Failed to delete blob '{BlobPath}' during batch rollback.", blobPath);
+                    }
                 }
             }
 

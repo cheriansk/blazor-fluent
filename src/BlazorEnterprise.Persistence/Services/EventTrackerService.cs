@@ -213,6 +213,16 @@ public class EventTrackerService : IEventTrackerService
                 throw new InvalidOperationException($"Zero-Trust Security Violation: Cannot track event publish for '{eventName}'. Sender identity is missing and no service account is configured.");
             }
 
+            var existingId = await _dbContext.EventPublishTrackers
+                .AsNoTracking()
+                .Where(e => e.EventId == actualEventId || e.Id == actualEventId)
+                .Select(e => (Guid?)e.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (existingId.HasValue)
+            {
+                return existingId.Value;
+            }
+
             var record = new EventPublishTrackerEntity
             {
                 Id = Guid.CreateVersion7(),
@@ -291,12 +301,14 @@ public class EventTrackerService : IEventTrackerService
         await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         try
         {
-            // Lookup parent publication tracker by EventId or primary key Id with AsTracking
+            // Lookup all matching parent publication trackers by EventId or primary key Id with AsTracking
 
-            var parent = await _dbContext.EventPublishTrackers
+            var parents = await _dbContext.EventPublishTrackers
                 .AsTracking()
                 .Where(e => e.EventId == eventId || e.Id == eventId)
-                .FirstOrDefaultAsync(cancellationToken);
+                .OrderByDescending(e => e.PublishedAtUtc)
+                .ToListAsync(cancellationToken);
+            var parent = parents.FirstOrDefault();
 
             var tenantId = parent?.TenantId ?? (_tenantContext.HasActiveTenant ? _tenantContext.TenantId : Guid.Empty);
             if (tenantId == Guid.Empty)
@@ -329,11 +341,11 @@ public class EventTrackerService : IEventTrackerService
 
             _dbContext.EventConsumptionTrackers.Add(consumption);
 
-            if (parent != null)
+            foreach (var p in parents)
             {
-                if (parent.Status == EventTrackerStatusEnum.Published)
+                if (p.Status == EventTrackerStatusEnum.Published)
                 {
-                    parent.Status = EventTrackerStatusEnum.InProgress;
+                    p.Status = EventTrackerStatusEnum.InProgress;
                 }
             }
 
@@ -429,6 +441,18 @@ public class EventTrackerService : IEventTrackerService
                 else if (succeededCount == total)
                 {
                     consumption.PublishTracker.Status = EventTrackerStatusEnum.Completed;
+                }
+
+                var duplicateTrackers = await _dbContext.EventPublishTrackers
+                    .AsTracking()
+                    .Where(e => e.EventId == consumption.PublishTracker.EventId && e.Id != consumption.PublishTracker.Id &&
+                                (e.Status == EventTrackerStatusEnum.Published || e.Status == EventTrackerStatusEnum.InProgress))
+                    .ToListAsync(cancellationToken);
+
+                foreach (var dup in duplicateTrackers)
+                {
+                    dup.Status = consumption.PublishTracker.Status;
+                    dup.ConsumerCount = consumption.PublishTracker.ConsumerCount;
                 }
             }
 

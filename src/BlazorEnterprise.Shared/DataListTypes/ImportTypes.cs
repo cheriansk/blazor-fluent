@@ -34,6 +34,11 @@ public static class ImportFileTypeEnumDefinitions
         [Display(Name = "Hierarchical Data", Description = "Nested object tree structures.")]
         public const string HierarchicalDisplay = Hierarchical;
     }
+
+    public static bool IsWordDocument(this ImportFileTypeEnum fileType) =>
+        fileType is ImportFileTypeEnum.ScanFindingsWord
+            or ImportFileTypeEnum.StatementOfWorkWord
+            or ImportFileTypeEnum.DeliverablesWord;
 }
 
 /// <summary>

@@ -111,12 +111,17 @@ public class BatchJobQueueListener : BackgroundService
             var currentUser = scope.ServiceProvider.GetService<ICurrentUser>();
             var isCron = string.Equals(jobEvent.TriggerSource, "Cron", StringComparison.OrdinalIgnoreCase);
 
-            // Lookup tenant-scoped system daemon account
+            // Temporarily establish system daemon identity ONLY for finding the tenant-scoped system daemon account
+            currentUser?.SetSystemDaemon(
+                $"BatchJob:{jobName}",
+                _jobsOptions.Value.CronServiceAccountEmail ?? "system-daemon@local");
             var daemonUser = await dbContext.TenantUsers
                 .AsNoTracking()
                 .Where(tu => tu.TenantId == tenantId && tu.User.UserKind == UserKindEnum.SystemDaemon && !tu.IsDeleted)
                 .Select(tu => tu.User)
                 .FirstOrDefaultAsync(stoppingToken);
+            // Immediately clear temporary system daemon identity so no other query ever uses it
+            currentUser?.ClearSystemDaemon();
 
             if (isCron)
             {

@@ -1555,6 +1555,8 @@
         "ICurrentUser.SetSystemDaemon(string, string?)",
         "RestoreUserContext",
         "ICurrentUser.RestoreUserContext(string, string, string, bool)",
+        "ClearSystemDaemon",
+        "ICurrentUser.ClearSystemDaemon()",
         "_tenantContext",
         "DefaultCurrentUser._tenantContext",
         "_isSystemDaemon",
@@ -1609,14 +1611,17 @@
         "DefaultCurrentUser.IsAuthenticatedTenantUser",
         "DefaultCurrentUser.IsAuthenticatedTenantUser.get",
         "DefaultCurrentUser.SetSystemDaemon(string, string?)",
+        "DefaultCurrentUser.ClearSystemDaemon()",
         "DefaultCurrentUser.RestoreUserContext(string, string, string, bool)"
       ],
       "MemberSyntaxHashes": {
         "ICurrentUser.IsInRole(string)": "d3c97604b5e12e10620c6ae6a92cbf04c40a9df39c3c9b3531545f6f6b39f239",
         "ICurrentUser.SetSystemDaemon(string, string?)": "f12d0407b4895847e01e02d1a20a84e8fe5a33e208f342e5c8a9701a6729fcd8",
         "ICurrentUser.RestoreUserContext(string, string, string, bool)": "c6d8a600c05134d70962daa38940f8baecaef4da94cdde1c500b69870b02a6fa",
+        "ICurrentUser.ClearSystemDaemon()": "9ef64f34b2dcaa15a3c761d73b46fe5255d3a5ac34e91de02471fc4fac9e0972",
         "DefaultCurrentUser.IsInRole(string)": "9806818c32f1181a53a5c20156c811d329078d94b0de5fd2a0fc43731f49b630",
         "DefaultCurrentUser.SetSystemDaemon(string, string?)": "1be877a4ad7b04558edbc5f932354e5c725c3e375355794b1c523aaad3442363",
+        "DefaultCurrentUser.ClearSystemDaemon()": "be4f7767ae1b229047b9f888123e23bd9115dd9098db27358b7d0c5a81e12887",
         "DefaultCurrentUser.RestoreUserContext(string, string, string, bool)": "f9db1d276127f3cfa10b61f285ff263fff0887aee6a0a63ae3ccb16235440636"
       }
     },
@@ -15103,8 +15108,8 @@
         "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "6c8c342449dd3225512d1216d650b88f15c5729249143b9cceb0f0de8cc49915",
         "GenericFileImportBatchJobHandler.GetTemplateConfigCachedAsync(string, CancellationToken)": "1a2ac00ac99a73b99d29ee24a5cd20daa0e99a50e7f5506f546a27ddeac3b0dd",
         "GenericFileImportBatchJobHandler.OrderFilesByDependenciesAsync(List\u003CImportFileEntity\u003E, CancellationToken)": "c55d80ff292ec0358654d7ab20cab8d77e2d844c78cf82a73477c57f257e80fc",
-        "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "407ed89f979eee31ddb0d4a8c95d98f572a0feaa50cd9324b213a79f66607569",
-        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "345bada13accd97cc13d089a2b63f2ede29b9029600bc5377f20f8228fafa8a1",
+        "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "4979793ecf7988921bc7a8e5f5ef16e82159927d35dfa52bdc4c1f0ef4d444a0",
+        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "d11c979608a7314c0e9668548366c983b3d2f751f6e847fd7124c2643dc85845",
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)": "3f2c24b1bbc2e9c1c82b11432bb036a6f03f3a87825e2fbb335898656ce42573"
       }
     },
@@ -15486,7 +15491,7 @@
         "DocumentParsingJobHandler.HandleAsync(DocumentParsingJobEvent, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "DocumentParsingJobHandler.HandleAsync(DocumentParsingJobEvent, CancellationToken)": "c6213222975214e0f9236d911e7b6572c281e795a3716970614f6c30b963cb55"
+        "DocumentParsingJobHandler.HandleAsync(DocumentParsingJobEvent, CancellationToken)": "b4cbbb644430ef91398d109247ef565c821f8b51cece8b0e9fe0dbcc00cfc706"
       }
     },
     "Jobs/Jobs/DocumentParsing/JsonComparisonJobHandler.cs": {
@@ -15764,7 +15769,7 @@
       ],
       "MemberSyntaxHashes": {
         "BatchJobQueueListener.ExecuteAsync(CancellationToken)": "4f9034f1d015a2a06b078e391c5b9b3084d6481df95e53dab7f2d03edefc0ef1",
-        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "87d86f64bf092ef5dc52865413dfe0a626631b53e686d6e89d29555e4d224456"
+        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "acbccad53900c8a3f05809b44b2e5416d7f005ecb65ec2994dbe4b7e17a0a095"
       }
     },
     "Jobs/Queue/ChannelJobEventQueue.cs": {
@@ -17413,6 +17418,33 @@
         "_20261116163922_AddDocumentParsingTables.BuildTargetModel(ModelBuilder)": "1f777a1630b0eae8ae7bd0e69a61fff2605535db573f3fe87ba2d009dc1b174a"
       }
     },
+    "Persistence/Migrations/20261117171433_SyncPendingModelChanges.cs": {
+      "RelativePath": "Persistence/Migrations/20261117171433_SyncPendingModelChanges.cs",
+      "KnownMembers": [
+        "Up",
+        "_20261117171433_SyncPendingModelChanges.Up(MigrationBuilder)",
+        "Down",
+        "_20261117171433_SyncPendingModelChanges.Down(MigrationBuilder)",
+        ".ctor",
+        "_20261117171433_SyncPendingModelChanges._20261117171433_SyncPendingModelChanges()"
+      ],
+      "MemberSyntaxHashes": {
+        "_20261117171433_SyncPendingModelChanges.Up(MigrationBuilder)": "6f0945bb6dec82d17f23154fbf39f0ca92580919989841a48b5221dd1f946f7b",
+        "_20261117171433_SyncPendingModelChanges.Down(MigrationBuilder)": "e8617e86cba73e19eaf1c161333232409b2680e8cc8a17959a478b8a478947ae"
+      }
+    },
+    "Persistence/Migrations/20261117171433_SyncPendingModelChanges.Designer.cs": {
+      "RelativePath": "Persistence/Migrations/20261117171433_SyncPendingModelChanges.Designer.cs",
+      "KnownMembers": [
+        "BuildTargetModel",
+        "_20261117171433_SyncPendingModelChanges.BuildTargetModel(ModelBuilder)",
+        ".ctor",
+        "_20261117171433_SyncPendingModelChanges._20261117171433_SyncPendingModelChanges()"
+      ],
+      "MemberSyntaxHashes": {
+        "_20261117171433_SyncPendingModelChanges.BuildTargetModel(ModelBuilder)": "26085c15f9db79c9a18bb2a79ef59fd6c0c7adcf59348eb00a5aba920de12984"
+      }
+    },
     "Persistence/Migrations/AppDbContextModelSnapshot.cs": {
       "RelativePath": "Persistence/Migrations/AppDbContextModelSnapshot.cs",
       "KnownMembers": [
@@ -17426,7 +17458,7 @@
         "AppDbContextModelSnapshot.AppDbContextModelSnapshot()"
       ],
       "MemberSyntaxHashes": {
-        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "52f54c05a72c7a7a9c63148861c2846fcf8fe8bb2a2639078afcc9efdd467911"
+        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "edb0f3e877e6036d492e2ce1a430d0b676f4d5f9520cee46319e513470077892"
       }
     },
     "Persistence/PersistenceExtensions.cs": {
@@ -17832,9 +17864,9 @@
         "EventTrackerService.EventTrackerService()"
       ],
       "MemberSyntaxHashes": {
-        "EventTrackerService.TrackPublishAsync\u003CTEvent\u003E(TEvent, Guid?, string?, string?, string?, string, string, string?, string?, string?, CancellationToken)": "4770a6b89497195560f1336f988eb1be04cf0fd89523b8dca31375cd96a8cf7c",
-        "EventTrackerService.TrackConsumptionStartAsync(Guid, string, string, int, CancellationToken)": "bc39fb1e34d7b61b33a1217a04c62fe91284f5a45a2c77ee15665d57d5011e8d",
-        "EventTrackerService.TrackConsumptionCompleteAsync(Guid, bool, double, string?, string?, CancellationToken)": "54c42b2a8cdb30890e677e02e57224cd74472df373d1b3a66d9a1390f16603a9",
+        "EventTrackerService.TrackPublishAsync\u003CTEvent\u003E(TEvent, Guid?, string?, string?, string?, string, string, string?, string?, string?, CancellationToken)": "fb844e042b62d1bba6aab1db965b9c43cc59a6aa5f56692342f265ef8493e593",
+        "EventTrackerService.TrackConsumptionStartAsync(Guid, string, string, int, CancellationToken)": "6bc554796ce246060b1398075514b3163de3ed6bb57916845b90081518af9616",
+        "EventTrackerService.TrackConsumptionCompleteAsync(Guid, bool, double, string?, string?, CancellationToken)": "5a993999c11db20cc4cffeaedbdb1a6477fef82326d3e4b01d470351666e3c15",
         "EventTrackerService.GetEventsAsync(EventTrackerFilterReqDto, CancellationToken)": "56b6e75d952f2a40d427218ef1efdfd76099750fac5d8bdedd12fb59c1b07ce5",
         "EventTrackerService.GetConsumptionsAsync(Guid, CancellationToken)": "0c892425fad80583a593b41d957fc013f634cae51298950ea5a9abd1bee5168d",
         "EventTrackerService.GetEventByIdAsync(Guid, CancellationToken)": "661e32d37b6d10969c78345eea74ca9691ca723d86258f785b5830e649d5f9a5"
@@ -18010,7 +18042,7 @@
         "ImportFileService.SendNotificationAsync(string, string, NotificationSeverityEnum, Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ImportFileService.UploadBatchAndQueueAsync(UploadBatchRequest, CancellationToken)": "f3ca20429e827bf943d177ba8f601170a90437eb6153a9a4b5ca55b7083e4bf8",
+        "ImportFileService.UploadBatchAndQueueAsync(UploadBatchRequest, CancellationToken)": "c0a5daaf5b95266639a083c8a3f7517bd7583e165299df6046259ebde5c9e16e",
         "ImportFileService.UploadAndQueueAsync(UploadFileRequest, CancellationToken)": "5dd7212ea47fc1371693a06fd416e53dcadbd9410df80437879ca1df54dbe9d1",
         "ImportFileService.GetImportHistoryAsync(Guid, CancellationToken)": "6e7ae1f8f7b4b89f027158ede3129584baed67c86a1fdfeeecd19aee8a4aa669",
         "ImportFileService.GetImportFilesByBatchAsync(Guid, Guid, CancellationToken)": "ec239bbbda898257eee7a1d948cef1fbe3a4872ca8f77f9eb94e07e7028da0c7",
@@ -26123,6 +26155,8 @@
         "ImportFileTypeEnumDefinitions.Categories",
         "Filters",
         "ImportFileTypeEnumDefinitions.Filters",
+        "IsWordDocument",
+        "ImportFileTypeEnumDefinitions.IsWordDocument(ImportFileTypeEnum)",
         "Spreadsheet",
         "ImportFileTypeEnumDefinitions.Categories.Spreadsheet",
         "Structured",
@@ -26200,7 +26234,9 @@
         "ImportStatusEnumDefinitions.AllowedTransitions",
         "ImportStatusEnumDefinitions.ImportStatusEnumDefinitions()"
       ],
-      "MemberSyntaxHashes": {}
+      "MemberSyntaxHashes": {
+        "ImportFileTypeEnumDefinitions.IsWordDocument(ImportFileTypeEnum)": "ab61e9b79e5c962dc5ebefbafd803f43590552a7d186fc0c8f192480509e8986"
+      }
     },
     "Shared/DataListTypes/JobStatusTypes.cs": {
       "RelativePath": "Shared/DataListTypes/JobStatusTypes.cs",
@@ -34019,6 +34055,8 @@
         "AppCurrentUser.IsSystemDaemon.set",
         "SetSystemDaemon",
         "AppCurrentUser.SetSystemDaemon(string, string?)",
+        "ClearSystemDaemon",
+        "AppCurrentUser.ClearSystemDaemon()",
         "RestoreUserContext",
         "AppCurrentUser.RestoreUserContext(string, string, string, bool)",
         "Clear",
@@ -34033,6 +34071,7 @@
         "AppCurrentUser.SetImpersonation(string, string, string, string)": "b923775ca627e6f2cf7bea657bda5631afe06e0c8c8cdbade85d5ccaccc0c2c3",
         "AppCurrentUser.ClearImpersonation(string?, string?, string?)": "c4d08068256bcfc52be316b9917ce0678edfe86f4b8710d91a7687af2eeed8f4",
         "AppCurrentUser.SetSystemDaemon(string, string?)": "27d8594ada31814c3123d8c68eafabd1f6d5f35f734ab64842adfdbf25add61b",
+        "AppCurrentUser.ClearSystemDaemon()": "29ca6975698eb542c5a92e83c3f4860e1bd781c969d8cbf249ca2796737d5f46",
         "AppCurrentUser.RestoreUserContext(string, string, string, bool)": "e66e84d29510b4b18e6fa13b5761b67375e29a66ff4f88cd5c29fe690c71f3a2",
         "AppCurrentUser.Clear()": "210cb5ec3785cfc04712816916059dfaa6540e697502850cc2f18e0713895fe3"
       }
