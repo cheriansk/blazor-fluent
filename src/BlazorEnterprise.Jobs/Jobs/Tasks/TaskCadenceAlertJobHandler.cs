@@ -19,22 +19,23 @@ namespace BlazorEnterprise.Jobs.Jobs.Tasks;
 /// </summary>
 public class TaskCadenceAlertJobHandler : IBatchJobHandler<TaskCadenceAlertJobEvent>
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly INotifyService _notificationService;
     private readonly ILogger<TaskCadenceAlertJobHandler> _logger;
 
     public TaskCadenceAlertJobHandler(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         INotifyService notificationService,
         ILogger<TaskCadenceAlertJobHandler> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _notificationService = notificationService;
         _logger = logger;
     }
 
     public async Task HandleAsync(TaskCadenceAlertJobEvent jobEvent, CancellationToken cancellationToken)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         _logger.LogInformation("TaskCadenceAlertJobHandler initiated cadence deadline evaluation.");
 
         var today = DateTime.UtcNow.Date;

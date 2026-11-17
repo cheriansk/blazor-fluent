@@ -17,22 +17,23 @@ namespace BlazorEnterprise.Jobs.Jobs.Audit;
 /// </summary>
 public class AuditPurgeJobHandler : IBatchJobHandler<AuditPurgeJobEvent>
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly IAuditService _auditService;
     private readonly ILogger<AuditPurgeJobHandler> _logger;
 
     public AuditPurgeJobHandler(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         IAuditService auditService,
         ILogger<AuditPurgeJobHandler> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _auditService = auditService;
         _logger = logger;
     }
 
     public async Task HandleAsync(AuditPurgeJobEvent jobEvent, CancellationToken cancellationToken)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var now = DateTime.UtcNow;
         _logger.LogInformation("AuditPurgeJob starting multi-tier retention purge at {Now:yyyy-MM-dd HH:mm:ss} UTC.", now);
 

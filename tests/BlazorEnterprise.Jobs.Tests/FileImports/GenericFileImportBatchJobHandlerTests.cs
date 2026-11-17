@@ -34,11 +34,13 @@ public class GenericFileImportBatchJobHandlerTests
             .Options;
         var tenantContextMock = new Mock<ITenantContext>();
         tenantContextMock.Setup(t => t.TenantId).Returns(Guid.NewGuid());
-        using var dbContext = new AppDbContext(options, new Mock<IDateTimeProvider>().Object, tenantContextMock.Object);
+        var dbFactoryMock = new Mock<IDbContextFactory<AppDbContext>>();
+        dbFactoryMock.Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new AppDbContext(options, new Mock<IDateTimeProvider>().Object, tenantContextMock.Object));
 
         // Act
         var handler = new GenericFileImportBatchJobHandler(
-            dbContext,
+            dbFactoryMock.Object,
             _encryptionServiceMock.Object,
             _blobStorageServiceMock.Object,
             _notifyServiceMock.Object,

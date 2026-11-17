@@ -18,7 +18,7 @@ namespace BlazorEnterprise.Jobs.Services;
 /// </summary>
 public class JobManagerService : IJobManagerService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly IJobEventQueue _queue;
     private readonly IAuditService _auditService;
     private readonly ITenantContext _tenantContext;
@@ -26,14 +26,14 @@ public class JobManagerService : IJobManagerService
     private readonly ILogger<JobManagerService> _logger;
 
     public JobManagerService(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         IJobEventQueue queue,
         IAuditService auditService,
         ITenantContext tenantContext,
         ICurrentUser currentUser,
         ILogger<JobManagerService> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _queue = queue;
         _auditService = auditService;
         _tenantContext = tenantContext;
@@ -43,6 +43,7 @@ public class JobManagerService : IJobManagerService
 
     public async Task<IReadOnlyList<JobExecutionEntity>> GetRecentExecutionsAsync(int limit = 100, CancellationToken cancellationToken = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var query = _dbContext.JobExecutions.AsNoTracking();
 
         var activeTenant = _tenantContext.TenantId;
@@ -56,6 +57,7 @@ public class JobManagerService : IJobManagerService
 
     public async Task<Result> TriggerJobAsync(string jobName, string? tenantId = null, CancellationToken cancellationToken = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(jobName))
             return Result.Failure("JobName is required.");
 
@@ -148,6 +150,7 @@ public class JobManagerService : IJobManagerService
 
     public async Task<Result> RetryJobAsync(Guid executionId, CancellationToken cancellationToken = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var execution = await _dbContext.JobExecutions.FindAsync([executionId], cancellationToken);
         if (execution is null)
         {

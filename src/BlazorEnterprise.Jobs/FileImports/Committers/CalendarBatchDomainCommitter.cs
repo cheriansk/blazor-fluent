@@ -19,16 +19,16 @@ namespace BlazorEnterprise.Jobs.FileImports.Committers;
 public sealed class CalendarBatchDomainCommitter : IBatchDomainCommitter
 {
     private readonly ICalendarService _calendarService;
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ILogger<CalendarBatchDomainCommitter> _logger;
 
     public CalendarBatchDomainCommitter(
         ICalendarService calendarService,
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ILogger<CalendarBatchDomainCommitter> logger)
     {
         _calendarService = calendarService;
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _logger = logger;
     }
 
@@ -48,6 +48,8 @@ public sealed class CalendarBatchDomainCommitter : IBatchDomainCommitter
                 file.TenantId, jobEvent.TenantId);
             return Result<int>.Failure("Zero-Trust Security Violation: Cross-tenant commit detected.");
         }
+
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
 
         var isProgram = rows.Any(r => string.Equals(r.TargetEntityName, "CalendarEntity", StringComparison.OrdinalIgnoreCase));
         var batchRevisionName = $"Batch Import - {file.OriginalFileName} ({DateTime.UtcNow:yyyy-MM-dd HH:mm})";
