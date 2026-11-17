@@ -14978,12 +14978,12 @@
       "KnownMembers": [
         "_calendarService",
         "CalendarBatchDomainCommitter._calendarService",
-        "_dbContext",
-        "CalendarBatchDomainCommitter._dbContext",
+        "_dbFactory",
+        "CalendarBatchDomainCommitter._dbFactory",
         "_logger",
         "CalendarBatchDomainCommitter._logger",
         ".ctor",
-        "CalendarBatchDomainCommitter.CalendarBatchDomainCommitter(ICalendarService, AppDbContext, ILogger\u003CCalendarBatchDomainCommitter\u003E)",
+        "CalendarBatchDomainCommitter.CalendarBatchDomainCommitter(ICalendarService, IDbContextFactory\u003CAppDbContext\u003E, ILogger\u003CCalendarBatchDomainCommitter\u003E)",
         "CanCommit",
         "CalendarBatchDomainCommitter.CanCommit(string)",
         "CommitProcessedRowsAsync",
@@ -14995,7 +14995,7 @@
       ],
       "MemberSyntaxHashes": {
         "CalendarBatchDomainCommitter.CanCommit(string)": "d46280247e2656a8716f7006ec5a43755ca78292ce75652cd580edb2a92fcbe9",
-        "CalendarBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "4c1031ddaf52d6c09c50144d70bdb1069a9da67f391fd2c29c3891473e765452",
+        "CalendarBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "a8963cf89364a3ae70c59f409babf223aa45e10dcadb111e3e591b74929f9b6b",
         "CalendarBatchDomainCommitter.BuildProgramTimelineRows(IReadOnlyList\u003CProcessedDomainRowDto\u003E)": "8f2f32bc8dfd051238a7313cd3225fb3ce3797c2902adf464c8fae42bb32fbc6",
         "CalendarBatchDomainCommitter.BuildProjectPhases(IReadOnlyList\u003CProcessedDomainRowDto\u003E)": "1d91c81591d4364c7548ff2e2ad67b0429ee35a9d577d280df7b4ce84e2d6ba9"
       }
@@ -15016,12 +15016,12 @@
     "Jobs/FileImports/Committers/TaskBatchDomainCommitter.cs": {
       "RelativePath": "Jobs/FileImports/Committers/TaskBatchDomainCommitter.cs",
       "KnownMembers": [
-        "_dbContext",
-        "TaskBatchDomainCommitter._dbContext",
+        "_dbFactory",
+        "TaskBatchDomainCommitter._dbFactory",
         "_logger",
         "TaskBatchDomainCommitter._logger",
         ".ctor",
-        "TaskBatchDomainCommitter.TaskBatchDomainCommitter(AppDbContext, ILogger\u003CTaskBatchDomainCommitter\u003E)",
+        "TaskBatchDomainCommitter.TaskBatchDomainCommitter(IDbContextFactory\u003CAppDbContext\u003E, ILogger\u003CTaskBatchDomainCommitter\u003E)",
         "CanCommit",
         "TaskBatchDomainCommitter.CanCommit(string)",
         "CommitProcessedRowsAsync",
@@ -15029,7 +15029,7 @@
       ],
       "MemberSyntaxHashes": {
         "TaskBatchDomainCommitter.CanCommit(string)": "7165768daad1a7d85fba2dc855ab75bc7bfc7be61128dfb6a46373b2a5b351bd",
-        "TaskBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "b0bc956e879945e74c285b45516a3df14feb5d9cfd19ba56ce884dac353242b4"
+        "TaskBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "d2e385e15329acaaaa65143f49ef58925512b12e229145fd961c7c29cb240250"
       }
     },
     "Jobs/FileImports/Configuration/IFileTemplateConfigRepository.cs": {
@@ -15062,8 +15062,8 @@
     "Jobs/FileImports/GenericFileImportBatchJobHandler.cs": {
       "RelativePath": "Jobs/FileImports/GenericFileImportBatchJobHandler.cs",
       "KnownMembers": [
-        "_dbContext",
-        "GenericFileImportBatchJobHandler._dbContext",
+        "_dbFactory",
+        "GenericFileImportBatchJobHandler._dbFactory",
         "_encryptionService",
         "GenericFileImportBatchJobHandler._encryptionService",
         "_blobStorageService",
@@ -15085,7 +15085,7 @@
         "_templateCache",
         "GenericFileImportBatchJobHandler._templateCache",
         ".ctor",
-        "GenericFileImportBatchJobHandler.GenericFileImportBatchJobHandler(AppDbContext, ITenantEncryptionService, ITenantBlobStorageService, INotifyService, IJobEventPublisher, ILogger\u003CGenericFileImportBatchJobHandler\u003E, IFileTemplateConfigRepository?, ILocalBatchStagerResolver?, IEngineClient?, IEnumerable\u003CCommitters.IBatchDomainCommitter\u003E?)",
+        "GenericFileImportBatchJobHandler.GenericFileImportBatchJobHandler(IDbContextFactory\u003CAppDbContext\u003E, ITenantEncryptionService, ITenantBlobStorageService, INotifyService, IJobEventPublisher, ILogger\u003CGenericFileImportBatchJobHandler\u003E, IFileTemplateConfigRepository?, ILocalBatchStagerResolver?, IEngineClient?, IEnumerable\u003CCommitters.IBatchDomainCommitter\u003E?)",
         "HandleAsync",
         "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)",
         "GetTemplateConfigCachedAsync",
@@ -15100,19 +15100,19 @@
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "6c714e10e18c093fb28b513210c5f828fdd0c3ca5561ee938b8d3cce883d1d36",
+        "GenericFileImportBatchJobHandler.HandleAsync(FileImportBatchJobEvent, CancellationToken)": "6c8c342449dd3225512d1216d650b88f15c5729249143b9cceb0f0de8cc49915",
         "GenericFileImportBatchJobHandler.GetTemplateConfigCachedAsync(string, CancellationToken)": "1a2ac00ac99a73b99d29ee24a5cd20daa0e99a50e7f5506f546a27ddeac3b0dd",
         "GenericFileImportBatchJobHandler.OrderFilesByDependenciesAsync(List\u003CImportFileEntity\u003E, CancellationToken)": "c55d80ff292ec0358654d7ab20cab8d77e2d844c78cf82a73477c57f257e80fc",
-        "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "29680f53aaf2f752f31d5c2c3dae7f67f704300172e33cfea9878534e2ef55bf",
-        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "808c8f2404a24b6390c43bc2970c45ac7464b175d128a551c1e58b4572fac1dc",
+        "GenericFileImportBatchJobHandler.ProcessSingleFileAsync(ImportFileEntity, FileImportBatchJobEvent, CancellationToken)": "407ed89f979eee31ddb0d4a8c95d98f572a0feaa50cd9324b213a79f66607569",
+        "GenericFileImportBatchJobHandler.ProcessHybridCanonicalPipelineAsync(ImportFileEntity, FileTemplateConfig, FileImportBatchJobEvent, CancellationToken)": "345bada13accd97cc13d089a2b63f2ede29b9029600bc5377f20f8228fafa8a1",
         "GenericFileImportBatchJobHandler.SendNotificationAsync(ImportFileEntity, string, string, NotificationSeverityEnum, CancellationToken)": "3f2c24b1bbc2e9c1c82b11432bb036a6f03f3a87825e2fbb335898656ce42573"
       }
     },
     "Jobs/FileImports/Staging/GenericTabularJsonBatchStager.cs": {
       "RelativePath": "Jobs/FileImports/Staging/GenericTabularJsonBatchStager.cs",
       "KnownMembers": [
-        "_dbContext",
-        "GenericTabularJsonBatchStager._dbContext",
+        "_dbFactory",
+        "GenericTabularJsonBatchStager._dbFactory",
         "_logger",
         "GenericTabularJsonBatchStager._logger",
         "SpreadsheetNs",
@@ -15126,7 +15126,7 @@
         "get_StrategyName",
         "GenericTabularJsonBatchStager.StrategyName.get",
         ".ctor",
-        "GenericTabularJsonBatchStager.GenericTabularJsonBatchStager(AppDbContext, ILogger\u003CGenericTabularJsonBatchStager\u003E)",
+        "GenericTabularJsonBatchStager.GenericTabularJsonBatchStager(IDbContextFactory\u003CAppDbContext\u003E, ILogger\u003CGenericTabularJsonBatchStager\u003E)",
         "ValidateAndStageCanonicalJsonAsync",
         "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)",
         "IsExcelFormat",
@@ -15229,7 +15229,7 @@
         "GenericTabularJsonBatchStager.ExcelSheetMetadata.Deconstruct(out string, out string)"
       ],
       "MemberSyntaxHashes": {
-        "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)": "107193e8743741c7f3aef83e4242b6638c6044abeaff8422bf411a0aae2714f0",
+        "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)": "9339c42a813912299887543bab8af430deb52621f676581107675d15195a7a17",
         "GenericTabularJsonBatchStager.IsExcelFormat(ImportFileEntity, FileTemplateConfig)": "3c07144754abd0b5085fbbdbe2038776e9bcf8cb9f591e9578ba749e6e51fc10",
         "GenericTabularJsonBatchStager.ValidateRow(int, string, IReadOnlyDictionary\u003Cstring, string?\u003E, IReadOnlyDictionary\u003Cstring, ColumnTemplateConfig\u003E, IReadOnlyList\u003Cstring\u003E, HashSet\u003Cstring\u003E, List\u003CFileValidationError\u003E)": "590e20ce18588c8108cc556cecbaa3944a57d20862ce225abf5898a3b8a6cd71",
         "GenericTabularJsonBatchStager.TryParseExcelOrIsoDate(string, out DateTime)": "2165277a9d55a889be6185a74dd09a1ca5ee258af1f4edbb1504ef793b915391",
@@ -15454,19 +15454,19 @@
     "Jobs/Jobs/Audit/AuditPurgeJobHandler.cs": {
       "RelativePath": "Jobs/Jobs/Audit/AuditPurgeJobHandler.cs",
       "KnownMembers": [
-        "_dbContext",
-        "AuditPurgeJobHandler._dbContext",
+        "_dbFactory",
+        "AuditPurgeJobHandler._dbFactory",
         "_auditService",
         "AuditPurgeJobHandler._auditService",
         "_logger",
         "AuditPurgeJobHandler._logger",
         ".ctor",
-        "AuditPurgeJobHandler.AuditPurgeJobHandler(AppDbContext, IAuditService, ILogger\u003CAuditPurgeJobHandler\u003E)",
+        "AuditPurgeJobHandler.AuditPurgeJobHandler(IDbContextFactory\u003CAppDbContext\u003E, IAuditService, ILogger\u003CAuditPurgeJobHandler\u003E)",
         "HandleAsync",
         "AuditPurgeJobHandler.HandleAsync(AuditPurgeJobEvent, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "AuditPurgeJobHandler.HandleAsync(AuditPurgeJobEvent, CancellationToken)": "63c126651195b747879db979bebd1a0da8d5cb344c4c4171b98fe7d5dab778f8"
+        "AuditPurgeJobHandler.HandleAsync(AuditPurgeJobEvent, CancellationToken)": "1aebb2447d12cf59cfc32f6223b1657878626dab074296608ebc643397ccfe86"
       }
     },
     "Jobs/Jobs/DocumentParsing/DocumentParsingJobHandler.cs": {
@@ -15599,8 +15599,8 @@
     "Jobs/Jobs/Tasks/DailyTaskSummaryJobHandler.cs": {
       "RelativePath": "Jobs/Jobs/Tasks/DailyTaskSummaryJobHandler.cs",
       "KnownMembers": [
-        "_dbContext",
-        "DailyTaskSummaryJobHandler._dbContext",
+        "_dbFactory",
+        "DailyTaskSummaryJobHandler._dbFactory",
         "_teamsSender",
         "DailyTaskSummaryJobHandler._teamsSender",
         "_notificationOptions",
@@ -15608,14 +15608,14 @@
         "_logger",
         "DailyTaskSummaryJobHandler._logger",
         ".ctor",
-        "DailyTaskSummaryJobHandler.DailyTaskSummaryJobHandler(AppDbContext, ITeamsNotificationSender, IOptions\u003CNotificationOptions\u003E, ILogger\u003CDailyTaskSummaryJobHandler\u003E)",
+        "DailyTaskSummaryJobHandler.DailyTaskSummaryJobHandler(IDbContextFactory\u003CAppDbContext\u003E, ITeamsNotificationSender, IOptions\u003CNotificationOptions\u003E, ILogger\u003CDailyTaskSummaryJobHandler\u003E)",
         "HandleAsync",
         "DailyTaskSummaryJobHandler.HandleAsync(DailyTaskSummaryJobEvent, CancellationToken)",
         "Sanitize",
         "DailyTaskSummaryJobHandler.Sanitize(string?)"
       ],
       "MemberSyntaxHashes": {
-        "DailyTaskSummaryJobHandler.HandleAsync(DailyTaskSummaryJobEvent, CancellationToken)": "0916c28f36f96f0b9bcaf86a7dec8796e36e94acb3b9f42df29dcd4d78a71e19",
+        "DailyTaskSummaryJobHandler.HandleAsync(DailyTaskSummaryJobEvent, CancellationToken)": "929dd6793e3488f20e171a344c776154f843d3197066db89f64654b6f322b716",
         "DailyTaskSummaryJobHandler.Sanitize(string?)": "f276e712f4193821b06ad46fc07b390905f03beaac689867e4669ece1a1bfaa2"
       }
     },
@@ -15709,19 +15709,19 @@
     "Jobs/Jobs/Tasks/TaskCadenceAlertJobHandler.cs": {
       "RelativePath": "Jobs/Jobs/Tasks/TaskCadenceAlertJobHandler.cs",
       "KnownMembers": [
-        "_dbContext",
-        "TaskCadenceAlertJobHandler._dbContext",
+        "_dbFactory",
+        "TaskCadenceAlertJobHandler._dbFactory",
         "_notificationService",
         "TaskCadenceAlertJobHandler._notificationService",
         "_logger",
         "TaskCadenceAlertJobHandler._logger",
         ".ctor",
-        "TaskCadenceAlertJobHandler.TaskCadenceAlertJobHandler(AppDbContext, INotifyService, ILogger\u003CTaskCadenceAlertJobHandler\u003E)",
+        "TaskCadenceAlertJobHandler.TaskCadenceAlertJobHandler(IDbContextFactory\u003CAppDbContext\u003E, INotifyService, ILogger\u003CTaskCadenceAlertJobHandler\u003E)",
         "HandleAsync",
         "TaskCadenceAlertJobHandler.HandleAsync(TaskCadenceAlertJobEvent, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "TaskCadenceAlertJobHandler.HandleAsync(TaskCadenceAlertJobEvent, CancellationToken)": "26822f77a53a0a6b77ea28cced559eecff62d16481101c7a79d25de320cbfab9"
+        "TaskCadenceAlertJobHandler.HandleAsync(TaskCadenceAlertJobEvent, CancellationToken)": "9067b58a05d475998593dc4d0852012b99d319719a9e67b915ba2e039e8bed2f"
       }
     },
     "Jobs/JobsExtensions.cs": {
@@ -15951,8 +15951,8 @@
     "Jobs/Services/JobManagerService.cs": {
       "RelativePath": "Jobs/Services/JobManagerService.cs",
       "KnownMembers": [
-        "_dbContext",
-        "JobManagerService._dbContext",
+        "_dbFactory",
+        "JobManagerService._dbFactory",
         "_queue",
         "JobManagerService._queue",
         "_auditService",
@@ -15964,7 +15964,7 @@
         "_logger",
         "JobManagerService._logger",
         ".ctor",
-        "JobManagerService.JobManagerService(AppDbContext, IJobEventQueue, IAuditService, ITenantContext, ICurrentUser, ILogger\u003CJobManagerService\u003E)",
+        "JobManagerService.JobManagerService(IDbContextFactory\u003CAppDbContext\u003E, IJobEventQueue, IAuditService, ITenantContext, ICurrentUser, ILogger\u003CJobManagerService\u003E)",
         "GetRecentExecutionsAsync",
         "JobManagerService.GetRecentExecutionsAsync(int, CancellationToken)",
         "TriggerJobAsync",
@@ -15973,9 +15973,9 @@
         "JobManagerService.RetryJobAsync(Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "JobManagerService.GetRecentExecutionsAsync(int, CancellationToken)": "4bed4ea5fe6fee5cb97e59e4ef343fa9c77e6d221dfcbef0b62ff0bf89b43436",
-        "JobManagerService.TriggerJobAsync(string, string?, CancellationToken)": "d6a3ec81a25767a3a340256451b9539068e48ea4ba503993ac5298ea73be3108",
-        "JobManagerService.RetryJobAsync(Guid, CancellationToken)": "e6ae0db25b8f4c43db31cee02d081d0713d2998d87f3b9340fd893faf3b620e7"
+        "JobManagerService.GetRecentExecutionsAsync(int, CancellationToken)": "855f5033324d0801d127d9317f381cf2eafe9a4bb951c024edab4779c49fe05d",
+        "JobManagerService.TriggerJobAsync(string, string?, CancellationToken)": "bd4c5098a18fcd35b8e7eae271f47fac2bd2c8c0f72117e5a48380d57f82c860",
+        "JobManagerService.RetryJobAsync(Guid, CancellationToken)": "b9a2ded2db97422041da5eae7efb4a12e996af57b516b37427c6c84df6d3bd27"
       }
     },
     "Jobs/Services/JsonAnalysis/JsonComparisonService.cs": {
@@ -37093,7 +37093,7 @@
       "RelativePath": "Shared.UI/wwwroot/css/material-theme.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "aa116c3218b1d51550bcfd9c8c3f416c9b39aef1aa43ac647cc201b8dbc2439a"
+        "$Content": "5828f781ab9ce5c8776397b22b86c32cfd9b96cf95aa8ef18286736a4218db8d"
       }
     },
     "Shared.UI/wwwroot/js/quill-interop.js": {

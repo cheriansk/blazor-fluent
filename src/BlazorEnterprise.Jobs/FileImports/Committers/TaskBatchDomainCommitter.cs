@@ -3,6 +3,7 @@ using BlazorEnterprise.Core.Domain.Imports;
 using BlazorEnterprise.Core.Domain.Tasks;
 using BlazorEnterprise.Core.Events.Imports;
 using BlazorEnterprise.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 using BlazorEnterprise.Shared.Common;
 using BlazorEnterprise.Shared.Contracts.Engine.Transforms;
 using BlazorEnterprise.Shared.DataListTypes;
@@ -15,14 +16,14 @@ namespace BlazorEnterprise.Jobs.FileImports.Committers;
 /// </summary>
 public sealed class TaskBatchDomainCommitter : IBatchDomainCommitter
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ILogger<TaskBatchDomainCommitter> _logger;
 
     public TaskBatchDomainCommitter(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ILogger<TaskBatchDomainCommitter> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _logger = logger;
     }
 
@@ -43,6 +44,7 @@ public sealed class TaskBatchDomainCommitter : IBatchDomainCommitter
         }
 
         var uploaderEmail = string.IsNullOrWhiteSpace(file.CreatedBy) ? "system@local" : file.CreatedBy;
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var committedCount = 0;
 
         foreach (var row in rows)

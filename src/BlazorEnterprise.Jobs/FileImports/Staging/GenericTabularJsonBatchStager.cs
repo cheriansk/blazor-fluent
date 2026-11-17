@@ -23,7 +23,7 @@ namespace BlazorEnterprise.Jobs.FileImports.Staging;
 /// </summary>
 public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ILogger<GenericTabularJsonBatchStager> _logger;
 
     private static readonly XNamespace SpreadsheetNs = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
@@ -33,10 +33,10 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
     public string StrategyName => "generic-json";
 
     public GenericTabularJsonBatchStager(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ILogger<GenericTabularJsonBatchStager> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _logger = logger;
     }
 
@@ -46,6 +46,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         FileTemplateConfig config,
         CancellationToken ct = default)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         if (decryptedStream.CanSeek)
             decryptedStream.Position = 0;
 

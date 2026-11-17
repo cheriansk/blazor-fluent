@@ -31,7 +31,7 @@ namespace BlazorEnterprise.Jobs.FileImports;
 /// </summary>
 public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatchJobEvent>
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITenantEncryptionService _encryptionService;
     private readonly ITenantBlobStorageService _blobStorageService;
     private readonly INotifyService _notificationService;
@@ -44,7 +44,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, FileTemplateConfig?> _templateCache = new(StringComparer.OrdinalIgnoreCase);
 
     public GenericFileImportBatchJobHandler(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ITenantEncryptionService encryptionService,
         ITenantBlobStorageService blobStorageService,
         INotifyService notificationService,
@@ -55,7 +55,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         IEngineClient? engineClient = null,
         IEnumerable<BlazorEnterprise.Jobs.FileImports.Committers.IBatchDomainCommitter>? domainCommitters = null)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _encryptionService = encryptionService;
         _blobStorageService = blobStorageService;
         _notificationService = notificationService;
@@ -69,6 +69,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
 
     public async Task HandleAsync(FileImportBatchJobEvent jobEvent, CancellationToken cancellationToken)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         _logger.LogInformation("GenericFileImportBatchJobHandler starting for ImportId={ImportId} (CorrelationId={CorrelationId})",
             jobEvent.ImportId, jobEvent.CorrelationId);
 
@@ -171,6 +172,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         FileImportBatchJobEvent jobEvent,
         CancellationToken ct)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         _logger.LogInformation("--- Starting import execution for file '{FileName}' ({FileId}, Type={FileType}) in Batch {ImportId} ---",
             file.OriginalFileName, file.Id, file.FileType, file.ImportId);
 
@@ -223,6 +225,7 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
         FileImportBatchJobEvent jobEvent,
         CancellationToken ct)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(ct);
         var canonicalStager = _batchStagerResolver!.ResolveStager(templateConfig);
 
         // 1. Download & Decrypt Stream Locally

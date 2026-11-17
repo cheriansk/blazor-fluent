@@ -18,18 +18,18 @@ namespace BlazorEnterprise.Jobs.Jobs.Tasks;
 /// </summary>
 public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEvent>
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly ITeamsNotificationSender _teamsSender;
     private readonly IOptions<NotificationOptions> _notificationOptions;
     private readonly ILogger<DailyTaskSummaryJobHandler> _logger;
 
     public DailyTaskSummaryJobHandler(
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbFactory,
         ITeamsNotificationSender teamsSender,
         IOptions<NotificationOptions> notificationOptions,
         ILogger<DailyTaskSummaryJobHandler> logger)
     {
-        _dbContext = dbContext;
+        _dbFactory = dbFactory;
         _teamsSender = teamsSender;
         _notificationOptions = notificationOptions;
         _logger = logger;
@@ -37,6 +37,7 @@ public class DailyTaskSummaryJobHandler : IBatchJobHandler<DailyTaskSummaryJobEv
 
     public async Task HandleAsync(DailyTaskSummaryJobEvent jobEvent, CancellationToken cancellationToken)
     {
+        await using var _dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         _logger.LogInformation("DailyTaskSummaryJobHandler starting end-of-day task summary dispatch.");
 
         var today = DateTime.UtcNow.Date;
