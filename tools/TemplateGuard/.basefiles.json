@@ -17617,6 +17617,33 @@
         "_20261117171433_SyncPendingModelChanges.BuildTargetModel(ModelBuilder)": "4a81c0bcb27ac6960df37416dd07a3d573988c7e099ab761f2bf8db3abecc1cf"
       }
     },
+    "Persistence/Migrations/20261118202957_ScanFindingsEntity.cs": {
+      "RelativePath": "Persistence/Migrations/20261118202957_ScanFindingsEntity.cs",
+      "KnownMembers": [
+        "Up",
+        "_20261118202957_ScanFindingsEntity.Up(MigrationBuilder)",
+        "Down",
+        "_20261118202957_ScanFindingsEntity.Down(MigrationBuilder)",
+        ".ctor",
+        "_20261118202957_ScanFindingsEntity._20261118202957_ScanFindingsEntity()"
+      ],
+      "MemberSyntaxHashes": {
+        "_20261118202957_ScanFindingsEntity.Up(MigrationBuilder)": "b701797251338f3c30f70bb88e50ce436779c1c5212475a19f0bccea928b069a",
+        "_20261118202957_ScanFindingsEntity.Down(MigrationBuilder)": "2732bac412680d54a576bee0794fa9916245c83b5f3837609652d77280a32f8f"
+      }
+    },
+    "Persistence/Migrations/20261118202957_ScanFindingsEntity.Designer.cs": {
+      "RelativePath": "Persistence/Migrations/20261118202957_ScanFindingsEntity.Designer.cs",
+      "KnownMembers": [
+        "BuildTargetModel",
+        "_20261118202957_ScanFindingsEntity.BuildTargetModel(ModelBuilder)",
+        ".ctor",
+        "_20261118202957_ScanFindingsEntity._20261118202957_ScanFindingsEntity()"
+      ],
+      "MemberSyntaxHashes": {
+        "_20261118202957_ScanFindingsEntity.BuildTargetModel(ModelBuilder)": "92bddafea004090086d368397f595a7e095ad57cab58076aac8d3f7ee2726391"
+      }
+    },
     "Persistence/Migrations/AppDbContextModelSnapshot.cs": {
       "RelativePath": "Persistence/Migrations/AppDbContextModelSnapshot.cs",
       "KnownMembers": [
@@ -17630,7 +17657,7 @@
         "AppDbContextModelSnapshot.AppDbContextModelSnapshot()"
       ],
       "MemberSyntaxHashes": {
-        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "768c660c088f4b085d093d2c554c83f583a87b38edc659a8448d6b33de330e0f"
+        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "84895e32f0cadffe1a640f6172a869a4f964e58c5a4fc4eef0326b54e33b402e"
       }
     },
     "Persistence/PersistenceExtensions.cs": {
