@@ -544,8 +544,12 @@ fluent-dialog {
 .csk-icon-btn { display: inline-flex; align-items: center; justify-content: center; }
 .csk-icon-sm { width: 16px; height: 16px; }
 .csk-icon-lg { width: 24px; height: 24px; }
-.csk-icon-success { color: var(--md-sys-color-primary, #1b873f); }
-.csk-icon-muted { color: var(--md-sys-color-on-surface-variant, #6e7781); }
+.csk-icon-xl { width: 32px; height: 32px; }
+.csk-icon-primary { color: var(--mat-primary, #1976d2); fill: var(--mat-primary, #1976d2); }
+.csk-icon-success { color: var(--md-sys-color-primary, #1b873f); fill: var(--mat-success, #1b873f); }
+.csk-icon-warning { color: var(--mat-warning, #ed6c02); fill: var(--mat-warning, #ed6c02); }
+.csk-icon-error { color: var(--mat-error, #d32f2f); fill: var(--mat-error, #d32f2f); }
+.csk-icon-muted { color: var(--md-sys-color-on-surface-variant, #6e7781); fill: var(--mat-on-surface-variant, #6e7781); }
 .column-name { font-weight: 600; font-size: 0.9375rem; }
 .metric-kpi-val { font-size: 1.5rem; font-weight: 700; }
 .list-bulleted { list-style-type: disc; padding-left: 20px; }
