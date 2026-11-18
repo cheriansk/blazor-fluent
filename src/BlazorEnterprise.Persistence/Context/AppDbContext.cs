@@ -197,6 +197,7 @@ public class AppDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ImportFileEntity> ImportFiles => Set<ImportFileEntity>();
     public DbSet<BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingConfigEntity> DocumentParsingConfigs => Set<BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingConfigEntity>();
     public DbSet<BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingResultEntity> DocumentParsingResults => Set<BlazorEnterprise.Core.Domain.DocumentParsing.DocumentParsingResultEntity>();
+    public DbSet<BlazorEnterprise.Core.Domain.DocumentParsing.ScanFindingEntity> ScanFindings => Set<BlazorEnterprise.Core.Domain.DocumentParsing.ScanFindingEntity>();
     public DbSet<BlazorEnterprise.Core.Domain.DocumentParsing.JsonComparisonResultEntity> JsonComparisonResults => Set<BlazorEnterprise.Core.Domain.DocumentParsing.JsonComparisonResultEntity>();
     public DbSet<RevisionHeaderEntity> RevisionHeaders => Set<RevisionHeaderEntity>();
 

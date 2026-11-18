@@ -17,7 +17,7 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261117171433_SyncPendingModelChanges";
+    public override string LastMigrationId => "20261118202957_ScanFindingsEntity";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -634,6 +634,113 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
                     .HasDatabaseName("IX_JsonComparisonResults_TenantId_ProjectId");
 
                 b.ToTable("JsonComparisonResults", "core");
+            });
+
+        modelBuilder.Entity("BlazorEnterprise.Core.Domain.DocumentParsing.ScanFindingEntity", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<string>("Comment")
+                    .HasMaxLength(4000)
+                    .HasColumnType("character varying(4000)");
+
+                b.Property<DateTime>("Created")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Created");
+
+                b.Property<string>("CreatedBy")
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("CreatedBy");
+
+                b.Property<string>("CustomerName")
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
+
+                b.Property<DateTime?>("DeletedAtUtc")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<string>("DeletedBy")
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)");
+
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasMaxLength(4000)
+                    .HasColumnType("character varying(4000)");
+
+                b.Property<Guid?>("DocumentParsingResultId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("DocumentType")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<byte[]>("EncryptedPayloadBytes")
+                    .HasColumnType("bytea");
+
+                b.Property<Guid>("ImportFileId")
+                    .HasColumnType("uuid");
+
+                b.Property<bool>("IsDeleted")
+                    .HasColumnType("boolean");
+
+                b.Property<int>("Level")
+                    .HasColumnType("integer");
+
+                b.Property<int>("OrderIndex")
+                    .HasColumnType("integer");
+
+                b.Property<Guid?>("ProgramId")
+                    .HasColumnType("uuid");
+
+                b.Property<Guid?>("ProjectId")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("ProjectManager")
+                    .HasMaxLength(200)
+                    .HasColumnType("character varying(200)");
+
+                b.Property<string>("SourceVersion")
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<string>("TargetVersion")
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<Guid>("TenantId")
+                    .HasColumnType("uuid")
+                    .HasColumnOrder(0);
+
+                b.Property<DateTime>("Updated")
+                    .HasColumnType("timestamp with time zone")
+                    .HasColumnName("Updated");
+
+                b.Property<string>("UpdatedBy")
+                    .HasMaxLength(256)
+                    .HasColumnType("character varying(256)")
+                    .HasColumnName("UpdatedBy");
+
+                b.Property<uint>("Version")
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasColumnType("xid")
+                    .HasColumnName("xmin");
+
+                b.HasKey("Id");
+
+                b.HasIndex("DocumentParsingResultId");
+
+                b.HasIndex("TenantId");
+
+                b.HasIndex("TenantId", "ProjectId", "ImportFileId");
+
+                b.ToTable("ScanFindings", "app");
             });
 
         modelBuilder.Entity("BlazorEnterprise.Core.Domain.Events.EventConsumptionTrackerEntity", b =>

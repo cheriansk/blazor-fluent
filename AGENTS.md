@@ -146,3 +146,25 @@ Always consult the 11 modular engineering skills before designing, writing, or r
   9. `plan-ui-change`: Native Material 3 layout planning and UX hierarchy.
   10. `support-prerendering`: Circuit restoration and prerender-safe initialization.
   11. `use-js-interop`: CSP-compliant isolated ES modules via `IJSRuntime`.
+
+---
+
+## 📦 9. File Import, Staging & Batch Processing Pipeline (`Stage 1 → Stage 2a → Stage 2b`)
+When adding a new `FileType` to be imported, staged, validated, and processed, follow this exact end-to-end architecture:
+
+1. **Enum & Domain Entity (`Shared`, `Core`, `Persistence`)**:
+   - Add the new member to `ImportFileTypeEnum` in `BlazorEnterprise.Shared.DataListTypes` with `[Display(Name = "...")]`.
+   - If the `FileType` targets a new domain table, create `<Name>Entity` (`TG007`, `TG008`, `TG027`), `<Name>EntityValidator` (`TG009`), `<Name>EntityConfiguration` (`TG010`), and add `DbSet<<Name>Entity>` to `AppDbContext`.
+2. **Stage 1 — Generic Raw Staging (`BlazorEnterprise.Jobs`)**:
+   - **Never create file-specific stagers.** All formats (`.xlsx`, `.csv`, `.txt`, `.docx`, `.zip`) use `GenericTabularJsonBatchStager`.
+   - Keep `staging.StagedImports` compact: 1 row per Excel sheet, 1 row per `.txt`/`.csv` file (`{"Lines": [...]}` without delimiter splitting), and 1 row per `.docx` file (`{"Paragraphs": [...], "Tables": [...]}`).
+3. **Stage 2a — AI / Document Parsing (`.docx` / unstructured files only, `BlazorEnterprise.Jobs`)**:
+   - `DocumentParsingService` / `DocumentParsingJobHandler` reads raw JSON from `staging.StagedImports`, extracts structured fields, and writes `app.DocumentParsingResults` (`Status = PendingReview`).
+4. **Pre-API Generic Schema Validation (`BlazorEnterprise.Shared` → `BlazorEnterprise.Jobs`)**:
+   - `StagedSchemaValidator` runs in `Jobs` **before** calling the Cloud API (for both non-extracted tabular files and extracted `.docx` files) to check required sheets/columns, not-null/not-empty values, and basic data types.
+   - Failures emit unified `FileValidationError(SheetName, RowIndex, ColumnName, ErrorMessage, AttemptedValue)` and halt before the API call.
+5. **Stage 2b — File-Specific Business Validation & Transform (`BlazorEnterprise.RulesEngine` + `BlazorEnterprise.Api`)**:
+   - Create `<Name>CloudProcessor : BaseCloudProcessor` in `BlazorEnterprise.RulesEngine/BatchProcessing/Processors/` and register it in `BlazorEnterprise.Api/Program.cs` (`AddSingleton<BaseCloudProcessor, <Name>CloudProcessor>()`).
+   - Keep **only** file-specific business validations and proprietary transforms in `BaseCloudProcessor`, returning `ProcessBatchRespDto` with `ProcessedDomainRowDto[]` (or `FileValidationError[]`).
+6. **Local Domain Commit (`BlazorEnterprise.Jobs`)**:
+   - Create `<Name>BatchDomainCommitter : IBatchDomainCommitter` in `BlazorEnterprise.Jobs/FileImports/Committers/` to persist `ProcessedDomainRowDto[]` into PostgreSQL and mark `staging.StagedImports` rows `IsProcessed = true, Status = "Processed"`.
