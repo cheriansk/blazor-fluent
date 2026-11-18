@@ -308,6 +308,46 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             .Where(s => s.TenantId == file.TenantId && s.ImportFileId == file.Id && !s.IsProcessed)
             .ToListAsync(ct);
 
+        // Pre-API Generic Schema Validation on raw {"Lines": [...]} payloads
+        var preApiErrors = new List<BlazorEnterprise.Shared.Models.FileValidationError>();
+        foreach (var chunk in stagedChunks)
+        {
+            if (string.IsNullOrWhiteSpace(chunk.PayloadJson)) continue;
+            using var doc = System.Text.Json.JsonDocument.Parse(chunk.PayloadJson);
+            if (doc.RootElement.TryGetProperty("Lines", out var linesElem) && linesElem.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                var lines = linesElem.EnumerateArray().Select(e => e.GetString() ?? string.Empty).ToList();
+                var parsed = BlazorEnterprise.Shared.Validation.StagedSchemaValidator.ParseDelimitedLines(lines);
+                var sheetCfg = templateConfig.Sheets?.FirstOrDefault(s => string.Equals(s.Name, chunk.SheetName, StringComparison.OrdinalIgnoreCase))
+                    ?? templateConfig.Sheets?.FirstOrDefault();
+                var cols = sheetCfg?.Columns is { Count: > 0 } sc ? sc : templateConfig.Columns;
+                if (cols is { Count: > 0 })
+                {
+                    var rule = new BlazorEnterprise.Shared.Validation.StagedSchemaValidator.SchemaSheetRule(
+                        chunk.SheetName,
+                        sheetCfg?.Required ?? true,
+                        cols.Select(c => new BlazorEnterprise.Shared.Validation.StagedSchemaValidator.SchemaColumnRule(c.Name, c.Required, c.DataType)).ToList());
+                    var res = BlazorEnterprise.Shared.Validation.StagedSchemaValidator.ValidateTabularSheet(chunk.SheetName, parsed.Headers, parsed.Rows, rule);
+                    preApiErrors.AddRange(res.Errors);
+                }
+            }
+        }
+
+        if (preApiErrors.Count > 0)
+        {
+            var errSummary = $"Pre-API generic schema validation failed with {preApiErrors.Count} error(s).";
+            file.Status = ImportStatusEnum.ValidationFailed;
+            file.StepStage = "ValidationFailed";
+            file.ErrorMessage = errSummary;
+            file.ValidationErrorsJson = System.Text.Json.JsonSerializer.Serialize(preApiErrors);
+            file.ErrorRowsCount = preApiErrors.Count;
+            file.ProcessedAtUtc = DateTime.UtcNow;
+            _dbContext.ImportFiles.Update(file);
+            _dbContext.IsTransactionScopeCommitAuthorized = true; try { await _dbContext.SaveChangesAsync(ct); } finally { _dbContext.IsTransactionScopeCommitAuthorized = false; }
+            await SendNotificationAsync(file, title: "File Validation Failed", message: errSummary, severity: NotificationSeverityEnum.Warning, ct);
+            return;
+        }
+
         var sheetOrder = (templateConfig.Sheets ?? [])
             .Select((s, idx) => new { s.Name, idx })
             .ToDictionary(x => x.Name, x => x.idx, StringComparer.OrdinalIgnoreCase);

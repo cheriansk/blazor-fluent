@@ -59,6 +59,15 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         var chunkSize = config.ChunkSize > 0 ? config.ChunkSize : 1000;
 
         var isExcel = IsExcelFormat(file, config);
+        if (!isExcel)
+        {
+            var ext = Path.GetExtension(file.OriginalFileName).ToLowerInvariant();
+            if (ext is ".txt" or ".csv" or ".docx")
+            {
+                return await StageRawSingleRowFileAsync(_dbContext, file, decryptedStream, ext, ct);
+            }
+        }
+
         var xmlSettings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
 
         ZipArchive? archive = null;
@@ -773,6 +782,107 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             }
         }
         return colIndex - 1;
+    }
+
+    private async Task<Result<int>> StageRawSingleRowFileAsync(
+        AppDbContext dbContext,
+        ImportFileEntity file,
+        Stream decryptedStream,
+        string extension,
+        CancellationToken ct)
+    {
+        if (decryptedStream.CanSeek)
+        {
+            decryptedStream.Position = 0;
+        }
+
+        string payloadJson;
+        int rowCount;
+
+        if (extension is ".txt" or ".csv")
+        {
+            var lines = new List<string>();
+            using var reader = new StreamReader(decryptedStream, leaveOpen: true);
+            while (await reader.ReadLineAsync(ct) is { } line)
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    lines.Add(line);
+                }
+            }
+
+            rowCount = lines.Count;
+            payloadJson = JsonSerializer.Serialize(new { Lines = lines });
+        }
+        else
+        {
+            // .docx raw OpenXML Paragraphs + Tables extraction
+            var paragraphs = new List<string>();
+            var tables = new List<List<List<string>>>();
+
+            using var wordDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(decryptedStream, false);
+            var body = wordDoc.MainDocumentPart?.Document?.Body;
+            if (body is not null)
+            {
+                foreach (var p in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+                {
+                    var text = p.InnerText?.Trim();
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        paragraphs.Add(text);
+                    }
+                }
+
+                foreach (var tbl in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Table>())
+                {
+                    var tableRows = new List<List<string>>();
+                    foreach (var row in tbl.Elements<DocumentFormat.OpenXml.Wordprocessing.TableRow>())
+                    {
+                        var cells = row.Elements<DocumentFormat.OpenXml.Wordprocessing.TableCell>()
+                            .Select(c => c.InnerText?.Trim() ?? string.Empty)
+                            .ToList();
+                        tableRows.Add(cells);
+                    }
+                    tables.Add(tableRows);
+                }
+            }
+
+            rowCount = paragraphs.Count + tables.Sum(t => t.Count);
+            payloadJson = JsonSerializer.Serialize(new { Paragraphs = paragraphs, Tables = tables });
+        }
+
+        var staged = new StagedImportEntity
+        {
+            TenantId = file.TenantId,
+            ProjectId = file.ProjectId,
+            ImportId = file.ImportId,
+            ImportFileId = file.Id,
+            FileType = file.FileType.ToString(),
+            OriginalFileName = file.OriginalFileName,
+            SheetName = "Default",
+            ChunkIndex = 1,
+            TotalChunks = 1,
+            RowCount = rowCount,
+            IsProcessed = false,
+            Status = "Staged",
+            PayloadJson = payloadJson
+        };
+
+        dbContext.StagedImports.Add(staged);
+        file.Status = ImportStatusEnum.Staging;
+        file.StepStage = "Stage";
+
+        dbContext.IsTransactionScopeCommitAuthorized = true;
+        try
+        {
+            await dbContext.SaveChangesAsync(ct);
+        }
+        finally
+        {
+            dbContext.IsTransactionScopeCommitAuthorized = false;
+        }
+
+        return Result<int>.Success(1);
     }
 
     private sealed record SheetProcessingPlan(
