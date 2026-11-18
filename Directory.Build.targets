@@ -17,14 +17,8 @@
                      '$(RunHeavyScansOnRebuild)' == 'true'">
     <Message Text="==&gt; [Rebuild Automation] Updating base manifest, verifying zero-hardcode, regenerating docs/diagrams, and syncing AI skills..." Importance="high" />
 
-    <!-- 1. Base Manifest Scan (TemplateGuard.Tool + generate-base-manifest.ps1) -->
-    <Exec Command="&quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net11.0\TemplateGuard.Tool.exe&quot; &quot;$(MSBuildThisFileDirectory).&quot;" 
-          WorkingDirectory="$(MSBuildThisFileDirectory)"
-          Condition="Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net11.0\TemplateGuard.Tool.exe')" />
-    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\TemplateGuard.Tool.csproj&quot; -- &quot;$(MSBuildThisFileDirectory).&quot;" 
-          WorkingDirectory="$(MSBuildThisFileDirectory)"
-          Condition="!Exists('$(MSBuildThisFileDirectory)tools\src\TemplateGuard.Tool\bin\Debug\net11.0\TemplateGuard.Tool.exe')" />
-    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\generate-base-manifest.ps1&quot;"
+    <!-- 1. Base Manifest Scan + TemplateGuard NuGet Package Pack -->
+    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)scripts\build-templateguard.ps1&quot;"
           WorkingDirectory="$(MSBuildThisFileDirectory)" />
 
     <!-- 2. Verify Zero-Hardcode -->
