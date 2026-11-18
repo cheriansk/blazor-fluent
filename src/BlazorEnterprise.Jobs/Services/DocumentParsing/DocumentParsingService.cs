@@ -80,15 +80,56 @@ public sealed partial class DocumentParsingService : IDocumentParsingService
             throw new InvalidOperationException($"ImportFile '{importFileId}' was not found for tenant '{tenantId}'.");
         }
 
-        await using var encryptedStream = await _blobStorageService.DownloadBlobAsync(importFile.BlobUri, ct);
-        await using var decryptedStream = await _encryptionService.DecryptStreamAsync(encryptedStream, tenantId.ToString(), ct);
-
         var errors = new List<ParsingErrorDto>();
         var paragraphs = new List<string>();
         var sections = new List<Dictionary<string, string>>();
 
-        using (var doc = WordprocessingDocument.Open(decryptedStream, false))
+        var stagedRow = await db.StagedImports
+            .AsNoTracking()
+            .Where(s => s.TenantId == tenantId && s.ImportFileId == importFileId)
+            .OrderBy(s => s.ChunkIndex)
+            .FirstOrDefaultAsync(ct);
+
+        if (stagedRow is not null && !string.IsNullOrWhiteSpace(stagedRow.PayloadJson))
         {
+            using var docJson = JsonDocument.Parse(stagedRow.PayloadJson);
+            if (docJson.RootElement.TryGetProperty("Paragraphs", out var pElem) && pElem.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in pElem.EnumerateArray())
+                {
+                    var text = item.GetString()?.Trim();
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        paragraphs.Add(text);
+                    }
+                }
+            }
+            if (docJson.RootElement.TryGetProperty("Tables", out var tElem) && tElem.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var tbl in tElem.EnumerateArray())
+                {
+                    if (tbl.ValueKind != JsonValueKind.Array) continue;
+                    foreach (var row in tbl.EnumerateArray())
+                    {
+                        var cells = row.EnumerateArray().Select(c => c.GetString()?.Trim() ?? string.Empty).ToList();
+                        if (cells.Count >= 2 && !string.IsNullOrWhiteSpace(cells[0]))
+                        {
+                            sections.Add(new Dictionary<string, string>
+                            {
+                                ["Description"] = cells[0],
+                                ["Comment"] = cells[1]
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            await using var encryptedStream = await _blobStorageService.DownloadBlobAsync(importFile.BlobUri, ct);
+            await using var decryptedStream = await _encryptionService.DecryptStreamAsync(encryptedStream, tenantId.ToString(), ct);
+
+            using var doc = WordprocessingDocument.Open(decryptedStream, false);
             var body = doc.MainDocumentPart?.Document?.Body;
             if (body is null)
             {
