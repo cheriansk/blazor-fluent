@@ -414,7 +414,9 @@ namespace TemplateGuard.Analyzers
                         {
                             if (!entity.IsAbstract && InheritsFrom(entity, "BaseEntity") && !configurations.Contains(entity.Name))
                             {
-                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName("BlazorEnterprise.Persistence.Context.AppDbContext");
+                                var prefix = ExtractProjectPrefix(assemblyName, null) ?? "BlazorEnterprise";
+                                var appDbContextSymbol = endCtx.Compilation.GetTypeByMetadataName($"{prefix}.Persistence.Context.AppDbContext")
+                                    ?? endCtx.Compilation.GetTypeByMetadataName("BlazorEnterprise.Persistence.Context.AppDbContext");
                                 var location = appDbContextSymbol?.Locations.FirstOrDefault() ?? Location.None;
                                 endCtx.ReportDiagnostic(Diagnostic.Create(RuleTg010, location, entity.Name));
                             }
@@ -1117,7 +1119,8 @@ namespace TemplateGuard.Analyzers
             if (filePath != null)
             {
                 if (filePath.EndsWith("/DataListExtensions.cs", StringComparison.OrdinalIgnoreCase) ||
-                    filePath.Contains("/BlazorEnterprise.Shared/Extensions/") ||
+                    filePath.IndexOf(".Shared/Extensions/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    filePath.IndexOf("/Shared/Extensions/", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     filePath.Contains("/Migrations/") ||
                     filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1191,7 +1194,9 @@ namespace TemplateGuard.Analyzers
                 var typeName = paramTypeSymbol.Name;
                 var fullTypeName = paramTypeSymbol.ToDisplayString();
 
-                if (filePath != null && !filePath.Contains("/BlazorEnterprise.Jobs/") &&
+                if (filePath != null &&
+                    filePath.IndexOf(".Jobs/", StringComparison.OrdinalIgnoreCase) < 0 &&
+                    filePath.IndexOf("/Jobs/", StringComparison.OrdinalIgnoreCase) < 0 &&
                     (typeName is "AppDbContext" or "DbContext" ||
                     fullTypeName.EndsWith(".AppDbContext", StringComparison.Ordinal) ||
                     fullTypeName == "Microsoft.EntityFrameworkCore.DbContext"))
@@ -1396,7 +1401,8 @@ namespace TemplateGuard.Analyzers
                 var normalizedCssPath = addFile.Path.Replace('\\', '/');
                 bool isGlobalCss = normalizedCssPath.IndexOf("/wwwroot/", StringComparison.OrdinalIgnoreCase) >= 0;
                 bool isOwnScopedCss = string.Equals(addFile.Path, expectedScopedCssPath, StringComparison.OrdinalIgnoreCase);
-                bool isSharedUiComponentCss = normalizedCssPath.IndexOf("/BlazorEnterprise.Shared.UI/Components/", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                bool isSharedUiComponentCss = (normalizedCssPath.IndexOf(".Shared.UI/Components/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                               normalizedCssPath.IndexOf("/Shared.UI/Components/", StringComparison.OrdinalIgnoreCase) >= 0) &&
                                               normalizedCssPath.EndsWith(".razor.css", StringComparison.OrdinalIgnoreCase);
 
                 if (!isGlobalCss && !isOwnScopedCss && !isSharedUiComponentCss)
