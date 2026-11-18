@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -89,7 +90,7 @@ public static class Program
                 entry.KnownMembers.Add(methodSyntax.Identifier.Text);
                 entry.KnownMembers.Add(memberKey);
 
-                var normalizedSyntax = methodSyntax.NormalizeWhitespace().ToString().Replace("null !", "null!");
+                var normalizedSyntax = NormalizeProjectTokens(methodSyntax.NormalizeWhitespace().ToString().Replace("null !", "null!"));
                 using var sha = SHA256.Create();
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(normalizedSyntax));
                 var hash = BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
@@ -111,7 +112,7 @@ public static class Program
             if (layerRelPath == null) continue;
 
             var content = File.ReadAllText(file);
-            var normalizedText = NormalizeRazorContent(content);
+            var normalizedText = NormalizeProjectTokens(NormalizeRazorContent(content));
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(normalizedText));
             var hash = BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
@@ -141,7 +142,7 @@ public static class Program
             var layerRelPath = GetLayerRelativePath(file, layers);
             if (layerRelPath == null) continue;
 
-            var normalizedText = NormalizeRazorContent(File.ReadAllText(file));
+            var normalizedText = NormalizeProjectTokens(NormalizeRazorContent(File.ReadAllText(file)));
             using var sha = SHA256.Create();
             var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(normalizedText))).Replace("-", "").ToLowerInvariant();
 
@@ -166,7 +167,9 @@ public static class Program
     public static string? GetLayerRelativePath(string fullPath, string[] layers)
     {
         var normalized = fullPath.Replace('\\', '/');
-        foreach (var layer in layers)
+        var orderedLayers = layers.OrderByDescending(l => l.Length).ToArray();
+
+        foreach (var layer in orderedLayers)
         {
             var marker = "." + layer + "/";
             var idx = normalized.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
@@ -174,8 +177,12 @@ public static class Program
             {
                 return layer + "/" + normalized.Substring(idx + marker.Length);
             }
+        }
+
+        foreach (var layer in orderedLayers)
+        {
             var directMarker = "/" + layer + "/";
-            idx = normalized.IndexOf(directMarker, StringComparison.OrdinalIgnoreCase);
+            var idx = normalized.IndexOf(directMarker, StringComparison.OrdinalIgnoreCase);
             if (idx >= 0)
             {
                 return layer + "/" + normalized.Substring(idx + directMarker.Length);
@@ -189,5 +196,10 @@ public static class Program
         var lines = content.Replace("\r\n", "\n").Split('\n')
             .Select(l => l.TrimEnd());
         return string.Join("\n", lines).Trim();
+    }
+
+    public static string NormalizeProjectTokens(string text)
+    {
+        return Regex.Replace(text, "BlazorEnterprise", "__TEMPLATE_ROOT__", RegexOptions.IgnoreCase);
     }
 }

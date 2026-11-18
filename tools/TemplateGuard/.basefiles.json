@@ -300,7 +300,7 @@
         "AdminEndpoints.GetAdminEmail(ClaimsPrincipal)"
       ],
       "MemberSyntaxHashes": {
-        "AdminEndpoints.MapAdminEndpoints(IEndpointRouteBuilder)": "df501ab80ad6f29d7c096b89b48fd9d3992c72de772c0b9f6c57c67798c89395",
+        "AdminEndpoints.MapAdminEndpoints(IEndpointRouteBuilder)": "8c8960a7861db83115eb21799e9e597026927f729e96ca528963ff321e7aed72",
         "AdminEndpoints.GetAdminEmail(ClaimsPrincipal)": "cc51eb9cff23cb30ebc20be9a1a09fa29d0da1e34b9a557256b1bbde4f64aa05"
       }
     },
@@ -388,7 +388,7 @@
         "AuthEndpoints.MapAuthEndpoints(IEndpointRouteBuilder)"
       ],
       "MemberSyntaxHashes": {
-        "AuthEndpoints.MapAuthEndpoints(IEndpointRouteBuilder)": "a5f71fdef8c3cc93082d8c75c0a3ec6d129872ce8c737130cae4280e16d23866"
+        "AuthEndpoints.MapAuthEndpoints(IEndpointRouteBuilder)": "de0b2c5501a57b1ef27412d6719b63ad2221ece464b11eabfe2f163705c27163"
       }
     },
     "Api/Endpoints/ProcessEndpoints.cs": {
@@ -406,14 +406,14 @@
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "9aefad8aa0c9f0fd468eb7c73abba0245c5a6a7f50d74d124fb7a201044cad73",
+        "ProcessEndpoints.MapProcessEndpoints(IEndpointRouteBuilder)": "dc8be1a6f8621da84aec3a3acae6bc5837f3a52861b19434ed170b959e924044",
         "ProcessEndpoints.ValidateEnvelope(EncryptedEnvelopeDto?)": "221b3c8805f29db28e4968ec063b19b7682d2847843cbc174889bac9e31ea58e",
         "ProcessEndpoints.ResolveEncryptionKey(ClaimsPrincipal, IConfiguration, ILogger)": "0b059e6881573514a81efb11cd000565e24fbd986b4151b254eaa28090abc193",
         "ProcessEndpoints.ResolveVaultAtRestKey(ClaimsPrincipal, IConfiguration)": "a9b51ed79515f7fa746e94e77a95661829dd21600480cc9ff13812d0d140bcc1"
       }
     },
-    "Infrastructure/GlobalExceptionHandler.cs": {
-      "RelativePath": "Infrastructure/GlobalExceptionHandler.cs",
+    "Api/Infrastructure/GlobalExceptionHandler.cs": {
+      "RelativePath": "Api/Infrastructure/GlobalExceptionHandler.cs",
       "KnownMembers": [
         "_logger",
         "GlobalExceptionHandler._logger",
@@ -475,7 +475,7 @@
         "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRoleEnum)"
       ],
       "MemberSyntaxHashes": {
-        "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRoleEnum)": "8c86d7309908e0a6d805aa009decd10c98bda441a445ccfdf54a5b425cdc9760"
+        "EndpointClearanceExtensions.RequireClearance(RouteHandlerBuilder, ProjectRoleEnum)": "8bb13472cd5ed9d4bde58e2f1cc4715c42cf869c545b14fd657a57fd7ba3a667"
       }
     },
     "AppHost/Program.cs": {
@@ -1404,8 +1404,8 @@
         "ICalendarService.CreateProjectCalendarEntryAsync(CalendarEntity, CancellationToken)": "7ed94d849a24bc454a603ebf16bf06c4198ac5a9b5a74a65745f61c7e4f69993",
         "ICalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "e5d4d47efba23ca14c7a1dd41e9b29cd21ca3239a9a483bd335a33cf4f2fbd4c",
         "ICalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "3b738923e913457991151657832f08904691efbab7d177c622526cbb17ae87e6",
-        "ICalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CDtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "f0fb8ec2f15fdf443d660312bd861de2eb27cb980e432357ba1c3ec56b42c4d9",
-        "ICalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CDtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "1cb6c39802cc78121344125c069420710ef1bce98c3a38d32ef5bf95dd41a9b6"
+        "ICalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CDtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "6d2b17beed73d3b034a4f2dbae6195b2afa76cb02ef65e16fa453274a219d325",
+        "ICalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CDtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "5918ed2566ec4e51957ce5b0761302bfc9ff4cfc90f5eef7fb6559b98bd5aa0d"
       }
     },
     "Core/Contracts/ICircuitActivityTracker.cs": {
@@ -1921,21 +1921,21 @@
         "IHierarchyAuthorizationService.CanAccessProgramAsync(Guid, string, CancellationToken)": "00b4564ac3d2dc498ebff90d8fd5fb5f34bfe1628a43f697b7663643fab8e559",
         "IHierarchyAuthorizationService.CanAccessProjectAsync(Guid, string, CancellationToken)": "2822db47e20a999d1b9c9f6eb9e8ad0d3fa2eb8a9438aafc5efaeb1c0f9c483b",
         "IHierarchyAuthorizationService.GetAccessibleProgramIdsAsync(string, string, CancellationToken)": "1e05470a9b115e8be609be31382fa7d6845a2b4b55e4709757acec341a3bbb5f",
-        "IHierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)": "c3bac0403c580693af5264ecd5dac209b66574f92e17cf6a836b50c59c3d64fe",
-        "IHierarchyAuthorizationService.HasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRoleEnum, string?, CancellationToken)": "ebc84aa2f01900854d4945a4f24050eb7dc79d5dbdde82234f666c25afeb1a1b",
-        "IHierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRoleEnum, string?, CancellationToken)": "32b093b85abee9f112f64e770ba9957672f4af25d9106f52c1baacbc49095492",
+        "IHierarchyAuthorizationService.GetEffectiveProjectRoleAsync(Guid, string?, CancellationToken)": "888f005bbd129463e0af2426a0cea4dcf7f0c1347ac7430498998abb3306b8db",
+        "IHierarchyAuthorizationService.HasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRoleEnum, string?, CancellationToken)": "3a4b810f482b7387a5bb7745df410d5c98d3faba01d8f959b19e0073f8c38513",
+        "IHierarchyAuthorizationService.EnsureHasProjectClearanceAsync(Guid, Shared.DataListTypes.ProjectRoleEnum, string?, CancellationToken)": "0ea795ec5639130c2cf29f01ed2b55c245cf2a5fe5b57f0a001d386bd5064a8f",
         "IHierarchyAuthorizationService.IsUserActiveAndProvisionedAsync(string, CancellationToken)": "1c49f0820512e909045903af58f2c584d4c920c1ef5004a5f390eb102859ac91",
         "IHierarchyAuthorizationService.CanManageTenantAdminsAsync(string, string, CancellationToken)": "8a6963b28c9e6d1038cdb17da191b270ce750279f2247851c88ee95ee83f994c",
         "IHierarchyAuthorizationService.CanManageProgramAdminsAsync(Guid, string, CancellationToken)": "de72e031b82261e33f33b24f0100ad3695b957d32c43b1868c3fc5a6694a11c4",
         "IHierarchyAuthorizationService.CanManageProjectAdminsAsync(Guid, string, CancellationToken)": "e07e724c55dad7cd07c8d0cf17a36ab12f1d475a5d94aa870a4e8131764873e0",
-        "IHierarchyAuthorizationService.GetEffectiveProgramRoleAsync(Guid, string?, CancellationToken)": "ee6a604166cff15a25d65e68ebe62518ba0e8bfef056b8a468ac7e0a9da69a1e",
-        "IHierarchyAuthorizationService.HasProgramClearanceAsync(Guid, Shared.DataListTypes.ProgramRoleEnum, string?, CancellationToken)": "0286deca171bc704cd65c7ee90b3ecfe78a97eded5b89ac6f357805bb61724a9",
-        "IHierarchyAuthorizationService.EnsureHasProgramClearanceAsync(Guid, Shared.DataListTypes.ProgramRoleEnum, string?, CancellationToken)": "c15b1181a010591e757fd657f620afb6d8588c3467fa781dcb82434393dbb97d",
+        "IHierarchyAuthorizationService.GetEffectiveProgramRoleAsync(Guid, string?, CancellationToken)": "2bdf99946d9bcb5bcbb0f4148f0c9d172f351dfc1e7cbdbc9413b9c4b2a28eb9",
+        "IHierarchyAuthorizationService.HasProgramClearanceAsync(Guid, Shared.DataListTypes.ProgramRoleEnum, string?, CancellationToken)": "9b2646590065041b2260972cda56fa888b838e1df88b4d23ee028ce1becddc78",
+        "IHierarchyAuthorizationService.EnsureHasProgramClearanceAsync(Guid, Shared.DataListTypes.ProgramRoleEnum, string?, CancellationToken)": "3727cbc4e0b3c0eb7afa3ceb2047a927b52f93a0fff87c9f724faf8f1840bae1",
         "IHierarchyAuthorizationService.EnsureIsTenantAdminAsync(Guid, string?, CancellationToken)": "90fd60410abee0ddeac7f1ebfe1c8b23ae9c01ceba5a928852f35102fb777445",
-        "IHierarchyAuthorizationService.CanViewScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "cb15996039da0340600837e16144e545ec0c55fa71d43ca4f3993585732eb3bf",
-        "IHierarchyAuthorizationService.CanEditScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "e00975a946caa941b4f6967c730a10458a8f9996a4eb8e2b7edc82bde3184ea2",
-        "IHierarchyAuthorizationService.EnsureCanViewScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "611805c9608cc468534d08d72f7480c638df983ced93d830c4fe9ba0021e44ea",
-        "IHierarchyAuthorizationService.EnsureCanEditScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "85b1ef741f08ba7fee33ffb519a544da2b245bcd3b3bc8ad38e38d00a232a848"
+        "IHierarchyAuthorizationService.CanViewScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "2adc57383f5ad27b912657c33b5984ac81697d9984d5188b2f2a675a6f09a336",
+        "IHierarchyAuthorizationService.CanEditScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "534d05619f1b055e1cad8d04625b0db28d15984c5be1c04a2c7d3c3f30d7e48d",
+        "IHierarchyAuthorizationService.EnsureCanViewScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "ca1ece158121fe4b620d2116dda623ff23070eaee2f9315549ab0b8e7fe0d38d",
+        "IHierarchyAuthorizationService.EnsureCanEditScopedItemAsync(Shared.DataListTypes.TaskLevelEnum, Guid, Guid?, Guid?, string?, CancellationToken)": "6320b371af329f684accafeed696d0a7fc121cbc7afc63e6094cef72177ff2a4"
       }
     },
     "Core/Contracts/IImpersonationService.cs": {
@@ -4517,7 +4517,7 @@
         "EventPublishTrackerEntity.EventPublishTrackerEntity()"
       ],
       "MemberSyntaxHashes": {
-        "EventPublishTrackerEntity.GetEffectiveSender()": "2d73b8079d8a9e3964465efb34cb7fca215aec6bdc3aba5935472fe897ab48ad",
+        "EventPublishTrackerEntity.GetEffectiveSender()": "4a60000c8174e1228cf406891045274386ac83a70263813a5997af592ac1fc14",
         "EventPublishTrackerEntity.GetEffectiveSenderOrigin()": "7b9a350f3d38e89c1fea1f41ab280e2c4b9c0908290ae322970815660a636269"
       }
     },
@@ -14109,7 +14109,7 @@
         "SystemIdentityUtility.RequireAuthenticatedTenantUser(ICurrentUser, ITenantContext, string)": "7e2412e73e39e0f315e4390ba90c9e0423d664b6d6303b999ea68bb6f2382c87",
         "SystemIdentityUtility.RequireAuthenticatedContext(ICurrentUser, ITenantContext, string)": "0ab480f3ffc80a9d1d46fff9329380508fc334d3f3fa8d1552a511510e2b5eb9",
         "SystemIdentityUtility.ResolveAuditableUserId(ICurrentUser, string)": "1e233bcf64b7fdf39007399c01c54ad1663766cdb4f9ad120a5f57fa81bf2c68",
-        "SystemIdentityUtility.EstablishPreAuthContext(ICurrentUser, ITenantContext, ISystemIdentity, string, string)": "5ad9602383b8f49074fccce41840743f0cb479cd9245b2b282fb4c8db4b08623",
+        "SystemIdentityUtility.EstablishPreAuthContext(ICurrentUser, ITenantContext, ISystemIdentity, string, string)": "01812661959543b8c8687dc0e558ff8f136c7197f2b1e2b44fc1d89f5912bb7f",
         "SystemIdentityUtility.FormatInternalDaemonEmail(string)": "0bd7234f63fefe5d1616b82a39f0ea54c6c171c9adaa80e202dc27484132c922",
         "SystemIdentityUtility.IsSystemDaemon(string?)": "27dc2670d29f3875f491c606a28a0981f0a1a2286320143ff0f4e1ce0b13e81c"
       }
@@ -14229,7 +14229,7 @@
         "EngineGatewayExtensions.AddEngineClient(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "EngineGatewayExtensions.AddEngineClient(IServiceCollection, IConfiguration)": "9ecc38a3497142f33868fe7230fa376bfda377b5d8a68b111203fc77599d0d92"
+        "EngineGatewayExtensions.AddEngineClient(IServiceCollection, IConfiguration)": "a8edf4dc2ef1c771723ddce0808daae8e59d478b18bfbada5c28b782213b2be1"
       }
     },
     "Infrastructure/EngineGateway/IRemoteEngineGateway.cs": {
@@ -14311,7 +14311,7 @@
         "InfrastructureExtensions.AddInfrastructure(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "InfrastructureExtensions.AddInfrastructure(IServiceCollection, IConfiguration)": "1b35fca42d28d84700fdb4ce2b5b121e004d62c9827d8db0efda0a800e171557"
+        "InfrastructureExtensions.AddInfrastructure(IServiceCollection, IConfiguration)": "d392beff1a26c9e3bfaff5fd27fe4db19389659a88ec83645c494933ed43fe4e"
       }
     },
     "Infrastructure/Notifications/EmailNotificationSender.cs": {
@@ -14327,7 +14327,7 @@
         "EmailNotificationSender.SendEmailNotificationAsync(NotificationEntity, string, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "EmailNotificationSender.SendEmailNotificationAsync(NotificationEntity, string, CancellationToken)": "073bb5c83d3346c5c93cbf0c1cdb102bd3f70a15df8c4d92de19fb97e09b8cbc"
+        "EmailNotificationSender.SendEmailNotificationAsync(NotificationEntity, string, CancellationToken)": "24b3e1d6a4005f3c644ac350683009203ae6667bb1ffa08ecdf1f1d90ac15cc1"
       }
     },
     "Infrastructure/Notifications/NotificationChannelQueue.cs": {
@@ -14389,24 +14389,30 @@
       "KnownMembers": [
         "_logger",
         "BlazorCircuitObservabilityHandler._logger",
-        "_correlationContext",
-        "BlazorCircuitObservabilityHandler._correlationContext",
+        "_tenantContext",
+        "BlazorCircuitObservabilityHandler._tenantContext",
+        "_currentUser",
+        "BlazorCircuitObservabilityHandler._currentUser",
+        "_dateTimeProvider",
+        "BlazorCircuitObservabilityHandler._dateTimeProvider",
+        "_openedAt",
+        "BlazorCircuitObservabilityHandler._openedAt",
         ".ctor",
-        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E, ICorrelationContext)",
+        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E, ITenantContext, ICurrentUser, IDateTimeProvider)",
         "OnCircuitOpenedAsync",
         "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)",
-        "OnCircuitClosedAsync",
-        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)",
         "OnConnectionUpAsync",
         "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)",
         "OnConnectionDownAsync",
-        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)"
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)",
+        "OnCircuitClosedAsync",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "4e2d0419f5fd1a29ab7f2876b3279a2b78ccd5b6abc9f76c1ceaea5231d21b75",
-        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "b0ed2595adb2d1c97b8feab9e05ec8c45f52b6cd9f1f73483b1bc752b5447364",
-        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "72cee5400ac443ff218e5a0a0ba6f11c5e2782bc9592f68e481a8165d048c0ac",
-        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "b100404659ba5b04a0a89201e7c9a01ab2f8eccce29cffde753e40ecaffdc749"
+        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "0dc7fc4c4be6c58c35c9631c876f38aa396c55d6547df5cd130ef0a2d5ffbed3",
+        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "c7d2fac4013ea98fc43573ec37e701b4a102843fda4de47bd1dccc17c396e18a",
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "87d72093327cf499f687936173b7d1c4ab696008e82d09556ba3f6d2cede5078",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "5d60bf43baf69c5afb051eaf0ea92472f6b87d152ce00975f9df1087168c21a7"
       }
     },
     "Infrastructure/Security/CircuitSessionTracker.cs": {
@@ -14689,7 +14695,7 @@
       ],
       "MemberSyntaxHashes": {
         "TenantTokenService.GenerateS2SToken(Guid, string)": "2f877b3ca5ee10f1a26c43534a1b4cadc5ae91793ca96a0b41edcf33e5cb71c5",
-        "TenantTokenService.GenerateS2SToken(string, string)": "2dee2293e0f34e21ec5eab96b6c237246c8c86abf8e24c72ef71b8b3610c7e8e"
+        "TenantTokenService.GenerateS2SToken(string, string)": "f5bbd7641b7ad08caae9cefdb6572869aea2bc76e62721d88b1a0b63baf51ef7"
       }
     },
     "Infrastructure/Security/UserSessionCircuitHandler.cs": {
@@ -15034,7 +15040,7 @@
       ],
       "MemberSyntaxHashes": {
         "TaskBatchDomainCommitter.CanCommit(string)": "7165768daad1a7d85fba2dc855ab75bc7bfc7be61128dfb6a46373b2a5b351bd",
-        "TaskBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "d2e385e15329acaaaa65143f49ef58925512b12e229145fd961c7c29cb240250"
+        "TaskBatchDomainCommitter.CommitProcessedRowsAsync(ImportFileEntity, IReadOnlyList\u003CProcessedDomainRowDto\u003E, FileImportBatchJobEvent, CancellationToken)": "fcc36ce986d6388ca8cfa3a09cf2323f31b827b19c2fe9bf07dfda6f101864d1"
       }
     },
     "Jobs/FileImports/Configuration/IFileTemplateConfigRepository.cs": {
@@ -15491,7 +15497,7 @@
         "DocumentParsingJobHandler.HandleAsync(DocumentParsingJobEvent, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "DocumentParsingJobHandler.HandleAsync(DocumentParsingJobEvent, CancellationToken)": "b4cbbb644430ef91398d109247ef565c821f8b51cece8b0e9fe0dbcc00cfc706"
+        "DocumentParsingJobHandler.HandleAsync(DocumentParsingJobEvent, CancellationToken)": "6eae391e364335014590160edbf8adfbfaa5e23453f3dde01b81c8fc8b5ab1ae"
       }
     },
     "Jobs/Jobs/DocumentParsing/JsonComparisonJobHandler.cs": {
@@ -15511,7 +15517,7 @@
         "JsonComparisonJobHandler.HandleAsync(JsonComparisonJobEvent, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "JsonComparisonJobHandler.HandleAsync(JsonComparisonJobEvent, CancellationToken)": "4d7463a057a7d77563fa73d05e3772a53a71b9672a91fbf781143b2b55a3bd01"
+        "JsonComparisonJobHandler.HandleAsync(JsonComparisonJobEvent, CancellationToken)": "15add50bcb2e46587faae7bd3a714a0fc5055cdfeb31ebbb66e2d8b885f1ed0c"
       }
     },
     "Jobs/Jobs/Tasks/DailyTaskSummaryJobEvent.cs": {
@@ -15740,7 +15746,7 @@
         "JobsExtensions.RegisterImplementationsOf(IServiceCollection, Assembly, Type)"
       ],
       "MemberSyntaxHashes": {
-        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool, bool)": "da69bba849d875f142a66cec1472ed13592a2ab8942f2360e8b5bd721e56bebb",
+        "JobsExtensions.AddBackgroundJobs(IServiceCollection, bool, bool)": "6d8b871560a130b874dcec68294f925cdb9c0a6181095eb4227a2f89f22c307f",
         "JobsExtensions.RegisterBatchJobHandlers(IServiceCollection, Assembly)": "98a3cd912b137751957d5a5b828e51fe4257f98805c7fe459a2efba4bdc18694",
         "JobsExtensions.RegisterImplementationsOf(IServiceCollection, Assembly, Type)": "5ed1cc104291512deba0890ece276c02b130b318644706b1e6fd35ae981bd19a"
       }
@@ -15769,7 +15775,7 @@
       ],
       "MemberSyntaxHashes": {
         "BatchJobQueueListener.ExecuteAsync(CancellationToken)": "4f9034f1d015a2a06b078e391c5b9b3084d6481df95e53dab7f2d03edefc0ef1",
-        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "acbccad53900c8a3f05809b44b2e5416d7f005ecb65ec2994dbe4b7e17a0a095"
+        "BatchJobQueueListener.ProcessJobEventAsync(IJobEvent, CancellationToken)": "637d5cd41cf76e04d2d61477e6df7b328b57a4bdd427893c1b651f4b19060c8c"
       }
     },
     "Jobs/Queue/ChannelJobEventQueue.cs": {
@@ -15793,7 +15799,7 @@
         "ChannelJobEventQueue.Complete()"
       ],
       "MemberSyntaxHashes": {
-        "ChannelJobEventQueue.EnqueueAsync(IJobEvent, CancellationToken)": "1bdcbf105335f0bb36ce544eafb7ab0380dfc48cd2e71f94124d73c0f012214a",
+        "ChannelJobEventQueue.EnqueueAsync(IJobEvent, CancellationToken)": "8ad0f29b2f5df49fa583991a288b7f5490c68bfd0c7d4ac9251094c9de16a513",
         "ChannelJobEventQueue.PublishAsync(IJobEvent, CancellationToken)": "8ae6379b711fb375f5ffe8b63e8e7f2fe07ddeeb6d6cb18dcdeb6fdcec4e28ed",
         "ChannelJobEventQueue.ReadAllAsync(CancellationToken)": "06976582f0b01fa2f6846f53dad27d083cfef8dcbcaf652db77f0f25914cbcb4",
         "ChannelJobEventQueue.Complete()": "0e17fa371c96f93a62289618d7ed102546d5b9bf5bd3563528b10df868af1936"
@@ -15900,7 +15906,7 @@
         "PeriodicBatchScheduler.ScheduleEntry.Deconstruct(out string, out CronExpression, out Func\u003CGuid, string, IJobEvent\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "PeriodicBatchScheduler.ExecuteAsync(CancellationToken)": "44e7b0b68abe06f0ea913aee3d00e957e7177ee829c8a3eb195a72630362fc77",
+        "PeriodicBatchScheduler.ExecuteAsync(CancellationToken)": "645e942eb91ac98bbe5d9fad092ed6a5c011ef8d257ef7a6c5c856b783816276",
         "PeriodicBatchScheduler.BuildSchedules()": "538cf1ab788316dcf7e08b99f37912513f1f5f566261cf44a3653df75dc660f6",
         "PeriodicBatchScheduler.TryParseCron(string, string, out CronExpression)": "6a6eb0f841e256139b4669715033adb4ca64b2b5b87a81ec50ee77677f727374"
       }
@@ -16754,8 +16760,8 @@
         "AppDbContext.OnModelCreating(ModelBuilder)": "a67c59010a211a964ca7b12bc911aa34cdb4246733e5aa8bf2572cacf2763d2c",
         "AppDbContext.ConfigureNamedTenantFilter\u003CTEntity\u003E(ModelBuilder)": "705f3947cd636cda274f39e43fdf324fc82491b54d269840a01a57847b5526ad",
         "AppDbContext.ConfigureNamedSoftDeleteFilter\u003CTEntity\u003E(ModelBuilder)": "efef6259e83850f776fd1d7069f48697407f75b2b2b417d447f9aedced4d8183",
-        "AppDbContext.SaveChanges(bool)": "b9ad18ab7d28566e32915c5a7b39a4f4f1bc5618e3c71b4e7c7caae9aa97c7a4",
-        "AppDbContext.SaveChangesAsync(bool, CancellationToken)": "1df8f13b0c4300fdca96e2bef37dde77cedc307f209be0eb8094768a2f09fa78",
+        "AppDbContext.SaveChanges(bool)": "b02669ae2dbce34ec15cca4240329cb5fd26ef15435fa607232865cc112bb728",
+        "AppDbContext.SaveChangesAsync(bool, CancellationToken)": "be33c221bf7fe46c54b1caa33b87686d73165f2d0eacb6ff1b76749cf65cac35",
         "AppDbContext.Dispose()": "fc4f34d008ed7f395ed6b8830e3e52816e87ab429f3a0b9a6ed68f9889c76551",
         "AppDbContext.DisposeAsync()": "4cc3e62c801601d5597eac52b022635647b9f01c6c395bc4dd079e2643b9b4c6"
       }
@@ -16769,7 +16775,7 @@
         "AppDbContextDesignTimeFactory.AppDbContextDesignTimeFactory()"
       ],
       "MemberSyntaxHashes": {
-        "AppDbContextDesignTimeFactory.CreateDbContext(string[])": "57101e1e5212a2f7f62473fa87068c6a4c8789e661d7e2b50bc842201fd7f4fe"
+        "AppDbContextDesignTimeFactory.CreateDbContext(string[])": "b6dda34fedb2df902d5c408197b6d935074a3c0acc76b8deb9b9c5883c14c1ee"
       }
     },
     "Persistence/Context/UtcDateTimeConverter.cs": {
@@ -16872,7 +16878,7 @@
         "MigrationBuilderRlsExtensions.DisableTenantRowLevelSecurity(MigrationBuilder, string, string)": "d83c53912db15de923380e6de250007b48e6ca05770cc8e30038ff8ca4b2954e",
         "MigrationBuilderRlsExtensions.ApplyAllTenantRowLevelSecurity(MigrationBuilder)": "3be278d2466b6100a4807e91ac211c32ae45419a18c2bd3a627f25eb862d3a72",
         "MigrationBuilderRlsExtensions.RevertAllTenantRowLevelSecurity(MigrationBuilder)": "f84dee6982e0cf35850eb6e793f47ebd0e4cfabf41f214c3abdea53a43dd2e07",
-        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)": "36f20defa9ae4f0f132dbe01ce66ddc7e95933aca397e389637feb72937d9856"
+        "MigrationBuilderRlsExtensions.CreateAppRoleAndGrantPermissions(MigrationBuilder, string, string?)": "2020047f35f47d0c8eacc797037706d83cae90e3c8caa0d97990473f3e077270"
       }
     },
     "Persistence/Extensions/QueryableExtensions.cs": {
@@ -17062,7 +17068,7 @@
         "DbCommandLoggingInterceptor.TagCommandText(DbCommand)": "272ba0f656471ac1c3e5278db321fda5aa2197accc36f11eef61f2bc13820cb8",
         "DbCommandLoggingInterceptor.LogCommandExecuted(DbCommand, CommandExecutedEventData)": "18fee6c1ac63d3a07d3778f0e4702fe8c49c70c9d04efdfda490054c43a929ce",
         "DbCommandLoggingInterceptor.LogCommandFailed(DbCommand, CommandErrorEventData)": "8805bc75c37753d3e69f961ac4c4354ccad12c89f0c947ec8a5780d296d6c5b2",
-        "DbCommandLoggingInterceptor.ResolveCurrentCorrelationId()": "17a9ec5a159a357a97b3428988d1b80f5e3cb2e1f0bb2f7b3db4709297171619",
+        "DbCommandLoggingInterceptor.ResolveCurrentCorrelationId()": "fd978964c0fe9502b5fb1c24a478dcb88cb73b86bfabe58cbc68855e935725b3",
         "DbCommandLoggingInterceptor.FormatParameters(DbParameterCollection?)": "527942a16b44af04cfa4e2dca245ecefb813d86cd971b7e886fca2b4be602a7f",
         "DbCommandLoggingInterceptor.IsSensitiveParameterName(string)": "dc39da4a948146678c869a1764ecd646febce608f19506d4cd556876ba86afbf",
         "DbCommandLoggingInterceptor.FormatParameterValue(object?)": "0c218edddec6b8ba683a4eaaff63e91eb070b85a6504a6bd750725f8e30435d5"
@@ -17091,8 +17097,8 @@
       "MemberSyntaxHashes": {
         "EntityValidationInterceptor.SavingChanges(DbContextEventData, InterceptionResult\u003Cint\u003E)": "8a102a571560cd9b33992372608868796ee368950f7ffaa26b8c98e6d210679d",
         "EntityValidationInterceptor.SavingChangesAsync(DbContextEventData, InterceptionResult\u003Cint\u003E, CancellationToken)": "87d4397f02f2cb697466397210bb903b5e463910d3536efc7eae7fccaf3f17e5",
-        "EntityValidationInterceptor.ValidateEntitiesAsync(DbContext, CancellationToken)": "3f11222b6faab3c6d2caf4bd6ec69e43764e02e350d25f0359d286b07c819403",
-        "EntityValidationInterceptor.ValidateEntitiesSync(DbContext)": "3b7143e2e66830966b2c85e65536ae1a86268a4005cfb33257ebfb1b6854379a"
+        "EntityValidationInterceptor.ValidateEntitiesAsync(DbContext, CancellationToken)": "2f8050862f467e8b1cd490e3b9671166c31a1978a553e748c87d4e73bde5c0f3",
+        "EntityValidationInterceptor.ValidateEntitiesSync(DbContext)": "81a52c6169b7d35212e27346e97449287d272ad9efe952b45d12643030b90cf3"
       }
     },
     "Persistence/Interceptors/NoTrackingMutationGuardInterceptor.cs": {
@@ -17334,7 +17340,7 @@
         "entity_redeisgn.entity_redeisgn()"
       ],
       "MemberSyntaxHashes": {
-        "entity_redeisgn.BuildTargetModel(ModelBuilder)": "470034a6248ba181b7078aebb19e3e4ae1c7255e5d266d0477586c8ffb60f9a2"
+        "entity_redeisgn.BuildTargetModel(ModelBuilder)": "299e0a40bff7d8a59dc1399996ce5f3647bcbdbfc4f8bdb3883329736df4bc49"
       }
     },
     "Persistence/Migrations/20261112184446_Activities.cs": {
@@ -17361,7 +17367,7 @@
         "Activities.Activities()"
       ],
       "MemberSyntaxHashes": {
-        "Activities.BuildTargetModel(ModelBuilder)": "40f33a2dde743825ac89efdf70fdbd43f9219305569d04680d435ca0781cfb85"
+        "Activities.BuildTargetModel(ModelBuilder)": "b21e8023bc5615dc572d0b0fa22ab509aafd9104352303f14dd038475d66c1a7"
       }
     },
     "Persistence/Migrations/20261116052313_PendingChanges.cs": {
@@ -17388,7 +17394,7 @@
         "_20261116052313_PendingChanges._20261116052313_PendingChanges()"
       ],
       "MemberSyntaxHashes": {
-        "_20261116052313_PendingChanges.BuildTargetModel(ModelBuilder)": "675e3751aee16cf9cc3942c91633a0e43cab8aa7014c973fa2e561b1cb460dbf"
+        "_20261116052313_PendingChanges.BuildTargetModel(ModelBuilder)": "78adb05c7ddfc4c38d7d7febb32c72f372ede27d2c59a7017eda72ea03d5d6f4"
       }
     },
     "Persistence/Migrations/20261116163922_AddDocumentParsingTables.cs": {
@@ -17415,7 +17421,7 @@
         "_20261116163922_AddDocumentParsingTables._20261116163922_AddDocumentParsingTables()"
       ],
       "MemberSyntaxHashes": {
-        "_20261116163922_AddDocumentParsingTables.BuildTargetModel(ModelBuilder)": "1f777a1630b0eae8ae7bd0e69a61fff2605535db573f3fe87ba2d009dc1b174a"
+        "_20261116163922_AddDocumentParsingTables.BuildTargetModel(ModelBuilder)": "86b17f878fc71735095808c000cd00d0fb84b432c7594f483a0f9f2bf5e73f16"
       }
     },
     "Persistence/Migrations/20261117171433_SyncPendingModelChanges.cs": {
@@ -17442,7 +17448,7 @@
         "_20261117171433_SyncPendingModelChanges._20261117171433_SyncPendingModelChanges()"
       ],
       "MemberSyntaxHashes": {
-        "_20261117171433_SyncPendingModelChanges.BuildTargetModel(ModelBuilder)": "26085c15f9db79c9a18bb2a79ef59fd6c0c7adcf59348eb00a5aba920de12984"
+        "_20261117171433_SyncPendingModelChanges.BuildTargetModel(ModelBuilder)": "4a81c0bcb27ac6960df37416dd07a3d573988c7e099ab761f2bf8db3abecc1cf"
       }
     },
     "Persistence/Migrations/AppDbContextModelSnapshot.cs": {
@@ -17458,7 +17464,7 @@
         "AppDbContextModelSnapshot.AppDbContextModelSnapshot()"
       ],
       "MemberSyntaxHashes": {
-        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "edb0f3e877e6036d492e2ce1a430d0b676f4d5f9520cee46319e513470077892"
+        "AppDbContextModelSnapshot.BuildModel(ModelBuilder)": "768c660c088f4b085d093d2c554c83f583a87b38edc659a8448d6b33de330e0f"
       }
     },
     "Persistence/PersistenceExtensions.cs": {
@@ -17468,7 +17474,7 @@
         "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)"
       ],
       "MemberSyntaxHashes": {
-        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "4f6168687aaa759e323a33d6f761153bc443e1949a0c2ab21e6a7cb3e2da69fe"
+        "PersistenceExtensions.AddPersistence(IServiceCollection, IConfiguration)": "659133be1a00b1a88673d0baafe1f8870d691bdaadbd66819552571a6b244c81"
       }
     },
     "Persistence/Services/ActionItemService.cs": {
@@ -17682,10 +17688,10 @@
         "CalendarService.CreateProjectCalendarEntryAsync(CalendarEntity, CancellationToken)": "ad28287a20282956f9b513d166e55130e35dcf04d10dbd1d689efc1fda84eba7",
         "CalendarService.CreateUserCalendarEntryAsync(UserCalendarEntity, CancellationToken)": "68fd52dd70fbdb1d1bd9d0e367f852218ef398234f38ebcc696a794275dd3034",
         "CalendarService.DeleteCalendarEntryAsync(Guid, TaskLevelEnum, CancellationToken)": "c4fe92441354f245fed1bba4c9949f2f264975158eaa00c2c52a130ddc1df39b",
-        "CalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CCore.Dtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "332055b04934f7e8eb4ab2706febf15b25d73a3d8b1458c08d9603c3a4559938",
-        "CalendarService.ExecuteSaveProgramCalendarScheduleAsync(AppDbContext, Guid, Guid, IReadOnlyList\u003CCore.Dtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "e9b1186ea532b70a8846f805424cecd5bbac74ae950e3cf9f944fe68de8d203f",
-        "CalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CCore.Dtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "d6373187958689fa7bb8fb7e174b64b750d9a0524cd5420e4765cfe099bfda26",
-        "CalendarService.ExecuteSaveProjectCalendarScheduleAsync(AppDbContext, Guid, Guid, Guid?, IReadOnlyList\u003CCore.Dtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "cb816a38c3e15c894dc0f2eaf52ec21c142206911606df8814fbb8d151db932c"
+        "CalendarService.SaveProgramCalendarScheduleAsync(Guid, Guid, IReadOnlyList\u003CCore.Dtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "feeba27ef338542d8ea2d37a7cedea5e317ec2ceba33039004744ee19235b7bf",
+        "CalendarService.ExecuteSaveProgramCalendarScheduleAsync(AppDbContext, Guid, Guid, IReadOnlyList\u003CCore.Dtos.ProgramTimelineRowDto\u003E, Guid?, bool, string?, CancellationToken)": "588e55e1581e4ba4a1eff7e912e8a11bc57541540df0e11d181ee5ec56d669d4",
+        "CalendarService.SaveProjectCalendarScheduleAsync(Guid, Guid, Guid?, IReadOnlyList\u003CCore.Dtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "dcec4949f9457e9efcfaddadc71465a3f29b35a46f842ab9a1a7222571aefcf3",
+        "CalendarService.ExecuteSaveProjectCalendarScheduleAsync(AppDbContext, Guid, Guid, Guid?, IReadOnlyList\u003CCore.Dtos.ProjectPhaseDto\u003E, Guid?, bool, string?, CancellationToken)": "a7869535f2e6b647161b80001a2eee7f0ba5bf73ccd8f1333bff0e6ab7829459"
       }
     },
     "Persistence/Services/CircuitActivityTracker.cs": {
@@ -17864,7 +17870,7 @@
         "EventTrackerService.EventTrackerService()"
       ],
       "MemberSyntaxHashes": {
-        "EventTrackerService.TrackPublishAsync\u003CTEvent\u003E(TEvent, Guid?, string?, string?, string?, string, string, string?, string?, string?, CancellationToken)": "fb844e042b62d1bba6aab1db965b9c43cc59a6aa5f56692342f265ef8493e593",
+        "EventTrackerService.TrackPublishAsync\u003CTEvent\u003E(TEvent, Guid?, string?, string?, string?, string, string, string?, string?, string?, CancellationToken)": "a0c558c385a75bd5ccf98efb6494ce7afbbac7806f5354be016355f44205ec7f",
         "EventTrackerService.TrackConsumptionStartAsync(Guid, string, string, int, CancellationToken)": "6bc554796ce246060b1398075514b3163de3ed6bb57916845b90081518af9616",
         "EventTrackerService.TrackConsumptionCompleteAsync(Guid, bool, double, string?, string?, CancellationToken)": "5a993999c11db20cc4cffeaedbdb1a6477fef82326d3e4b01d470351666e3c15",
         "EventTrackerService.GetEventsAsync(EventTrackerFilterReqDto, CancellationToken)": "56b6e75d952f2a40d427218ef1efdfd76099750fac5d8bdedd12fb59c1b07ce5",
@@ -18042,7 +18048,7 @@
         "ImportFileService.SendNotificationAsync(string, string, NotificationSeverityEnum, Guid, CancellationToken)"
       ],
       "MemberSyntaxHashes": {
-        "ImportFileService.UploadBatchAndQueueAsync(UploadBatchRequest, CancellationToken)": "c0a5daaf5b95266639a083c8a3f7517bd7583e165299df6046259ebde5c9e16e",
+        "ImportFileService.UploadBatchAndQueueAsync(UploadBatchRequest, CancellationToken)": "48e2fa4e571b64945b9413c56f4950df8bd0c9c158e949eb8872d57f0fc2c631",
         "ImportFileService.UploadAndQueueAsync(UploadFileRequest, CancellationToken)": "5dd7212ea47fc1371693a06fd416e53dcadbd9410df80437879ca1df54dbe9d1",
         "ImportFileService.GetImportHistoryAsync(Guid, CancellationToken)": "6e7ae1f8f7b4b89f027158ede3129584baed67c86a1fdfeeecd19aee8a4aa669",
         "ImportFileService.GetImportFilesByBatchAsync(Guid, Guid, CancellationToken)": "ec239bbbda898257eee7a1d948cef1fbe3a4872ca8f77f9eb94e07e7028da0c7",
@@ -18252,7 +18258,7 @@
       "MemberSyntaxHashes": {
         "KnowledgeBaseService.GetArticlesAsync(string?, KnowledgeArticleStatusEnum?, string?, bool?, CancellationToken)": "797020690a1daf1636ae58e0ced7dff23b041af43c762d2d6524f80504f068f7",
         "KnowledgeBaseService.GetArticleByIdAsync(Guid, CancellationToken)": "842345832d18e342271344c7b111b4a413d78b54608bf3c6a45f999bde86e388",
-        "KnowledgeBaseService.CreateArticleAsync(CreateArticleDto, CancellationToken)": "ff12654d59b4f6604f56e6a9b7354eaeb1ce4607e8c96977290b800dde07f5f7",
+        "KnowledgeBaseService.CreateArticleAsync(CreateArticleDto, CancellationToken)": "c15556af1d61077d89b9ac774c731286eee9f7bcc833c3ba07d66888eabeb043",
         "KnowledgeBaseService.UpdateArticleAsync(UpdateArticleDto, CancellationToken)": "73e5bc01bfa059a65e6ef61d8d224d53dcecab1e5c55036e684a491499aa1d7a",
         "KnowledgeBaseService.ApproveArticleAsync(Guid, CancellationToken)": "e588953c3fa9c71c00ba80eb4f6591b580f18077b7a58dacdd13fac56d845667",
         "KnowledgeBaseService.DeleteArticleAsync(Guid, CancellationToken)": "7455a5d162a207e5bd3bb74c9bbbd53b63a8743dedf70a67336d5db4f350a0c3",
@@ -19153,7 +19159,7 @@
         "TenantService.GetTenantProjectsAsync(string, CancellationToken)": "60ee59777bddc61fb46dc8555dac248a3c18dd52daeb4089457e059e9045ff60",
         "TenantService.CreateTenantProjectAsync(string, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, CancellationToken)": "bbdf6c177b9d60117ef6133c85c105c03bcd529e8da8dd3ba6b6de45a9d81af0",
         "TenantService.UpdateTenantProjectAsync(string, Guid, string, string, string?, DateTime?, DateTime?, string?, ProjectStatusEnum, Guid?, uint, CancellationToken)": "bbf3fc97b8da88d334df9cf8017e3b21d9c49e80a59a2459d91b6d421d8a2535",
-        "TenantService.SyncProjectRosterAsync(Guid, IEnumerable\u003CCore.Dtos.ProjectRosterMemberDto\u003E, CancellationToken)": "d672b9f8936555a62df92714e783353c01f7c6c40058bd74011866442b6fa60d",
+        "TenantService.SyncProjectRosterAsync(Guid, IEnumerable\u003CCore.Dtos.ProjectRosterMemberDto\u003E, CancellationToken)": "0dd03e21d1c52aea31ce3615a19f3c6f73d07f9525e1f69e1aa7cf6d837ee339",
         "TenantService.RegenerateTenantLicenseKeyAsync(string, CancellationToken)": "5b2502af48f84a96956737c41895cbf1ed3f2cdd4c24dd823ebed6899aa19c04",
         "TenantService.GetTenantDaemonUserAsync(Guid, CancellationToken)": "21960d86a4fa0527630f65288be11200a46eb80e618dac82d7e78db471f0419f",
         "TenantService.IsTenantDaemonActiveAsync(Guid, CancellationToken)": "538ab6297804dceba3cc7d506094d6da5e8147e840567311f0c65bde97b44a00",
@@ -19754,7 +19760,7 @@
       ],
       "MemberSyntaxHashes": {
         "TaskCloudProcessor.ProcessChunk(Guid, Guid, int, string, CanonicalStagedChunkPayload, IReadOnlyDictionary\u003Cstring, string\u003E?)": "80ac445ace4becd7e7feeceadbc4377816fb7dab5380c00ffed6746289e9e70f",
-        "TaskCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)": "df9205d874ddc05a75e1cf11e2cab74863c7a95fb57a3d8f41354862fc9f9744",
+        "TaskCloudProcessor.NormalizeStatus(string?, int, string, List\u003CFileValidationError\u003E)": "6049f1637c00e1d77a968167d35638be68c8d58d989ef1c6f9c3168bafe3d782",
         "TaskCloudProcessor.NormalizePriority(string?, int, string, List\u003CFileValidationError\u003E)": "ee8236824967fcb79839a87dfb9dbd890b11954890408a9e5f9ee22695776975"
       }
     },
@@ -19830,7 +19836,7 @@
       ],
       "MemberSyntaxHashes": {
         "Extensions.AddServiceDefaults(IHostApplicationBuilder)": "2ce0d48e389b4fc8eff1ae7c89df87107790e96e0a26ef4f2adcfcccf9ed653c",
-        "Extensions.ConfigureOpenTelemetry(IHostApplicationBuilder)": "78fc87350228469b5b54fa31c9ed533bb457dc64c54160dd98d913f61565c49b",
+        "Extensions.ConfigureOpenTelemetry(IHostApplicationBuilder)": "672ff1a20463b1f2452749d839a0f3db07845f7be79c14f4e7e2366d652593e7",
         "Extensions.AddOpenTelemetryExporters(IHostApplicationBuilder)": "891c245211b19afae8e6360f853bac11e547ccefdae65fadc274b8f424c6b771",
         "Extensions.AddDefaultHealthChecks(IHostApplicationBuilder)": "1425bd8b1597e74d3e7b8ce0f7dba3c60fc5672cc86559942a98a3de86114775",
         "Extensions.MapDefaultEndpoints(WebApplication)": "06117272ff8d30e6fd0b86e8e74d53d0a2fe48f240dd2dc4185e72d260e88122"
@@ -24959,7 +24965,7 @@
       ],
       "MemberSyntaxHashes": {
         "ICorrelationContext.Renew()": "b34962bccfd01f7ebb40447045b408f239f8546988f60167a8444f9863fa2028",
-        "CorrelationContext.Renew()": "44dcbe39494c051678799fece7f0561f3f6f0a5fa02dbd8e755df8903c866234"
+        "CorrelationContext.Renew()": "6b33b5f2e193041fe57683981ae9517e46c1f910bbb0d9f9ed315fd506306cd1"
       }
     },
     "Shared/Contracts/Engine/Client/IEngineClient.cs": {
@@ -28071,7 +28077,7 @@
         "CorrelationIdEnricher.CorrelationIdEnricher()"
       ],
       "MemberSyntaxHashes": {
-        "CorrelationIdEnricher.Enrich(LogEvent, ILogEventPropertyFactory)": "05798547f9d71569c5f4a418a61a485d886f03f9231ea57d99304fa7ebe9437a"
+        "CorrelationIdEnricher.Enrich(LogEvent, ILogEventPropertyFactory)": "2b6f8e19fbfd68e06e0e4e601ede696a2395841fb49f8ed2ec2f4a197746d2e7"
       }
     },
     "Shared/Logging/SharedLoggingExtensions.cs": {
@@ -28085,8 +28091,8 @@
         "SharedLoggingExtensions.StrictSeverity(LoggerSinkConfiguration, Action\u003CLoggerSinkConfiguration\u003E)"
       ],
       "MemberSyntaxHashes": {
-        "SharedLoggingExtensions.UseSharedSerilog(IHostBuilder, string, Action\u003CLoggerSinkConfiguration, IConfiguration\u003E?)": "1a7599beafdb60102ae96cbd665458c9d9cee07667e22bca7c6619d2cb91d9d5",
-        "SharedLoggingExtensions.ResolveRootLogsDirectory(string)": "4f0f1d3dccfc0ce000246358f2118c7fdd959e834fd95198be16bbbc875b116a",
+        "SharedLoggingExtensions.UseSharedSerilog(IHostBuilder, string, Action\u003CLoggerSinkConfiguration, IConfiguration\u003E?)": "30d1080af5fd07f09d5a734659c5e9e396880f3e090c6c0d9adf03dca86a0852",
+        "SharedLoggingExtensions.ResolveRootLogsDirectory(string)": "b93b174efc4fa93a94f47d94fe5934920a06964280fce7180e669c28c9dae658",
         "SharedLoggingExtensions.StrictSeverity(LoggerSinkConfiguration, Action\u003CLoggerSinkConfiguration\u003E)": "855942feac0111ba408dab68946947363df995c9e34a4cd4122d3fdcb8e1fa22"
       }
     },
@@ -28401,7 +28407,7 @@
         "SharedObservabilityExtensions.SharedObservabilityExtensions()"
       ],
       "MemberSyntaxHashes": {
-        "SharedObservabilityExtensions.StartCorrelatedActivity(string, string, string?)": "2036309456171116bea747eef2888098b09c5a45b52a2367292fa0bbe87d9570"
+        "SharedObservabilityExtensions.StartCorrelatedActivity(string, string, string?)": "7c7c6526bf408d8eafa632f2907325914a38dd32e125809c5d3b90eefe46a3d5"
       }
     },
     "Shared/Security/EncryptedEnvelopeDto.cs": {
@@ -28500,8 +28506,8 @@
         "PayloadEncryptionUtility.Decrypt(EncryptedEnvelopeDto, byte[])": "dbe3243110ceb20572f7a0f90ab69e1e73d1bc7aa6418f2983a846b5dbff31ba",
         "PayloadEncryptionUtility.EncryptPayload\u003CT\u003E(T, byte[])": "8e436bec8ac7b1e3ca8f2a2a15767307ce1894788976652bf88dea1953a922c2",
         "PayloadEncryptionUtility.DecryptPayload\u003CT\u003E(EncryptedEnvelopeDto, byte[])": "18bcb8f42d2f00b0f3f1a28b31b115b81439e040c1b9bad1dfe58b447bc4ce45",
-        "PayloadEncryptionUtility.DeriveTenantKey(string, string)": "7e3411a35628ccfa00608a2b7f49c40c18536ea40479a90b5bd09d0359a553a5",
-        "PayloadEncryptionUtility.DeriveVaultAtRestKey(string, string)": "ccd3d0371e249a930d09835278c6ae6a9bddafc168a497f7e3910dd458cc11cc",
+        "PayloadEncryptionUtility.DeriveTenantKey(string, string)": "c26b35fc0d0171ee8b364ad0cd8417391a5eccb87f64146183a8e0bd2c3cfb2b",
+        "PayloadEncryptionUtility.DeriveVaultAtRestKey(string, string)": "2ae893bf8af6519ff448a75e36ac163886a8be3a8bc184c6def8fa90f2264a6f",
         "PayloadEncryptionUtility.EncryptToPackedBytes\u003CT\u003E(T, byte[])": "2b64929a1b046b32286d8928a6be2c62cc8c8194a5f04c4c83ab3ecc3a797713",
         "PayloadEncryptionUtility.DecryptFromPackedBytes\u003CT\u003E(byte[], byte[])": "445f9a03ca60546eb7c68cca6b96cf0154a0faac3e11d7adf2c42c56882ba291",
         "PayloadEncryptionUtility.CompressGzip(string)": "444cabcea0013cd336d80b624f9d1a784dec66706eca3e6ff09948d1920abdaa",
@@ -32180,7 +32186,7 @@
         "SettingsJobsTab.LoadAvailableTenantsAsync()": "8222ae3c0dda3f23dca553dbc90478387313d214290b8c0379b48ef8fa2f80a3",
         "SettingsJobsTab.OnTenantSelected(string?)": "16b8da075f572a4f670d399d4d74606f9bf1f41d982d249479f238a6331c3a72",
         "SettingsJobsTab.ClearTenantFilter()": "67ceacba87eb9848fa30dd564cfdb72cf4a6406cf49099e1acb8cb9d383417d8",
-        "SettingsJobsTab.LoadExecutionsAsync()": "8e82bb0ce67dadf5e7f4feda8e5e19b9780f1826a23f6c26942f8e7e13652834",
+        "SettingsJobsTab.LoadExecutionsAsync()": "fa0db190bdd61018a084c06a105b8c47b38c716903f7375bbfede048e3e1d4f9",
         "SettingsJobsTab.TriggerSelectedJobAsync()": "d7a6cbae2e89b3ea73bc8b12487714aba78368d4a160b1482148841f21dabc36",
         "SettingsJobsTab.RetryJobAsync(Guid)": "24814200095c4bc9813a251a2f24106dc8838248e0a38e28123b404dd68b70e0",
         "SettingsJobsTab.HandleTimeZoneChanged()": "a807801f7e2ef3f461a348209d068857455c4652fc0b84fe6e75d56c45fd2a5c",
@@ -32741,16 +32747,16 @@
         "SettingsProgramsTab.CreateProgramProjectAsync()": "55697b580c22b241228122408a36ccb910bcd5c9ffc53da7a4a0e8e795708b3a",
         "SettingsProgramsTab.HandleEditProgramFromWizardAsync()": "527fac1619b8cde864695ac8ba6d74af3ed79be7f625fdcac786064b876eb8ad",
         "SettingsProgramsTab.HandleEditProjectFromWizardAsync()": "b4b8a3b3e728d52e5d0f9ce36836977175717fd84f125318b52ffc2c7c33de17",
-        "SettingsProgramsTab.OpenCreateProgramWizard()": "efaa3fdd238cb35e331b67b8cf1fc06a6005ab84121e43a77425706bbb052a20",
-        "SettingsProgramsTab.OpenViewProgramWizard(ProgramEntity)": "dd35c14a3686c011918c72ca6a53d33bc902686ca47d53c672f4b23e022af391",
-        "SettingsProgramsTab.OpenEditProgramWizard(ProgramEntity)": "db648a9af09ed7e25da879456b48f4e596c98f2b399ad0817a83d05b3da4b756",
-        "SettingsProgramsTab.OnProgramWizardSavedAsync(Core.Dtos.CreateProgramWizardState)": "6cb060d5f844ad7868408e2e9b85dedc4c793ce1d6f232dd110607a7d8c9a039",
+        "SettingsProgramsTab.OpenCreateProgramWizard()": "2e5758693f21013336aea367678b1d67fcb6ab77926a819cbcceaf1715b534bc",
+        "SettingsProgramsTab.OpenViewProgramWizard(ProgramEntity)": "025d82be6d0db757cfeed74698d411cec5f5d021d7b1d6166d5301a74394daf3",
+        "SettingsProgramsTab.OpenEditProgramWizard(ProgramEntity)": "8c058914a8a0c581943b560c7a285f48ef151fb5ce0570702383dbfa8da13c86",
+        "SettingsProgramsTab.OnProgramWizardSavedAsync(Core.Dtos.CreateProgramWizardState)": "bafa4248d3cef691b30ccd2d3ad6918e94b18063ca158730e6eea5c76a80ca9f",
         "SettingsProgramsTab.ToggleProgramExpanded(Guid)": "f5feda90d59dbb66b13aa0680012de0b4c656150f39d6c2c70859d554533c128",
         "SettingsProgramsTab.GetProjectStatusBadgeColor(ProjectStatusEnum)": "6eb3a0b6188ed18892515d761a1dba3d79fce1260a2f7b182e3f76714365cc32",
-        "SettingsProgramsTab.OpenCreateProjectWizard(ProgramEntity)": "43836bc47bea0e048a05b199138282960fd202fc1a540962f7c3a1d9592d59a3",
-        "SettingsProgramsTab.OpenViewProjectWizard(ProjectEntity)": "a3e98e93b3096b08c0cde2b277103c0b611ad288692d88d66b1cdd1523390c0c",
-        "SettingsProgramsTab.OpenEditProjectWizard(ProjectEntity)": "4df53c4b38f3fce46b40e0475bc743bf6b70ef635a2cc46941e1e5b679a7596d",
-        "SettingsProgramsTab.OnProjectWizardSavedAsync(Core.Dtos.CreateProjectWizardState)": "831da7fb0d8172f557c07aa3b0b47353a3bb6b2178e560dc6c78170844be633d",
+        "SettingsProgramsTab.OpenCreateProjectWizard(ProgramEntity)": "311538a83d503e50baf5f155bccd9ab0297faa624a8fa95ee8b18e3d52d0ec5b",
+        "SettingsProgramsTab.OpenViewProjectWizard(ProjectEntity)": "319fdceebbb45d4fba32faa96aa19ba14b1779509fc6d694da8996b4725b12c1",
+        "SettingsProgramsTab.OpenEditProjectWizard(ProjectEntity)": "20baa4c9d1ab9432219dd40eb28587d704b3d6da07a0989f770e64d790a22437",
+        "SettingsProgramsTab.OnProjectWizardSavedAsync(Core.Dtos.CreateProjectWizardState)": "3c4f2089d9dcb6730eef16f80648550b7eccbc622e8d19a4976f9db1a1f809b5",
         "SettingsProgramsTab.Dispose()": "8cf226da2b5aeacc3edde4c43b22d06565ef72f10c3cdc79f7d706ce76495c74"
       }
     },
@@ -33073,8 +33079,8 @@
         "SettingsSprintTimelineTab.LoadSprintsAsync()": "56c3aee815f3c49c1b4d182e3bee26f47c78b37841577094be92d5bcf43386dc",
         "SettingsSprintTimelineTab.OpenCreateModal()": "749261237b02930901ec59628393578a2d06569293b4cf302ae65832c00c2f0a",
         "SettingsSprintTimelineTab.OpenEditModal(SprintDto)": "5f5dacb8230b630549c39822e0c0320b42322a43897afbc563cc7a730eee8577",
-        "SettingsSprintTimelineTab.SaveSprint()": "ac1fff347c2d6c088dbcbedc12c3c5840970afa841f38e134d84e17413096d70",
-        "SettingsSprintTimelineTab.DeleteSprint(Guid)": "7c17c7d267fb42ab3ca82812e8e2aedd83307042ca2d3c6613f82e8c2fce7b82",
+        "SettingsSprintTimelineTab.SaveSprint()": "a9cdee316ae8e061c6525cd233da21580d3067326abe25961e877c28305e0d07",
+        "SettingsSprintTimelineTab.DeleteSprint(Guid)": "7371926f52b248038a893ae0b9dad37b4ca5349699997d0852cb0d6d17c7afd2",
         "SettingsSprintTimelineTab.Dispose()": "048f28e833f34a3caa4fb1071bd3cc76d615d95bd84ba82d9eb5396c8cfdfbee",
         "SettingsSprintTimelineTab.HandleStartDateChanged(ChangeEventArgs)": "a623b932b5b3843bc3cb6ff6bd2ebe33716359ce8993bf024528b6e394e09248",
         "SettingsSprintTimelineTab.HandleEndDateChanged(ChangeEventArgs)": "b0bc5bb5b31eb5214073d262262fb46fe1cf9817de78618e56f10ab2673d2246"
@@ -33445,9 +33451,9 @@
         "SettingsTenantsTab.SaveTenantProgramAsync()": "4abb4eebde378a2dca1c02fc64269749c19330e7735581b615f04b64c5bf8fb8",
         "SettingsTenantsTab.OpenTenantTasksManagement(TenantEntity)": "ee2cff06e0e9fc46b14ede334d0624f2c790fff9085c82b3eff40a098774fe60",
         "SettingsTenantsTab.CloseTenantTasksManagement()": "00f564c6d5838b07e4961c338928ad4e8b5751a0fb040fb4be241abfe9c6a95a",
-        "SettingsTenantsTab.LoadTenantWorkItemsAsync()": "32afadfcbd7ee3d7d9830b1c82497c518f042376d05022953667747b7a1b8ab8",
-        "SettingsTenantsTab.CreateTenantTaskAsync()": "de919f20be4fcd8b99886bf965bb6fac4391e96ec236a8ecba2c4afbe2cf9dcf",
-        "SettingsTenantsTab.CreateTenantRiskAsync()": "60951d277afab77bc204759f6e0ab5ce99b1caa6d9ba9552f3c6ad4c52520f6b",
+        "SettingsTenantsTab.LoadTenantWorkItemsAsync()": "9e60791814a972d03573a40a0f5be5db89aa0f3d7575ed3ccd68d38416d443de",
+        "SettingsTenantsTab.CreateTenantTaskAsync()": "0312350b9b66f3ed810436e377363bd8902a56d22b1004f625e34d84de6288f8",
+        "SettingsTenantsTab.CreateTenantRiskAsync()": "9e51f8cd8e5d27326686fb28e3f67d42217348204f24624f75b69ecd5c334ed9",
         "SettingsTenantsTab.ToggleTenantTaskStatusAsync(TaskEntity)": "ef83ef1bef0130b33a45e8ce5658d20b21a3f5cfff475262cd416faf46862150",
         "SettingsTenantsTab.Dispose()": "eacc3c5b227e03fadea361b4b16435b3b2cdd6d8fb27938fb05ba87193b886a1"
       }
@@ -33538,11 +33544,11 @@
       ],
       "MemberSyntaxHashes": {
         "SettingsUserCalendarTab.OnInitializedAsync()": "21de3654ba13ca293edf11520b822688fa0aa44e0bb8f3da9a852fb30f5afc74",
-        "SettingsUserCalendarTab.LoadCalendarAsync()": "7cd0ed95f6cd7c2485cba165a6c268eea8fea35c22c684634a0f27960f19b12d",
+        "SettingsUserCalendarTab.LoadCalendarAsync()": "f1083d2d85c16390b50067e90b66e60d713a9a9d33cba48401644bea52448d66",
         "SettingsUserCalendarTab.OpenNewEventModal()": "0565eca504c7c4291f445a431b4a5a012e01ef3df91e9c4dd36cfbbaabf359e6",
         "SettingsUserCalendarTab.HandleAddEntryForDate(DateTime)": "162f7139afaa253716fd3b55e11c66f5dbb6e0be35a46152ea1df10ee319907a",
         "SettingsUserCalendarTab.HandleItemClick(CalendarItemDto)": "c55ef3b080cb3c5ea8d325cca9da75e8069051b6062d2c6918c50c75341ff664",
-        "SettingsUserCalendarTab.SaveNewEventAsync()": "e1f8d9dcd9e9cba61b3e262dc90b215bd196e569f3efbacadfa867479fd633e4"
+        "SettingsUserCalendarTab.SaveNewEventAsync()": "227e53c8ea088685a85cd889e3dcb44eb919f6fb02f1ab1b2f48a68f70a8a512"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserTab.razor.cs": {
@@ -33635,7 +33641,7 @@
         "SettingsUserTab.OnInitialized()": "11f0710a531823ffce62a9944431e7be21f509a96e275b26beadf77bb9ccce18",
         "SettingsUserTab.UpdateLivePreviews()": "41660eb0bb326f0b745233dbeed5e28b5f4716b72bd29dfc092f1e41472d1405",
         "SettingsUserTab.OnTimeZoneChanged(string?)": "4768a100ed4a8d896d5a00681750db1626a6890297bb6aae1a7e47df9d9864f8",
-        "SettingsUserTab.SaveTimeZoneAsync()": "38d78f51f4624019d44956ddc3a8f63b1caeab8d1258cf9a6dfc6562ced36289",
+        "SettingsUserTab.SaveTimeZoneAsync()": "c35ac9fd9786c6104c210e1f913cf0d8376051a8e77837029f83bde20d48bcca",
         "SettingsUserTab.ResetToUtcAsync()": "3c6d4d6e948b991d6de43d61c92628b8126ba5e28b94eb455b8b6a2f978ec7ff",
         "SettingsUserTab.Dispose()": "62364d04f6b837a4ecc13b1933c16d6f039bfffceb2cae8e1e201771488fb8c8",
         "SettingsUserTab.RunClockLoopAsync(CancellationToken)": "4ddb4a4387ffbf0bbc50f3e217c92edf99e4065e62f05c029af2c5e620ec9890"
@@ -33737,7 +33743,7 @@
         "SprintPlanningPage.ToggleAllItems(ChangeEventArgs)": "d87bc5d155105056e45b5d002fb022b0598169180df92047472f78ec398d11b5",
         "SprintPlanningPage.OpenMoveModal()": "6ce7c7fbbba8dd136086eaa1ce5e692a2e9aa5ab8fbd907ed9a541f48e3dd9ca",
         "SprintPlanningPage.CloseMoveModal()": "6eb815466f9d3d23346bba80f53933c3f1f831e9874b377ec1941eb71057e0c3",
-        "SprintPlanningPage.ExecuteMoveAsync()": "cb178ebf4ec1ff4ccdb81da049d1125bd2876084e8d3e2b1505768fa48ccb035",
+        "SprintPlanningPage.ExecuteMoveAsync()": "a314625109f6bd162233c174bccc7701268ca8b930d5aeed448b6914e3b72e23",
         "SprintPlanningPage.BuildTabs()": "6066c3421d1ddd02f8cb4b1a8c3cbd6d7d6b4aa4803a70bfbe65c5484a682ace",
         "SprintPlanningPage.RenderSummaryTab()": "49288cb9b8f1354643897c363a8ce467d4fac1e1a07a925cfe98b36bfe6036e7",
         "SprintPlanningPage.RenderPlannerTab()": "7d67644cb29fc2bfa3e70ba182eedfc6eca246488b22ab7d1bc99007fc231963",
@@ -33745,8 +33751,8 @@
         "SprintPlanningPage.GetStatusBadgeClass(TaskStatusEnum)": "4246b9db9b0feae9ec4635a09228950bf2d628cff04121658d3937aa76c5c801"
       }
     },
-    "Shared/TabContainerComp.razor.cs": {
-      "RelativePath": "Shared/TabContainerComp.razor.cs",
+    "Web/Components/Shared/TabContainerComp.razor.cs": {
+      "RelativePath": "Web/Components/Shared/TabContainerComp.razor.cs",
       "KnownMembers": [
         "\u003CLogger\u003Ek__BackingField",
         "TabContainerComp.Logger.field",
@@ -33816,8 +33822,8 @@
         "TabContainerComp.IsTabLoaded(string)": "193924591ab76622994acdbee2655fb2e7c2c895a1b1f134e9efcef62fe7e624"
       }
     },
-    "Shared/TabItemModel.cs": {
-      "RelativePath": "Shared/TabItemModel.cs",
+    "Web/Components/Shared/TabItemModel.cs": {
+      "RelativePath": "Web/Components/Shared/TabItemModel.cs",
       "KnownMembers": [
         "\u003CId\u003Ek__BackingField",
         "TabItemModel.Id.field",
@@ -33872,8 +33878,8 @@
       ],
       "MemberSyntaxHashes": {}
     },
-    "Infrastructure/Middleware/CorrelationIdMiddleware.cs": {
-      "RelativePath": "Infrastructure/Middleware/CorrelationIdMiddleware.cs",
+    "Web/Infrastructure/Middleware/CorrelationIdMiddleware.cs": {
+      "RelativePath": "Web/Infrastructure/Middleware/CorrelationIdMiddleware.cs",
       "KnownMembers": [
         "CorrelationHeader",
         "CorrelationIdMiddleware.CorrelationHeader",
@@ -33885,11 +33891,36 @@
         "CorrelationIdMiddleware.InvokeAsync(HttpContext, ICorrelationContext)"
       ],
       "MemberSyntaxHashes": {
-        "CorrelationIdMiddleware.InvokeAsync(HttpContext, ICorrelationContext)": "b29eca225bfe0934654075e1a750922164e43c081d34dc33b1dbd0614af79b9d"
+        "CorrelationIdMiddleware.InvokeAsync(HttpContext, ICorrelationContext)": "1eb8b432deaea8d47d74f22100a45e5594569646a9d0428bc531da05ed224e02"
       }
     },
-    "Infrastructure/Observability/WebExceptionHandler.cs": {
-      "RelativePath": "Infrastructure/Observability/WebExceptionHandler.cs",
+    "Web/Infrastructure/Observability/BlazorCircuitObservabilityHandler.cs": {
+      "RelativePath": "Web/Infrastructure/Observability/BlazorCircuitObservabilityHandler.cs",
+      "KnownMembers": [
+        "_logger",
+        "BlazorCircuitObservabilityHandler._logger",
+        "_correlationContext",
+        "BlazorCircuitObservabilityHandler._correlationContext",
+        ".ctor",
+        "BlazorCircuitObservabilityHandler.BlazorCircuitObservabilityHandler(ILogger\u003CBlazorCircuitObservabilityHandler\u003E, ICorrelationContext)",
+        "OnCircuitOpenedAsync",
+        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)",
+        "OnCircuitClosedAsync",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)",
+        "OnConnectionUpAsync",
+        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)",
+        "OnConnectionDownAsync",
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)"
+      ],
+      "MemberSyntaxHashes": {
+        "BlazorCircuitObservabilityHandler.OnCircuitOpenedAsync(Circuit, CancellationToken)": "4e2d0419f5fd1a29ab7f2876b3279a2b78ccd5b6abc9f76c1ceaea5231d21b75",
+        "BlazorCircuitObservabilityHandler.OnCircuitClosedAsync(Circuit, CancellationToken)": "b0ed2595adb2d1c97b8feab9e05ec8c45f52b6cd9f1f73483b1bc752b5447364",
+        "BlazorCircuitObservabilityHandler.OnConnectionUpAsync(Circuit, CancellationToken)": "72cee5400ac443ff218e5a0a0ba6f11c5e2782bc9592f68e481a8165d048c0ac",
+        "BlazorCircuitObservabilityHandler.OnConnectionDownAsync(Circuit, CancellationToken)": "b100404659ba5b04a0a89201e7c9a01ab2f8eccce29cffde753e40ecaffdc749"
+      }
+    },
+    "Web/Infrastructure/Observability/WebExceptionHandler.cs": {
+      "RelativePath": "Web/Infrastructure/Observability/WebExceptionHandler.cs",
       "KnownMembers": [
         "_logger",
         "WebExceptionHandler._logger",
@@ -33902,8 +33933,8 @@
         "WebExceptionHandler.TryHandleAsync(HttpContext, Exception, CancellationToken)": "d322a27b99c5ca4acec1bd68b216a03a3386e2246771c42a210a2185bfa6fa7e"
       }
     },
-    "Infrastructure/Security/AppCurrentUser.cs": {
-      "RelativePath": "Infrastructure/Security/AppCurrentUser.cs",
+    "Web/Infrastructure/Security/AppCurrentUser.cs": {
+      "RelativePath": "Web/Infrastructure/Security/AppCurrentUser.cs",
       "KnownMembers": [
         "_rootAdminService",
         "AppCurrentUser._rootAdminService",
@@ -34076,8 +34107,8 @@
         "AppCurrentUser.Clear()": "210cb5ec3785cfc04712816916059dfaa6540e697502850cc2f18e0713895fe3"
       }
     },
-    "Infrastructure/Security/CurrentUserAuthenticationStateProvider.cs": {
-      "RelativePath": "Infrastructure/Security/CurrentUserAuthenticationStateProvider.cs",
+    "Web/Infrastructure/Security/CurrentUserAuthenticationStateProvider.cs": {
+      "RelativePath": "Web/Infrastructure/Security/CurrentUserAuthenticationStateProvider.cs",
       "KnownMembers": [
         "_currentUser",
         "CurrentUserAuthenticationStateProvider._currentUser",
@@ -34095,8 +34126,8 @@
         "CurrentUserAuthenticationStateProvider.NotifyUserChanged()": "465725ff7afe2c425d518b86d44a0a353cb67bc8efb90efde8ff13bd2fe48969"
       }
     },
-    "Infrastructure/Security/UserSessionStorageData.cs": {
-      "RelativePath": "Infrastructure/Security/UserSessionStorageData.cs",
+    "Web/Infrastructure/Security/UserSessionStorageData.cs": {
+      "RelativePath": "Web/Infrastructure/Security/UserSessionStorageData.cs",
       "KnownMembers": [
         ".ctor",
         "UserSessionStorageData.UserSessionStorageData(Guid, string, string, string, Guid?, string?, DateTime?, Guid?)",
@@ -34725,10 +34756,10 @@
         "FileImportPage.OnFileTypeChanged(string?)": "fb9f9b2d3fb3a4ca36ef4e207647503d62dc24899d05e2767d6f29fdb054e772",
         "FileImportPage.HandleFileSelected(InputFileChangeEventArgs)": "55ca8ca1be29ee04fdf25fadf11dc39387237cb8761c827bf492edae9be94b2e",
         "FileImportPage.ClearSelectedFile()": "a75f51e4f3168b580e74c206006c00c692801ae6c07a7b737cbeadc016a3692d",
-        "FileImportPage.DownloadTemplateAsync()": "2b76613750e51411584cd7c5f5fe07ad40872a48501c4b474440ae49b4c94fc9",
+        "FileImportPage.DownloadTemplateAsync()": "7091125acc58d996f97949378468bbb46c9cdf649f87d65bf123e35d92081509",
         "FileImportPage.HandleBeforeInternalNavigation(LocationChangingContext)": "9bcff257af590b2a7965409e95c715e140adbe2228d1a9b239a95039e57c4ac3",
-        "FileImportPage.ImportAndStageFileAsync()": "b258ffef8d9fcf99e6ad87ade53bb141627be2f719012271cb5c0cdfe51ae415",
-        "FileImportPage.RefreshHistoryAsync()": "9f234c35b6274a7056f2997198d8618de64992482b2a4e726fd817052fe037be",
+        "FileImportPage.ImportAndStageFileAsync()": "af8a76d52190300520fea06cff597b88f97a24aba1394f6f7a2c502adb1fc4c7",
+        "FileImportPage.RefreshHistoryAsync()": "892e966fa8e7fe855ee6771acbc675a9406ec73c2a98559ce22249b406696840",
         "FileImportPage.ViewDiagnosticsAsync(Guid)": "754ec5d0cb1634421110dcd1557ccdf50855a463cef041250240899d5d698e01",
         "FileImportPage.PromptDelete(Guid)": "711f9d4e11e464ba902c810e77852864649af3e7a64fe2d0f7ff4ccf5617bcce",
         "FileImportPage.DeleteConfirmedAsync()": "b61bead965d65875473cc5e72371db870734742b343174dfcf26de2440709c89",
@@ -34959,10 +34990,10 @@
         "KnowledgeArticleEditPage.KnowledgeArticleEditPage()"
       ],
       "MemberSyntaxHashes": {
-        "KnowledgeArticleEditPage.OnInitializedAsync()": "f285c94e7729f142a290e11173525677d6b3f43db653503a53ee9f135ad769a4",
+        "KnowledgeArticleEditPage.OnInitializedAsync()": "1dc246239de5c6354c2612166098311fb1269895fc68bfd1cbc61ab472767632",
         "KnowledgeArticleEditPage.ToggleReviewer(string, bool)": "35562c169a9d92be15256339deca7d31372a2c16d999bbc4a4e4c8d4539f780c",
         "KnowledgeArticleEditPage.ValidateForm()": "9c5681bdc326b398d23d059c13f69175b63d388f5bd678d70634ee9e4c781ee3",
-        "KnowledgeArticleEditPage.SaveArticleAsync()": "2c1b47aed7720dcb0bc0d99c60426173d1e9c7d1e0b25f9f985663287b41829b",
+        "KnowledgeArticleEditPage.SaveArticleAsync()": "3bc491c15994ecece4b24a1da39d34c5f41ba2502af817b1760d7b167d0049bb",
         "KnowledgeArticleEditPage.HandleConflictReloadAsync()": "98473e2bca6cd02505fb723f85897dbac5d53f956ce3bad7b9f41b19fdce6ad4"
       }
     },
@@ -35126,8 +35157,8 @@
       ],
       "MemberSyntaxHashes": {
         "KnowledgeArticleViewPage.OnInitializedAsync()": "3e0f9182c8420a9fc96b9ffca826861bcaad6d847a7b59bfaeddd26e4b6cefc4",
-        "KnowledgeArticleViewPage.LoadArticleAsync()": "e0615f5a64c95cd3557320c9cb46f81b84bc87ec8a9d79b5f37bb698e9b361e7",
-        "KnowledgeArticleViewPage.ApproveArticleAsync()": "7d7d23cf9a5cd1a78e471ebc8b01b668045d85ef8bdf838fff24faeb05896258"
+        "KnowledgeArticleViewPage.LoadArticleAsync()": "78a2b7ee68bfd84411ebe9b58021bcdafaa6fe6416afa9950e451b2daadbd195",
+        "KnowledgeArticleViewPage.ApproveArticleAsync()": "33a8fd12362c88a07af3c4c143e844197c07cd25e9393f4309b776f93979b235"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor.cs": {
@@ -35284,14 +35315,14 @@
         "ProjectRoleManagementPage.OnInitializedAsync()": "a1de634c0183c609d4b14a7ae1362328a36a5e5d6c9050796612e69353e8681a",
         "ProjectRoleManagementPage.LoadTenantUsersAsync()": "4c74ffc78cc324be022d20595b2115813944d8aeb77f7e12bcb16b4778df6589",
         "ProjectRoleManagementPage.OnTenantUserSelected(string?)": "54a9814761de86dfe2f48982632691b87bd92e64b0fb3d0308ac17b547d51b5f",
-        "ProjectRoleManagementPage.LoadProjectsAsync()": "218ac0ded126012e4fc8533e04d59c077d4c0dd77085425d7c4862979e7e3d70",
+        "ProjectRoleManagementPage.LoadProjectsAsync()": "b7280c06b522815ff0c04d9f896fa4f295e4b4b8c329477d1c645323101bef61",
         "ProjectRoleManagementPage.OnProjectChanged(string?)": "5fdc00216bdd961d317a08dec693bd36bbc978dfadf38fd97b8ee62c0d7e009c",
-        "ProjectRoleManagementPage.LoadMembersAsync()": "8054ff888dfdf5e05ab86f1253a09c3e3ed1cc9d00b810cb4a1edf7c08a1ad61",
+        "ProjectRoleManagementPage.LoadMembersAsync()": "97f542288283ebf06391b163375ff1806f7dd6de02462b013de0be414e032e75",
         "ProjectRoleManagementPage.OpenAddModal()": "8bb13b2a3789161bad197d19a2d172a154055565e250cbaaac1679a49bc6e7b7",
         "ProjectRoleManagementPage.EditAssignment(ProjectUserRoleEntity)": "319eb1f27d2c15d1127d31c1d98f29047464075abbb7c00404370dc929daff1e",
         "ProjectRoleManagementPage.CancelModal()": "277877441ed1f6f14991831c0c59b323474a6eee6ee7b5c34bb3d0e7bfa6bfe7",
-        "ProjectRoleManagementPage.SaveAssignmentAsync()": "0a540ea762d02f5c05a7bf53a481101144646186a216f822223ecdf6dd04e8da",
-        "ProjectRoleManagementPage.RevokeAssignmentAsync(string)": "165e96667bd6cb1426651f97826e0803ba7d86713bab19ca7e687cf82958e620",
+        "ProjectRoleManagementPage.SaveAssignmentAsync()": "0d77cef789693237fd59bc7fc15c10065bf12c1af4ba040aadc7070d0d730988",
+        "ProjectRoleManagementPage.RevokeAssignmentAsync(string)": "091c3097c2815d24f64896b4878af32202d3248bd66e56768d5f9f13622cc12a",
         "ProjectRoleManagementPage.PromptImpersonation(ProjectUserRoleEntity)": "e4170bdfd529999482216550d1c1bf42a1e17be404bb3d9b807fa1a643b68c09",
         "ProjectRoleManagementPage.StartImpersonationAsync()": "4caaccdef529bdc573a258c789415a21e2308f44126de60287e54d6b230b2099"
       }
@@ -35914,399 +35945,399 @@
       "RelativePath": "Shared.UI/_Imports.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "366fe669c98b1f262154cb6f4cb46e0f3fb62d98608fe014ab840c756f07f519"
+        "$Markup": "7bc3f3a4f40d82d0787a2e7013cf0171147c6d39e25c00a9dbb0ab380313df88"
       }
     },
     "Shared.UI/Components/Badge/CskBadge.razor": {
       "RelativePath": "Shared.UI/Components/Badge/CskBadge.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e1c414693ad7ab5d4c714754250d73e8b460067c5335657f5268cb06d991d156"
+        "$Markup": "3ffe93900335ebc8707d134c09147de7113e11644be20408381e39f0dfdc2870"
       }
     },
     "Shared.UI/Components/Button/CskButton.razor": {
       "RelativePath": "Shared.UI/Components/Button/CskButton.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "22c5d3cc151f751500c6bb79b7a24566bd0ed5f5c291d2d4b0b6b66bfd87ee49"
+        "$Markup": "caa58e9dede676f0b1b112b1c14ce8ee4aab4b5a1780467da9f6d0e73c0fe9be"
       }
     },
     "Shared.UI/Components/Card/CskCard.razor": {
       "RelativePath": "Shared.UI/Components/Card/CskCard.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "316fd0987b762a89265e30a90036df09e8d514d2686dbe335663c65850e1d978"
+        "$Markup": "95fbd2025548604c3f94c6e1c09b245c4cb15429cfa8e5a06bb26c39afc5fcd4"
       }
     },
     "Shared.UI/Components/Checkbox/CskCheckbox.razor": {
       "RelativePath": "Shared.UI/Components/Checkbox/CskCheckbox.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "458950db4a768a61825088da29afb47e54a7c98699ce45ee0e92061cfc51e9cf"
+        "$Markup": "7f10ea02ab24a9e21ea094c9dd9341b7152a8e7fbe9abd29cf0b9c5cd5353357"
       }
     },
     "Shared.UI/Components/Common/CalendarScheduleComp.razor": {
       "RelativePath": "Shared.UI/Components/Common/CalendarScheduleComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4b903b6cc1a7c73ba742d6a7ab289b3cae1e03b17764f30aa1a659dd1a11e539"
+        "$Markup": "8226b4e3c4bb8638b8b223d571c237d9a75ba8f6cf7a321ceb2c13f64cb253b1"
       }
     },
     "Shared.UI/Components/Common/ConfirmDialogModal.razor": {
       "RelativePath": "Shared.UI/Components/Common/ConfirmDialogModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "54b63f8abc4f679587bb1558d8ac74f80e6e994f28ae07bce274728268a8d9a9"
+        "$Markup": "bc412d3c14f4dff04654f9f6783844afbe7abe398a71ecd07aeb653ec5335622"
       }
     },
     "Shared.UI/Components/Common/DataListSelect.razor": {
       "RelativePath": "Shared.UI/Components/Common/DataListSelect.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d396b7a8f5ca69bc024ac79d25dc9da0bc3e0d266fad94667a99af0554e54e6c"
+        "$Markup": "c59fd97eb6ada0d640195f5e9cd74c46bb00226d8287401b50ca1d4311a2a005"
       }
     },
     "Shared.UI/Components/Common/EmptyStateComp.razor": {
       "RelativePath": "Shared.UI/Components/Common/EmptyStateComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "1c6fd794e549a75754e049d8ae911d18e2ff2c9476152576a47d0ef471739677"
+        "$Markup": "42aae4ba67af8e9a2388810d8d9689db3421ceae4afdf10367b678a4a8e62cba"
       }
     },
     "Shared.UI/Components/Common/FormNavigationGuardComp.razor": {
       "RelativePath": "Shared.UI/Components/Common/FormNavigationGuardComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "7e6570d8a4058629fff5817f7210367b61b351906cc09bb4ccde77f681076440"
+        "$Markup": "8c3540436c56c626e62654c0e6dcc1029287f73c601979053d42e46cee071993"
       }
     },
     "Shared.UI/Components/Common/PageHeaderComp.razor": {
       "RelativePath": "Shared.UI/Components/Common/PageHeaderComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "2fd363c945377a7a5c9f3f84b9ea39ac934367c953700cc242cc37d6e29ed624"
+        "$Markup": "af4da26ef9db6f68840e6945d516e993e1c2c9edab51d757976aa8fa0217bf42"
       }
     },
     "Shared.UI/Components/Common/SwimlaneBoardComp.razor": {
       "RelativePath": "Shared.UI/Components/Common/SwimlaneBoardComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "6e06f8ea6e3cae0e55ecaceb579a980d63137578e65570afbe5be49e8ea5ac86"
+        "$Markup": "726ef981ddf4ed82f40de09a03e184bac118ed523cfbdeae98db90a2086fb627"
       }
     },
     "Shared.UI/Components/DataGrid/CskDataGrid.razor": {
       "RelativePath": "Shared.UI/Components/DataGrid/CskDataGrid.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "6bc2479307587ba898bf1b7b9e7c677fae00d39f3f73b4fb82faa8285fcd9d75"
+        "$Markup": "d7e6b4c5a1ce279ee15fb6ce17b12edd2f94b1437eced4855648c74df33afd8e"
       }
     },
     "Shared.UI/Components/DatePicker/CskDatePicker.razor": {
       "RelativePath": "Shared.UI/Components/DatePicker/CskDatePicker.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "161c31ee008dc6c1eb2b998b2515a78de4f3283723998bcdc8f8adaa3a76cf9d"
+        "$Markup": "c2c13c0725247994c4ba306be35284686e0cac07c13e3fb2c2a2cfa91e265ff8"
       }
     },
     "Shared.UI/Components/Dialog/CskDialog.razor": {
       "RelativePath": "Shared.UI/Components/Dialog/CskDialog.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "1019b459637c2b1d1389b69354d168ddc42afde4961b0c4272832866543268a9"
+        "$Markup": "490d4b6e2805e78fee586b02b322388007806dbf309d06234fa23dce5f0e2e28"
       }
     },
     "Shared.UI/Components/Dialog/CskDialogBody.razor": {
       "RelativePath": "Shared.UI/Components/Dialog/CskDialogBody.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "1d87a88d98db03c5d50d8658bcb7186facc524164f2cfe9834f383976ee1c782"
+        "$Markup": "42f06ad2d1394329b2b28dfaabf518f030d5e8346f6def573ffa170e535e0015"
       }
     },
     "Shared.UI/Components/Divider/CskDivider.razor": {
       "RelativePath": "Shared.UI/Components/Divider/CskDivider.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b35f279a3509cf021ab55fe3353881d54b75c474469fd0e2644ebcdf058e24d9"
+        "$Markup": "d29059eb9d0be52d3a8332c6336dbc52bc235a0441b4f04a7b28ffe113a98bba"
       }
     },
     "Shared.UI/Components/Grid/CskGrid.razor": {
       "RelativePath": "Shared.UI/Components/Grid/CskGrid.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ab192150de0ec3e28f7dfc0d1cae7cd6f769ce4806d8195261d52c7f3fb152ef"
+        "$Markup": "c9cca804888c70c54b31936cc6e6a745e580b1c407db89edf53e0477de80474b"
       }
     },
     "Shared.UI/Components/Grid/CskGridItem.razor": {
       "RelativePath": "Shared.UI/Components/Grid/CskGridItem.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f058395deffe7de5a2d24e270229b5f2030c73158a11878076f8100bc7d41ded"
+        "$Markup": "0909d0f5e9ea247b7ea4367c6eae5fa48674be42bb49c80c51bcd77441b73194"
       }
     },
     "Shared.UI/Components/Icons/CskIcon.razor": {
       "RelativePath": "Shared.UI/Components/Icons/CskIcon.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "10d8e6476c3fe2478fb80b390acc1e52e26c480d001236291ecf8ea36fb814fe"
+        "$Markup": "9ae6872f480e5b3d247a50a96095276bef4c4764ad81096e36af47ee8c075cd8"
       }
     },
     "Shared.UI/Components/Label/CskLabel.razor": {
       "RelativePath": "Shared.UI/Components/Label/CskLabel.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "86e8e23dd24fc15ed31b990867dfbc9dc90f47a1b4af4917f21d12d890f7b4de"
+        "$Markup": "c1c5992996b475eaf033dafa201b773b1a1202c875d48dbeb6de9a2a78379291"
       }
     },
     "Shared.UI/Components/Link/CskLink.razor": {
       "RelativePath": "Shared.UI/Components/Link/CskLink.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "171cd62ed1b4c3f7ed8eab9fe66f6236cab0bb774df012bc45bfb569af77e3b2"
+        "$Markup": "2d06f3e562024a7c0512920dde5a6cd9bef7981d9ec00a55994391dfa6180b10"
       }
     },
     "Shared.UI/Components/MessageBar/CskMessageBar.razor": {
       "RelativePath": "Shared.UI/Components/MessageBar/CskMessageBar.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "5c4231c8e4a90b9a4bc322a623cbe562101bd5483d7540bf78acab8d4475dc0a"
+        "$Markup": "f4c8a660e42497219eb1efa6ab0f1b0a44b0e94e73beb822d597284427cb083c"
       }
     },
     "Shared.UI/Components/MetricCard/CskMetricCard.razor": {
       "RelativePath": "Shared.UI/Components/MetricCard/CskMetricCard.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "2b6c3cdc0f4d2284ef85d24659ba050c224cf3b79b509a0e1f2f171e99d30a7f"
+        "$Markup": "866677c8c67d6733614cc73bc7050db25922c65fc505b3352b3cb1df9d9fe533"
       }
     },
     "Shared.UI/Components/ProgressBar/CskProgressBar.razor": {
       "RelativePath": "Shared.UI/Components/ProgressBar/CskProgressBar.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "739b1404b08b550a0bd49d1d9925d2278cd67f02070215c6f2261dc742421f80"
+        "$Markup": "51b5e592bb64093a9978fdc039c402159172eea2127210ac2fe28768de1217a5"
       }
     },
     "Shared.UI/Components/Radio/CskRadio.razor": {
       "RelativePath": "Shared.UI/Components/Radio/CskRadio.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "99740c75a5a0c4648e51ee582258decec8ce9f0a96262630b00e8a233e7e21b0"
+        "$Markup": "7f8f02328209cd4e8101b01a22e45c0c61c521d52348a418bc58c59fadadd6db"
       }
     },
     "Shared.UI/Components/Radio/CskRadioGroup.razor": {
       "RelativePath": "Shared.UI/Components/Radio/CskRadioGroup.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "417e9a4af87353d01849401f26cde1c913a15148960d2cca94ec9142bf2f1c8b"
+        "$Markup": "3c0b5d039548a6b4ec58e8c5cc73b658e6a9375aa5a22ff07acc7043c4ef86ba"
       }
     },
     "Shared.UI/Components/RichText/CskRichTextEditor.razor": {
       "RelativePath": "Shared.UI/Components/RichText/CskRichTextEditor.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "dbc4544d8560037045fb794841f92d7a84e370d7139b20d5cc36f7772491e07e"
+        "$Markup": "62bc18056330db865e7edda5e18e470d6bece7426873954455666355c81ef04e"
       }
     },
     "Shared.UI/Components/SectionHeader/CskSectionHeader.razor": {
       "RelativePath": "Shared.UI/Components/SectionHeader/CskSectionHeader.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "6b91807e02fa733c30ecbdfe1e3c43b18e712aa1b7bf91a204bfd1efde32d930"
+        "$Markup": "d84edc84fb0114ebb2f76b3bdd15c091aa6ab8bb31ca4511f892f61fc5eeb5d2"
       }
     },
     "Shared.UI/Components/Select/CskOption.razor": {
       "RelativePath": "Shared.UI/Components/Select/CskOption.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "15888a093b21eaca4741ed88eb6bcc8ca1a1a580947e9fe0cfc86bbb576de764"
+        "$Markup": "03b0b98117b2e18e65ae33a99b71874a339d47f7f9e72158e3e857701f7b1313"
       }
     },
     "Shared.UI/Components/Select/CskSelect.razor": {
       "RelativePath": "Shared.UI/Components/Select/CskSelect.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "14d203dafce4dc17499345bc517307951ea7d848a51cca5e8160d0c1d2f9b677"
+        "$Markup": "c5b8420ec617d88180c193231573daba71821f911599cc8b0afbc97c7c800634"
       }
     },
     "Shared.UI/Components/Spinner/CskSpinner.razor": {
       "RelativePath": "Shared.UI/Components/Spinner/CskSpinner.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b9b7b949a69fda42fe08b659378cb3150ba3b9dc393aedb177a9fdd759b3a533"
+        "$Markup": "f1942b4245d87aadbac129b6e78228053ffa72e024662d1aed027f44eca573cf"
       }
     },
     "Shared.UI/Components/Stack/CskSpacer.razor": {
       "RelativePath": "Shared.UI/Components/Stack/CskSpacer.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d3b658cb2a70240708c750394e1fb72bfe59adf0322910f1cf49f3b010bd12ca"
+        "$Markup": "34f9bfb02d42d6d236416dda43aaebf377833767dfc2ed8d84296b0dae600404"
       }
     },
     "Shared.UI/Components/Stack/CskStack.razor": {
       "RelativePath": "Shared.UI/Components/Stack/CskStack.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "95ee4672476b2a52e6bef4216cf723ac8e1fb72b6a8e6a462c3a6e5fb0fad8b7"
+        "$Markup": "e0de73a611497bab5b3c1635b754a0f412dbf4e807683cd9ecab7934e3dce59c"
       }
     },
     "Shared.UI/Components/StatusChip/CskStatusChip.razor": {
       "RelativePath": "Shared.UI/Components/StatusChip/CskStatusChip.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "087cdad785afcc6db1d0f8a66372e56dcb9025208113f75d0c2441a854c812af"
+        "$Markup": "d57e2d59f20471a1031638adc8c7f49e7c78c9d5a0cd6e835d1ed27b680dfabd"
       }
     },
     "Shared.UI/Components/Switch/CskSwitch.razor": {
       "RelativePath": "Shared.UI/Components/Switch/CskSwitch.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "91e749869b1b634dcbda590219b0e428fd46f33ae353d9391663a8d963ccdbf7"
+        "$Markup": "9d4a01240c72af8b4dd1f3f33ed74d6b69b802f34057cd1fdca9457ee1bee368"
       }
     },
     "Shared.UI/Components/Tabs/CskTabs.razor": {
       "RelativePath": "Shared.UI/Components/Tabs/CskTabs.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e5c2342798fd741812ce8554da180f1eb17f254a94b84072cecdf40e47ddb7fc"
+        "$Markup": "754cb583d12cf59730ef3a99a98c36c9f156c4d08c42ea0c113ea835d44b78db"
       }
     },
     "Shared.UI/Components/TagInput/CskTagInput.razor": {
       "RelativePath": "Shared.UI/Components/TagInput/CskTagInput.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "647a0346751e42393e5f476d5cb6fd084ac8791cd74d89fe7ab1d0d19c380142"
+        "$Markup": "6c0ed533578ff735f99bd7398decdd570bce7137eb536c37f85ab294c6a2efcf"
       }
     },
     "Shared.UI/Components/TextArea/CskTextArea.razor": {
       "RelativePath": "Shared.UI/Components/TextArea/CskTextArea.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "53bc0490dc094965f51dbcb99fd800d767bdddccda277c7aea3efa306547d025"
+        "$Markup": "d76cf84edbf84c058a2b81dfb76d091abd814ca38ae2509ab03fb6bc777806c6"
       }
     },
     "Shared.UI/Components/TextInput/CskTextInput.razor": {
       "RelativePath": "Shared.UI/Components/TextInput/CskTextInput.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "28b090d7f7c4658f65f7074a0bc95087f8b11de67582a6854ead76716a3d0183"
+        "$Markup": "5edf223426b3fd76d044bc86d03521a8d56c35c3269ee639a650ab19f665c80c"
       }
     },
     "Shared.UI/Components/TimelineView/CskTimelineView.razor": {
       "RelativePath": "Shared.UI/Components/TimelineView/CskTimelineView.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "570862fac3570a312c3ea915035948f2c216dede650019b39819ecb5ebaf499a"
+        "$Markup": "06068109998991a7a7050b6a7abb5065eee4213bd1ce6787ef2b1edd2d816e5b"
       }
     },
     "Shared.UI/Components/Tooltip/CskTooltip.razor": {
       "RelativePath": "Shared.UI/Components/Tooltip/CskTooltip.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "586bb31dbb5856bd12745cd1519293c306745cd23b39e6f50a10052c8615f9cf"
+        "$Markup": "dafb3ae97264c30e5e433b640e9472d09dc1487b83195068dce49a12eeffffe5"
       }
     },
     "Shared.UI/Wizards/CskWizardModal.razor": {
       "RelativePath": "Shared.UI/Wizards/CskWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4e2852636f97287d54737c75044e0d1023751586df5a03aceae3c3cae472da8c"
+        "$Markup": "42c4cba26c8d77a382117ed55fb73177547eb0a73043d464d8734c4d3fb3f35e"
       }
     },
     "Shared.UI/Wizards/WizardStep.razor": {
       "RelativePath": "Shared.UI/Wizards/WizardStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "886e535e1be86ba249cee1e71168e6fe1ddf1feebe38f0ccba29de0781da8dc9"
+        "$Markup": "c97e7e2dff51ebf797e6e0c0a9a4a686e2e008471a54b144df0642c9ff8b06c6"
       }
     },
     "Web/_Imports.razor": {
       "RelativePath": "Web/_Imports.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "38f48b2d48f00f9845f96ad331e5fed9367b1aa2bd87e8abacea3cf98157b5bf"
+        "$Markup": "5655f62344f424dc3bf283ef2a1439a0e3dacb696c6feedd99dc5e50b607eaa3"
       }
     },
     "Web/Components/App.razor": {
       "RelativePath": "Web/Components/App.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ebefd100be87fd698ae5ce32b048627eed0994753fb98ef658999607d9dea0b5"
+        "$Markup": "9d50c4ebb2857996ca41d8462c95ef88aa70e8cd417492e113b4ee8a724eec2d"
       }
     },
     "Web/Components/Common/AppErrorBoundaryComp.razor": {
       "RelativePath": "Web/Components/Common/AppErrorBoundaryComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "06d2cb24652c3bbcf8c1889942889932ac4854c7dd4a2dd42a376c8fb6c5c8a8"
+        "$Markup": "4fba765104572a596a2faa00f4cd1fbdd1a68d99a29edf0e1cf9c72b62cbabe6"
       }
     },
     "Web/Components/Common/ClearanceGate.razor": {
       "RelativePath": "Web/Components/Common/ClearanceGate.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "8fd0aa4d37775ed52582d83e8c2563906fe596befa7e18c476d275d9f80db998"
+        "$Markup": "7f64b244b5bc7737afda9df88b431739a886bc2760af8ea977b7037b85b4b6cc"
       }
     },
     "Web/Components/Common/ConcurrencyConflictDialog.razor": {
       "RelativePath": "Web/Components/Common/ConcurrencyConflictDialog.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4b2dd4f36f65d5e90f66aba174920b35fea209c3d0f2213dd90884594000413a"
+        "$Markup": "0d5fd39de96f232a9ea8367d3f44f886d885a0d86a873f0cbaeb773d113cd627"
       }
     },
     "Web/Components/Common/CreateWorkflowWizardModal.razor": {
       "RelativePath": "Web/Components/Common/CreateWorkflowWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "8b38baaa581e835be050fb94f89e1207b8288c0b77ccef2dee7fd4707010ed53"
+        "$Markup": "91fcda0a2e00369baa641178d6f817afc5c5e12f17b279826ed31bf093b6cf93"
       }
     },
     "Web/Components/Common/CskTenantUserPicker.razor": {
       "RelativePath": "Web/Components/Common/CskTenantUserPicker.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "77baa6b563cdd7c4c874babed6d43ab42c2693b6bdf7625cb0911a1a7216e6f1"
+        "$Markup": "147fdecca846421f3e1131ccfd30c96453a0a0cfe5dff9e292fce4e561f34bd5"
       }
     },
     "Web/Components/Common/EntityHistoryButton.razor": {
       "RelativePath": "Web/Components/Common/EntityHistoryButton.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "a293c3e09ace7971f1426462d3ca32114a755401a3d4ad380818bc518890806d"
+        "$Markup": "22e155ca691d9e344e9d33a4232c8f4d0a1fca4f74ffee818ddd4fe6eda08a56"
       }
     },
     "Web/Components/Common/EntityHistoryViewerDrawer.razor": {
       "RelativePath": "Web/Components/Common/EntityHistoryViewerDrawer.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "db66f81b28282efc865e42f4fec7f30fe2c05a5b5f7ee86b84ffcd7dbb262f68"
+        "$Markup": "a0191b1f0080ed8b0a777340e20d526f8ee00e294ef6257844afa2cf6f080580"
       }
     },
     "Web/Components/Common/ImpersonationBannerComp.razor": {
       "RelativePath": "Web/Components/Common/ImpersonationBannerComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "8661f72eec47bb171558f2117cc124c393bb6ca286f20da23a664aa25b75ea24"
+        "$Markup": "2864dd963c54a518e8ccce1f1271aabf997cb9b56c823f730dab8913a95bf1df"
       }
     },
     "Web/Components/Common/ObservabilityErrorBoundaryComp.razor": {
       "RelativePath": "Web/Components/Common/ObservabilityErrorBoundaryComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "860ca2cf7d5570e69b5d07502816685a92ab17923bafec5c4b041d3befbf3ee6"
+        "$Markup": "8a7436b0711a5a7011b6c464f472d26d0ece15c83e2395ee94a293f4a080d63f"
       }
     },
     "Web/Components/Common/ProjectAccessDeniedCardComp.razor": {
       "RelativePath": "Web/Components/Common/ProjectAccessDeniedCardComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "54c316a47461d99919db8dbf913140bb3af2fe8aba29c2aad0ffc7000131e445"
+        "$Markup": "10937dc35ea13cc7c7799c0027cc90fbe5c482648e5a2d115fa3f2fc14c09eb3"
       }
     },
     "Web/Components/Common/ProjectAuthorizeViewComp.razor": {
       "RelativePath": "Web/Components/Common/ProjectAuthorizeViewComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4caa83e9560cc86bcd5c12289c7daae37afbae5a3d9512eafa35d70be3b04b9f"
+        "$Markup": "2f37ce314a2b8ee6d4ebdec979249fbe0779c285bdf95832feac82aade3be937"
       }
     },
     "Web/Components/Common/RedirectToLogin.razor": {
@@ -36320,98 +36351,98 @@
       "RelativePath": "Web/Components/Common/RevisionToolbarComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "0e42b9076238276f96b831e2ce7a97fcdab5c4074d84aa33079992360d551239"
+        "$Markup": "345729127fb11577ec54349a33fc634bbd2b32a7e2cd89d9ae19873c37933954"
       }
     },
     "Web/Components/Common/SessionRevokedModal.razor": {
       "RelativePath": "Web/Components/Common/SessionRevokedModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e2fdeacccc2e5af26ee6d371c480ca394891a93b381f2fe6a3aadcc8b362f449"
+        "$Markup": "abd993ee7af7f25bd03935863cfbe6dd8d5357ac49b7fc2b4cd70e38f454b478"
       }
     },
     "Web/Components/Common/SessionTimeoutModal.razor": {
       "RelativePath": "Web/Components/Common/SessionTimeoutModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "145e2a4894e2ae9fdd7af0fd2a2510da3acddb4b20f3916bb4c42e943ea1b54e"
+        "$Markup": "9ef56f3357730c52926ee83521006910900f2152156b2480a9d3e2fefd663080"
       }
     },
     "Web/Components/Common/TaskDependencyLinkModal.razor": {
       "RelativePath": "Web/Components/Common/TaskDependencyLinkModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "33ae98177f8654674e99a2b8feecd865613f7c8b6475dc4f036019b7dcf4c067"
+        "$Markup": "8667ea02ebbb70d04ab77918bc6d75e31076aea5f86e574e4c314d9e2ca090a7"
       }
     },
     "Web/Components/Common/UserDateTime.razor": {
       "RelativePath": "Web/Components/Common/UserDateTime.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "807d0dab2b460b9c7f432b199c99675afd0a823b262d75035dfae9ba27ea92b2"
+        "$Markup": "20b06edb0fbc8e58048a4ef43e85511d4f1fc76c0d80a141bfda644830c6b8b2"
       }
     },
     "Web/Components/Common/WorkflowStepperComp.razor": {
       "RelativePath": "Web/Components/Common/WorkflowStepperComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e1baea9845be6c07232241c680217e78549020298cb06922efb9f92c814c24cf"
+        "$Markup": "4082c8cd1b18692a2129f21fd0d0c35ed68e026dbfbe22a2e96d22cd61a7f55c"
       }
     },
     "Web/Components/Dialogs/TaskCreationDialog.razor": {
       "RelativePath": "Web/Components/Dialogs/TaskCreationDialog.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "0dd6ac1aa32a767d9df452c746120723c0199749cc9370aea19ec40484317925"
+        "$Markup": "8d193fc75e934cd89c8861d6b99089b53a1b42aacc886e7de749aafb85fccbc5"
       }
     },
     "Web/Components/Dialogs/TaskTypeSelectionButton.razor": {
       "RelativePath": "Web/Components/Dialogs/TaskTypeSelectionButton.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "c7afa53e30e8b2f0410e6405fe322315859c6298d841a98bfc9acac557da297e"
+        "$Markup": "691626f03d483986add1af5f1747a3ec980d1ea4bc19109ee4eb63eb4f0f1f58"
       }
     },
     "Web/Components/Layout/CalendarQuickViewPopup.razor": {
       "RelativePath": "Web/Components/Layout/CalendarQuickViewPopup.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d208acd9c5aee2d62877191c74cb10584d32308b5963c5681329aa7a0872f599"
+        "$Markup": "a4d2bce494ffe08ce25d3ac41ab330457ece8c2830cda8e8ae4516edc06bf97d"
       }
     },
     "Web/Components/Layout/MainLayout.razor": {
       "RelativePath": "Web/Components/Layout/MainLayout.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b0a439db427a2cad1ae3bdc125c9d826abcc238c461bb7bd9415ece0711b4027"
+        "$Markup": "c6b3e21f1eda5ba2309f5e9edb3cf701dc6b9e312cf92312e345263d96d5f667"
       }
     },
     "Web/Components/Layout/NavMenuComp.razor": {
       "RelativePath": "Web/Components/Layout/NavMenuComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "464fe0f9f06ae58c259977a8d973b0aa598da7423dfa52e5ffb889229a703491"
+        "$Markup": "bc3d90e2c043bfc94409577b20826dfe78f0d5519b7937ee52cec7eae8fe0e0f"
       }
     },
     "Web/Components/Layout/NotificationBellPopup.razor": {
       "RelativePath": "Web/Components/Layout/NotificationBellPopup.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4c390a8d165de4bcb6e8f91df16b184422797b293e8f8e455f1bc694aee91294"
+        "$Markup": "456df7a2e94d77bececba89e511285322ea14d6573b5c0a0d049ae1e91e6b4e4"
       }
     },
     "Web/Components/Layout/PendingChangesIndicatorComp.razor": {
       "RelativePath": "Web/Components/Layout/PendingChangesIndicatorComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "bccd39e3eb34fd2df49493d93dff551573ef8cfa2f5734d45cb89be3810fc2de"
+        "$Markup": "1714882ba0ee162b81f74dfdf6f3b9b035e332e28acda6c76e604d967e7babca"
       }
     },
     "Web/Components/Layout/ProgramAndProjectSwitcherComp.razor": {
       "RelativePath": "Web/Components/Layout/ProgramAndProjectSwitcherComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "af417916675b2411ad8fa4dd18c89a2b3d351639d4bbc55a2164bd4654195a51"
+        "$Markup": "618545acc83569ad048cd8508861ae376ffde8bffa2626533559f6a1e35be1a4"
       }
     },
     "Web/Components/Layout/ReconnectModal.razor": {
@@ -36425,70 +36456,70 @@
       "RelativePath": "Web/Components/Layout/TenantAndProjectSwitcherComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "c39093e566b16855a33e459a402bfa5de19c276d262b1ec2ee207ed67f16bedd"
+        "$Markup": "ccdada77314bc3cf7e147d5a7612570a4dd05700213947ad6407824b4c5f4ce3"
       }
     },
     "Web/Components/Layout/TenantSwitcherComp.razor": {
       "RelativePath": "Web/Components/Layout/TenantSwitcherComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "10e0c601723047718b81de2f6e3192a8c377268820ce54125c8655400c67b94f"
+        "$Markup": "398d3f6dba09703f4623954655bd6f4e8716426fddcb42423394bb05532291c9"
       }
     },
     "Web/Components/Pages/AuthErrorPage.razor": {
       "RelativePath": "Web/Components/Pages/AuthErrorPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e812a4f6542a3cb3ca4d4b3f3c111bf9226541050d8884fe86d537d937829bea"
+        "$Markup": "8e8143356086f7b1730dacb4867bc8e94f989dbcbf323409226bcd47753deb21"
       }
     },
     "Web/Components/Pages/Dashboard/DashboardAuditTrail.razor": {
       "RelativePath": "Web/Components/Pages/Dashboard/DashboardAuditTrail.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "8f8b62d92b002e382adeb6d69316b860917262329bffbaf863d017b3a2d74b47"
+        "$Markup": "7f4f08ea6aaa6b0168ce43d04e9db44212e7766d375bf8d548fcbdad24a2fd64"
       }
     },
     "Web/Components/Pages/Dashboard/DashboardKanbanBoard.razor": {
       "RelativePath": "Web/Components/Pages/Dashboard/DashboardKanbanBoard.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "fe1defdb85178e02f120a1f253e0c72c528b4c00f719947c559608a3c1ff5f8c"
+        "$Markup": "e7f976ac38058bf345f2e8f1cd7e80551bcb17c4c099df3cdc9a294427c5b69a"
       }
     },
     "Web/Components/Pages/Dashboard/MyProjectsGrid.razor": {
       "RelativePath": "Web/Components/Pages/Dashboard/MyProjectsGrid.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "269ba645bfe1d345e5d3a5bb337bfff3cb8ee6a9d3b0cfd54cfb61148308432d"
+        "$Markup": "8194b43d0b366473df67f99d806987451747fbd07ca3b423bbf7cee55f46c750"
       }
     },
     "Web/Components/Pages/Dashboard/ProgramSummaryCard.razor": {
       "RelativePath": "Web/Components/Pages/Dashboard/ProgramSummaryCard.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e5fe3c121275f3cd2776c677e4e8e5ae47e56403d9571fec343e9a3cf9896fe3"
+        "$Markup": "c6605ce73f98d44ee9889e12df6d6c7f6d248c749ee7c7f089bfb9aa56c01302"
       }
     },
     "Web/Components/Pages/ErrorPage.razor": {
       "RelativePath": "Web/Components/Pages/ErrorPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "7f43aa3f523236d8de6b66ca1aee4344c5ad8929f693c9c6d18b1da78201008a"
+        "$Markup": "72c15657430cda8666c4266dda71e1373ae70ce00dfbba38a2253600ce6361d7"
       }
     },
     "Web/Components/Pages/HomePage.razor": {
       "RelativePath": "Web/Components/Pages/HomePage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f5e5d1a7ffc1353bbacead4dbf9d108d8443f42fd8fcb4dde7ad4caf66b60b7c"
+        "$Markup": "f2f3f21e5995959e1d10b831eae00e5a27bfce50e982bb31e5c1397f92aa24d0"
       }
     },
     "Web/Components/Pages/LoginPage.razor": {
       "RelativePath": "Web/Components/Pages/LoginPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e3593237e05b8de22be5098361fa95ef85391683fa8e165bbfddb0edbce996b1"
+        "$Markup": "a519e4b8c895bab3607858f8bfe77a02aaaf468737e37dadbe742fde058df8b7"
       }
     },
     "Web/Components/Pages/NotFoundPage.razor": {
@@ -36502,364 +36533,364 @@
       "RelativePath": "Web/Components/Pages/ProgramHolisticView.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "c73ff3da6010fbda13f90af284dd6d77600e13170357cdb0505c7f8dd406d3f3"
+        "$Markup": "b2afb6fa78642cdaf2706b6a5a79da7c1a0512fe2046c5c5911ad14efa6a2a81"
       }
     },
     "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewHomeTab.razor": {
       "RelativePath": "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewHomeTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "bbea2c2e9370cea200002f00a8ed4620b3771e4bbbad636b28aa0fb7d738a4ef"
+        "$Markup": "f7a591aeea288dfc08b3237a69228708022f7357ef1dc9060c819c051b35fdbc"
       }
     },
     "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewMilestoneTab.razor": {
       "RelativePath": "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewMilestoneTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "1f447046ad4373e2efa03a8c68e0ea75ff8db51c33bb23c5e63f161f55d8dd1a"
+        "$Markup": "94965cdab285f53a8a4f2fcce9454677e0bfe4ee0c73f7a80f6a4a5833370dba"
       }
     },
     "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewRaidLogTab.razor": {
       "RelativePath": "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewRaidLogTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4471230f1ad5a1133ff7cffe5e153909b52fca01e69ff71a2ecc326949ece502"
+        "$Markup": "09eed967f437c8637bf9bc77b9fcf6bbfd28c339146b2e9eb617275b8151f65a"
       }
     },
     "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewTimelineTab.razor": {
       "RelativePath": "Web/Components/Pages/ProgramHolisticView/ProgramHolisticViewTimelineTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "30a31cdb11f7d34b7ad7b0a9096a68d88b2c5f333947e02d67d417e6a944ea99"
+        "$Markup": "dadac3d759f812ff2dc6073bb52c6b2b46c34e2bd7f61d53c76f28cc16d579a2"
       }
     },
     "Web/Components/Pages/ProjectHolisticView.razor": {
       "RelativePath": "Web/Components/Pages/ProjectHolisticView.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "a18659f3f4c2e6ec85f0a268a1aafc6a933176761d8718d971cd29a4995065c9"
+        "$Markup": "61667a6dfee459d607e2cb2248855c1917f631f1bb9b26217d3e329fb29eef6d"
       }
     },
     "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor": {
       "RelativePath": "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewHomeTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "5d6792ec915cfe9c144f0b904d48feea76b880702ea6c300fd1d5af6e9c1c38a"
+        "$Markup": "3d0e9765bae3df9e37e9f79c70569f487b45a1ce94b3805a75ebf90ae1a89849"
       }
     },
     "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor": {
       "RelativePath": "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewMilestoneTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ae872eb1b2ca42de78b3df8ed5253b562e21d5426b8c8ad17dc6e39ffc05a7fa"
+        "$Markup": "f22f5edce2c2f98486f25b3be64ce9a5ee1eb2faf904549259d18fcf647daedc"
       }
     },
     "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewRaidLogTab.razor": {
       "RelativePath": "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewRaidLogTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "a918124dc729ae9949b85791927e58d1166075038d3a0d33f109a6d6cace56b8"
+        "$Markup": "8576e8360f97320a657d494ec88e201273ea296d090ef2fa3173a58ddaf3977e"
       }
     },
     "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor": {
       "RelativePath": "Web/Components/Pages/ProjectHolisticView/ProjectHolisticViewTimelineTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "3e7bca32d5164e94b6ba10c2762a6811f63de60eb29fa65b713d2ee7b4246349"
+        "$Markup": "4e2653642f66a0d683488e4b468212bfcdef1022fdce4420cf1d5edb954d73a5"
       }
     },
     "Web/Components/Pages/Resources/ResourceManagementPage.razor": {
       "RelativePath": "Web/Components/Pages/Resources/ResourceManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "18f2a4897c4325406afc003cf5f1d948ffbcfca86139a9514d4e9548b279a8c8"
+        "$Markup": "daf685c0c2d1678272823b626a71a7b9afbec81d34143fac30f8148fe00ee5a3"
       }
     },
     "Web/Components/Pages/Resources/ResourceSelectionModal.razor": {
       "RelativePath": "Web/Components/Pages/Resources/ResourceSelectionModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "3ebad1f688fd165022b646da1c3779a68f93b1075752c21bd5b4a6054005d80d"
+        "$Markup": "bdf3bc9881ca5ba4617ae248e852f85562a5005ef278b5f4ae7710f0de5be3a8"
       }
     },
     "Web/Components/Pages/Settings/ProgramWizard/CreateProgramWizardModal.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProgramWizard/CreateProgramWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "a22dbecb682fae77d9d9a5102ec454854299520380ba909333cb86d77f354e9a"
+        "$Markup": "cbaada1744ce14419383dd2ec119b473361b16a75e113158a45f96c62c52d247"
       }
     },
     "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramDetailsStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramDetailsStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "9fee75a6372b67e7fa583e8e4cadb03616d07fa8784ea6239ff052ad99aa7bb1"
+        "$Markup": "2197f5da2a8d9e4089318cf8287faa03b413a24744f36a26667ab4d27d887e1c"
       }
     },
     "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramMilestonesStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramMilestonesStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "bdb390857a69d3ec8c25578ed2e1cd67a7db9921be20409a52fc06b9790a2a27"
+        "$Markup": "d94dc1331cd607f8a51cd78d0bd9db232774718ce3e75edbb2ea0f93b7f5237e"
       }
     },
     "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramReviewStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramReviewStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "fe494288f45aca3442a8bce1bcb08c12bb314c369a88a742b51e650b560af60b"
+        "$Markup": "e016708475b3d0b077326bb143c02cd186bf38c88bc34e5e3b858c3dcf2a6687"
       }
     },
     "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramTimelineStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProgramWizard/Steps/ProgramTimelineStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "0f9fcbc96887465834a8b522c4e80f46c000f3d08a93bafad4abbd983169379f"
+        "$Markup": "7c80a34cb2b2e67c551b672ec0d1270fd8ccd6e1dc1b35d14d00a513931811be"
       }
     },
     "Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardModal.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/CreateProjectWizardModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "6bf44a116f6cb48bdedb494314730656e054a890743e42d8b96e456e50ee2b58"
+        "$Markup": "83e74c9a55d31ae11997100efd25e11690dd002aca3848eab0eb273f275752a3"
       }
     },
     "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectBasicDetailsStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectBasicDetailsStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "0b445da75ec5311a2383f28e68350d6184df5ef2ccecb55dc99acecf784a27ec"
+        "$Markup": "0523358fadbb0f34ac1e70959425e7dda9c184151f4fac245cb4b3afc081d796"
       }
     },
     "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectMilestoneCalendarStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectMilestoneCalendarStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "c59fc7fd68d2f13dd1a09fc009662856c8c8264b7d78aa32e0898767bf7716a5"
+        "$Markup": "65f861db183dd209bdfb7116e81331611ab6a60c70d1bef878255971a22a21b6"
       }
     },
     "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectReviewStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectReviewStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f91c252f070ec81b6b828b90ed2a862cd11f855448ec36f351c2204828b4d421"
+        "$Markup": "63fa8f4891c3c3aa83b1f13ca96367475c87aa657ad124f775010cbcf661cc26"
       }
     },
     "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTeamRosterStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTeamRosterStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ccf0a05c6c9b4782ea6e4e9dae78428be8ab8c1a3c9fe1163a3b1ef2d8d05211"
+        "$Markup": "7f2c360b5e8f512137ce5ec8f6ca776f7f4bc69fe3e0bde3a252858c26e74e96"
       }
     },
     "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTimelineStep.razor": {
       "RelativePath": "Web/Components/Pages/Settings/ProjectWizard/Steps/ProjectTimelineStep.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "62715d5b46cfc5cce60ae537df1cb86a93d2ea7052b51239e3652913dcea74a6"
+        "$Markup": "5324984d9c6a4d582e46bd0dc89235bb03a2f1d8c686716aa486ca31c1974543"
       }
     },
     "Web/Components/Pages/Settings/SettingsAuditTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsAuditTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d30a3391758bd82cc35223e79027b618a882b07aaddb8ebb383a6ec050f02faa"
+        "$Markup": "c8b4786896e47c2f29859c1408d1afcca9c8209c9660714fd7f98cd09ae806c2"
       }
     },
     "Web/Components/Pages/Settings/SettingsEventsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsEventsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "20b59bf0d0d251396cc705068240387deca7d35efb260e55c9fe0eaf1ac80d66"
+        "$Markup": "2fae8e96f81d842b391f0d7aac2291d750df978753ad4a9cc3c893c2eedad36c"
       }
     },
     "Web/Components/Pages/Settings/SettingsJobsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsJobsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "87682a2b8e9bb67e381799f42c1922ba3bf3096fb53efd4460372aea2371ed0f"
+        "$Markup": "6817826fcce60f39f4eb8639f67d9638ca107c4499a9555e44f8a0648cbffb23"
       }
     },
     "Web/Components/Pages/Settings/SettingsNotificationsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsNotificationsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "fab2a4cdc64c805ab013c73c3e68818adfb5e56a1ae0e2dc2a132aa960cb7dd4"
+        "$Markup": "133dbcaea345136b8611443dcb4748bef9b87d53afac1dc8dda9b9a023ff7a0f"
       }
     },
     "Web/Components/Pages/Settings/SettingsPage.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e66bf6b37b36722047d3de05d89deda7a7b9a600b17e5b3e7ec7872f5909f52f"
+        "$Markup": "27cd90cd216f0a3b2445f875d8fb7b0ff30019f41c6444cb3f9d4659522ea774"
       }
     },
     "Web/Components/Pages/Settings/SettingsProgramsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsProgramsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b5c3a88384cc652d3b4ea1192ee8d69756b77139940cdf67b15abf4b35c51231"
+        "$Markup": "00e8428cc6023070a16ca0e1cbf999cca0c019cec5530cae220bd8a8ee993a36"
       }
     },
     "Web/Components/Pages/Settings/SettingsRateCardTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsRateCardTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "ae1b73859444090bd7b229d59d9466284b1abb9512c6b6b9e447a1c67056cf5a"
+        "$Markup": "0fb800cea0ef14778a7c6194262678a287d5d6a62b727f006f9bb56d3f584bef"
       }
     },
     "Web/Components/Pages/Settings/SettingsSessionsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsSessionsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f8dbee9cb44a413d72860a9740b2c9562b7655e8846f2433d0d129a5b96034ca"
+        "$Markup": "7f02bed311fb72a4a9801a6c00494d2a781c47453f516385de81b202c4dae184"
       }
     },
     "Web/Components/Pages/Settings/SettingsSprintTimelineTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsSprintTimelineTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "36e252e2bbf36ce4df671f4153fd0ecdfe1ec517a57037ad9fa14a56368d2a58"
+        "$Markup": "465881ad1318914d0b0adc7093a3b88edc5ec6dc5dd556312b371083d1061d8d"
       }
     },
     "Web/Components/Pages/Settings/SettingsTenantsTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsTenantsTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "0077837bbb920320d3c27e69d65c9169539951b0b661a2c58650b7b3ac77049c"
+        "$Markup": "def05ba207eb716d0b116c396aea013a5c09dd718a6cbd3456ea7a62bab3f7d7"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsUserCalendarTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "f875a3defc1db1a68947c900329bd9243c382e44e3f33e68e6090d038563c53f"
+        "$Markup": "2d9e85f775eebcbc768e982ed3fba16c1ac2f9867789801eb9e8162e60222dd1"
       }
     },
     "Web/Components/Pages/Settings/SettingsUserTab.razor": {
       "RelativePath": "Web/Components/Pages/Settings/SettingsUserTab.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "82b57e8f5a9818677e85efc7cdba3af28b554bb61127219e848160f339dae52e"
+        "$Markup": "a39f1ded0cf8a753893376e7f6004c9f33e16dd64a419c55cabda6ef6954ef30"
       }
     },
     "Web/Components/Pages/Sprints/SprintPlanningPage.razor": {
       "RelativePath": "Web/Components/Pages/Sprints/SprintPlanningPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "9a7b9751f1324915612fbb69b3b1ab5a32fc4240bd4d29491ddedd12a64bc212"
+        "$Markup": "9f004183d17028c064fa6025c3ce25cfff75440555d3a2ab7b891e9708839d27"
       }
     },
     "Web/Components/Routes.razor": {
       "RelativePath": "Web/Components/Routes.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b5e45d63343ae0c0a5b94ddd2780f2e9e1819ff61f47e858789377b2d89ba2e3"
+        "$Markup": "e8a61ef72aa640f8736a63f4a9ae533d01a10c97d29af4aca084972a93633b35"
       }
     },
-    "Shared/TabContainerComp.razor": {
-      "RelativePath": "Shared/TabContainerComp.razor",
+    "Web/Components/Shared/TabContainerComp.razor": {
+      "RelativePath": "Web/Components/Shared/TabContainerComp.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "97a03b6b41a70263b0390711764c61166572cbe3f466197b657f535d869c71c2"
+        "$Markup": "5abee489b24bdef7c940f847d06a5076781ad1c528a32615788864e756daa42e"
       }
     },
     "Web/Modules/Events/Pages/EventTrackerDashboardPage.razor": {
       "RelativePath": "Web/Modules/Events/Pages/EventTrackerDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "549cbaf4f43c73d0f4b7ae023cc98f024e94efc8edbeeede6cf8e80121a7768b"
+        "$Markup": "879fbed46fae184300d6e358ba6bc9c1d3d75a00ce9c3ea49adb545dd1b8c700"
       }
     },
     "Web/Modules/Imports/Components/ImportErrorsModal.razor": {
       "RelativePath": "Web/Modules/Imports/Components/ImportErrorsModal.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b532161f6f47c00d9c6c9c4cca0c0d262d148dd781a887e3659707b86929276e"
+        "$Markup": "67f40c727113101f95967d54171edd48741c6ba83de0003c8ab2efd50f286b83"
       }
     },
     "Web/Modules/Imports/Pages/DocumentParsingReviewPage.razor": {
       "RelativePath": "Web/Modules/Imports/Pages/DocumentParsingReviewPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "d6463d861bd76e66deea2ee12df6ae2fe9c3b5adff2a12dc3c18e5c1691d1f43"
+        "$Markup": "059d6905759528f20e88662a60efa36016095ad9bfb29dbd2614b29f5499ba39"
       }
     },
     "Web/Modules/Imports/Pages/FileImportPage.razor": {
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "4b4f6cf0cfc46510843488755f421d03154c25397e596b945ae8e55669404632"
+        "$Markup": "84309597dece977f7c7c30a4aaeba381eb0764c7b0d88f5f30fe12dd98fb3ecf"
       }
     },
-    "Jobs/Pages/JobsDashboardPage.razor": {
-      "RelativePath": "Jobs/Pages/JobsDashboardPage.razor",
+    "Web/Modules/Jobs/Pages/JobsDashboardPage.razor": {
+      "RelativePath": "Web/Modules/Jobs/Pages/JobsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "17bd420fd171e593017ff0da2dd65bd00ffe3f6393682d817cc8530ce7846869"
+        "$Markup": "f57746aaea66b93bdcdb91199dd5e75615e8ee2cba8c3e121c00ebf73dd6d812"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor": {
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleEditPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "9e6984ea0b90d081024e3bb88560729b67e83ff408ccb7c30855fd537f5f5d87"
+        "$Markup": "aa4475e3bd7f8a1b4fef636386b086f84c248e0f692961bbafc555ae616b01c8"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor": {
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticlesListPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "e3a7f137412294e0da9e1ac1adaa2c7788663041e75ff9c8e2af4bb0c26d1f50"
+        "$Markup": "30967c42593ea4a7187c2b0f51d671f443f81e6262e1c7481255f3f68f22838f"
       }
     },
     "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleViewPage.razor": {
       "RelativePath": "Web/Modules/KnowledgeBase/Pages/KnowledgeArticleViewPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "dcd44ea324ea06c0dd836cf5263923bb287f2dafbc708cdcbbeedb1d789fe9f3"
+        "$Markup": "2a82ed5773d930a600a0de8af773625585c5495e04b53b2fd2d87d3386f2a17e"
       }
     },
     "Web/Modules/Tenancy/Pages/ActiveSessionsDashboardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ActiveSessionsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "bcb879a1a5ac2f1825e5552d5733a457c2b299a25a83b4789adb617ea07d0ba2"
+        "$Markup": "f17bec1abaf19b03f17a65406eee01af512f2539ddbad7da1eca82ed01211586"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectRoleManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "2fcc9d9a594cbeeaada2a7c369f7482ad199fa05c48282f5a4d13557cf2c3b8a"
+        "$Markup": "1a74ae608fc0efc4b210d6e62c6a9deeed7136ccd3299488d46d6a9aa6f89ceb"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectsDashboardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "140a57a2e8838b7c7077d7a2edbdebbf646ed3447e89610aee58bf3cc2f81a5d"
+        "$Markup": "2d89fe438c8a979e1bafd2638a4ba49334bf9ed49853789668f98a7b81e5667f"
       }
     },
     "Web/Modules/Tenancy/Pages/ProjectTasksBoardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/ProjectTasksBoardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "610cef753e1660cf460ea8ae65c74cf48fa364a5f9d444f5d6a2ced8ea45ac5a"
+        "$Markup": "a02ee099cb65d54ae4b4e12b5a2d66650495bc1031b03f5bd2a246f13af9a610"
       }
     },
     "Web/Modules/Tenancy/Pages/TenantManagementPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/TenantManagementPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "c7502aa49e17b54bc51bf28137f8ec4fc3106ae648315922df3aa0b02187676f"
+        "$Markup": "570a28eebec4d62a8f57e4946a66c6c7593c20a7dbc09eb654fa43b57567733a"
       }
     },
     "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor": {
       "RelativePath": "Web/Modules/Tenancy/Pages/WorkflowsDashboardPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "23fb8742fa710333085790a005907b7b186a0c35ea2f445a16b995abb38a8b4e"
+        "$Markup": "ec0011cf5c918c49f8eef2bde72dfa11cf2ee6baa46c018c654f8a134c8503d3"
       }
     },
     "Shared.UI/Components/Badge/CskBadge.razor.css": {
@@ -37132,14 +37163,14 @@
       "RelativePath": "Shared.UI/wwwroot/css/material-theme.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "5828f781ab9ce5c8776397b22b86c32cfd9b96cf95aa8ef18286736a4218db8d"
+        "$Content": "a7cfdf47ec91f7e50ef646f6975204665ee0a79aca45edd14771225b61d80c90"
       }
     },
     "Shared.UI/wwwroot/js/quill-interop.js": {
       "RelativePath": "Shared.UI/wwwroot/js/quill-interop.js",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Content": "82c8a1c1b747f0f6eb0a275efda8d2b5d86ef7574649b49cc853d6c8cf1cf221"
+        "$Content": "07f76938bc556df1b511a01473e3f3590c35cf591099acc0cc3c35f3e4a7a673"
       }
     },
     "Web/Components/Common/AppErrorBoundaryComp.razor.css": {
@@ -37555,8 +37586,8 @@
         "$Content": "9b688b5cf099f4ebd4fdb1bb8e1b9a20a1c8af9baeac7d2f477aa97560b0288b"
       }
     },
-    "Shared/TabContainerComp.razor.css": {
-      "RelativePath": "Shared/TabContainerComp.razor.css",
+    "Web/Components/Shared/TabContainerComp.razor.css": {
+      "RelativePath": "Web/Components/Shared/TabContainerComp.razor.css",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
         "$Content": "ad9ae154b8cf3dd3db45ee831e9f8d5cce5ae6eb09f0b982c9f7f4f93d4d4fc3"

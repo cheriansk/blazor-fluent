@@ -484,14 +484,16 @@ namespace TemplateGuard.Analyzers
                     return;
                 }
 
-                compilationContext.RegisterSymbolAction(ctx => AnalyzeMember(ctx, manifest),
+                var projectPrefix = ExtractProjectPrefix(assemblyName, manifest.Layers);
+
+                compilationContext.RegisterSymbolAction(ctx => AnalyzeMember(ctx, manifest, projectPrefix),
                     SymbolKind.Method, SymbolKind.Property, SymbolKind.Field);
 
-                compilationContext.RegisterAdditionalFileAction(fileCtx => AnalyzeAdditionalFile(fileCtx, manifest, assemblyName));
+                compilationContext.RegisterAdditionalFileAction(fileCtx => AnalyzeAdditionalFile(fileCtx, manifest, assemblyName, projectPrefix));
             });
         }
 
-        private void AnalyzeMember(SymbolAnalysisContext context, BaseManifestModel manifest)
+        private void AnalyzeMember(SymbolAnalysisContext context, BaseManifestModel manifest, string? projectPrefix)
         {
             var symbol = context.Symbol;
             var location = symbol.Locations.FirstOrDefault();
@@ -546,7 +548,7 @@ namespace TemplateGuard.Analyzers
                 if (symbol is IMethodSymbol methodSymbol && methodSymbol.DeclaringSyntaxReferences.Length > 0)
                 {
                     var syntax = methodSymbol.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken);
-                    var currentHash = ComputeSyntaxHash(syntax);
+                    var currentHash = ComputeSyntaxHash(syntax, projectPrefix);
 
                     string? baseHash = null;
                     if (matchedEntry.MemberSyntaxHashes.TryGetValue(memberKey, out baseHash) ||
@@ -567,9 +569,50 @@ namespace TemplateGuard.Analyzers
             }
         }
 
-        private static string ComputeSyntaxHash(SyntaxNode node)
+        private static string? ExtractProjectPrefix(string assemblyName, IList<string>? manifestLayers)
         {
+            if (string.IsNullOrWhiteSpace(assemblyName)) return null;
+            var candidates = (manifestLayers != null && manifestLayers.Count > 0 ? manifestLayers : DefaultLayers)
+                .Concat(new[] { "Worker" })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(l => l.Length);
+
+            foreach (var layer in candidates)
+            {
+                var suffix = "." + layer;
+                if (assemblyName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return assemblyName.Substring(0, assemblyName.Length - suffix.Length);
+                }
+            }
+
+            return null;
+        }
+
+        private static string NormalizeProjectTokens(string text, string? projectPrefix)
+        {
+            var result = Regex.Replace(text, "BlazorEnterprise", "__TEMPLATE_ROOT__", RegexOptions.IgnoreCase);
+            if (!string.IsNullOrWhiteSpace(projectPrefix) &&
+                !string.Equals(projectPrefix, "BlazorEnterprise", StringComparison.OrdinalIgnoreCase))
+            {
+                result = Regex.Replace(result, Regex.Escape(projectPrefix), "__TEMPLATE_ROOT__", RegexOptions.IgnoreCase);
+            }
+            return result;
+        }
+
+        private static string ComputeSyntaxHash(SyntaxNode node, string? projectPrefix = null)
+        {
+            if (node.ContainsDirectives)
+            {
+                var reparsedTree = CSharpSyntaxTree.ParseText(
+                    node.ToFullString(),
+                    new CSharpParseOptions(LanguageVersion.Latest, DocumentationMode.Parse));
+                var root = reparsedTree.GetRoot();
+                node = root.DescendantNodes().OfType<MethodDeclarationSyntax>().FirstOrDefault() ?? root;
+            }
+
             var normalized = node.NormalizeWhitespace().ToString().Replace("null !", "null!");
+            normalized = NormalizeProjectTokens(normalized, projectPrefix);
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(normalized));
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
@@ -581,8 +624,11 @@ namespace TemplateGuard.Analyzers
         private static string? NormalizeToLayerRelativePath(string fullPath, IList<string>? manifestLayers)
         {
             var normalized = fullPath.Replace('\\', '/');
-            IEnumerable<string> layers = (manifestLayers != null && manifestLayers.Count > 0) ? manifestLayers : DefaultLayers;
-            foreach (var layer in layers)
+            var orderedLayers = ((manifestLayers != null && manifestLayers.Count > 0) ? manifestLayers : DefaultLayers)
+                .OrderByDescending(l => l.Length)
+                .ToArray();
+
+            foreach (var layer in orderedLayers)
             {
                 var marker = "." + layer + "/";
                 var idx = normalized.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
@@ -590,9 +636,12 @@ namespace TemplateGuard.Analyzers
                 {
                     return layer + "/" + normalized.Substring(idx + marker.Length);
                 }
+            }
 
+            foreach (var layer in orderedLayers)
+            {
                 var directMarker = "/" + layer + "/";
-                idx = normalized.IndexOf(directMarker, StringComparison.OrdinalIgnoreCase);
+                var idx = normalized.IndexOf(directMarker, StringComparison.OrdinalIgnoreCase);
                 if (idx >= 0)
                 {
                     return layer + "/" + normalized.Substring(idx + directMarker.Length);
@@ -601,7 +650,7 @@ namespace TemplateGuard.Analyzers
             return null;
         }
 
-        private void AnalyzeAdditionalFile(AdditionalFileAnalysisContext context, BaseManifestModel manifest, string assemblyName)
+        private void AnalyzeAdditionalFile(AdditionalFileAnalysisContext context, BaseManifestModel manifest, string assemblyName, string? projectPrefix)
         {
             var file = context.AdditionalFile;
             var isRazor = file.Path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase);
@@ -629,7 +678,7 @@ namespace TemplateGuard.Analyzers
             if (text == null) return;
 
             var rawContent = text.ToString();
-            var currentHash = ComputeRazorHash(rawContent);
+            var currentHash = ComputeRazorHash(rawContent, projectPrefix);
 
             if (string.Equals(currentHash, baseHash, StringComparison.Ordinal)) return;
 
@@ -658,11 +707,11 @@ namespace TemplateGuard.Analyzers
             return match.Success && !string.IsNullOrWhiteSpace(match.Groups[1].Value);
         }
 
-        private static string ComputeRazorHash(string content)
+        private static string ComputeRazorHash(string content, string? projectPrefix = null)
         {
             var lines = content.Replace("\r\n", "\n").Split('\n')
                 .Select(l => l.TrimEnd());
-            var normalized = string.Join("\n", lines).Trim();
+            var normalized = NormalizeProjectTokens(string.Join("\n", lines).Trim(), projectPrefix);
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(normalized));
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
