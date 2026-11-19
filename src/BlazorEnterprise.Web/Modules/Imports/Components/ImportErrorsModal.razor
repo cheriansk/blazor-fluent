@@ -23,11 +23,11 @@
                                     ResizableColumns="true"
                                     TGridItem="FileValidationError"
                                     Class="w-full">
-                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet / Section" Width="130px" />
-                        <CskPropertyColumn Property="@(e => e.RowIndex)" Title="Row #" Width="80px" />
-                        <CskPropertyColumn Property="@(e => e.ColumnName)" Title="Column / Field" Width="140px" />
+                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet / Section" />
+                        <CskPropertyColumn Property="@(e => e.RowIndex)" Title="Row #" />
+                        <CskPropertyColumn Property="@(e => e.ColumnName)" Title="Column / Field" />
                         <CskPropertyColumn Property="@(e => e.ErrorMessage)" Title="Validation Message" />
-                        <CskPropertyColumn Property="@(e => e.AttemptedValue)" Title="Attempted Value" Width="140px" />
+                        <CskPropertyColumn Property="@(e => e.AttemptedValue)" Title="Attempted Value" />
                     </CskDataGrid>
                 </CskStack>
             }
