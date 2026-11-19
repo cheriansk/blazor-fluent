@@ -67,7 +67,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
                 return await ExtractAndStageZipAsync(_dbContext, file, decryptedStream, ct);
             }
 
-            if (ext is ".txt" or ".csv" or ".docx")
+            if (ext is ".txt" or ".csv" or ".docx" or ".xml" or ".json")
             {
                 return await StageRawSingleRowFileAsync(_dbContext, file, decryptedStream, ext, ct);
             }
@@ -804,7 +804,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         string payloadJson;
         int rowCount;
 
-        if (extension is ".txt" or ".csv")
+        if (extension is ".txt" or ".csv" or ".xml" or ".json")
         {
             var lines = new List<string>();
             using var reader = new StreamReader(decryptedStream, leaveOpen: true);
@@ -916,20 +916,92 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
             }
 
             var innerExt = Path.GetExtension(entry.Name).ToLowerInvariant();
-            if (innerExt is not (".txt" or ".csv" or ".json" or ".xml"))
+            if (innerExt is not (".xlsx" or ".csv" or ".docx" or ".xml" or ".txt" or ".json"))
             {
                 continue;
             }
 
-            var lines = new List<string>();
-            await using var entryStream = entry.Open();
-            using var reader = new StreamReader(entryStream, leaveOpen: false);
-            while (await reader.ReadLineAsync(ct) is { } line)
+            string payloadJson;
+            int rowCount;
+
+            if (innerExt == ".docx")
             {
-                if (!string.IsNullOrWhiteSpace(line))
+                using var ms = new MemoryStream();
+                await using (var entryStream = entry.Open())
                 {
-                    lines.Add(line);
+                    await entryStream.CopyToAsync(ms, ct);
                 }
+                ms.Position = 0;
+
+                var paragraphs = new List<string>();
+                var tables = new List<List<List<string>>>();
+                using var wordDoc = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Open(ms, false);
+                var body = wordDoc.MainDocumentPart?.Document?.Body;
+                if (body is not null)
+                {
+                    foreach (var p in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+                    {
+                        var text = p.InnerText?.Trim();
+                        if (!string.IsNullOrEmpty(text)) paragraphs.Add(text);
+                    }
+                    foreach (var tbl in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Table>())
+                    {
+                        var tableRows = new List<List<string>>();
+                        foreach (var row in tbl.Elements<DocumentFormat.OpenXml.Wordprocessing.TableRow>())
+                        {
+                            tableRows.Add(row.Elements<DocumentFormat.OpenXml.Wordprocessing.TableCell>()
+                                .Select(c => c.InnerText?.Trim() ?? string.Empty).ToList());
+                        }
+                        tables.Add(tableRows);
+                    }
+                }
+                rowCount = paragraphs.Count + tables.Sum(t => t.Count);
+                payloadJson = JsonSerializer.Serialize(new { Paragraphs = paragraphs, Tables = tables });
+            }
+            else if (innerExt == ".xlsx")
+            {
+                using var ms = new MemoryStream();
+                await using (var entryStream = entry.Open())
+                {
+                    await entryStream.CopyToAsync(ms, ct);
+                }
+                ms.Position = 0;
+
+                var xmlSettings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
+                var xlsxErrors = new List<FileValidationError>();
+                using var innerArchive = new ZipArchive(ms, ZipArchiveMode.Read, leaveOpen: true);
+                var (sheets, relsDoc, sharedStrings) = LoadExcelWorkbookMetadata(innerArchive, xmlSettings, xlsxErrors);
+                var sheetPayloads = new List<object>();
+                var totalRows = 0;
+
+                foreach (var sheet in sheets)
+                {
+                    var sheetRows = new List<Dictionary<string, string?>>();
+                    foreach (var (rowIndex, rowCells, _) in ReadExcelSheetRows(innerArchive, sheet, relsDoc, sharedStrings, xmlSettings, sheet.Name, xlsxErrors))
+                    {
+                        sheetRows.Add(rowCells);
+                    }
+                    totalRows += sheetRows.Count;
+                    sheetPayloads.Add(new { SheetName = sheet.Name, Rows = sheetRows });
+                }
+
+                rowCount = totalRows;
+                payloadJson = JsonSerializer.Serialize(new { Sheets = sheetPayloads });
+            }
+            else
+            {
+                var lines = new List<string>();
+                await using var entryStream = entry.Open();
+                using var reader = new StreamReader(entryStream, leaveOpen: false);
+                while (await reader.ReadLineAsync(ct) is { } line)
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        lines.Add(line);
+                    }
+                }
+                rowCount = lines.Count;
+                payloadJson = JsonSerializer.Serialize(new { Lines = lines });
             }
 
             stagedCount++;
@@ -944,10 +1016,10 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
                 SheetName = "Default",
                 ChunkIndex = stagedCount,
                 TotalChunks = 0,
-                RowCount = lines.Count,
+                RowCount = rowCount,
                 IsProcessed = false,
                 Status = "Staged",
-                PayloadJson = JsonSerializer.Serialize(new { Lines = lines })
+                PayloadJson = payloadJson
             });
         }
 
