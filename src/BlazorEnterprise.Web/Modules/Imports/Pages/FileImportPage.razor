@@ -217,7 +217,11 @@
                                     @context.ImportId.ToString()[..8]...
                                 </span>
                             </CskTemplateColumn>
-                            <CskPropertyColumn Property="@(f => f.OriginalFileName)" Title="File Name" Width="170px" />
+                            <CskTemplateColumn Title="File Name" Width="170px">
+                                <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => OpenFileStatusDialogAsync(context))">
+                                    @context.OriginalFileName
+                                </CskButton>
+                            </CskTemplateColumn>
                             <CskTemplateColumn Title="Format Specification" Width="140px">
                                 <CskBadge Variant="@BadgeAppearance.Outline">@context.FileType</CskBadge>
                             </CskTemplateColumn>
@@ -304,3 +308,46 @@
                     Message="Are you sure you want to delete this import record and its staged items?"
                     ConfirmLabel="Delete"
                     OnConfirmed="@DeleteConfirmedAsync" />
+
+<CskDialog @bind-IsOpen="_isFileStatusDialogOpen"
+           Title="@($"File Status: {_selectedStatusFile?.OriginalFileName}")"
+           Width="760px">
+    <ChildContent>
+        @if (_selectedStatusFile is not null)
+        {
+            <CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
+                <CskStack Orientation="CskOrientation.Horizontal" Gap="CskStackGap.Small">
+                    <CskBadge>
+                        @GetFriendlyFileStatus(_selectedStatusFile.Status)
+                    </CskBadge>
+                    @if (!string.IsNullOrWhiteSpace(_selectedStatusFile.ErrorMessage))
+                    {
+                        <CskMessageBar>@_selectedStatusFile.ErrorMessage</CskMessageBar>
+                    }
+                </CskStack>
+
+                @if (_isLoadingStagedEntries)
+                {
+                    <CskSpinner />
+                }
+                else if (_stagedEntries.Count == 0)
+                {
+                    <CskMessageBar>No staged entries recorded yet for this file.</CskMessageBar>
+                }
+                else
+                {
+                    <CskDataGrid Items="@_stagedEntries.AsQueryable()" TGridItem="StagedEntryStatusDto">
+                        <CskPropertyColumn Property="@(e => e.OriginalFileName)" Title="Entry / File" />
+                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet" Width="120px" />
+                        <CskPropertyColumn Property="@(e => e.RowCount)" Title="Rows" Width="80px" />
+                        <CskPropertyColumn Property="@(e => e.FriendlyStatus)" Title="Status" Width="130px" />
+                        <CskPropertyColumn Property="@(e => e.ErrorMessage)" Title="Error" />
+                    </CskDataGrid>
+                }
+            </CskStack>
+        }
+    </ChildContent>
+    <ActionTemplate>
+        <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _isFileStatusDialogOpen = false)">Close</CskButton>
+    </ActionTemplate>
+</CskDialog>

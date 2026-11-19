@@ -149,22 +149,31 @@ Always consult the 11 modular engineering skills before designing, writing, or r
 
 ---
 
-## 📦 9. File Import, Staging & Batch Processing Pipeline (`Stage 1 → Stage 2a → Stage 2b`)
-When adding a new `FileType` to be imported, staged, validated, and processed, follow this exact end-to-end architecture:
+## 📦 9. File Import, Staging & Batch Processing Pipeline (`Upload → Stage 1 → Stage 2a → Stage 2b`)
+Every file import batch MUST follow this exact end-to-end design and runtime lifecycle:
 
 1. **Enum & Domain Entity (`Shared`, `Core`, `Persistence`)**:
    - Add the new member to `ImportFileTypeEnum` in `BlazorEnterprise.Shared.DataListTypes` with `[Display(Name = "...")]`.
    - If the `FileType` targets a new domain table, create `<Name>Entity` (`TG007`, `TG008`, `TG027`), `<Name>EntityValidator` (`TG009`), `<Name>EntityConfiguration` (`TG010`), and add `DbSet<<Name>Entity>` to `AppDbContext`.
-2. **Stage 1 — Generic Raw Staging (`BlazorEnterprise.Jobs`)**:
+2. **Upload Phase (Fast & Decoupled)**:
+   - Store the encrypted file as-is in blob storage (`tenants/{tenantId}/projects/{projectId}/imports/{importFileId}{ext}`) and create **1 `ImportFileEntity` row** (`Status = Uploaded`).
+   - **Never** extract `.zip` archives or parse file contents during upload.
+3. **Stage 1 — Generic Raw Staging (`GenericTabularJsonBatchStager` in `BlazorEnterprise.Jobs`)**:
    - **Never create file-specific stagers.** All formats (`.xlsx`, `.csv`, `.txt`, `.docx`, `.zip`) use `GenericTabularJsonBatchStager`.
-   - Keep `staging.StagedImports` compact: 1 row per Excel sheet, 1 row per `.txt`/`.csv` file (`{"Lines": [...]}` without delimiter splitting), and 1 row per `.docx` file (`{"Paragraphs": [...], "Tables": [...]}`).
-3. **Stage 2a — AI / Document Parsing (`.docx` / unstructured files only, `BlazorEnterprise.Jobs`)**:
+   - Keep `staging.StagedImports` compact:
+     - `.xlsx`: 1 row per Excel sheet.
+     - `.txt` / `.csv`: 1 row per file (`{"Lines": [...]}` without delimiter splitting).
+     - `.docx`: 1 row per file (`{"Paragraphs": [...], "Tables": [...]}`).
+     - `.zip`: Extract in Stage 1 using `ZipExtractionRule` and write 1 `StagedImportEntity` row per inner file (`OriginalFileName` = relative path inside the archive).
+4. **Stage 2a — AI / Document Parsing (`.docx` / unstructured files only, `BlazorEnterprise.Jobs`)**:
    - `DocumentParsingService` / `DocumentParsingJobHandler` reads raw JSON from `staging.StagedImports`, extracts structured fields, and writes `app.DocumentParsingResults` (`Status = PendingReview`).
-4. **Pre-API Generic Schema Validation (`BlazorEnterprise.Shared` → `BlazorEnterprise.Jobs`)**:
-   - `StagedSchemaValidator` runs in `Jobs` **before** calling the Cloud API (for both non-extracted tabular files and extracted `.docx` files) to check required sheets/columns, not-null/not-empty values, and basic data types.
+5. **Pre-API Generic Schema Validation (`StagedSchemaValidator` in `BlazorEnterprise.Shared` → `Jobs`)**:
+   - `StagedSchemaValidator` runs in `Jobs` **before** calling the Cloud API (for both non-extracted tabular/delimited files and extracted `.docx` files) to check required sheets/columns, not-null/not-empty values, and basic data types.
    - Failures emit unified `FileValidationError(SheetName, RowIndex, ColumnName, ErrorMessage, AttemptedValue)` and halt before the API call.
-5. **Stage 2b — File-Specific Business Validation & Transform (`BlazorEnterprise.RulesEngine` + `BlazorEnterprise.Api`)**:
+6. **Stage 2b — File-Specific Business Validation & Transform (`BlazorEnterprise.RulesEngine` + `BlazorEnterprise.Api`)**:
    - Create `<Name>CloudProcessor : BaseCloudProcessor` in `BlazorEnterprise.RulesEngine/BatchProcessing/Processors/` and register it in `BlazorEnterprise.Api/Program.cs` (`AddSingleton<BaseCloudProcessor, <Name>CloudProcessor>()`).
    - Keep **only** file-specific business validations and proprietary transforms in `BaseCloudProcessor`, returning `ProcessBatchRespDto` with `ProcessedDomainRowDto[]` (or `FileValidationError[]`).
-6. **Local Domain Commit (`BlazorEnterprise.Jobs`)**:
+7. **Local Domain Commit (`BlazorEnterprise.Jobs`)**:
    - Create `<Name>BatchDomainCommitter : IBatchDomainCommitter` in `BlazorEnterprise.Jobs/FileImports/Committers/` to persist `ProcessedDomainRowDto[]` into PostgreSQL and mark `staging.StagedImports` rows `IsProcessed = true, Status = "Processed"`.
+8. **Import Status UI (`FileImportPage.razor`)**:
+   - Imported file names are clickable and open a `<CskDialog>` showing overall file status (`Imported`, `Staged`, `Stage Failed`, `Processed`, `Process Failed`) and per-staged-entry status from `staging.StagedImports`.

@@ -1,6 +1,8 @@
 using BlazorEnterprise.Shared.UI.Components;
+using Microsoft.EntityFrameworkCore;
 using BlazorEnterprise.Components.Common;
 using BlazorEnterprise.Core.Contracts;
+using BlazorEnterprise.Core.Domain.Imports;
 using BlazorEnterprise.Core.Domain.Tenancy;
 using BlazorEnterprise.Core.Dtos.Imports;
 using BlazorEnterprise.Core.Extensions;
@@ -320,6 +322,82 @@ public partial class FileImportPage : ComponentBase, IDisposable
             _statusMessage = result.Error;
         }
     }
+
+    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = default!;
+
+    private bool _isFileStatusDialogOpen;
+    private bool _isLoadingStagedEntries;
+    private ImportFileSummaryDto? _selectedStatusFile;
+    private List<StagedEntryStatusDto> _stagedEntries = [];
+
+    private async Task OpenFileStatusDialogAsync(ImportFileSummaryDto file)
+    {
+        _selectedStatusFile = file;
+        _stagedEntries = [];
+        _isFileStatusDialogOpen = true;
+        _isLoadingStagedEntries = true;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var rows = await db.StagedImports
+                .AsNoTracking()
+                .Where(s => s.ImportFileId == file.Id)
+                .OrderBy(s => s.ChunkIndex)
+                .Select(s => new
+                {
+                    s.OriginalFileName,
+                    s.SheetName,
+                    s.RowCount,
+                    s.Status,
+                    s.IsProcessed,
+                    s.ErrorMessage
+                })
+                .ToListAsync();
+
+            _stagedEntries = rows.Select(r => new StagedEntryStatusDto(
+                r.OriginalFileName,
+                r.SheetName,
+                r.RowCount,
+                MapStagedStatus(r.Status, r.IsProcessed),
+                r.ErrorMessage)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load staged entries for ImportFileId {ImportFileId}. CorrelationId: {CorrelationId}", file.Id, CorrelationContext.CorrelationId);
+        }
+        finally
+        {
+            _isLoadingStagedEntries = false;
+        }
+    }
+
+    private static string GetFriendlyFileStatus(ImportStatusEnum status) => status switch
+    {
+        ImportStatusEnum.Uploaded => "Imported",
+        ImportStatusEnum.Staging or ImportStatusEnum.StagingSuccess => "Staged",
+        ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed => "Stage Failed",
+        ImportStatusEnum.Completed => "Processed",
+        _ => status.ToString()
+    };
+
+    private static string MapStagedStatus(string status, bool isProcessed)
+    {
+        if (isProcessed || string.Equals(status, "Processed", StringComparison.OrdinalIgnoreCase))
+            return "Processed";
+        if (string.Equals(status, "Failed", StringComparison.OrdinalIgnoreCase))
+            return "Process Failed";
+        if (string.Equals(status, "ValidationFailed", StringComparison.OrdinalIgnoreCase))
+            return "Stage Failed";
+        return "Staged";
+    }
+
+    private sealed record StagedEntryStatusDto(
+        string OriginalFileName,
+        string SheetName,
+        int RowCount,
+        string FriendlyStatus,
+        string? ErrorMessage);
 
     private static string FormatBytes(long bytes)
     {
