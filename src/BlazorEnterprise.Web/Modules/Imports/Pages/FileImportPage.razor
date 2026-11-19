@@ -212,7 +212,7 @@
                                      ResizableColumns="true"
                                      TGridItem="ImportFileSummaryDto"
                                      Class="full-width">
-                            <CskTemplateColumn Title="Batch ID" Width="100px">
+                            <CskTemplateColumn Title="Batch ID">
                                 <span title="@context.ImportId.ToString()" class="mono-code">
                                     @context.ImportId.ToString()[..8]...
                                 </span>
@@ -222,15 +222,15 @@
                                     @context.OriginalFileName
                                 </CskButton>
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="Format Specification" Width="140px">
+                            <CskTemplateColumn Title="Format Specification">
                                 <CskBadge Variant="@BadgeAppearance.Outline">@context.FileType</CskBadge>
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="Pipeline Stage" Width="100px">
+                            <CskTemplateColumn Title="Pipeline Stage">
                                 <CskBadge Variant="@BadgeAppearance.Filled" Color="BadgeColor.Subtle">
                                     @(string.IsNullOrWhiteSpace(context.StepStage) ? "Uploaded" : context.StepStage)
                                 </CskBadge>
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="Status" Width="140px">
+                            <CskTemplateColumn Title="Status">
                                 @switch (context.Status)
                                 {
                                     case ImportStatusEnum.Uploaded:
@@ -268,13 +268,13 @@
                                         break;
                                 }
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="Metrics" Width="100px">
+                            <CskTemplateColumn Title="Metrics">
                                 <span>@context.ValidRowsCount / @context.TotalRowsCount ok</span>
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="Size" Width="80px">
+                            <CskTemplateColumn Title="Size">
                                 <span>@FormatBytes(context.FileSizeBytes)</span>
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="Actions" Width="130px">
+                            <CskTemplateColumn Title="Actions">
                                 <CskStack Orientation="CskOrientation.Horizontal" HorizontalGap="6">
                                     @if (context.Status is ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed or ImportStatusEnum.ProcessingFailed)
                                     {
