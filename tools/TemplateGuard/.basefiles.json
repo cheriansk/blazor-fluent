@@ -15393,7 +15393,7 @@
         "GenericTabularJsonBatchStager.ExcelSheetMetadata.Deconstruct(out string, out string)"
       ],
       "MemberSyntaxHashes": {
-        "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)": "c5215d40b6c8ba7547706c3609320c22e05666e8c7860a061bc3074e9a0734fd",
+        "GenericTabularJsonBatchStager.ValidateAndStageCanonicalJsonAsync(ImportFileEntity, Stream, FileTemplateConfig, CancellationToken)": "d075a9d49ad77b358d06059ed0c7fbe5492d596ec295c3bb4f2410aadf7029e0",
         "GenericTabularJsonBatchStager.IsExcelFormat(ImportFileEntity, FileTemplateConfig)": "3c07144754abd0b5085fbbdbe2038776e9bcf8cb9f591e9578ba749e6e51fc10",
         "GenericTabularJsonBatchStager.ValidateRow(int, string, IReadOnlyDictionary\u003Cstring, string?\u003E, IReadOnlyDictionary\u003Cstring, ColumnTemplateConfig\u003E, IReadOnlyList\u003Cstring\u003E, HashSet\u003Cstring\u003E, List\u003CFileValidationError\u003E)": "590e20ce18588c8108cc556cecbaa3944a57d20862ce225abf5898a3b8a6cd71",
         "GenericTabularJsonBatchStager.TryParseExcelOrIsoDate(string, out DateTime)": "2165277a9d55a889be6185a74dd09a1ca5ee258af1f4edbb1504ef793b915391",
@@ -15402,9 +15402,9 @@
         "GenericTabularJsonBatchStager.LoadExcelWorkbookMetadata(ZipArchive, XmlReaderSettings, List\u003CFileValidationError\u003E)": "a171d8c5f7a8afa175775273ced53fbb142d1cae03ada797063a3dd011dc09e4",
         "GenericTabularJsonBatchStager.ReadExcelSheetRows(ZipArchive, GenericTabularJsonBatchStager.ExcelSheetMetadata, XDocument?, IReadOnlyList\u003Cstring\u003E, XmlReaderSettings, string, List\u003CFileValidationError\u003E)": "0b4650a67b0bb8829f27743138226ce265d6fe64cd73ffd688322aa543109ad9",
         "GenericTabularJsonBatchStager.ParseExcelColumnIndex(string)": "bfcd1669b7166c7941c26600dd8f438d967eb7d4640dd14436617672bae00ac9",
-        "GenericTabularJsonBatchStager.StageRawSingleRowFileAsync(AppDbContext, ImportFileEntity, Stream, string, CancellationToken)": "f03cf89dbbc99d23b56a65a44ad2ec876623b1869ae7451664a85b6e9b53aa0a",
+        "GenericTabularJsonBatchStager.StageRawSingleRowFileAsync(AppDbContext, ImportFileEntity, Stream, string, CancellationToken)": "62ff6281770a4b6f2a98e56dbefe491ad24b8312af5ad6c2edd3096388c0c879",
         "GenericTabularJsonBatchStager.IsZipFileType(ImportFileTypeEnum)": "0566168324bccd8a2e973c59c40594498ffdc56a00fcc957eb56ec4933e9f47b",
-        "GenericTabularJsonBatchStager.ExtractAndStageZipAsync(AppDbContext, ImportFileEntity, Stream, CancellationToken)": "c7ff7665ad0cd3b046311859604be30b5d833403105efa4f1dcab1ca9745fca6"
+        "GenericTabularJsonBatchStager.ExtractAndStageZipAsync(AppDbContext, ImportFileEntity, Stream, CancellationToken)": "7d953312b846f6e3ef7f5dfb988917861619566fe75a16019dde645e736e4a24"
       }
     },
     "Jobs/FileImports/Staging/ICanonicalBatchStager.cs": {
