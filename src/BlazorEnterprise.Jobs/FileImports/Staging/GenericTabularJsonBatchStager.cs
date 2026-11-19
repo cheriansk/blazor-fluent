@@ -62,6 +62,11 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         if (!isExcel)
         {
             var ext = Path.GetExtension(file.OriginalFileName).ToLowerInvariant();
+            if (ext == ".zip" || IsZipFileType(file.FileType))
+            {
+                return await ExtractAndStageZipAsync(_dbContext, file, decryptedStream, ct);
+            }
+
             if (ext is ".txt" or ".csv" or ".docx")
             {
                 return await StageRawSingleRowFileAsync(_dbContext, file, decryptedStream, ext, ct);
@@ -883,6 +888,83 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         }
 
         return Result<int>.Success(1);
+    }
+
+    private static bool IsZipFileType(ImportFileTypeEnum fileType) =>
+        fileType.ToString().EndsWith("Zip", StringComparison.OrdinalIgnoreCase);
+
+    private static async Task<Result<int>> ExtractAndStageZipAsync(
+        AppDbContext dbContext,
+        ImportFileEntity file,
+        Stream decryptedStream,
+        CancellationToken ct)
+    {
+        if (decryptedStream.CanSeek)
+        {
+            decryptedStream.Position = 0;
+        }
+
+        using var archive = new ZipArchive(decryptedStream, ZipArchiveMode.Read, leaveOpen: true);
+        var stagedCount = 0;
+
+        foreach (var entry in archive.Entries)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (string.IsNullOrEmpty(entry.Name))
+            {
+                continue;
+            }
+
+            var innerExt = Path.GetExtension(entry.Name).ToLowerInvariant();
+            if (innerExt is not (".txt" or ".csv" or ".json" or ".xml"))
+            {
+                continue;
+            }
+
+            var lines = new List<string>();
+            await using var entryStream = entry.Open();
+            using var reader = new StreamReader(entryStream, leaveOpen: false);
+            while (await reader.ReadLineAsync(ct) is { } line)
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    lines.Add(line);
+                }
+            }
+
+            stagedCount++;
+            dbContext.StagedImports.Add(new StagedImportEntity
+            {
+                TenantId = file.TenantId,
+                ProjectId = file.ProjectId,
+                ImportId = file.ImportId,
+                ImportFileId = file.Id,
+                FileType = file.FileType.ToString(),
+                OriginalFileName = entry.FullName,
+                SheetName = "Default",
+                ChunkIndex = stagedCount,
+                TotalChunks = 0,
+                RowCount = lines.Count,
+                IsProcessed = false,
+                Status = "Staged",
+                PayloadJson = JsonSerializer.Serialize(new { Lines = lines })
+            });
+        }
+
+        file.Status = ImportStatusEnum.Staging;
+        file.StepStage = "Stage";
+
+        dbContext.IsTransactionScopeCommitAuthorized = true;
+        try
+        {
+            await dbContext.SaveChangesAsync(ct);
+        }
+        finally
+        {
+            dbContext.IsTransactionScopeCommitAuthorized = false;
+        }
+
+        return Result<int>.Success(stagedCount);
     }
 
     private sealed record SheetProcessingPlan(
