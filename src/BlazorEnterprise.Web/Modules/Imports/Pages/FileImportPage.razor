@@ -217,7 +217,7 @@
                                     @context.ImportId.ToString()[..8]...
                                 </span>
                             </CskTemplateColumn>
-                            <CskTemplateColumn Title="File Name" Width="170px">
+                            <CskTemplateColumn Title="File Name">
                                 <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => OpenFileStatusDialogAsync(context))">
                                     @context.OriginalFileName
                                 </CskButton>
@@ -310,8 +310,7 @@
                     OnConfirmed="@DeleteConfirmedAsync" />
 
 <CskDialog @bind-IsOpen="_isFileStatusDialogOpen"
-           Title="@($"File Status: {_selectedStatusFile?.OriginalFileName}")"
-           Width="760px">
+           Title="@($"File Status: {_selectedStatusFile?.OriginalFileName}")">
     <ChildContent>
         @if (_selectedStatusFile is not null)
         {
@@ -338,9 +337,9 @@
                 {
                     <CskDataGrid Items="@_stagedEntries.AsQueryable()" TGridItem="StagedEntryStatusDto">
                         <CskPropertyColumn Property="@(e => e.OriginalFileName)" Title="Entry / File" />
-                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet" Width="120px" />
-                        <CskPropertyColumn Property="@(e => e.RowCount)" Title="Rows" Width="80px" />
-                        <CskPropertyColumn Property="@(e => e.FriendlyStatus)" Title="Status" Width="130px" />
+                        <CskPropertyColumn Property="@(e => e.SheetName)" Title="Sheet" />
+                        <CskPropertyColumn Property="@(e => e.RowCount)" Title="Rows" />
+                        <CskPropertyColumn Property="@(e => e.FriendlyStatus)" Title="Status" />
                         <CskPropertyColumn Property="@(e => e.ErrorMessage)" Title="Error" />
                     </CskDataGrid>
                 }
