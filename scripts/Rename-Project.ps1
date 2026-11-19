@@ -417,15 +417,25 @@ if ($Mode -eq "ClientDistribution") {
 # =============================================================================
 Write-Host "=== Phase 4.6: Purging Template Authoring Generator & Analyzer Projects ===" -ForegroundColor Cyan
 
-# 0. Consumers consume pre-built TemplateGuard artifacts (.basefiles.json, TemplateGuard.Analyzers.dll, *.nupkg).
+# 0. Consumers consume pre-built TemplateGuard NuGet package (*.nupkg, which embeds .basefiles.json & TemplateGuard.Analyzers.dll).
 #    Authoring projects (tools/src/) and authoring build scripts are purged without recompilation.
 $tgOutDir       = Join-Path $RepoRoot "tools\TemplateGuard"
 $manifestPath   = Join-Path $tgOutDir ".basefiles.json"
 $analyzerDll    = Join-Path $tgOutDir "TemplateGuard.Analyzers.dll"
-if ((Test-Path $manifestPath) -and (Test-Path $analyzerDll)) {
-    Write-Host "  Using pre-built TemplateGuard governance artifacts (.basefiles.json, TemplateGuard.Analyzers.dll)." -ForegroundColor Green
+$nupkgFiles     = Get-ChildItem -Path $tgOutDir -Filter "*.nupkg" -File -ErrorAction SilentlyContinue
+if ($nupkgFiles.Count -gt 0) {
+    Write-Host "  Using pre-built TemplateGuard NuGet package ($($nupkgFiles[0].Name))." -ForegroundColor Green
 } else {
-    Write-Host "  [WARN] Pre-built TemplateGuard artifacts not found in tools/TemplateGuard. Governance baseline may be missing." -ForegroundColor Yellow
+    Write-Host "  [WARN] Pre-built TemplateGuard *.nupkg not found in tools/TemplateGuard. Governance baseline may be missing." -ForegroundColor Yellow
+}
+
+foreach ($looseFile in @($manifestPath, $analyzerDll)) {
+    if (Test-Path $looseFile) {
+        if (-not $DryRun) {
+            Set-ItemProperty -Path $looseFile -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue
+            Remove-Item -Path $looseFile -Force
+        }
+    }
 }
 
 # 1. Clean up TemplateGuard source projects (Tool & Analyzers) so downstream only consumes the compiled DLL

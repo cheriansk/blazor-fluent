@@ -374,9 +374,9 @@ public partial class FileImportPage : ComponentBase, IDisposable
 
     private static string GetFriendlyFileStatus(ImportStatusEnum status) => status switch
     {
-        ImportStatusEnum.Uploaded => "Imported",
-        ImportStatusEnum.Staging or ImportStatusEnum.StagingSuccess => "Staged",
-        ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed => "Stage Failed",
+        ImportStatusEnum.Uploaded => "Uploaded",
+        ImportStatusEnum.Staging or ImportStatusEnum.StagingSuccess => "Imported",
+        ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed => "Import Failed",
         ImportStatusEnum.Completed => "Processed",
         _ => status.ToString()
     };

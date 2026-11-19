@@ -1015,7 +1015,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
                 OriginalFileName = entry.FullName,
                 SheetName = "Default",
                 ChunkIndex = stagedCount,
-                TotalChunks = 0,
+                TotalChunks = 1,
                 RowCount = rowCount,
                 IsProcessed = false,
                 Status = "Staged",
