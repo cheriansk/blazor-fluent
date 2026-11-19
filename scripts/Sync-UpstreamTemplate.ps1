@@ -381,21 +381,13 @@ switch ($Mode) {
                 Write-Host "  [UPDATED] $uf" -ForegroundColor Cyan
             }
 
-            # 3. Synchronize TemplateGuard Artifacts
-            $stagedManifest = Join-Path $stagingDir "tools\TemplateGuard\.basefiles.json"
-            $destManifest = Join-Path $DownstreamFolder "tools\TemplateGuard\.basefiles.json"
-            if (Test-Path $stagedManifest) {
-                if (Test-Path $destManifest) { Set-ItemProperty -Path $destManifest -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue }
-                Copy-Item -Path $stagedManifest -Destination $destManifest -Force
-                Set-ItemProperty -Path $destManifest -Name IsReadOnly -Value $true
-                Write-Host "  [GOVERNANCE] Updated and locked tools/TemplateGuard/.basefiles.json" -ForegroundColor Green
-            }
-
-            $stagedAnalyzerDll = Join-Path $stagingDir "tools\TemplateGuard\TemplateGuard.Analyzers.dll"
-            $destAnalyzerDll = Join-Path $DownstreamFolder "tools\TemplateGuard\TemplateGuard.Analyzers.dll"
-            if (Test-Path $stagedAnalyzerDll) {
-                Copy-Item -Path $stagedAnalyzerDll -Destination $destAnalyzerDll -Force
-                Write-Host "  [GOVERNANCE] Updated tools/TemplateGuard/TemplateGuard.Analyzers.dll" -ForegroundColor Green
+            # 3. Synchronize TemplateGuard NuGet Package (remove loose .basefiles.json & TemplateGuard.Analyzers.dll)
+            foreach ($looseName in @(".basefiles.json", "TemplateGuard.Analyzers.dll")) {
+                $looseDest = Join-Path $DownstreamFolder "tools\TemplateGuard\$looseName"
+                if (Test-Path $looseDest) {
+                    Set-ItemProperty -Path $looseDest -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue
+                    Remove-Item -Path $looseDest -Force
+                }
             }
 
             # Purge any stale or misnamed downstream nupkg packages before copying clean upstream packages

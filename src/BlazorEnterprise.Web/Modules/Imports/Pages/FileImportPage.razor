@@ -309,9 +309,13 @@
                     ConfirmLabel="Delete"
                     OnConfirmed="@DeleteConfirmedAsync" />
 
-<CskDialog @bind-IsOpen="_isFileStatusDialogOpen"
-           Title="@($"File Status: {_selectedStatusFile?.OriginalFileName}")">
-    <ChildContent>
+@if (_isFileStatusDialogOpen)
+{
+    <CskDialog>
+        <TitleTemplate>
+            File Status: @_selectedStatusFile?.OriginalFileName
+        </TitleTemplate>
+        <ChildContent>
         @if (_selectedStatusFile is not null)
         {
             <CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
@@ -350,3 +354,4 @@
         <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _isFileStatusDialogOpen = false)">Close</CskButton>
     </ActionTemplate>
 </CskDialog>
+}

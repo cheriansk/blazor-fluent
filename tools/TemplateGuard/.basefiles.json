@@ -15404,7 +15404,7 @@
         "GenericTabularJsonBatchStager.ParseExcelColumnIndex(string)": "bfcd1669b7166c7941c26600dd8f438d967eb7d4640dd14436617672bae00ac9",
         "GenericTabularJsonBatchStager.StageRawSingleRowFileAsync(AppDbContext, ImportFileEntity, Stream, string, CancellationToken)": "62ff6281770a4b6f2a98e56dbefe491ad24b8312af5ad6c2edd3096388c0c879",
         "GenericTabularJsonBatchStager.IsZipFileType(ImportFileTypeEnum)": "0566168324bccd8a2e973c59c40594498ffdc56a00fcc957eb56ec4933e9f47b",
-        "GenericTabularJsonBatchStager.ExtractAndStageZipAsync(AppDbContext, ImportFileEntity, Stream, CancellationToken)": "7d953312b846f6e3ef7f5dfb988917861619566fe75a16019dde645e736e4a24"
+        "GenericTabularJsonBatchStager.ExtractAndStageZipAsync(AppDbContext, ImportFileEntity, Stream, CancellationToken)": "2476f1ecbdfce0fbac34e18e8a5ca5ac84e20f26bebce76e11c16a0f5cbf0bce"
       }
     },
     "Jobs/FileImports/Staging/ICanonicalBatchStager.cs": {
@@ -35305,7 +35305,7 @@
         "FileImportPage.PromptDelete(Guid)": "711f9d4e11e464ba902c810e77852864649af3e7a64fe2d0f7ff4ccf5617bcce",
         "FileImportPage.DeleteConfirmedAsync()": "b61bead965d65875473cc5e72371db870734742b343174dfcf26de2440709c89",
         "FileImportPage.OpenFileStatusDialogAsync(ImportFileSummaryDto)": "255f7770e797c95dba72540a61d86e43d2f2d99136dbaded55cef538683e9223",
-        "FileImportPage.GetFriendlyFileStatus(ImportStatusEnum)": "b214bf5d51b093b86e7191a32a1cde5556ad74f0c10e4478929f3380b1f837f0",
+        "FileImportPage.GetFriendlyFileStatus(ImportStatusEnum)": "eadb35dca07b5a04494cb492c7b7a0a10d4a845e9f72abaffbbd50d335471c12",
         "FileImportPage.MapStagedStatus(string, bool)": "db8927974a5ec4107a11b008db86169571326e0f026da172bf4761963ae388ef",
         "FileImportPage.FormatBytes(long)": "51ac77aefe8adc0ca238aefb7d553c65f997ca2fb3369d2182e058444b4f6cf6"
       }
@@ -37364,7 +37364,7 @@
       "RelativePath": "Web/Modules/Imports/Pages/FileImportPage.razor",
       "KnownMembers": [],
       "MemberSyntaxHashes": {
-        "$Markup": "b9786ccf79fc3953a96584cba1cb1047f56b62c5c4c93dcab6d9ab36b20fd48d"
+        "$Markup": "0153ec2dedfc87a922c1ea05b24292cf507ba2bc9c79013703864b173b7a12f2"
       }
     },
     "Web/Modules/Jobs/Pages/JobsDashboardPage.razor": {
