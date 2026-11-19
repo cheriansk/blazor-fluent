@@ -422,7 +422,7 @@ Write-Host "=== Phase 4.6: Purging Template Authoring Generator & Analyzer Proje
 $tgOutDir       = Join-Path $RepoRoot "tools\TemplateGuard"
 $manifestPath   = Join-Path $tgOutDir ".basefiles.json"
 $analyzerDll    = Join-Path $tgOutDir "TemplateGuard.Analyzers.dll"
-$nupkgFiles     = Get-ChildItem -Path $tgOutDir -Filter "*.nupkg" -File -ErrorAction SilentlyContinue
+$nupkgFiles     = @(Get-ChildItem -Path $tgOutDir -Filter "*.nupkg" -File -ErrorAction SilentlyContinue)
 if ($nupkgFiles.Count -gt 0) {
     Write-Host "  Using pre-built TemplateGuard NuGet package ($($nupkgFiles[0].Name))." -ForegroundColor Green
 } else {
