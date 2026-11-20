@@ -1,0 +1,49 @@
+@* [NEED-HUMAN-REVIEW] *@
+@page "/imports/staged"
+@using BlazorEnterprise.Shared.UI.Components
+@inherits AuthorizedPageComponentBase
+
+<PageTitle>Staged Imports</PageTitle>
+
+<CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
+    <CskStack Orientation="CskOrientation.Horizontal" Gap="CskStackGap.Small">
+        <CskButton Variant="CskButtonVariant.Outlined" OnClick="@LoadStagedImportsAsync">Refresh</CskButton>
+    </CskStack>
+
+    @if (_isLoading)
+    {
+        <CskSpinner />
+    }
+    else if (_items.Count == 0)
+    {
+        <CskMessageBar>No staged import records found for the active project.</CskMessageBar>
+    }
+    else
+    {
+        <CskDataGrid Items="@_items.AsQueryable()" TGridItem="StagedImportRowDto">
+            <CskPropertyColumn Property="@(x => x.OriginalFileName)" Title="File / Entry" />
+            <CskPropertyColumn Property="@(x => x.FileType)" Title="File Type" />
+            <CskPropertyColumn Property="@(x => x.SheetName)" Title="Sheet" />
+            <CskPropertyColumn Property="@(x => x.RowCount)" Title="Rows" />
+            <CskPropertyColumn Property="@(x => x.Status)" Title="Status" />
+            <CskPropertyColumn Property="@(x => x.ProcessedAtUtc)" Title="Processed (UTC)" />
+            <CskPropertyColumn Property="@(x => x.ErrorMessage)" Title="Error" />
+            <CskTemplateColumn Title="Payload">
+                <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => OpenPayloadDialog(context))">View JSON</CskButton>
+            </CskTemplateColumn>
+        </CskDataGrid>
+    }
+</CskStack>
+
+@if (_isPayloadDialogOpen)
+{
+    <CskDialog>
+        <TitleTemplate>Staged Payload: @_selectedRow?.OriginalFileName (@_selectedRow?.SheetName)</TitleTemplate>
+        <ChildContent>
+            <pre>@_selectedRow?.PayloadJson</pre>
+        </ChildContent>
+        <ActionTemplate>
+            <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _isPayloadDialogOpen = false)">Close</CskButton>
+        </ActionTemplate>
+    </CskDialog>
+}

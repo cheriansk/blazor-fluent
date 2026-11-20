@@ -172,25 +172,6 @@ public class ImportFileService : IImportFileService
                 await _eventTracker.TrackPublishAsync(batchEvent, eventId: batchEvent.EventId, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
             }
 
-            // 3b. Enqueue local ML.NET + OpenXML parsing for uploaded Word (.docx) documents
-            foreach (var file in importFiles)
-            {
-                if (request.EnableDocumentParsing && file.FileType == ImportFileTypeEnum.ScanFindingsWord)
-                {
-                    var parsingEvent = new BlazorEnterprise.Core.Events.DocumentParsing.DocumentParsingJobEvent(
-                        ImportFileId: file.Id,
-                        ProjectId: file.ProjectId,
-                        ExpectedDocumentType: "Auto",
-                        TenantId: tenantGuid,
-                        CorrelationId: correlationId,
-                        SenderOrigin: senderOrigin,
-                        SenderUserId: senderUserId,
-                        SenderUserEmail: senderUserEmail);
-
-                    await _eventTracker.TrackPublishAsync(parsingEvent, eventId: parsingEvent.EventId, correlationId: correlationId, triggerSource: "FileUpload", sourceClass: nameof(ImportFileService), senderOrigin: senderOrigin, senderUserId: senderUserId, senderUserEmail: senderUserEmail, cancellationToken: ct);
-                }
-            }
-
             // 4. Send in-app notification to the uploader
             await SendNotificationAsync(
                 title: "Batch Upload Succeeded",
