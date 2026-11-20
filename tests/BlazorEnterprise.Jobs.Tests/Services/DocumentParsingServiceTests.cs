@@ -76,7 +76,7 @@ public class DocumentParsingServiceTests
                 OriginalFileName = "PolicyCenter_Assessment.docx",
                 BlobUri = "tenants/test/policy.bin",
                 ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                FileType = ImportFileTypeEnum.ScanFindingsWord,
+                FileType = ImportFileTypeEnum.ScanFindings,
                 Status = ImportStatusEnum.Uploaded,
                 Sha256Checksum = "abc"
             });

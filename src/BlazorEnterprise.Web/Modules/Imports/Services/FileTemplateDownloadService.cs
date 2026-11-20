@@ -17,7 +17,7 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
     {
         new()
         {
-            FileType = ImportFileTypeEnum.ProgramCalendarExcel,
+            FileType = ImportFileTypeEnum.ProgramCalendar,
             DisplayName = "Program Calendar (Excel)",
             Extension = ".xlsx",
             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -27,7 +27,7 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
         },
         new()
         {
-            FileType = ImportFileTypeEnum.ProjectCalendarExcel,
+            FileType = ImportFileTypeEnum.ProjectCalendar,
             DisplayName = "Project Calendar (Excel)",
             Extension = ".xlsx",
             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -37,7 +37,7 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
         },
         new()
         {
-            FileType = ImportFileTypeEnum.TaskExcel,
+            FileType = ImportFileTypeEnum.Tasks,
             DisplayName = "Tasks (Excel)",
             Extension = ".xlsx",
             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -45,39 +45,9 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
             Description = "Excel workbook containing project tasks with title, priority, status, and assignee details.",
             SampleFileName = "Tasks_Template.xlsx"
         },
-        new()
-        {
-            FileType = ImportFileTypeEnum.TaskCsv,
-            DisplayName = "Tasks (CSV)",
-            Extension = ".csv",
-            ContentType = "text/csv",
-            AcceptAttribute = ".csv,text/csv",
-            Description = "Comma-delimited text file containing task records with standard header fields.",
-            SampleFileName = "Tasks_Template.csv"
-        },
-        new()
-        {
-            FileType = ImportFileTypeEnum.TaskJson,
-            DisplayName = "Tasks (JSON)",
-            Extension = ".json",
-            ContentType = "application/json",
-            AcceptAttribute = ".json,application/json",
-            Description = "JSON array containing task objects conforming to the task import specification.",
-            SampleFileName = "Tasks_Template.json"
-        },
-        new()
-        {
-            FileType = ImportFileTypeEnum.TaskXml,
-            DisplayName = "Tasks (XML)",
-            Extension = ".xml",
-            ContentType = "application/xml",
-            AcceptAttribute = ".xml,application/xml,text/xml",
-            Description = "XML document containing root <Tasks> with child <Task> elements.",
-            SampleFileName = "Tasks_Template.xml"
-        },
         new ImportFileTypeMetadata
         {
-            FileType = ImportFileTypeEnum.ScanFindingsWord,
+            FileType = ImportFileTypeEnum.ScanFindings,
             DisplayName = "Scan Findings (.docx)",
             Extension = ".docx",
             ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -87,7 +57,7 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
         },
         new ImportFileTypeMetadata
         {
-            FileType = ImportFileTypeEnum.StatementOfWorkWord,
+            FileType = ImportFileTypeEnum.StatementOfWork,
             DisplayName = "Statement Of Work (.docx)",
             Extension = ".docx",
             ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -97,7 +67,7 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
         },
         new ImportFileTypeMetadata
         {
-            FileType = ImportFileTypeEnum.DeliverablesWord,
+            FileType = ImportFileTypeEnum.Deliverables,
             DisplayName = "Deliverables (.docx)",
             Extension = ".docx",
             ContentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -165,15 +135,15 @@ public sealed class FileTemplateDownloadService : IFileTemplateDownloadService
     {
         return fileType switch
         {
-            ImportFileTypeEnum.ProgramCalendarExcel => new List<string>
+            ImportFileTypeEnum.ProgramCalendar => new List<string>
             {
                 "EntryType", "Title", "StartDate", "EndDate", "Status", "OwnerEmails", "Comments", "ProgramCode"
             },
-            ImportFileTypeEnum.ProjectCalendarExcel => new List<string>
+            ImportFileTypeEnum.ProjectCalendar => new List<string>
             {
                 "EntryType", "Title", "StartDate", "EndDate", "Status", "OwnerEmails", "Comments"
             },
-            ImportFileTypeEnum.TaskExcel or ImportFileTypeEnum.TaskCsv or ImportFileTypeEnum.TaskJson or ImportFileTypeEnum.TaskXml => new List<string>
+            ImportFileTypeEnum.Tasks => new List<string>
             {
                 "TaskCode", "Title", "Priority", "Status", "AssigneeEmail", "Description"
             },

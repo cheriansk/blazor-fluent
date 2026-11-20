@@ -15,8 +15,8 @@ public sealed class CalendarCloudProcessor : BaseCloudProcessor
 {
     private static readonly string[] SupportedTypes =
     [
-        nameof(ImportFileTypeEnum.ProgramCalendarExcel),
-        nameof(ImportFileTypeEnum.ProjectCalendarExcel)
+        nameof(ImportFileTypeEnum.ProgramCalendar),
+        nameof(ImportFileTypeEnum.ProjectCalendar)
     ];
 
     private static readonly Regex EmailRegex = new(
@@ -39,7 +39,7 @@ public sealed class CalendarCloudProcessor : BaseCloudProcessor
         var processedRows = new List<ProcessedDomainRowDto>(payload.Rows.Count);
         var sheetName = string.IsNullOrWhiteSpace(payload.SheetName) ? "Calendar" : payload.SheetName;
 
-        var isProgramCalendar = string.Equals(fileType, nameof(ImportFileTypeEnum.ProgramCalendarExcel), StringComparison.OrdinalIgnoreCase);
+        var isProgramCalendar = string.Equals(fileType, nameof(ImportFileTypeEnum.ProgramCalendar), StringComparison.OrdinalIgnoreCase);
         var targetEntity = isProgramCalendar ? "CalendarEntity" : "CalendarEntity";
 
         Guid? currentTimelineSourceRowId = null;

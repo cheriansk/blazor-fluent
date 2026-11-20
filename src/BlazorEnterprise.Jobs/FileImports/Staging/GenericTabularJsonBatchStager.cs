@@ -393,7 +393,7 @@ public sealed class GenericTabularJsonBatchStager : ICanonicalBatchStager
         if (string.Equals(config.Format.Type, "delimited", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        return file.FileType == ImportFileTypeEnum.TaskExcel ||
+        return file.FileType == ImportFileTypeEnum.Tasks ||
                file.OriginalFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase);
     }
 

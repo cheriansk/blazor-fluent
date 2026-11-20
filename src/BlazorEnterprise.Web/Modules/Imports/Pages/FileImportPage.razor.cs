@@ -43,7 +43,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
 
     // File type configuration & state
     private IReadOnlyList<ImportFileTypeMetadata> _availableTypes = Array.Empty<ImportFileTypeMetadata>();
-    private ImportFileTypeEnum _selectedFileType = ImportFileTypeEnum.ProgramCalendarExcel;
+    private ImportFileTypeEnum _selectedFileType = ImportFileTypeEnum.ProgramCalendar;
     private bool _enableDocumentParsing;
     private ImportFileTypeMetadata? _selectedMetadata;
 
@@ -123,7 +123,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
         if (newCode.TryToEnum<ImportFileTypeEnum>(out var fileType))
         {
             _selectedFileType = fileType;
-            _enableDocumentParsing = fileType == ImportFileTypeEnum.ScanFindingsWord;
+            _enableDocumentParsing = fileType == ImportFileTypeEnum.ScanFindings;
             UpdateSelectedMetadata();
             // Clear current file if its extension does not match the new type
             if (_selectedFile != null && _selectedMetadata != null)

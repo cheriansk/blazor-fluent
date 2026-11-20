@@ -12,7 +12,7 @@ public class UploadFileRequest
 {
     public Guid ProjectId { get; set; }
     [AllowHardcodedDefault("TaskExcel is default file type for import wizard")]
-    public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.TaskExcel;
+    public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.Tasks;
     public string FileName { get; set; } = string.Empty;
     [AllowHardcodedDefault("Standard MIME fallback for arbitrary file streams")]
     public string ContentType { get; set; } = "application/octet-stream";
@@ -30,7 +30,7 @@ public class UploadBatchFileItem
     public string ContentType { get; set; } = "application/octet-stream";
     public long FileSizeBytes { get; set; }
     [AllowHardcodedDefault("TaskExcel is default file type for import wizard")]
-    public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.TaskExcel;
+    public ImportFileTypeEnum FileType { get; set; } = ImportFileTypeEnum.Tasks;
     public Stream? ContentStream { get; set; }
 }
 
