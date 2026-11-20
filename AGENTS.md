@@ -52,6 +52,10 @@
 - **Protected Base Files**: Core entity base classes (`BaseEntity`, `AuditableEntity`, `TenantAuditableEntity`), security pipelines, global interceptors, and core UI wrappers (`Csk*`) represent the architectural foundation.
 - **No Direct Modification of Base Files**: NEVER delete, rename, or strip architectural invariants from these protected starter files.
 - **The `.Custom.cs` Extension Pattern**: When extending existing domain entities or core services with project-specific logic, ALWAYS author a separate partial class with the `.Custom.cs` naming convention (e.g., `TaskEntity.Custom.cs`) or inherit base types rather than modifying base definitions.
+- **Strict `TG*` Roslyn Analyzer Compliance (`TG001`–`TG027`)**: Never suppress (`#pragma warning disable`), bypass, or work around `TG*` analyzer errors. Always follow the `ALLOWED APPROACH` up front while coding:
+  - `TG001` / `TG002` (Base `.cs` files): Never edit protected base files or signatures; extend via `*.Custom.cs` partial classes or inherit base types.
+  - `TG004` / `TG021` (Base `.razor` / `Csk*` UI): Never edit protected `Csk*` or base `.razor` files; wrap or compose them in `BlazorEnterprise.Web` components.
+  - **Sync New `TG*` Rules**: Whenever a new `TG*` rule is added to `TemplateGuard.Analyzers`, its rule ID and `ALLOWED APPROACH` MUST also be added to `AGENTS.md` so agents follow the standard up front while coding rather than discovering it during compilation.
 
 ---
 
