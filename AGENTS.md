@@ -177,3 +177,6 @@ Every file import batch MUST follow this exact end-to-end design and runtime lif
    - Create `<Name>BatchDomainCommitter : IBatchDomainCommitter` in `BlazorEnterprise.Jobs/FileImports/Committers/` to persist `ProcessedDomainRowDto[]` into PostgreSQL and mark `staging.StagedImports` rows `IsProcessed = true, Status = "Processed"`.
 8. **Import Status UI (`FileImportPage.razor`)**:
    - Imported file names are clickable and open a `<CskDialog>` showing overall file status (`Imported`, `Staged`, `Stage Failed`, `Processed`, `Process Failed`) and per-staged-entry status from `staging.StagedImports`.
+9. **Fail-Closed DB Persistence & Actionable Validation Tracking**:
+   - **Never Hardcode Required DB Fields**: When persisting to PostgreSQL, required fields must never be hardcoded or silently defaulted. If a required field is missing, fail closed, log a structured error with `CorrelationId` for administrators, and require explicit user validation.
+   - **Track All Batch & API Validation Errors**: All data validation errors during batch staging (`Jobs`) and Stage 2b (`Api` / `RulesEngine`) must be checked and tracked as unified `FileValidationError` items (`ImportFiles.ValidationErrorsJson` / `DocumentParsingResults`) so the user can review, fix, re-import, and re-run.
