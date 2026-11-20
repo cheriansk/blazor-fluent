@@ -336,6 +336,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
         _stagedEntries = [];
         _isFileStatusDialogOpen = true;
         _isLoadingStagedEntries = true;
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -369,6 +370,7 @@ public partial class FileImportPage : ComponentBase, IDisposable
         finally
         {
             _isLoadingStagedEntries = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

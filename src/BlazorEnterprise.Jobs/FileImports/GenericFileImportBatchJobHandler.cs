@@ -303,6 +303,21 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             SenderUserEmail: jobEvent.SenderUserEmail,
             ParentExecutionId: jobEvent.EventId), ct);
 
+        // 2b. Stage 2a handoff for ScanFindingsWord (.docx): trigger AI/Document Parsing from staging.StagedImports
+        if (file.FileType == ImportFileTypeEnum.ScanFindingsWord)
+        {
+            await _eventPublisher.PublishAsync(new BlazorEnterprise.Core.Events.DocumentParsing.DocumentParsingJobEvent(
+                ImportFileId: file.Id,
+                ProjectId: file.ProjectId,
+                ExpectedDocumentType: "Auto",
+                TenantId: file.TenantId,
+                CorrelationId: jobEvent.CorrelationId,
+                SenderOrigin: jobEvent.SenderOrigin,
+                SenderUserId: jobEvent.SenderUserId,
+                SenderUserEmail: jobEvent.SenderUserEmail), ct);
+            return;
+        }
+
         // 3. Dispatch Unprocessed Staged Chunks to Stateless Cloud API (All-or-Nothing Atomicity)
         var stagedChunks = await _dbContext.StagedImports
             .Where(s => s.TenantId == file.TenantId && s.ImportFileId == file.Id && !s.IsProcessed)
