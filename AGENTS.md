@@ -13,6 +13,13 @@
 - **Dotnet Build & Test Restriction**: NEVER run `dotnet build`, `dotnet test`, `dotnet run`, `dotnet ef`, or `msbuild` without explicit confirmation or direct request from the user. When code verification is ready, present the changes and ask the user for permission before running any build or test command.
 - **Git Restrictions**: NEVER execute any git commands (`git status`, `git add`, `git commit`, `git checkout`, `git reset`, `git restore`, `git push`, etc.). Leave all changes unstaged in the working tree for the developer.
 - **Documentation & Comment Integrity**: Preserve all existing comments, XML docstrings, and architectural notes unrelated to your immediate edit.
+- **AI Pending-Review Tagging**: Whenever an AI agent creates or modifies a file (`.cs`, `.razor`, `.css`, `.js`, `.md`, `.json`, `.ps1`), it MUST add a pending-review marker at the top of the file so developers can track unreviewed AI changes (run `pwsh scripts/Find-PendingAiReviews.ps1` to list them; human reviewers remove the marker once reviewed). Generated `.html` files in `datadictionary` are excluded:
+  - `.cs`, `.js`, `.ts`: `// [NEED-HUMAN-REVIEW]`
+  - `.css`: `/* [NEED-HUMAN-REVIEW] */`
+  - `.razor`: `@* [NEED-HUMAN-REVIEW] *@`
+  - `.md`: `<!-- [NEED-HUMAN-REVIEW] -->`
+  - `.ps1`, `.py`, `.yml`: `# [NEED-HUMAN-REVIEW]`
+  - `.json`: `"_needHumanReview": true` (when schema permits)
 
 ---
 
