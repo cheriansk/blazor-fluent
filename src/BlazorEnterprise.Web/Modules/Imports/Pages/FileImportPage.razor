@@ -172,7 +172,7 @@
                     <CskStack Orientation="CskOrientation.Horizontal" HorizontalAlignment="CskHorizontalAlignment.SpaceBetween" VerticalAlignment="CskVerticalAlignment.Center" Class="mt-2">
                         <CskCheckbox Label="Run AI Document Parsing (Scan Findings only)"
                                      @bind-Value="_enableDocumentParsing"
-                                     Disabled="@(_selectedFileType != ImportFileTypeEnum.ScanFindingsWord)" />
+                                     Disabled="@(_selectedFileType != ImportFileTypeEnum.ScanFindings)" />
                         <CskButton Variant="CskButtonVariant.Filled"
                                    IconStart="@CskIcons.ArrowSync"
                                    Disabled="@(_isStagingInProgress || _selectedFile == null || _currentProject == null)"

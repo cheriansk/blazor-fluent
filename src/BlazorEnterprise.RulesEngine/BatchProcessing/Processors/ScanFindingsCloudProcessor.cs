@@ -13,7 +13,6 @@ public sealed class ScanFindingsCloudProcessor : BaseCloudProcessor
     public override IReadOnlyCollection<string> SupportedFileTypes { get; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "ScanFindingsWord",
             "ScanFindings"
         };
 

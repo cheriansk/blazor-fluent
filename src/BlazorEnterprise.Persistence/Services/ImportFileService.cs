@@ -120,7 +120,7 @@ public class ImportFileService : IImportFileService
                 uploadedBlobPaths.Add(blobUri);
 
                 var isUnparsedWordDoc = item.FileType.IsWordDocument() &&
-                    !(request.EnableDocumentParsing && item.FileType == ImportFileTypeEnum.ScanFindingsWord);
+                    !(request.EnableDocumentParsing && item.FileType == ImportFileTypeEnum.ScanFindings);
 
                 importFiles.Add(new ImportFileEntity
                 {

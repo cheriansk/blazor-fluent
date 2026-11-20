@@ -44,11 +44,11 @@ public static class PreFlightFileValidator
 
         // 3. Extension check
         var extension = Path.GetExtension(sanitizedName).ToLowerInvariant();
-        if (expectedType == ImportFileTypeEnum.TaskExcel && extension != ".xlsx")
+        if (expectedType == ImportFileTypeEnum.Tasks && extension != ".xlsx")
         {
             errors.Add(new FileValidationError("File", 0, "Extension", "Excel import requires a valid .xlsx file."));
         }
-        else if (expectedType == ImportFileTypeEnum.TaskCsv && extension != ".csv")
+        else if (expectedType == ImportFileTypeEnum.Tasks && extension != ".csv")
         {
             errors.Add(new FileValidationError("File", 0, "Extension", "CSV import requires a valid .csv file."));
         }
@@ -58,7 +58,7 @@ public static class PreFlightFileValidator
         {
             var initialPosition = contentStream.CanSeek ? contentStream.Position : 0;
 
-            if (expectedType == ImportFileTypeEnum.TaskExcel)
+            if (expectedType == ImportFileTypeEnum.Tasks)
             {
                 var header = new byte[4];
                 var bytesRead = contentStream.Read(header, 0, 4);
@@ -74,7 +74,7 @@ public static class PreFlightFileValidator
                         "File signature mismatch. The uploaded file is not a valid OpenXML/Excel spreadsheet."));
                 }
             }
-            else if (expectedType == ImportFileTypeEnum.TaskCsv)
+            else if (expectedType == ImportFileTypeEnum.Tasks)
             {
                 // Verify CSV has no binary null bytes in first 512 bytes
                 var sample = new byte[512];

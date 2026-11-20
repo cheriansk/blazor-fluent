@@ -130,7 +130,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
         var reqDto = new FileConvertReqDto(
             SessionId: Guid.NewGuid(),
             FileName: "test.csv",
-            FileType: ImportFileTypeEnum.TaskCsv,
+            FileType: ImportFileTypeEnum.Tasks,
             FileBytes: Encoding.UTF8.GetBytes("Title,Status\nTask 1,Open\n")
         );
 
@@ -260,7 +260,7 @@ public class ApiIntegrationTests : IClassFixture<ApiTestWebApplicationFactory>
         var reqDto = new FileConvertReqDto(
             SessionId: Guid.NewGuid(),
             FileName: "worker_batch.csv",
-            FileType: ImportFileTypeEnum.TaskCsv,
+            FileType: ImportFileTypeEnum.Tasks,
             FileBytes: Encoding.UTF8.GetBytes("Title,Status\nWorker Task 1,Open\n")
         );
 

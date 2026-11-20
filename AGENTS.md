@@ -161,6 +161,7 @@ Every file import batch MUST follow this exact end-to-end design and runtime lif
 
 1. **Enum & Domain Entity (`Shared`, `Core`, `Persistence`)**:
    - Add the new member to `ImportFileTypeEnum` in `BlazorEnterprise.Shared.DataListTypes` with `[Display(Name = "...")]`.
+   - **Domain-Based Enum Naming Only**: `ImportFileTypeEnum` members MUST represent business/domain types only (e.g., `Tasks`, `ProgramCalendar`, `ScanFindings`) — **never** include file-format suffixes (`Excel`, `Word`, `Csv`, `Json`, `Xml`, `Zip`). File-format filtering belongs on the UI file picker (`accept`) and extension detection in `GenericTabularJsonBatchStager`.
    - If the `FileType` targets a new domain table, create `<Name>Entity` (`TG007`, `TG008`, `TG027`), `<Name>EntityValidator` (`TG009`), `<Name>EntityConfiguration` (`TG010`), and add `DbSet<<Name>Entity>` to `AppDbContext`.
 2. **Upload Phase (Fast & Decoupled)**:
    - Store the encrypted file as-is in blob storage (`tenants/{tenantId}/projects/{projectId}/imports/{importFileId}{ext}`) and create **1 `ImportFileEntity` row** (`Status = Uploaded`).

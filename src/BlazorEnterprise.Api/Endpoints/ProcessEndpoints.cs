@@ -54,7 +54,7 @@ public static class ProcessEndpoints
 
                 FileConvertRespDto resp;
 
-                if (req.FileType == ImportFileTypeEnum.TaskExcel)
+                if (req.FileType == ImportFileTypeEnum.Tasks)
                 {
                     var result = OpenXmlTabularParser.Parse(req.FileBytes, "Tasks", ["Title", "Status"]);
                     resp = new FileConvertRespDto(

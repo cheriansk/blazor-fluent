@@ -13,8 +13,7 @@ public sealed class TaskCloudProcessor : BaseCloudProcessor
 {
     private static readonly string[] SupportedTypes =
     [
-        nameof(ImportFileTypeEnum.TaskCsv),
-        nameof(ImportFileTypeEnum.TaskExcel)
+        nameof(ImportFileTypeEnum.Tasks)
     ];
 
     public override IReadOnlyCollection<string> SupportedFileTypes => SupportedTypes;

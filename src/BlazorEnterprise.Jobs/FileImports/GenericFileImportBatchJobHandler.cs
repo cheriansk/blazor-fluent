@@ -303,8 +303,8 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
             SenderUserEmail: jobEvent.SenderUserEmail,
             ParentExecutionId: jobEvent.EventId), ct);
 
-        // 2b. Stage 2a handoff for ScanFindingsWord (.docx): trigger AI/Document Parsing from staging.StagedImports
-        if (file.FileType == ImportFileTypeEnum.ScanFindingsWord)
+        // 2b. Stage 2a handoff for ScanFindings (.docx): trigger AI/Document Parsing from staging.StagedImports
+        if (file.FileType == ImportFileTypeEnum.ScanFindings)
         {
             await _eventPublisher.PublishAsync(new BlazorEnterprise.Core.Events.DocumentParsing.DocumentParsingJobEvent(
                 ImportFileId: file.Id,

@@ -36,9 +36,9 @@ public static class ImportFileTypeEnumDefinitions
     }
 
     public static bool IsWordDocument(this ImportFileTypeEnum fileType) =>
-        fileType is ImportFileTypeEnum.ScanFindingsWord
-            or ImportFileTypeEnum.StatementOfWorkWord
-            or ImportFileTypeEnum.DeliverablesWord;
+        fileType is ImportFileTypeEnum.ScanFindings
+            or ImportFileTypeEnum.StatementOfWork
+            or ImportFileTypeEnum.Deliverables;
 }
 
 /// <summary>
@@ -47,50 +47,35 @@ public static class ImportFileTypeEnumDefinitions
 [ClassificationEnum]
 public enum ImportFileTypeEnum
 {
-    [Display(Name = "Project Tasks (Excel .xlsx)", Description = "Project tasks workbook with Tasks and Comments sheets.")]
+    [Display(Name = "Project Tasks", Description = "Project tasks import (.xlsx, .csv, .json, .xml).")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
-    TaskExcel = 1,
+    Tasks = 1,
 
-    [Display(Name = "Project Tasks (JSON .json)", Description = "Project tasks JSON structured document.")]
-    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
-    TaskJson = 2,
-
-    [Display(Name = "Project Tasks (XML .xml)", Description = "Project tasks XML document.")]
-    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
-    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
-    TaskXml = 3,
-
-    [Display(Name = "Project Tasks (CSV .csv)", Description = "Project tasks comma-delimited plain text file.")]
-    [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Text)]
-    [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
-    TaskCsv = 4,
-
-    [Display(Name = "Program Calendar & Milestones (Excel .xlsx)", Description = "Single-sheet program timeline stages and milestones workbook.")]
+    [Display(Name = "Program Calendar & Milestones", Description = "Single-sheet program timeline stages and milestones workbook.")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
-    ProgramCalendarExcel = 5,
+    ProgramCalendar = 5,
 
-    [Display(Name = "Project Calendar & Milestones (Excel .xlsx)", Description = "Single-sheet project timeline phases and milestones workbook.")]
+    [Display(Name = "Project Calendar & Milestones", Description = "Single-sheet project timeline phases and milestones workbook.")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Spreadsheet)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Tabular)]
-    ProjectCalendarExcel = 6,
+    ProjectCalendar = 6,
 
     [Display(Name = "Scan Findings (.docx)", Description = "Scan findings Word document parsed locally via ML.NET and OpenXML.")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
-    ScanFindingsWord = 10,
+    ScanFindings = 10,
 
     [Display(Name = "Statement Of Work (.docx)", Description = "Statement of Work Word document (stored without AI parsing).")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
-    StatementOfWorkWord = 11,
+    StatementOfWork = 11,
 
     [Display(Name = "Deliverables (.docx)", Description = "Deliverables Word document (stored without AI parsing).")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
     [DataListFilterCriterias(ImportFileTypeEnumDefinitions.Filters.Hierarchical)]
-    DeliverablesWord = 12,
+    Deliverables = 12,
 
     [Display(Name = "JSON Comparison", Description = "RFC 6902 JSON Patch comparison between two parsed documents.")]
     [DataListCategory(ImportFileTypeEnumDefinitions.Categories.Structured)]
