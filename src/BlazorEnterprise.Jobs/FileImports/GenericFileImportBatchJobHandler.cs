@@ -393,14 +393,36 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                 Rows: [],
                 CompressedChunkBytes: compressedBytes);
 
-            var engineResult = await _engineClient!.ProcessStagedBatchAsync(batchReq, ct);
+            Result<ProcessBatchRespDto> engineResult;
+            try
+            {
+                engineResult = await _engineClient!.ProcessStagedBatchAsync(batchReq, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var safeErr = $"Cloud API call failed or timed out for chunk {chunk.ChunkIndex}/{chunk.TotalChunks}. Reference ID: {jobEvent.CorrelationId}";
+                _logger.LogError(ex, "Cloud API call failed for FileId={FileId}, Chunk={ChunkIndex}/{TotalChunks}. CorrelationId: {CorrelationId}",
+                    file.Id, chunk.ChunkIndex, chunk.TotalChunks, jobEvent.CorrelationId);
+                chunk.Status = "Failed";
+                chunk.ErrorMessage = safeErr;
+                chunk.ProcessedAtUtc = DateTime.UtcNow;
+                allCloudErrors.Add(new FileValidationError(chunk.SheetName, 0, "CloudApi", safeErr));
+                break;
+            }
 
             // Zero-Trust Response Verification
             if (engineResult.IsSuccess && engineResult.Data != null && engineResult.Data.TenantId != file.TenantId)
             {
                 _logger.LogCritical("Zero-Trust Security Violation: Cloud API response TenantId '{RespTenant}' does not match File TenantId '{FileTenant}'. Halting immediately.",
                     engineResult.Data.TenantId, file.TenantId);
-                allCloudErrors.Add(new FileValidationError("Security", 0, "TenantId", "Zero-Trust Security Violation: Response tenant identity mismatch."));
+                chunk.Status = "Failed";
+                chunk.ErrorMessage = "Zero-Trust Security Violation: Response tenant identity mismatch.";
+                chunk.ProcessedAtUtc = DateTime.UtcNow;
+                allCloudErrors.Add(new FileValidationError("Security", 0, "TenantId", chunk.ErrorMessage));
                 break;
             }
 
@@ -413,6 +435,14 @@ public class GenericFileImportBatchJobHandler : IBatchJobHandler<FileImportBatch
                     ?? engineResult.Error
                     ?? engineResult.Data?.ErrorMessage
                     ?? $"Cloud batch processing rejected chunk {chunk.ChunkIndex}/{chunk.TotalChunks}.";
+
+                chunk.Status = "Failed";
+                chunk.ErrorMessage = firstError;
+                chunk.ProcessedAtUtc = DateTime.UtcNow;
+                if (allCloudErrors.Count == 0)
+                {
+                    allCloudErrors.Add(new FileValidationError(chunk.SheetName, 0, "CloudApi", firstError));
+                }
 
                 _logger.LogWarning("Cloud processing rejected chunk {ChunkIndex}/{TotalChunks} for file '{FileName}': {Error}",
                     chunk.ChunkIndex, chunk.TotalChunks, file.OriginalFileName, firstError);

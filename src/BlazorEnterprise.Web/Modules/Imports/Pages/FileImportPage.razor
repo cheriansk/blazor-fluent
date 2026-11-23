@@ -279,6 +279,10 @@
                                     @if (context.Status is ImportStatusEnum.ValidationFailed or ImportStatusEnum.StagingFailed or ImportStatusEnum.ProcessingFailed)
                                     {
                                         <CskButton Variant="CskButtonVariant.Text"
+                                                   OnClick="@(() => RetryFileAsync(context))">
+                                            Retry
+                                        </CskButton>
+                                        <CskButton Variant="CskButtonVariant.Text"
                                                    IconStart="@CskIcons.ErrorCircle"
                                                    Class="text-danger"
                                                    OnClick="@(() => ViewDiagnosticsAsync(context.Id))">

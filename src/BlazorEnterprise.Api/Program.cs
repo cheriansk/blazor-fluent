@@ -58,6 +58,8 @@ builder.Services.AddHybridCache(options =>
     };
 });
 
+builder.Services.Configure<BlazorEnterprise.Api.Middleware.ApiPayloadAuditOptions>(
+    builder.Configuration.GetSection(BlazorEnterprise.Api.Middleware.ApiPayloadAuditOptions.SectionName));
 builder.Services.AddSingleton<BaseCloudProcessor, TaskCloudProcessor>();
 builder.Services.AddSingleton<BaseCloudProcessor, ScanFindingsCloudProcessor>();
 builder.Services.AddSingleton<BaseCloudProcessor, CalendarCloudProcessor>();
