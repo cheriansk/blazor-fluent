@@ -330,6 +330,36 @@ public partial class FileImportPage : ComponentBase, IDisposable
     private ImportFileSummaryDto? _selectedStatusFile;
     private List<StagedEntryStatusDto> _stagedEntries = [];
 
+    private async Task RetryFileAsync(ImportFileSummaryDto file)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entity = await db.ImportFiles.AsTracking().FirstOrDefaultAsync(f => f.Id == file.Id);
+            if (entity is null) return;
+
+            entity.Status = ImportStatusEnum.Uploaded;
+            entity.StepStage = "Queued";
+            entity.ErrorMessage = null;
+
+            db.IsTransactionScopeCommitAuthorized = true;
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            finally
+            {
+                db.IsTransactionScopeCommitAuthorized = false;
+            }
+
+            await RefreshHistoryAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to retry import file {ImportFileId}.", file.Id);
+        }
+    }
+
     private async Task OpenFileStatusDialogAsync(ImportFileSummaryDto file)
     {
         _selectedStatusFile = file;

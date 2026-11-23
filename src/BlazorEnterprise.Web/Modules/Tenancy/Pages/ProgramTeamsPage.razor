@@ -1,0 +1,111 @@
+@* [NEED-HUMAN-REVIEW] *@
+@page "/program-teams"
+@using BlazorEnterprise.Shared.UI.Components
+@inherits AuthorizedPageComponentBase
+
+<PageTitle>Program Teams</PageTitle>
+
+<CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
+    <CskStack Orientation="CskOrientation.Horizontal" Gap="CskStackGap.Small">
+        <CskButton Variant="CskButtonVariant.Filled" OnClick="@OpenCreateDialog">New Team</CskButton>
+        <CskButton Variant="CskButtonVariant.Outlined" OnClick="@LoadTeamsAsync">Refresh</CskButton>
+    </CskStack>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <CskMessageBar>@_errorMessage</CskMessageBar>
+    }
+
+    @if (_isLoading)
+    {
+        <CskSpinner />
+    }
+    else if (_teams.Count == 0)
+    {
+        <CskMessageBar>No teams configured for this program yet.</CskMessageBar>
+    }
+    else
+    {
+        <CskDataGrid Items="@_teams.AsQueryable()" TGridItem="ProgramTeamRowDto">
+            <CskPropertyColumn Property="@(t => t.Name)" Title="Team Name" />
+            <CskPropertyColumn Property="@(t => t.Description)" Title="Description" />
+            <CskPropertyColumn Property="@(t => t.OwnersDisplay)" Title="Owners" />
+            <CskTemplateColumn Title="Status">
+                <CskBadge>@(context.IsDisabled ? "Disabled" : "Active")</CskBadge>
+            </CskTemplateColumn>
+            <CskTemplateColumn Title="Actions">
+                <CskStack Orientation="CskOrientation.Horizontal" Gap="CskStackGap.Small">
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => OpenEditDialog(context))">Edit</CskButton>
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => ToggleDisableAsync(context))">
+                        @(context.IsDisabled ? "Enable" : "Disable")
+                    </CskButton>
+                    <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => OpenHistoryDialogAsync(context))">History</CskButton>
+                </CskStack>
+            </CskTemplateColumn>
+        </CskDataGrid>
+    }
+</CskStack>
+
+@if (_isEditorOpen)
+{
+    <CskDialog>
+        <TitleTemplate>@(_editingTeamId.HasValue ? "Edit Team" : "Create Team")</TitleTemplate>
+        <ChildContent>
+            <CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Medium">
+                @if (!string.IsNullOrWhiteSpace(_dialogError))
+                {
+                    <CskMessageBar>@_dialogError</CskMessageBar>
+                }
+                <CskTextInput Label="Team Name" @bind-Value="_formName" />
+                <CskTextArea Label="Description" @bind-Value="_formDescription" />
+
+                <CskStack Orientation="CskOrientation.Vertical" Gap="CskStackGap.Small">
+                    @for (var i = 0; i < _formOwners.Count; i++)
+                    {
+                        var idx = i;
+                        <CskStack Orientation="CskOrientation.Horizontal" Gap="CskStackGap.Small">
+                            <CskTextInput Label="@($"Owner {idx + 1}")" @bind-Value="_formOwners[idx]" />
+                            @if (_formOwners.Count > 1)
+                            {
+                                <CskButton Variant="CskButtonVariant.Text" OnClick="@(() => _formOwners.RemoveAt(idx))">Remove</CskButton>
+                            }
+                        </CskStack>
+                    }
+                    @if (_formOwners.Count < 4)
+                    {
+                        <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _formOwners.Add(string.Empty))">Add Owner (Max 4)</CskButton>
+                    }
+                </CskStack>
+            </CskStack>
+        </ChildContent>
+        <ActionTemplate>
+            <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _isEditorOpen = false)">Cancel</CskButton>
+            <CskButton Variant="CskButtonVariant.Filled" OnClick="@SaveTeamAsync">Save</CskButton>
+        </ActionTemplate>
+    </CskDialog>
+}
+
+@if (_isHistoryOpen)
+{
+    <CskDialog>
+        <TitleTemplate>History: @_historyTeamName</TitleTemplate>
+        <ChildContent>
+            @if (_historyItems.Count == 0)
+            {
+                <CskMessageBar>No history records found.</CskMessageBar>
+            }
+            else
+            {
+                <CskDataGrid Items="@_historyItems.AsQueryable()" TGridItem="TeamHistoryRowDto">
+                    <CskPropertyColumn Property="@(h => h.Action)" Title="Action" />
+                    <CskPropertyColumn Property="@(h => h.ChangedBy)" Title="Changed By" />
+                    <CskPropertyColumn Property="@(h => h.ChangedAtUtc)" Title="Changed (UTC)" />
+                    <CskPropertyColumn Property="@(h => h.SnapshotJson)" Title="Snapshot" />
+                </CskDataGrid>
+            }
+        </ChildContent>
+        <ActionTemplate>
+            <CskButton Variant="CskButtonVariant.Outlined" OnClick="@(() => _isHistoryOpen = false)">Close</CskButton>
+        </ActionTemplate>
+    </CskDialog>
+}
