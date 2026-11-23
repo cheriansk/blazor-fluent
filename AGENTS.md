@@ -51,7 +51,15 @@
 ## 🏛️ 3. Base Template Preservation & Downstream Extension Law
 - **Protected Base Files**: Core entity base classes (`BaseEntity`, `AuditableEntity`, `TenantAuditableEntity`), security pipelines, global interceptors, and core UI wrappers (`Csk*`) represent the architectural foundation.
 - **No Direct Modification of Base Files**: NEVER delete, rename, or strip architectural invariants from these protected starter files.
-- **The `.Custom.cs` Extension Pattern**: When extending existing domain entities or core services with project-specific logic, ALWAYS author a separate partial class with the `.Custom.cs` naming convention (e.g., `TaskEntity.Custom.cs`) or inherit base types rather than modifying base definitions.
+- **The `.Custom.cs` Extension Pattern**: Keep base files clean for upstream template syncs by extending them in separate files:
+  - **`.cs` (Entities, Services, Validators)**: Author a separate `*.Custom.cs` partial class (e.g., `TaskEntity.Custom.cs`) or inherit base types.
+  - **`.razor.cs` (Code-Behind)**: Author a separate `*.razor.Custom.cs` partial class in the exact same namespace for downstream `[Inject]` properties, fields, and methods.
+  - **`.razor` (Markup)**: Markup cannot be partial-split; wrap or compose base components inside new `*Comp.razor` / `*Page.razor` / `*Modal.razor` files in `BlazorEnterprise.Web`.
+  - **Enums (`DataListTypes`)**:
+    - *Adding a new enum*: Place it in a separate `*CustomTypes.cs` file.
+    - *Adding a member to an existing base `enum`*: C# `enum`s cannot be `partial` — add it minimally to the base `enum` file and tag with `[NEED-HUMAN-REVIEW]`.
+    - *Disabling an existing base `enum` value*: Never delete or renumber existing values if DB rows reference them; mark `[Browsable(false)]` / `[Obsolete]` or filter in `<DataListSelect>`.
+  - **Worst-Case Scenarios Requiring Base-File Edits**: Only edit a base file directly when (1) changing an existing non-`virtual` method's internal logic/signature, (2) modifying existing `.razor` markup that cannot be wrapped, or (3) adding/disabling a member on an existing base `enum`. Keep such edits minimal and tagged with `[NEED-HUMAN-REVIEW]`.
 - **Strict `TG*` Roslyn Analyzer Compliance (`TG001`–`TG027`)**: Never suppress (`#pragma warning disable`), bypass, or work around `TG*` analyzer errors. Always follow the `ALLOWED APPROACH` up front while coding:
   - `TG001` / `TG002` (Base `.cs` files): Never edit protected base files or signatures; extend via `*.Custom.cs` partial classes or inherit base types.
   - `TG004` / `TG021` (Base `.razor` / `Csk*` UI): Never edit protected `Csk*` or base `.razor` files; wrap or compose them in `BlazorEnterprise.Web` components.
